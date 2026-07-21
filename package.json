@@ -4,17 +4,15 @@
   "private": true,
   "type": "module",
   "main": "main.js",
-  "scripts": {
-    "build:libs": "npm run build -w packages/language-service",
-    "build": "npm run build:libs && tsc --noEmit && node esbuild.config.mjs production",
-    "dev": "node esbuild.config.mjs",
-    "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
-    "test": "vitest --run",
-    "postinstall": "npm run build:libs"
+  "engines": {
+    "node": ">=22.0.0"
   },
-  "workspaces": [
-    "packages/*"
-  ],
+  "scripts": {
+    "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run"
+  },
   "dependencies": {
     "@codemirror/autocomplete": "6.18.6",
     "@codemirror/commands": "6.8.1",
@@ -22,7 +20,7 @@
     "@codemirror/lint": "6.8.5",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@domorium/language-service": "*"
+    "@domorium/language-service": "^0.1.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
