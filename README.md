@@ -48,7 +48,7 @@ npm run build
 
 The packaged plugin is written to `dist/`.
 
-The shared GEDCOM parser and language service are maintained in the main
+The shared GEDCOM parser and editor-independent language service are maintained in the main
 [Domorium repository](https://github.com/lavich/domorium). Their source is
 included here so releases can be built and reviewed independently.
 

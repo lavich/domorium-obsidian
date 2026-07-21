@@ -18,9 +18,8 @@ import {
   type ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import type { CompletionItem, MarkupContent } from "vscode-languageserver-protocol";
-
-import { semanticTokenLegend } from "@domorium/lsp";
+import type { CompletionItem } from "@domorium/language-service";
+import { semanticTokenLegend } from "@domorium/language-service";
 
 import { toOffset, toOffsets, toPosition } from "./positions";
 import { EditorLanguageService } from "./service";
@@ -87,11 +86,7 @@ function semanticDecorations(
     })
     .filter((range) => range.from < range.to);
   const hints = (indentationHints ? service.getInlayHints() : []).map((hint) => {
-    const label =
-      typeof hint.label === "string"
-        ? hint.label
-        : hint.label.map((part) => part.value).join("");
-    return Decoration.widget({ widget: new IndentHintWidget(label), side: -1 }).range(
+    return Decoration.widget({ widget: new IndentHintWidget(hint.label), side: -1 }).range(
       toOffset(state.doc, hint.position),
     );
   });
@@ -153,9 +148,9 @@ function diagnosticSource(language: EditorLanguageService) {
         from: range.from,
         to: Math.max(range.from, range.to),
         severity:
-          diagnostic.severity === 1
+          diagnostic.severity === "error"
             ? "error"
-            : diagnostic.severity === 2
+            : diagnostic.severity === "warning"
               ? "warning"
               : "info",
         message: diagnostic.message,
@@ -172,13 +167,7 @@ function hoverSource(language: EditorLanguageService) {
     if (!hover) return null;
     const contents = Array.isArray(hover.contents) ? hover.contents : [hover.contents];
     const text = contents
-      .map((content) =>
-        typeof content === "string"
-          ? content
-          : "language" in content
-            ? content.value
-            : (content as MarkupContent).value,
-      )
+      .map((content) => content.value)
       .join("\n\n");
     return {
       pos: offset,

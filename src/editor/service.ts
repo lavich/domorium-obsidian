@@ -1,4 +1,4 @@
-import { GedcomLanguageService } from "@domorium/lsp";
+import { GedcomLanguageService } from "@domorium/language-service";
 
 export class EditorLanguageService {
   readonly service = new GedcomLanguageService();

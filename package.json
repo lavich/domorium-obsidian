@@ -5,7 +5,7 @@
   "type": "module",
   "main": "main.js",
   "scripts": {
-    "build:libs": "npm run build -w packages/lsp",
+    "build:libs": "npm run build -w packages/language-service",
     "build": "npm run build:libs && tsc --noEmit && node esbuild.config.mjs production",
     "dev": "node esbuild.config.mjs",
     "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
@@ -22,8 +22,7 @@
     "@codemirror/lint": "6.8.5",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@domorium/lsp": "*",
-    "vscode-languageserver-protocol": "3.17.5"
+    "@domorium/language-service": "*"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
