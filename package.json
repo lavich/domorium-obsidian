@@ -1,0 +1,36 @@
+{
+  "name": "domorium-obsidian",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "build:libs": "npm run build -w packages/lsp",
+    "build": "npm run build:libs && tsc --noEmit && node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit && npm run typecheck --workspaces --if-present",
+    "test": "vitest --run",
+    "postinstall": "npm run build:libs"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@codemirror/autocomplete": "6.18.6",
+    "@codemirror/commands": "6.8.1",
+    "@codemirror/language": "6.11.3",
+    "@codemirror/lint": "6.8.5",
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
+    "@domorium/lsp": "*",
+    "vscode-languageserver-protocol": "3.17.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "esbuild": "^0.25.9",
+    "obsidian": "latest",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3",
+    "vitest": "^3.2.4"
+  }
+}

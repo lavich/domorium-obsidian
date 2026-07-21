@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["[0-9]*.[0-9]*.[0-9]*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Verify tagged commit belongs to main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main
+      - name: Verify version
+        run: test "$GITHUB_REF_NAME" = "$(node -p "require('./manifest.json').version")"
+      - run: npm run build
+      - name: Validate release files
+        run: |
+          test -s dist/main.js
+          test -s dist/manifest.json
+          test -s dist/styles.css
+          test "$(node -p "require('./versions.json')[require('./manifest.json').version]")" = "$(node -p "require('./manifest.json').minAppVersion")"
+      - name: Create GitHub release
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          dist/main.js
+          dist/manifest.json
+          dist/styles.css
+          --title "Domorium for Obsidian $GITHUB_REF_NAME"
+          --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

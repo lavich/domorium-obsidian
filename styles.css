@@ -1,0 +1,42 @@
+.domorium-gedcom-view {
+  height: 100%;
+}
+
+.domorium-gedcom-editor {
+  height: 100%;
+  font-family: var(--font-monospace);
+  font-size: var(--font-text-size);
+}
+
+.domorium-gedcom-editor .cm-editor,
+.domorium-gedcom-editor .cm-scroller {
+  height: 100%;
+}
+
+.domorium-token-comment {
+  color: var(--text-faint);
+}
+
+.domorium-token-keyword {
+  color: var(--color-cyan);
+}
+
+.domorium-token-string {
+  color: var(--color-purple);
+}
+
+.domorium-token-declaration {
+  font-weight: var(--font-semibold);
+}
+
+.domorium-indent-hint {
+  color: transparent;
+  white-space: pre;
+  user-select: none;
+}
+
+.domorium-hover {
+  max-width: 28rem;
+  padding: var(--size-4-2) var(--size-4-3);
+  white-space: pre-wrap;
+}
