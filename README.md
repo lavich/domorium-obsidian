@@ -19,6 +19,22 @@ Domorium keeps the GEDCOM file as the source of truth. It does not convert
 records into Markdown, create a second genealogy database, or send vault data
 to a remote service.
 
+## Usage
+
+1. Enable **Domorium GEDCOM Editor** in **Settings → Community plugins**.
+2. Open a `.ged` or `.gedcom` file in your vault.
+3. Edit the source directly. Obsidian saves changes back to the same file.
+
+Use **Go to GEDCOM definition** from the command palette to jump from an XREF
+usage to its record declaration. Editor behavior can be adjusted in the
+plugin settings.
+
+## Privacy
+
+Domorium works locally inside the vault. It does not require an account, make
+network requests, access files outside the vault, show advertisements, or
+collect analytics or telemetry.
+
 ## Beta installation
 
 Until Domorium is available in Community Plugins, install the latest GitHub
@@ -49,8 +65,8 @@ npm run build
 The packaged plugin is written to `dist/`.
 
 The shared GEDCOM parser and editor-independent language service are maintained in the main
-[Domorium repository](https://github.com/lavich/domorium). Their source is
-included here so releases can be built and reviewed independently.
+[Domorium repository](https://github.com/lavich/domorium) and consumed as
+versioned public npm packages.
 
 ## License
 
