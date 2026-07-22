@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- Add searchable settings support for Obsidian 1.13.0 and later.
+- Improve validation of persisted plugin settings.
+- Update editor DOM creation to use Obsidian helpers.
+- Add ESLint quality checks to CI.
+- Add provenance attestations for release assets.
+
 ## 0.1.0
 
 - Open and edit `.ged` and `.gedcom` files directly in Obsidian.

@@ -69,4 +69,4 @@ versioned public npm packages.
 
 ## License
 
-MIT © 2025 Andrei Lobanov
+MIT © 2026 Andrei Lobanov
