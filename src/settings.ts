@@ -1,6 +1,13 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import {
+  App,
+  PluginSettingTab,
+  Setting,
+  type SettingDefinitionItem,
+} from "obsidian";
 
 import type DomoriumPlugin from "./main";
+import { SETTING_DEFINITIONS } from "./settingDefinitions";
+import type { DomoriumSettings } from "./settingsData";
 
 export class DomoriumSettingTab extends PluginSettingTab {
   constructor(
@@ -8,6 +15,30 @@ export class DomoriumSettingTab extends PluginSettingTab {
     private readonly plugin: DomoriumPlugin,
   ) {
     super(app, plugin);
+  }
+
+  getSettingDefinitions(): SettingDefinitionItem<keyof DomoriumSettings>[] {
+    return SETTING_DEFINITIONS;
+  }
+
+  getControlValue(key: string): unknown {
+    if (key === "diagnostics" || key === "indentationHints") {
+      return this.plugin.settings[key];
+    }
+    return undefined;
+  }
+
+  setControlValue(key: string, value: unknown): Promise<void> {
+    if (typeof value !== "boolean") {
+      return Promise.resolve();
+    }
+    if (key === "diagnostics") {
+      return this.plugin.updateSettings({ diagnostics: value });
+    }
+    if (key === "indentationHints") {
+      return this.plugin.updateSettings({ indentationHints: value });
+    }
+    return Promise.resolve();
   }
 
   display(): void {

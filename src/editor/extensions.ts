@@ -56,7 +56,9 @@ function completionSource(
   }
   const service = language.update(context.state.doc.toString());
   const items = service.getCompletionItems(toPosition(context.state.doc, context.pos));
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
   return {
     from: before?.from ?? context.pos,
     options: items.map((item) => ({
@@ -102,10 +104,7 @@ class IndentHintWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    const span = document.createElement("span");
-    span.className = "domorium-indent-hint";
-    span.textContent = this.label;
-    return span;
+    return createSpan({ cls: "domorium-indent-hint", text: this.label });
   }
 
   eq(other: IndentHintWidget): boolean {
@@ -164,17 +163,14 @@ function hoverSource(language: EditorLanguageService) {
   return hoverTooltip((view, offset) => {
     const service = language.update(view.state.doc.toString());
     const hover = service.getHover(toPosition(view.state.doc, offset));
-    if (!hover) return null;
-    const contents = Array.isArray(hover.contents) ? hover.contents : [hover.contents];
-    const text = contents
-      .map((content) => content.value)
-      .join("\n\n");
+    if (!hover) {
+      return null;
+    }
+    const text = hover.contents.value;
     return {
       pos: offset,
       create() {
-        const dom = document.createElement("div");
-        dom.className = "domorium-hover";
-        dom.textContent = text;
+        const dom = createDiv({ cls: "domorium-hover", text });
         return { dom };
       },
     };
@@ -188,7 +184,9 @@ function foldingSource(language: EditorLanguageService) {
     const range = service
       .getFoldingRanges()
       .find((candidate) => candidate.startLine === line.number - 1);
-    if (!range) return null;
+    if (!range) {
+      return null;
+    }
     const endLine = state.doc.line(Math.min(range.endLine + 1, state.doc.lines));
     return { from: line.to, to: endLine.to };
   });
@@ -197,12 +195,18 @@ function foldingSource(language: EditorLanguageService) {
 function definitionNavigation(language: EditorLanguageService): Extension {
   return EditorView.domEventHandlers({
     mousedown(event, view) {
-      if (!(event.metaKey || event.ctrlKey) || event.button !== 0) return false;
+      if (!(event.metaKey || event.ctrlKey) || event.button !== 0) {
+        return false;
+      }
       const offset = view.posAtCoords({ x: event.clientX, y: event.clientY });
-      if (offset === null) return false;
+      if (offset === null) {
+        return false;
+      }
       const service = language.update(view.state.doc.toString());
       const definition = service.getDefinitionRanges(toPosition(view.state.doc, offset))[0];
-      if (!definition) return false;
+      if (!definition) {
+        return false;
+      }
       event.preventDefault();
       const from = toOffset(view.state.doc, definition.start);
       view.dispatch({ selection: { anchor: from }, scrollIntoView: true });

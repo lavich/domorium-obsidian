@@ -58,8 +58,7 @@ Reload Community Plugins and enable **Domorium GEDCOM Editor**.
 
 ```bash
 npm install
-npm test
-npm run build
+npm run check
 ```
 
 The packaged plugin is written to `dist/`.
