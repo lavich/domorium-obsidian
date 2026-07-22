@@ -77,7 +77,9 @@ export class GedcomView extends TextFileView {
     const definition = this.language
       .update(state.doc.toString())
       .getDefinitionRanges(position)[0];
-    if (!definition) return false;
+    if (!definition) {
+      return false;
+    }
     const from = toOffset(state.doc, definition.start);
     this.editor.dispatch({ selection: { anchor: from }, scrollIntoView: true });
     this.editor.focus();

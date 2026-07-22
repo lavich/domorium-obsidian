@@ -2,13 +2,17 @@ import { Plugin } from "obsidian";
 
 import { GEDCOM_VIEW_TYPE, GedcomView } from "./GedcomView";
 import { DomoriumSettingTab } from "./settings";
-import { DEFAULT_SETTINGS, type DomoriumSettings } from "./settingsData";
+import {
+  DEFAULT_SETTINGS,
+  parseSettings,
+  type DomoriumSettings,
+} from "./settingsData";
 
 export default class DomoriumPlugin extends Plugin {
   settings: DomoriumSettings = DEFAULT_SETTINGS;
 
   async onload(): Promise<void> {
-    this.settings = { ...DEFAULT_SETTINGS, ...(await this.loadData()) };
+    this.settings = parseSettings(await this.loadData());
     this.registerView(
       GEDCOM_VIEW_TYPE,
       (leaf) => new GedcomView(leaf, this.settings),
@@ -20,8 +24,12 @@ export default class DomoriumPlugin extends Plugin {
       name: "Go to GEDCOM definition",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view) return false;
-        if (!checking) view.goToDefinition();
+        if (!view) {
+          return false;
+        }
+        if (!checking) {
+          view.goToDefinition();
+        }
         return true;
       },
     });
