@@ -18,6 +18,7 @@ import type { GedcomEditorSettings } from "./editor/extensions";
 import { toOffset, toPosition } from "./editor/positions";
 import {
   EditorLanguageService,
+  resolveVaultRelativePath,
   toCodeMirrorChanges,
 } from "./editor/service";
 
@@ -54,7 +55,7 @@ export class GedcomView extends TextFileView {
   }
 
   getViewData(): string {
-    return this.editor.state.doc.toString();
+    return this.editor.state.sliceDoc();
   }
 
   setViewData(data: string, clear: boolean): void {
@@ -89,7 +90,7 @@ export class GedcomView extends TextFileView {
     const { state } = this.editor;
     const position = toPosition(state.doc, state.selection.main.head);
     const definition = this.language
-      .update(state.doc.toString())
+      .update(state.sliceDoc())
       .getDefinitionRanges(position)[0];
     if (!definition) {
       return false;
@@ -103,15 +104,41 @@ export class GedcomView extends TextFileView {
   findReferences(): Range[] {
     const { state } = this.editor;
     return this.language
-      .update(state.doc.toString())
+      .update(state.sliceDoc())
       .getReferences(toPosition(state.doc, state.selection.main.head), {
         includeDeclaration: true,
       });
   }
 
+  goToNextReference(): number {
+    const references = this.findReferences();
+    if (references.length === 0) {
+      return 0;
+    }
+    const current = this.editor.state.selection.main.head;
+    const offsets = references.map((range) =>
+      toOffset(this.editor.state.doc, range.start),
+    );
+    const target = offsets.find((offset) => offset > current) ?? offsets[0];
+    this.editor.dispatch({
+      selection: { anchor: target },
+      scrollIntoView: true,
+    });
+    this.editor.focus();
+    return references.length;
+  }
+
+  canRenameReference(): boolean {
+    const { state } = this.editor;
+    this.language.update(state.sliceDoc());
+    return this.language.prepareRename(
+      toPosition(state.doc, state.selection.main.head),
+    ).ok;
+  }
+
   renameReference(newName: string): boolean {
     const { state } = this.editor;
-    this.language.update(state.doc.toString());
+    this.language.update(state.sliceDoc());
     const result = this.language.rename(
       toPosition(state.doc, state.selection.main.head),
       newName,
@@ -121,7 +148,7 @@ export class GedcomView extends TextFileView {
 
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
     const { state } = this.editor;
-    this.language.update(state.doc.toString());
+    this.language.update(state.sliceDoc());
     const changes = toCodeMirrorChanges(
       state.doc,
       edit,
@@ -147,13 +174,14 @@ export class GedcomView extends TextFileView {
       doc: data,
       selection: cursor === undefined ? undefined : { anchor: cursor },
       extensions: [
+        EditorState.lineSeparator.of(data.includes("\r\n") ? "\r\n" : "\n"),
         ...createEditorExtensions(this.language, this.settings, {
           applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
           openDocumentLink: (link) => this.openDocumentLink(link),
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
-            this.data = update.state.doc.toString();
+            this.data = update.state.sliceDoc();
             this.requestSave();
           }
         }),
@@ -163,14 +191,25 @@ export class GedcomView extends TextFileView {
 
   private openDocumentLink(link: DocumentLink): void {
     if (link.kind === "http") {
-      window.open(link.targetText, "_blank", "noopener,noreferrer");
+      void this.app.workspace.openLinkText(
+        link.targetText,
+        this.file?.path ?? "",
+        true,
+      );
       return;
     }
     if (link.kind !== "file-relative") {
       new Notice("Absolute file links are not opened automatically");
       return;
     }
-    const path = normalizePath(link.targetText);
+    const relativePath = this.file
+      ? resolveVaultRelativePath(this.file.path, link.targetText)
+      : null;
+    if (!relativePath) {
+      new Notice("File link points outside the vault");
+      return;
+    }
+    const path = normalizePath(relativePath);
     const file = this.app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {
       new Notice(`Vault file not found: ${path}`);

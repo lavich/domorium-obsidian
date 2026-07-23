@@ -42,11 +42,11 @@ export default class DomoriumPlugin extends Plugin {
           return false;
         }
         if (!checking) {
-          const references = view.findReferences();
+          const referenceCount = view.goToNextReference();
           new Notice(
-            references.length === 0
+            referenceCount === 0
               ? "No GEDCOM references found"
-              : `${references.length} GEDCOM reference(s) found`,
+              : `${referenceCount} GEDCOM reference(s); moved to next`,
           );
         }
         return true;
@@ -57,7 +57,7 @@ export default class DomoriumPlugin extends Plugin {
       name: "Rename GEDCOM reference",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view) {
+        if (!view || !view.canRenameReference()) {
           return false;
         }
         if (!checking) {

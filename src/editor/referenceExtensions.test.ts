@@ -1,7 +1,11 @@
 import { EditorState } from "@codemirror/state";
 import { describe, expect, it } from "vitest";
 
-import { EditorLanguageService, toCodeMirrorChanges } from "./service";
+import {
+  EditorLanguageService,
+  resolveVaultRelativePath,
+  toCodeMirrorChanges,
+} from "./service";
 
 const text = [
   "0 HEAD",
@@ -62,6 +66,42 @@ describe("reference editing adapters", () => {
           edits: [
             {
               range: {
+                start: { line: 99, character: 0 },
+                end: { line: 99, character: 0 },
+              },
+              newText: "unsafe",
+            },
+          ],
+        },
+        2,
+      ),
+    ).toBeNull();
+    expect(
+      toCodeMirrorChanges(
+        state.doc,
+        {
+          version: 2,
+          edits: [
+            {
+              range: {
+                start: { line: 3, character: 6 },
+                end: { line: 3, character: 2 },
+              },
+              newText: "@I2@",
+            },
+          ],
+        },
+        2,
+      ),
+    ).toBeNull();
+    expect(
+      toCodeMirrorChanges(
+        state.doc,
+        {
+          version: 2,
+          edits: [
+            {
+              range: {
                 start: { line: 3, character: 2 },
                 end: { line: 3, character: 6 },
               },
@@ -105,5 +145,26 @@ describe("reference editing adapters", () => {
         .apply(transaction.state.doc)
         .toString(),
     ).toBe(text);
+  });
+
+  it("preserves CRLF through the editor-state line separator", () => {
+    const source = "0 HEAD\r\n0 TRLR\r\n";
+    const state = EditorState.create({
+      doc: source,
+      extensions: [EditorState.lineSeparator.of("\r\n")],
+    });
+    expect(state.sliceDoc()).toBe(source);
+  });
+
+  it("resolves local links from the GEDCOM file directory and stays in vault", () => {
+    expect(
+      resolveVaultRelativePath("family/tree.ged", "media/photo.jpg"),
+    ).toBe("family/media/photo.jpg");
+    expect(
+      resolveVaultRelativePath("family/tree.ged", "../shared/photo.jpg"),
+    ).toBe("shared/photo.jpg");
+    expect(
+      resolveVaultRelativePath("tree.ged", "../outside/photo.jpg"),
+    ).toBeNull();
   });
 });

@@ -25,6 +25,16 @@ export function toCodeMirrorChanges(
   if (edit.version !== version) {
     return null;
   }
+  if (
+    edit.edits.some(
+      ({ range }) =>
+        !isValidPosition(doc, range.start) ||
+        !isValidPosition(doc, range.end) ||
+        comparePosition(range.start, range.end) > 0,
+    )
+  ) {
+    return null;
+  }
   const changes = edit.edits
     .map((textEdit) => {
       const range = toOffsets(doc, textEdit.range);
@@ -37,6 +47,44 @@ export function toCodeMirrorChanges(
     }
   }
   return changes;
+}
+
+export function resolveVaultRelativePath(
+  documentPath: string,
+  target: string,
+): string | null {
+  const parts = documentPath.split("/").slice(0, -1);
+  for (const part of target.replaceAll("\\", "/").split("/")) {
+    if (!part || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      if (parts.length === 0) {
+        return null;
+      }
+      parts.pop();
+    } else {
+      parts.push(part);
+    }
+  }
+  return parts.join("/");
+}
+
+function isValidPosition(doc: Text, position: Position): boolean {
+  if (
+    !Number.isInteger(position.line) ||
+    !Number.isInteger(position.character) ||
+    position.line < 0 ||
+    position.character < 0 ||
+    position.line >= doc.lines
+  ) {
+    return false;
+  }
+  return position.character <= doc.line(position.line + 1).length;
+}
+
+function comparePosition(left: Position, right: Position): number {
+  return left.line - right.line || left.character - right.character;
 }
 
 export class EditorLanguageService {

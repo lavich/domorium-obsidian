@@ -63,7 +63,7 @@ function completionSource(
   ) {
     return null;
   }
-  const service = language.update(context.state.doc.toString());
+  const service = language.update(context.state.sliceDoc());
   const items = service.getCompletionItems(toPosition(context.state.doc, context.pos));
   if (items.length === 0) {
     return null;
@@ -83,7 +83,7 @@ function semanticDecorations(
   language: EditorLanguageService,
   indentationHints: boolean,
 ): DecorationSet {
-  const service = language.update(state.doc.toString());
+  const service = language.update(state.sliceDoc());
   const tokens = service
     .getSemanticTokens()
     .map((token) => {
@@ -152,7 +152,7 @@ function diagnosticSource(
   actions: GedcomEditorActions,
 ) {
   return linter((view) => {
-    const service = language.update(view.state.doc.toString());
+    const service = language.update(view.state.sliceDoc());
     return service.getDiagnostics().map((diagnostic): CmDiagnostic => {
       const range = toOffsets(view.state.doc, diagnostic.range);
       const codeActions = service.getCodeActions(
@@ -209,7 +209,7 @@ function documentLinkNavigation(
         return false;
       }
       const links = language
-        .update(view.state.doc.toString())
+        .update(view.state.sliceDoc())
         .getDocumentLinks();
       const link = links.find((candidate) => {
         const range = toOffsets(view.state.doc, candidate.range);
@@ -227,7 +227,7 @@ function documentLinkNavigation(
 
 function hoverSource(language: EditorLanguageService) {
   return hoverTooltip((view, offset) => {
-    const service = language.update(view.state.doc.toString());
+    const service = language.update(view.state.sliceDoc());
     const hover = service.getHover(toPosition(view.state.doc, offset));
     if (!hover) {
       return null;
@@ -246,7 +246,7 @@ function hoverSource(language: EditorLanguageService) {
 function foldingSource(language: EditorLanguageService) {
   return foldService.of((state, lineStart) => {
     const line = state.doc.lineAt(lineStart);
-    const service = language.update(state.doc.toString());
+    const service = language.update(state.sliceDoc());
     const range = service
       .getFoldingRanges()
       .find((candidate) => candidate.startLine === line.number - 1);
@@ -268,7 +268,7 @@ function definitionNavigation(language: EditorLanguageService): Extension {
       if (offset === null) {
         return false;
       }
-      const service = language.update(view.state.doc.toString());
+      const service = language.update(view.state.sliceDoc());
       const definition = service.getDefinitionRanges(toPosition(view.state.doc, offset))[0];
       if (!definition) {
         return false;
@@ -298,7 +298,7 @@ function referenceHighlights(language: EditorLanguageService): Extension {
       }
 
       private build(view: EditorView): DecorationSet {
-        const service = language.update(view.state.doc.toString());
+        const service = language.update(view.state.sliceDoc());
         const position = toPosition(
           view.state.doc,
           view.state.selection.main.head,
