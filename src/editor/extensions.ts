@@ -20,6 +20,7 @@ import {
 } from "@codemirror/view";
 import type {
   CompletionItem,
+  Diagnostic,
   DocumentLink,
   WorkspaceEdit,
 } from "@domorium/language-service";
@@ -36,6 +37,54 @@ export interface GedcomEditorSettings {
 export interface GedcomEditorActions {
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean;
   openDocumentLink(link: DocumentLink): void;
+}
+
+export interface ReferenceHighlightSpec {
+  from: number;
+  to: number;
+  kind: "read" | "write";
+}
+
+export function getReferenceHighlightSpecs(
+  state: EditorState,
+  language: EditorLanguageService,
+): ReferenceHighlightSpec[] {
+  const service = language.update(state.sliceDoc());
+  const position = toPosition(state.doc, state.selection.main.head);
+  return service.getDocumentHighlights(position).map((highlight) => {
+    const range = toOffsets(state.doc, highlight.range);
+    return { from: range.from, to: range.to, kind: highlight.kind };
+  });
+}
+
+export function getDiagnosticActions(
+  language: EditorLanguageService,
+  diagnostic: Diagnostic,
+  applyWorkspaceEdit: (edit: WorkspaceEdit) => boolean,
+): { name: string; apply(): void }[] {
+  const codeActions = language.service.getCodeActions(
+    diagnostic.range,
+    [diagnostic],
+    language.getVersion(),
+  );
+  if (!Array.isArray(codeActions)) {
+    return [];
+  }
+  return codeActions.flatMap((action) => {
+    const edits = [
+      ...(action.edit ? [{ name: action.title, edit: action.edit }] : []),
+      ...(action.choices ?? []).map((choice) => ({
+        name: choice.title,
+        edit: choice.edit,
+      })),
+    ];
+    return edits.map(({ name, edit }) => ({
+      name,
+      apply: () => {
+        applyWorkspaceEdit(edit);
+      },
+    }));
+  });
 }
 
 const completionType: Record<number, string> = {
@@ -155,11 +204,6 @@ function diagnosticSource(
     const service = language.update(view.state.sliceDoc());
     return service.getDiagnostics().map((diagnostic): CmDiagnostic => {
       const range = toOffsets(view.state.doc, diagnostic.range);
-      const codeActions = service.getCodeActions(
-        diagnostic.range,
-        [diagnostic],
-        language.getVersion(),
-      );
       return {
         from: range.from,
         to: Math.max(range.from, range.to),
@@ -171,25 +215,11 @@ function diagnosticSource(
               : "info",
         message: diagnostic.message,
         source: "Domorium",
-        actions: Array.isArray(codeActions)
-          ? codeActions.flatMap((action) => {
-              const edits = [
-                ...(action.edit
-                  ? [{ name: action.title, edit: action.edit }]
-                  : []),
-                ...(action.choices ?? []).map((choice) => ({
-                  name: choice.title,
-                  edit: choice.edit,
-                })),
-              ];
-              return edits.map(({ name, edit }) => ({
-                name,
-                apply: () => {
-                  actions.applyWorkspaceEdit(edit);
-                },
-              }));
-            })
-          : undefined,
+        actions: getDiagnosticActions(
+          language,
+          diagnostic,
+          (edit) => actions.applyWorkspaceEdit(edit),
+        ),
       };
     });
   }, { delay: 250 });
@@ -298,23 +328,15 @@ function referenceHighlights(language: EditorLanguageService): Extension {
       }
 
       private build(view: EditorView): DecorationSet {
-        const service = language.update(view.state.sliceDoc());
-        const position = toPosition(
-          view.state.doc,
-          view.state.selection.main.head,
-        );
         return Decoration.set(
-          service
-            .getDocumentHighlights(position)
-            .map((highlight) => {
-              const range = toOffsets(view.state.doc, highlight.range);
+          getReferenceHighlightSpecs(view.state, language).map((highlight) => {
               return Decoration.mark({
                 class:
                   highlight.kind === "write"
                     ? "domorium-reference-write"
                     : "domorium-reference-read",
-              }).range(range.from, range.to);
-            }),
+              }).range(highlight.from, highlight.to);
+          }),
         );
       }
     },

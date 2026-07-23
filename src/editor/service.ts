@@ -17,6 +17,27 @@ export interface CodeMirrorChange {
   insert: string;
 }
 
+export interface CodeMirrorEditTarget {
+  state: { doc: Text };
+  dispatch(spec: {
+    changes: CodeMirrorChange[];
+    userEvent: string;
+  }): void;
+}
+
+export function applyWorkspaceEditToTarget(
+  target: CodeMirrorEditTarget,
+  edit: WorkspaceEdit,
+  version: number,
+): boolean {
+  const changes = toCodeMirrorChanges(target.state.doc, edit, version);
+  if (!changes) {
+    return false;
+  }
+  target.dispatch({ changes, userEvent: "input.domorium" });
+  return true;
+}
+
 export function toCodeMirrorChanges(
   doc: Text,
   edit: WorkspaceEdit,
@@ -68,6 +89,31 @@ export function resolveVaultRelativePath(
     }
   }
   return parts.join("/");
+}
+
+export interface DocumentLinkRouter {
+  openExternal(url: string): void;
+  openVaultFile(path: string): void;
+}
+
+export function routeDocumentLink(
+  link: DocumentLink,
+  documentPath: string,
+  router: DocumentLinkRouter,
+): boolean {
+  if (link.kind === "http") {
+    router.openExternal(link.targetText);
+    return true;
+  }
+  if (link.kind !== "file-relative") {
+    return false;
+  }
+  const path = resolveVaultRelativePath(documentPath, link.targetText);
+  if (!path) {
+    return false;
+  }
+  router.openVaultFile(path);
+  return true;
 }
 
 function isValidPosition(doc: Text, position: Position): boolean {

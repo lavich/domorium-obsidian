@@ -18,8 +18,8 @@ import type { GedcomEditorSettings } from "./editor/extensions";
 import { toOffset, toPosition } from "./editor/positions";
 import {
   EditorLanguageService,
-  resolveVaultRelativePath,
-  toCodeMirrorChanges,
+  applyWorkspaceEditToTarget,
+  routeDocumentLink,
 } from "./editor/service";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
@@ -149,19 +149,11 @@ export class GedcomView extends TextFileView {
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
     const { state } = this.editor;
     this.language.update(state.sliceDoc());
-    const changes = toCodeMirrorChanges(
-      state.doc,
+    return applyWorkspaceEditToTarget(
+      this.editor,
       edit,
       this.language.getVersion(),
     );
-    if (!changes) {
-      return false;
-    }
-    this.editor.dispatch({
-      changes,
-      userEvent: "input.domorium",
-    });
-    return true;
   }
 
   onClose(): Promise<void> {
@@ -190,31 +182,26 @@ export class GedcomView extends TextFileView {
   }
 
   private openDocumentLink(link: DocumentLink): void {
-    if (link.kind === "http") {
-      void this.app.workspace.openLinkText(
-        link.targetText,
-        this.file?.path ?? "",
-        true,
-      );
-      return;
+    const routed = routeDocumentLink(link, this.file?.path ?? "", {
+      openExternal: (url) => {
+        this.contentEl.ownerDocument.defaultView?.open(
+          url,
+          "_blank",
+          "noopener,noreferrer",
+        );
+      },
+      openVaultFile: (relativePath) => {
+        const path = normalizePath(relativePath);
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) {
+          new Notice(`Vault file not found: ${path}`);
+          return;
+        }
+        void this.app.workspace.getLeaf(false).openFile(file);
+      },
+    });
+    if (!routed) {
+      new Notice("File link cannot be opened safely");
     }
-    if (link.kind !== "file-relative") {
-      new Notice("Absolute file links are not opened automatically");
-      return;
-    }
-    const relativePath = this.file
-      ? resolveVaultRelativePath(this.file.path, link.targetText)
-      : null;
-    if (!relativePath) {
-      new Notice("File link points outside the vault");
-      return;
-    }
-    const path = normalizePath(relativePath);
-    const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) {
-      new Notice(`Vault file not found: ${path}`);
-      return;
-    }
-    void this.app.workspace.getLeaf(false).openFile(file);
   }
 }

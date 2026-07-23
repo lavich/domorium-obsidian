@@ -1,11 +1,22 @@
-import { EditorState } from "@codemirror/state";
-import { describe, expect, it } from "vitest";
+import { history, undo } from "@codemirror/commands";
+import {
+  EditorState,
+  Transaction,
+  type TransactionSpec,
+} from "@codemirror/state";
+import { describe, expect, it, vi } from "vitest";
 
 import {
+  applyWorkspaceEditToTarget,
   EditorLanguageService,
   resolveVaultRelativePath,
+  routeDocumentLink,
   toCodeMirrorChanges,
 } from "./service";
+import {
+  getDiagnosticActions,
+  getReferenceHighlightSpecs,
+} from "./extensions";
 
 const text = [
   "0 HEAD",
@@ -122,29 +133,34 @@ describe("reference editing adapters", () => {
   });
 
   it("keeps the rename atomic so one undo restores the original text", () => {
-    const state = EditorState.create({ doc: text });
+    let state = EditorState.create({ doc: text, extensions: [history()] });
     const language = new EditorLanguageService();
     language.update(text);
     const result = language.rename({ line: 5, character: 9 }, "@I2@");
     if (!result.ok) {
       throw new Error(result.message);
     }
-    const changes = toCodeMirrorChanges(
-      state.doc,
-      result.edit,
-      language.getVersion(),
-    )!;
-    const transaction = state.update({
-      changes,
-      userEvent: "input.domorium",
-    });
-    expect(transaction.state.doc.toString()).toContain("@I2@");
+    const target = {
+      get state() {
+        return state;
+      },
+      dispatch(transaction: Transaction | TransactionSpec) {
+        state =
+          transaction instanceof Transaction
+            ? transaction.state
+            : state.update(transaction).state;
+      },
+    };
     expect(
-      transaction.changes
-        .invert(transaction.startState.doc)
-        .apply(transaction.state.doc)
-        .toString(),
-    ).toBe(text);
+      applyWorkspaceEditToTarget(
+        target,
+        result.edit,
+        language.getVersion(),
+      ),
+    ).toBe(true);
+    expect(state.doc.toString()).toContain("@I2@");
+    expect(undo(target)).toBe(true);
+    expect(state.doc.toString()).toBe(text);
   });
 
   it("preserves CRLF through the editor-state line separator", () => {
@@ -166,5 +182,70 @@ describe("reference editing adapters", () => {
     expect(
       resolveVaultRelativePath("tree.ged", "../outside/photo.jpg"),
     ).toBeNull();
+  });
+
+  it("routes HTTP externally and vault files through the resolved path", () => {
+    const openExternal = vi.fn();
+    const openVaultFile = vi.fn();
+    const router = { openExternal, openVaultFile };
+
+    expect(
+      routeDocumentLink(
+        {
+          kind: "http",
+          targetText: "https://example.com",
+          range: {
+            start: { line: 0, character: 0 },
+            end: { line: 0, character: 1 },
+          },
+        },
+        "family/tree.ged",
+        router,
+      ),
+    ).toBe(true);
+    expect(openExternal).toHaveBeenCalledWith("https://example.com");
+
+    expect(
+      routeDocumentLink(
+        {
+          kind: "file-relative",
+          targetText: "media/photo.jpg",
+          range: {
+            start: { line: 0, character: 0 },
+            end: { line: 0, character: 1 },
+          },
+        },
+        "family/tree.ged",
+        router,
+      ),
+    ).toBe(true);
+    expect(openVaultFile).toHaveBeenCalledWith("family/media/photo.jpg");
+  });
+
+  it("recomputes reference specs from selection and wires lint actions", () => {
+    const language = new EditorLanguageService();
+    let state = EditorState.create({
+      doc: text.replace("0 TRLR", "1 WIFE @I9@\n0 TRLR"),
+    });
+    const declaration = text.indexOf("@I1@");
+    state = state.update({ selection: { anchor: declaration + 1 } }).state;
+    expect(getReferenceHighlightSpecs(state, language)).toMatchObject([
+      { kind: "write" },
+      { kind: "read" },
+    ]);
+
+    const diagnostic = language.service
+      .getDiagnostics()
+      .find(({ code }) => code === "unresolved-xref")!;
+    const apply = vi.fn(() => true);
+    const actions = getDiagnosticActions(language, diagnostic, apply);
+    expect(actions.map(({ name }) => name)).toEqual(
+      expect.arrayContaining([
+        "Replace @I9@ with @I1@",
+        "Create INDI record @I9@",
+      ]),
+    );
+    actions[0].apply();
+    expect(apply).toHaveBeenCalledOnce();
   });
 });
