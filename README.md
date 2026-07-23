@@ -12,6 +12,10 @@ autocomplete, navigation, folding, and semantic highlighting.
 - Semantic highlighting for levels, tags, and cross-references
 - Documentation tooltips for GEDCOM tags
 - Go to definition for XREF values
+- Find XREF references and highlight declarations and usages
+- Safe XREF rename as one undoable edit
+- Web links and vault-relative file links
+- Quick fixes for broken references and invalid levels
 - Folding and visual indentation for nested records
 - Desktop and mobile Obsidian support
 
@@ -26,8 +30,9 @@ to a remote service.
 3. Edit the source directly. Obsidian saves changes back to the same file.
 
 Use **Go to GEDCOM definition** from the command palette to jump from an XREF
-usage to its record declaration. Editor behavior can be adjusted in the
-plugin settings.
+usage to its record declaration. **Find GEDCOM references** moves between
+matching declarations and usages, and **Rename GEDCOM reference** updates the
+current XREF atomically. Editor behavior can be adjusted in the plugin settings.
 
 ## Privacy
 

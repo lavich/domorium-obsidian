@@ -1,6 +1,6 @@
 {
   "name": "domorium-obsidian",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "main.js",
@@ -17,12 +17,12 @@
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.18.6",
-    "@codemirror/commands": "6.10.4",
+    "@codemirror/commands": "6.8.1",
     "@codemirror/language": "6.12.4",
     "@codemirror/lint": "6.8.5",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@domorium/language-service": "^0.1.0"
+    "@domorium/language-service": "^0.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

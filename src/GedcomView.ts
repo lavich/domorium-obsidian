@@ -1,11 +1,26 @@
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { TextFileView, type WorkspaceLeaf } from "obsidian";
+import {
+  normalizePath,
+  Notice,
+  TextFileView,
+  TFile,
+  type WorkspaceLeaf,
+} from "obsidian";
+import type {
+  DocumentLink,
+  Range,
+  WorkspaceEdit,
+} from "@domorium/language-service";
 
 import { createEditorExtensions } from "./editor/extensions";
 import type { GedcomEditorSettings } from "./editor/extensions";
 import { toOffset, toPosition } from "./editor/positions";
-import { EditorLanguageService } from "./editor/service";
+import {
+  EditorLanguageService,
+  applyWorkspaceEditToTarget,
+  routeDocumentLink,
+} from "./editor/service";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -40,7 +55,7 @@ export class GedcomView extends TextFileView {
   }
 
   getViewData(): string {
-    return this.editor.state.doc.toString();
+    return this.editor.state.sliceDoc();
   }
 
   setViewData(data: string, clear: boolean): void {
@@ -75,7 +90,7 @@ export class GedcomView extends TextFileView {
     const { state } = this.editor;
     const position = toPosition(state.doc, state.selection.main.head);
     const definition = this.language
-      .update(state.doc.toString())
+      .update(state.sliceDoc())
       .getDefinitionRanges(position)[0];
     if (!definition) {
       return false;
@@ -84,6 +99,61 @@ export class GedcomView extends TextFileView {
     this.editor.dispatch({ selection: { anchor: from }, scrollIntoView: true });
     this.editor.focus();
     return true;
+  }
+
+  findReferences(): Range[] {
+    const { state } = this.editor;
+    return this.language
+      .update(state.sliceDoc())
+      .getReferences(toPosition(state.doc, state.selection.main.head), {
+        includeDeclaration: true,
+      });
+  }
+
+  goToNextReference(): number {
+    const references = this.findReferences();
+    if (references.length === 0) {
+      return 0;
+    }
+    const current = this.editor.state.selection.main.head;
+    const offsets = references.map((range) =>
+      toOffset(this.editor.state.doc, range.start),
+    );
+    const target = offsets.find((offset) => offset > current) ?? offsets[0];
+    this.editor.dispatch({
+      selection: { anchor: target },
+      scrollIntoView: true,
+    });
+    this.editor.focus();
+    return references.length;
+  }
+
+  canRenameReference(): boolean {
+    const { state } = this.editor;
+    this.language.update(state.sliceDoc());
+    return this.language.prepareRename(
+      toPosition(state.doc, state.selection.main.head),
+    ).ok;
+  }
+
+  renameReference(newName: string): boolean {
+    const { state } = this.editor;
+    this.language.update(state.sliceDoc());
+    const result = this.language.rename(
+      toPosition(state.doc, state.selection.main.head),
+      newName,
+    );
+    return result.ok && this.applyWorkspaceEdit(result.edit);
+  }
+
+  applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
+    const { state } = this.editor;
+    this.language.update(state.sliceDoc());
+    return applyWorkspaceEditToTarget(
+      this.editor,
+      edit,
+      this.language.getVersion(),
+    );
   }
 
   onClose(): Promise<void> {
@@ -96,14 +166,42 @@ export class GedcomView extends TextFileView {
       doc: data,
       selection: cursor === undefined ? undefined : { anchor: cursor },
       extensions: [
-        ...createEditorExtensions(this.language, this.settings),
+        EditorState.lineSeparator.of(data.includes("\r\n") ? "\r\n" : "\n"),
+        ...createEditorExtensions(this.language, this.settings, {
+          applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
+          openDocumentLink: (link) => this.openDocumentLink(link),
+        }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
-            this.data = update.state.doc.toString();
+            this.data = update.state.sliceDoc();
             this.requestSave();
           }
         }),
       ],
     });
+  }
+
+  private openDocumentLink(link: DocumentLink): void {
+    const routed = routeDocumentLink(link, this.file?.path ?? "", {
+      openExternal: (url) => {
+        this.contentEl.ownerDocument.defaultView?.open(
+          url,
+          "_blank",
+          "noopener,noreferrer",
+        );
+      },
+      openVaultFile: (relativePath) => {
+        const path = normalizePath(relativePath);
+        const file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) {
+          new Notice(`Vault file not found: ${path}`);
+          return;
+        }
+        void this.app.workspace.getLeaf(false).openFile(file);
+      },
+    });
+    if (!routed) {
+      new Notice("File link cannot be opened safely");
+    }
   }
 }
