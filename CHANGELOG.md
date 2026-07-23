@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Add rename support for GEDCOM record identifiers and all their references.
+- Add code actions for creating missing referenced records and removing dangling links.
+- Add go-to-definition and reference discovery for GEDCOM cross-references.
+- Preserve local file links and editor changes while applying reference edits.
+
 ## 0.1.1
 
 - Add searchable settings support for Obsidian 1.13.0 and later.
