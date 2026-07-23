@@ -1,11 +1,25 @@
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
-import { TextFileView, type WorkspaceLeaf } from "obsidian";
+import {
+  normalizePath,
+  Notice,
+  TextFileView,
+  TFile,
+  type WorkspaceLeaf,
+} from "obsidian";
+import type {
+  DocumentLink,
+  Range,
+  WorkspaceEdit,
+} from "@domorium/language-service";
 
 import { createEditorExtensions } from "./editor/extensions";
 import type { GedcomEditorSettings } from "./editor/extensions";
 import { toOffset, toPosition } from "./editor/positions";
-import { EditorLanguageService } from "./editor/service";
+import {
+  EditorLanguageService,
+  toCodeMirrorChanges,
+} from "./editor/service";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -86,6 +100,43 @@ export class GedcomView extends TextFileView {
     return true;
   }
 
+  findReferences(): Range[] {
+    const { state } = this.editor;
+    return this.language
+      .update(state.doc.toString())
+      .getReferences(toPosition(state.doc, state.selection.main.head), {
+        includeDeclaration: true,
+      });
+  }
+
+  renameReference(newName: string): boolean {
+    const { state } = this.editor;
+    this.language.update(state.doc.toString());
+    const result = this.language.rename(
+      toPosition(state.doc, state.selection.main.head),
+      newName,
+    );
+    return result.ok && this.applyWorkspaceEdit(result.edit);
+  }
+
+  applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
+    const { state } = this.editor;
+    this.language.update(state.doc.toString());
+    const changes = toCodeMirrorChanges(
+      state.doc,
+      edit,
+      this.language.getVersion(),
+    );
+    if (!changes) {
+      return false;
+    }
+    this.editor.dispatch({
+      changes,
+      userEvent: "input.domorium",
+    });
+    return true;
+  }
+
   onClose(): Promise<void> {
     this.editor.destroy();
     return Promise.resolve();
@@ -96,7 +147,10 @@ export class GedcomView extends TextFileView {
       doc: data,
       selection: cursor === undefined ? undefined : { anchor: cursor },
       extensions: [
-        ...createEditorExtensions(this.language, this.settings),
+        ...createEditorExtensions(this.language, this.settings, {
+          applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
+          openDocumentLink: (link) => this.openDocumentLink(link),
+        }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
             this.data = update.state.doc.toString();
@@ -105,5 +159,23 @@ export class GedcomView extends TextFileView {
         }),
       ],
     });
+  }
+
+  private openDocumentLink(link: DocumentLink): void {
+    if (link.kind === "http") {
+      window.open(link.targetText, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (link.kind !== "file-relative") {
+      new Notice("Absolute file links are not opened automatically");
+      return;
+    }
+    const path = normalizePath(link.targetText);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(`Vault file not found: ${path}`);
+      return;
+    }
+    void this.app.workspace.getLeaf(false).openFile(file);
   }
 }

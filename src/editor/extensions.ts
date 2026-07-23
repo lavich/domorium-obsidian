@@ -18,7 +18,11 @@ import {
   type ViewUpdate,
   WidgetType,
 } from "@codemirror/view";
-import type { CompletionItem } from "@domorium/language-service";
+import type {
+  CompletionItem,
+  DocumentLink,
+  WorkspaceEdit,
+} from "@domorium/language-service";
 import { semanticTokenLegend } from "@domorium/language-service";
 
 import { toOffset, toOffsets, toPosition } from "./positions";
@@ -27,6 +31,11 @@ import { EditorLanguageService } from "./service";
 export interface GedcomEditorSettings {
   diagnostics: boolean;
   indentationHints: boolean;
+}
+
+export interface GedcomEditorActions {
+  applyWorkspaceEdit(edit: WorkspaceEdit): boolean;
+  openDocumentLink(link: DocumentLink): void;
 }
 
 const completionType: Record<number, string> = {
@@ -138,11 +147,19 @@ function semanticPlugin(
   );
 }
 
-function diagnosticSource(language: EditorLanguageService) {
+function diagnosticSource(
+  language: EditorLanguageService,
+  actions: GedcomEditorActions,
+) {
   return linter((view) => {
     const service = language.update(view.state.doc.toString());
     return service.getDiagnostics().map((diagnostic): CmDiagnostic => {
       const range = toOffsets(view.state.doc, diagnostic.range);
+      const codeActions = service.getCodeActions(
+        diagnostic.range,
+        [diagnostic],
+        language.getVersion(),
+      );
       return {
         from: range.from,
         to: Math.max(range.from, range.to),
@@ -154,9 +171,58 @@ function diagnosticSource(language: EditorLanguageService) {
               : "info",
         message: diagnostic.message,
         source: "Domorium",
+        actions: Array.isArray(codeActions)
+          ? codeActions.flatMap((action) => {
+              const edits = [
+                ...(action.edit
+                  ? [{ name: action.title, edit: action.edit }]
+                  : []),
+                ...(action.choices ?? []).map((choice) => ({
+                  name: choice.title,
+                  edit: choice.edit,
+                })),
+              ];
+              return edits.map(({ name, edit }) => ({
+                name,
+                apply: () => {
+                  actions.applyWorkspaceEdit(edit);
+                },
+              }));
+            })
+          : undefined,
       };
     });
   }, { delay: 250 });
+}
+
+function documentLinkNavigation(
+  language: EditorLanguageService,
+  actions: GedcomEditorActions,
+): Extension {
+  return EditorView.domEventHandlers({
+    click(event, view) {
+      if (!(event.metaKey || event.ctrlKey) || event.button !== 0) {
+        return false;
+      }
+      const offset = view.posAtCoords({ x: event.clientX, y: event.clientY });
+      if (offset === null) {
+        return false;
+      }
+      const links = language
+        .update(view.state.doc.toString())
+        .getDocumentLinks();
+      const link = links.find((candidate) => {
+        const range = toOffsets(view.state.doc, candidate.range);
+        return offset >= range.from && offset < range.to;
+      });
+      if (!link) {
+        return false;
+      }
+      event.preventDefault();
+      actions.openDocumentLink(link);
+      return true;
+    },
+  });
 }
 
 function hoverSource(language: EditorLanguageService) {
@@ -216,9 +282,50 @@ function definitionNavigation(language: EditorLanguageService): Extension {
   });
 }
 
+function referenceHighlights(language: EditorLanguageService): Extension {
+  return ViewPlugin.fromClass(
+    class {
+      decorations: DecorationSet;
+
+      constructor(view: EditorView) {
+        this.decorations = this.build(view);
+      }
+
+      update(update: ViewUpdate): void {
+        if (update.docChanged || update.selectionSet) {
+          this.decorations = this.build(update.view);
+        }
+      }
+
+      private build(view: EditorView): DecorationSet {
+        const service = language.update(view.state.doc.toString());
+        const position = toPosition(
+          view.state.doc,
+          view.state.selection.main.head,
+        );
+        return Decoration.set(
+          service
+            .getDocumentHighlights(position)
+            .map((highlight) => {
+              const range = toOffsets(view.state.doc, highlight.range);
+              return Decoration.mark({
+                class:
+                  highlight.kind === "write"
+                    ? "domorium-reference-write"
+                    : "domorium-reference-read",
+              }).range(range.from, range.to);
+            }),
+        );
+      }
+    },
+    { decorations: (value) => value.decorations },
+  );
+}
+
 export function createEditorExtensions(
   language: EditorLanguageService,
   settings: GedcomEditorSettings,
+  actions: GedcomEditorActions,
 ): Extension[] {
   const extensions: Extension[] = [
     lineNumbers(),
@@ -229,6 +336,8 @@ export function createEditorExtensions(
     semanticPlugin(language, settings.indentationHints),
     foldingSource(language),
     definitionNavigation(language),
+    documentLinkNavigation(language, actions),
+    referenceHighlights(language),
     indentUnit.of("  "),
     EditorView.lineWrapping,
     EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off" }),
@@ -245,7 +354,7 @@ export function createEditorExtensions(
     keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
   ];
   if (settings.diagnostics) {
-    extensions.push(lintGutter(), diagnosticSource(language));
+    extensions.push(lintGutter(), diagnosticSource(language, actions));
   }
   return extensions;
 }
