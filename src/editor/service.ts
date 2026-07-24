@@ -6,7 +6,7 @@ import {
   type Range,
   type ReferenceOptions,
   type WorkspaceEdit,
-} from "@domorium/language-service";
+} from "gedcom-language-service";
 import type { Text } from "@codemirror/state";
 
 import { toOffsets } from "./positions";
@@ -34,7 +34,7 @@ export function applyWorkspaceEditToTarget(
   if (!changes) {
     return false;
   }
-  target.dispatch({ changes, userEvent: "input.domorium" });
+  target.dispatch({ changes, userEvent: "input.gedcom" });
   return true;
 }
 

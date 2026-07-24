@@ -1,51 +1,51 @@
-.domorium-gedcom-view {
+.gedcom-gedcom-view {
   height: 100%;
 }
 
-.domorium-gedcom-editor {
+.gedcom-gedcom-editor {
   height: 100%;
   font-family: var(--font-monospace);
   font-size: var(--font-text-size);
 }
 
-.domorium-gedcom-editor .cm-editor,
-.domorium-gedcom-editor .cm-scroller {
+.gedcom-gedcom-editor .cm-editor,
+.gedcom-gedcom-editor .cm-scroller {
   height: 100%;
 }
 
-.domorium-token-comment {
+.gedcom-token-comment {
   color: var(--text-faint);
 }
 
-.domorium-token-keyword {
+.gedcom-token-keyword {
   color: var(--color-cyan);
 }
 
-.domorium-token-string {
+.gedcom-token-string {
   color: var(--color-purple);
 }
 
-.domorium-token-declaration {
+.gedcom-token-declaration {
   font-weight: var(--font-semibold);
 }
 
-.domorium-indent-hint {
+.gedcom-indent-hint {
   color: transparent;
   white-space: pre;
   user-select: none;
 }
 
-.domorium-hover {
+.gedcom-hover {
   max-width: 28rem;
   padding: var(--size-4-2) var(--size-4-3);
   white-space: pre-wrap;
 }
-.domorium-reference-write {
+.gedcom-reference-write {
   background: color-mix(in srgb, var(--color-accent) 28%, transparent);
   border-radius: 2px;
 }
 
-.domorium-reference-read {
+.gedcom-reference-read {
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
   border-radius: 2px;
 }

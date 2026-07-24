@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { SETTING_DEFINITIONS } from "./settingDefinitions";
 import { DEFAULT_SETTINGS, parseSettings } from "./settingsData";
 
-describe("Domorium settings", () => {
+describe("GEDCOM settings", () => {
   it("enables language assistance by default", () => {
     expect(DEFAULT_SETTINGS).toEqual({
       diagnostics: true,

@@ -23,8 +23,8 @@ import type {
   Diagnostic,
   DocumentLink,
   WorkspaceEdit,
-} from "@domorium/language-service";
-import { semanticTokenLegend } from "@domorium/language-service";
+} from "gedcom-language-service";
+import { semanticTokenLegend } from "gedcom-language-service";
 
 import { toOffset, toOffsets, toPosition } from "./positions";
 import { EditorLanguageService } from "./service";
@@ -138,8 +138,8 @@ function semanticDecorations(
     .map((token) => {
       const from = toOffset(state.doc, { line: token.line, character: token.char });
       const tokenType = semanticTokenLegend.tokenTypes[token.tokenType] ?? "unknown";
-      const declaration = token.tokenModifiers !== 0 ? " domorium-token-declaration" : "";
-      return Decoration.mark({ class: `domorium-token-${tokenType}${declaration}` }).range(
+      const declaration = token.tokenModifiers !== 0 ? " gedcom-token-declaration" : "";
+      return Decoration.mark({ class: `gedcom-token-${tokenType}${declaration}` }).range(
         from,
         Math.min(from + token.length, state.doc.length),
       );
@@ -162,7 +162,7 @@ class IndentHintWidget extends WidgetType {
   }
 
   toDOM(): HTMLElement {
-    return createSpan({ cls: "domorium-indent-hint", text: this.label });
+    return createSpan({ cls: "gedcom-indent-hint", text: this.label });
   }
 
   eq(other: IndentHintWidget): boolean {
@@ -214,7 +214,7 @@ function diagnosticSource(
               ? "warning"
               : "info",
         message: diagnostic.message,
-        source: "Domorium",
+        source: "GEDCOM",
         actions: getDiagnosticActions(
           language,
           diagnostic,
@@ -266,7 +266,7 @@ function hoverSource(language: EditorLanguageService) {
     return {
       pos: offset,
       create() {
-        const dom = createDiv({ cls: "domorium-hover", text });
+        const dom = createDiv({ cls: "gedcom-hover", text });
         return { dom };
       },
     };
@@ -333,8 +333,8 @@ function referenceHighlights(language: EditorLanguageService): Extension {
               return Decoration.mark({
                 class:
                   highlight.kind === "write"
-                    ? "domorium-reference-write"
-                    : "domorium-reference-read",
+                    ? "gedcom-reference-write"
+                    : "gedcom-reference-read",
               }).range(highlight.from, highlight.to);
           }),
         );

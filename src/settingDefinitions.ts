@@ -1,9 +1,9 @@
 import type { SettingDefinitionItem } from "obsidian";
 
-import { DEFAULT_SETTINGS, type DomoriumSettings } from "./settingsData";
+import { DEFAULT_SETTINGS, type GedcomSettings } from "./settingsData";
 
 export const SETTING_DEFINITIONS: SettingDefinitionItem<
-  keyof DomoriumSettings
+  keyof GedcomSettings
 >[] = [
   {
     name: "Diagnostics",
