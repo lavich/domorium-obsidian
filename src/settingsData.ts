@@ -1,14 +1,14 @@
-export interface DomoriumSettings {
+export interface GedcomSettings {
   diagnostics: boolean;
   indentationHints: boolean;
 }
 
-export const DEFAULT_SETTINGS: DomoriumSettings = {
+export const DEFAULT_SETTINGS: GedcomSettings = {
   diagnostics: true,
   indentationHints: true,
 };
 
-export function parseSettings(data: unknown): DomoriumSettings {
+export function parseSettings(data: unknown): GedcomSettings {
   if (typeof data !== "object" || data === null) {
     return { ...DEFAULT_SETTINGS };
   }

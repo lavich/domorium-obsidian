@@ -11,7 +11,7 @@ import type {
   DocumentLink,
   Range,
   WorkspaceEdit,
-} from "@domorium/language-service";
+} from "gedcom-language-service";
 
 import { createEditorExtensions } from "./editor/extensions";
 import type { GedcomEditorSettings } from "./editor/extensions";
@@ -22,7 +22,7 @@ import {
   routeDocumentLink,
 } from "./editor/service";
 
-export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
+export const GEDCOM_VIEW_TYPE = "gedcom-gedcom";
 
 export class GedcomView extends TextFileView {
   private editor: EditorView;
@@ -34,8 +34,8 @@ export class GedcomView extends TextFileView {
     private settings: GedcomEditorSettings,
   ) {
     super(leaf);
-    this.contentEl.addClass("domorium-gedcom-view");
-    const editorEl = this.contentEl.createDiv({ cls: "domorium-gedcom-editor" });
+    this.contentEl.addClass("gedcom-gedcom-view");
+    const editorEl = this.contentEl.createDiv({ cls: "gedcom-gedcom-editor" });
     this.editor = new EditorView({
       parent: editorEl,
       state: this.createState(""),

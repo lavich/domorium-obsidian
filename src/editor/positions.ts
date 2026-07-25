@@ -1,4 +1,4 @@
-import type { Position, Range } from "@domorium/language-service";
+import type { Position, Range } from "gedcom-language-service";
 import type { Text } from "@codemirror/state";
 
 export function toOffset(document: Text, position: Position): number {

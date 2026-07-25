@@ -1,9 +1,9 @@
-# Domorium GEDCOM Editor
+# GEDCOM for Obsidian
 
 Edit source `.ged` and `.gedcom` files directly in Obsidian with validation,
 autocomplete, navigation, folding, and semantic highlighting.
 
-![Domorium GEDCOM editor in Obsidian](images/domorium-obsidian.png)
+![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
 
 ## Features
 
@@ -19,13 +19,13 @@ autocomplete, navigation, folding, and semantic highlighting.
 - Folding and visual indentation for nested records
 - Desktop and mobile Obsidian support
 
-Domorium keeps the GEDCOM file as the source of truth. It does not convert
+The plugin keeps the GEDCOM file as the source of truth. It does not convert
 records into Markdown, create a second genealogy database, or send vault data
 to a remote service.
 
 ## Usage
 
-1. Enable **Domorium GEDCOM Editor** in **Settings → Community plugins**.
+1. Enable **GEDCOM** in **Settings → Community plugins**.
 2. Open a `.ged` or `.gedcom` file in your vault.
 3. Edit the source directly. Obsidian saves changes back to the same file.
 
@@ -36,28 +36,28 @@ current XREF atomically. Editor behavior can be adjusted in the plugin settings.
 
 ## Privacy
 
-Domorium works locally inside the vault. It does not require an account, make
+GEDCOM works locally inside the vault. It does not require an account, make
 network requests, access files outside the vault, show advertisements, or
 collect analytics or telemetry.
 
 ## Beta installation
 
-Until Domorium is available in Community Plugins, install the latest GitHub
+Until GEDCOM is available in Community Plugins, install the latest GitHub
 release using [BRAT](https://github.com/TfTHacker/obsidian42-brat) and this
 repository URL:
 
 ```text
-https://github.com/lavich/domorium-obsidian
+https://github.com/lavich/gedcom-obsidian
 ```
 
 For a manual installation, copy `main.js`, `manifest.json`, and `styles.css`
 from the latest release into:
 
 ```text
-<vault>/.obsidian/plugins/domorium/
+<vault>/.obsidian/plugins/gedcom/
 ```
 
-Reload Community Plugins and enable **Domorium GEDCOM Editor**.
+Reload Community Plugins and enable **GEDCOM**.
 
 ## Development
 
@@ -69,7 +69,7 @@ npm run check
 The packaged plugin is written to `dist/`.
 
 The shared GEDCOM parser and editor-independent language service are maintained in the main
-[Domorium repository](https://github.com/lavich/domorium) and consumed as
+[GEDCOM repository](https://github.com/lavich/gedcom) and consumed as
 versioned public npm packages.
 
 ## License

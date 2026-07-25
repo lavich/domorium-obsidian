@@ -1,6 +1,6 @@
 {
-  "name": "domorium-obsidian",
-  "version": "0.2.0",
+  "name": "gedcom-obsidian",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "main": "main.js",
@@ -22,7 +22,7 @@
     "@codemirror/lint": "6.8.5",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@domorium/language-service": "^0.1.1"
+    "gedcom-language-service": "^0.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

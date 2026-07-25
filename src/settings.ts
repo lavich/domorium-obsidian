@@ -5,19 +5,19 @@ import {
   type SettingDefinitionItem,
 } from "obsidian";
 
-import type DomoriumPlugin from "./main";
+import type GedcomPlugin from "./main";
 import { SETTING_DEFINITIONS } from "./settingDefinitions";
-import type { DomoriumSettings } from "./settingsData";
+import type { GedcomSettings } from "./settingsData";
 
-export class DomoriumSettingTab extends PluginSettingTab {
+export class GedcomSettingTab extends PluginSettingTab {
   constructor(
     app: App,
-    private readonly plugin: DomoriumPlugin,
+    private readonly plugin: GedcomPlugin,
   ) {
     super(app, plugin);
   }
 
-  getSettingDefinitions(): SettingDefinitionItem<keyof DomoriumSettings>[] {
+  getSettingDefinitions(): SettingDefinitionItem<keyof GedcomSettings>[] {
     return SETTING_DEFINITIONS;
   }
 
