@@ -6,7 +6,7 @@ import {
   type Range,
   type ReferenceOptions,
   type WorkspaceEdit,
-} from "gedcom-language-service";
+} from "@gedcom/language-service";
 import type { Text } from "@codemirror/state";
 
 import { toOffsets } from "./positions";

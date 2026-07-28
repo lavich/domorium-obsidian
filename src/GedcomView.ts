@@ -11,7 +11,7 @@ import type {
   DocumentLink,
   Range,
   WorkspaceEdit,
-} from "gedcom-language-service";
+} from "@gedcom/language-service";
 
 import { createEditorExtensions } from "./editor/extensions";
 import type { GedcomEditorSettings } from "./editor/extensions";
