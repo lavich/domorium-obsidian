@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.2
+
+- Use the published `@gedcom/codemirror` package for shared GEDCOM editor
+  behavior.
+- Preserve Obsidian-specific styling, vault links, settings, and persistence
+  while removing duplicated editor integration code.
+- Verify ESM, CommonJS, TypeScript declarations, atomic reference rename, and
+  single-runtime CodeMirror bundling.
+
 ## 0.2.0
 
 - Add rename support for GEDCOM record identifiers and all their references.
