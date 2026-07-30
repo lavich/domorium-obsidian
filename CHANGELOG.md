@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- Restore the permanent Obsidian community-plugin ID `domorium` so updates
+  continue to match the existing plugin listing.
+- Keep the lowercase display name `gedcom` required by plugin review.
+
 ## 0.2.2
 
 - Use the published `@gedcom/codemirror` package for shared GEDCOM editor
