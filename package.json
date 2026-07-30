@@ -22,7 +22,8 @@
     "@codemirror/lint": "6.8.5",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@gedcom/language-service": "^0.1.2"
+    "@gedcom/codemirror": "file:../gedcom-codemirror-candidate.N1gSC3/gedcom-codemirror-0.1.0.tgz",
+    "@lezer/highlight": "^1.2.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
