@@ -1,26 +1,29 @@
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
+  applyWorkspaceEdit,
+  canRenameReference,
+  createGedcomExtensions,
+  EditorLanguageService,
+  findReferences,
+  goToDefinition,
+  goToNextReference,
+  renameReference,
+  type DocumentLink,
+  type GedcomEditorSettings,
+  type Range,
+  type WorkspaceEdit,
+} from "@gedcom/codemirror";
+import {
   normalizePath,
   Notice,
   TextFileView,
   TFile,
   type WorkspaceLeaf,
 } from "obsidian";
-import type {
-  DocumentLink,
-  Range,
-  WorkspaceEdit,
-} from "@gedcom/language-service";
 
-import { createEditorExtensions } from "./editor/extensions";
-import type { GedcomEditorSettings } from "./editor/extensions";
-import { toOffset, toPosition } from "./editor/positions";
-import {
-  EditorLanguageService,
-  applyWorkspaceEditToTarget,
-  routeDocumentLink,
-} from "./editor/service";
+import { createHostEditorExtensions } from "./editor/hostExtensions";
+import { routeDocumentLink } from "./editor/service";
 
 export const GEDCOM_VIEW_TYPE = "gedcom-gedcom";
 
@@ -87,69 +90,36 @@ export class GedcomView extends TextFileView {
   }
 
   goToDefinition(): boolean {
-    const { state } = this.editor;
-    const position = toPosition(state.doc, state.selection.main.head);
-    const definition = this.language
-      .update(state.sliceDoc())
-      .getDefinitionRanges(position)[0];
-    if (!definition) {
-      return false;
+    const moved = goToDefinition(this.editor, this.language);
+    if (moved) {
+      this.editor.focus();
     }
-    const from = toOffset(state.doc, definition.start);
-    this.editor.dispatch({ selection: { anchor: from }, scrollIntoView: true });
-    this.editor.focus();
-    return true;
+    return moved;
   }
 
   findReferences(): Range[] {
-    const { state } = this.editor;
-    return this.language
-      .update(state.sliceDoc())
-      .getReferences(toPosition(state.doc, state.selection.main.head), {
-        includeDeclaration: true,
-      });
+    return findReferences(this.editor.state, this.language);
   }
 
   goToNextReference(): number {
-    const references = this.findReferences();
-    if (references.length === 0) {
-      return 0;
+    const referenceCount = goToNextReference(this.editor, this.language);
+    if (referenceCount > 0) {
+      this.editor.focus();
     }
-    const current = this.editor.state.selection.main.head;
-    const offsets = references.map((range) =>
-      toOffset(this.editor.state.doc, range.start),
-    );
-    const target = offsets.find((offset) => offset > current) ?? offsets[0];
-    this.editor.dispatch({
-      selection: { anchor: target },
-      scrollIntoView: true,
-    });
-    this.editor.focus();
-    return references.length;
+    return referenceCount;
   }
 
   canRenameReference(): boolean {
-    const { state } = this.editor;
-    this.language.update(state.sliceDoc());
-    return this.language.prepareRename(
-      toPosition(state.doc, state.selection.main.head),
-    ).ok;
+    return canRenameReference(this.editor.state, this.language);
   }
 
   renameReference(newName: string): boolean {
-    const { state } = this.editor;
-    this.language.update(state.sliceDoc());
-    const result = this.language.rename(
-      toPosition(state.doc, state.selection.main.head),
-      newName,
-    );
-    return result.ok && this.applyWorkspaceEdit(result.edit);
+    return renameReference(this.editor, this.language, newName);
   }
 
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
-    const { state } = this.editor;
-    this.language.update(state.sliceDoc());
-    return applyWorkspaceEditToTarget(
+    this.language.update(this.editor.state.sliceDoc());
+    return applyWorkspaceEdit(
       this.editor,
       edit,
       this.language.getVersion(),
@@ -167,9 +137,14 @@ export class GedcomView extends TextFileView {
       selection: cursor === undefined ? undefined : { anchor: cursor },
       extensions: [
         EditorState.lineSeparator.of(data.includes("\r\n") ? "\r\n" : "\n"),
-        ...createEditorExtensions(this.language, this.settings, {
-          applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
-          openDocumentLink: (link) => this.openDocumentLink(link),
+        ...createHostEditorExtensions(this.settings),
+        ...createGedcomExtensions({
+          language: this.language,
+          settings: this.settings,
+          actions: {
+            applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
+            openDocumentLink: (link) => this.openDocumentLink(link),
+          },
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {

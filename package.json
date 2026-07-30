@@ -1,6 +1,6 @@
 {
   "name": "gedcom-obsidian",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "main": "main.js",
@@ -22,7 +22,8 @@
     "@codemirror/lint": "6.8.5",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@gedcom/language-service": "^0.1.2"
+    "@gedcom/codemirror": "^0.1.0",
+    "@lezer/highlight": "^1.2.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
