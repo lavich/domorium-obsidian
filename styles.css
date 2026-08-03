@@ -13,18 +13,6 @@
   height: 100%;
 }
 
-.gedcom-token-comment {
-  color: var(--text-faint);
-}
-
-.gedcom-token-keyword {
-  color: var(--color-cyan);
-}
-
-.gedcom-token-string {
-  color: var(--color-purple);
-}
-
 .gedcom-token-declaration {
   font-weight: var(--font-semibold);
 }

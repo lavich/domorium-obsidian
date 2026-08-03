@@ -1,6 +1,6 @@
 {
-  "id": "domorium-gedcom",
-  "name": "Domorium — GEDCOM Tools",
+  "id": "domorium",
+  "name": "Domorium",
   "version": "0.3.0",
   "minAppVersion": "1.5.0",
   "description": "Domorium tools for editing GEDCOM files with autocomplete, validation, navigation, and semantic highlighting.",
