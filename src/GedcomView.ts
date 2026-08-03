@@ -13,7 +13,7 @@ import {
   type GedcomEditorSettings,
   type Range,
   type WorkspaceEdit,
-} from "@gedcom/codemirror";
+} from "@domorium/codemirror";
 import {
   normalizePath,
   Notice,
@@ -119,11 +119,7 @@ export class GedcomView extends TextFileView {
 
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
     this.language.update(this.editor.state.sliceDoc());
-    return applyWorkspaceEdit(
-      this.editor,
-      edit,
-      this.language.getVersion(),
-    );
+    return applyWorkspaceEdit(this.editor, edit, this.language.getVersion());
   }
 
   onClose(): Promise<void> {

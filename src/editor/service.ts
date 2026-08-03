@@ -1,4 +1,4 @@
-import type { DocumentLink } from "@gedcom/codemirror";
+import type { DocumentLink } from "@domorium/codemirror";
 
 export function resolveVaultRelativePath(
   documentPath: string,

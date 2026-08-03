@@ -7,7 +7,7 @@ import esbuild from "esbuild";
 const production = process.argv[2] === "production";
 const context = await esbuild.context({
   banner: {
-    js: "/* Generated GEDCOM Obsidian plugin bundle. */",
+    js: "/* Generated Domorium GEDCOM Obsidian plugin bundle. */",
   },
   entryPoints: ["src/main.ts"],
   bundle: true,

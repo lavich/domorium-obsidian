@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Rebrand the plugin as Domorium while preserving the permanent `domorium`
+  community-plugin ID.
+- Move the repository to `lavich/domorium-obsidian` and the shared editor
+  dependency to `@domorium/codemirror`.
+
 ## 0.2.3
 
 - Restore the permanent Obsidian community-plugin ID `domorium` so updates
