@@ -47,7 +47,7 @@ jobs:
           dist/main.js
           dist/manifest.json
           dist/styles.css
-          --title "GEDCOM for Obsidian $GITHUB_REF_NAME"
+          --title "Domorium $GITHUB_REF_NAME"
           --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
