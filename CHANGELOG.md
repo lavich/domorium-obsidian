@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0
+
+- Rebrand the plugin as Domorium — GEDCOM Tools.
+- Move the Obsidian plugin identity to `domorium-gedcom` and the repository to
+  `lavich/domorium-obsidian`.
+- Replace the shared dependency with `@domorium/language-service`.
+
 ## 0.2.0
 
 - Add rename support for GEDCOM record identifiers and all their references.

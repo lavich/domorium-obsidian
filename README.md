@@ -1,6 +1,6 @@
-# GEDCOM for Obsidian
+# Domorium — GEDCOM Tools for Obsidian
 
-Edit source `.ged` and `.gedcom` files directly in Obsidian with validation,
+Edit source `.ged` and `.gedcom` files directly in Obsidian with Domorium's validation,
 autocomplete, navigation, folding, and semantic highlighting.
 
 ![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
@@ -25,7 +25,7 @@ to a remote service.
 
 ## Usage
 
-1. Enable **GEDCOM** in **Settings → Community plugins**.
+1. Enable **Domorium — GEDCOM Tools** in **Settings → Community plugins**.
 2. Open a `.ged` or `.gedcom` file in your vault.
 3. Edit the source directly. Obsidian saves changes back to the same file.
 
@@ -36,28 +36,28 @@ current XREF atomically. Editor behavior can be adjusted in the plugin settings.
 
 ## Privacy
 
-GEDCOM works locally inside the vault. It does not require an account, make
+Domorium works locally inside the vault. It does not require an account, make
 network requests, access files outside the vault, show advertisements, or
 collect analytics or telemetry.
 
 ## Beta installation
 
-Until GEDCOM is available in Community Plugins, install the latest GitHub
+Until Domorium is available in Community Plugins, install the latest GitHub
 release using [BRAT](https://github.com/TfTHacker/obsidian42-brat) and this
 repository URL:
 
 ```text
-https://github.com/lavich/gedcom-obsidian
+https://github.com/lavich/domorium-obsidian
 ```
 
 For a manual installation, copy `main.js`, `manifest.json`, and `styles.css`
 from the latest release into:
 
 ```text
-<vault>/.obsidian/plugins/gedcom/
+<vault>/.obsidian/plugins/domorium-gedcom/
 ```
 
-Reload Community Plugins and enable **GEDCOM**.
+Reload Community Plugins and enable **Domorium — GEDCOM Tools**.
 
 ## Development
 
@@ -69,9 +69,13 @@ npm run check
 The packaged plugin is written to `dist/`.
 
 The shared GEDCOM parser and editor-independent language service are maintained in the main
-[GEDCOM repository](https://github.com/lavich/gedcom) and consumed as
+[Domorium repository](https://github.com/lavich/domorium) and consumed as
 versioned public npm packages.
 
 ## License
 
 MIT © 2026 Andrei Lobanov
+
+Domorium is an independent project and is not affiliated with or endorsed by
+FamilySearch or Intellectual Reserve, Inc. FAMILYSEARCH GEDCOM™ and FAMILYSEARCH®
+are trademarks of Intellectual Reserve, Inc.

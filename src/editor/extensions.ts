@@ -23,8 +23,8 @@ import type {
   Diagnostic,
   DocumentLink,
   WorkspaceEdit,
-} from "@gedcom/language-service";
-import { semanticTokenLegend } from "@gedcom/language-service";
+} from "@domorium/language-service";
+import { semanticTokenLegend } from "@domorium/language-service";
 
 import { toOffset, toOffsets, toPosition } from "./positions";
 import { EditorLanguageService } from "./service";
