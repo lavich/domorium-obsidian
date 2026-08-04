@@ -19,7 +19,7 @@
     "@codemirror/autocomplete": "6.20.3",
     "@codemirror/commands": "6.8.1",
     "@codemirror/language": "6.12.4",
-    "@codemirror/lint": "6.8.5",
+    "@codemirror/lint": "6.9.7",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
     "@domorium/codemirror": "^0.2.0",
