@@ -1,7 +1,8 @@
-# Domorium for Obsidian
+# GEDCOM for Obsidian
 
-Edit source `.ged` and `.gedcom` files directly in Obsidian with Domorium's validation,
-autocomplete, navigation, folding, and semantic highlighting.
+GEDCOM language support by Domorium. Edit source `.ged` and `.gedcom` files
+directly in Obsidian with validation, autocomplete, navigation, folding, and
+semantic highlighting.
 
 ![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
 
@@ -25,7 +26,7 @@ to a remote service.
 
 ## Usage
 
-1. Enable **Domorium** in **Settings → Community plugins**.
+1. Enable **GEDCOM** in **Settings → Community plugins**.
 2. Open a `.ged` or `.gedcom` file in your vault.
 3. Edit the source directly. Obsidian saves changes back to the same file.
 
@@ -36,13 +37,13 @@ current XREF atomically. Editor behavior can be adjusted in the plugin settings.
 
 ## Privacy
 
-Domorium works locally inside the vault. It does not require an account, make
+GEDCOM by Domorium works locally inside the vault. It does not require an account, make
 network requests, access files outside the vault, show advertisements, or
 collect analytics or telemetry.
 
 ## Installation
 
-Install **Domorium** from Obsidian's Community Plugins directory. To test beta
+Install **GEDCOM** from Obsidian's Community Plugins directory. To test beta
 releases, use [BRAT](https://github.com/TfTHacker/obsidian42-brat) with this
 repository URL:
 
@@ -57,7 +58,7 @@ from the latest release into:
 <vault>/.obsidian/plugins/domorium/
 ```
 
-Reload Community Plugins and enable **Domorium**.
+Reload Community Plugins and enable **GEDCOM**.
 
 ## Development
 

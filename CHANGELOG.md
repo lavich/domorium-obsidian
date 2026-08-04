@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- Present the plugin as GEDCOM while retaining Domorium as the ecosystem and
+  repository identity.
+
 ## 0.3.0
 
 - Rebrand the plugin as Domorium while preserving the permanent `domorium`
