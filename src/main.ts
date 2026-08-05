@@ -1,6 +1,15 @@
-import { type App, Modal, Notice, Plugin, Setting } from "obsidian";
+import {
+  addIcon,
+  type App,
+  Modal,
+  Notice,
+  Plugin,
+  removeIcon,
+  Setting,
+} from "obsidian";
 
 import { GEDCOM_VIEW_TYPE, GedcomView } from "./GedcomView";
+import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
 import {
   DEFAULT_SETTINGS,
@@ -13,6 +22,7 @@ export default class GedcomPlugin extends Plugin {
 
   async onload(): Promise<void> {
     this.settings = parseSettings(await this.loadData());
+    addIcon(GEDCOM_ICON_ID, GEDCOM_ICON_SVG);
     this.registerView(
       GEDCOM_VIEW_TYPE,
       (leaf) => new GedcomView(leaf, this.settings),
@@ -72,6 +82,10 @@ export default class GedcomPlugin extends Plugin {
     });
   }
 
+  onunload(): void {
+    removeIcon(GEDCOM_ICON_ID);
+  }
+
   async updateSettings(changes: Partial<GedcomSettings>): Promise<void> {
     this.settings = { ...this.settings, ...changes };
     await this.saveData(this.settings);
@@ -108,10 +122,13 @@ class RenameReferenceModal extends Modal {
         });
       })
       .addButton((button) =>
-        button.setButtonText("Rename").setCta().onClick(() => {
-          this.close();
-          this.onSubmit(value);
-        }),
+        button
+          .setButtonText("Rename")
+          .setCta()
+          .onClick(() => {
+            this.close();
+            this.onSubmit(value);
+          }),
       );
   }
 }
