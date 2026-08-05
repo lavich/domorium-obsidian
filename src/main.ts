@@ -1,6 +1,15 @@
-import { type App, Modal, Notice, Plugin, Setting } from "obsidian";
+import {
+  addIcon,
+  type App,
+  Modal,
+  Notice,
+  Plugin,
+  removeIcon,
+  Setting,
+} from "obsidian";
 
 import { GEDCOM_VIEW_TYPE, GedcomView } from "./GedcomView";
+import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
 import {
   DEFAULT_SETTINGS,
@@ -13,6 +22,7 @@ export default class GedcomPlugin extends Plugin {
 
   async onload(): Promise<void> {
     this.settings = parseSettings(await this.loadData());
+    addIcon(GEDCOM_ICON_ID, GEDCOM_ICON_SVG);
     this.registerView(
       GEDCOM_VIEW_TYPE,
       (leaf) => new GedcomView(leaf, this.settings),
@@ -21,7 +31,7 @@ export default class GedcomPlugin extends Plugin {
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     this.addCommand({
       id: "go-to-gedcom-definition",
-      name: "Go to GEDCOM definition",
+      name: "Go to definition",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
         if (!view) {
@@ -35,7 +45,7 @@ export default class GedcomPlugin extends Plugin {
     });
     this.addCommand({
       id: "find-gedcom-references",
-      name: "Find GEDCOM references",
+      name: "Find references",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
         if (!view) {
@@ -54,7 +64,7 @@ export default class GedcomPlugin extends Plugin {
     });
     this.addCommand({
       id: "rename-gedcom-reference",
-      name: "Rename GEDCOM reference",
+      name: "Rename reference",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
         if (!view || !view.canRenameReference()) {
@@ -70,6 +80,10 @@ export default class GedcomPlugin extends Plugin {
         return true;
       },
     });
+  }
+
+  onunload(): void {
+    removeIcon(GEDCOM_ICON_ID);
   }
 
   async updateSettings(changes: Partial<GedcomSettings>): Promise<void> {
@@ -108,10 +122,13 @@ class RenameReferenceModal extends Modal {
         });
       })
       .addButton((button) =>
-        button.setButtonText("Rename").setCta().onClick(() => {
-          this.close();
-          this.onSubmit(value);
-        }),
+        button
+          .setButtonText("Rename")
+          .setCta()
+          .onClick(() => {
+            this.close();
+            this.onSubmit(value);
+          }),
       );
   }
 }
