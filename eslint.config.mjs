@@ -23,6 +23,12 @@ export default tseslint.config(
     },
   },
   {
+    files: ["**/*.test.ts"],
+    rules: {
+      "obsidianmd/no-nodejs-modules": "off",
+    },
+  },
+  {
     plugins: {
       "@stylistic": stylistic,
       "@typescript-eslint": tseslint.plugin,
