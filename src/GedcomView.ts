@@ -24,8 +24,9 @@ import {
 
 import { createHostEditorExtensions } from "./editor/hostExtensions";
 import { routeDocumentLink } from "./editor/service";
+import { GEDCOM_ICON_ID } from "./icon";
 
-export const GEDCOM_VIEW_TYPE = "gedcom-gedcom";
+export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
 export class GedcomView extends TextFileView {
   private editor: EditorView;
@@ -54,7 +55,7 @@ export class GedcomView extends TextFileView {
   }
 
   getIcon(): string {
-    return "file-code-2";
+    return GEDCOM_ICON_ID;
   }
 
   getViewData(): string {
