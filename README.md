@@ -1,10 +1,19 @@
 # GEDCOM for Obsidian
 
+[![release](https://img.shields.io/github/v/release/lavich/domorium-obsidian)](https://github.com/lavich/domorium-obsidian/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 GEDCOM language support by Domorium. Edit source `.ged` and `.gedcom` files
 directly in Obsidian with validation, autocomplete, navigation, folding, and
 semantic highlighting.
 
 ![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
+
+Part of [Domorium](https://github.com/lavich/domorium). The same GEDCOM language
+support runs in [VS Code](https://marketplace.visualstudio.com/items?itemName=domorium.gedcom),
+[JetBrains IDEs](https://plugins.jetbrains.com/plugin/index?xmlId=domorium.gedcom),
+and [in the browser](https://domorium.com/) — one implementation of the format,
+adapted per editor.
 
 ## Features
 

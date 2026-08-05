@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0
+
+- First stable release, matching the 1.0.0 line of the rest of Domorium.
+- No change to plugin behaviour.
+
 ## 0.3.1
 
 - Present the plugin as GEDCOM while retaining Domorium as the ecosystem and
