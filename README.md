@@ -47,14 +47,14 @@ release using [BRAT](https://github.com/TfTHacker/obsidian42-brat) and this
 repository URL:
 
 ```text
-https://github.com/lavich/gedcom-obsidian
+https://github.com/lavich/domorium-obsidian
 ```
 
 For a manual installation, copy `main.js`, `manifest.json`, and `styles.css`
 from the latest release into:
 
 ```text
-<vault>/.obsidian/plugins/gedcom/
+<vault>/.obsidian/plugins/domorium/
 ```
 
 Reload Community Plugins and enable **GEDCOM**.
