@@ -33,7 +33,7 @@
     "eslint": "^10.8.0",
     "eslint-plugin-obsidianmd": "^0.4.1",
     "obsidian": "latest",
-    "typescript": "^5.9.2",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.65.0",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"
