@@ -1,4 +1,4 @@
-export const GEDCOM_ICON_ID = "domorium-tree";
+export const GEDCOM_ICON_ID = "domorium-gedcom-icon";
 
 export const GEDCOM_ICON_SVG = `
   <g transform="scale(4.1666667)" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
