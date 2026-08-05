@@ -31,7 +31,7 @@ export default class GedcomPlugin extends Plugin {
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     this.addCommand({
       id: "go-to-gedcom-definition",
-      name: "Go to GEDCOM definition",
+      name: "Go to definition",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
         if (!view) {
@@ -45,7 +45,7 @@ export default class GedcomPlugin extends Plugin {
     });
     this.addCommand({
       id: "find-gedcom-references",
-      name: "Find GEDCOM references",
+      name: "Find references",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
         if (!view) {
@@ -64,7 +64,7 @@ export default class GedcomPlugin extends Plugin {
     });
     this.addCommand({
       id: "rename-gedcom-reference",
-      name: "Rename GEDCOM reference",
+      name: "Rename reference",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(GedcomView);
         if (!view || !view.canRenameReference()) {
