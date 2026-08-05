@@ -1,7 +1,8 @@
 # GEDCOM for Obsidian
 
-Edit source `.ged` and `.gedcom` files directly in Obsidian with validation,
-autocomplete, navigation, folding, and semantic highlighting.
+GEDCOM language support by Domorium. Edit source `.ged` and `.gedcom` files
+directly in Obsidian with validation, autocomplete, navigation, folding, and
+semantic highlighting.
 
 ![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
 
@@ -36,14 +37,14 @@ current XREF atomically. Editor behavior can be adjusted in the plugin settings.
 
 ## Privacy
 
-GEDCOM works locally inside the vault. It does not require an account, make
+GEDCOM by Domorium works locally inside the vault. It does not require an account, make
 network requests, access files outside the vault, show advertisements, or
 collect analytics or telemetry.
 
-## Beta installation
+## Installation
 
-Until GEDCOM is available in Community Plugins, install the latest GitHub
-release using [BRAT](https://github.com/TfTHacker/obsidian42-brat) and this
+Install **GEDCOM** from Obsidian's Community Plugins directory. To test beta
+releases, use [BRAT](https://github.com/TfTHacker/obsidian42-brat) with this
 repository URL:
 
 ```text
@@ -69,9 +70,13 @@ npm run check
 The packaged plugin is written to `dist/`.
 
 The shared GEDCOM parser and editor-independent language service are maintained in the main
-[GEDCOM repository](https://github.com/lavich/gedcom) and consumed as
+[Domorium repository](https://github.com/lavich/domorium) and consumed as
 versioned public npm packages.
 
 ## License
 
 MIT © 2026 Andrei Lobanov
+
+Domorium is an independent project and is not affiliated with or endorsed by
+FamilySearch or Intellectual Reserve, Inc. FAMILYSEARCH GEDCOM™ and FAMILYSEARCH®
+are trademarks of Intellectual Reserve, Inc.

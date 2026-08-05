@@ -13,7 +13,7 @@ import {
   type GedcomEditorSettings,
   type Range,
   type WorkspaceEdit,
-} from "@gedcom/codemirror";
+} from "@domorium/codemirror";
 import {
   normalizePath,
   Notice,

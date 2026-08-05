@@ -13,7 +13,7 @@ import {
 import { lintGutter } from "@codemirror/lint";
 import type { Extension } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
-import type { GedcomEditorSettings } from "@gedcom/codemirror";
+import type { GedcomEditorSettings } from "@domorium/codemirror";
 import { tags } from "@lezer/highlight";
 
 const obsidianHighlightStyle = HighlightStyle.define([
@@ -32,7 +32,10 @@ export function createHostEditorExtensions(
     indentUnit.of("  "),
     syntaxHighlighting(obsidianHighlightStyle),
     EditorView.lineWrapping,
-    EditorView.contentAttributes.of({ spellcheck: "false", autocorrect: "off" }),
+    EditorView.contentAttributes.of({
+      spellcheck: "false",
+      autocorrect: "off",
+    }),
     EditorView.theme({
       "&": { height: "100%", backgroundColor: "var(--background-primary)" },
       ".cm-scroller": { overflow: "auto", fontFamily: "var(--font-monospace)" },
