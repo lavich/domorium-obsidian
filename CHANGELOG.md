@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0
+
+- Accept application-defined extension tags (`_XXXX`) instead of flagging every
+  one of them as an unknown tag. Notes holding files exported by other genealogy
+  applications no longer fill with false warnings.
+- Read extension tag declarations from `HEAD.SCHMA` in GEDCOM 7 documents: hover
+  shows the URI a tag is bound to, and autocomplete offers the declared tags.
+- Warn when a GEDCOM 7 document uses an extension tag it never declares in
+  `HEAD.SCHMA`. GEDCOM 5.5.1 files, which have no such structure, are unaffected.
+- Stop offering top-level record tags as completions inside a structure whose
+  type cannot be resolved.
+
 ## 1.0.0
 
 - First stable release, matching the 1.0.0 line of the rest of Domorium.
