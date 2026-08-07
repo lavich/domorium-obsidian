@@ -1,9 +1,9 @@
 {
   "id": "domorium",
-  "name": "GEDCOM",
-  "version": "1.1.0",
+  "name": "Gedcom",
+  "version": "1.2.0",
   "minAppVersion": "1.5.0",
-  "description": "GEDCOM language support by Domorium with autocomplete, validation, navigation, and semantic highlighting.",
+  "description": "Edit genealogy files in the GEDCOM 5.5.1 and 7.0 formats, with autocomplete, validation, navigation, and semantic highlighting.",
   "author": "Andrei Lobanov",
   "authorUrl": "https://github.com/lavich",
   "isDesktopOnly": false
