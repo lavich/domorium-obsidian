@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0
+
+- Keep the spaces that belong to a value. A `NOTE` whose text began with spaces
+  was losing them, and `CONC` continuations silently changed the text they
+  rejoined.
+- Stop the hint for a broken pointer from covering the note. It named every
+  matching record in the file and offered a quick fix for each; it now names ten
+  and says how many more there are, and the tooltip is capped and scrolls.
+  Autocomplete still offers every record.
+- Hover no longer shows stray asterisks around the tag description.
+- Colour and validate large files without the editor stalling: highlighting is
+  built for the visible lines rather than the whole note, diagnostics refresh
+  once typing pauses, and validation cost no longer grows with the number of
+  records times the number of lines.
+
 ## 1.1.0
 
 - Accept application-defined extension tags (`_XXXX`) instead of flagging every
