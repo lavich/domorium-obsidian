@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.0
+
+- Dates that name their calendar are no longer marked. `JULIAN 1401`,
+  `HEBREW 1 TSH 5761` and even `GREGORIAN 1 JAN 2000` were all underlined in a
+  GEDCOM 7 note. Each calendar's own months and epochs now apply, so a Hebrew
+  date carrying a Gregorian month is still caught.
+- **Three older date forms are now marked in a 7.0 note**, so a file that was
+  clean may not be: the `@#DGREGORIAN@` calendar escape, a slashed year such as
+  `1 JAN 1857/58`, and phrases like `INT 1950 (around 1950)` or `(unknown)`.
+  Version 7.0 removed all three — a date phrase belongs in a `PHRASE` line
+  beneath the date. GEDCOM 5.5.1 files are unaffected.
+- A line whose payload the specification allows to be left out is no longer
+  reported as missing a value. `1 EVEN` with only a `TYPE` beneath it was
+  flagged, along with 60 other kinds of line, and so were `AGE` and `DATE` left
+  empty with a `PHRASE` instead.
+- A file beginning with a byte order mark no longer opens with a warning on its
+  first line.
+- A source citation carrying text where a pointer belongs now says what belongs
+  there rather than naming the rule.
+
 ## 1.2.0
 
 - Keep the spaces that belong to a value. A `NOTE` whose text began with spaces
