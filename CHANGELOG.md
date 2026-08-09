@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.4.0
+
+- An extension tag used as an enumeration value is no longer marked as an error.
+  `2 PEDI _ENUMVAL` and `2 ROLE _CHILD` were underlined in a GEDCOM 7 note,
+  though the specification permits extending an enumeration this way. One that
+  is never declared in `HEAD.SCHMA` is now a warning instead of an error.
+- A `HEAD.SCHMA` tag declared as an abbreviation for a standard URI is read as
+  the structure it names. A record written under such an alias now satisfies a
+  pointer to the standard tag, and a date in an aliased calendar is accepted.
+- `1 EVEN` with a `TYPE` beneath it is no longer reported as missing a value in
+  a GEDCOM 5.5.1 note.
+- **A count that is not a number is now marked.** `1 NCHI abc` was accepted, and
+  so were `3.7`, `12abc` and `Infinity`.
+- An event with neither a value nor anything beneath it is a warning rather than
+  an error, and says what is actually wrong: the line asserts nothing and other
+  software may drop it.
+- A source citation pointing at a record type the note does not contain no
+  longer offers an empty list of candidates.
+
 ## 1.3.0
 
 - Dates that name their calendar are no longer marked. `JULIAN 1401`,
