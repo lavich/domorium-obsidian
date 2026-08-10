@@ -1,7 +1,7 @@
 {
   "id": "domorium",
   "name": "Gedcom",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "minAppVersion": "1.5.0",
   "description": "Edit genealogy files in the GEDCOM 5.5.1 and 7.0 formats, with autocomplete, validation, navigation, and semantic highlighting.",
   "author": "Andrei Lobanov",
