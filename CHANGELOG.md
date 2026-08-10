@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.5.0
+
+- **A note whose GEDCOM version cannot be checked no longer looks clean.**
+  `2 VERS 4.0`, a misspelled version and a note with no version line were all
+  checked against the GEDCOM 7 rules and reported nothing, because none of those
+  rules applied. Each now carries one error saying so, and the rest of the
+  checking goes quiet rather than judging the note by the wrong specification.
+  Highlighting, folding and navigation are unaffected.
+- **`2 VERS 5.5`, `5.5.5` and `5.5EL` are checked against the 5.5.1 rules with a
+  warning** that says the two differ, so some marks may not apply and others may
+  be missing. Those notes previously collected the 5.5.1 marks with no
+  explanation of where they came from.
+- Autocomplete and file links go quiet for a version with no rules.
+- **Anything written under a structure that cannot hold it is now marked.** A
+  line beneath `1 TITL`, or beneath the trailer in a 5.5.1 note, was accepted
+  without comment.
+- `2 VERS  5.5.1` written with two spaces was read as GEDCOM 7, so the note was
+  checked against the wrong rules and an absolute media path stopped being a
+  link. Both are fixed.
+- `1 OBJE` with `FILE` and `TITL` beneath it, the inline form of a 5.5.1 media
+  link, no longer reports `FILE` as an unknown tag.
+
 ## 1.4.0
 
 - An extension tag used as an enumeration value is no longer marked as an error.
