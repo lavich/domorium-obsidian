@@ -15,6 +15,8 @@ import {
   type WorkspaceEdit,
 } from "@domorium/codemirror";
 import {
+  HoverPopover,
+  Keymap,
   normalizePath,
   Notice,
   TextFileView,
@@ -28,15 +30,19 @@ import {
   positionFromOffset,
 } from "./editor/ephemeralState";
 import { createHostEditorExtensions } from "./editor/hostExtensions";
+import { readRecordPreview } from "./editor/recordPreview";
 import { routeDocumentLink } from "./editor/service";
 import { GEDCOM_ICON_ID } from "./icon";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
+const PREVIEW_MAX_LINES = 24;
+
 export class GedcomView extends TextFileView {
   private editor: EditorView;
   private readonly language = new EditorLanguageService();
   private applyingData = false;
+  private previewed: string | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -48,6 +54,9 @@ export class GedcomView extends TextFileView {
     this.editor = new EditorView({
       parent: editorEl,
       state: this.createState(""),
+    });
+    this.registerDomEvent(editorEl, "mousemove", (event) => {
+      this.previewRecord(event);
     });
   }
 
@@ -179,6 +188,37 @@ export class GedcomView extends TextFileView {
           }
         }),
       ],
+    });
+  }
+
+  private previewRecord(event: MouseEvent): void {
+    if (!Keymap.isModifier(event, "Mod")) {
+      this.previewed = null;
+      return;
+    }
+    const offset = this.editor.posAtCoords({
+      x: event.clientX,
+      y: event.clientY,
+    });
+    const doc = this.editor.state.doc;
+    const preview =
+      offset === null
+        ? null
+        : readRecordPreview(
+            this.language.update(doc),
+            doc,
+            offset,
+            PREVIEW_MAX_LINES,
+          );
+    if (preview === null || preview === this.previewed) {
+      this.previewed = preview;
+      return;
+    }
+    this.previewed = preview;
+    const popover = new HoverPopover(this.leaf, event.target as HTMLElement);
+    popover.hoverEl.createEl("pre", {
+      cls: "gedcom-record-preview",
+      text: preview,
     });
   }
 

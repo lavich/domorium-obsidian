@@ -28,6 +28,15 @@
   padding: var(--size-4-2) var(--size-4-3);
   white-space: pre-wrap;
 }
+.gedcom-record-preview {
+  margin: 0;
+  padding: var(--size-4-2) var(--size-4-3);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  white-space: pre;
+  overflow-x: auto;
+}
+
 .gedcom-reference-write {
   background: color-mix(in srgb, var(--color-accent) 28%, transparent);
   border-radius: 2px;
