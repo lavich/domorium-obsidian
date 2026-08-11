@@ -6,6 +6,8 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      gedcom:
+      codemirror:
         patterns:
-          - "gedcom-*"
+          - "@codemirror/*"
+          - "@lezer/*"
+          - "obsidian"
