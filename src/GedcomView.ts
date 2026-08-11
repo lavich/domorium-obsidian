@@ -24,6 +24,7 @@ import {
 } from "@domorium/codemirror";
 import {
   HoverPopover,
+  type Menu,
   normalizePath,
   Notice,
   TextFileView,
@@ -38,9 +39,15 @@ import {
 } from "./editor/ephemeralState";
 import { createHostEditorExtensions } from "./editor/hostExtensions";
 import { routeDocumentLink } from "./editor/service";
+import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
+
+export interface GedcomViewHost {
+  fillMenu(menu: Menu, view: GedcomView): void;
+  statusChanged(view: GedcomView): void;
+}
 
 export class GedcomView extends TextFileView {
   private editor: EditorView;
@@ -51,6 +58,7 @@ export class GedcomView extends TextFileView {
   constructor(
     leaf: WorkspaceLeaf,
     private settings: GedcomEditorSettings,
+    private readonly host: GedcomViewHost,
   ) {
     super(leaf);
     this.contentEl.addClass("gedcom-gedcom-view");
@@ -91,11 +99,27 @@ export class GedcomView extends TextFileView {
     } finally {
       this.applyingData = false;
     }
+    this.host.statusChanged(this);
   }
 
   clear(): void {
     this.language.clear();
     this.editor.setState(this.createState(""));
+    this.host.statusChanged(this);
+  }
+
+  getStatus(): GedcomStatus {
+    const { state } = this.editor;
+    return {
+      version: this.language.current(state.doc)?.getVersionResolution(),
+      problems:
+        (this.settings.diagnostics ?? true) ? diagnosticCount(state) : undefined,
+    };
+  }
+
+  onPaneMenu(menu: Menu, source: string): void {
+    super.onPaneMenu(menu, source);
+    this.host.fillMenu(menu, this);
   }
 
   getEphemeralState(): Record<string, unknown> {
@@ -127,6 +151,7 @@ export class GedcomView extends TextFileView {
     const selection = this.editor.state.selection;
     this.settings = settings;
     this.editor.setState(this.createState(data, selection.main.head));
+    this.host.statusChanged(this);
   }
 
   goToDefinition(): boolean {
@@ -212,6 +237,7 @@ export class GedcomView extends TextFileView {
           if (update.docChanged && !this.applyingData) {
             this.requestSave();
           }
+          this.host.statusChanged(this);
         }),
       ],
     });

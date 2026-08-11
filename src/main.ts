@@ -1,6 +1,8 @@
 import {
   addIcon,
   type App,
+  type IconName,
+  type Menu,
   Modal,
   Notice,
   Plugin,
@@ -8,7 +10,8 @@ import {
   Setting,
 } from "obsidian";
 
-import { GEDCOM_VIEW_TYPE, GedcomView } from "./GedcomView";
+import { formatStatus } from "./editor/status";
+import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
 import {
@@ -17,101 +20,133 @@ import {
   type GedcomSettings,
 } from "./settingsData";
 
-export default class GedcomPlugin extends Plugin {
+interface GedcomCommand {
+  id: string;
+  name: string;
+  icon: IconName;
+  isAvailable(view: GedcomView): boolean;
+  run(plugin: GedcomPlugin, view: GedcomView): void;
+}
+
+const COMMANDS: GedcomCommand[] = [
+  {
+    id: "go-to-gedcom-definition",
+    name: "Go to definition",
+    icon: "arrow-right",
+    isAvailable: () => true,
+    run: (_plugin, view) => {
+      view.goToDefinition();
+    },
+  },
+  {
+    id: "find-gedcom-references",
+    name: "Find references",
+    icon: "search",
+    isAvailable: () => true,
+    run: (_plugin, view) => {
+      const referenceCount = view.goToNextReference();
+      new Notice(
+        referenceCount === 0
+          ? "No GEDCOM references found"
+          : `${referenceCount} GEDCOM reference(s); moved to next`,
+      );
+    },
+  },
+  {
+    id: "rename-gedcom-reference",
+    name: "Rename reference",
+    icon: "pencil",
+    isAvailable: (view) => view.canRenameReference(),
+    run: (plugin, view) => {
+      new RenameReferenceModal(plugin.app, (newName) => {
+        if (!view.renameReference(newName)) {
+          new Notice("GEDCOM reference could not be renamed");
+        }
+      }).open();
+    },
+  },
+  {
+    id: "go-to-next-gedcom-problem",
+    name: "Go to next problem",
+    icon: "chevron-down",
+    isAvailable: (view) => view.problemCount() > 0,
+    run: (_plugin, view) => {
+      view.goToNextProblem();
+    },
+  },
+  {
+    id: "go-to-previous-gedcom-problem",
+    name: "Go to previous problem",
+    icon: "chevron-up",
+    isAvailable: (view) => view.problemCount() > 0,
+    run: (_plugin, view) => {
+      view.goToPreviousProblem();
+    },
+  },
+];
+
+export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
+  private statusBar: HTMLElement | undefined;
 
   async onload(): Promise<void> {
     this.settings = parseSettings(await this.loadData());
     addIcon(GEDCOM_ICON_ID, GEDCOM_ICON_SVG);
     this.registerView(
       GEDCOM_VIEW_TYPE,
-      (leaf) => new GedcomView(leaf, this.settings),
+      (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
     this.addSettingTab(new GedcomSettingTab(this.app, this));
-    this.addCommand({
-      id: "go-to-gedcom-definition",
-      name: "Go to definition",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view) {
-          return false;
-        }
-        if (!checking) {
-          view.goToDefinition();
-        }
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "find-gedcom-references",
-      name: "Find references",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view) {
-          return false;
-        }
-        if (!checking) {
-          const referenceCount = view.goToNextReference();
-          new Notice(
-            referenceCount === 0
-              ? "No GEDCOM references found"
-              : `${referenceCount} GEDCOM reference(s); moved to next`,
-          );
-        }
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "rename-gedcom-reference",
-      name: "Rename reference",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view || !view.canRenameReference()) {
-          return false;
-        }
-        if (!checking) {
-          new RenameReferenceModal(this.app, (newName) => {
-            if (!view.renameReference(newName)) {
-              new Notice("GEDCOM reference could not be renamed");
-            }
-          }).open();
-        }
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "go-to-next-gedcom-problem",
-      name: "Go to next problem",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view || view.problemCount() === 0) {
-          return false;
-        }
-        if (!checking) {
-          view.goToNextProblem();
-        }
-        return true;
-      },
-    });
-    this.addCommand({
-      id: "go-to-previous-gedcom-problem",
-      name: "Go to previous problem",
-      checkCallback: (checking) => {
-        const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        if (!view || view.problemCount() === 0) {
-          return false;
-        }
-        if (!checking) {
-          view.goToPreviousProblem();
-        }
-        return true;
-      },
-    });
+    for (const command of COMMANDS) {
+      this.addCommand({
+        id: command.id,
+        name: command.name,
+        checkCallback: (checking) => {
+          const view = this.app.workspace.getActiveViewOfType(GedcomView);
+          if (!view || !command.isAvailable(view)) {
+            return false;
+          }
+          if (!checking) {
+            command.run(this, view);
+          }
+          return true;
+        },
+      });
+    }
+    this.statusBar = this.addStatusBarItem();
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", () => {
+        this.refreshStatusBar();
+      }),
+    );
+    this.refreshStatusBar();
   }
 
   onunload(): void {
     removeIcon(GEDCOM_ICON_ID);
+  }
+
+  fillMenu(menu: Menu, view: GedcomView): void {
+    for (const command of COMMANDS) {
+      if (!command.isAvailable(view)) {
+        continue;
+      }
+      menu.addItem((item) =>
+        item
+          .setTitle(command.name)
+          .setIcon(command.icon)
+          .onClick(() => {
+            command.run(this, view);
+          }),
+      );
+    }
+  }
+
+  statusChanged(view: GedcomView): void {
+    if (this.app.workspace.getActiveViewOfType(GedcomView) === view) {
+      this.refreshStatusBar();
+    }
   }
 
   async updateSettings(changes: Partial<GedcomSettings>): Promise<void> {
@@ -122,6 +157,14 @@ export default class GedcomPlugin extends Plugin {
         leaf.view.applySettings(this.settings);
       }
     });
+  }
+
+  private refreshStatusBar(): void {
+    const view = this.app.workspace.getActiveViewOfType(GedcomView);
+    this.statusBar?.toggle(view !== null);
+    if (view) {
+      this.statusBar?.setText(formatStatus(view.getStatus()));
+    }
   }
 }
 
