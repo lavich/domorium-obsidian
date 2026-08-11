@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest --run",
+    "test:browser": "node harness/build.mjs && playwright test",
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.62.1",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/node": "^26.2.0",
     "esbuild": "^0.28.1",

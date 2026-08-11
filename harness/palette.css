@@ -1,0 +1,42 @@
+/*
+ * The CSS variables Obsidian gives a plugin, with values chosen to be
+ * recognisable in an assertion rather than pretty: every one is a distinct
+ * primary so a test can say which variable a pixel came from.
+ */
+body {
+  margin: 0;
+  --font-monospace: monospace;
+  --font-text-size: 16px;
+  --size-4-2: 8px;
+  --size-4-3: 12px;
+  --font-semibold: 600;
+  --radius-s: 4px;
+}
+
+body.theme-light {
+  --background-primary: rgb(255, 255, 255);
+  --background-secondary: rgb(240, 240, 240);
+  --background-modifier-border: rgb(200, 200, 200);
+  --interactive-normal: rgb(230, 230, 230);
+  --text-normal: rgb(0, 0, 0);
+  --text-faint: rgb(10, 20, 30);
+  --color-cyan: rgb(0, 128, 128);
+  --color-purple: rgb(128, 0, 128);
+  --color-accent: rgb(255, 0, 0);
+}
+
+body.theme-dark {
+  --background-primary: rgb(20, 20, 20);
+  --background-secondary: rgb(30, 30, 30);
+  --background-modifier-border: rgb(60, 60, 60);
+  --interactive-normal: rgb(45, 45, 45);
+  --text-normal: rgb(255, 255, 255);
+  --text-faint: rgb(200, 210, 220);
+  --color-cyan: rgb(0, 255, 255);
+  --color-purple: rgb(255, 0, 255);
+  --color-accent: rgb(0, 255, 0);
+}
+
+#editor {
+  height: 100vh;
+}
