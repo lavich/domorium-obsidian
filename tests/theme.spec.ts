@@ -122,6 +122,26 @@ test.describe("the Obsidian theme", () => {
     expect(SAMPLE.includes("  1 HUSB")).toBe(false);
   });
 
+  test("paints a payload from the normal text variable, not from a default", async ({
+    page,
+  }) => {
+    const payloadColour = async (dark: boolean): Promise<string> => {
+      await mount(page, { dark });
+      return page.evaluate(() => {
+        const line = [...document.querySelectorAll(".cm-line")].find((element) =>
+          (element.textContent ?? "").includes("John"),
+        );
+        return line ? getComputedStyle(line).color : "missing";
+      });
+    };
+
+    expect(await payloadColour(false)).toBe("rgb(0, 0, 0)");
+    expect(
+      await payloadColour(true),
+      "a value is the data; it cannot be black on a dark theme",
+    ).toBe("rgb(255, 255, 255)");
+  });
+
   test("does not indent the file it is showing", async ({ page }) => {
     await mount(page);
     const text = await page.evaluate(
