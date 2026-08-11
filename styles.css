@@ -46,3 +46,22 @@
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
   border-radius: 2px;
 }
+
+.gedcom-gedcom-editor .cm-panels {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border-color: var(--background-modifier-border);
+}
+
+.gedcom-gedcom-editor .cm-textfield {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-gedcom-editor .cm-button {
+  background: var(--interactive-normal);
+  background-image: none;
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}

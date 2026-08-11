@@ -15,6 +15,7 @@ export interface GedcomCompositionOptions {
   language: EditorLanguageService;
   settings: GedcomEditorSettings;
   actions: GedcomEditorActions;
+  dark: boolean;
   showPreview: (
     preview: RecordPreview,
     view: EditorView,
@@ -32,7 +33,7 @@ export function createGedcomComposition(
       show: options.showPreview,
       hide: options.hidePreview,
     }),
-    ...createHostEditorExtensions(options.settings),
+    ...createHostEditorExtensions(options.settings, options.dark),
     ...createGedcomExtensions({
       language: options.language,
       settings: options.settings,

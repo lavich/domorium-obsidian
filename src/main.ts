@@ -83,6 +83,24 @@ const COMMANDS: GedcomCommand[] = [
       view.goToPreviousProblem();
     },
   },
+  {
+    id: "toggle-gedcom-problems-panel",
+    name: "Toggle problems panel",
+    icon: "list-checks",
+    isAvailable: (view) => view.canShowProblems(),
+    run: (_plugin, view) => {
+      view.toggleProblemsPanel();
+    },
+  },
+  {
+    id: "search-in-gedcom-file",
+    name: "Search in file",
+    icon: "text-search",
+    isAvailable: () => true,
+    run: (_plugin, view) => {
+      view.openSearch();
+    },
+  },
 ];
 
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
@@ -120,6 +138,13 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         this.refreshStatusBar();
       }),
     );
+    this.registerEvent(
+      this.app.workspace.on("css-change", () => {
+        this.forEachView((view) => {
+          view.refresh();
+        });
+      }),
+    );
     this.refreshStatusBar();
   }
 
@@ -152,9 +177,15 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   async updateSettings(changes: Partial<GedcomSettings>): Promise<void> {
     this.settings = { ...this.settings, ...changes };
     await this.saveData(this.settings);
+    this.forEachView((view) => {
+      view.applySettings(this.settings);
+    });
+  }
+
+  private forEachView(run: (view: GedcomView) => void): void {
     this.app.workspace.getLeavesOfType(GEDCOM_VIEW_TYPE).forEach((leaf) => {
       if (leaf.view instanceof GedcomView) {
-        leaf.view.applySettings(this.settings);
+        run(leaf.view);
       }
     });
   }

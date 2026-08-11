@@ -1,8 +1,11 @@
 import {
+  closeLintPanel,
   diagnosticCount,
   nextDiagnostic,
+  openLintPanel,
   previousDiagnostic,
 } from "@codemirror/lint";
+import { openSearchPanel } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -145,9 +148,13 @@ export class GedcomView extends TextFileView {
   }
 
   applySettings(settings: GedcomEditorSettings): void {
+    this.settings = settings;
+    this.refresh();
+  }
+
+  refresh(): void {
     const data = this.getViewData();
     const selection = this.editor.state.selection;
-    this.settings = settings;
     this.editor.setState(this.createState(data, selection.main.head));
     this.host.statusChanged(this);
   }
@@ -192,6 +199,24 @@ export class GedcomView extends TextFileView {
     return moved;
   }
 
+  canShowProblems(): boolean {
+    return this.settings.diagnostics ?? true;
+  }
+
+  toggleProblemsPanel(): void {
+    const open = this.editor.dom.querySelector(".cm-panel-lint") !== null;
+    if (open) {
+      closeLintPanel(this.editor);
+    } else {
+      openLintPanel(this.editor);
+    }
+    this.editor.focus();
+  }
+
+  openSearch(): void {
+    openSearchPanel(this.editor);
+  }
+
   canRenameReference(): boolean {
     return canRenameReference(this.editor.state, this.language);
   }
@@ -210,6 +235,10 @@ export class GedcomView extends TextFileView {
     return Promise.resolve();
   }
 
+  private isDark(): boolean {
+    return this.containerEl.ownerDocument.body.classList.contains("theme-dark");
+  }
+
   private createState(data: string, cursor?: number): EditorState {
     return EditorState.create({
       doc: data,
@@ -219,6 +248,7 @@ export class GedcomView extends TextFileView {
         ...createGedcomComposition({
           language: this.language,
           settings: this.settings,
+          dark: this.isDark(),
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
             openDocumentLink: (link) => this.openDocumentLink(link),
