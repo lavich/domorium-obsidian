@@ -1,3 +1,8 @@
+import {
+  diagnosticCount,
+  nextDiagnostic,
+  previousDiagnostic,
+} from "@codemirror/lint";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -142,6 +147,26 @@ export class GedcomView extends TextFileView {
       this.editor.focus();
     }
     return referenceCount;
+  }
+
+  problemCount(): number {
+    return diagnosticCount(this.editor.state);
+  }
+
+  goToNextProblem(): boolean {
+    const moved = nextDiagnostic(this.editor);
+    if (moved) {
+      this.editor.focus();
+    }
+    return moved;
+  }
+
+  goToPreviousProblem(): boolean {
+    const moved = previousDiagnostic(this.editor);
+    if (moved) {
+      this.editor.focus();
+    }
+    return moved;
   }
 
   canRenameReference(): boolean {

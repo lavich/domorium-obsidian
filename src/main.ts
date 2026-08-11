@@ -80,6 +80,34 @@ export default class GedcomPlugin extends Plugin {
         return true;
       },
     });
+    this.addCommand({
+      id: "go-to-next-gedcom-problem",
+      name: "Go to next problem",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(GedcomView);
+        if (!view || view.problemCount() === 0) {
+          return false;
+        }
+        if (!checking) {
+          view.goToNextProblem();
+        }
+        return true;
+      },
+    });
+    this.addCommand({
+      id: "go-to-previous-gedcom-problem",
+      name: "Go to previous problem",
+      checkCallback: (checking) => {
+        const view = this.app.workspace.getActiveViewOfType(GedcomView);
+        if (!view || view.problemCount() === 0) {
+          return false;
+        }
+        if (!checking) {
+          view.goToPreviousProblem();
+        }
+        return true;
+      },
+    });
   }
 
   onunload(): void {
