@@ -40,6 +40,9 @@
 .gedcom-hovered-pointer {
   text-decoration: underline;
   text-decoration-color: var(--text-accent);
+  /* The tail of @ crosses the underline, and skipping ink drops it under both
+     delimiters of every pointer. */
+  text-decoration-skip-ink: none;
   cursor: pointer;
 }
 
