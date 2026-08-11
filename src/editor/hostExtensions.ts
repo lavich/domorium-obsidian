@@ -1,19 +1,10 @@
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  indentWithTab,
-} from "@codemirror/commands";
-import {
-  foldGutter,
-  HighlightStyle,
-  indentUnit,
-  syntaxHighlighting,
-} from "@codemirror/language";
-import { lintGutter } from "@codemirror/lint";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import type { Extension } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers } from "@codemirror/view";
-import type { GedcomEditorSettings } from "@domorium/codemirror";
+import { EditorView } from "@codemirror/view";
+import {
+  createStandaloneEditorExtensions,
+  type GedcomEditorSettings,
+} from "@domorium/codemirror";
 import { tags } from "@lezer/highlight";
 
 const obsidianHighlightStyle = HighlightStyle.define([
@@ -25,17 +16,11 @@ const obsidianHighlightStyle = HighlightStyle.define([
 export function createHostEditorExtensions(
   settings: GedcomEditorSettings,
 ): Extension[] {
-  const extensions: Extension[] = [
-    lineNumbers(),
-    history(),
-    foldGutter(),
-    indentUnit.of("  "),
-    syntaxHighlighting(obsidianHighlightStyle),
-    EditorView.lineWrapping,
-    EditorView.contentAttributes.of({
-      spellcheck: "false",
-      autocorrect: "off",
+  return [
+    ...createStandaloneEditorExtensions({
+      diagnostics: settings.diagnostics ?? true,
     }),
+    syntaxHighlighting(obsidianHighlightStyle),
     EditorView.theme({
       "&": { height: "100%", backgroundColor: "var(--background-primary)" },
       ".cm-scroller": { overflow: "auto", fontFamily: "var(--font-monospace)" },
@@ -46,10 +31,5 @@ export function createHostEditorExtensions(
         border: "none",
       },
     }),
-    keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
   ];
-  if (settings.diagnostics ?? true) {
-    extensions.push(lintGutter());
-  }
-  return extensions;
 }

@@ -1,4 +1,3 @@
-import { highlightingFor } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -8,17 +7,18 @@ import {
   EditorLanguageService,
   findReferences,
   goToDefinition,
+  getRecordPreviewRuns,
   goToNextReference,
+  recordPreviewHover,
   renameReference,
-  semanticTokenTag,
   type DocumentLink,
   type GedcomEditorSettings,
   type Range,
+  type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
 import {
   HoverPopover,
-  Keymap,
   normalizePath,
   Notice,
   TextFileView,
@@ -32,28 +32,16 @@ import {
   positionFromOffset,
 } from "./editor/ephemeralState";
 import { createHostEditorExtensions } from "./editor/hostExtensions";
-import {
-  hoveredPointerField,
-  setHoveredPointer,
-} from "./editor/pointerDecoration";
-import {
-  findRecordPreview,
-  toPreviewRuns,
-  type OffsetSpan,
-  type RecordPreview,
-} from "./editor/recordPreview";
 import { routeDocumentLink } from "./editor/service";
 import { GEDCOM_ICON_ID } from "./icon";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
-const PREVIEW_MAX_LINES = 24;
-
 export class GedcomView extends TextFileView {
   private editor: EditorView;
   private readonly language = new EditorLanguageService();
   private applyingData = false;
-  private pointer: OffsetSpan | null = null;
+  private preview: HoverPopover | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -65,17 +53,6 @@ export class GedcomView extends TextFileView {
     this.editor = new EditorView({
       parent: editorEl,
       state: this.createState(""),
-    });
-    this.registerDomEvent(editorEl, "mousemove", (event) => {
-      this.previewRecord(event);
-    });
-    this.registerDomEvent(editorEl, "mouseleave", () => {
-      this.clearPointer();
-    });
-    this.registerDomEvent(editorEl.ownerDocument, "keyup", (event) => {
-      if (!Keymap.isModifier(event, "Mod")) {
-        this.clearPointer();
-      }
     });
   }
 
@@ -186,14 +163,17 @@ export class GedcomView extends TextFileView {
   }
 
   private createState(data: string, cursor?: number): EditorState {
-    // The rebuilt state carries no decoration, so the marked pointer is gone.
-    this.pointer = null;
     return EditorState.create({
       doc: data,
       selection: cursor === undefined ? undefined : { anchor: cursor },
       extensions: [
         EditorState.lineSeparator.of(data.includes("\r\n") ? "\r\n" : "\n"),
-        hoveredPointerField,
+        recordPreviewHover({
+          language: this.language,
+          show: (preview, _view, event) =>
+            this.showPreview(preview, event.target as HTMLElement),
+          hide: () => this.hidePreview(),
+        }),
         ...createHostEditorExtensions(this.settings),
         ...createGedcomExtensions({
           language: this.language,
@@ -213,60 +193,18 @@ export class GedcomView extends TextFileView {
     });
   }
 
-  private previewRecord(event: MouseEvent): void {
-    if (!Keymap.isModifier(event, "Mod")) {
-      this.clearPointer();
-      return;
-    }
-    const offset = this.editor.posAtCoords({
-      x: event.clientX,
-      y: event.clientY,
+  private showPreview(preview: RecordPreview, target: HTMLElement): void {
+    this.preview = new HoverPopover(this.leaf, target);
+    const block = this.preview.hoverEl.createEl("pre", {
+      cls: "gedcom-record-preview",
     });
-    const doc = this.editor.state.doc;
-    const preview =
-      offset === null
-        ? null
-        : findRecordPreview(
-            this.language.update(doc),
-            doc,
-            offset,
-            PREVIEW_MAX_LINES,
-          );
-    if (!preview) {
-      this.clearPointer();
-      return;
-    }
-    if (this.pointer?.from === preview.pointer.from) {
-      return;
-    }
-    this.pointer = preview.pointer;
-    this.editor.dispatch({ effects: setHoveredPointer.of(preview.pointer) });
-    const popover = new HoverPopover(this.leaf, event.target as HTMLElement);
-    this.renderPreview(popover.hoverEl, preview);
-  }
-
-  private clearPointer(): void {
-    if (!this.pointer) {
-      return;
-    }
-    this.pointer = null;
-    this.editor.dispatch({ effects: setHoveredPointer.of(null) });
-  }
-
-  private renderPreview(container: HTMLElement, preview: RecordPreview): void {
-    const doc = this.editor.state.doc;
-    const runs = toPreviewRuns(
-      doc,
-      preview.from,
-      preview.to,
-      this.language.update(doc).getSemanticTokens(preview),
-    );
-    const block = container.createEl("pre", { cls: "gedcom-record-preview" });
-    for (const run of runs) {
-      const tag = run.tokenType === null ? null : semanticTokenTag(run.tokenType);
-      const cls = tag === null ? null : highlightingFor(this.editor.state, [tag]);
-      if (cls) {
-        block.createSpan({ cls, text: run.text });
+    for (const run of getRecordPreviewRuns(
+      this.editor.state,
+      this.language,
+      preview,
+    )) {
+      if (run.className) {
+        block.createSpan({ cls: run.className, text: run.text });
       } else {
         block.appendText(run.text);
       }
@@ -274,6 +212,11 @@ export class GedcomView extends TextFileView {
     if (preview.truncated) {
       block.appendText("\n…");
     }
+  }
+
+  private hidePreview(): void {
+    this.preview?.unload();
+    this.preview = null;
   }
 
   private openDocumentLink(link: DocumentLink): void {
