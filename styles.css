@@ -37,6 +37,12 @@
   overflow-x: auto;
 }
 
+.gedcom-hovered-pointer {
+  text-decoration: underline;
+  text-decoration-color: var(--text-accent);
+  cursor: pointer;
+}
+
 .gedcom-reference-write {
   background: color-mix(in srgb, var(--color-accent) 28%, transparent);
   border-radius: 2px;
