@@ -22,6 +22,11 @@ import {
   type WorkspaceLeaf,
 } from "obsidian";
 
+import {
+  offsetFromPosition,
+  parseEphemeralState,
+  positionFromOffset,
+} from "./editor/ephemeralState";
 import { createHostEditorExtensions } from "./editor/hostExtensions";
 import { routeDocumentLink } from "./editor/service";
 import { GEDCOM_ICON_ID } from "./icon";
@@ -81,6 +86,30 @@ export class GedcomView extends TextFileView {
   clear(): void {
     this.language.clear();
     this.editor.setState(this.createState(""));
+  }
+
+  getEphemeralState(): Record<string, unknown> {
+    const { doc, selection } = this.editor.state;
+    return {
+      cursor: positionFromOffset(doc, selection.main.head),
+      scroll: this.editor.scrollDOM.scrollTop,
+    };
+  }
+
+  setEphemeralState(state: unknown): void {
+    const { cursor, scroll } = parseEphemeralState(state);
+    if (cursor) {
+      this.editor.dispatch({
+        selection: {
+          anchor: offsetFromPosition(this.editor.state.doc, cursor),
+        },
+        // Scrolling the cursor into view would fight the stored scroll below.
+        scrollIntoView: scroll === undefined,
+      });
+    }
+    if (scroll !== undefined) {
+      this.editor.scrollDOM.scrollTop = scroll;
+    }
   }
 
   applySettings(settings: GedcomEditorSettings): void {
