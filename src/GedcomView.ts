@@ -185,7 +185,6 @@ export class GedcomView extends TextFileView {
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
-            this.data = update.state.sliceDoc();
             this.requestSave();
           }
         }),
