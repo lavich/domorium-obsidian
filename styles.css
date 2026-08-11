@@ -37,15 +37,6 @@
   overflow-x: auto;
 }
 
-.gedcom-hovered-pointer {
-  text-decoration: underline;
-  text-decoration-color: var(--text-accent);
-  /* The tail of @ crosses the underline, and skipping ink drops it under both
-     delimiters of every pointer. */
-  text-decoration-skip-ink: none;
-  cursor: pointer;
-}
-
 .gedcom-reference-write {
   background: color-mix(in srgb, var(--color-accent) 28%, transparent);
   border-radius: 2px;
