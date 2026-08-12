@@ -28,6 +28,7 @@ adapted per editor.
 - Quick fixes for broken references and invalid levels
 - Folding and visual indentation for nested records
 - Highlighted and checked `gedcom` code blocks in notes
+- Links from a note to a record, through `obsidian://domorium`
 - Desktop and mobile Obsidian support
 
 The plugin keeps the GEDCOM file as the source of truth. It does not convert
@@ -48,6 +49,10 @@ current XREF atomically. Editor behavior can be adjusted in the plugin settings.
 A record pasted into a note is highlighted and checked when it is fenced as
 `gedcom`. A block carries no header, so it is read as GEDCOM 7 unless the fence
 names another specification — ```` ```gedcom 5.5.1 ````.
+
+A note can link to a record. **Copy link to record** puts an
+`obsidian://domorium?vault=…&file=…&xref=@I47@` link on the clipboard; opening it
+opens the file with the cursor on that record.
 
 ## Privacy
 

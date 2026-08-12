@@ -5,6 +5,7 @@ import {
   type IconName,
   type Menu,
   Modal,
+  normalizePath,
   Notice,
   Plugin,
   removeIcon,
@@ -15,6 +16,12 @@ import {
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
+import {
+  gedcomLinkUrl,
+  parseGedcomLink,
+  PROTOCOL_ACTION,
+  type GedcomLinkTarget,
+} from "./vault/protocolLink";
 import {
   describeRetarget,
   describeStranded,
@@ -50,6 +57,32 @@ const COMMANDS: GedcomCommand[] = [
       new RecordSwitcherModal(plugin.app, view.records(), (record) => {
         view.goToRecord(record);
       }).open();
+    },
+  },
+  {
+    id: "copy-gedcom-record-link",
+    name: "Copy link to record",
+    icon: "link",
+    isAvailable: (view) => view.file !== null && view.recordAtCursor() !== undefined,
+    run: (plugin, view) => {
+      const record = view.recordAtCursor();
+      if (!record?.identifier || !view.file) {
+        new Notice("GEDCOM: no record with an identifier at the cursor");
+        return;
+      }
+      const url = gedcomLinkUrl(
+        plugin.app.vault.getName(),
+        view.file.path,
+        record.identifier,
+      );
+      void navigator.clipboard.writeText(url).then(
+        () => {
+          new Notice(`GEDCOM: link to ${record.identifier} copied`);
+        },
+        () => {
+          new Notice("GEDCOM: the link could not be copied");
+        },
+      );
     },
   },
   {
@@ -166,6 +199,14 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       }
     });
     this.addSettingTab(new GedcomSettingTab(this.app, this));
+    this.registerObsidianProtocolHandler(PROTOCOL_ACTION, (params) => {
+      const target = parseGedcomLink(params);
+      if (!target) {
+        new Notice("GEDCOM: the link names no file");
+        return;
+      }
+      void this.openGedcomLink(target);
+    });
     for (const command of COMMANDS) {
       this.addCommand({
         id: command.id,
@@ -237,6 +278,25 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.forEachView((view) => {
       view.applySettings(this.settings);
     });
+  }
+
+  private async openGedcomLink(target: GedcomLinkTarget): Promise<void> {
+    const path = normalizePath(target.file);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(`GEDCOM: ${path} is not in this vault`);
+      return;
+    }
+    const leaf = this.app.workspace.getLeaf(false);
+    await leaf.openFile(file);
+    if (!target.xref) {
+      return;
+    }
+    const view = leaf.view;
+    // The file is open either way; only the record could not be found.
+    if (!(view instanceof GedcomView) || !view.goToXref(target.xref)) {
+      new Notice(`GEDCOM: ${target.xref} is not in ${file.name}`);
+    }
   }
 
   private async followRenamedFile(from: string, to: string): Promise<void> {
