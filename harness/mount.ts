@@ -178,6 +178,16 @@ function playground(): void {
   for (const input of [sample, dark, diagnostics, hints, realistic]) {
     input.addEventListener("change", apply);
   }
+  controls
+    .querySelector<HTMLButtonElement>("#problems")!
+    .addEventListener("click", () => {
+      window.gedcom.openProblems();
+    });
+  controls
+    .querySelector<HTMLButtonElement>("#search")!
+    .addEventListener("click", () => {
+      window.gedcom.openSearch();
+    });
   apply();
 }
 
