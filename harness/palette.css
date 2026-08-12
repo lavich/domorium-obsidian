@@ -106,3 +106,167 @@ body.realistic.theme-dark {
   --text-accent: #a882ff;
   --text-highlight-bg: rgba(255, 208, 0, 0.4);
 }
+
+/*
+ * The chrome Obsidian brings to a plugin's DOM, copied from its own app.css so
+ * a screenshot of this harness shows what the plugin shows. Never asserted on;
+ * the suite reads geometry and the variables above.
+ */
+body {
+  --size-2-2: 4px;
+  --size-2-3: 6px;
+  --size-4-1: 4px;
+  --size-4-4: 16px;
+  --font-ui-smaller: 12px;
+  --radius-s: 4px;
+  --input-radius: 5px;
+  --input-border-width: 1px;
+  --input-height: 30px;
+  --icon-size: 18px;
+  --icon-stroke: 1.75px;
+  --clickable-icon-radius: var(--radius-s);
+  --icon-opacity: 0.85;
+  --icon-opacity-hover: 1;
+  --file-line-width: 700px;
+  --layer-popover: 30;
+}
+
+body.theme-light {
+  --background-modifier-form-field: #fff;
+  --background-modifier-hover: rgba(0, 0, 0, 0.075);
+  --background-modifier-active-hover: rgba(112, 93, 207, 0.15);
+  --text-muted: #6e6e6e;
+}
+
+body.theme-dark {
+  --background-modifier-form-field: rgba(0, 0, 0, 0.3);
+  --background-modifier-hover: rgba(255, 255, 255, 0.075);
+  --background-modifier-active-hover: rgba(127, 109, 242, 0.25);
+  --text-muted: #b3b3b3;
+}
+
+body {
+  --icon-color: var(--text-muted);
+  --icon-color-hover: var(--text-muted);
+  --icon-color-active: var(--text-accent);
+  --icon-color-focused: var(--text-normal);
+}
+
+#editor input[type="text"] {
+  background: var(--background-modifier-form-field);
+  border: var(--input-border-width) solid var(--background-modifier-border);
+  color: var(--text-normal);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-small);
+  padding: var(--size-4-1) var(--size-4-2);
+  border-radius: var(--input-radius);
+  height: var(--input-height);
+  outline: none;
+}
+
+#editor .clickable-icon {
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--size-2-2) var(--size-2-3);
+  border: none;
+  border-radius: var(--clickable-icon-radius);
+  color: var(--icon-color);
+  opacity: var(--icon-opacity);
+  height: auto;
+}
+
+#editor .clickable-icon .svg-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  stroke-width: var(--icon-stroke);
+}
+
+#editor .clickable-icon:hover {
+  opacity: var(--icon-opacity-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+#editor .clickable-icon.is-active {
+  opacity: var(--icon-opacity-hover);
+  color: var(--icon-color-active);
+  background-color: var(--background-modifier-active-hover);
+}
+
+#editor .document-search-container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-4-2) 0;
+  margin: 0 var(--size-4-4);
+  gap: var(--size-4-2);
+}
+
+#editor .document-search,
+#editor .document-replace {
+  width: 100%;
+  max-width: var(--file-line-width);
+  margin: 0 auto;
+  display: flex;
+  padding: 0 var(--size-4-2);
+  gap: var(--size-4-2);
+}
+
+#editor .document-replace {
+  display: none;
+}
+
+#editor .document-search-container.mod-replace-mode .document-replace {
+  display: flex;
+}
+
+#editor .search-input-container {
+  position: relative;
+  display: flex;
+}
+
+#editor .document-search-input,
+#editor .document-replace-input {
+  flex-grow: 1;
+}
+
+#editor .document-search-count {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+  position: absolute;
+  transform: translateY(-50%);
+  top: 50%;
+  inset-inline-end: var(--size-4-2);
+}
+
+#editor .document-replace-buttons,
+#editor .document-search-buttons {
+  display: flex;
+  gap: var(--size-4-1);
+  align-items: center;
+}
+
+body {
+  --search-icon-size: 18px;
+  --search-icon-color: var(--text-muted);
+}
+
+#editor .search-input-container:before {
+  top: calc((var(--input-height) - var(--search-icon-size)) / 2);
+  inset-inline-start: var(--size-4-2);
+  position: absolute;
+  content: "";
+  height: var(--search-icon-size);
+  width: var(--search-icon-size);
+  display: block;
+  background-color: var(--search-icon-color);
+  -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='11' cy='11' r='8'></circle><line x1='21' y1='21' x2='16.65' y2='16.65'></line></svg>");
+  -webkit-mask-repeat: no-repeat;
+}
+
+#editor .search-input-container input {
+  display: block;
+  width: 100%;
+  padding-inline-start: 36px;
+}

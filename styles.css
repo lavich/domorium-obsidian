@@ -55,27 +55,11 @@
   font-size: var(--font-ui-small, 13px);
 }
 
-.gedcom-gedcom-editor .cm-textfield {
+/* The search bar is Obsidian's own chrome, so it sits on the note background
+   the editor uses rather than on the panel background CodeMirror expects. */
+.gedcom-gedcom-editor .cm-panels-top {
   background: var(--background-primary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s, 4px);
-  padding: 4px 8px;
-  font-family: inherit;
-}
-
-.gedcom-gedcom-editor .cm-button {
-  background: var(--interactive-normal);
-  background-image: none;
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s, 4px);
-  padding: 4px 10px;
-  font-family: inherit;
-}
-
-.gedcom-gedcom-editor .cm-button:hover {
-  background: var(--interactive-hover);
+  border-bottom: none;
 }
 
 .gedcom-gedcom-editor .cm-panel-lint li {

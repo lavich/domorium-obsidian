@@ -10,6 +10,7 @@ import {
 import { createGedcomComposition } from "../src/editor/composition";
 import { previewGesture } from "../src/editor/previewGesture";
 import type { RecordPreviewTrigger } from "../src/settingsData";
+import { stubSetIcon } from "./icons";
 
 export interface HarnessOptions {
   doc: string;
@@ -74,6 +75,7 @@ function mount(options: HarnessOptions): void {
           options.recordPreview ?? "modifier",
           (event) => event.metaKey || event.ctrlKey,
         ),
+        setIcon: stubSetIcon,
         actions: {
           applyWorkspaceEdit: () => true,
           openDocumentLink: (link) => {

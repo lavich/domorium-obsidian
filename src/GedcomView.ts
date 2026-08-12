@@ -29,6 +29,7 @@ import {
   type Menu,
   normalizePath,
   Notice,
+  setIcon,
   TextFileView,
   TFile,
   type WorkspaceLeaf,
@@ -322,6 +323,7 @@ export class GedcomView extends TextFileView {
           gesture: previewGesture(this.settings.recordPreview, (event) =>
             Keymap.isModifier(event, "Mod"),
           ),
+          setIcon,
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
             openDocumentLink: (link) => this.openDocumentLink(link),
