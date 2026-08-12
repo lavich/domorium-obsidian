@@ -16,6 +16,7 @@ import {
   goToDefinition,
   getRecordPreviewRuns,
   goToNextReference,
+  positionToOffset,
   renameReference,
   type DocumentLink,
   type Range,
@@ -35,6 +36,7 @@ import {
 
 import { createGedcomComposition } from "./editor/composition";
 import { previewGesture } from "./editor/previewGesture";
+import { recordEntries, type GedcomRecord } from "./editor/records";
 import type { GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
@@ -169,6 +171,22 @@ export class GedcomView extends TextFileView {
       this.editor.focus();
     }
     return moved;
+  }
+
+  records(): GedcomRecord[] {
+    return recordEntries(
+      this.language.update(this.editor.state.doc).getDocumentSymbols(),
+    );
+  }
+
+  goToRecord(record: GedcomRecord): void {
+    this.editor.dispatch({
+      selection: {
+        anchor: positionToOffset(this.editor.state.doc, record.start),
+      },
+      scrollIntoView: true,
+    });
+    this.editor.focus();
   }
 
   findReferences(): Range[] {
