@@ -109,8 +109,9 @@ body.realistic.theme-dark {
 
 /*
  * The chrome Obsidian brings to a plugin's DOM, copied from its own app.css so
- * a screenshot of this harness shows what the plugin shows. Never asserted on;
- * the suite reads geometry and the variables above.
+ * a screenshot of this harness shows what the plugin shows. Selectors are left
+ * exactly as Obsidian writes them: scoping them to #editor would make them beat
+ * the plugin's own overrides, which in the app they lose to.
  */
 body {
   --size-2-2: 4px;
@@ -152,7 +153,7 @@ body {
   --icon-color-focused: var(--text-normal);
 }
 
-#editor input[type="text"] {
+input[type="text"] {
   background: var(--background-modifier-form-field);
   border: var(--input-border-width) solid var(--background-modifier-border);
   color: var(--text-normal);
@@ -164,7 +165,7 @@ body {
   outline: none;
 }
 
-#editor .clickable-icon {
+.clickable-icon {
   background-color: transparent;
   display: flex;
   align-items: center;
@@ -177,24 +178,24 @@ body {
   height: auto;
 }
 
-#editor .clickable-icon .svg-icon {
+.clickable-icon .svg-icon {
   width: var(--icon-size);
   height: var(--icon-size);
   stroke-width: var(--icon-stroke);
 }
 
-#editor .clickable-icon:hover {
+.clickable-icon:hover {
   opacity: var(--icon-opacity-hover);
   background-color: var(--background-modifier-hover);
 }
 
-#editor .clickable-icon.is-active {
+.clickable-icon.is-active {
   opacity: var(--icon-opacity-hover);
   color: var(--icon-color-active);
   background-color: var(--background-modifier-active-hover);
 }
 
-#editor .document-search-container {
+.document-search-container {
   display: flex;
   flex-direction: column;
   padding: var(--size-4-2) 0;
@@ -202,8 +203,8 @@ body {
   gap: var(--size-4-2);
 }
 
-#editor .document-search,
-#editor .document-replace {
+.document-search,
+.document-replace {
   width: 100%;
   max-width: var(--file-line-width);
   margin: 0 auto;
@@ -212,25 +213,25 @@ body {
   gap: var(--size-4-2);
 }
 
-#editor .document-replace {
+.document-replace {
   display: none;
 }
 
-#editor .document-search-container.mod-replace-mode .document-replace {
+.document-search-container.mod-replace-mode .document-replace {
   display: flex;
 }
 
-#editor .search-input-container {
+.search-input-container {
   position: relative;
   display: flex;
 }
 
-#editor .document-search-input,
-#editor .document-replace-input {
+.document-search-input,
+.document-replace-input {
   flex-grow: 1;
 }
 
-#editor .document-search-count {
+.document-search-count {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   font-variant-numeric: tabular-nums;
@@ -240,8 +241,8 @@ body {
   inset-inline-end: var(--size-4-2);
 }
 
-#editor .document-replace-buttons,
-#editor .document-search-buttons {
+.document-replace-buttons,
+.document-search-buttons {
   display: flex;
   gap: var(--size-4-1);
   align-items: center;
@@ -252,7 +253,7 @@ body {
   --search-icon-color: var(--text-muted);
 }
 
-#editor .search-input-container:before {
+.search-input-container:before {
   top: calc((var(--input-height) - var(--search-icon-size)) / 2);
   inset-inline-start: var(--size-4-2);
   position: absolute;
@@ -265,7 +266,7 @@ body {
   -webkit-mask-repeat: no-repeat;
 }
 
-#editor .search-input-container input {
+.search-input-container input {
   display: block;
   width: 100%;
   padding-inline-start: 36px;
