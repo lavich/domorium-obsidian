@@ -1,18 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { mount } from "./harness";
-
-const PROBLEMS = [
-  "0 HEAD",
-  "1 GEDC",
-  "2 VERS 7.0",
-  "0 @I1@ INDI",
-  "1 NAME",
-  "1 FOO bar",
-  "1 FAMC @F9@",
-  "0 TRLR",
-  "",
-].join("\n");
+import { mount, PROBLEMS } from "./harness";
 
 async function openPanels(page: Page, dark: boolean): Promise<void> {
   await mount(page, { doc: PROBLEMS, dark });

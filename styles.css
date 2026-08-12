@@ -85,3 +85,27 @@
 .gedcom-gedcom-editor .cm-diagnosticSource {
   display: none;
 }
+
+.gedcom-gedcom-editor .cm-lint-marker {
+  content: none;
+  box-sizing: border-box;
+  width: 0.85em;
+  height: 0.85em;
+  margin-top: 0.1em;
+}
+
+.gedcom-gedcom-editor .cm-lint-marker-error {
+  background: var(--text-error);
+  border-radius: 50%;
+}
+
+.gedcom-gedcom-editor .cm-lint-marker-warning {
+  background: var(--text-warning);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.gedcom-gedcom-editor .cm-lint-marker-info,
+.gedcom-gedcom-editor .cm-lint-marker-hint {
+  background: var(--text-accent);
+  border-radius: var(--radius-s, 2px);
+}

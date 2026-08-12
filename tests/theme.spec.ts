@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mount, SAMPLE } from "./harness";
+import { mount, PROBLEMS, SAMPLE } from "./harness";
 
 /**
  * The colours in harness/palette.css are distinct on purpose: each assertion
@@ -140,6 +140,43 @@ test.describe("the Obsidian theme", () => {
       await payloadColour(true),
       "a value is the data; it cannot be black on a dark theme",
     ).toBe("rgb(255, 255, 255)");
+  });
+
+  test("marks a problem in the gutter with Obsidian's own error and warning colours", async ({
+    page,
+  }) => {
+    const markers = async (dark: boolean) => {
+      await mount(page, { doc: PROBLEMS, dark });
+      await expect(page.locator(".cm-lint-marker-error").first()).toBeVisible();
+      return page.evaluate(() => {
+        const read = (selector: string) => {
+          const element = document.querySelector(selector);
+          if (!element) {
+            return null;
+          }
+          const style = getComputedStyle(element);
+          return { background: style.backgroundColor, content: style.content };
+        };
+        return {
+          error: read(".cm-lint-marker-error"),
+          warning: read(".cm-lint-marker-warning"),
+        };
+      });
+    };
+
+    const dark = await markers(true);
+    expect(dark.error?.background, "--text-error").toBe("rgb(255, 100, 100)");
+    expect(dark.warning?.background, "--text-warning").toBe(
+      "rgb(255, 200, 100)",
+    );
+    expect(
+      dark.error?.content,
+      "the library's two-tone SVG is not what is painted",
+    ).not.toContain("data:image");
+
+    const light = await markers(false);
+    expect(light.error?.background).toBe("rgb(180, 0, 0)");
+    expect(light.warning?.background).toBe("rgb(180, 120, 0)");
   });
 
   test("does not indent the file it is showing", async ({ page }) => {

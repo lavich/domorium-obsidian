@@ -26,6 +26,9 @@ body.theme-light {
   --color-cyan: rgb(0, 128, 128);
   --color-purple: rgb(128, 0, 128);
   --color-accent: rgb(255, 0, 0);
+  --text-error: rgb(180, 0, 0);
+  --text-warning: rgb(180, 120, 0);
+  --text-accent: rgb(0, 0, 180);
 }
 
 body.theme-dark {
@@ -39,6 +42,9 @@ body.theme-dark {
   --color-cyan: rgb(0, 255, 255);
   --color-purple: rgb(255, 0, 255);
   --color-accent: rgb(0, 255, 0);
+  --text-error: rgb(255, 100, 100);
+  --text-warning: rgb(255, 200, 100);
+  --text-accent: rgb(150, 150, 255);
 }
 
 #editor {
@@ -76,6 +82,9 @@ body.realistic.theme-light {
   --color-cyan: #008b94;
   --color-purple: #7852ee;
   --color-accent: #705dcf;
+  --text-error: #c0332e;
+  --text-warning: #b8860b;
+  --text-accent: #705dcf;
 }
 
 body.realistic.theme-dark {
@@ -89,4 +98,7 @@ body.realistic.theme-dark {
   --color-cyan: #4ac8d8;
   --color-purple: #a882ff;
   --color-accent: #7f6df2;
+  --text-error: #e26d6d;
+  --text-warning: #e0b34f;
+  --text-accent: #a882ff;
 }

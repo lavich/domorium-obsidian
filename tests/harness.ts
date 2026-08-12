@@ -17,6 +17,19 @@ export const SAMPLE = [
   "",
 ].join("\n");
 
+/** A file with an error, a warning and a broken pointer, in that order. */
+export const PROBLEMS = [
+  "0 HEAD",
+  "1 GEDC",
+  "2 VERS 7.0",
+  "0 @I1@ INDI",
+  "1 NAME",
+  "1 FOO bar",
+  "1 FAMC @F9@",
+  "0 TRLR",
+  "",
+].join("\n");
+
 /** The offset of the first character of a line, counting from 1. */
 export function lineStart(doc: string, line: number): number {
   return doc
