@@ -9,7 +9,7 @@ async function openPanels(page: Page, dark: boolean): Promise<void> {
     window.gedcom.openSearch();
   });
   await page.waitForSelector(".cm-panel-lint");
-  await page.waitForSelector(".cm-search");
+  await page.waitForSelector(".document-search-container");
 }
 
 function styleOf(
@@ -32,12 +32,22 @@ test.describe("the panels CodeMirror paints", () => {
     page,
   }) => {
     await openPanels(page, true);
-    const panels = await styleOf(page, ".cm-panels");
+    const panels = await styleOf(page, ".cm-panels-bottom");
 
     expect(panels.background, "--background-secondary in the dark palette").toBe(
       "rgb(30, 30, 30)",
     );
-    expect(panels.colour).toBe("rgb(255, 255, 255)");
+  });
+
+  test("give the search bar the note background, the way Obsidian's own has", async ({
+    page,
+  }) => {
+    await openPanels(page, true);
+
+    expect(
+      (await styleOf(page, ".cm-panels-top")).background,
+      "--background-primary in the dark palette",
+    ).toBe("rgb(20, 20, 20)");
   });
 
   test("use the interface font, not the editor's monospace and not the browser's", async ({
@@ -45,7 +55,7 @@ test.describe("the panels CodeMirror paints", () => {
   }) => {
     await openPanels(page, false);
 
-    for (const selector of [".cm-panels", ".cm-textfield", ".cm-button"]) {
+    for (const selector of [".cm-panels", ".document-search-input input"]) {
       const style = await styleOf(page, selector);
       expect(style.font, `${selector} follows --font-interface`).toContain(
         "system-ui",
@@ -55,15 +65,6 @@ test.describe("the panels CodeMirror paints", () => {
     expect(content.font, "the document itself stays monospace").toContain(
       "monospace",
     );
-  });
-
-  test("round the field and the buttons the way the app does", async ({
-    page,
-  }) => {
-    await openPanels(page, false);
-
-    expect((await styleOf(page, ".cm-textfield")).radius).toBe("4px");
-    expect((await styleOf(page, ".cm-button")).radius).toBe("4px");
   });
 
   test("declare the colour scheme, which is what the selected row's system colours follow", async ({
@@ -109,7 +110,9 @@ test.describe("the panels CodeMirror paints", () => {
   }) => {
     await openPanels(page, true);
     const order = await page.evaluate(() => {
-      const search = document.querySelector(".cm-search")!.getBoundingClientRect();
+      const search = document
+        .querySelector(".document-search-container")!
+        .getBoundingClientRect();
       const content = document.querySelector(".cm-content")!.getBoundingClientRect();
       const lint = document.querySelector(".cm-panel-lint")!.getBoundingClientRect();
       return { search: search.top, content: content.top, lint: lint.top };

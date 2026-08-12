@@ -8,6 +8,8 @@ import {
 } from "@domorium/codemirror";
 import { tags } from "@lezer/highlight";
 
+import { obsidianSearchPanel, type IconSetter } from "./searchPanel";
+
 const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--text-faint)" },
   { tag: tags.keyword, color: "var(--color-cyan)" },
@@ -17,12 +19,13 @@ const obsidianHighlightStyle = HighlightStyle.define([
 export function createHostEditorExtensions(
   settings: GedcomEditorSettings,
   dark: boolean,
+  setIcon: IconSetter,
 ): Extension[] {
   return [
     ...createStandaloneEditorExtensions({
       diagnostics: settings.diagnostics ?? true,
     }),
-    search({ top: true }),
+    search({ top: true, createPanel: obsidianSearchPanel(setIcon) }),
     syntaxHighlighting(obsidianHighlightStyle),
     EditorView.theme(
       {
