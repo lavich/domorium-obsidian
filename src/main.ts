@@ -13,6 +13,7 @@ import {
   TFile,
 } from "obsidian";
 
+import { createGedcomApi, type GedcomApi } from "./api";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
@@ -161,6 +162,19 @@ const COMMANDS: GedcomCommand[] = [
 
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
+  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
+  readonly api: GedcomApi = createGedcomApi({
+    read: async (path) => {
+      const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+      if (!(file instanceof TFile)) {
+        return null;
+      }
+      return {
+        text: await this.app.vault.cachedRead(file),
+        revision: `${file.stat.mtime}:${file.stat.size}`,
+      };
+    },
+  });
   private statusBar: HTMLElement | undefined;
 
   async onload(): Promise<void> {
