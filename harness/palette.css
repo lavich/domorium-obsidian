@@ -29,6 +29,7 @@ body.theme-light {
   --text-error: rgb(180, 0, 0);
   --text-warning: rgb(180, 120, 0);
   --text-accent: rgb(0, 0, 180);
+  --text-highlight-bg: rgba(255, 208, 0, 0.4);
 }
 
 body.theme-dark {
@@ -45,6 +46,7 @@ body.theme-dark {
   --text-error: rgb(255, 100, 100);
   --text-warning: rgb(255, 200, 100);
   --text-accent: rgb(150, 150, 255);
+  --text-highlight-bg: rgba(255, 208, 0, 0.4);
 }
 
 #editor {
@@ -85,6 +87,7 @@ body.realistic.theme-light {
   --text-error: #c0332e;
   --text-warning: #b8860b;
   --text-accent: #705dcf;
+  --text-highlight-bg: rgba(255, 208, 0, 0.4);
 }
 
 body.realistic.theme-dark {
@@ -101,4 +104,5 @@ body.realistic.theme-dark {
   --text-error: #e26d6d;
   --text-warning: #e0b34f;
   --text-accent: #a882ff;
+  --text-highlight-bg: rgba(255, 208, 0, 0.4);
 }

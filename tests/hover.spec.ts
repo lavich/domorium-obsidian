@@ -85,6 +85,41 @@ test.describe("the hovered pointer", () => {
     expect((await calls(page)).hides).toBe(1);
   });
 
+  test("marks a hovered pointer that also carries a problem without losing either", async ({
+    page,
+  }) => {
+    const doc =
+      "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n1 FAMC @I1@\n0 TRLR\n";
+    await mount(page, { doc });
+    await expect(page.locator(".cm-lintRange-error")).toBeVisible();
+
+    const pointer = doc.indexOf("@I1@", doc.indexOf("1 FAMC")) + 2;
+    await modHover(page, pointer);
+
+    const both = await page.evaluate(() => {
+      const read = (selector: string) => {
+        const element = document.querySelector(selector);
+        return element
+          ? {
+              decoration: getComputedStyle(element).textDecorationLine,
+              style: getComputedStyle(element).textDecorationStyle,
+            }
+          : null;
+      };
+      return {
+        hovered: read(".gedcom-hovered-pointer"),
+        lint: read(".cm-lintRange-error"),
+      };
+    });
+
+    expect(both.hovered?.decoration, "the gesture still marks it").toBe(
+      "underline",
+    );
+    expect(both.lint?.style, "and the problem is still wavy under it").toBe(
+      "wavy",
+    );
+  });
+
   test("lets go when the modifier is released over a focused editor", async ({
     page,
   }) => {

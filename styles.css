@@ -109,3 +109,29 @@
   background: var(--text-accent);
   border-radius: var(--radius-s, 2px);
 }
+
+.gedcom-gedcom-editor .cm-lintRange {
+  background-image: none;
+  padding-bottom: 0;
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-skip-ink: none;
+  text-decoration-thickness: 1px;
+}
+
+.gedcom-gedcom-editor .cm-lintRange-error {
+  text-decoration-color: var(--text-error);
+}
+
+.gedcom-gedcom-editor .cm-lintRange-warning {
+  text-decoration-color: var(--text-warning);
+}
+
+.gedcom-gedcom-editor .cm-lintRange-info,
+.gedcom-gedcom-editor .cm-lintRange-hint {
+  text-decoration-color: var(--text-accent);
+}
+
+.gedcom-gedcom-editor .cm-lintRange-active {
+  background-color: var(--text-highlight-bg);
+}

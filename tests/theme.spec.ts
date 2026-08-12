@@ -179,6 +179,46 @@ test.describe("the Obsidian theme", () => {
     expect(light.warning?.background).toBe("rgb(180, 120, 0)");
   });
 
+  test("underlines a problem in Obsidian's colours, without the library's image", async ({
+    page,
+  }) => {
+    const underlines = async (dark: boolean) => {
+      await mount(page, { doc: PROBLEMS, dark });
+      await expect(page.locator(".cm-lintRange-error").first()).toBeVisible();
+      return page.evaluate(() => {
+        const read = (selector: string) => {
+          const element = document.querySelector(selector);
+          if (!element) {
+            return null;
+          }
+          const style = getComputedStyle(element);
+          return {
+            colour: style.textDecorationColor,
+            style: style.textDecorationStyle,
+            image: style.backgroundImage,
+          };
+        };
+        return {
+          error: read(".cm-lintRange-error"),
+          warning: read(".cm-lintRange-warning"),
+        };
+      });
+    };
+
+    const dark = await underlines(true);
+    expect(dark.error?.colour, "--text-error").toBe("rgb(255, 100, 100)");
+    expect(dark.warning?.colour, "--text-warning").toBe("rgb(255, 200, 100)");
+    expect(dark.error?.style, "still wavy, as a problem should be").toBe("wavy");
+    expect(
+      dark.error?.image,
+      "the library's red SVG is gone, so the colour can be ours",
+    ).toBe("none");
+
+    const light = await underlines(false);
+    expect(light.error?.colour).toBe("rgb(180, 0, 0)");
+    expect(light.warning?.colour).toBe("rgb(180, 120, 0)");
+  });
+
   test("does not indent the file it is showing", async ({ page }) => {
     await mount(page);
     const text = await page.evaluate(
