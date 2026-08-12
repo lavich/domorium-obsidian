@@ -103,3 +103,67 @@ window.gedcom = {
       : null;
   },
 };
+
+const SAMPLES: Record<string, string> = {
+  small: [
+    "0 HEAD",
+    "1 GEDC",
+    "2 VERS 7.0",
+    "0 @I1@ INDI",
+    "1 NAME John /Smith/",
+    "1 FAMS @F1@",
+    "0 @F1@ FAM",
+    "1 HUSB @I1@",
+    "1 NCHI abc",
+    "0 TRLR",
+    "",
+  ].join("\n"),
+  problems: [
+    "0 HEAD",
+    "1 GEDC",
+    "2 VERS 7.0",
+    "0 @I1@ INDI",
+    "1 NAME",
+    "1 FOO bar",
+    "1 FAMC @F9@",
+    "1 NCHI abc",
+    "0 @F1@ FAM",
+    "1 HUSB @I1@",
+    "1 CHIL @I7@",
+    "0 TRLR",
+    "",
+  ].join("\n"),
+  "no version": ["0 HEAD", "1 SOUR Domorium", "0 TRLR", ""].join("\n"),
+};
+
+function playground(): void {
+  const controls = document.getElementById("controls");
+  if (!controls) {
+    return;
+  }
+  const sample = controls.querySelector<HTMLSelectElement>("#sample")!;
+  const dark = controls.querySelector<HTMLInputElement>("#dark")!;
+  const diagnostics = controls.querySelector<HTMLInputElement>("#diagnostics")!;
+  const hints = controls.querySelector<HTMLInputElement>("#hints")!;
+  const realistic = controls.querySelector<HTMLInputElement>("#realistic")!;
+
+  for (const name of Object.keys(SAMPLES)) {
+    sample.append(new Option(name, name));
+  }
+
+  const apply = (): void => {
+    mount({
+      doc: SAMPLES[sample.value],
+      dark: dark.checked,
+      diagnostics: diagnostics.checked,
+      indentationHints: hints.checked,
+    });
+    document.body.classList.toggle("realistic", realistic.checked);
+  };
+  for (const input of [sample, dark, diagnostics, hints, realistic]) {
+    input.addEventListener("change", apply);
+  }
+  apply();
+}
+
+playground();
