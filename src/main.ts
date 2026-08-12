@@ -1,6 +1,7 @@
 import {
   addIcon,
   type App,
+  FuzzySuggestModal,
   type IconName,
   type Menu,
   Modal,
@@ -10,6 +11,7 @@ import {
   Setting,
 } from "obsidian";
 
+import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
@@ -29,6 +31,17 @@ interface GedcomCommand {
 }
 
 const COMMANDS: GedcomCommand[] = [
+  {
+    id: "go-to-gedcom-record",
+    name: "Go to record",
+    icon: "list-tree",
+    isAvailable: (view) => view.records().length > 0,
+    run: (plugin, view) => {
+      new RecordSwitcherModal(plugin.app, view.records(), (record) => {
+        view.goToRecord(record);
+      }).open();
+    },
+  },
   {
     id: "go-to-gedcom-definition",
     name: "Go to definition",
@@ -196,6 +209,29 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     if (view) {
       this.statusBar?.setText(formatStatus(view.getStatus()));
     }
+  }
+}
+
+class RecordSwitcherModal extends FuzzySuggestModal<GedcomRecord> {
+  constructor(
+    app: App,
+    private readonly records: GedcomRecord[],
+    private readonly onChoose: (record: GedcomRecord) => void,
+  ) {
+    super(app);
+    this.setPlaceholder("Find a record by name, identifier or tag");
+  }
+
+  getItems(): GedcomRecord[] {
+    return this.records;
+  }
+
+  getItemText(record: GedcomRecord): string {
+    return recordText(record);
+  }
+
+  onChooseItem(record: GedcomRecord): void {
+    this.onChoose(record);
   }
 }
 
