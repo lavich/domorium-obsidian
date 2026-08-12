@@ -36,6 +36,7 @@ import {
 
 import { createGedcomComposition } from "./editor/composition";
 import { previewGesture } from "./editor/previewGesture";
+import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
 import type { GedcomSettings } from "./settingsData";
 import {
@@ -98,9 +99,19 @@ export class GedcomView extends TextFileView {
       if (clear) {
         this.editor.setState(this.createState(data));
       } else if (data !== this.getViewData()) {
+        // The file was rewritten from outside: keep the reader's place, and
+        // do not leave a preview open over a record that may be gone.
+        this.hidePreview();
+        const before = this.editor.state.doc;
+        const head = this.editor.state.selection.main.head;
+        const scroll = this.editor.scrollDOM.scrollTop;
         this.editor.dispatch({
-          changes: { from: 0, to: this.editor.state.doc.length, insert: data },
+          changes: { from: 0, to: before.length, insert: data },
         });
+        this.editor.dispatch({
+          selection: { anchor: carryCursor(before, this.editor.state.doc, head) },
+        });
+        this.editor.scrollDOM.scrollTop = scroll;
       }
       this.language.update(data);
     } finally {

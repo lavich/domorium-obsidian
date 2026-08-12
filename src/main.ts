@@ -286,6 +286,15 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     }
   }
 
+  /** data.json was rewritten elsewhere — a sync, or a hand editing it. */
+  async onExternalSettingsChange(): Promise<void> {
+    this.settings = parseSettings(await this.loadData());
+    this.forEachView((view) => {
+      view.applySettings(this.settings);
+    });
+    this.refreshStatusBar();
+  }
+
   async updateSettings(changes: Partial<GedcomSettings>): Promise<void> {
     this.settings = { ...this.settings, ...changes };
     await this.saveData(this.settings);
