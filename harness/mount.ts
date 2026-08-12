@@ -8,12 +8,15 @@ import {
 } from "@domorium/codemirror";
 
 import { createGedcomComposition } from "../src/editor/composition";
+import { previewGesture } from "../src/editor/previewGesture";
+import type { RecordPreviewTrigger } from "../src/settingsData";
 
 export interface HarnessOptions {
   doc: string;
   dark?: boolean;
   diagnostics?: boolean;
   indentationHints?: boolean;
+  recordPreview?: RecordPreviewTrigger;
 }
 
 export interface HarnessCalls {
@@ -67,6 +70,10 @@ function mount(options: HarnessOptions): void {
         language,
         settings,
         dark: options.dark ?? false,
+        gesture: previewGesture(
+          options.recordPreview ?? "modifier",
+          (event) => event.metaKey || event.ctrlKey,
+        ),
         actions: {
           applyWorkspaceEdit: () => true,
           openDocumentLink: (link) => {

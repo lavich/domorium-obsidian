@@ -18,13 +18,13 @@ import {
   goToNextReference,
   renameReference,
   type DocumentLink,
-  type GedcomEditorSettings,
   type Range,
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
 import {
   HoverPopover,
+  Keymap,
   type Menu,
   normalizePath,
   Notice,
@@ -34,6 +34,8 @@ import {
 } from "obsidian";
 
 import { createGedcomComposition } from "./editor/composition";
+import { previewGesture } from "./editor/previewGesture";
+import type { GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
   parseEphemeralState,
@@ -58,7 +60,7 @@ export class GedcomView extends TextFileView {
 
   constructor(
     leaf: WorkspaceLeaf,
-    private settings: GedcomEditorSettings,
+    private settings: GedcomSettings,
     private readonly host: GedcomViewHost,
   ) {
     super(leaf);
@@ -147,12 +149,14 @@ export class GedcomView extends TextFileView {
     }
   }
 
-  applySettings(settings: GedcomEditorSettings): void {
+  applySettings(settings: GedcomSettings): void {
     this.settings = settings;
     this.refresh();
   }
 
   refresh(): void {
+    // The state that would have reported the mark going away is thrown away here.
+    this.hidePreview();
     const data = this.getViewData();
     const selection = this.editor.state.selection;
     this.editor.setState(this.createState(data, selection.main.head));
@@ -249,6 +253,9 @@ export class GedcomView extends TextFileView {
           language: this.language,
           settings: this.settings,
           dark: this.isDark(),
+          gesture: previewGesture(this.settings.recordPreview, (event) =>
+            Keymap.isModifier(event, "Mod"),
+          ),
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
             openDocumentLink: (link) => this.openDocumentLink(link),
