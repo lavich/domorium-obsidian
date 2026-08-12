@@ -7,10 +7,10 @@ import {
 
 import type GedcomPlugin from "./main";
 import {
-  RECORD_PREVIEW_OPTIONS,
   SETTING_DEFINITIONS,
+  type GedcomSettingDefinition,
 } from "./settingDefinitions";
-import { isRecordPreviewTrigger, type GedcomSettings } from "./settingsData";
+import { changedSetting, type GedcomSettings } from "./settingsData";
 
 export class GedcomSettingTab extends PluginSettingTab {
   constructor(
@@ -25,69 +25,50 @@ export class GedcomSettingTab extends PluginSettingTab {
   }
 
   getControlValue(key: string): unknown {
-    if (
-      key === "diagnostics" ||
-      key === "indentationHints" ||
-      key === "recordPreview"
-    ) {
-      return this.plugin.settings[key];
-    }
-    return undefined;
+    return key in this.plugin.settings
+      ? this.plugin.settings[key as keyof GedcomSettings]
+      : undefined;
   }
 
   setControlValue(key: string, value: unknown): Promise<void> {
-    if (key === "recordPreview") {
-      return isRecordPreviewTrigger(value)
-        ? this.plugin.updateSettings({ recordPreview: value })
-        : Promise.resolve();
-    }
-    if (typeof value !== "boolean") {
-      return Promise.resolve();
-    }
-    if (key === "diagnostics") {
-      return this.plugin.updateSettings({ diagnostics: value });
-    }
-    if (key === "indentationHints") {
-      return this.plugin.updateSettings({ indentationHints: value });
-    }
-    return Promise.resolve();
+    const change = changedSetting(key, value);
+    return change ? this.plugin.updateSettings(change) : Promise.resolve();
   }
 
+  /**
+   * Deprecated since Obsidian 1.13.0 and not called when
+   * `getSettingDefinitions` answers, but `minAppVersion` is 1.5.0, so this is
+   * what an older app shows.
+   */
   display(): void {
     this.containerEl.empty();
+    for (const definition of SETTING_DEFINITIONS) {
+      this.render(definition);
+    }
+  }
 
-    new Setting(this.containerEl)
-      .setName("Diagnostics")
-      .setDesc("Underline GEDCOM errors and warnings in the editor.")
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.diagnostics).onChange(async (value) => {
-          await this.plugin.updateSettings({ diagnostics: value });
-        }),
-      );
+  private render(definition: GedcomSettingDefinition): void {
+    const setting = new Setting(this.containerEl)
+      .setName(definition.name)
+      .setDesc(definition.desc);
+    const { control } = definition;
+    const change = (value: unknown): void => {
+      void this.setControlValue(control.key, value);
+    };
 
-    new Setting(this.containerEl)
-      .setName("Indentation hints")
-      .setDesc("Visually indent nested GEDCOM records without changing the file.")
-      .addToggle((toggle) =>
+    if (control.type === "toggle") {
+      setting.addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings.indentationHints)
-          .onChange(async (value) => {
-            await this.plugin.updateSettings({ indentationHints: value });
-          }),
+          .setValue(this.plugin.settings[control.key] as boolean)
+          .onChange(change),
       );
-
-    new Setting(this.containerEl)
-      .setName("Record preview")
-      .setDesc(
-        "Show the record a cross-reference points at when the pointer is over it.",
-      )
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOptions(RECORD_PREVIEW_OPTIONS)
-          .setValue(this.plugin.settings.recordPreview)
-          .onChange(async (value) => {
-            await this.setControlValue("recordPreview", value);
-          }),
-      );
+      return;
+    }
+    setting.addDropdown((dropdown) =>
+      dropdown
+        .addOptions(control.options)
+        .setValue(this.plugin.settings[control.key] as string)
+        .onChange(change),
+    );
   }
 }

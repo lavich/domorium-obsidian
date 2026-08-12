@@ -4,17 +4,11 @@ import {
   type GedcomDocument,
 } from "@domorium/language-service";
 
-/**
- * Once something is reachable at `app.plugins.plugins["domorium"].api`,
- * removing it breaks a vault silently. This says what a consumer is holding.
- */
 export const API_VERSION = "1.0.0";
 
 export interface GedcomApi {
   readonly version: string;
-  /** Parse text that is already in hand. */
   parse(text: string, options?: CreateDocumentOptions): GedcomDocument;
-  /** Parse a GEDCOM file anywhere in the vault, open or not. */
   read(path: string): Promise<GedcomDocument>;
 }
 
@@ -45,7 +39,6 @@ export function createGedcomApi(vault: VaultReader): GedcomApi {
       if (!file) {
         throw new Error(`No GEDCOM file at ${path}`);
       }
-      // A dataview block re-runs on every keystroke in the note it lives in.
       const cached = parsed.get(path);
       if (cached?.revision === file.revision) {
         return cached.document;

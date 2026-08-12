@@ -14,10 +14,20 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   recordPreview: "modifier",
 };
 
-export function isRecordPreviewTrigger(
-  value: unknown,
-): value is RecordPreviewTrigger {
+function isRecordPreviewTrigger(value: unknown): value is RecordPreviewTrigger {
   return RECORD_PREVIEW_TRIGGERS.includes(value as RecordPreviewTrigger);
+}
+
+export function changedSetting(
+  key: string,
+  value: unknown,
+): Partial<GedcomSettings> | null {
+  if (!(key in DEFAULT_SETTINGS)) {
+    return null;
+  }
+  const settingKey = key as keyof GedcomSettings;
+  const accepted = parseSettings({ ...DEFAULT_SETTINGS, [key]: value });
+  return accepted[settingKey] === value ? { [settingKey]: value } : null;
 }
 
 export function parseSettings(data: unknown): GedcomSettings {

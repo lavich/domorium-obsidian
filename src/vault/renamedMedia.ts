@@ -13,19 +13,11 @@ export function isGedcomPath(path: string): boolean {
   return dot > 0 && GEDCOM_EXTENSIONS.includes(path.slice(dot + 1).toLowerCase());
 }
 
-/**
- * Every media payload sits on a line whose tag is FILE, so a file without the
- * word cannot hold one. Parsing a 50MB export to learn that takes seconds, on
- * the thread the interface is drawn from, for every rename in the vault.
- */
+/** Exact, not a guess: every payload sits on a line whose tag is FILE. */
 export function mayNameAFile(text: string): boolean {
   return text.includes("FILE");
 }
 
-/**
- * For a file no view is showing. An open one is edited through its editor, so
- * that the rewrite lands in the undo history the user can reach.
- */
 export function applyEdits(text: string, edit: WorkspaceEdit): string {
   const lineStarts = [0];
   for (let index = 0; index < text.length; index += 1) {

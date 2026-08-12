@@ -1,6 +1,14 @@
-import type { SettingDefinitionItem } from "obsidian";
+import type { SettingDropdownControl, SettingToggleControl } from "obsidian";
 
 import { DEFAULT_SETTINGS, type GedcomSettings } from "./settingsData";
+
+type SettingKey = keyof GedcomSettings;
+
+export interface GedcomSettingDefinition {
+  name: string;
+  desc: string;
+  control: SettingToggleControl<SettingKey> | SettingDropdownControl<SettingKey>;
+}
 
 export const RECORD_PREVIEW_OPTIONS: Record<string, string> = {
   modifier: "Hold Ctrl/Cmd and hover",
@@ -8,9 +16,7 @@ export const RECORD_PREVIEW_OPTIONS: Record<string, string> = {
   off: "Never",
 };
 
-export const SETTING_DEFINITIONS: SettingDefinitionItem<
-  keyof GedcomSettings
->[] = [
+export const SETTING_DEFINITIONS: GedcomSettingDefinition[] = [
   {
     name: "Diagnostics",
     desc: "Underline GEDCOM errors and warnings in the editor.",
