@@ -51,6 +51,7 @@ export interface MountOptions {
   dark?: boolean;
   diagnostics?: boolean;
   indentationHints?: boolean;
+  recordPreview?: "modifier" | "hover" | "off";
 }
 
 export async function mount(

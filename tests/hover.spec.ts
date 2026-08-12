@@ -6,7 +6,7 @@ import { mount, offsetOf, SAMPLE } from "./harness";
 const POINTER = offsetOf(SAMPLE, "@F1@");
 const TAG = offsetOf(SAMPLE, "FAMS");
 
-async function modHover(page: Page, offset: number): Promise<void> {
+async function hover(page: Page, offset: number): Promise<void> {
   const coords = await page.evaluate(
     (target) => window.gedcom.coordsAt(target),
     offset,
@@ -14,8 +14,12 @@ async function modHover(page: Page, offset: number): Promise<void> {
   if (!coords) {
     throw new Error(`no coordinates for offset ${offset}`);
   }
-  await page.keyboard.down("Meta");
   await page.mouse.move(coords.x, coords.y);
+}
+
+async function modHover(page: Page, offset: number): Promise<void> {
+  await page.keyboard.down("Meta");
+  await hover(page, offset);
 }
 
 function calls(page: Page): Promise<{ previews: unknown[]; hides: number }> {
@@ -54,11 +58,7 @@ test.describe("the hovered pointer", () => {
     page,
   }) => {
     await mount(page);
-    const coords = await page.evaluate(
-      (target) => window.gedcom.coordsAt(target),
-      POINTER + 2,
-    );
-    await page.mouse.move(coords!.x, coords!.y);
+    await hover(page, POINTER + 2);
 
     expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
     expect((await calls(page)).previews).toEqual([]);
@@ -132,14 +132,36 @@ test.describe("the hovered pointer", () => {
     expect((await calls(page)).hides).toBe(1);
   });
 
-  test("keeps the mark when the modifier is released over an editor that never had focus — lavich/domorium#177", async ({
+  test("lets go when the modifier is released over an editor that never had focus", async ({
     page,
   }) => {
-    test.fail();
     await mount(page);
     await modHover(page, POINTER + 2);
     await page.keyboard.up("Meta");
 
     expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect((await calls(page)).hides).toBe(1);
+  });
+});
+
+test.describe("the gesture the user has chosen", () => {
+  test("answers a plain hover once previews are set to hover", async ({
+    page,
+  }) => {
+    await mount(page, { recordPreview: "hover" });
+    await hover(page, POINTER + 2);
+
+    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(1);
+    expect((await calls(page)).previews).toEqual([
+      { from: POINTER, to: POINTER + 4 },
+    ]);
+  });
+
+  test("answers nothing at all once previews are off", async ({ page }) => {
+    await mount(page, { recordPreview: "off" });
+    await modHover(page, POINTER + 2);
+
+    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect((await calls(page)).previews).toEqual([]);
   });
 });

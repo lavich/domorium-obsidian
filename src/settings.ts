@@ -6,8 +6,11 @@ import {
 } from "obsidian";
 
 import type GedcomPlugin from "./main";
-import { SETTING_DEFINITIONS } from "./settingDefinitions";
-import type { GedcomSettings } from "./settingsData";
+import {
+  RECORD_PREVIEW_OPTIONS,
+  SETTING_DEFINITIONS,
+} from "./settingDefinitions";
+import { isRecordPreviewTrigger, type GedcomSettings } from "./settingsData";
 
 export class GedcomSettingTab extends PluginSettingTab {
   constructor(
@@ -22,13 +25,22 @@ export class GedcomSettingTab extends PluginSettingTab {
   }
 
   getControlValue(key: string): unknown {
-    if (key === "diagnostics" || key === "indentationHints") {
+    if (
+      key === "diagnostics" ||
+      key === "indentationHints" ||
+      key === "recordPreview"
+    ) {
       return this.plugin.settings[key];
     }
     return undefined;
   }
 
   setControlValue(key: string, value: unknown): Promise<void> {
+    if (key === "recordPreview") {
+      return isRecordPreviewTrigger(value)
+        ? this.plugin.updateSettings({ recordPreview: value })
+        : Promise.resolve();
+    }
     if (typeof value !== "boolean") {
       return Promise.resolve();
     }
@@ -61,6 +73,20 @@ export class GedcomSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.indentationHints)
           .onChange(async (value) => {
             await this.plugin.updateSettings({ indentationHints: value });
+          }),
+      );
+
+    new Setting(this.containerEl)
+      .setName("Record preview")
+      .setDesc(
+        "Show the record a cross-reference points at when the pointer is over it.",
+      )
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOptions(RECORD_PREVIEW_OPTIONS)
+          .setValue(this.plugin.settings.recordPreview)
+          .onChange(async (value) => {
+            await this.setControlValue("recordPreview", value);
           }),
       );
   }
