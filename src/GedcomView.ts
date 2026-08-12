@@ -8,13 +8,11 @@ import { EditorView } from "@codemirror/view";
 import {
   applyWorkspaceEdit,
   canRenameReference,
-  createGedcomExtensions,
   EditorLanguageService,
   findReferences,
   goToDefinition,
   getRecordPreviewRuns,
   goToNextReference,
-  recordPreviewHover,
   renameReference,
   type DocumentLink,
   type GedcomEditorSettings,
@@ -32,12 +30,12 @@ import {
   type WorkspaceLeaf,
 } from "obsidian";
 
+import { createGedcomComposition } from "./editor/composition";
 import {
   offsetFromPosition,
   parseEphemeralState,
   positionFromOffset,
 } from "./editor/ephemeralState";
-import { createHostEditorExtensions } from "./editor/hostExtensions";
 import { routeDocumentLink } from "./editor/service";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
@@ -218,20 +216,16 @@ export class GedcomView extends TextFileView {
       selection: cursor === undefined ? undefined : { anchor: cursor },
       extensions: [
         EditorState.lineSeparator.of(data.includes("\r\n") ? "\r\n" : "\n"),
-        recordPreviewHover({
-          language: this.language,
-          show: (preview, _view, event) =>
-            this.showPreview(preview, event.target as HTMLElement),
-          hide: () => this.hidePreview(),
-        }),
-        ...createHostEditorExtensions(this.settings),
-        ...createGedcomExtensions({
+        ...createGedcomComposition({
           language: this.language,
           settings: this.settings,
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
             openDocumentLink: (link) => this.openDocumentLink(link),
           },
+          showPreview: (preview, _view, event) =>
+            this.showPreview(preview, event.target as HTMLElement),
+          hidePreview: () => this.hidePreview(),
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {

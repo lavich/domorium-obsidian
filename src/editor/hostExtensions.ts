@@ -22,7 +22,11 @@ export function createHostEditorExtensions(
     }),
     syntaxHighlighting(obsidianHighlightStyle),
     EditorView.theme({
-      "&": { height: "100%", backgroundColor: "var(--background-primary)" },
+      "&": {
+        height: "100%",
+        backgroundColor: "var(--background-primary)",
+        color: "var(--text-normal)",
+      },
       ".cm-scroller": { overflow: "auto", fontFamily: "var(--font-monospace)" },
       ".cm-content": { caretColor: "var(--text-normal)" },
       ".cm-gutters": {

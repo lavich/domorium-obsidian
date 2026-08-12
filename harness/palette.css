@@ -1,0 +1,86 @@
+/*
+ * The CSS variables Obsidian gives a plugin, with values chosen to be
+ * recognisable in an assertion rather than pretty: every one is a distinct
+ * primary so a test can say which variable a pixel came from.
+ */
+body {
+  margin: 0;
+  --font-monospace: monospace;
+  --font-text-size: 16px;
+  --size-4-2: 8px;
+  --size-4-3: 12px;
+  --font-semibold: 600;
+  --radius-s: 4px;
+}
+
+body.theme-light {
+  --background-primary: rgb(255, 255, 255);
+  --background-secondary: rgb(240, 240, 240);
+  --background-modifier-border: rgb(200, 200, 200);
+  --interactive-normal: rgb(230, 230, 230);
+  --text-normal: rgb(0, 0, 0);
+  --text-faint: rgb(10, 20, 30);
+  --color-cyan: rgb(0, 128, 128);
+  --color-purple: rgb(128, 0, 128);
+  --color-accent: rgb(255, 0, 0);
+}
+
+body.theme-dark {
+  --background-primary: rgb(20, 20, 20);
+  --background-secondary: rgb(30, 30, 30);
+  --background-modifier-border: rgb(60, 60, 60);
+  --interactive-normal: rgb(45, 45, 45);
+  --text-normal: rgb(255, 255, 255);
+  --text-faint: rgb(200, 210, 220);
+  --color-cyan: rgb(0, 255, 255);
+  --color-purple: rgb(255, 0, 255);
+  --color-accent: rgb(0, 255, 0);
+}
+
+#editor {
+  height: 100vh;
+}
+
+#controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  font: 13px/1.4 system-ui, sans-serif;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+#editor {
+  height: calc(100vh - 38px);
+}
+
+/*
+ * Approximate Obsidian defaults, for looking at rather than asserting on. The
+ * palettes above stay garish so a test can name the variable a pixel came from;
+ * this class is never set by the suite.
+ */
+body.realistic.theme-light {
+  --background-primary: #ffffff;
+  --background-secondary: #f2f3f5;
+  --background-modifier-border: #dcdcdc;
+  --interactive-normal: #f2f3f5;
+  --text-normal: #222222;
+  --text-faint: #a0a0a0;
+  --color-cyan: #008b94;
+  --color-purple: #7852ee;
+  --color-accent: #705dcf;
+}
+
+body.realistic.theme-dark {
+  --background-primary: #1e1e1e;
+  --background-secondary: #161616;
+  --background-modifier-border: #333333;
+  --interactive-normal: #2a2a2a;
+  --text-normal: #dadada;
+  --text-faint: #6a6a6a;
+  --color-cyan: #4ac8d8;
+  --color-purple: #a882ff;
+  --color-accent: #7f6df2;
+}

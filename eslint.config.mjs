@@ -7,12 +7,21 @@ export default tseslint.config(
   {
     ignores: [
       "dist/**",
+      "harness/dist/**",
+      "harness/results/**",
       "coverage/**",
       "esbuild.config.mjs",
+      "playwright.config.ts",
       "vitest.config.ts",
     ],
   },
   ...obsidianmd.configs.recommended,
+  {
+    files: ["tests/**/*.ts", "harness/**/*.ts"],
+    rules: {
+      "obsidianmd/no-nodejs-modules": "off",
+    },
+  },
   {
     files: ["**/*.{ts,cts,mts,tsx}"],
     languageOptions: {

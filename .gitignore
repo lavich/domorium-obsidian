@@ -6,3 +6,5 @@ coverage/
 .DS_Store
 /docs/superpowers/
 /.superpowers/
+harness/dist/
+harness/results/
