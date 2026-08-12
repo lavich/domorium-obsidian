@@ -1,5 +1,58 @@
 # Changelog
 
+## 1.6.0
+
+- **The record a pointer names is previewed where the pointer is written.**
+  `1 FAMS @F1@` said nothing about who `@F1@` is. Hold Ctrl/Cmd and hover it, and
+  the record appears in the editor's own colours. Which gesture opens a preview is
+  a setting — Ctrl/Cmd and hover, hover alone, or never — and the preview closes
+  when the modifier is released, wherever the pointer has gone by then.
+- **A record can be reached by name.** _Go to record_ lists every record in the
+  file and matches on name, identifier and tag at once, so `marie` finds
+  `Marie /Curie/ @I47@ INDI` and `indi` narrows the list to individuals. Until now
+  a record was found by scrolling for its identifier.
+- **A search bar and a problems list, in the chrome Obsidian uses for a note.**
+  Find and replace, match case, whole word and regular expressions, with the match
+  count beside the field. _Go to next problem_ and its counterpart move through the
+  file's diagnostics and wrap around, where before a problem was found by scrolling
+  for an underline. Both panels follow the theme — every surface CodeMirror paints
+  itself was light whatever Obsidian was wearing.
+- **The status bar names the specification a file is checked against**, and counts
+  its problems: `GEDCOM 5.5, checked as 5.5.1 · 2 problems`. Which of 1.5.0's
+  version rules had applied was otherwise visible only by hovering the `VERS` line.
+  The plugin's commands are on the tab menu as well as in the palette.
+- **A note can link to a person, not only to a file.**
+  `obsidian://domorium?vault=Family&file=tree.ged&xref=@I47@` opens the file with
+  the cursor on that record — from a note, a browser, or another application — and
+  _Copy link to record_ writes one. A link naming a record that is no longer there
+  opens the file and says what was missing, rather than failing quietly.
+- **A GEDCOM record pasted into a note is read as GEDCOM.** A fenced `gedcom` block
+  is highlighted and checked as an excerpt rather than judged as a whole file, and
+  what is wrong with it is listed beneath it. The fence may name the dialect, as in
+  `gedcom 5.5.1`, and a block holding a whole file is judged by its own header.
+- **A note can read a GEDCOM file it never opens.** `api.read(path)` goes to the
+  vault and hands back the validator's own document, for a `dataviewjs` block
+  asking about a file in another folder; `api.parse(text)` does the same for text
+  already in hand.
+- **A renamed media file is followed into the payloads that name it.** Obsidian
+  rewrites every note that linked to a renamed photo, while
+  `1 FILE media/marie.jpg` inside a `.ged` file kept pointing at a path that no
+  longer existed. A renamed `.ged` that another file names is followed too. A
+  GEDCOM 7 payload that would need a `..` segment is left as it was and reported,
+  because the format permits none there; 5.5.1 takes the same move without comment.
+  A rename no longer reads, rewrites and re-saves every `.ged` in the vault, and a
+  large export no longer freezes the interface while they are examined.
+- **The reader keeps their place.** Following a definition into another file and
+  coming back landed on line 1, and so did leaving a tab and returning. A file
+  rewritten from outside — Sync finishing on a phone, a `git pull` — left the caret
+  at the end and the scroll at the top; the caret is now carried by line and column,
+  and an open preview is closed, since the rewrite may have taken the record out
+  from under it. Settings changed on another device reach a running plugin.
+- Typing no longer stringifies the whole document on every keystroke.
+- A tooltip follows the glyph the pointer is over; the space after a tag showed that
+  tag's documentation. The underline under a marked declaration no longer breaks
+  where the tail of `@` crosses it.
+
 ## 1.5.0
 
 - **A note whose GEDCOM version cannot be checked no longer looks clean.**
