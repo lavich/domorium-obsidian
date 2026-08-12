@@ -54,6 +54,24 @@ A note can link to a record. **Copy link to record** puts an
 `obsidian://domorium?vault=…&file=…&xref=@I47@` link on the clipboard; opening it
 opens the file with the cursor on that record.
 
+## For dataviewjs and other plugins
+
+The parsed document is reachable without opening the file:
+
+````
+```dataviewjs
+const api = app.plugins.plugins["domorium"].api;
+const tree = await api.read("family/tree.ged");
+dv.list(tree.getNodes().filter((n) => n.tokens.TAG?.value === "INDI")
+  .map((n) => tree.getLabel(n) ?? n.tokens.XREF?.value));
+```
+````
+
+`api.parse(text, options)` does the same for text already in hand. Both answer
+with the validator's `GedcomDocument`: `getNodes`, `getErrors`, `getVersion`,
+`getLabel`, `getPointerTargetTag`, `isRecordDeclaration`. `api.version` says
+which API you are holding.
+
 ## Privacy
 
 GEDCOM by Domorium works locally inside the vault. It does not require an account, make
