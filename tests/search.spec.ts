@@ -125,6 +125,46 @@ test.describe("the search bar", () => {
     await expect(page.locator(count)).toHaveText("1/2");
   });
 
+  test("lines up with the document, the way a note and its bar do", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1400, height: 400 });
+    await openSearch(page);
+
+    const left = await page.evaluate(() => {
+      const at = (selector: string) =>
+        document.querySelector(selector)!.getBoundingClientRect().left;
+      return { line: at(".cm-line"), field: at(".document-search-input") };
+    });
+
+    expect(
+      Math.abs(left.field - left.line),
+      "the field starts where the document does",
+    ).toBeLessThan(12);
+    expect(left.line, "and both are centred in a wide pane").toBeGreaterThan(
+      200,
+    );
+  });
+
+  test("gives a narrow pane over to the document rather than to margins", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 520, height: 400 });
+    await openSearch(page);
+
+    const room = await page.evaluate(() => {
+      const box = document.querySelector(".cm-content")!.getBoundingClientRect();
+      const gutter = document.querySelector(".cm-gutters")!.getBoundingClientRect();
+      return { content: box.width, right: box.right, gutter: gutter.left };
+    });
+
+    expect(room.gutter, "nothing is pushed off the left").toBeGreaterThanOrEqual(
+      0,
+    );
+    expect(room.right, "and nothing overflows the pane").toBeLessThanOrEqual(520);
+    expect(room.content, "the document takes what is left").toBeGreaterThan(400);
+  });
+
   test("closes on Escape and on the button", async ({ page }) => {
     await openSearch(page);
     await page.press(input, "Escape");

@@ -151,3 +151,14 @@
 .gedcom-note-problem-warning {
   color: var(--text-warning);
 }
+
+/* Obsidian centres a note and limits its width; the search bar it lends us
+   follows the same --file-line-width, so the document does too. Centring the
+   scroller's children keeps the gutter attached to the text it numbers. */
+.gedcom-gedcom-editor .cm-scroller {
+  justify-content: center;
+}
+
+.gedcom-gedcom-editor .cm-content {
+  max-width: var(--file-line-width);
+}
