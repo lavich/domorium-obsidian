@@ -4,7 +4,7 @@ import {
   RECORD_PREVIEW_OPTIONS,
   SETTING_DEFINITIONS,
 } from "./settingDefinitions";
-import { DEFAULT_SETTINGS, parseSettings } from "./settingsData";
+import { changedSetting, DEFAULT_SETTINGS, parseSettings } from "./settingsData";
 
 describe("GEDCOM settings", () => {
   it("enables language assistance by default", () => {
@@ -67,5 +67,52 @@ describe("GEDCOM settings", () => {
         },
       },
     ]);
+  });
+
+  it("has a definition for every setting, and a setting for every definition", () => {
+    expect(SETTING_DEFINITIONS.map((item) => item.control.key).sort()).toEqual(
+      Object.keys(DEFAULT_SETTINGS).sort(),
+    );
+  });
+
+  it("defaults every control to what the setting itself defaults to", () => {
+    for (const { control } of SETTING_DEFINITIONS) {
+      expect(control.defaultValue).toBe(DEFAULT_SETTINGS[control.key]);
+    }
+  });
+
+  it("offers a dropdown only values the setting accepts", () => {
+    for (const { control } of SETTING_DEFINITIONS) {
+      if (control.type !== "dropdown") {
+        continue;
+      }
+      for (const value of Object.keys(control.options)) {
+        expect(changedSetting(control.key, value)).toEqual({
+          [control.key]: value,
+        });
+      }
+    }
+  });
+});
+
+describe("one setting the user has changed", () => {
+  it("takes a value the setting can hold", () => {
+    expect(changedSetting("diagnostics", false)).toEqual({
+      diagnostics: false,
+    });
+    expect(changedSetting("recordPreview", "off")).toEqual({
+      recordPreview: "off",
+    });
+  });
+
+  it("declines a value of the wrong kind rather than resetting the setting", () => {
+    expect(changedSetting("diagnostics", "no")).toBeNull();
+    expect(changedSetting("recordPreview", "sometimes")).toBeNull();
+    expect(changedSetting("recordPreview", true)).toBeNull();
+  });
+
+  it("declines a key that is not a setting", () => {
+    expect(changedSetting("theme", "dark")).toBeNull();
+    expect(changedSetting("__proto__", {})).toBeNull();
   });
 });

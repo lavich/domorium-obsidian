@@ -11,10 +11,7 @@ export type BlockDialect = NonNullable<CreateDocumentOptions["dialect"]>;
 const DIALECTS: BlockDialect[] = ["7.0", "5.5.1"];
 const DEFAULT_DIALECT: BlockDialect = "7.0";
 
-/**
- * A block carries no header, so the fence names the specification. A block
- * that pastes a whole file with one is judged by what it says instead.
- */
+/** A block that pastes a whole file is judged by its own header, not by this. */
 export function blockDialect(fence: string | undefined): BlockDialect {
   const named = /^\s*(?:`{3,}|~{3,})\s*gedcom\s+(\S+)/u.exec(fence ?? "")?.[1];
   return DIALECTS.find((dialect) => dialect === named) ?? DEFAULT_DIALECT;

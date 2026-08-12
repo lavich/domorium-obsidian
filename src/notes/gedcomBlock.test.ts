@@ -71,7 +71,6 @@ describe("a GEDCOM block in a note", () => {
   });
 
   it("judges the same lines by the specification the fence named", () => {
-    // 7.0 fixed the enumeration to M, F, X and U; 5.5.1 left it open.
     const block = "0 @I1@ INDI\n1 SEX Z";
 
     expect(renderGedcomBlock(block, "7.0").problems).toHaveLength(1);

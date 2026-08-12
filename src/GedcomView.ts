@@ -99,8 +99,6 @@ export class GedcomView extends TextFileView {
       if (clear) {
         this.editor.setState(this.createState(data));
       } else if (data !== this.getViewData()) {
-        // The file was rewritten from outside: keep the reader's place, and
-        // do not leave a preview open over a record that may be gone.
         this.hidePreview();
         const before = this.editor.state.doc;
         const head = this.editor.state.selection.main.head;
@@ -170,7 +168,7 @@ export class GedcomView extends TextFileView {
   }
 
   refresh(): void {
-    // The state that would have reported the mark going away is thrown away here.
+    // setState throws away the state whose update would have reported this.
     this.hidePreview();
     const data = this.getViewData();
     const selection = this.editor.state.selection;

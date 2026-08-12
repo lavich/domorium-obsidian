@@ -2,7 +2,6 @@ import {
   addIcon,
   type App,
   FuzzySuggestModal,
-  type IconName,
   type Menu,
   Modal,
   normalizePath,
@@ -14,11 +13,11 @@ import {
 } from "obsidian";
 
 import { createGedcomApi, type GedcomApi } from "./api";
+import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import {
-  gedcomLinkUrl,
   parseGedcomLink,
   PROTOCOL_ACTION,
   type GedcomLinkTarget,
@@ -39,126 +38,6 @@ import {
   parseSettings,
   type GedcomSettings,
 } from "./settingsData";
-
-interface GedcomCommand {
-  id: string;
-  name: string;
-  icon: IconName;
-  isAvailable(view: GedcomView): boolean;
-  run(plugin: GedcomPlugin, view: GedcomView): void;
-}
-
-const COMMANDS: GedcomCommand[] = [
-  {
-    id: "go-to-gedcom-record",
-    name: "Go to record",
-    icon: "list-tree",
-    isAvailable: (view) => view.records().length > 0,
-    run: (plugin, view) => {
-      new RecordSwitcherModal(plugin.app, view.records(), (record) => {
-        view.goToRecord(record);
-      }).open();
-    },
-  },
-  {
-    id: "copy-gedcom-record-link",
-    name: "Copy link to record",
-    icon: "link",
-    isAvailable: (view) => view.file !== null && view.recordAtCursor() !== undefined,
-    run: (plugin, view) => {
-      const record = view.recordAtCursor();
-      if (!record?.identifier || !view.file) {
-        new Notice("GEDCOM: no record with an identifier at the cursor");
-        return;
-      }
-      const url = gedcomLinkUrl(
-        plugin.app.vault.getName(),
-        view.file.path,
-        record.identifier,
-      );
-      void navigator.clipboard.writeText(url).then(
-        () => {
-          new Notice(`GEDCOM: link to ${record.identifier} copied`);
-        },
-        () => {
-          new Notice("GEDCOM: the link could not be copied");
-        },
-      );
-    },
-  },
-  {
-    id: "go-to-gedcom-definition",
-    name: "Go to definition",
-    icon: "arrow-right",
-    isAvailable: () => true,
-    run: (_plugin, view) => {
-      view.goToDefinition();
-    },
-  },
-  {
-    id: "find-gedcom-references",
-    name: "Find references",
-    icon: "search",
-    isAvailable: () => true,
-    run: (_plugin, view) => {
-      const referenceCount = view.goToNextReference();
-      new Notice(
-        referenceCount === 0
-          ? "No GEDCOM references found"
-          : `${referenceCount} GEDCOM reference(s); moved to next`,
-      );
-    },
-  },
-  {
-    id: "rename-gedcom-reference",
-    name: "Rename reference",
-    icon: "pencil",
-    isAvailable: (view) => view.canRenameReference(),
-    run: (plugin, view) => {
-      new RenameReferenceModal(plugin.app, (newName) => {
-        if (!view.renameReference(newName)) {
-          new Notice("GEDCOM reference could not be renamed");
-        }
-      }).open();
-    },
-  },
-  {
-    id: "go-to-next-gedcom-problem",
-    name: "Go to next problem",
-    icon: "chevron-down",
-    isAvailable: (view) => view.problemCount() > 0,
-    run: (_plugin, view) => {
-      view.goToNextProblem();
-    },
-  },
-  {
-    id: "go-to-previous-gedcom-problem",
-    name: "Go to previous problem",
-    icon: "chevron-up",
-    isAvailable: (view) => view.problemCount() > 0,
-    run: (_plugin, view) => {
-      view.goToPreviousProblem();
-    },
-  },
-  {
-    id: "toggle-gedcom-problems-panel",
-    name: "Toggle problems panel",
-    icon: "list-checks",
-    isAvailable: (view) => view.canShowProblems(),
-    run: (_plugin, view) => {
-      view.toggleProblemsPanel();
-    },
-  },
-  {
-    id: "search-in-gedcom-file",
-    name: "Search in file",
-    icon: "text-search",
-    isAvailable: () => true,
-    run: (_plugin, view) => {
-      view.openSearch();
-    },
-  },
-];
 
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
@@ -202,8 +81,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       if (problems.length === 0) {
         return;
       }
-      // Listed rather than underlined: a note is prose, and a wavy line under
-      // a pasted example reads as the note being broken.
       const list = element.createEl("ul", { cls: "gedcom-note-problems" });
       for (const problem of problems) {
         list.createEl("li", {
@@ -231,7 +108,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
             return false;
           }
           if (!checking) {
-            command.run(this, view);
+            command.run(this.commandHost(), view);
           }
           return true;
         },
@@ -274,7 +151,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
           .setTitle(command.name)
           .setIcon(command.icon)
           .onClick(() => {
-            command.run(this, view);
+            command.run(this.commandHost(), view);
           }),
       );
     }
@@ -316,7 +193,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       return;
     }
     const view = leaf.view;
-    // The file is open either way; only the record could not be found.
     if (!(view instanceof GedcomView) || !view.goToXref(target.xref)) {
       new Notice(`GEDCOM: ${target.xref} is not in ${file.name}`);
     }
@@ -347,8 +223,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         files += result.count > 0 ? 1 : 0;
         stranded += result.stranded;
       } catch (error) {
-        // One unreadable file is not a reason to leave the rest pointing at
-        // a path that no longer exists.
         console.error(`Domorium: ${file.path} could not be checked`, error);
         unreadable += 1;
       }
@@ -387,6 +261,22 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         : retargetMedia(current, file.path, from, to).text,
     );
     return { count: planned.count, stranded: planned.stranded };
+  }
+
+  private commandHost(): CommandHost {
+    return {
+      vaultName: () => this.app.vault.getName(),
+      notify: (message) => {
+        new Notice(message);
+      },
+      copy: (text) => navigator.clipboard.writeText(text),
+      chooseRecord: (records, chosen) => {
+        new RecordSwitcherModal(this.app, records, chosen).open();
+      },
+      askForName: (entered) => {
+        new RenameReferenceModal(this.app, entered).open();
+      },
+    };
   }
 
   private forEachView(run: (view: GedcomView) => void): void {
