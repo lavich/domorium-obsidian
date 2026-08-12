@@ -14,6 +14,7 @@ import {
 
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
+import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import {
   describeRetarget,
   describeStranded,
@@ -137,6 +138,33 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
+    this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
+      const section = ctx.getSectionInfo(element);
+      const { runs, problems } = renderGedcomBlock(
+        source,
+        blockDialect(section?.text.split("\n")[section.lineStart]),
+      );
+      const block = element.createEl("pre", { cls: "gedcom-note-block" });
+      for (const run of runs) {
+        if (run.className) {
+          block.createSpan({ cls: run.className, text: run.text });
+        } else {
+          block.appendText(run.text);
+        }
+      }
+      if (problems.length === 0) {
+        return;
+      }
+      // Listed rather than underlined: a note is prose, and a wavy line under
+      // a pasted example reads as the note being broken.
+      const list = element.createEl("ul", { cls: "gedcom-note-problems" });
+      for (const problem of problems) {
+        list.createEl("li", {
+          cls: `gedcom-note-problem-${problem.level}`,
+          text: `Line ${problem.line}: ${problem.message}`,
+        });
+      }
+    });
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     for (const command of COMMANDS) {
       this.addCommand({

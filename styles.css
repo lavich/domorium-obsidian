@@ -135,3 +135,35 @@
 .gedcom-gedcom-editor .cm-lintRange-active {
   background-color: var(--text-highlight-bg);
 }
+
+.gedcom-note-block {
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  white-space: pre;
+  overflow-x: auto;
+}
+
+/* The legend names lezer tags, not GEDCOM: comment is the level number,
+   keyword the pointer, string the tag. Same variables the editor theme uses. */
+.gedcom-note-block .gedcom-token-comment {
+  color: var(--text-faint);
+}
+.gedcom-note-block .gedcom-token-keyword {
+  color: var(--color-cyan);
+}
+.gedcom-note-block .gedcom-token-string {
+  color: var(--color-purple);
+}
+
+.gedcom-note-problems {
+  margin: 0;
+  font-size: var(--font-smaller);
+}
+
+.gedcom-note-problem-error {
+  color: var(--text-error);
+}
+
+.gedcom-note-problem-warning {
+  color: var(--text-warning);
+}
