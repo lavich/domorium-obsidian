@@ -17,7 +17,9 @@ import { formatStatus } from "./editor/status";
 import {
   describeRetarget,
   describeStranded,
+  describeUnreadable,
   isGedcomPath,
+  mayNameAFile,
   retargetMedia,
 } from "./vault/renamedMedia";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
@@ -160,7 +162,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     );
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
-        if (file instanceof TFile && !isGedcomPath(file.path)) {
+        if (file instanceof TFile) {
           void this.followRenamedFile(oldPath, file.path);
         }
       }),
@@ -220,17 +222,25 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     let payloads = 0;
     let files = 0;
     let stranded = 0;
+    let unreadable = 0;
     for (const file of this.app.vault.getFiles()) {
       if (!isGedcomPath(file.path)) {
         continue;
       }
       const view = open.get(file.path);
-      const result = view
-        ? view.followRenamedFile(from, to)
-        : await this.rewriteClosedFile(file, from, to);
-      payloads += result.count;
-      files += result.count > 0 ? 1 : 0;
-      stranded += result.stranded;
+      try {
+        const result = view
+          ? view.followRenamedFile(from, to)
+          : await this.rewriteClosedFile(file, from, to);
+        payloads += result.count;
+        files += result.count > 0 ? 1 : 0;
+        stranded += result.stranded;
+      } catch (error) {
+        // One unreadable file is not a reason to leave the rest pointing at
+        // a path that no longer exists.
+        console.error(`Domorium: ${file.path} could not be checked`, error);
+        unreadable += 1;
+      }
     }
 
     if (payloads > 0) {
@@ -239,6 +249,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     if (stranded > 0) {
       new Notice(describeStranded(stranded));
     }
+    if (unreadable > 0) {
+      new Notice(describeUnreadable(unreadable));
+    }
   }
 
   private async rewriteClosedFile(
@@ -246,15 +259,23 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     from: string,
     to: string,
   ): Promise<{ count: number; stranded: number }> {
-    let count = 0;
-    let stranded = 0;
-    await this.app.vault.process(file, (text) => {
-      const result = retargetMedia(text, file.path, from, to);
-      count = result.count;
-      stranded = result.stranded;
-      return result.text;
-    });
-    return { count, stranded };
+    const text = await this.app.vault.read(file);
+    if (!mayNameAFile(text)) {
+      return { count: 0, stranded: 0 };
+    }
+    const planned = retargetMedia(text, file.path, from, to);
+    if (planned.count === 0) {
+      return { count: 0, stranded: planned.stranded };
+    }
+    // process writes whatever it is handed, so a file with nothing to change
+    // is never given to it: every GEDCOM in the vault would be rewritten, and
+    // its modification time is what Sync and the file list go by.
+    await this.app.vault.process(file, (current) =>
+      current === text
+        ? planned.text
+        : retargetMedia(current, file.path, from, to).text,
+    );
+    return { count: planned.count, stranded: planned.stranded };
   }
 
   private forEachView(run: (view: GedcomView) => void): void {

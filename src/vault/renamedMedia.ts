@@ -14,6 +14,15 @@ export function isGedcomPath(path: string): boolean {
 }
 
 /**
+ * Every media payload sits on a line whose tag is FILE, so a file without the
+ * word cannot hold one. Parsing a 50MB export to learn that takes seconds, on
+ * the thread the interface is drawn from, for every rename in the vault.
+ */
+export function mayNameAFile(text: string): boolean {
+  return text.includes("FILE");
+}
+
+/**
  * For a file no view is showing. An open one is edited through its editor, so
  * that the rewrite lands in the undo history the user can reach.
  */
@@ -94,6 +103,10 @@ export function retargetMedia(
 
 export function describeRetarget(payloads: number, files: number): string {
   return `GEDCOM: repointed ${count(payloads, "media link")} in ${count(files, "file")}`;
+}
+
+export function describeUnreadable(files: number): string {
+  return `GEDCOM: could not check ${count(files, "file")} for links to the renamed file`;
 }
 
 export function describeStranded(payloads: number): string {

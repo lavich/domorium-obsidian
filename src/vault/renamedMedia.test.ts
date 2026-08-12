@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   describeRetarget,
   describeStranded,
+  describeUnreadable,
   isGedcomPath,
+  mayNameAFile,
   retargetMedia,
 } from "./renamedMedia";
 
@@ -156,6 +158,18 @@ describe("a media file that has been renamed", () => {
   });
 });
 
+describe("which files are worth parsing at all", () => {
+  it("takes a file that carries the tag a payload sits on", () => {
+    expect(mayNameAFile(file("7.0", "media/marie.jpg"))).toBe(true);
+  });
+
+  it("declines an export with no media in it, whatever its size", () => {
+    expect(
+      mayNameAFile("0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n0 TRLR\n"),
+    ).toBe(false);
+  });
+});
+
 describe("which vault files are ours to rewrite", () => {
   it("takes both extensions the plugin registers, whatever their case", () => {
     expect(isGedcomPath("family/tree.ged")).toBe(true);
@@ -179,6 +193,12 @@ describe("what the notice says", () => {
   it("counts more than one with one", () => {
     expect(describeRetarget(3, 2)).toBe(
       "GEDCOM: repointed 3 media links in 2 files",
+    );
+  });
+
+  it("owns up to a file it could not read rather than passing over it", () => {
+    expect(describeUnreadable(1)).toBe(
+      "GEDCOM: could not check 1 file for links to the renamed file",
     );
   });
 
