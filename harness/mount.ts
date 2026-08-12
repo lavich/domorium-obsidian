@@ -1,3 +1,5 @@
+import { openLintPanel } from "@codemirror/lint";
+import { openSearchPanel } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -26,6 +28,8 @@ declare global {
       mount(options: HarnessOptions): void;
       calls: HarnessCalls;
       view: EditorView | undefined;
+      openProblems(): void;
+      openSearch(): void;
       classOf(selector: string): string | null;
       rectOf(selector: string): DOMRect | null;
       coordsAt(offset: number): { x: number; y: number } | null;
@@ -62,6 +66,7 @@ function mount(options: HarnessOptions): void {
       extensions: createGedcomComposition({
         language,
         settings,
+        dark: options.dark ?? false,
         actions: {
           applyWorkspaceEdit: () => true,
           openDocumentLink: (link) => {
@@ -87,6 +92,16 @@ window.gedcom = {
   mount,
   calls,
   view: undefined,
+  openProblems: () => {
+    if (view) {
+      openLintPanel(view);
+    }
+  },
+  openSearch: () => {
+    if (view) {
+      openSearchPanel(view);
+    }
+  },
   classOf: (selector) =>
     document.querySelector(selector)?.getAttribute("class") ?? null,
   rectOf: (selector) => {
@@ -163,6 +178,16 @@ function playground(): void {
   for (const input of [sample, dark, diagnostics, hints, realistic]) {
     input.addEventListener("change", apply);
   }
+  controls
+    .querySelector<HTMLButtonElement>("#problems")!
+    .addEventListener("click", () => {
+      window.gedcom.openProblems();
+    });
+  controls
+    .querySelector<HTMLButtonElement>("#search")!
+    .addEventListener("click", () => {
+      window.gedcom.openSearch();
+    });
   apply();
 }
 

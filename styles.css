@@ -46,3 +46,92 @@
   background: color-mix(in srgb, var(--color-accent) 15%, transparent);
   border-radius: 2px;
 }
+
+.gedcom-gedcom-editor .cm-panels {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border-color: var(--background-modifier-border);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-small, 13px);
+}
+
+.gedcom-gedcom-editor .cm-textfield {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  padding: 4px 8px;
+  font-family: inherit;
+}
+
+.gedcom-gedcom-editor .cm-button {
+  background: var(--interactive-normal);
+  background-image: none;
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  padding: 4px 10px;
+  font-family: inherit;
+}
+
+.gedcom-gedcom-editor .cm-button:hover {
+  background: var(--interactive-hover);
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li {
+  padding: 2px var(--size-4-3, 12px);
+}
+
+.gedcom-gedcom-editor .cm-diagnosticSource {
+  display: none;
+}
+
+.gedcom-gedcom-editor .cm-lint-marker {
+  content: none;
+  box-sizing: border-box;
+  width: 0.85em;
+  height: 0.85em;
+  margin-top: 0.1em;
+}
+
+.gedcom-gedcom-editor .cm-lint-marker-error {
+  background: var(--text-error);
+  border-radius: 50%;
+}
+
+.gedcom-gedcom-editor .cm-lint-marker-warning {
+  background: var(--text-warning);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.gedcom-gedcom-editor .cm-lint-marker-info,
+.gedcom-gedcom-editor .cm-lint-marker-hint {
+  background: var(--text-accent);
+  border-radius: var(--radius-s, 2px);
+}
+
+.gedcom-gedcom-editor .cm-lintRange {
+  background-image: none;
+  padding-bottom: 0;
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-skip-ink: none;
+  text-decoration-thickness: 1px;
+}
+
+.gedcom-gedcom-editor .cm-lintRange-error {
+  text-decoration-color: var(--text-error);
+}
+
+.gedcom-gedcom-editor .cm-lintRange-warning {
+  text-decoration-color: var(--text-warning);
+}
+
+.gedcom-gedcom-editor .cm-lintRange-info,
+.gedcom-gedcom-editor .cm-lintRange-hint {
+  text-decoration-color: var(--text-accent);
+}
+
+.gedcom-gedcom-editor .cm-lintRange-active {
+  background-color: var(--text-highlight-bg);
+}
