@@ -44,6 +44,7 @@ import {
   positionFromOffset,
 } from "./editor/ephemeralState";
 import { routeDocumentLink } from "./editor/service";
+import { planRetarget } from "./vault/renamedMedia";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
 
@@ -187,6 +188,29 @@ export class GedcomView extends TextFileView {
       scrollIntoView: true,
     });
     this.editor.focus();
+  }
+
+  followRenamedFile(
+    from: string,
+    to: string,
+  ): { count: number; stranded: number } {
+    const documentPath = this.file?.path;
+    if (!documentPath) {
+      return { count: 0, stranded: 0 };
+    }
+    const { edit, stranded } = planRetarget(
+      this.language.update(this.editor.state.doc),
+      documentPath,
+      from,
+      to,
+    );
+    if (edit.edits.length === 0) {
+      return { count: 0, stranded };
+    }
+    return {
+      count: this.applyWorkspaceEdit(edit) ? edit.edits.length : 0,
+      stranded,
+    };
   }
 
   findReferences(): Range[] {

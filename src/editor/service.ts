@@ -21,6 +21,27 @@ export function resolveVaultRelativePath(
   return parts.join("/");
 }
 
+/** The inverse: how a document at `documentPath` spells a file in the vault. */
+export function relativeToDocument(
+  documentPath: string,
+  vaultPath: string,
+): string {
+  const from = documentPath.split("/").slice(0, -1);
+  const to = vaultPath.split("/");
+  let shared = 0;
+  while (
+    shared < from.length &&
+    shared < to.length - 1 &&
+    from[shared] === to[shared]
+  ) {
+    shared += 1;
+  }
+  return [
+    ...Array.from({ length: from.length - shared }, () => ".."),
+    ...to.slice(shared),
+  ].join("/");
+}
+
 export interface DocumentLinkRouter {
   openExternal(url: string): void;
   openVaultFile(path: string): void;

@@ -9,10 +9,17 @@ import {
   Plugin,
   removeIcon,
   Setting,
+  TFile,
 } from "obsidian";
 
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
+import {
+  describeRetarget,
+  describeStranded,
+  isGedcomPath,
+  retargetMedia,
+} from "./vault/renamedMedia";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
@@ -152,6 +159,13 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       }),
     );
     this.registerEvent(
+      this.app.vault.on("rename", (file, oldPath) => {
+        if (file instanceof TFile && !isGedcomPath(file.path)) {
+          void this.followRenamedFile(oldPath, file.path);
+        }
+      }),
+    );
+    this.registerEvent(
       this.app.workspace.on("css-change", () => {
         this.forEachView((view) => {
           view.refresh();
@@ -193,6 +207,54 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.forEachView((view) => {
       view.applySettings(this.settings);
     });
+  }
+
+  private async followRenamedFile(from: string, to: string): Promise<void> {
+    const open = new Map<string, GedcomView>();
+    this.forEachView((view) => {
+      if (view.file) {
+        open.set(view.file.path, view);
+      }
+    });
+
+    let payloads = 0;
+    let files = 0;
+    let stranded = 0;
+    for (const file of this.app.vault.getFiles()) {
+      if (!isGedcomPath(file.path)) {
+        continue;
+      }
+      const view = open.get(file.path);
+      const result = view
+        ? view.followRenamedFile(from, to)
+        : await this.rewriteClosedFile(file, from, to);
+      payloads += result.count;
+      files += result.count > 0 ? 1 : 0;
+      stranded += result.stranded;
+    }
+
+    if (payloads > 0) {
+      new Notice(describeRetarget(payloads, files));
+    }
+    if (stranded > 0) {
+      new Notice(describeStranded(stranded));
+    }
+  }
+
+  private async rewriteClosedFile(
+    file: TFile,
+    from: string,
+    to: string,
+  ): Promise<{ count: number; stranded: number }> {
+    let count = 0;
+    let stranded = 0;
+    await this.app.vault.process(file, (text) => {
+      const result = retargetMedia(text, file.path, from, to);
+      count = result.count;
+      stranded = result.stranded;
+      return result.text;
+    });
+    return { count, stranded };
   }
 
   private forEachView(run: (view: GedcomView) => void): void {
