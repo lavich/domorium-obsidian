@@ -44,6 +44,7 @@ import {
   positionFromOffset,
 } from "./editor/ephemeralState";
 import { routeDocumentLink } from "./editor/service";
+import { recordAtLine } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
@@ -178,6 +179,20 @@ export class GedcomView extends TextFileView {
     return recordEntries(
       this.language.update(this.editor.state.doc).getDocumentSymbols(),
     );
+  }
+
+  recordAtCursor(): GedcomRecord | undefined {
+    const { doc, selection } = this.editor.state;
+    return recordAtLine(this.records(), doc.lineAt(selection.main.head).number - 1);
+  }
+
+  goToXref(xref: string): boolean {
+    const record = this.records().find((entry) => entry.identifier === xref);
+    if (!record) {
+      return false;
+    }
+    this.goToRecord(record);
+    return true;
   }
 
   goToRecord(record: GedcomRecord): void {
