@@ -51,12 +51,17 @@
   background: var(--background-secondary);
   color: var(--text-normal);
   border-color: var(--background-modifier-border);
+  font-family: var(--font-interface);
+  font-size: var(--font-ui-small, 13px);
 }
 
 .gedcom-gedcom-editor .cm-textfield {
   background: var(--background-primary);
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  padding: 4px 8px;
+  font-family: inherit;
 }
 
 .gedcom-gedcom-editor .cm-button {
@@ -64,4 +69,19 @@
   background-image: none;
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  padding: 4px 10px;
+  font-family: inherit;
+}
+
+.gedcom-gedcom-editor .cm-button:hover {
+  background: var(--interactive-hover);
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li {
+  padding: 2px var(--size-4-3, 12px);
+}
+
+.gedcom-gedcom-editor .cm-diagnosticSource {
+  display: none;
 }

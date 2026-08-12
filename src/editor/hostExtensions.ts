@@ -30,6 +30,7 @@ export function createHostEditorExtensions(
           height: "100%",
           backgroundColor: "var(--background-primary)",
           color: "var(--text-normal)",
+          colorScheme: dark ? "dark" : "light",
         },
         ".cm-scroller": {
           overflow: "auto",
