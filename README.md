@@ -27,6 +27,7 @@ adapted per editor.
 - Web links and vault-relative file links
 - Quick fixes for broken references and invalid levels
 - Folding and visual indentation for nested records
+- Highlighted and checked `gedcom` code blocks in notes
 - Desktop and mobile Obsidian support
 
 The plugin keeps the GEDCOM file as the source of truth. It does not convert
@@ -43,6 +44,10 @@ Use **Go to GEDCOM definition** from the command palette to jump from an XREF
 usage to its record declaration. **Find GEDCOM references** moves between
 matching declarations and usages, and **Rename GEDCOM reference** updates the
 current XREF atomically. Editor behavior can be adjusted in the plugin settings.
+
+A record pasted into a note is highlighted and checked when it is fenced as
+`gedcom`. A block carries no header, so it is read as GEDCOM 7 unless the fence
+names another specification — ```` ```gedcom 5.5.1 ````.
 
 ## Privacy
 
