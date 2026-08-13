@@ -26,7 +26,7 @@
     0px,
     calc(
       var(--navbar-height, 0px) + var(--navbar-bottom-offset, 0px) -
-        var(--keyboard-height, 0px)
+        var(--keyboard-height, 0px) * 2 - 2px
     )
   );
 }

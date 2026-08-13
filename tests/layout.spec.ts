@@ -49,4 +49,28 @@ test.describe("the editor in its pane", () => {
       "the last problem has to be readable, and it cannot be scrolled",
     ).toBeLessThanOrEqual(box.navbar);
   });
+
+  // A keyboard shrinks the area the view has and pushes the navbar down out of
+  // it, so there is nothing of the navbar left to clear.
+  test("reserves nothing for the navbar while the keyboard is up", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await mount(page, { doc: PROBLEMS, mobile: true, keyboard: 308 });
+    await page.evaluate(() => {
+      window.gedcom.openProblems();
+    });
+    await page.waitForSelector(".cm-panel-lint");
+
+    const bottom = await page.evaluate(() => {
+      const of = (selector: string) =>
+        document.querySelector(selector)!.getBoundingClientRect().bottom;
+      return { panel: of(".cm-panel-lint"), editor: of(".cm-editor") };
+    });
+
+    expect(
+      bottom.editor - bottom.panel,
+      "a gap here is the blank strip above the keyboard, again",
+    ).toBeLessThan(8);
+  });
 });
