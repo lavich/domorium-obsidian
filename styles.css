@@ -2,6 +2,14 @@
   height: 100%;
 }
 
+/* Obsidian pads a view and lets it scroll, and iOS reports the keyboard's height
+   as the bottom inset that padding is drawn from — 308px of it, taken out of the
+   editor. Its own full-height views reset this by type, and so must ours. */
+.workspace-leaf-content[data-type="domorium-gedcom"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
 .gedcom-gedcom-editor {
   height: 100%;
   font-family: var(--font-monospace);

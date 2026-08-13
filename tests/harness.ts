@@ -53,6 +53,7 @@ export interface MountOptions {
   indentationHints?: boolean;
   recordPreview?: "modifier" | "hover" | "off";
   mobile?: boolean;
+  keyboard?: number;
 }
 
 export async function mount(
