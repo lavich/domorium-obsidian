@@ -1,5 +1,4 @@
 import { openLintPanel } from "@codemirror/lint";
-import { openSearchPanel } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -8,6 +7,7 @@ import {
 } from "@domorium/codemirror";
 
 import { createGedcomComposition } from "../src/editor/composition";
+import { openSearch } from "../src/editor/searchPanel";
 import { previewGesture } from "../src/editor/previewGesture";
 import type { RecordPreviewTrigger } from "../src/settingsData";
 import { stubSetIcon } from "./icons";
@@ -18,6 +18,7 @@ export interface HarnessOptions {
   diagnostics?: boolean;
   indentationHints?: boolean;
   recordPreview?: RecordPreviewTrigger;
+  mobile?: boolean;
 }
 
 export interface HarnessCalls {
@@ -33,7 +34,7 @@ declare global {
       calls: HarnessCalls;
       view: EditorView | undefined;
       openProblems(): void;
-      openSearch(): void;
+      openSearch(replace?: boolean): void;
       classOf(selector: string): string | null;
       rectOf(selector: string): DOMRect | null;
       coordsAt(offset: number): { x: number; y: number } | null;
@@ -55,7 +56,10 @@ function mount(options: HarnessOptions): void {
     throw new Error("harness: #editor is missing");
   }
   parent.replaceChildren();
-  document.body.className = options.dark ? "theme-dark" : "theme-light";
+  document.body.className = [
+    options.dark ? "theme-dark" : "theme-light",
+    ...(options.mobile ? ["is-mobile", "is-phone", "auto-full-screen"] : []),
+  ].join(" ");
 
   const language = new EditorLanguageService();
   const settings = {
@@ -106,9 +110,9 @@ window.gedcom = {
       openLintPanel(view);
     }
   },
-  openSearch: () => {
+  openSearch: (replace = false) => {
     if (view) {
-      openSearchPanel(view);
+      openSearch(view, replace);
     }
   },
   classOf: (selector) =>
@@ -123,7 +127,10 @@ window.gedcom = {
     }
     const coords = view.coordsAtPos(offset);
     return coords
-      ? { x: (coords.left + coords.right) / 2, y: (coords.top + coords.bottom) / 2 }
+      ? {
+          x: (coords.left + coords.right) / 2,
+          y: (coords.top + coords.bottom) / 2,
+        }
       : null;
   },
 };

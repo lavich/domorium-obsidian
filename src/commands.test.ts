@@ -25,7 +25,7 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     goToNextProblem: vi.fn(() => true),
     goToPreviousProblem: vi.fn(() => true),
     toggleProblemsPanel: vi.fn(),
-    openSearch: vi.fn(),
+    openSearch: vi.fn<(replace: boolean) => void>(),
     ...overrides,
   };
 }
@@ -116,11 +116,12 @@ describe("what a command offers itself for", () => {
     );
   });
 
-  it("always offers the three that need nothing of the document", () => {
+  it("always offers the ones that need nothing of the document", () => {
     for (const id of [
       "go-to-gedcom-definition",
       "find-gedcom-references",
       "search-in-gedcom-file",
+      "replace-in-gedcom-file",
     ]) {
       expect(command(id).isAvailable(view({ records: () => [] }))).toBe(true);
     }

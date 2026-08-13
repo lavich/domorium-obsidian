@@ -52,6 +52,7 @@ export interface MountOptions {
   diagnostics?: boolean;
   indentationHints?: boolean;
   recordPreview?: "modifier" | "hover" | "off";
+  mobile?: boolean;
 }
 
 export async function mount(

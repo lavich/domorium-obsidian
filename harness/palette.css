@@ -58,7 +58,9 @@ body.theme-dark {
   gap: 12px;
   align-items: center;
   padding: 8px 12px;
-  font: 13px/1.4 system-ui, sans-serif;
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
   background: var(--background-secondary);
   color: var(--text-normal);
   border-bottom: 1px solid var(--background-modifier-border);
@@ -114,6 +116,8 @@ body.realistic.theme-dark {
  * the plugin's own overrides, which in the app they lose to.
  */
 body {
+  --touch-size-s: 40px;
+  --size-2-1: 2px;
   --size-2-2: 4px;
   --size-2-3: 6px;
   --size-4-1: 4px;
@@ -270,4 +274,58 @@ body {
   display: block;
   width: 100%;
   padding-inline-start: 36px;
+}
+
+/* The same chrome on a phone, where Obsidian tells the buttons to grow. */
+.is-mobile .document-search-container {
+  margin-inline: 0;
+  padding: var(--size-4-4) var(--size-4-3);
+  padding-top: var(--view-top-spacing-markdown);
+}
+
+/* Its phone mode, where the header floats and these reserve room for it. */
+body {
+  --safe-area-inset-top: 59px;
+  --view-header-height: 48px;
+  --view-top-spacing-markdown: var(--size-4-2);
+}
+
+.is-phone.auto-full-screen {
+  --view-top-spacing-markdown: calc(
+    var(--safe-area-inset-top) + var(--view-header-height) + 16px
+  );
+}
+
+.is-mobile .document-search-container + .cm-editor {
+  --view-top-spacing-markdown: var(--size-4-3);
+}
+
+.is-mobile .document-search,
+.is-mobile .document-replace {
+  height: auto;
+  padding: 0;
+}
+
+.is-mobile .document-search input,
+.is-mobile .document-replace input {
+  flex-grow: 1;
+}
+
+.is-mobile .document-search .document-search-buttons,
+.is-mobile .document-replace .document-replace-buttons {
+  display: flex;
+  flex-grow: 1;
+  align-items: stretch;
+}
+
+.is-phone .document-search,
+.is-phone .document-replace {
+  gap: var(--size-4-1);
+}
+
+.is-phone .document-search-buttons,
+.is-phone .document-replace-buttons {
+  gap: var(--size-2-1);
+  padding-inline-start: var(--size-4-1);
+  justify-content: flex-end;
 }
