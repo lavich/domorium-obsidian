@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mount, MANY_PROBLEMS, PROBLEMS, SAMPLE } from "./harness";
+import { mount, PROBLEMS, SAMPLE } from "./harness";
 
 test.describe("the editor in its pane", () => {
   // #87: the editor came out 113px of a 433px view, so the document ended four
@@ -50,22 +50,35 @@ test.describe("the editor in its pane", () => {
     ).toBeLessThanOrEqual(box.navbar);
   });
 
-  // One wrapped problem fills CodeMirror's 100px on a phone, so the rest were
-  // behind a scroll nobody would look for.
-  test("holds a handful of problems without hiding any", async ({ page }) => {
+  // The room was counted twice: once after the last line, once under the panel
+  // that stands below it.
+  test("counts the room for the navbar once", async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 852 });
-    await mount(page, { doc: MANY_PROBLEMS, mobile: true });
+    await mount(page, { doc: PROBLEMS, mobile: true });
+
+    const alone = await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector(".cm-scroller")!).paddingBottom,
+    );
+
     await page.evaluate(() => {
       window.gedcom.openProblems();
     });
-    await expect(page.locator(".cm-panel-lint li")).toHaveCount(5);
+    await page.waitForSelector(".cm-panel-lint");
 
-    const list = await page.evaluate(() => {
-      const element = document.querySelector(".cm-panel-lint ul")!;
-      return { shown: element.clientHeight, all: element.scrollHeight };
-    });
+    const withPanel = await page.evaluate(
+      () =>
+        getComputedStyle(document.querySelector(".cm-scroller")!).paddingBottom,
+    );
 
-    expect(list.shown, "all five, not one and a scrollbar").toBe(list.all);
+    expect(
+      parseFloat(alone),
+      "the last line clears the navbar itself",
+    ).toBeGreaterThan(50);
+    expect(
+      withPanel,
+      "and hands the job over when a panel takes the bottom",
+    ).toBe("0px");
   });
 
   // A keyboard shrinks the area the view has and pushes the navbar down out of
