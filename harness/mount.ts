@@ -18,7 +18,6 @@ export interface HarnessOptions {
   diagnostics?: boolean;
   indentationHints?: boolean;
   recordPreview?: RecordPreviewTrigger;
-  /** The two body classes Obsidian sets on a phone, which its chrome reads. */
   mobile?: boolean;
 }
 

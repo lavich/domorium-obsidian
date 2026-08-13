@@ -34,7 +34,6 @@ export interface GedcomCommand {
   id: string;
   name: string;
   icon: string;
-  /** Which group of the pane menu it belongs to, where Obsidian names one. */
   section?: string;
   isAvailable(view: CommandView): boolean;
   run(host: CommandHost, view: CommandView): void;

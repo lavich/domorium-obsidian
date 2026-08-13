@@ -179,8 +179,7 @@ test.describe("the search bar", () => {
     ).toBeGreaterThan(row.whole / 2);
   });
 
-  // #87: the panel took the spacing Obsidian reserves for its floating header,
-  // which the view it sits in has already been given.
+  // #87: the panel took room the view it sits in had already been given.
   test("does not push itself below the room made for the header", async ({
     page,
   }) => {

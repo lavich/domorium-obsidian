@@ -160,15 +160,13 @@
   margin-inline: 0;
 }
 
-/* On a phone Obsidian reserves room for its floating header twice over: once as
-   this view's own top margin, and again as the bar's padding. Its markdown bar
-   escapes by standing beside the editor, which a panel inside one cannot. */
+/* The view already has this room as a margin; Obsidian resets the variable for
+   a bar beside the editor, which a panel inside one cannot be. */
 .gedcom-gedcom-editor {
   --view-top-spacing-markdown: var(--size-4-3);
 }
 
-/* Obsidian gives its own search row's icons a touch target on a phone; the rule
-   names `.search-row`, which the document bar is not. */
+/* Obsidian's own rule for this names `.search-row`, which this bar is not. */
 .is-mobile .gedcom-gedcom-editor .document-search-button,
 .is-mobile .gedcom-gedcom-editor .document-search-close-button {
   width: var(--touch-size-s);
