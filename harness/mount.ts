@@ -59,7 +59,7 @@ function mount(options: HarnessOptions): void {
   parent.replaceChildren();
   document.body.className = [
     options.dark ? "theme-dark" : "theme-light",
-    ...(options.mobile ? ["is-mobile", "is-phone"] : []),
+    ...(options.mobile ? ["is-mobile", "is-phone", "auto-full-screen"] : []),
   ].join(" ");
 
   const language = new EditorLanguageService();

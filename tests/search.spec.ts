@@ -177,6 +177,27 @@ test.describe("the search bar", () => {
     ).toBeGreaterThan(row.whole / 2);
   });
 
+  // #87: the panel took the spacing Obsidian reserves for its floating header,
+  // which the view it sits in has already been given.
+  test("does not push itself below the room made for the header", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await openSearch(page, { mobile: true });
+
+    const padding = await page.evaluate(() =>
+      parseFloat(
+        getComputedStyle(document.querySelector(".document-search-container")!)
+          .paddingTop,
+      ),
+    );
+
+    expect(
+      padding,
+      "a phone's header is not our panel's to clear",
+    ).toBeLessThan(24);
+  });
+
   test("closes on Escape and on the button", async ({ page }) => {
     await openSearch(page);
     await page.press(input, "Escape");

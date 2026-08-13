@@ -161,6 +161,13 @@
   flex-wrap: wrap;
 }
 
+/* On a phone Obsidian reserves room for its floating header twice over: once as
+   this view's own top margin, and again as the bar's padding. Its markdown bar
+   escapes by standing beside the editor, which a panel inside one cannot. */
+.gedcom-gedcom-editor {
+  --view-top-spacing-markdown: var(--size-4-3);
+}
+
 /* Obsidian's own row carries four controls, ours seven; without a floor the
    field is what they take their width from. */
 .gedcom-gedcom-editor .document-search-input,

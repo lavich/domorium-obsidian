@@ -279,6 +279,26 @@ body {
 .is-mobile .document-search-container {
   margin-inline: 0;
   padding: var(--size-4-4) var(--size-4-3);
+  padding-top: var(--view-top-spacing-markdown);
+}
+
+/* Obsidian's phone mode with the header and navbar floating over the view. It
+   reserves room for them in these variables, and resets the markdown one for a
+   bar that sits beside the editor — which a CodeMirror panel cannot. */
+body {
+  --safe-area-inset-top: 59px;
+  --view-header-height: 48px;
+  --view-top-spacing-markdown: var(--size-4-2);
+}
+
+.is-phone.auto-full-screen {
+  --view-top-spacing-markdown: calc(
+    var(--safe-area-inset-top) + var(--view-header-height) + 16px
+  );
+}
+
+.is-mobile .document-search-container + .cm-editor {
+  --view-top-spacing-markdown: var(--size-4-3);
 }
 
 .is-mobile .document-search,
