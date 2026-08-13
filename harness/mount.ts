@@ -1,5 +1,4 @@
 import { openLintPanel } from "@codemirror/lint";
-import { openSearchPanel } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -8,6 +7,7 @@ import {
 } from "@domorium/codemirror";
 
 import { createGedcomComposition } from "../src/editor/composition";
+import { openSearch } from "../src/editor/searchPanel";
 import { previewGesture } from "../src/editor/previewGesture";
 import type { RecordPreviewTrigger } from "../src/settingsData";
 import { stubSetIcon } from "./icons";
@@ -35,7 +35,7 @@ declare global {
       calls: HarnessCalls;
       view: EditorView | undefined;
       openProblems(): void;
-      openSearch(): void;
+      openSearch(replace?: boolean): void;
       classOf(selector: string): string | null;
       rectOf(selector: string): DOMRect | null;
       coordsAt(offset: number): { x: number; y: number } | null;
@@ -111,9 +111,9 @@ window.gedcom = {
       openLintPanel(view);
     }
   },
-  openSearch: () => {
+  openSearch: (replace = false) => {
     if (view) {
-      openSearchPanel(view);
+      openSearch(view, replace);
     }
   },
   classOf: (selector) =>

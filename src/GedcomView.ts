@@ -5,7 +5,6 @@ import {
   openLintPanel,
   previousDiagnostic,
 } from "@codemirror/lint";
-import { openSearchPanel } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -45,6 +44,7 @@ import {
   parseEphemeralState,
   positionFromOffset,
 } from "./editor/ephemeralState";
+import { openSearch } from "./editor/searchPanel";
 import { routeDocumentLink } from "./editor/service";
 import { recordAtLine } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
@@ -284,8 +284,8 @@ export class GedcomView extends TextFileView {
     this.editor.focus();
   }
 
-  openSearch(): void {
-    openSearchPanel(this.editor);
+  openSearch(replace = false): void {
+    openSearch(this.editor, replace);
   }
 
   canRenameReference(): boolean {

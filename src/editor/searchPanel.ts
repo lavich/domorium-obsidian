@@ -3,12 +3,14 @@ import {
   findNext,
   findPrevious,
   getSearchQuery,
+  openSearchPanel,
   replaceAll,
   replaceNext,
   SearchQuery,
   selectMatches,
   setSearchQuery,
 } from "@codemirror/search";
+import { StateEffect, StateField, type Extension } from "@codemirror/state";
 import type { EditorView, Panel } from "@codemirror/view";
 
 import { countMatches, describeMatches } from "./searchMatches";
@@ -18,22 +20,28 @@ export type IconSetter = (element: HTMLElement, icon: string) => void;
 /** Obsidian's own delay before it acts on what is being typed into a search. */
 const SETTLE_MS = 150;
 
-type FlagKey = "caseSensitive" | "wholeWord" | "regexp";
+const setReplaceMode = StateEffect.define<boolean>();
 
-export const SEARCH_FLAGS: { key: FlagKey; icon: string; label: string }[] = [
-  { key: "caseSensitive", icon: "uppercase-lowercase-a", label: "Match case" },
-  { key: "wholeWord", icon: "whole-word", label: "Whole word" },
-  { key: "regexp", icon: "regex", label: "Regular expression" },
-];
+/** Replace has no control in the row, so the mode it opens in is state. */
+export const replaceMode: Extension = StateField.define<boolean>({
+  create: () => false,
+  update: (mode, transaction) =>
+    transaction.effects.reduce(
+      (current, effect) => (effect.is(setReplaceMode) ? effect.value : current),
+      mode,
+    ),
+});
+
+const replacing = (view: EditorView): boolean =>
+  view.state.field(replaceMode as StateField<boolean>, false) ?? false;
+
+export function openSearch(view: EditorView, replace: boolean): void {
+  view.dispatch({ effects: setReplaceMode.of(replace) });
+  openSearchPanel(view);
+}
 
 export function obsidianSearchPanel(setIcon: IconSetter) {
   return (view: EditorView): Panel => {
-    const opening = getSearchQuery(view.state);
-    const flags: Record<FlagKey, boolean> = {
-      caseSensitive: opening.caseSensitive,
-      wholeWord: opening.wholeWord,
-      regexp: opening.regexp,
-    };
     // The view's own document and window, not this file's: a popout has both.
     const owner = view.dom.ownerDocument;
     const timers = owner.defaultView ?? window;
@@ -60,12 +68,12 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
       "div",
       "search-input-container document-search-input",
     );
-    const searchInput = field("Find");
+    const searchInput = field("Find...");
     searchInput.setAttribute("main-field", "true");
     const countEl = element("div", "document-search-count");
     const buttons = element("div", "document-search-buttons");
     const replaceRow = element("div", "document-replace");
-    const replaceInput = field("Replace");
+    const replaceInput = field("Replace...");
     replaceInput.classList.add("document-replace-input");
     const replaceButtons = element("div", "document-replace-buttons");
 
@@ -80,19 +88,16 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
           new SearchQuery({
             search: searchInput.value,
             replace: replaceInput.value,
-            ...flags,
           }),
         ),
       });
     };
 
     const showCount = (): void => {
-      const query = getSearchQuery(view.state);
+      const matches = countMatches(view.state, getSearchQuery(view.state));
       const empty = searchInput.value === "";
-      countEl.textContent = empty
-        ? ""
-        : describeMatches(countMatches(view.state, query));
-      inputWrap.classList.toggle("mod-no-match", !empty && !query.valid);
+      countEl.textContent = empty ? "" : describeMatches(matches);
+      inputWrap.classList.toggle("mod-no-match", !empty && matches.total === 0);
     };
 
     const later = (run: () => void): void => {
@@ -125,31 +130,13 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
       return control;
     };
 
-    const replaceToggle = button(searchRow, "chevron-right", "Replace", () => {
-      const on = !dom.classList.contains("mod-replace-mode");
-      dom.classList.toggle("mod-replace-mode", on);
-      replaceToggle.classList.toggle("is-active", on);
-      setIcon(replaceToggle, on ? "chevron-down" : "chevron-right");
-      (on ? replaceInput : searchInput).focus();
-    });
-    searchRow.prepend(replaceToggle);
-
     button(buttons, "arrow-up", "Previous", () => findPrevious(view));
     button(buttons, "arrow-down", "Next", () => findNext(view));
     button(buttons, "text-select", "Select all matches", () =>
       selectMatches(view),
     );
-    for (const flag of SEARCH_FLAGS) {
-      const control = button(buttons, flag.icon, flag.label, () => {
-        flags[flag.key] = !flags[flag.key];
-        control.classList.toggle("is-active", flags[flag.key]);
-        commit();
-        later(showCount);
-      });
-      control.classList.toggle("is-active", flags[flag.key]);
-    }
 
-    const close = button(searchRow, "x", "Exit search", () =>
+    const close = button(buttons, "x", "Exit search", () =>
       closeSearchPanel(view),
     );
     close.classList.remove("document-search-button");
@@ -191,6 +178,7 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
       mount() {
         searchInput.value = getSearchQuery(view.state).search;
         replaceInput.value = getSearchQuery(view.state).replace;
+        dom.classList.toggle("mod-replace-mode", replacing(view));
         // Opening the panel is all the command does; the focus is the panel's.
         searchInput.focus();
         searchInput.select();
@@ -203,6 +191,13 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
         );
         if (requeried && query.search !== searchInput.value) {
           searchInput.value = query.search;
+        }
+        if (
+          update.transactions.some((transaction) =>
+            transaction.effects.some((effect) => effect.is(setReplaceMode)),
+          )
+        ) {
+          dom.classList.toggle("mod-replace-mode", replacing(update.view));
         }
         if (update.docChanged || update.selectionSet || requeried) {
           later(showCount);

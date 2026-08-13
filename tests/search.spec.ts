@@ -36,12 +36,15 @@ test.describe("the search bar", () => {
       "Previous",
       "Next",
       "Select all matches",
-      "Match case",
-      "Whole word",
-      "Regular expression",
       "Exit search",
     ]) {
       await expect(page.locator(`[aria-label="${label}"]`)).toHaveCount(1);
+    }
+    for (const label of ["Match case", "Whole word", "Regular expression"]) {
+      await expect(
+        page.locator(`[aria-label="${label}"]`),
+        "Obsidian's own row carries no flags, so neither does this one",
+      ).toHaveCount(0);
     }
   });
 
@@ -64,47 +67,46 @@ test.describe("the search bar", () => {
     await expect(page.locator(count)).toHaveText("1/1");
   });
 
-  test("says nothing about a query it cannot run, and marks the field", async ({
-    page,
-  }) => {
+  test("marks the field when nothing in the file matches", async ({ page }) => {
     await openSearch(page);
-    await page.click('[aria-label="Regular expression"]');
-    await page.fill(input, "@I[");
+    await page.fill(input, "Ipswich");
 
     await expect(page.locator(count)).toHaveText("");
     await expect(page.locator(".document-search-input")).toHaveClass(
       /mod-no-match/,
     );
+
+    await page.fill(input, "NAME");
+    await expect(page.locator(".document-search-input")).not.toHaveClass(
+      /mod-no-match/,
+    );
   });
 
-  test("shows a flag it is honouring as active", async ({ page }) => {
-    await openSearch(page);
-    const matchCase = page.locator('[aria-label="Match case"]');
-
-    await expect(matchCase).not.toHaveClass(/is-active/);
-    await matchCase.click();
-    await expect(matchCase).toHaveClass(/is-active/);
-
-    await page.fill(input, "name");
-    await expect(page.locator(count)).toHaveText("");
-  });
-
-  test("keeps replace out of the way until it is asked for", async ({
+  test("keeps replace out of the way until a command asks for it", async ({
     page,
   }) => {
     await openSearch(page);
     const replaceRow = page.locator(".document-replace");
 
     await expect(replaceRow).toBeHidden();
-    await page.click('.document-search > [aria-label="Replace"]');
+    await expect(
+      page.locator('.document-search [aria-label="Replace"]'),
+      "and offers no control of its own for it",
+    ).toHaveCount(0);
+
+    await page.evaluate(() => {
+      window.gedcom.openSearch(true);
+    });
     await expect(replaceRow).toBeVisible();
-    await expect(page.locator(".document-replace-input")).toBeFocused();
   });
 
   test("replaces through the panel, in the document", async ({ page }) => {
-    await openSearch(page);
+    await mount(page, { doc: SAMPLE });
+    await page.evaluate(() => {
+      window.gedcom.openSearch(true);
+    });
+    await page.waitForSelector(".document-search-container");
     await page.fill(input, "John");
-    await page.click('.document-search > [aria-label="Replace"]');
     await page.fill(".document-replace-input", "Jane");
     await page.click('.document-replace-buttons [aria-label="Replace all"]');
 

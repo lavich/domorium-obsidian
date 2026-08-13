@@ -116,6 +116,7 @@ body.realistic.theme-dark {
  * the plugin's own overrides, which in the app they lose to.
  */
 body {
+  --touch-size-s: 40px;
   --size-2-1: 2px;
   --size-2-2: 4px;
   --size-2-3: 6px;

@@ -15,7 +15,7 @@ export interface CommandView {
   goToNextProblem(): boolean;
   goToPreviousProblem(): boolean;
   toggleProblemsPanel(): void;
-  openSearch(): void;
+  openSearch(replace: boolean): void;
 }
 
 /** Everything outside the view, which is where `obsidian` stays. */
@@ -142,7 +142,16 @@ export const COMMANDS: GedcomCommand[] = [
     icon: "text-search",
     isAvailable: () => true,
     run: (_host, view) => {
-      view.openSearch();
+      view.openSearch(false);
+    },
+  },
+  {
+    id: "replace-in-gedcom-file",
+    name: "Search and replace in file",
+    icon: "replace",
+    isAvailable: () => true,
+    run: (_host, view) => {
+      view.openSearch(true);
     },
   },
 ];

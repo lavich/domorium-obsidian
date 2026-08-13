@@ -168,8 +168,15 @@
   --view-top-spacing-markdown: var(--size-4-3);
 }
 
-/* Obsidian's own row carries four controls, ours seven; without a floor the
-   field is what they take their width from. */
+/* Obsidian gives its own search row's icons a touch target on a phone; the rule
+   names `.search-row`, which the document bar is not. */
+.is-mobile .gedcom-gedcom-editor .document-search-button,
+.is-mobile .gedcom-gedcom-editor .document-search-close-button {
+  width: var(--touch-size-s);
+  height: var(--touch-size-s);
+}
+
+/* Without a floor the field is what the buttons take their width from. */
 .gedcom-gedcom-editor .document-search-input,
 .gedcom-gedcom-editor .document-replace-input {
   min-width: 12rem;
