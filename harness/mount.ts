@@ -19,6 +19,8 @@ export interface HarnessOptions {
   indentationHints?: boolean;
   recordPreview?: RecordPreviewTrigger;
   mobile?: boolean;
+  /** Height iOS reports as the bottom inset while the keyboard is up. */
+  keyboard?: number;
 }
 
 export interface HarnessCalls {
@@ -58,8 +60,14 @@ function mount(options: HarnessOptions): void {
   parent.replaceChildren();
   document.body.className = [
     options.dark ? "theme-dark" : "theme-light",
-    ...(options.mobile ? ["is-mobile", "is-phone", "auto-full-screen"] : []),
+    ...(options.mobile
+      ? ["is-mobile", "is-phone", "auto-full-screen", "is-floating-nav"]
+      : []),
   ].join(" ");
+  document.body.style.setProperty(
+    "--keyboard-height",
+    `${options.keyboard ?? 0}px`,
+  );
 
   const language = new EditorLanguageService();
   const settings = {

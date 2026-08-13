@@ -2,6 +2,41 @@
   height: 100%;
 }
 
+/* Obsidian pads a view and lets it scroll, and iOS reports the keyboard's height
+   as the bottom inset that padding is drawn from — 308px of it, taken out of the
+   editor. Its own full-height views reset this by type, and so must ours. */
+.workspace-leaf-content[data-type="domorium-gedcom"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* The navbar floats over the view. A note scrolls out from under it, and so can
+   the document once the scroller has somewhere to go, but a panel pinned to the
+   editor's bottom cannot — it is lifted instead. Height stays with the editor. */
+.is-mobile .gedcom-gedcom-editor .cm-panels-bottom {
+  margin-bottom: var(--gedcom-navbar-room);
+}
+
+.is-mobile .gedcom-gedcom-editor .cm-scroller {
+  padding-bottom: var(--gedcom-navbar-room);
+}
+
+/* Whichever is lowest needs the room, and only it: with a panel open the
+   scroller is no longer what the navbar covers. */
+.is-mobile .gedcom-gedcom-editor:has(.cm-panels-bottom) .cm-scroller {
+  padding-bottom: 0;
+}
+
+.is-mobile .gedcom-gedcom-editor {
+  --gedcom-navbar-room: max(
+    0px,
+    calc(
+      var(--navbar-height, 0px) + var(--navbar-bottom-offset, 0px) -
+        var(--keyboard-height, 0px) * 2 - 2px
+    )
+  );
+}
+
 .gedcom-gedcom-editor {
   height: 100%;
   font-family: var(--font-monospace);
