@@ -30,6 +30,22 @@ export const PROBLEMS = [
   "",
 ].join("\n");
 
+/** Five problems, of two lines and of one, for a panel that has to hold them. */
+export const MANY_PROBLEMS = [
+  "0 HEAD",
+  "1 GEDC",
+  "2 VERS 7.0",
+  "0 @I1@ INDI",
+  "1 NAME",
+  "1 FOO bar",
+  "1 FAMC @F9@",
+  "1 NCHI abc",
+  "2 DATE 31 FEB 1880",
+  "1 SEX Z",
+  "0 TRLR",
+  "",
+].join("\n");
+
 /** The offset of the first character of a line, counting from 1. */
 export function lineStart(doc: string, line: number): number {
   return doc

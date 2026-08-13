@@ -10,6 +10,11 @@
   overflow: hidden;
 }
 
+/* CodeMirror caps the list at 100px, which on a phone is one wrapped message. */
+.is-mobile .gedcom-gedcom-editor .cm-panel-lint ul {
+  max-height: min(40vh, 15rem);
+}
+
 /* The navbar floats over the view. A note scrolls out from under it, and so can
    the document once the scroller has somewhere to go, but a panel pinned to the
    editor's bottom cannot — it is lifted instead. Height stays with the editor. */

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mount, PROBLEMS, SAMPLE } from "./harness";
+import { mount, MANY_PROBLEMS, PROBLEMS, SAMPLE } from "./harness";
 
 test.describe("the editor in its pane", () => {
   // #87: the editor came out 113px of a 433px view, so the document ended four
@@ -48,6 +48,24 @@ test.describe("the editor in its pane", () => {
       box.panel,
       "the last problem has to be readable, and it cannot be scrolled",
     ).toBeLessThanOrEqual(box.navbar);
+  });
+
+  // One wrapped problem fills CodeMirror's 100px on a phone, so the rest were
+  // behind a scroll nobody would look for.
+  test("holds a handful of problems without hiding any", async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await mount(page, { doc: MANY_PROBLEMS, mobile: true });
+    await page.evaluate(() => {
+      window.gedcom.openProblems();
+    });
+    await expect(page.locator(".cm-panel-lint li")).toHaveCount(5);
+
+    const list = await page.evaluate(() => {
+      const element = document.querySelector(".cm-panel-lint ul")!;
+      return { shown: element.clientHeight, all: element.scrollHeight };
+    });
+
+    expect(list.shown, "all five, not one and a scrollbar").toBe(list.all);
   });
 
   // A keyboard shrinks the area the view has and pushes the navbar down out of
