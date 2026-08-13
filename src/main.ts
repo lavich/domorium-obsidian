@@ -146,14 +146,17 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       if (!command.isAvailable(view)) {
         continue;
       }
-      menu.addItem((item) =>
+      menu.addItem((item) => {
         item
           .setTitle(command.name)
           .setIcon(command.icon)
           .onClick(() => {
             command.run(this.commandHost(), view);
-          }),
-      );
+          });
+        if (command.section) {
+          item.setSection(command.section);
+        }
+      });
     }
   }
 

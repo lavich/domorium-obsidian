@@ -34,6 +34,8 @@ export interface GedcomCommand {
   id: string;
   name: string;
   icon: string;
+  /** Which group of the pane menu it belongs to, where Obsidian names one. */
+  section?: string;
   isAvailable(view: CommandView): boolean;
   run(host: CommandHost, view: CommandView): void;
 }
@@ -138,8 +140,9 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "search-in-gedcom-file",
-    name: "Search in file",
-    icon: "text-search",
+    name: "Find...",
+    icon: "file-search",
+    section: "find",
     isAvailable: () => true,
     run: (_host, view) => {
       view.openSearch(false);
@@ -147,8 +150,9 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "replace-in-gedcom-file",
-    name: "Search and replace in file",
-    icon: "replace",
+    name: "Replace...",
+    icon: "file-search",
+    section: "find",
     isAvailable: () => true,
     run: (_host, view) => {
       view.openSearch(true);
