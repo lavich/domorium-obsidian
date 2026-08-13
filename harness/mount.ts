@@ -18,6 +18,8 @@ export interface HarnessOptions {
   diagnostics?: boolean;
   indentationHints?: boolean;
   recordPreview?: RecordPreviewTrigger;
+  /** The two body classes Obsidian sets on a phone, which its chrome reads. */
+  mobile?: boolean;
 }
 
 export interface HarnessCalls {
@@ -55,7 +57,10 @@ function mount(options: HarnessOptions): void {
     throw new Error("harness: #editor is missing");
   }
   parent.replaceChildren();
-  document.body.className = options.dark ? "theme-dark" : "theme-light";
+  document.body.className = [
+    options.dark ? "theme-dark" : "theme-light",
+    ...(options.mobile ? ["is-mobile", "is-phone"] : []),
+  ].join(" ");
 
   const language = new EditorLanguageService();
   const settings = {
@@ -123,7 +128,10 @@ window.gedcom = {
     }
     const coords = view.coordsAtPos(offset);
     return coords
-      ? { x: (coords.left + coords.right) / 2, y: (coords.top + coords.bottom) / 2 }
+      ? {
+          x: (coords.left + coords.right) / 2,
+          y: (coords.top + coords.bottom) / 2,
+        }
       : null;
   },
 };

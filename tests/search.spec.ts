@@ -1,9 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { mount, SAMPLE } from "./harness";
+import { mount, SAMPLE, type MountOptions } from "./harness";
 
-async function openSearch(page: Page): Promise<void> {
-  await mount(page, { doc: SAMPLE });
+async function openSearch(
+  page: Page,
+  options: MountOptions = {},
+): Promise<void> {
+  await mount(page, { doc: SAMPLE, ...options });
   await page.evaluate(() => {
     window.gedcom.openSearch();
   });
@@ -152,6 +155,26 @@ test.describe("the search bar", () => {
       Math.abs(box.field - box.line),
       "so the field starts about where the lines do",
     ).toBeLessThan(40);
+  });
+
+  // #86: the field arrived at a sixth of the row, with the count over the text.
+  test("leaves the field usable at the width of a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 });
+    await openSearch(page, { mobile: true });
+
+    const row = await page.evaluate(() => {
+      const at = (selector: string) =>
+        document.querySelector(selector)!.getBoundingClientRect();
+      return {
+        whole: at(".document-search").width,
+        field: at(".document-search-input").width,
+      };
+    });
+
+    expect(
+      row.field,
+      "the field keeps at least half the row it shares with the buttons",
+    ).toBeGreaterThan(row.whole / 2);
   });
 
   test("closes on Escape and on the button", async ({ page }) => {

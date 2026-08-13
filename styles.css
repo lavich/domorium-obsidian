@@ -158,4 +158,12 @@
 .gedcom-gedcom-editor .document-search,
 .gedcom-gedcom-editor .document-replace {
   margin-inline: 0;
+  flex-wrap: wrap;
+}
+
+/* Obsidian's own row carries four controls, ours seven; without a floor the
+   field is what they take their width from. */
+.gedcom-gedcom-editor .document-search-input,
+.gedcom-gedcom-editor .document-replace-input {
+  min-width: 12rem;
 }
