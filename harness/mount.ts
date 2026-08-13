@@ -60,7 +60,9 @@ function mount(options: HarnessOptions): void {
   parent.replaceChildren();
   document.body.className = [
     options.dark ? "theme-dark" : "theme-light",
-    ...(options.mobile ? ["is-mobile", "is-phone", "auto-full-screen"] : []),
+    ...(options.mobile
+      ? ["is-mobile", "is-phone", "auto-full-screen", "is-floating-nav"]
+      : []),
   ].join(" ");
   document.body.style.setProperty(
     "--keyboard-height",

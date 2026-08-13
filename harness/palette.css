@@ -1,3 +1,8 @@
+/* Obsidian's own reset, without which padding does not eat a height. */
+* {
+  box-sizing: border-box;
+}
+
 /*
  * The CSS variables Obsidian gives a plugin, with values chosen to be
  * recognisable in an assertion rather than pretty: every one is a distinct
@@ -5,6 +10,9 @@
  */
 body {
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--keyboard-height, 0px));
   --font-monospace: monospace;
   --font-interface: system-ui, sans-serif;
   --font-ui-small: 13px;
@@ -49,11 +57,8 @@ body.theme-dark {
   --text-highlight-bg: rgba(255, 208, 0, 0.4);
 }
 
-#editor {
-  height: 100vh;
-}
-
 #controls {
+  flex: none;
   display: flex;
   gap: 12px;
   align-items: center;
@@ -70,7 +75,8 @@ body.theme-dark {
    ancestors do to its height. The leaf loses what the keyboard takes, and
    iOS reports that height as the bottom inset while it is up. */
 .workspace-leaf-content {
-  height: calc(100vh - 38px - var(--keyboard-height, 0px));
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
   position: relative;
   display: flex;
@@ -139,6 +145,8 @@ body.realistic.theme-dark {
  */
 body {
   --header-height: 0px;
+  --touch-size-l: 52px;
+  --navbar-bottom-offset: max(var(--safe-area-inset-bottom), var(--size-4-3));
   --size-4-8: 32px;
   --safe-area-inset-bottom: max(34px, var(--keyboard-height, 0px));
   --touch-size-s: 40px;
@@ -306,6 +314,28 @@ body {
   margin-inline: 0;
   padding: var(--size-4-4) var(--size-4-3);
   padding-top: var(--view-top-spacing-markdown);
+}
+
+/* The navbar floats over the view on a phone, and a keyboard pushes it off
+   screen rather than hiding it. */
+.mobile-navbar {
+  display: none;
+}
+
+.is-floating-nav {
+  --navbar-height: var(--touch-size-l);
+}
+
+.is-floating-nav .mobile-navbar {
+  display: block;
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  height: var(--navbar-height);
+  margin-bottom: calc(
+    var(--navbar-bottom-offset) - var(--keyboard-height, 0px) - 2px
+  );
+  background: var(--background-secondary);
 }
 
 /* Its phone mode, where the header floats and these reserve room for it. */
