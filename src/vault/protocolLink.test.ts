@@ -7,6 +7,8 @@ import {
   normalizeXref,
   parseGedcomLink,
   recordAtLine,
+  recordSubpath,
+  xrefFromSubpath,
 } from "./protocolLink";
 
 describe("the identifier a link carries", () => {
@@ -51,6 +53,25 @@ describe("writing a link", () => {
     expect(
       parseGedcomLink(Object.fromEntries(url.searchParams) as Record<string, string>),
     ).toEqual({ file: "tree.ged", xref: "@I47@" });
+  });
+});
+
+describe("the record a link carries after the hash", () => {
+  it("writes the identifier the file contains", () => {
+    expect(recordSubpath("@I47@")).toBe("#@I47@");
+    expect(recordSubpath("I47"), "and takes one written by hand").toBe("#@I47@");
+  });
+
+  it("reads it back, with or without the hash", () => {
+    expect(xrefFromSubpath("#@I47@")).toBe("@I47@");
+    expect(xrefFromSubpath("@I47@")).toBe("@I47@");
+    expect(xrefFromSubpath("#I47")).toBe("@I47@");
+  });
+
+  it("answers nothing for a link that named no record", () => {
+    expect(xrefFromSubpath("#")).toBeNull();
+    expect(xrefFromSubpath("")).toBeNull();
+    expect(xrefFromSubpath("#  ")).toBeNull();
   });
 });
 

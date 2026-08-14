@@ -269,6 +269,12 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   private commandHost(): CommandHost {
     return {
       vaultName: () => this.app.vault.getName(),
+      linkToRecord: (path, subpath) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        return file instanceof TFile
+          ? this.app.fileManager.generateMarkdownLink(file, "", subpath)
+          : "";
+      },
       notify: (message) => {
         new Notice(message);
       },

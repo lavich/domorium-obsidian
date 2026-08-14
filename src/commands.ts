@@ -1,5 +1,5 @@
 import type { GedcomRecord } from "./editor/records";
-import { gedcomLinkUrl } from "./vault/protocolLink";
+import { gedcomLinkUrl, recordSubpath } from "./vault/protocolLink";
 
 export interface CommandView {
   readonly file: { path: string } | null;
@@ -21,6 +21,8 @@ export interface CommandView {
 /** Everything outside the view, which is where `obsidian` stays. */
 export interface CommandHost {
   vaultName(): string;
+  /** A link the vault indexes, spelt the way this user's settings spell one. */
+  linkToRecord(path: string, subpath: string): string;
   notify(message: string): void;
   copy(text: string): Promise<void>;
   chooseRecord(
@@ -39,6 +41,29 @@ export interface GedcomCommand {
   run(host: CommandHost, view: CommandView): void;
 }
 
+const identifiedRecord = (view: CommandView): boolean =>
+  view.file !== null && view.recordAtCursor()?.identifier !== undefined;
+
+function copyRecordLink(
+  host: CommandHost,
+  view: CommandView,
+  write: (path: string, identifier: string) => string,
+): void {
+  const identifier = view.recordAtCursor()?.identifier;
+  if (!identifier || !view.file) {
+    host.notify("GEDCOM: no record with an identifier at the cursor");
+    return;
+  }
+  void host.copy(write(view.file.path, identifier)).then(
+    () => {
+      host.notify(`GEDCOM: link to ${identifier} copied`);
+    },
+    () => {
+      host.notify("GEDCOM: the link could not be copied");
+    },
+  );
+}
+
 export const COMMANDS: GedcomCommand[] = [
   {
     id: "go-to-gedcom-record",
@@ -52,27 +77,26 @@ export const COMMANDS: GedcomCommand[] = [
     },
   },
   {
-    id: "copy-gedcom-record-link",
+    id: "copy-gedcom-record-wikilink",
     name: "Copy link to record",
     icon: "link",
-    isAvailable: (view) =>
-      view.file !== null && view.recordAtCursor()?.identifier !== undefined,
-    run: (host, view) => {
-      const identifier = view.recordAtCursor()?.identifier;
-      if (!identifier || !view.file) {
-        host.notify("GEDCOM: no record with an identifier at the cursor");
-        return;
-      }
-      const url = gedcomLinkUrl(host.vaultName(), view.file.path, identifier);
-      void host.copy(url).then(
-        () => {
-          host.notify(`GEDCOM: link to ${identifier} copied`);
-        },
-        () => {
-          host.notify("GEDCOM: the link could not be copied");
-        },
-      );
-    },
+    section: "copy",
+    isAvailable: identifiedRecord,
+    run: (host, view) =>
+      copyRecordLink(host, view, (path, identifier) =>
+        host.linkToRecord(path, recordSubpath(identifier)),
+      ),
+  },
+  {
+    id: "copy-gedcom-record-link",
+    name: "Copy Obsidian URL to record",
+    icon: "globe",
+    section: "copy",
+    isAvailable: identifiedRecord,
+    run: (host, view) =>
+      copyRecordLink(host, view, (path, identifier) =>
+        gedcomLinkUrl(host.vaultName(), path, identifier),
+      ),
   },
   {
     id: "go-to-gedcom-definition",

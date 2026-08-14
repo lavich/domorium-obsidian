@@ -53,3 +53,15 @@ describe("GEDCOM view ephemeral state", () => {
     expect(parseEphemeralState({ scroll: -1 })).toEqual({});
   });
 });
+
+describe("the subpath a link carries", () => {
+  it("is kept when the link named a record", () => {
+    expect(parseEphemeralState({ subpath: "#@I47@" }).subpath).toBe("#@I47@");
+  });
+
+  it("is dropped when it is empty or not a string", () => {
+    expect(parseEphemeralState({ subpath: "" }).subpath).toBeUndefined();
+    expect(parseEphemeralState({ subpath: "  " }).subpath).toBeUndefined();
+    expect(parseEphemeralState({ subpath: 47 }).subpath).toBeUndefined();
+  });
+});

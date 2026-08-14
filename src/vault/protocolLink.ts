@@ -31,6 +31,16 @@ export function gedcomLinkUrl(
   return `obsidian://${PROTOCOL_ACTION}?${query.toString()}`;
 }
 
+/** What a `[[tree.ged#@I47@]]` link carries after the `#`. */
+export function recordSubpath(xref: string): string {
+  return `#${normalizeXref(xref)}`;
+}
+
+export function xrefFromSubpath(subpath: string): string | null {
+  const bare = subpath.replace(/^#/u, "").trim();
+  return bare ? normalizeXref(bare) : null;
+}
+
 export function recordAtLine(
   records: GedcomRecord[],
   line: number,
