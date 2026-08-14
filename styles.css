@@ -78,12 +78,16 @@
   color: var(--code-keyword);
 }
 
+.gedcom-note-block .gedcom-token-variable {
+  color: var(--code-property);
+}
+
 .gedcom-note-block .gedcom-token-string {
-  color: var(--code-normal);
+  color: var(--code-string);
 }
 
 .gedcom-note-block .gedcom-token-declaration {
-  font-weight: var(--font-semibold);
+  color: var(--code-function);
 }
 
 /* ── What the plugin renders outside the editor ──────────────────────────

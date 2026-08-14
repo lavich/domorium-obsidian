@@ -216,7 +216,12 @@ export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.string, color: "var(--code-normal)" },
   // A declaring pointer is `definition` over the tag its type maps to, which is
   // how the package says which `@I1@` the record is declared at.
-  { tag: tags.definition(tags.keyword), fontWeight: "var(--font-semibold)" },
+  { tag: tags.variableName, color: "var(--code-function)" },
+  {
+    tag: tags.definition(tags.variableName),
+    color: "var(--code-function)",
+    fontWeight: "var(--font-semibold)",
+  },
   { tag: tags.link, class: "gedcom-internal-link" },
   { tag: tags.url, class: "gedcom-external-link" },
 ]);

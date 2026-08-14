@@ -41,6 +41,9 @@ body.theme-light {
   --code-normal: rgb(20, 40, 60);
   --code-comment: rgb(10, 20, 30);
   --code-keyword: rgb(128, 0, 128);
+  --code-property: rgb(0, 128, 128);
+  --code-function: rgb(160, 100, 0);
+  --code-string: rgb(0, 120, 0);
   --nav-item-background-hover: rgb(235, 225, 245);
   --nav-item-background-selected: rgb(215, 195, 240);
   --nav-item-color-selected: rgb(40, 0, 80);
@@ -64,6 +67,9 @@ body.theme-dark {
   --code-normal: rgb(220, 230, 240);
   --code-comment: rgb(200, 210, 220);
   --code-keyword: rgb(255, 0, 255);
+  --code-property: rgb(0, 255, 255);
+  --code-function: rgb(255, 200, 0);
+  --code-string: rgb(120, 255, 120);
   --nav-item-background-hover: rgb(45, 35, 60);
   --nav-item-background-selected: rgb(70, 50, 100);
   --nav-item-color-selected: rgb(230, 220, 255);
