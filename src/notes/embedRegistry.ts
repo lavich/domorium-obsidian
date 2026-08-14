@@ -76,10 +76,13 @@ class RecordEmbed extends Component {
       });
       return;
     }
-    containerEl.createDiv({
-      cls: "gedcom-embed-title",
-      text: preview.kind === "record" ? preview.title : this.file.name,
-    });
+    // A record says its own name on the line below; a whole file does not.
+    if (preview.kind === "file") {
+      containerEl.createDiv({
+        cls: "gedcom-embed-title",
+        text: this.file.name,
+      });
+    }
     const block = containerEl.createEl("pre", { cls: "gedcom-note-block" });
     for (const run of preview.runs) {
       if (run.className) {

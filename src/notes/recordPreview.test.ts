@@ -24,18 +24,6 @@ describe("what a link to a record shows before it is followed", () => {
     expect(text(preview)).toBe("0 @I1@ INDI\n1 NAME Marie /Curie/\n1 SEX F");
   });
 
-  it("names the record by what a reader calls it", () => {
-    const preview = recordPreview(FILE, "#@I1@");
-
-    expect(preview.kind === "record" && preview.title).toBe("Marie /Curie/");
-  });
-
-  it("falls back to the identifier where the format names none", () => {
-    const preview = recordPreview("0 @F1@ FAM\n1 HUSB @I1@\n0 TRLR\n", "#@F1@");
-
-    expect(preview.kind === "record" && preview.title).toBe("@F1@");
-  });
-
   it("paints the record, rather than handing back one run of text", () => {
     const preview = recordPreview(FILE, "#@I1@");
 

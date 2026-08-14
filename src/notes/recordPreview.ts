@@ -11,7 +11,7 @@ export interface PreviewOptions {
 }
 
 export type RecordPreview =
-  | { kind: "record"; title: string; runs: BlockRun[]; truncated: boolean }
+  | { kind: "record"; runs: BlockRun[]; truncated: boolean }
   | { kind: "file"; runs: BlockRun[]; truncated: boolean }
   | { kind: "missing"; xref: string };
 
@@ -40,11 +40,7 @@ export function recordPreview(
     return { kind: "missing", xref };
   }
   const { start, end } = record.range;
-  return {
-    kind: "record",
-    title: record.label ?? xref,
-    ...read(start.line, end.line - start.line + 1),
-  };
+  return { kind: "record", ...read(start.line, end.line - start.line + 1) };
 }
 
 function slice(
