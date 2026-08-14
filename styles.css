@@ -97,8 +97,26 @@
   border-bottom: none;
 }
 
+/* A list of places in a file is a shape Obsidian already has, in the search
+   results pane; these are its measurements. */
 .gedcom-gedcom-editor .cm-panel-lint li {
-  padding: 2px var(--size-4-3, 12px);
+  padding: var(--size-4-2) var(--size-4-5) var(--size-4-2) var(--size-4-3);
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: var(--cursor);
+  white-space: pre-wrap;
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li:last-child {
+  border-bottom: none;
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li:hover {
+  background-color: var(--nav-item-background-hover);
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li[aria-selected] {
+  background-color: var(--nav-item-background-selected);
+  color: var(--nav-item-color-selected);
 }
 
 .gedcom-gedcom-editor .cm-diagnosticSource {
