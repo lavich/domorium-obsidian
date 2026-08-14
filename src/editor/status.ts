@@ -2,6 +2,7 @@ export interface VersionStatus {
   kind: string;
   version?: string;
   dialect?: string;
+  system?: string;
 }
 
 export interface GedcomStatus {
@@ -24,6 +25,8 @@ function formatVersion(version: VersionStatus | undefined): string {
       return `GEDCOM ${version.version}, checked as ${version.dialect}`;
     case "unsupported":
       return `GEDCOM ${version.version}, not checked`;
+    case "paf":
+      return `${version.system ?? "Personal Ancestral File"}, not checked`;
     case "undetermined":
       return "GEDCOM version missing, not checked";
     default:

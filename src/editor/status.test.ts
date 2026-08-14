@@ -27,6 +27,15 @@ describe("GEDCOM status line", () => {
     ).toBe("GEDCOM 4.0, not checked · 1 problem");
   });
 
+  it("names the system a file that is not GEDCOM was written by", () => {
+    expect(
+      formatStatus({
+        version: { kind: "paf", system: "PAF" },
+        problems: undefined,
+      }),
+    ).toBe("PAF, not checked");
+  });
+
   it("says a missing version is not checked", () => {
     expect(
       formatStatus({ version: { kind: "undetermined", dialect: "7.0" }, problems: 1 }),
