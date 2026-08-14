@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.7.0
+
+- **A note can link to a person, and the vault sees the link.** `[[tree.ged#@I47@]]`
+  is indexed like any other, so the file's Backlinks pane lists the notes that
+  mention a record, the graph draws an edge to each, and the note's Outgoing Links
+  pane names it. 1.6.0's `obsidian://domorium` link is an external URL, which never
+  enters the link cache, so nothing in the vault could answer which notes talk
+  about a person. _Copy link to record_ writes the indexed form, spelt the way this
+  vault spells its own links and carrying the record's name; _Copy Obsidian URL to
+  record_ writes the URL, for a browser or another application.
+- **Hovering a link to a record shows the record**, highlighted, without opening
+  the file, and `![[tree.ged#@I47@]]` embeds it in the note. A link to a `.ged`
+  file used to show a card carrying nothing but the file name, and a link naming a
+  record the file no longer has says so rather than showing the wrong one.
+- **Typing `[[tree.ged#` offers the records in that file**, by name where the
+  format gives one, matched the way the rest of Obsidian matches. It answered "No
+  match found": a subpath is read as a heading or a block, and neither exists for a
+  file that is not markdown, so the one link that has to be typed by hand was the
+  one nothing helped with.
+- **A record read inside a note is indented as it is in the editor.** The editor
+  draws the indentation rather than writing it, so a preview, an embed and a
+  `gedcom` block all started flat and the level of a line had to be counted by eye.
+  The plugin's own indentation setting decides, in the notes as in the editor.
+- **Landing on a record puts it in the middle of the screen**, where a jump
+  downwards used to leave it on the last line with everything it declares below the
+  fold.
+- **A shared note can be linked to.** `0 @N1@ SNOTE text` answered with its text
+  where every other record answers with its identifier, so `[[tree.ged#@N1@]]`
+  opened the file and stopped at the top, and _Copy link to record_ wrote a link to
+  nothing.
+- **The status bar names a file written by Personal Ancestral File** rather than
+  calling it GEDCOM: a header naming a system before `GEDC` is PAF, which no
+  specification here judges, and saying `GEDCOM` said the same as for a file that
+  had been checked.
+
 ## 1.6.0
 
 - **The record a pointer names is previewed where the pointer is written.**
