@@ -1,4 +1,5 @@
-import { openLintPanel } from "@codemirror/lint";
+import { nextDiagnostic, openLintPanel } from "@codemirror/lint";
+import { hoveredPointer } from "@domorium/codemirror";
 import { EditorState } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import {
@@ -36,6 +37,8 @@ declare global {
       calls: HarnessCalls;
       view: EditorView | undefined;
       openProblems(): void;
+      nextProblem(): void;
+      hoveredSpan(): { from: number; to: number } | null;
       openSearch(replace?: boolean): void;
       classOf(selector: string): string | null;
       rectOf(selector: string): DOMRect | null;
@@ -118,6 +121,12 @@ window.gedcom = {
       openLintPanel(view);
     }
   },
+  nextProblem: () => {
+    if (view) {
+      nextDiagnostic(view);
+    }
+  },
+  hoveredSpan: () => (view ? hoveredPointer(view.state) : null),
   openSearch: (replace = false) => {
     if (view) {
       openSearch(view, replace);

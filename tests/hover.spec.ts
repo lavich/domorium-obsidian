@@ -22,6 +22,10 @@ async function modHover(page: Page, offset: number): Promise<void> {
   await hover(page, offset);
 }
 
+function hovered(page: Page) {
+  return page.evaluate(() => window.gedcom.hoveredSpan());
+}
+
 function calls(page: Page): Promise<{ previews: unknown[]; hides: number }> {
   return page.evaluate(() => ({
     previews: window.gedcom.calls.previews,
@@ -30,28 +34,37 @@ function calls(page: Page): Promise<{ previews: unknown[]; hides: number }> {
 }
 
 test.describe("the hovered pointer", () => {
-  test("answers for a pointer, with the mark over both delimiters", async ({
+  test("answers for a pointer, over both of its delimiters", async ({
     page,
   }) => {
     await mount(page);
     await modHover(page, POINTER + 2);
 
-    const marked = await page.evaluate(() => {
-      const element = document.querySelector(".gedcom-hovered-pointer");
-      return element
-        ? {
-            text: element.textContent,
-            decoration: getComputedStyle(element).textDecorationLine,
-          }
-        : null;
+    expect(await hovered(page), "both @ are inside it").toEqual({
+      from: POINTER,
+      to: POINTER + 4,
     });
-
-    expect(marked, "the pointer is marked").not.toBeNull();
-    expect(marked!.text, "the mark covers both @").toBe("@F1@");
-    expect(marked!.decoration).toBe("underline");
     expect((await calls(page)).previews).toEqual([
       { from: POINTER, to: POINTER + 4 },
     ]);
+  });
+
+  test("shows what it says on Obsidian's popover surface, not the library's grey", async ({
+    page,
+  }) => {
+    await mount(page, { dark: true });
+    await hover(page, offsetOf(SAMPLE, "INDI") + 1);
+    await page.waitForSelector(".cm-tooltip");
+
+    const box = await page.evaluate(() => {
+      const style = getComputedStyle(document.querySelector(".cm-tooltip")!);
+      return { background: style.backgroundColor, radius: style.borderRadius };
+    });
+
+    expect(box.background, "--background-primary in the dark palette").toBe(
+      "rgb(20, 20, 20)",
+    );
+    expect(box.radius, "--radius-m").toBe("8px");
   });
 
   test("says nothing without the modifier, however long the mouse sits there", async ({
@@ -60,7 +73,7 @@ test.describe("the hovered pointer", () => {
     await mount(page);
     await hover(page, POINTER + 2);
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect(await hovered(page)).toBeNull();
     expect((await calls(page)).previews).toEqual([]);
   });
 
@@ -70,22 +83,22 @@ test.describe("the hovered pointer", () => {
     await mount(page);
     await modHover(page, TAG + 2);
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect(await hovered(page)).toBeNull();
     expect((await calls(page)).previews).toEqual([]);
   });
 
   test("lets go when the mouse moves off the pointer", async ({ page }) => {
     await mount(page);
     await modHover(page, POINTER + 2);
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(1);
+    expect(await hovered(page)).not.toBeNull();
 
     await modHover(page, TAG + 2);
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect(await hovered(page)).toBeNull();
     expect((await calls(page)).hides).toBe(1);
   });
 
-  test("marks a hovered pointer that also carries a problem without losing either", async ({
+  test("leaves the problem's own underline alone on a pointer it is hovering", async ({
     page,
   }) => {
     const doc =
@@ -96,28 +109,13 @@ test.describe("the hovered pointer", () => {
     const pointer = doc.indexOf("@I1@", doc.indexOf("1 FAMC")) + 2;
     await modHover(page, pointer);
 
-    const both = await page.evaluate(() => {
-      const read = (selector: string) => {
-        const element = document.querySelector(selector);
-        return element
-          ? {
-              decoration: getComputedStyle(element).textDecorationLine,
-              style: getComputedStyle(element).textDecorationStyle,
-            }
-          : null;
-      };
-      return {
-        hovered: read(".gedcom-hovered-pointer"),
-        lint: read(".cm-lintRange-error"),
-      };
+    const lint = await page.evaluate(() => {
+      const element = document.querySelector(".cm-lintRange-error");
+      return element ? getComputedStyle(element).textDecorationStyle : null;
     });
 
-    expect(both.hovered?.decoration, "the gesture still marks it").toBe(
-      "underline",
-    );
-    expect(both.lint?.style, "and the problem is still wavy under it").toBe(
-      "wavy",
-    );
+    expect(await hovered(page), "the gesture answers for it").not.toBeNull();
+    expect(lint, "and the problem is still wavy under it").toBe("wavy");
   });
 
   test("lets go when the modifier is released over a focused editor", async ({
@@ -128,7 +126,7 @@ test.describe("the hovered pointer", () => {
     await modHover(page, POINTER + 2);
     await page.keyboard.up("Meta");
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect(await hovered(page)).toBeNull();
     expect((await calls(page)).hides).toBe(1);
   });
 
@@ -139,7 +137,7 @@ test.describe("the hovered pointer", () => {
     await modHover(page, POINTER + 2);
     await page.keyboard.up("Meta");
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect(await hovered(page)).toBeNull();
     expect((await calls(page)).hides).toBe(1);
   });
 });
@@ -151,7 +149,7 @@ test.describe("the gesture the user has chosen", () => {
     await mount(page, { recordPreview: "hover" });
     await hover(page, POINTER + 2);
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(1);
+    expect(await hovered(page)).not.toBeNull();
     expect((await calls(page)).previews).toEqual([
       { from: POINTER, to: POINTER + 4 },
     ]);
@@ -161,7 +159,7 @@ test.describe("the gesture the user has chosen", () => {
     await mount(page, { recordPreview: "off" });
     await modHover(page, POINTER + 2);
 
-    expect(await page.locator(".gedcom-hovered-pointer").count()).toBe(0);
+    expect(await hovered(page)).toBeNull();
     expect((await calls(page)).previews).toEqual([]);
   });
 });

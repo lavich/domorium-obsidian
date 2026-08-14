@@ -7,16 +7,18 @@ import { mount, PROBLEMS, SAMPLE } from "./harness";
  * names the Obsidian variable a pixel came from.
  */
 const LIGHT = {
+  comment: "rgb(10, 20, 30)",
+  keyword: "rgb(128, 0, 128)",
+  normal: "rgb(20, 40, 60)",
   faint: "rgb(10, 20, 30)",
-  cyan: "rgb(0, 128, 128)",
-  purple: "rgb(128, 0, 128)",
   background: "rgb(255, 255, 255)",
 };
 
 const DARK = {
+  comment: "rgb(200, 210, 220)",
+  keyword: "rgb(255, 0, 255)",
+  normal: "rgb(220, 230, 240)",
   faint: "rgb(200, 210, 220)",
-  cyan: "rgb(0, 255, 255)",
-  purple: "rgb(255, 0, 255)",
   background: "rgb(20, 20, 20)",
 };
 
@@ -42,9 +44,9 @@ test.describe("the Obsidian theme", () => {
     await mount(page);
     const colours = await tokenColours(page);
 
-    expect(colours["0"], "a level is a comment").toBe(LIGHT.faint);
-    expect(colours.HEAD, "a tag is a string").toBe(LIGHT.purple);
-    expect(colours["@I1@"], "an XREF is a keyword").toBe(LIGHT.cyan);
+    expect(colours["0"], "a level is a comment").toBe(LIGHT.comment);
+    expect(colours.HEAD, "a tag is a string").toBe(LIGHT.normal);
+    expect(colours["@I1@"], "an XREF is a keyword").toBe(LIGHT.keyword);
   });
 
   test("follows the variables into dark, which is what the theme flag decides", async ({
@@ -53,9 +55,9 @@ test.describe("the Obsidian theme", () => {
     await mount(page, { dark: true });
     const colours = await tokenColours(page);
 
-    expect(colours["0"]).toBe(DARK.faint);
-    expect(colours.HEAD).toBe(DARK.purple);
-    expect(colours["@I1@"]).toBe(DARK.cyan);
+    expect(colours["0"]).toBe(DARK.comment);
+    expect(colours.HEAD).toBe(DARK.normal);
+    expect(colours["@I1@"]).toBe(DARK.keyword);
   });
 
   test("takes the editor and gutter background from the primary variable", async ({

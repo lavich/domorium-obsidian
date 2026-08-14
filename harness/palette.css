@@ -38,6 +38,12 @@ body.theme-light {
   --text-warning: rgb(180, 120, 0);
   --text-accent: rgb(0, 0, 180);
   --text-highlight-bg: rgba(255, 208, 0, 0.4);
+  --code-normal: rgb(20, 40, 60);
+  --code-comment: rgb(10, 20, 30);
+  --code-keyword: rgb(128, 0, 128);
+  --nav-item-background-hover: rgb(235, 225, 245);
+  --nav-item-background-selected: rgb(215, 195, 240);
+  --nav-item-color-selected: rgb(40, 0, 80);
 }
 
 body.theme-dark {
@@ -55,6 +61,12 @@ body.theme-dark {
   --text-warning: rgb(255, 200, 100);
   --text-accent: rgb(150, 150, 255);
   --text-highlight-bg: rgba(255, 208, 0, 0.4);
+  --code-normal: rgb(220, 230, 240);
+  --code-comment: rgb(200, 210, 220);
+  --code-keyword: rgb(255, 0, 255);
+  --nav-item-background-hover: rgb(45, 35, 60);
+  --nav-item-background-selected: rgb(70, 50, 100);
+  --nav-item-color-selected: rgb(230, 220, 255);
 }
 
 #controls {
@@ -144,6 +156,12 @@ body.realistic.theme-dark {
  * the plugin's own overrides, which in the app they lose to.
  */
 body {
+  --cursor: default;
+  --radius-m: 8px;
+  --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.15);
+  --popover-width: 450px;
+  --popover-max-height: 95vh;
+  --popover-font-size: 16px;
   --header-height: 0px;
   --touch-size-l: 52px;
   --navbar-bottom-offset: max(var(--safe-area-inset-bottom), var(--size-4-3));
