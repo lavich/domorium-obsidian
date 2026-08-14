@@ -30,8 +30,3 @@ name. Pick one, then hover what you wrote.
 Open [[curie.ged]] and look at the Backlinks pane: every note that mentions a
 record is listed there, and the graph draws an edge to each. Nothing in this
 vault maintains that — the links are ordinary links.
-
-## Two files, two answers
-
-[[paf-export.ged]] was written by Personal Ancestral File. The status bar says
-`PAF, not checked` rather than pretending a specification applies to it.
