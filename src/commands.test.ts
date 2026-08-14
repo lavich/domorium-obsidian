@@ -38,6 +38,8 @@ function host(overrides: Partial<CommandHost> = {}) {
     copy,
     host: {
       vaultName: () => "Family",
+      linkToRecord: (path: string, subpath: string, text: string) =>
+        `[[${path}${subpath}|${text}]]`,
       notify,
       copy,
       chooseRecord: vi.fn(),
@@ -139,6 +141,15 @@ describe("what a command does when it runs", () => {
       "obsidian://domorium?vault=Family&file=tree.ged&xref=%40I1%40",
     );
     expect(notify).toHaveBeenCalledWith("GEDCOM: link to @I1@ copied");
+  });
+
+  it("copies a link the vault indexes, showing the name the record carries", async () => {
+    const { host: commandHost, copy, notify } = host();
+
+    command("copy-gedcom-record-wikilink").run(commandHost, view());
+    await vi.waitFor(() => expect(notify).toHaveBeenCalled());
+
+    expect(copy).toHaveBeenCalledWith("[[tree.ged#@I1@|Marie /Curie/]]");
   });
 
   it("says so when the clipboard refuses", async () => {

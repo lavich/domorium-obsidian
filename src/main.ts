@@ -12,14 +12,18 @@ import {
   TFile,
 } from "obsidian";
 
-import { createGedcomApi, type GedcomApi } from "./api";
+import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
+import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
+import { RecordIndex } from "./notes/recordIndex";
+import { RecordSuggest } from "./notes/recordSuggest";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
+  stripEmbed,
   type GedcomLinkTarget,
 } from "./vault/protocolLink";
 import {
@@ -39,10 +43,15 @@ import {
   type GedcomSettings,
 } from "./settingsData";
 
+/** Not in `obsidian.d.ts`: only the method that appends to it is. */
+interface SuggestRegistry {
+  suggests: unknown[];
+  removeSuggest(suggest: unknown): void;
+}
+
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
-  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
-  readonly api: GedcomApi = createGedcomApi({
+  private readonly vault: VaultReader = {
     read: async (path) => {
       const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
       if (!(file instanceof TFile)) {
@@ -53,7 +62,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         revision: `${file.stat.mtime}:${file.stat.size}`,
       };
     },
-  });
+  };
+  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
+  readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
 
   async onload(): Promise<void> {
@@ -69,6 +80,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       const { runs, problems } = renderGedcomBlock(
         source,
         blockDialect(section?.text.split("\n")[section.lineStart]),
+        this.settings.indentationHints,
       );
       const block = element.createEl("pre", { cls: "gedcom-note-block" });
       for (const run of runs) {
@@ -89,6 +101,14 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         });
       }
     });
+    const unregisterEmbeds = registerRecordEmbeds(
+      this.app,
+      () => this.settings.indentationHints,
+    );
+    if (unregisterEmbeds) {
+      this.register(unregisterEmbeds);
+    }
+    this.registerRecordSuggest();
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     this.registerObsidianProtocolHandler(PROTOCOL_ACTION, (params) => {
       const target = parseGedcomLink(params);
@@ -183,6 +203,25 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     });
   }
 
+  /**
+   * Obsidian's own suggester answers for everything inside `[[`, and the
+   * manager takes the first that answers, so appending puts this out of reach.
+   */
+  private registerRecordSuggest(): void {
+    const suggest = new RecordSuggest(this.app, new RecordIndex(this.vault));
+    const registry = (
+      this.app.workspace as unknown as { editorSuggest?: SuggestRegistry }
+    ).editorSuggest;
+    if (!Array.isArray(registry?.suggests)) {
+      this.registerEditorSuggest(suggest);
+      return;
+    }
+    registry.suggests.unshift(suggest);
+    this.register(() => {
+      registry.removeSuggest(suggest);
+    });
+  }
+
   private async openGedcomLink(target: GedcomLinkTarget): Promise<void> {
     const path = normalizePath(target.file);
     const file = this.app.vault.getAbstractFileByPath(path);
@@ -269,6 +308,16 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   private commandHost(): CommandHost {
     return {
       vaultName: () => this.app.vault.getName(),
+      linkToRecord: (path, subpath, text) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        if (!(file instanceof TFile)) {
+          return "";
+        }
+        // Obsidian spells a link to a file that is not markdown as an embed.
+        return stripEmbed(
+          this.app.fileManager.generateMarkdownLink(file, "", subpath, text),
+        );
+      },
       notify: (message) => {
         new Notice(message);
       },

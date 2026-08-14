@@ -7,6 +7,10 @@ import {
   normalizeXref,
   parseGedcomLink,
   recordAtLine,
+  recordLinkText,
+  recordSubpath,
+  stripEmbed,
+  xrefFromSubpath,
 } from "./protocolLink";
 
 describe("the identifier a link carries", () => {
@@ -51,6 +55,65 @@ describe("writing a link", () => {
     expect(
       parseGedcomLink(Object.fromEntries(url.searchParams) as Record<string, string>),
     ).toEqual({ file: "tree.ged", xref: "@I47@" });
+  });
+});
+
+describe("the record a link carries after the hash", () => {
+  it("writes the identifier the file contains", () => {
+    expect(recordSubpath("@I47@")).toBe("#@I47@");
+    expect(recordSubpath("I47"), "and takes one written by hand").toBe("#@I47@");
+  });
+
+  it("reads it back, with or without the hash", () => {
+    expect(xrefFromSubpath("#@I47@")).toBe("@I47@");
+    expect(xrefFromSubpath("@I47@")).toBe("@I47@");
+    expect(xrefFromSubpath("#I47")).toBe("@I47@");
+  });
+
+  it("answers nothing for a link that named no record", () => {
+    expect(xrefFromSubpath("#")).toBeNull();
+    expect(xrefFromSubpath("")).toBeNull();
+    expect(xrefFromSubpath("#  ")).toBeNull();
+  });
+});
+
+describe("the link Obsidian spells for a file that is not markdown", () => {
+  it("is an embed, and a link to a record is not an embed", () => {
+    expect(stripEmbed("![[tree.ged#@I47@]]")).toBe("[[tree.ged#@I47@]]");
+    expect(stripEmbed("![Marie](tree.ged#@I47@)")).toBe(
+      "[Marie](tree.ged#@I47@)",
+    );
+  });
+
+  it("leaves a link that is already one alone", () => {
+    expect(stripEmbed("[[tree.ged#@I47@]]")).toBe("[[tree.ged#@I47@]]");
+  });
+});
+
+describe("what a link to a record shows a reader", () => {
+  const record = (label?: string, identifier = "@I47@") => ({
+    tag: "INDI",
+    identifier,
+    label,
+    start: { line: 0, character: 0 },
+  });
+
+  it("shows the name the record carries", () => {
+    expect(recordLinkText(record("Marie /Curie/"))).toBe("Marie /Curie/");
+  });
+
+  it("shows the identifier where there is no name", () => {
+    expect(recordLinkText(record())).toBe("@I47@");
+  });
+
+  it("drops what would end the link early", () => {
+    expect(recordLinkText(record("Marie [nee|Skłodowska]"))).toBe(
+      "Marie  nee Skłodowska",
+    );
+  });
+
+  it("falls back to the identifier when nothing readable is left", () => {
+    expect(recordLinkText(record("[[|]]"))).toBe("@I47@");
   });
 });
 

@@ -213,3 +213,20 @@
 .gedcom-gedcom-editor .document-replace-input {
   min-width: 6rem;
 }
+
+.gedcom-embed {
+  padding: var(--size-4-3);
+}
+
+.gedcom-embed-title {
+  margin-bottom: var(--size-4-1);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-embed-missing {
+  color: var(--text-muted);
+}
+
+.gedcom-suggestion-detail {
+  color: var(--text-muted);
+}

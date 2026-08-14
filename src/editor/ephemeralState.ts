@@ -8,6 +8,8 @@ export interface EphemeralPosition {
 export interface GedcomEphemeralState {
   cursor?: EphemeralPosition;
   scroll?: number;
+  /** What followed the `#` in the link that opened the file, `#` included. */
+  subpath?: string;
 }
 
 export function positionFromOffset(
@@ -38,6 +40,9 @@ export function parseEphemeralState(value: unknown): GedcomEphemeralState {
   }
   if (isFiniteNumber(source.scroll) && source.scroll >= 0) {
     state.scroll = source.scroll;
+  }
+  if (typeof source.subpath === "string" && source.subpath.trim()) {
+    state.subpath = source.subpath;
   }
   return state;
 }

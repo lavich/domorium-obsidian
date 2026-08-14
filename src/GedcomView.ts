@@ -46,7 +46,7 @@ import {
 } from "./editor/ephemeralState";
 import { openSearch } from "./editor/searchPanel";
 import { routeDocumentLink } from "./editor/service";
-import { recordAtLine } from "./vault/protocolLink";
+import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
@@ -148,7 +148,11 @@ export class GedcomView extends TextFileView {
   }
 
   setEphemeralState(state: unknown): void {
-    const { cursor, scroll } = parseEphemeralState(state);
+    const { cursor, scroll, subpath } = parseEphemeralState(state);
+    const xref = subpath === undefined ? null : xrefFromSubpath(subpath);
+    if (xref && this.goToXref(xref)) {
+      return;
+    }
     if (cursor) {
       this.editor.dispatch({
         selection: {
@@ -206,11 +210,10 @@ export class GedcomView extends TextFileView {
   }
 
   goToRecord(record: GedcomRecord): void {
+    const anchor = positionToOffset(this.editor.state.doc, record.start);
     this.editor.dispatch({
-      selection: {
-        anchor: positionToOffset(this.editor.state.doc, record.start),
-      },
-      scrollIntoView: true,
+      selection: { anchor },
+      effects: EditorView.scrollIntoView(anchor, { y: "center" }),
     });
     this.editor.focus();
   }
