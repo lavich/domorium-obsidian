@@ -10,12 +10,12 @@
 2 CONT from public sources for demonstration. Two people in the last generation
 2 CONT are living, and carry a year of birth and nothing else.
 0 @U1@ SUBM
-1 NA4ME Domorium
+1 NAME Domorium
 1 WWW https://domorium.com/
 0 @I1@ INDI
 1 NAME Marie /Skłodowska-Curie/
 2 GIVN Marie
-2 SцURN Skłodowska-Curie
+2 SURN Skłodowska-Curie
 1 NAME Maria Salomea /Skłodowska/
 2 TYPE BIRTH
 1 SEX F

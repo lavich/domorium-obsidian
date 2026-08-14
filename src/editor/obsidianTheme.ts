@@ -22,7 +22,6 @@ const background = "var(--background-primary)",
   panelBackground = "var(--background-secondary)",
   text = "var(--text-normal)",
   faint = "var(--text-faint)",
-  accent = "var(--color-accent)",
   border = "var(--background-modifier-border)",
   error = "var(--text-error)",
   warning = "var(--text-warning)",
@@ -56,19 +55,10 @@ export function obsidianEditorTheme(dark: boolean): Extension {
         border: "none",
       },
 
-      ".gedcom-token-declaration": { fontWeight: "var(--font-semibold)" },
       ".gedcom-indent-hint": {
         color: "transparent",
         whiteSpace: "pre",
         userSelect: "none",
-      },
-      ".gedcom-reference-write": {
-        background: `color-mix(in srgb, ${accent} 28%, transparent)`,
-        borderRadius: "2px",
-      },
-      ".gedcom-reference-read": {
-        background: `color-mix(in srgb, ${accent} 15%, transparent)`,
-        borderRadius: "2px",
       },
       // A tooltip is a popover, not a dialog: Obsidian dresses one with the
       // generic surface variables and keeps only sizes under `--popover-*`.
