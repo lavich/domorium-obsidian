@@ -64,6 +64,14 @@ the format gives one. Hovering a link to a record shows the record, highlighted,
 without opening the file, and `![[tree.ged#@I47@]]` embeds it in the note the
 same way.
 
+## A vault to try it on
+
+[`demo-vault/`](demo-vault) is an Obsidian vault: open it with **Open folder as
+vault**, enable the plugin, and start from `Start here.md`. Four generations of
+the Curie family live in one GEDCOM file — seventeen people, five families,
+sources, repositories and images — and the notes around it link into it the way
+your own notes would.
+
 ## For dataviewjs and other plugins
 
 The parsed document is reachable without opening the file:

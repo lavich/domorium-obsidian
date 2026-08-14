@@ -10,6 +10,7 @@ export default tseslint.config(
       "harness/dist/**",
       "harness/results/**",
       "coverage/**",
+      "demo-vault/**",
       "esbuild.config.mjs",
       "playwright.config.ts",
       "vitest.config.ts",

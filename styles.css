@@ -97,8 +97,57 @@
   border-bottom: none;
 }
 
+/* A list of places in a file is a shape Obsidian already has, in the search
+   results pane; these are its measurements. */
 .gedcom-gedcom-editor .cm-panel-lint li {
-  padding: 2px var(--size-4-3, 12px);
+  padding: var(--size-4-2) var(--size-4-5) var(--size-4-2) var(--size-4-3);
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: var(--cursor);
+  white-space: pre-wrap;
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li:last-child {
+  border-bottom: none;
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li:hover {
+  background-color: var(--nav-item-background-hover);
+}
+
+.gedcom-gedcom-editor .cm-panel-lint li[aria-selected] {
+  background-color: var(--nav-item-background-selected);
+  color: var(--nav-item-color-selected);
+}
+
+/* The library leaves the close button as a bare glyph in the corner; every
+   other button in Obsidian is an icon-sized target. */
+.gedcom-gedcom-editor .cm-panel-lint [name="close"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: var(--size-2-2);
+  right: var(--size-2-2);
+  width: var(--size-4-6);
+  height: var(--size-4-6);
+  border-radius: var(--clickable-icon-radius);
+  color: var(--icon-color);
+  font-size: var(--font-ui-medium);
+  cursor: var(--cursor);
+}
+
+.gedcom-gedcom-editor .cm-panel-lint [name="close"]:hover {
+  color: var(--icon-color-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.is-mobile .gedcom-gedcom-editor .cm-panel-lint [name="close"] {
+  width: var(--touch-size-s);
+  height: var(--touch-size-s);
+}
+
+/* The button hangs over this row, and text under it cannot be read. */
+.gedcom-gedcom-editor .cm-panel-lint li:first-child {
+  padding-right: var(--size-4-8);
 }
 
 .gedcom-gedcom-editor .cm-diagnosticSource {

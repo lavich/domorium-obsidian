@@ -8,3 +8,6 @@ coverage/
 /.superpowers/
 harness/dist/
 harness/results/
+
+# Obsidian keeps its own state in a vault, including a copy of the plugin.
+demo-vault/.obsidian/
