@@ -1,0 +1,326 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SOUR DOMORIUM
+2 NAME Domorium demo vault
+2 VERS 1.7.0
+1 DATE 14 AUG 2026
+1 SUBM @U1@
+1 NOTE Four generations of the Skłodowski, Curie and Joliot families, compiled
+2 CONT from public sources for demonstration. Two people in the last generation
+2 CONT are living, and carry a year of birth and nothing else.
+0 @U1@ SUBM
+1 NAME Domorium
+1 WWW https://domorium.com/
+0 @I1@ INDI
+1 NAME Marie /Skłodowska-Curie/
+2 GIVN Marie
+2 SURN Skłodowska-Curie
+1 NAME Maria Salomea /Skłodowska/
+2 TYPE BIRTH
+1 SEX F
+1 BIRT
+2 DATE 7 NOV 1867
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 4 JUL 1934
+2 PLAC Passy, Haute-Savoie, France
+1 OCCU Physicist and chemist
+1 FAMC @F1@
+1 FAMS @F3@
+1 OBJE @O1@
+1 SNOTE @N1@
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1911
+0 @I2@ INDI
+1 NAME Pierre /Curie/
+2 GIVN Pierre
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 15 MAY 1859
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 APR 1906
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMC @F2@
+1 FAMS @F3@
+1 OBJE @O2@
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903
+0 @I3@ INDI
+1 NAME Władysław /Skłodowski/
+2 GIVN Władysław
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1832
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 14 MAY 1902
+2 PLAC Warsaw, Congress Poland
+1 OCCU Teacher of mathematics and physics
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I4@ INDI
+1 NAME Bronisława /Boguska/
+2 GIVN Bronisława
+2 SURN Boguska
+1 SEX F
+1 BIRT
+2 DATE 1835
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 9 MAY 1878
+2 PLAC Warsaw, Congress Poland
+1 OCCU Headmistress
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I5@ INDI
+1 NAME Zofia /Skłodowska/
+2 GIVN Zofia
+2 SURN Skłodowska
+1 SEX F
+1 BIRT
+2 DATE 1862
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1876
+2 PLAC Warsaw, Congress Poland
+1 FAMC @F1@
+0 @I6@ INDI
+1 NAME Józef /Skłodowski/
+2 GIVN Józef
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1863
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1937
+1 OCCU Physician
+1 FAMC @F1@
+0 @I7@ INDI
+1 NAME Bronisława /Dłuska/
+2 GIVN Bronisława
+2 SURN Dłuska
+1 SEX F
+1 BIRT
+2 DATE 1865
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1939
+1 OCCU Physician
+1 FAMC @F1@
+0 @I8@ INDI
+1 NAME Helena /Szalay/
+2 GIVN Helena
+2 SURN Szalay
+1 SEX F
+1 BIRT
+2 DATE 1866
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1961
+1 OCCU Teacher
+1 FAMC @F1@
+0 @I9@ INDI
+1 NAME Eugène /Curie/
+2 GIVN Eugène
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 28 AUG 1827
+2 PLAC Mulhouse, France
+1 DEAT
+2 DATE 25 FEB 1910
+2 PLAC Sceaux, France
+1 OCCU Physician
+1 FAMS @F2@
+0 @I10@ INDI
+1 NAME Sophie-Claire /Depouilly/
+2 GIVN Sophie-Claire
+2 SURN Depouilly
+1 SEX F
+1 BIRT
+2 DATE 1832
+1 DEAT
+2 DATE 1897
+1 FAMS @F2@
+0 @I11@ INDI
+1 NAME Jacques /Curie/
+2 GIVN Jacques
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 29 OCT 1855
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 FEB 1941
+2 PLAC Montpellier, France
+1 OCCU Physicist
+1 FAMC @F2@
+0 @I12@ INDI
+1 NAME Irène /Joliot-Curie/
+2 GIVN Irène
+2 SURN Joliot-Curie
+1 SEX F
+1 BIRT
+2 DATE 12 SEP 1897
+2 PLAC Paris, France
+1 DEAT
+2 DATE 17 MAR 1956
+2 PLAC Paris, France
+1 OCCU Physicist and chemist
+1 FAMC @F3@
+1 FAMS @F4@
+1 OBJE @O3@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935, shared with Frédéric Joliot
+0 @I13@ INDI
+1 NAME Ève /Curie/
+2 GIVN Ève
+2 SURN Curie
+1 SEX F
+1 BIRT
+2 DATE 6 DEC 1904
+2 PLAC Paris, France
+1 DEAT
+2 DATE 22 OCT 2007
+2 PLAC New York, New York, United States
+1 OCCU Writer and pianist
+1 FAMC @F3@
+1 FAMS @F5@
+1 SNOTE @N2@
+0 @I14@ INDI
+1 NAME Frédéric /Joliot/
+2 GIVN Frédéric
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 19 MAR 1900
+2 PLAC Paris, France
+1 DEAT
+2 DATE 14 AUG 1958
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMS @F4@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935
+0 @I15@ INDI
+1 NAME Henry Richardson /Labouisse/
+2 GIVN Henry Richardson
+2 SURN Labouisse
+1 SEX M
+1 BIRT
+2 DATE 11 FEB 1904
+2 PLAC New Orleans, Louisiana, United States
+1 DEAT
+2 DATE 25 MAR 1987
+2 PLAC New York, New York, United States
+1 OCCU Diplomat
+1 FAMS @F5@
+0 @I16@ INDI
+1 NAME Hélène /Langevin-Joliot/
+2 GIVN Hélène
+2 SURN Langevin-Joliot
+1 SEX F
+1 BIRT
+2 DATE 1927
+1 OCCU Nuclear physicist
+1 FAMC @F4@
+0 @I17@ INDI
+1 NAME Pierre /Joliot/
+2 GIVN Pierre
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 1932
+1 OCCU Biologist
+1 FAMC @F4@
+0 @F1@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 CHIL @I5@
+1 CHIL @I6@
+1 CHIL @I7@
+1 CHIL @I8@
+1 CHIL @I1@
+1 MARR
+2 DATE 1860
+2 PLAC Warsaw, Congress Poland
+0 @F2@ FAM
+1 HUSB @I9@
+1 WIFE @I10@
+1 CHIL @I11@
+1 CHIL @I2@
+0 @F3@ FAM
+1 HUSB @I2@
+1 WIFE @I1@
+1 CHIL @I12@
+1 CHIL @I13@
+1 MARR
+2 DATE 26 JUL 1895
+2 PLAC Sceaux, France
+0 @F4@ FAM
+1 HUSB @I14@
+1 WIFE @I12@
+1 CHIL @I16@
+1 CHIL @I17@
+1 MARR
+2 DATE 9 OCT 1926
+2 PLAC Paris, France
+0 @F5@ FAM
+1 HUSB @I15@
+1 WIFE @I13@
+1 MARR
+2 DATE 19 NOV 1954
+2 PLAC New York, New York, United States
+0 @O1@ OBJE
+1 FILE Media/marie-sklodowska-curie.svg
+2 FORM image/svg+xml
+2 TITL Marie Skłodowska-Curie
+0 @O2@ OBJE
+1 FILE Media/pierre-curie.svg
+2 FORM image/svg+xml
+2 TITL Pierre Curie
+0 @O3@ OBJE
+1 FILE Media/irene-joliot-curie.svg
+2 FORM image/svg+xml
+2 TITL Irène Joliot-Curie
+0 @S1@ SOUR
+1 TITL The Nobel Prize in Physics 1903
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+1 OBJE @O4@
+0 @S2@ SOUR
+1 TITL Parish registers of Warsaw
+1 REPO @R2@
+0 @S3@ SOUR
+1 TITL The Nobel Prize in Chemistry 1911 and 1935
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+0 @O4@ OBJE
+1 FILE Sources/nobel-diploma-1903.svg
+2 FORM image/svg+xml
+2 TITL Diploma of the 1903 prize
+0 @R1@ REPO
+1 NAME Nobel Prize Outreach
+1 WWW https://www.nobelprize.org/
+0 @R2@ REPO
+1 NAME State Archive in Warsaw
+1 ADDR Krzywe Koło 7
+2 CITY Warsaw
+2 CTRY Poland
+0 @N1@ SNOTE The only person to have won a Nobel Prize in two different sciences:
+1 CONT physics in 1903 and chemistry in 1911.
+0 @N2@ SNOTE Wrote Madame Curie, the biography of her mother, in 1937. Her husband
+1 CONT accepted the Nobel Peace Prize for UNICEF in 1965.
+0 TRLR
