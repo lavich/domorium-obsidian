@@ -1,3 +1,8 @@
+---
+tags:
+  - topic
+---
+
 Isolated from pitchblende at the École de physique et de chimie in Paris,
 announced in December 1898 by [[curie.ged#@I1@|Marie Skłodowska-Curie]] and
 [[curie.ged#@I2@|Pierre Curie]].

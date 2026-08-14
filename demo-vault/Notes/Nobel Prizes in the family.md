@@ -1,3 +1,9 @@
+---
+tags:
+  - topic
+  - nobel
+---
+
 Five prizes reach this family, across three generations.
 
 | year | prize     | who                                                                                                               |

@@ -1,3 +1,10 @@
+---
+tags:
+  - person
+  - family/curie
+  - nobel
+---
+
 Physicist and chemist, born in Warsaw in 1867, died at Sancellemoz in 1934.
 Her record is [[curie.ged#@I1@|Marie Skłodowska-Curie]], and the two prizes are
 recorded as a shared note: [[curie.ged#@N1@|Two Nobel Prizes]].

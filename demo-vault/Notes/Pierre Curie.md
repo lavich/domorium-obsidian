@@ -1,3 +1,10 @@
+---
+tags:
+  - person
+  - family/curie
+  - nobel
+---
+
 Physicist, born in Paris in 1859, killed by a horse-drawn cart on the rue
 Dauphine in 1906. His record is [[curie.ged#@I2@|Pierre Curie]].
 

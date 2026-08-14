@@ -1,3 +1,9 @@
+---
+tags:
+  - gedcom
+  - demo
+---
+
 # The Curie family
 
 A demonstration vault for the [GEDCOM plugin](https://github.com/lavich/domorium-obsidian).
@@ -24,6 +30,10 @@ first: the record appears without opening anything.
 
 Type `[[curie.ged#` on the line below and the records of that file are offered by
 name. Pick one, then hover what you wrote.
+
+Every note here is tagged, so the tag pane holds the vault's own shape:
+`person`, `topic`, `source`, and `family/curie` beside `family/joliot` and
+`family/sklodowski`.
 
 ## See what the vault knows
 

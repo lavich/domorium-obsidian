@@ -1,3 +1,10 @@
+---
+tags:
+  - person
+  - family/joliot
+  - nobel
+---
+
 The elder daughter, born in Paris in 1897. Her record:
 
 ![[curie.ged#@I12@]]

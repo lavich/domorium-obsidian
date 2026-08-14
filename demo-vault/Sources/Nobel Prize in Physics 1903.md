@@ -1,3 +1,9 @@
+---
+tags:
+  - source
+  - nobel
+---
+
 The source record is [[curie.ged#@S1@|The Nobel Prize in Physics 1903]], held by
 [[curie.ged#@R1@|Nobel Prize Outreach]] and cited from the records of
 [[curie.ged#@I1@|Marie Skłodowska-Curie]] and [[curie.ged#@I2@|Pierre Curie]].
