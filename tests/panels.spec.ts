@@ -28,6 +28,18 @@ function styleOf(
 }
 
 test.describe("the panels CodeMirror paints", () => {
+  test("give the problems panel a close button of a size a finger finds", async ({
+    page,
+  }) => {
+    await openPanels(page, true);
+    const box = await page
+      .locator('.cm-panel-lint [name="close"]')
+      .boundingBox();
+
+    expect(box?.width, "--size-4-6").toBeGreaterThanOrEqual(24);
+    expect(box?.height, "--size-4-6").toBeGreaterThanOrEqual(24);
+  });
+
   test("sit on Obsidian's secondary background rather than the library's", async ({
     page,
   }) => {
