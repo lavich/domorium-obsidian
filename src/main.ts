@@ -16,6 +16,7 @@ import { createGedcomApi, type GedcomApi } from "./api";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
+import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import {
   parseGedcomLink,
@@ -90,6 +91,10 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         });
       }
     });
+    const unregisterEmbeds = registerRecordEmbeds(this.app);
+    if (unregisterEmbeds) {
+      this.register(unregisterEmbeds);
+    }
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     this.registerObsidianProtocolHandler(PROTOCOL_ACTION, (params) => {
       const target = parseGedcomLink(params);

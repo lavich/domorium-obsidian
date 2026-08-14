@@ -42,7 +42,7 @@ export function renderGedcomBlock(
     dialect,
   });
   return {
-    runs: runsOf(source, service.getSemanticTokens()),
+    runs: tokenRuns(source, service.getSemanticTokens()),
     problems: service.getDiagnostics().map((diagnostic) => ({
       line: diagnostic.range.start.line + 1,
       message: diagnostic.message,
@@ -51,21 +51,25 @@ export function renderGedcomBlock(
   };
 }
 
-function runsOf(source: string, tokens: SemanticToken[]): BlockRun[] {
+/** Token offsets are the document's; `offset` says where `source` starts in it. */
+export function tokenRuns(
+  source: string,
+  tokens: SemanticToken[],
+  offset = 0,
+): BlockRun[] {
   const runs: BlockRun[] = [];
   let cursor = 0;
   for (const token of tokens) {
-    if (token.startOffset < cursor) {
+    const start = token.startOffset - offset;
+    const end = Math.min(token.endOffset - offset, source.length);
+    if (start < cursor || start >= source.length) {
       continue;
     }
-    if (token.startOffset > cursor) {
-      runs.push({ text: source.slice(cursor, token.startOffset), className: null });
+    if (start > cursor) {
+      runs.push({ text: source.slice(cursor, start), className: null });
     }
-    runs.push({
-      text: source.slice(token.startOffset, token.endOffset),
-      className: classOf(token),
-    });
-    cursor = token.endOffset;
+    runs.push({ text: source.slice(start, end), className: classOf(token) });
+    cursor = end;
   }
   if (cursor < source.length) {
     runs.push({ text: source.slice(cursor), className: null });

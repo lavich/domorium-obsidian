@@ -59,6 +59,9 @@ record** writes the `obsidian://domorium?vault=…&file=…&xref=@I47@` form ins
 which a browser or another application can follow. Either one opens the file with
 the cursor on that record.
 
+Hovering a link to a record shows the record, highlighted, without opening the
+file, and `![[tree.ged#@I47@]]` embeds it in the note the same way.
+
 ## For dataviewjs and other plugins
 
 The parsed document is reachable without opening the file:
