@@ -226,3 +226,7 @@
 .gedcom-embed-missing {
   color: var(--text-muted);
 }
+
+.gedcom-suggestion-detail {
+  color: var(--text-muted);
+}

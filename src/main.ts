@@ -12,12 +12,14 @@ import {
   TFile,
 } from "obsidian";
 
-import { createGedcomApi, type GedcomApi } from "./api";
+import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
+import { RecordIndex } from "./notes/recordIndex";
+import { RecordSuggest } from "./notes/recordSuggest";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -41,10 +43,15 @@ import {
   type GedcomSettings,
 } from "./settingsData";
 
+/** Not in `obsidian.d.ts`: only the method that appends to it is. */
+interface SuggestRegistry {
+  suggests: unknown[];
+  removeSuggest(suggest: unknown): void;
+}
+
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
-  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
-  readonly api: GedcomApi = createGedcomApi({
+  private readonly vault: VaultReader = {
     read: async (path) => {
       const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
       if (!(file instanceof TFile)) {
@@ -55,7 +62,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         revision: `${file.stat.mtime}:${file.stat.size}`,
       };
     },
-  });
+  };
+  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
+  readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
 
   async onload(): Promise<void> {
@@ -99,6 +108,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     if (unregisterEmbeds) {
       this.register(unregisterEmbeds);
     }
+    this.registerRecordSuggest();
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     this.registerObsidianProtocolHandler(PROTOCOL_ACTION, (params) => {
       const target = parseGedcomLink(params);
@@ -190,6 +200,26 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     await this.saveData(this.settings);
     this.forEachView((view) => {
       view.applySettings(this.settings);
+    });
+  }
+
+  /**
+   * Obsidian's own link suggester answers first for anything inside `[[`, and
+   * has nothing to say after the `#` of a file that is not markdown — so this
+   * one is put ahead of it, and answers null everywhere else.
+   */
+  private registerRecordSuggest(): void {
+    const suggest = new RecordSuggest(this.app, new RecordIndex(this.vault));
+    const registry = (
+      this.app.workspace as unknown as { editorSuggest?: SuggestRegistry }
+    ).editorSuggest;
+    if (!Array.isArray(registry?.suggests)) {
+      this.registerEditorSuggest(suggest);
+      return;
+    }
+    registry.suggests.unshift(suggest);
+    this.register(() => {
+      registry.removeSuggest(suggest);
     });
   }
 
