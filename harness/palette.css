@@ -157,6 +157,16 @@ body.realistic.theme-dark {
  */
 body {
   --cursor: default;
+  --cursor-link: pointer;
+  --font-weight: 400;
+  --text-accent-hover: rgb(255, 128, 0);
+  --link-color: var(--text-accent);
+  --link-color-hover: var(--text-accent-hover);
+  --link-weight: var(--font-weight);
+  --link-decoration-hover: underline;
+  --link-external-color: var(--text-accent);
+  --link-external-color-hover: var(--text-accent-hover);
+  --link-external-decoration-hover: underline;
   --radius-m: 8px;
   --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.15);
   --popover-width: 450px;

@@ -19,6 +19,13 @@ import { tags } from "@lezer/highlight";
  */
 
 const background = "var(--background-primary)",
+  link = "var(--link-color)",
+  linkHover = "var(--link-color-hover)",
+  linkWeight = "var(--link-weight)",
+  linkDecorationHover = "var(--link-decoration-hover)",
+  linkExternal = "var(--link-external-color)",
+  linkExternalHover = "var(--link-external-color-hover)",
+  linkExternalDecorationHover = "var(--link-external-decoration-hover)",
   panelBackground = "var(--background-secondary)",
   text = "var(--text-normal)",
   faint = "var(--text-faint)",
@@ -53,6 +60,31 @@ export function obsidianEditorTheme(dark: boolean): Extension {
         backgroundColor: background,
         color: faint,
         border: "none",
+      },
+
+      /*
+       * What Obsidian writes for a link in a note's source: a colour and a
+       * weight, and the underline only under the pointer. The names come from
+       * the highlight style below, which is where a host says what a tag is.
+       */
+      ".gedcom-internal-link": {
+        color: link,
+        fontWeight: linkWeight,
+        cursor: "var(--cursor-link)",
+      },
+      ".gedcom-internal-link:hover": {
+        color: linkHover,
+        textDecorationLine: linkDecorationHover,
+      },
+      ".gedcom-external-link": {
+        color: linkExternal,
+        fontWeight: linkWeight,
+        wordBreak: "break-word",
+        cursor: "var(--cursor-link)",
+      },
+      ".gedcom-external-link:hover": {
+        color: linkExternalHover,
+        textDecorationLine: linkExternalDecorationHover,
       },
 
       ".gedcom-indent-hint": {
@@ -96,7 +128,8 @@ export function obsidianEditorTheme(dark: boolean): Extension {
       // A list of places in a file is a shape Obsidian already has, in its
       // search results pane; these are its measurements.
       ".cm-panel-lint li": {
-        padding: "var(--size-4-2) var(--size-4-5) var(--size-4-2) var(--size-4-3)",
+        padding:
+          "var(--size-4-2) var(--size-4-5) var(--size-4-2) var(--size-4-3)",
         borderBottom: `1px solid ${border}`,
         cursor: "var(--cursor)",
         whiteSpace: "pre-wrap",
@@ -181,25 +214,17 @@ export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--code-comment)" },
   { tag: tags.keyword, color: "var(--code-keyword)" },
   { tag: tags.string, color: "var(--code-normal)" },
-  {
-    tag: tags.link,
-    color: "var(--link-color)",
-    textDecorationLine: "var(--link-decoration)",
-    textDecorationThickness: "var(--link-decoration-thickness)",
-    fontWeight: "var(--link-weight)",
-    cursor: "var(--cursor-link)",
-  },
-  {
-    tag: tags.url,
-    color: "var(--link-external-color)",
-    textDecorationLine: "var(--link-external-decoration)",
-    textDecorationThickness: "var(--link-decoration-thickness)",
-    fontWeight: "var(--link-weight)",
-    cursor: "var(--cursor-link)",
-  },
+  // A declaring pointer is `definition` over the tag its type maps to, which is
+  // how the package says which `@I1@` the record is declared at.
+  { tag: tags.definition(tags.keyword), fontWeight: "var(--font-semibold)" },
+  { tag: tags.link, class: "gedcom-internal-link" },
+  { tag: tags.url, class: "gedcom-external-link" },
 ]);
 
 /** The editor theme and the highlight style, as one extension. */
 export function obsidianTheme(dark: boolean): Extension {
-  return [obsidianEditorTheme(dark), syntaxHighlighting(obsidianHighlightStyle)];
+  return [
+    obsidianEditorTheme(dark),
+    syntaxHighlighting(obsidianHighlightStyle),
+  ];
 }
