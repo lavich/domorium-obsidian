@@ -7,7 +7,9 @@ import {
   normalizeXref,
   parseGedcomLink,
   recordAtLine,
+  recordLinkText,
   recordSubpath,
+  stripEmbed,
   xrefFromSubpath,
 } from "./protocolLink";
 
@@ -72,6 +74,46 @@ describe("the record a link carries after the hash", () => {
     expect(xrefFromSubpath("#")).toBeNull();
     expect(xrefFromSubpath("")).toBeNull();
     expect(xrefFromSubpath("#  ")).toBeNull();
+  });
+});
+
+describe("the link Obsidian spells for a file that is not markdown", () => {
+  it("is an embed, and a link to a record is not an embed", () => {
+    expect(stripEmbed("![[tree.ged#@I47@]]")).toBe("[[tree.ged#@I47@]]");
+    expect(stripEmbed("![Marie](tree.ged#@I47@)")).toBe(
+      "[Marie](tree.ged#@I47@)",
+    );
+  });
+
+  it("leaves a link that is already one alone", () => {
+    expect(stripEmbed("[[tree.ged#@I47@]]")).toBe("[[tree.ged#@I47@]]");
+  });
+});
+
+describe("what a link to a record shows a reader", () => {
+  const record = (label?: string, identifier = "@I47@") => ({
+    tag: "INDI",
+    identifier,
+    label,
+    start: { line: 0, character: 0 },
+  });
+
+  it("shows the name the record carries", () => {
+    expect(recordLinkText(record("Marie /Curie/"))).toBe("Marie /Curie/");
+  });
+
+  it("shows the identifier where there is no name", () => {
+    expect(recordLinkText(record())).toBe("@I47@");
+  });
+
+  it("drops what would end the link early", () => {
+    expect(recordLinkText(record("Marie [nee|Skłodowska]"))).toBe(
+      "Marie  nee Skłodowska",
+    );
+  });
+
+  it("falls back to the identifier when nothing readable is left", () => {
+    expect(recordLinkText(record("[[|]]"))).toBe("@I47@");
   });
 });
 

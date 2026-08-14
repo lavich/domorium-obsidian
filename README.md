@@ -50,9 +50,11 @@ A record pasted into a note is highlighted and checked when it is fenced as
 `gedcom`. A block carries no header, so it is read as GEDCOM 7 unless the fence
 names another specification — ```` ```gedcom 5.5.1 ````.
 
-A note can link to a record. **Copy link to record** puts `[[tree.ged#@I47@]]` on
-the clipboard — a link the vault indexes, so the file's Backlinks pane lists the
-notes that mention it and the graph draws an edge to each. **Copy Obsidian URL to
+A note can link to a record. **Copy link to record** puts
+`[[tree.ged#@I47@|Marie /Curie/]]` on the clipboard — a link the vault indexes,
+so the file's Backlinks pane lists the notes that mention it and the graph draws
+an edge to each. It is spelt the way this vault spells its own links, and shows
+the name the record carries rather than a path. **Copy Obsidian URL to
 record** writes the `obsidian://domorium?vault=…&file=…&xref=@I47@` form instead,
 which a browser or another application can follow. Either one opens the file with
 the cursor on that record.

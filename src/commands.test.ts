@@ -38,7 +38,8 @@ function host(overrides: Partial<CommandHost> = {}) {
     copy,
     host: {
       vaultName: () => "Family",
-      linkToRecord: (path: string, subpath: string) => `[[${path}${subpath}]]`,
+      linkToRecord: (path: string, subpath: string, text: string) =>
+        `[[${path}${subpath}|${text}]]`,
       notify,
       copy,
       chooseRecord: vi.fn(),
@@ -142,13 +143,13 @@ describe("what a command does when it runs", () => {
     expect(notify).toHaveBeenCalledWith("GEDCOM: link to @I1@ copied");
   });
 
-  it("copies a link the vault indexes, spelt by the user's settings", async () => {
+  it("copies a link the vault indexes, showing the name the record carries", async () => {
     const { host: commandHost, copy, notify } = host();
 
     command("copy-gedcom-record-wikilink").run(commandHost, view());
     await vi.waitFor(() => expect(notify).toHaveBeenCalled());
 
-    expect(copy).toHaveBeenCalledWith("[[tree.ged#@I1@]]");
+    expect(copy).toHaveBeenCalledWith("[[tree.ged#@I1@|Marie /Curie/]]");
   });
 
   it("says so when the clipboard refuses", async () => {

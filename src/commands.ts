@@ -1,5 +1,9 @@
 import type { GedcomRecord } from "./editor/records";
-import { gedcomLinkUrl, recordSubpath } from "./vault/protocolLink";
+import {
+  gedcomLinkUrl,
+  recordLinkText,
+  recordSubpath,
+} from "./vault/protocolLink";
 
 export interface CommandView {
   readonly file: { path: string } | null;
@@ -22,7 +26,7 @@ export interface CommandView {
 export interface CommandHost {
   vaultName(): string;
   /** A link the vault indexes, spelt the way this user's settings spell one. */
-  linkToRecord(path: string, subpath: string): string;
+  linkToRecord(path: string, subpath: string, text: string): string;
   notify(message: string): void;
   copy(text: string): Promise<void>;
   chooseRecord(
@@ -47,14 +51,15 @@ const identifiedRecord = (view: CommandView): boolean =>
 function copyRecordLink(
   host: CommandHost,
   view: CommandView,
-  write: (path: string, identifier: string) => string,
+  write: (path: string, identifier: string, text: string) => string,
 ): void {
-  const identifier = view.recordAtCursor()?.identifier;
-  if (!identifier || !view.file) {
+  const record = view.recordAtCursor();
+  const identifier = record?.identifier;
+  if (!record || !identifier || !view.file) {
     host.notify("GEDCOM: no record with an identifier at the cursor");
     return;
   }
-  void host.copy(write(view.file.path, identifier)).then(
+  void host.copy(write(view.file.path, identifier, recordLinkText(record))).then(
     () => {
       host.notify(`GEDCOM: link to ${identifier} copied`);
     },
@@ -83,8 +88,8 @@ export const COMMANDS: GedcomCommand[] = [
     section: "copy",
     isAvailable: identifiedRecord,
     run: (host, view) =>
-      copyRecordLink(host, view, (path, identifier) =>
-        host.linkToRecord(path, recordSubpath(identifier)),
+      copyRecordLink(host, view, (path, identifier, text) =>
+        host.linkToRecord(path, recordSubpath(identifier), text),
       ),
   },
   {

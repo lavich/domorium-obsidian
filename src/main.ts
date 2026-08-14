@@ -20,6 +20,7 @@ import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
+  stripEmbed,
   type GedcomLinkTarget,
 } from "./vault/protocolLink";
 import {
@@ -269,11 +270,17 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   private commandHost(): CommandHost {
     return {
       vaultName: () => this.app.vault.getName(),
-      linkToRecord: (path, subpath) => {
+      linkToRecord: (path, subpath, text) => {
         const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-        return file instanceof TFile
-          ? this.app.fileManager.generateMarkdownLink(file, "", subpath)
-          : "";
+        if (!(file instanceof TFile)) {
+          return "";
+        }
+        // A GEDCOM file is not markdown, so Obsidian spells a link to it as an
+        // embed — and an embedded GEDCOM is a broken box in a note, not a link
+        // anyone can follow. Its own image view drops the same "!".
+        return stripEmbed(
+          this.app.fileManager.generateMarkdownLink(file, "", subpath, text),
+        );
       },
       notify: (message) => {
         new Notice(message);
