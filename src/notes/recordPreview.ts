@@ -15,10 +15,7 @@ export type RecordPreview =
   | { kind: "file"; runs: BlockRun[]; truncated: boolean }
   | { kind: "missing"; xref: string };
 
-/**
- * What a link to a record shows before it is followed. A link naming none
- * shows the head of the file, which is where a GEDCOM says what it is.
- */
+/** A link naming no record shows the head of the file, where it says what it is. */
 export function recordPreview(
   text: string,
   subpath: string,

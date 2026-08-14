@@ -204,9 +204,8 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   }
 
   /**
-   * Obsidian's own link suggester answers first for anything inside `[[`, and
-   * has nothing to say after the `#` of a file that is not markdown — so this
-   * one is put ahead of it, and answers null everywhere else.
+   * Obsidian's own suggester answers for everything inside `[[`, and the
+   * manager takes the first that answers, so appending puts this out of reach.
    */
   private registerRecordSuggest(): void {
     const suggest = new RecordSuggest(this.app, new RecordIndex(this.vault));
@@ -314,9 +313,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         if (!(file instanceof TFile)) {
           return "";
         }
-        // A GEDCOM file is not markdown, so Obsidian spells a link to it as an
-        // embed — and an embedded GEDCOM is a broken box in a note, not a link
-        // anyone can follow. Its own image view drops the same "!".
+        // Obsidian spells a link to a file that is not markdown as an embed.
         return stripEmbed(
           this.app.fileManager.generateMarkdownLink(file, "", subpath, text),
         );

@@ -4,9 +4,8 @@ import { recordPreview } from "./recordPreview";
 
 /**
  * Obsidian renders a hover preview, and an embed in a note, by asking this
- * registry for the file's extension and falling back to a card carrying the
- * file name. It is how the canvas plugin renders a canvas, and it is not in
- * `obsidian.d.ts`, so a build without it leaves the card alone.
+ * registry for the file's extension, and falls back to a card naming the file.
+ * Not in `obsidian.d.ts`.
  */
 interface EmbedRegistry {
   registerExtension(extension: string, creator: EmbedCreator): void;
@@ -26,7 +25,6 @@ interface EmbedContext {
 
 export const EMBEDDED_EXTENSIONS = ["ged", "gedcom"];
 
-/** Answers with what undoes it, or nothing where there is no registry. */
 export function registerRecordEmbeds(
   app: App,
   indent: () => boolean,
