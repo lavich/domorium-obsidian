@@ -60,9 +60,7 @@ which a browser or another application can follow. Either one opens the file wit
 the cursor on that record.
 
 Hovering a link to a record shows the record, highlighted, without opening the
-file, and `![[tree.ged#@I47@]]` embeds it in the note the same way. A link
-written out by hand reads as `tree.ged > @I47@`; where the record has a name, a
-note shows that instead. Text of your own is left as you wrote it.
+file, and `![[tree.ged#@I47@]]` embeds it in the note the same way.
 
 ## For dataviewjs and other plugins
 

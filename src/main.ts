@@ -12,22 +12,16 @@ import {
   TFile,
 } from "obsidian";
 
-import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
+import { createGedcomApi, type GedcomApi } from "./api";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import {
-  namedLink,
-  RecordNameIndex,
-  splitSubpath,
-} from "./notes/recordLinks";
-import {
   parseGedcomLink,
   PROTOCOL_ACTION,
   stripEmbed,
-  xrefFromSubpath,
   type GedcomLinkTarget,
 } from "./vault/protocolLink";
 import {
@@ -49,7 +43,8 @@ import {
 
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
-  private readonly vault: VaultReader = {
+  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
+  readonly api: GedcomApi = createGedcomApi({
     read: async (path) => {
       const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
       if (!(file instanceof TFile)) {
@@ -60,10 +55,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         revision: `${file.stat.mtime}:${file.stat.size}`,
       };
     },
-  };
-  /** Reachable as app.plugins.plugins["domorium"].api — see README. */
-  readonly api: GedcomApi = createGedcomApi(this.vault);
-  private readonly recordNames = new RecordNameIndex(this.vault);
+  });
   private statusBar: HTMLElement | undefined;
 
   async onload(): Promise<void> {
@@ -107,9 +99,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     if (unregisterEmbeds) {
       this.register(unregisterEmbeds);
     }
-    this.registerMarkdownPostProcessor((element, context) =>
-      this.nameRecordLinks(element, context.sourcePath),
-    );
     this.addSettingTab(new GedcomSettingTab(this.app, this));
     this.registerObsidianProtocolHandler(PROTOCOL_ACTION, (params) => {
       const target = parseGedcomLink(params);
@@ -202,38 +191,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.forEachView((view) => {
       view.applySettings(this.settings);
     });
-  }
-
-  /** A link written by hand reads as a path; the record has a name. */
-  private async nameRecordLinks(
-    element: HTMLElement,
-    sourcePath: string,
-  ): Promise<void> {
-    await Promise.all(
-      element.findAll("a.internal-link").map(async (link) => {
-        const href = link.dataset.href ?? link.getAttr("href") ?? "";
-        const { path, subpath } = splitSubpath(href);
-        const xref = subpath ? xrefFromSubpath(subpath) : null;
-        if (!xref || !isGedcomPath(path)) {
-          return;
-        }
-        const file = this.app.metadataCache.getFirstLinkpathDest(
-          path,
-          sourcePath,
-        );
-        if (!file) {
-          return;
-        }
-        const named = namedLink(
-          href,
-          link.textContent ?? "",
-          await this.recordNames.nameOf(file.path, xref),
-        );
-        if (named) {
-          link.setText(named);
-        }
-      }),
-    );
   }
 
   private async openGedcomLink(target: GedcomLinkTarget): Promise<void> {
