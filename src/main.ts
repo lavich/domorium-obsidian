@@ -71,6 +71,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       const { runs, problems } = renderGedcomBlock(
         source,
         blockDialect(section?.text.split("\n")[section.lineStart]),
+        this.settings.indentationHints,
       );
       const block = element.createEl("pre", { cls: "gedcom-note-block" });
       for (const run of runs) {
@@ -91,7 +92,10 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         });
       }
     });
-    const unregisterEmbeds = registerRecordEmbeds(this.app);
+    const unregisterEmbeds = registerRecordEmbeds(
+      this.app,
+      () => this.settings.indentationHints,
+    );
     if (unregisterEmbeds) {
       this.register(unregisterEmbeds);
     }

@@ -27,7 +27,10 @@ interface EmbedContext {
 export const EMBEDDED_EXTENSIONS = ["ged", "gedcom"];
 
 /** Answers with what undoes it, or nothing where there is no registry. */
-export function registerRecordEmbeds(app: App): (() => void) | undefined {
+export function registerRecordEmbeds(
+  app: App,
+  indent: () => boolean,
+): (() => void) | undefined {
   const registry = (app as App & { embedRegistry?: EmbedRegistry })
     .embedRegistry;
   if (typeof registry?.registerExtension !== "function") {
@@ -36,7 +39,8 @@ export function registerRecordEmbeds(app: App): (() => void) | undefined {
   for (const extension of EMBEDDED_EXTENSIONS) {
     registry.registerExtension(
       extension,
-      (context, file, subpath) => new RecordEmbed(context, file, subpath),
+      (context, file, subpath) =>
+        new RecordEmbed(context, file, subpath, indent),
     );
   }
   return () => {
@@ -51,6 +55,7 @@ class RecordEmbed extends Component {
     private readonly context: EmbedContext,
     private readonly file: TFile,
     private readonly subpath: string,
+    private readonly indent: () => boolean,
   ) {
     super();
   }
@@ -62,6 +67,7 @@ class RecordEmbed extends Component {
     const preview = recordPreview(
       await this.context.app.vault.cachedRead(this.file),
       this.subpath,
+      { indent: this.indent() },
     );
     if (preview.kind === "missing") {
       containerEl.createDiv({

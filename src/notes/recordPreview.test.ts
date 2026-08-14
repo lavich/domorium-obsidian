@@ -60,14 +60,28 @@ describe("what a link to a record shows before it is followed", () => {
   });
 
   it("stops at the line it is given, and says it stopped", () => {
-    const preview = recordPreview(FILE, "#@I1@", 2);
+    const preview = recordPreview(FILE, "#@I1@", { limit: 2 });
 
     expect(text(preview)).toBe("0 @I1@ INDI\n1 NAME Marie /Curie/");
     expect(preview.kind === "record" && preview.truncated).toBe(true);
   });
 
+  it("indents a nested line, as the editor does, where that is asked for", () => {
+    const preview = recordPreview(FILE, "#@I1@", { indent: true });
+
+    expect(text(preview)).toBe(
+      "0 @I1@ INDI\n  1 NAME Marie /Curie/\n  1 SEX F",
+    );
+  });
+
+  it("leaves the file as written where it is not", () => {
+    expect(text(recordPreview(FILE, "#@I1@"))).toBe(
+      "0 @I1@ INDI\n1 NAME Marie /Curie/\n1 SEX F",
+    );
+  });
+
   it("says nothing was left out where nothing was", () => {
-    const preview = recordPreview(FILE, "#@I1@", 3);
+    const preview = recordPreview(FILE, "#@I1@", { limit: 3 });
 
     expect(preview.kind === "record" && preview.truncated).toBe(false);
   });

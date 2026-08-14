@@ -1,9 +1,14 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 
 import { xrefFromSubpath } from "../vault/protocolLink";
-import { tokenRuns, type BlockRun } from "./gedcomBlock";
+import { indentedRuns, tokenRuns, type BlockRun } from "./gedcomBlock";
 
 const LINE_LIMIT = 40;
+
+export interface PreviewOptions {
+  indent?: boolean;
+  limit?: number;
+}
 
 export type RecordPreview =
   | { kind: "record"; title: string; runs: BlockRun[]; truncated: boolean }
@@ -17,16 +22,16 @@ export type RecordPreview =
 export function recordPreview(
   text: string,
   subpath: string,
-  limit = LINE_LIMIT,
+  options: PreviewOptions = {},
 ): RecordPreview {
+  const { indent = false, limit = LINE_LIMIT } = options;
   const service = new GedcomLanguageService(text);
   const starts = lineStarts(text);
   const xref = xrefFromSubpath(subpath);
+  const read = (firstLine: number, available: number) =>
+    slice(service, text, starts, firstLine, available, limit, indent);
   if (!xref) {
-    return {
-      kind: "file",
-      ...slice(service, text, starts, 0, starts.length, limit),
-    };
+    return { kind: "file", ...read(0, starts.length) };
   }
   const record = service
     .getDocumentSymbols()
@@ -38,14 +43,7 @@ export function recordPreview(
   return {
     kind: "record",
     title: record.label ?? xref,
-    ...slice(
-      service,
-      text,
-      starts,
-      start.line,
-      end.line - start.line + 1,
-      limit,
-    ),
+    ...read(start.line, end.line - start.line + 1),
   };
 }
 
@@ -56,13 +54,21 @@ function slice(
   firstLine: number,
   available: number,
   limit: number,
+  indent: boolean,
 ): { runs: BlockRun[]; truncated: boolean } {
   const lines = Math.min(available, limit);
   const from = starts[firstLine] ?? 0;
   const to = (starts[firstLine + lines] ?? text.length + 1) - 1;
   const source = text.slice(from, to).replace(/[\r\n]+$/u, "");
+  const runs = tokenRuns(
+    source,
+    service.getSemanticTokens({ from, to }),
+    from,
+  );
   return {
-    runs: tokenRuns(source, service.getSemanticTokens({ from, to }), from),
+    runs: indent
+      ? indentedRuns(runs, service.getInlayHints({ from, to }), firstLine)
+      : runs,
     truncated: lines < available,
   };
 }

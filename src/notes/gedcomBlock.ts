@@ -3,6 +3,7 @@ import {
   semanticTokenLegend,
   type CreateDocumentOptions,
   type Diagnostic,
+  type InlayHint,
   type SemanticToken,
 } from "@domorium/language-service";
 
@@ -36,19 +37,57 @@ export interface RenderedBlock {
 export function renderGedcomBlock(
   source: string,
   dialect: BlockDialect,
+  indent = false,
 ): RenderedBlock {
   const service = new GedcomLanguageService(source, 0, {
     fragment: true,
     dialect,
   });
+  const runs = tokenRuns(source, service.getSemanticTokens());
   return {
-    runs: tokenRuns(source, service.getSemanticTokens()),
+    runs: indent ? indentedRuns(runs, service.getInlayHints()) : runs,
     problems: service.getDiagnostics().map((diagnostic) => ({
       line: diagnostic.range.start.line + 1,
       message: diagnostic.message,
       level: diagnostic.severity,
     })),
   };
+}
+
+/**
+ * The editor indents a nested line with a hint rather than a character, so a
+ * file read inside a note has to be given the same room by hand.
+ */
+export function indentedRuns(
+  runs: BlockRun[],
+  hints: InlayHint[],
+  firstLine = 0,
+): BlockRun[] {
+  const indents = new Map(
+    hints.map((hint) => [hint.position.line - firstLine, hint.label]),
+  );
+  const indented: BlockRun[] = [];
+  let line = 0;
+  const openLine = (): void => {
+    const indent = indents.get(line);
+    if (indent) {
+      indented.push({ text: indent, className: null });
+    }
+  };
+  openLine();
+  for (const run of runs) {
+    run.text.split("\n").forEach((piece, index) => {
+      if (index > 0) {
+        indented.push({ text: "\n", className: null });
+        line += 1;
+        openLine();
+      }
+      if (piece) {
+        indented.push({ text: piece, className: run.className });
+      }
+    });
+  }
+  return indented;
 }
 
 /** Token offsets are the document's; `offset` says where `source` starts in it. */
