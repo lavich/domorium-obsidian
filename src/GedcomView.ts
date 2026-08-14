@@ -213,9 +213,9 @@ export class GedcomView extends TextFileView {
     const anchor = positionToOffset(this.editor.state.doc, record.start);
     this.editor.dispatch({
       selection: { anchor },
-      // A record is read downwards, so it wants the top of the screen rather
-      // than the nearest edge, which leaves it on the last line.
-      effects: EditorView.scrollIntoView(anchor, { y: "start", yMargin: 16 }),
+      // The nearest edge leaves a record on the last line, with everything it
+      // declares below the fold.
+      effects: EditorView.scrollIntoView(anchor, { y: "center" }),
     });
     this.editor.focus();
   }
