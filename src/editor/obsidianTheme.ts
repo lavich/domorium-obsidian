@@ -205,18 +205,20 @@ export function obsidianEditorTheme(dark: boolean): Extension {
 }
 
 /**
- * The legend names lezer tags, not GEDCOM: comment is the level number,
- * keyword the pointer, string the tag. A link is `link` where it names a file
- * and `url` where it names the web, which is the distinction Obsidian keeps
- * two sets of variables for.
+ * The legend names lezer tags, not GEDCOM: comment is the level number, keyword
+ * the tag, variable the pointer and string the payload. A link is `link` where
+ * it names a file and `url` where it names the web, which is the distinction
+ * Obsidian keeps two sets of variables for.
  */
 export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--code-comment)" },
   { tag: tags.keyword, color: "var(--code-keyword)" },
-  { tag: tags.string, color: "var(--code-normal)" },
+  { tag: tags.string, color: "var(--code-string)" },
   // A declaring pointer is `definition` over the tag its type maps to, which is
-  // how the package says which `@I1@` the record is declared at.
-  { tag: tags.variableName, color: "var(--code-function)" },
+  // how the package says which `@I1@` the record is declared at. The colours are
+  // the ones a GEDCOM block in a note is given, which is the same document read
+  // in another place.
+  { tag: tags.variableName, color: "var(--code-property)" },
   {
     tag: tags.definition(tags.variableName),
     color: "var(--code-function)",

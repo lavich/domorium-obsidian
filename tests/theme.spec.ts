@@ -20,7 +20,9 @@ const LIGHT = {
 const DARK = {
   comment: "rgb(200, 210, 220)",
   keyword: "rgb(255, 0, 255)",
+  property: "rgb(0, 255, 255)",
   definition: "rgb(255, 200, 0)",
+  string: "rgb(120, 255, 120)",
   normal: "rgb(220, 230, 240)",
   faint: "rgb(200, 210, 220)",
   background: "rgb(20, 20, 20)",
@@ -53,6 +55,10 @@ test.describe("the Obsidian theme", () => {
     expect(colours["@I1@"], "and a declaring identifier is a definition").toBe(
       LIGHT.definition,
     );
+    // The colours a GEDCOM block in a note is given, because a reader who meets
+    // the same record in both places should not have to learn it twice.
+    expect(colours["@F1@"], "a reference is a property").toBe(LIGHT.property);
+    expect(colours["7.0"], "a payload is a string").toBe(LIGHT.string);
   });
 
   test("follows the variables into dark, which is what the theme flag decides", async ({
@@ -64,6 +70,8 @@ test.describe("the Obsidian theme", () => {
     expect(colours["0"]).toBe(DARK.comment);
     expect(colours.HEAD).toBe(DARK.keyword);
     expect(colours["@I1@"]).toBe(DARK.definition);
+    expect(colours["@F1@"]).toBe(DARK.property);
+    expect(colours["7.0"]).toBe(DARK.string);
   });
 
   test("takes the editor and gutter background from the primary variable", async ({
