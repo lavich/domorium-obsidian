@@ -4,18 +4,14 @@ import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 
 /*
- * A CodeMirror theme for Obsidian, in the shape @codemirror/theme-one-dark
- * gave the idea: an editor theme, a highlight style, and the two together.
+ * A CodeMirror theme for Obsidian, in the shape @codemirror/theme-one-dark gave
+ * the idea: an editor theme, a highlight style, and the two together. Where
+ * one-dark writes a colour, this writes the variable Obsidian keeps it in, so
+ * nothing here holds a value of its own.
  *
- * Where one-dark writes a colour, this writes the variable Obsidian keeps it
- * in, so the editor follows whatever theme the reader is wearing rather than
- * replacing it. Nothing here holds a value of its own.
- *
- * Every package CodeMirror loads brings a base theme, and none of them can be
- * turned off, so a rule here is an override. Two of them are written longer
- * than they look they need to be: a theme selector compiles to
- * `.cm-<themeID> <selector>`, and where the library states its own with more
- * classes than that, the shorter one is outweighed rather than overriding.
+ * Every rule is an override — no base theme can be turned off. A theme selector
+ * compiles to `.cm-<themeID> <selector>`, so where the library states its own
+ * with more classes than that, two rules below are written longer to match.
  */
 
 const background = "var(--background-primary)",
@@ -62,11 +58,9 @@ export function obsidianEditorTheme(dark: boolean): Extension {
         border: "none",
       },
 
-      /*
-       * What Obsidian writes for a link in a note's source: a colour and a
-       * weight, and the underline only under the pointer. The names come from
-       * the highlight style below, which is where a host says what a tag is.
-       */
+      // What Obsidian writes for a link in a note's source: a colour and a
+      // weight, the underline only under the pointer. The names are minted by
+      // the highlight style below.
       ".gedcom-internal-link": {
         color: link,
         fontWeight: linkWeight,
@@ -205,19 +199,17 @@ export function obsidianEditorTheme(dark: boolean): Extension {
 }
 
 /**
- * The legend names lezer tags, not GEDCOM: comment is the level number, keyword
- * the tag, variable the pointer and string the payload. A link is `link` where
- * it names a file and `url` where it names the web, which is the distinction
- * Obsidian keeps two sets of variables for.
+ * The legend names lezer tags, not GEDCOM: comment is the level, keyword the
+ * tag, variable the pointer, string the payload. A file is `link` and the web
+ * is `url`, the distinction Obsidian keeps two sets of variables for.
  */
 export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--code-comment)" },
   { tag: tags.keyword, color: "var(--code-keyword)" },
   { tag: tags.string, color: "var(--code-string)" },
-  // A declaring pointer is `definition` over the tag its type maps to, which is
-  // how the package says which `@I1@` the record is declared at. The colours are
-  // the ones a GEDCOM block in a note is given, which is the same document read
-  // in another place.
+  // A declaring pointer is `definition` over the tag its type maps to. The
+  // colours are the ones a GEDCOM block in a note is given: the same document,
+  // read in another place.
   { tag: tags.variableName, color: "var(--code-property)" },
   {
     tag: tags.definition(tags.variableName),

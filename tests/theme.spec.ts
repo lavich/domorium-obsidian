@@ -55,8 +55,7 @@ test.describe("the Obsidian theme", () => {
     expect(colours["@I1@"], "and a declaring identifier is a definition").toBe(
       LIGHT.definition,
     );
-    // The colours a GEDCOM block in a note is given, because a reader who meets
-    // the same record in both places should not have to learn it twice.
+    // The colours a GEDCOM block in a note is given: one record, one look.
     expect(colours["@F1@"], "a reference is a property").toBe(LIGHT.property);
     expect(colours["7.0"], "a payload is a string").toBe(LIGHT.string);
   });
@@ -95,12 +94,8 @@ test.describe("the Obsidian theme", () => {
     expect(dark).toBe(DARK.background);
   });
 
-  /*
-   * Semibold now comes from the highlight style's rule for
-   * `tags.definition(tags.keyword)`, and waits for the release of
-   * `@domorium/codemirror` that modifies a declaring token's tag: 1.3.0 marks
-   * one with a class and no tag, which no style can reach.
-   */
+  // Waits for the release of `@domorium/codemirror` that modifies a declaring
+  // token's tag: 1.3.0 marks one with a class and no tag, which no style reaches.
   test.fail(
     "marks an XREF declaration apart from a reference to it",
     async ({ page }) => {
@@ -126,12 +121,8 @@ test.describe("the Obsidian theme", () => {
     },
   );
 
-  /*
-   * A link in a note's source carries a colour and a weight, and takes its
-   * underline only under the pointer. The marker waits for the release of
-   * `@domorium/codemirror` that marks a link at all: 1.3.0 draws none, so
-   * there is nothing here to dress yet.
-   */
+  // Waits for the release of `@domorium/codemirror` that marks a link at all:
+  // 1.3.0 draws none, so there is nothing here to dress yet.
   test.fail("dresses a link the way a note's source does", async ({ page }) => {
     await mount(page, { doc: LINKS });
     const accent = "rgb(0, 0, 180)";

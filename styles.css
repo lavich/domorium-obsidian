@@ -1,12 +1,9 @@
 /*
- * The Obsidian theme for this editor. CodeMirror ships a base theme in every
- * package it loads and none of them can be turned off, so what is here is an
- * override — and it belongs here rather than in a `EditorView.theme`, because
- * a stylesheet is what a user's snippet and a third-party theme can reach.
- *
- * Two rules follow from that. Every value comes from an Obsidian variable, and
- * a selector that competes with a library rule is written in the library's own
- * shape: a shorter one is outweighed rather than overriding.
+ * The Obsidian theme for this editor. Every rule here is an override — no
+ * CodeMirror base theme can be turned off — and it lives in a stylesheet rather
+ * than an `EditorView.theme` because that is what a user's snippet and a
+ * third-party theme can reach. Every value comes from an Obsidian variable, and
+ * a selector competing with a library rule is written in the library's shape.
  */
 
 /* ── The view and its chrome ─────────────────────────────────────────────
