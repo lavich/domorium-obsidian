@@ -24,8 +24,8 @@
     "@codemirror/search": "6.7.1",
     "@codemirror/state": "6.5.0",
     "@codemirror/view": "6.38.6",
-    "@domorium/codemirror": "^1.3.0",
-    "@domorium/language-service": "^1.4.0",
+    "@domorium/codemirror": "^1.5.1",
+    "@domorium/language-service": "^1.5.0",
     "@lezer/highlight": "^1.2.3"
   },
   "devDependencies": {

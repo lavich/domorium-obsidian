@@ -94,36 +94,31 @@ test.describe("the Obsidian theme", () => {
     expect(dark).toBe(DARK.background);
   });
 
-  // Waits for the release of `@domorium/codemirror` that modifies a declaring
-  // token's tag: 1.3.0 marks one with a class and no tag, which no style reaches.
-  test.fail(
-    "marks an XREF declaration apart from a reference to it",
-    async ({ page }) => {
-      await mount(page);
-      const weights = await page.evaluate(() => {
-        const weightIn = (prefix: string): string => {
-          const line = [...document.querySelectorAll(".cm-line")].find(
-            (element) => (element.textContent ?? "").trim().startsWith(prefix),
-          );
-          const span = [...(line?.querySelectorAll("span") ?? [])].find(
-            (element) => element.textContent === "@I1@",
-          );
-          return span ? getComputedStyle(span).fontWeight : "missing";
-        };
-        return {
-          declaration: weightIn("0 @I1@"),
-          reference: weightIn("1 HUSB"),
-        };
-      });
+  test("marks an XREF declaration apart from a reference to it", async ({
+    page,
+  }) => {
+    await mount(page);
+    const weights = await page.evaluate(() => {
+      const weightIn = (prefix: string): string => {
+        const line = [...document.querySelectorAll(".cm-line")].find(
+          (element) => (element.textContent ?? "").trim().startsWith(prefix),
+        );
+        const span = [...(line?.querySelectorAll("span") ?? [])].find(
+          (element) => element.textContent === "@I1@",
+        );
+        return span ? getComputedStyle(span).fontWeight : "missing";
+      };
+      return {
+        declaration: weightIn("0 @I1@"),
+        reference: weightIn("1 HUSB"),
+      };
+    });
 
-      expect(weights.declaration, "the declaring @I1@ is semibold").toBe("600");
-      expect(weights.reference, "a reference to it is not").toBe("400");
-    },
-  );
+    expect(weights.declaration, "the declaring @I1@ is semibold").toBe("600");
+    expect(weights.reference, "a reference to it is not").toBe("400");
+  });
 
-  // Waits for the release of `@domorium/codemirror` that marks a link at all:
-  // 1.3.0 draws none, so there is nothing here to dress yet.
-  test.fail("dresses a link the way a note's source does", async ({ page }) => {
+  test("dresses a link the way a note's source does", async ({ page }) => {
     await mount(page, { doc: LINKS });
     const accent = "rgb(0, 0, 180)";
 
