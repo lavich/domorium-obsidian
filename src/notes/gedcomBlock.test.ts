@@ -34,17 +34,14 @@ describe("a GEDCOM block in a note", () => {
     expect(text(renderGedcomBlock(source, "7.0"))).toBe(source);
   });
 
-  it("paints levels, pointers and tags the way the editor paints them", () => {
+  // A tag is the keyword of its line, an identifier a variable and a payload the
+  // value — the meanings the token types carry since the legend was retyped.
+  it("paints levels, pointers, tags and payloads the way the editor paints them", () => {
     const block = renderGedcomBlock(source, "7.0");
 
     expect(classed(block, "gedcom-token-comment")).toEqual(["0", "1"]);
-    expect(classed(block, "gedcom-token-string")).toEqual(["INDI", "NAME"]);
-    expect(
-      block.runs
-        .filter((run) => run.className === null)
-        .map((run) => run.text)
-        .join(""),
-    ).toContain("Marie /Curie/");
+    expect(classed(block, "gedcom-token-keyword")).toEqual(["INDI", "NAME"]);
+    expect(classed(block, "gedcom-token-string")).toEqual(["Marie /Curie/"]);
   });
 
   it("sets a declaration apart from a reference to it", () => {

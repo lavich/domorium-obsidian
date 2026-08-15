@@ -30,6 +30,21 @@ export const PROBLEMS = [
   "",
 ].join("\n");
 
+/** A web address and a path into the vault, which are the two kinds of link. */
+export const LINKS = [
+  "0 HEAD",
+  "1 GEDC",
+  "2 VERS 7.0",
+  "0 @I1@ INDI",
+  "1 NAME Marie /Curie/",
+  "1 WWW https://domorium.com/",
+  "0 @O1@ OBJE",
+  "1 FILE media/marie.jpg",
+  "2 FORM image/jpeg",
+  "0 TRLR",
+  "",
+].join("\n");
+
 /** The offset of the first character of a line, counting from 1. */
 export function lineStart(doc: string, line: number): number {
   return doc

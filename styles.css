@@ -1,3 +1,14 @@
+/*
+ * The Obsidian theme for this editor. Every rule here is an override — no
+ * CodeMirror base theme can be turned off — and it lives in a stylesheet rather
+ * than an `EditorView.theme` because that is what a user's snippet and a
+ * third-party theme can reach. Every value comes from an Obsidian variable, and
+ * a selector competing with a library rule is written in the library's shape.
+ */
+
+/* ── The view and its chrome ─────────────────────────────────────────────
+   */
+
 .gedcom-gedcom-view {
   height: 100%;
 }
@@ -43,166 +54,11 @@
   font-size: var(--font-text-size);
 }
 
-.gedcom-gedcom-editor .cm-editor,
-.gedcom-gedcom-editor .cm-scroller {
-  height: 100%;
-}
-
-.gedcom-token-declaration {
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-indent-hint {
-  color: transparent;
-  white-space: pre;
-  user-select: none;
-}
-
-.gedcom-hover {
-  max-width: 28rem;
-  padding: var(--size-4-2) var(--size-4-3);
-  white-space: pre-wrap;
-}
-.gedcom-record-preview {
-  margin: 0;
-  padding: var(--size-4-2) var(--size-4-3);
-  font-family: var(--font-monospace);
-  font-size: var(--font-smaller);
-  white-space: pre;
-  overflow-x: auto;
-}
-
-.gedcom-reference-write {
-  background: color-mix(in srgb, var(--color-accent) 28%, transparent);
-  border-radius: 2px;
-}
-
-.gedcom-reference-read {
-  background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-  border-radius: 2px;
-}
-
-.gedcom-gedcom-editor .cm-panels {
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border-color: var(--background-modifier-border);
-  font-family: var(--font-interface);
-  font-size: var(--font-ui-small, 13px);
-}
-
-/* The search bar is Obsidian's own chrome, so it sits on the note background
-   the editor uses rather than on the panel background CodeMirror expects. */
-.gedcom-gedcom-editor .cm-panels-top {
-  background: var(--background-primary);
-  border-bottom: none;
-}
-
-/* A list of places in a file is a shape Obsidian already has, in the search
-   results pane; these are its measurements. */
-.gedcom-gedcom-editor .cm-panel-lint li {
-  padding: var(--size-4-2) var(--size-4-5) var(--size-4-2) var(--size-4-3);
-  border-bottom: 1px solid var(--background-modifier-border);
-  cursor: var(--cursor);
-  white-space: pre-wrap;
-}
-
-.gedcom-gedcom-editor .cm-panel-lint li:last-child {
-  border-bottom: none;
-}
-
-.gedcom-gedcom-editor .cm-panel-lint li:hover {
-  background-color: var(--nav-item-background-hover);
-}
-
-.gedcom-gedcom-editor .cm-panel-lint li[aria-selected] {
-  background-color: var(--nav-item-background-selected);
-  color: var(--nav-item-color-selected);
-}
-
-/* The library leaves the close button as a bare glyph in the corner; every
-   other button in Obsidian is an icon-sized target. */
-.gedcom-gedcom-editor .cm-panel-lint [name="close"] {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  top: var(--size-2-2);
-  right: var(--size-2-2);
-  width: var(--size-4-6);
-  height: var(--size-4-6);
-  border-radius: var(--clickable-icon-radius);
-  color: var(--icon-color);
-  font-size: var(--font-ui-medium);
-  cursor: var(--cursor);
-}
-
-.gedcom-gedcom-editor .cm-panel-lint [name="close"]:hover {
-  color: var(--icon-color-hover);
-  background-color: var(--background-modifier-hover);
-}
-
-.is-mobile .gedcom-gedcom-editor .cm-panel-lint [name="close"] {
-  width: var(--touch-size-s);
-  height: var(--touch-size-s);
-}
-
-/* The button hangs over this row, and text under it cannot be read. */
-.gedcom-gedcom-editor .cm-panel-lint li:first-child {
-  padding-right: var(--size-4-8);
-}
-
-.gedcom-gedcom-editor .cm-diagnosticSource {
-  display: none;
-}
-
-.gedcom-gedcom-editor .cm-lint-marker {
-  content: none;
-  box-sizing: border-box;
-  width: 0.85em;
-  height: 0.85em;
-  margin-top: 0.1em;
-}
-
-.gedcom-gedcom-editor .cm-lint-marker-error {
-  background: var(--text-error);
-  border-radius: 50%;
-}
-
-.gedcom-gedcom-editor .cm-lint-marker-warning {
-  background: var(--text-warning);
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-}
-
-.gedcom-gedcom-editor .cm-lint-marker-info,
-.gedcom-gedcom-editor .cm-lint-marker-hint {
-  background: var(--text-accent);
-  border-radius: var(--radius-s, 2px);
-}
-
-.gedcom-gedcom-editor .cm-lintRange {
-  background-image: none;
-  padding-bottom: 0;
-  text-decoration-line: underline;
-  text-decoration-style: wavy;
-  text-decoration-skip-ink: none;
-  text-decoration-thickness: 1px;
-}
-
-.gedcom-gedcom-editor .cm-lintRange-error {
-  text-decoration-color: var(--text-error);
-}
-
-.gedcom-gedcom-editor .cm-lintRange-warning {
-  text-decoration-color: var(--text-warning);
-}
-
-.gedcom-gedcom-editor .cm-lintRange-info,
-.gedcom-gedcom-editor .cm-lintRange-hint {
-  text-decoration-color: var(--text-accent);
-}
-
-.gedcom-gedcom-editor .cm-lintRange-active {
-  background-color: var(--text-highlight-bg);
-}
+/* ── GEDCOM in a note ────────────────────────────────────────────────────
+   The editor states its colours in its theme, where a `HighlightStyle` names
+   a lezer tag. A note has no editor, so a block there carries the class the
+   legend gives, and this states the same colours for it — Obsidian's own
+   palette for a code block, which is what this is. */
 
 .gedcom-note-block {
   font-family: var(--font-monospace);
@@ -211,16 +67,36 @@
   overflow-x: auto;
 }
 
-/* The legend names lezer tags, not GEDCOM: comment is the level number,
-   keyword the pointer, string the tag. Same variables the editor theme uses. */
 .gedcom-note-block .gedcom-token-comment {
-  color: var(--text-faint);
+  color: var(--code-comment);
 }
+
 .gedcom-note-block .gedcom-token-keyword {
-  color: var(--color-cyan);
+  color: var(--code-keyword);
 }
+
+.gedcom-note-block .gedcom-token-variable {
+  color: var(--code-property);
+}
+
 .gedcom-note-block .gedcom-token-string {
-  color: var(--color-purple);
+  color: var(--code-string);
+}
+
+.gedcom-note-block .gedcom-token-declaration {
+  color: var(--code-function);
+}
+
+/* ── What the plugin renders outside the editor ──────────────────────────
+   */
+
+.gedcom-record-preview {
+  margin: 0;
+  padding: var(--size-4-2) var(--size-4-3);
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  white-space: pre;
+  overflow-x: auto;
 }
 
 .gedcom-note-problems {
@@ -235,6 +111,9 @@
 .gedcom-note-problem-warning {
   color: var(--text-warning);
 }
+
+/* ── The search bar Obsidian lends us ────────────────────────────────────
+   */
 
 /* Obsidian centres a note within --file-line-width, and the bar it lends us
    centres with it. A GEDCOM file is data rather than prose and keeps the whole

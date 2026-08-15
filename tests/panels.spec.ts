@@ -28,6 +28,37 @@ function styleOf(
 }
 
 test.describe("the panels CodeMirror paints", () => {
+  test("mark the problem the cursor is on, over the library's own selection", async ({
+    page,
+  }) => {
+    await openPanels(page, true);
+    await page.evaluate(() => {
+      window.gedcom.nextProblem();
+    });
+    await page.waitForSelector(".cm-panel-lint li[aria-selected]");
+
+    expect(
+      (await styleOf(page, '.cm-panel-lint li[aria-selected]')).background,
+      "--nav-item-background-selected in the dark palette",
+    ).toBe("rgb(70, 50, 100)");
+  });
+
+  test("keep that colour when the list itself has the focus", async ({
+    page,
+  }) => {
+    await openPanels(page, true);
+    await page.evaluate(() => {
+      window.gedcom.nextProblem();
+      document.querySelector<HTMLElement>(".cm-panel-lint ul")?.focus();
+    });
+    await page.waitForSelector(".cm-panel-lint ul:focus li[aria-selected]");
+
+    expect(
+      (await styleOf(page, ".cm-panel-lint li[aria-selected]")).background,
+      "the library states a focused list with a class more than the plain one",
+    ).toBe("rgb(70, 50, 100)");
+  });
+
   test("give the problems panel a close button of a size a finger finds", async ({
     page,
   }) => {

@@ -1,22 +1,30 @@
 import { expect, test } from "@playwright/test";
 
-import { mount, PROBLEMS, SAMPLE } from "./harness";
+import { LINKS, mount, PROBLEMS, SAMPLE } from "./harness";
 
 /**
  * The colours in harness/palette.css are distinct on purpose: each assertion
  * names the Obsidian variable a pixel came from.
  */
 const LIGHT = {
+  comment: "rgb(10, 20, 30)",
+  keyword: "rgb(128, 0, 128)",
+  property: "rgb(0, 128, 128)",
+  definition: "rgb(160, 100, 0)",
+  string: "rgb(0, 120, 0)",
+  normal: "rgb(20, 40, 60)",
   faint: "rgb(10, 20, 30)",
-  cyan: "rgb(0, 128, 128)",
-  purple: "rgb(128, 0, 128)",
   background: "rgb(255, 255, 255)",
 };
 
 const DARK = {
+  comment: "rgb(200, 210, 220)",
+  keyword: "rgb(255, 0, 255)",
+  property: "rgb(0, 255, 255)",
+  definition: "rgb(255, 200, 0)",
+  string: "rgb(120, 255, 120)",
+  normal: "rgb(220, 230, 240)",
   faint: "rgb(200, 210, 220)",
-  cyan: "rgb(0, 255, 255)",
-  purple: "rgb(255, 0, 255)",
   background: "rgb(20, 20, 20)",
 };
 
@@ -42,9 +50,14 @@ test.describe("the Obsidian theme", () => {
     await mount(page);
     const colours = await tokenColours(page);
 
-    expect(colours["0"], "a level is a comment").toBe(LIGHT.faint);
-    expect(colours.HEAD, "a tag is a string").toBe(LIGHT.purple);
-    expect(colours["@I1@"], "an XREF is a keyword").toBe(LIGHT.cyan);
+    expect(colours["0"], "a level is a comment").toBe(LIGHT.comment);
+    expect(colours.HEAD, "a tag is a keyword").toBe(LIGHT.keyword);
+    expect(colours["@I1@"], "and a declaring identifier is a definition").toBe(
+      LIGHT.definition,
+    );
+    // The colours a GEDCOM block in a note is given: one record, one look.
+    expect(colours["@F1@"], "a reference is a property").toBe(LIGHT.property);
+    expect(colours["7.0"], "a payload is a string").toBe(LIGHT.string);
   });
 
   test("follows the variables into dark, which is what the theme flag decides", async ({
@@ -53,9 +66,11 @@ test.describe("the Obsidian theme", () => {
     await mount(page, { dark: true });
     const colours = await tokenColours(page);
 
-    expect(colours["0"]).toBe(DARK.faint);
-    expect(colours.HEAD).toBe(DARK.purple);
-    expect(colours["@I1@"]).toBe(DARK.cyan);
+    expect(colours["0"]).toBe(DARK.comment);
+    expect(colours.HEAD).toBe(DARK.keyword);
+    expect(colours["@I1@"]).toBe(DARK.definition);
+    expect(colours["@F1@"]).toBe(DARK.property);
+    expect(colours["7.0"]).toBe(DARK.string);
   });
 
   test("takes the editor and gutter background from the primary variable", async ({
@@ -85,19 +100,39 @@ test.describe("the Obsidian theme", () => {
     await mount(page);
     const weights = await page.evaluate(() => {
       const weightIn = (prefix: string): string => {
-        const line = [...document.querySelectorAll(".cm-line")].find((element) =>
-          (element.textContent ?? "").trim().startsWith(prefix),
+        const line = [...document.querySelectorAll(".cm-line")].find(
+          (element) => (element.textContent ?? "").trim().startsWith(prefix),
         );
         const span = [...(line?.querySelectorAll("span") ?? [])].find(
           (element) => element.textContent === "@I1@",
         );
         return span ? getComputedStyle(span).fontWeight : "missing";
       };
-      return { declaration: weightIn("0 @I1@"), reference: weightIn("1 HUSB") };
+      return {
+        declaration: weightIn("0 @I1@"),
+        reference: weightIn("1 HUSB"),
+      };
     });
 
     expect(weights.declaration, "the declaring @I1@ is semibold").toBe("600");
     expect(weights.reference, "a reference to it is not").toBe("400");
+  });
+
+  test("dresses a link the way a note's source does", async ({ page }) => {
+    await mount(page, { doc: LINKS });
+    const accent = "rgb(0, 0, 180)";
+
+    const web = page.locator(".gedcom-external-link");
+    const file = page.locator(".gedcom-internal-link");
+    await expect(web).toHaveCSS("color", accent);
+    await expect(file).toHaveCSS("color", accent);
+    await expect(file, "no underline until the pointer is on it").toHaveCSS(
+      "text-decoration-line",
+      "none",
+    );
+
+    await file.hover();
+    await expect(file).toHaveCSS("text-decoration-line", "underline");
   });
 
   test("indents nested lines with a hint the file does not contain", async ({
@@ -116,9 +151,10 @@ test.describe("the Obsidian theme", () => {
 
     expect(hint, "a nested line carries a hint").not.toBeNull();
     expect(hint!.text, "two spaces per level").toBe("  ");
-    expect(hint!.colour, "invisible, so copying the line does not carry it").toBe(
-      "rgba(0, 0, 0, 0)",
-    );
+    expect(
+      hint!.colour,
+      "invisible, so copying the line does not carry it",
+    ).toBe("rgba(0, 0, 0, 0)");
     expect(SAMPLE.includes("  1 HUSB")).toBe(false);
   });
 
@@ -128,8 +164,8 @@ test.describe("the Obsidian theme", () => {
     const payloadColour = async (dark: boolean): Promise<string> => {
       await mount(page, { dark });
       return page.evaluate(() => {
-        const line = [...document.querySelectorAll(".cm-line")].find((element) =>
-          (element.textContent ?? "").includes("John"),
+        const line = [...document.querySelectorAll(".cm-line")].find(
+          (element) => (element.textContent ?? "").includes("John"),
         );
         return line ? getComputedStyle(line).color : "missing";
       });
@@ -208,7 +244,9 @@ test.describe("the Obsidian theme", () => {
     const dark = await underlines(true);
     expect(dark.error?.colour, "--text-error").toBe("rgb(255, 100, 100)");
     expect(dark.warning?.colour, "--text-warning").toBe("rgb(255, 200, 100)");
-    expect(dark.error?.style, "still wavy, as a problem should be").toBe("wavy");
+    expect(dark.error?.style, "still wavy, as a problem should be").toBe(
+      "wavy",
+    );
     expect(
       dark.error?.image,
       "the library's red SVG is gone, so the colour can be ours",
