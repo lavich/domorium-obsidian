@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.8.0
+
+- **The editor wears the theme you chose.** Every colour it draws — the document,
+  the gutters, a tooltip, the problems list, a token — now comes from the same
+  variables the rest of Obsidian reads, so a theme change reaches the `.ged` file
+  the way it reaches a note. A hover card had been wearing the library's grey box,
+  which no theme could follow, and was the only surface in the editor that looked
+  like nothing else in the app.
+- **A GEDCOM line is coloured by what each part of it is.** A tag reads as a
+  keyword, an identifier as an identifier, and the text after a tag — which had no
+  colour at all — as a value. The record an identifier declares is set apart from a
+  reference to it, and a block in a note is coloured the same way, so the same
+  record looks the same in both places.
+- **A path and a web address look like links**, with the colour and weight
+  Obsidian gives a link in a note's source and the underline only under the
+  pointer.
+- **The problems list is a list of results**, in the shape and the measurements of
+  Obsidian's own search results pane: a row you can read, a hover, a selected row,
+  and a close button the size of every other button in the app.
+
 ## 1.7.0
 
 - **A note can link to a person, and the vault sees the link.** `[[tree.ged#@I47@]]`
