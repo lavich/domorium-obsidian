@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.8.1
+
+- **A note written as text in a GEDCOM 5.5.1 file is no longer marked as a
+  problem.** `1 NOTE plain text` was told to be a pointer to a `NOTE` record, and a
+  source citation carrying its description — `1 SOUR Parish register` — was told the
+  same, with `TEXT` beneath it called an unknown tag. Both are forms the
+  specification provides, and files exported by MyHeritage, Ancestry and Gramps are
+  full of them.
+
 ## 1.8.0
 
 - **The editor wears the theme you chose.** Every colour it draws — the document,
