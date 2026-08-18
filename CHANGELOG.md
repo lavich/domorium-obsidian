@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.8.2
+
+- **A file whose lines end in CR is read as a file, not as one line.** GEDCOM 5.5.1
+  ends a line with CR, LF, CR-LF or LF-CR, but only LF counted, so a file written
+  with CR alone arrived as a single line: its version was never found, and
+  validation, completion, navigation and colour all worked from that one line. All
+  four endings now end a line.
+- **A required tag missing from a parent with no children is marked where it is
+  missing.** The mark took its place from the first child, so a parent with none had
+  nowhere to point and landed on line 1. In a large export that gathered ten
+  `Missing required tag FORM in FILE` problems at the top of the file, a hundred
+  thousand lines from the media references they describe.
+- **Six value sets that 5.5.1 closes are checked at last.** `QUAY 9`,
+  `PEDI nonsense`, `RESN whatever`, `ORDI maybe`, `STAT nonsense` under `FAMC` and
+  `ADOP nonsense` under `INDI.ADOP.FAMC` all passed unremarked. Completion offers
+  the same values while one is typed: a `PEDI` line in a 5.5.1 file proposes
+  `adopted`, `birth`, `foster` and `sealing`.
+- **A year before the common era is read in the spellings exports write.**
+  `1472 B.C.` passed while `1472 BC`, `1472BC` and `1472B.C.` were marked, and
+  `29 FEB 1000 BC` was judged by whether 1000 was a leap year.
+- **An age in a 5.5.1 file is read by that version's rules.** `AGE <8y` was marked
+  while `AGE < 8y` passed, and `8Y` and `child` were marked while `8y` and `CHILD`
+  passed, because one rule written for GEDCOM 7 served both versions.
+- **A tag written in mixed case names the tag that is meant.** `1 NoTe hello` was
+  reported as an unknown tag `N` — a tag that is nowhere in your file — because the
+  tag was read only as far as its first upper-case letter. It now reads whole and
+  the message names `NOTE`.
+- **A line that cannot be read is reported once, in words about GEDCOM.** An
+  identifier with a space in it produced a message about characters and offsets,
+  then a second one about an unknown tag assembled from the wreckage. Such a line
+  now yields one problem, saying an identifier holds letters, digits and underscore
+  between two @ marks.
+- **An extension tag declared twice in `HEAD.SCHMA` with different URIs is no longer
+  reported.** The specification permits it, and files that use it include the
+  specification's own example.
+
 ## 1.8.1
 
 - **A note written as text in a GEDCOM 5.5.1 file is no longer marked as a
