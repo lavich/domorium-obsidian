@@ -6,6 +6,7 @@ import {
   Modal,
   normalizePath,
   Notice,
+  Platform,
   Plugin,
   removeIcon,
   Setting,
@@ -122,6 +123,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       this.addCommand({
         id: command.id,
         name: command.name,
+        hotkeys: command.hotkeys?.(Platform.isMacOS),
         checkCallback: (checking) => {
           const view = this.app.workspace.getActiveViewOfType(GedcomView);
           if (!view || !command.isAvailable(view)) {

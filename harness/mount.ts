@@ -10,6 +10,10 @@ import {
 import { createGedcomComposition } from "../src/editor/composition";
 import { mediaPreviewContent, previewBounds } from "../src/editor/media";
 import { renderMediaPreview } from "../src/editor/mediaPreviewView";
+import {
+  matchesBinding,
+  type SearchKeyBinding,
+} from "../src/editor/searchKeys";
 import { openSearch } from "../src/editor/searchPanel";
 import { hoverDelay, previewGesture } from "../src/editor/previewGesture";
 import {
@@ -131,6 +135,32 @@ function closeMedia(): void {
   popover = null;
 }
 
+/*
+ * What app.keymap does for the plugin, standing in the same place in the
+ * bubble: a scope answers on the document, so CodeMirror has already seen the
+ * key on contentDOM by the time it arrives here. The matching itself is the
+ * plugin's own, so a spec drives the shipped table.
+ */
+// Not the userAgent: Playwright's "Desktop Chrome" emulates a Windows one,
+// while its ControlOrMeta follows the host, and platform is what still agrees.
+const mac = navigator.platform.includes("Mac");
+
+function pushScope(bindings: SearchKeyBinding[]): () => void {
+  const handle = (event: KeyboardEvent): void => {
+    const binding = bindings.find((candidate) =>
+      matchesBinding(event, candidate, mac),
+    );
+    if (binding?.run()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+  document.addEventListener("keydown", handle);
+  return () => {
+    document.removeEventListener("keydown", handle);
+  };
+}
+
 function mount(options: HarnessOptions): void {
   view?.destroy();
   calls.previews = [];
@@ -182,7 +212,7 @@ function mount(options: HarnessOptions): void {
         delay: hoverDelay(record),
         mediaDelay: hoverDelay(media),
         modifierHeld: modifier,
-        setIcon: stubSetIcon,
+        panel: { setIcon: stubSetIcon, pushScope },
         actions: {
           applyWorkspaceEdit: () => true,
           openDocumentLink: (link) => {

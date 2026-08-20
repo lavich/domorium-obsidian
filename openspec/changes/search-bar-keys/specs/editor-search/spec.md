@@ -41,8 +41,9 @@ spec `Mod` means Command on macOS and Control elsewhere.
 
 While the bar is open, these keys SHALL act whether the focus is in one of the
 bar's fields or in the document: `F3` and `Mod+G` find the next match;
-`Shift+F3` and `Mod+Shift+G` find the previous one; `Alt+Enter` selects every
-match; `Mod+Alt+Enter` replaces every match; `Escape` closes the bar.
+`Shift+F3` and `Mod+Shift+G` find the previous one; `Alt+Enter` runs
+select-all-matches; `Mod+Alt+Enter` replaces every match; `Escape` closes the
+bar.
 
 #### Scenario: Finding the next match from the document
 - **WHEN** the bar is open with a term entered, the reader clicks into the
@@ -58,11 +59,19 @@ match; `Mod+Alt+Enter` replaces every match; `Escape` closes the bar.
 - **WHEN** the reader clicks into the document and presses `Escape`
 - **THEN** the bar closes
 
-#### Scenario: Selecting and replacing every match from the document
-- **WHEN** the reader clicks into the document and presses `Alt+Enter`
-- **THEN** every match is selected
-- **WHEN** the reader presses `Mod+Alt+Enter` with a replacement entered
+#### Scenario: Replacing every match from the document
+- **WHEN** the reader clicks into the document and presses `Mod+Alt+Enter` with
+  a replacement entered
 - **THEN** every match in the file is replaced
+
+#### Scenario: Selecting every match from the document
+- **WHEN** the reader clicks into the document and presses `Alt+Enter`
+- **THEN** the key runs the same select-all-matches the bar's own button runs,
+  and answers alike from either focus
+- **AND** the editor holds one selection range, so what a reader sees today is
+  the selection landing on a match rather than on every one; key and button will
+  select every match together, unchanged, once the editor allows more than one
+  range
 
 #### Scenario: The keys stop when the bar does
 - **WHEN** the bar has been closed
@@ -97,7 +106,8 @@ open bar.
 ### Requirement: Moving between the find and the replace field
 
 `Tab` and `Shift+Tab` SHALL move the focus between the find and the replace
-field, and SHALL do nothing while the replace row is collapsed.
+field, and SHALL do nothing of their own while the replace row is collapsed —
+the key is then not the bar's, as it is not in Obsidian's own bar.
 
 #### Scenario: Tab reaches the replace field
 - **WHEN** the bar is open with the replace row expanded and the focus is in the
@@ -108,7 +118,8 @@ field, and SHALL do nothing while the replace row is collapsed.
 #### Scenario: Tab with the replace row collapsed
 - **WHEN** the bar is open with the replace row collapsed and the focus is in
   the find field, and the reader presses `Tab`
-- **THEN** the focus stays where it is and nothing else happens
+- **THEN** no replace field appears and the bar takes no part: the focus moves on
+  to the next control the way it would with no binding at all
 
 ### Requirement: Every button names its key
 

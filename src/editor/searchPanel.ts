@@ -14,13 +14,31 @@ import { StateEffect, StateField, type Extension } from "@codemirror/state";
 import type { EditorView, Panel } from "@codemirror/view";
 
 import { countMatches, describeMatches } from "./searchMatches";
+import {
+  searchBindings,
+  SEARCH_KEY_CAPTIONS,
+  type ScopePusher,
+  type SearchKeyActions,
+} from "./searchKeys";
 
 export type IconSetter = (element: HTMLElement, icon: string) => void;
+
+/** What the panel needs of its host, which is where `obsidian` stays. */
+export interface PanelHost {
+  setIcon: IconSetter;
+  pushScope: ScopePusher;
+}
 
 /** Obsidian's own delay before it acts on what is being typed into a search. */
 const SETTLE_MS = 150;
 
 const setReplaceMode = StateEffect.define<boolean>();
+
+/** Obsidian writes a tooltip as the label, then its key on a line of its own. */
+const tooltip = (
+  label: string,
+  action: keyof typeof SEARCH_KEY_CAPTIONS,
+): string => `${label}\n${SEARCH_KEY_CAPTIONS[action]}`;
 
 /** Replace has no control in the row, so the mode it opens in is state. */
 export const replaceMode: Extension = StateField.define<boolean>({
@@ -40,7 +58,7 @@ export function openSearch(view: EditorView, replace: boolean): void {
   openSearchPanel(view);
 }
 
-export function obsidianSearchPanel(setIcon: IconSetter) {
+export function obsidianSearchPanel(host: PanelHost) {
   return (view: EditorView): Panel => {
     // The view's own document and window, not this file's: a popout has both.
     const owner = view.dom.ownerDocument;
@@ -117,7 +135,7 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
       );
       control.type = "button";
       control.setAttribute("aria-label", label);
-      setIcon(control, icon);
+      host.setIcon(control, icon);
       // Keeping focus in the field is what lets Enter go on finding matches.
       control.addEventListener("mousedown", (event) => {
         event.preventDefault();
@@ -130,10 +148,17 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
       return control;
     };
 
-    button(buttons, "arrow-up", "Previous", () => findPrevious(view));
-    button(buttons, "arrow-down", "Next", () => findNext(view));
-    button(buttons, "text-select", "Select all matches", () =>
-      selectMatches(view),
+    button(buttons, "arrow-up", tooltip("Previous", "findPrevious"), () =>
+      findPrevious(view),
+    );
+    button(buttons, "arrow-down", tooltip("Next", "findNext"), () =>
+      findNext(view),
+    );
+    button(
+      buttons,
+      "text-select",
+      tooltip("Select all matches", "selectAll"),
+      () => selectMatches(view),
     );
 
     const close = button(buttons, "x", "Exit search", () =>
@@ -142,9 +167,14 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
     close.classList.remove("document-search-button");
     close.classList.add("document-search-close-button");
 
-    button(replaceButtons, "replace", "Replace", () => replaceNext(view));
-    button(replaceButtons, "replace-all", "Replace all", () =>
-      replaceAll(view),
+    button(replaceButtons, "replace", tooltip("Replace", "replaceNext"), () =>
+      replaceNext(view),
+    );
+    button(
+      replaceButtons,
+      "replace-all",
+      tooltip("Replace all", "replaceAll"),
+      () => replaceAll(view),
     );
 
     for (const input of [searchInput, replaceInput]) {
@@ -152,30 +182,53 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
         commit();
         later(showCount);
       });
-      input.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          closeSearchPanel(view);
-          return;
-        }
-        if (event.key !== "Enter" || event.isComposing) {
-          return;
-        }
-        event.preventDefault();
-        if (input === replaceInput) {
-          replaceNext(view);
-        } else if (event.shiftKey) {
-          findPrevious(view);
-        } else {
-          findNext(view);
-        }
-      });
     }
+
+    const actions: SearchKeyActions = {
+      findNext: () => {
+        findNext(view);
+      },
+      findPrevious: () => {
+        findPrevious(view);
+      },
+      close: () => {
+        closeSearchPanel(view);
+      },
+      selectAll: () => {
+        selectMatches(view);
+      },
+      replaceNext: () => {
+        replaceNext(view);
+      },
+      replaceAll: () => {
+        replaceAll(view);
+      },
+      focused: () => {
+        const active = owner.activeElement;
+        if (active === searchInput) {
+          return "search";
+        }
+        return active === replaceInput ? "replace" : null;
+      },
+      // Two fields, so either direction is the other one.
+      moveFocus: () => {
+        if (!replacing(view)) {
+          return false;
+        }
+        const target =
+          owner.activeElement === replaceInput ? searchInput : replaceInput;
+        target.focus();
+        target.select();
+        return true;
+      },
+    };
+    let popScope: (() => void) | undefined;
 
     return {
       dom,
       top: true,
       mount() {
+        popScope = host.pushScope(searchBindings(actions));
         searchInput.value = getSearchQuery(view.state).search;
         replaceInput.value = getSearchQuery(view.state).replace;
         dom.classList.toggle("mod-replace-mode", replacing(view));
@@ -204,6 +257,7 @@ export function obsidianSearchPanel(setIcon: IconSetter) {
         }
       },
       destroy() {
+        popScope?.();
         timers.clearTimeout(settle);
       },
     };
