@@ -11,3 +11,7 @@ harness/results/
 
 # Obsidian keeps its own state in a vault, including a copy of the plugin.
 demo-vault/.obsidian/
+
+# OpenSpec regenerates its Claude Code skills from the installed CLI
+# (openspec init, openspec update), so they are not tracked here.
+.claude/skills/openspec-*/

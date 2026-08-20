@@ -1,0 +1,80 @@
+schema: spec-driven
+
+# Project context. Shown to AI when creating artifacts.
+context: |
+  Project: domorium-obsidian — an Obsidian community plugin (id `domorium`,
+  display name "Gedcom") that adds GEDCOM 5.5.1 and 7.0 language support to
+  Obsidian: validation, autocomplete, navigation, folding, semantic
+  highlighting, and links from notes into records.
+
+  Tech stack: TypeScript (strict, ESM), CodeMirror 6, the Obsidian plugin API,
+  esbuild for bundling, Vitest for unit tests, Playwright for browser tests.
+  Node >= 22. The package is private and never published to npm; releases are
+  GitHub releases carrying `main.js`, `manifest.json`, and `styles.css`.
+
+  The GEDCOM parser and the editor-independent language service are NOT in this
+  repository. They live in https://github.com/lavich/domorium and arrive as
+  versioned npm packages `@domorium/codemirror` and `@domorium/language-service`.
+  A change that needs parser or language-service behavior belongs upstream, not
+  here — this repository only adapts that language support to Obsidian.
+
+  Commands:
+    npm run check         lint + typecheck + unit tests + build (run before any commit)
+    npm run test          Vitest unit tests only
+    npm run test:browser  Playwright tests against the standalone harness
+    npm run dev           esbuild watch build
+    npm run build         typecheck then production bundle into dist/
+
+  Layout:
+    src/main.ts             plugin entry: lifecycle, commands, icon, protocol handler
+    src/GedcomView.ts       the file view for .ged / .gedcom
+    src/api.ts              the API other plugins and dataviewjs reach
+    src/commands.ts         command palette definitions
+    src/editor/             CodeMirror wiring: service, extensions, status, search, records
+    src/notes/              GEDCOM inside Markdown notes: code blocks, record index, previews, embeds, suggest
+    src/vault/              vault-level concerns: obsidian:// links, renamed media
+    src/settings*.ts        settings tab, definitions, persisted data
+    harness/                standalone browser harness used by Playwright
+    tests/                  Playwright specs
+    demo-vault/             a real Obsidian vault used for manual testing
+
+  Unit tests sit beside their subject as `*.test.ts`. Browser specs live in
+  `tests/`. Prefer extending an existing test file over adding a new one.
+
+  Conventions:
+    - Conventional Commits. Release commits read `chore(release): X.Y.Z`.
+    - A release bumps `package.json`, `manifest.json`, and adds the version to
+      `versions.json` mapped to its `minAppVersion`; the tag is the bare version.
+    - The plugin supports desktop AND mobile (`isDesktopOnly: false`). Node APIs
+      are unavailable in plugin code — `eslint-plugin-obsidianmd` enforces this.
+    - The GEDCOM file stays the source of truth. The plugin does not convert
+      records into Markdown, build a second genealogy database, or send vault
+      data anywhere.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - State explicitly whether the change belongs in this repository or upstream
+      in lavich/domorium (parser or language-service behavior belongs upstream).
+    - Include a "Non-goals" section.
+  tasks:
+    - The final task of every change is `npm run check`, plus
+      `npm run test:browser` when the change touches rendering, layout, or panels.
+    - Name the test file each task adds to or creates.
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+operations:
+  apply:
+    guidance:
+      - Do not edit dist/ or main.js; they are build output.
+      - "Verify mobile safety: no Node built-ins in anything under src/."
