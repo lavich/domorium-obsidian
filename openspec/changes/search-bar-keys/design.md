@@ -112,6 +112,11 @@ That keeps the gate in the one place a test can reach without a browser, and it
 is why `searchKeys.test.ts` can cover the whole table with a fake
 `SearchKeyActions`.
 
+Returning `false` means the key was never the bar's, so the browser goes on to
+do what it would have done: `Tab` in the find field with the replace row
+collapsed moves the focus to the next control, which is what Obsidian's own bar
+does with a key its `goToNextInput` declines.
+
 ### D4. `matchesBinding` is shipped code, not harness code
 
 The harness has no `app.keymap`, so its stub must match events itself. Putting
@@ -188,13 +193,41 @@ path would be invisible while the other worked.
   focus gate would break typing or indenting rather than merely fail to search
   → the gate is table data covered by unit tests, and the browser specs assert
   `Enter` still inserts a line and `Tab` still indents with the bar open.
-- Whether a scope handler that claims a key also stops CodeMirror from acting on
-  it is asserted, not assumed: the browser spec for `Escape` from the document
-  closes the bar exactly once, which is the case that would show a double
-  handling → verify it first, while the table is still cheap to change.
+- A scope handler that claims a key does **not** stop CodeMirror from acting on
+  it — asserted, and the answer is no. CodeMirror sees the key on `contentDOM`
+  before it reaches `document`, so neither `preventDefault` nor
+  `stopPropagation` from a scope handler can un-run it. `Escape` from the
+  document closes the bar exactly once, which is all the spec asks, and the
+  editor's own `simplifySelection` also runs, collapsing a non-empty selection
+  to a cursor → accepted. Winning the ordering would take a second keymap at
+  `Prec.highest` living as long as the panel, against D1 and D8, which is more
+  than one cosmetic overlap is worth.
 - The harness's scope is a stub, so ordering against the real `app.keymap` is
   only ever confirmed by hand in `demo-vault/` → the same trade-off `setIcon`
   already carries, and the stub sits in the same position in the bubble.
+- The harness bundle carries two copies of `@codemirror/state`: the 6.5.0 pinned
+  in `package.json`, and a 6.7.1 nested under `@codemirror/commands` 6.10.4,
+  which asks for `^6.7.0`. A range built by a command from one copy reads as
+  `undefined` through the other, so `simplifySelection` leaves
+  `{"ranges":[{}]}` rather than a cursor. The plugin is unaffected —
+  `esbuild.config.mjs` marks every `@codemirror/*` external and Obsidian
+  supplies one copy — and the harness duplicates only because it bundles
+  everything. Confirmed twice: the same `Escape` breaks the selection in the
+  harness with no panel open at all, and a metafile built without the externals
+  lists both paths → a spec must not assert on the selection left by a
+  `@codemirror/commands` command in the harness, which is why the browser case
+  for `Escape` asserts the bar closes and the document is untouched. The dedupe
+  is its own issue and its own PR, as the `@domorium` 2.0.0 bump is.
+
+- `Alt+Enter` runs select-all-matches, and the editor keeps one range of it:
+  `EditorState.allowMultipleSelections` is off, and
+  `tr.newSelection.asSingle()` is what a state without it applies, so a
+  two-range selection arrives and one survives → accepted. The bar's own "Select
+  all matches" button, shipped in #81, dispatches the same command and has
+  always had the same ceiling, so the key promises exactly what the button
+  delivers. Turning it on wants `allowMultipleSelections` and `drawSelection()`
+  to render a second range — editor-preset behavior, which lives upstream in
+  `lavich/domorium`, so it is filed there rather than worked around here.
 
 ## Migration Plan
 

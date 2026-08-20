@@ -19,7 +19,7 @@ export interface CommandView {
   goToNextProblem(): boolean;
   goToPreviousProblem(): boolean;
   toggleProblemsPanel(): void;
-  openSearch(replace: boolean): void;
+  showSearch(replace: boolean): void;
 }
 
 /** Everything outside the view, which is where `obsidian` stays. */
@@ -36,11 +36,19 @@ export interface CommandHost {
   askForName(entered: (newName: string) => void): void;
 }
 
+/** Obsidian's own `Hotkey`, spelt here so `obsidian` stays out of this file. */
+export interface CommandHotkey {
+  modifiers: ("Mod" | "Ctrl" | "Meta" | "Shift" | "Alt")[];
+  key: string;
+}
+
 export interface GedcomCommand {
   id: string;
   name: string;
   icon: string;
   section?: string;
+  /** The default binding, which differs by platform where Obsidian's own do. */
+  hotkeys?: (mac: boolean) => CommandHotkey[];
   isAvailable(view: CommandView): boolean;
   run(host: CommandHost, view: CommandView): void;
 }
@@ -173,7 +181,7 @@ export const COMMANDS: GedcomCommand[] = [
     section: "find",
     isAvailable: () => true,
     run: (_host, view) => {
-      view.openSearch(false);
+      view.showSearch(false);
     },
   },
   {
@@ -181,9 +189,17 @@ export const COMMANDS: GedcomCommand[] = [
     name: "Replace...",
     icon: "file-search",
     section: "find",
+    // Find needs no default: Obsidian's own editor:open-search finds the view
+    // by its showSearch. Its replace command cannot — the gate there wants a
+    // markdown editor — so this is the one key the plugin claims itself.
+    hotkeys: (mac) => [
+      mac
+        ? { modifiers: ["Mod", "Alt"], key: "F" }
+        : { modifiers: ["Mod"], key: "H" },
+    ],
     isAvailable: () => true,
     run: (_host, view) => {
-      view.openSearch(true);
+      view.showSearch(true);
     },
   },
 ];
