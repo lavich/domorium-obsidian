@@ -21,6 +21,8 @@ export default tseslint.config(
     files: ["tests/**/*.ts", "harness/**/*.ts"],
     rules: {
       "obsidianmd/no-nodejs-modules": "off",
+      // The harness runs without Obsidian, so Platform is out of reach there.
+      "obsidianmd/platform": "off",
     },
   },
   {

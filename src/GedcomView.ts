@@ -28,6 +28,7 @@ import {
   type Menu,
   normalizePath,
   Notice,
+  Scope,
   setIcon,
   TextFileView,
   TFile,
@@ -45,6 +46,7 @@ import {
   positionFromOffset,
 } from "./editor/ephemeralState";
 import { openSearch } from "./editor/searchPanel";
+import type { SearchKeyBinding } from "./editor/searchKeys";
 import { routeDocumentLink } from "./editor/service";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
@@ -287,7 +289,12 @@ export class GedcomView extends TextFileView {
     this.editor.focus();
   }
 
-  openSearch(replace = false): void {
+  /**
+   * The name Obsidian's own editor:open-search looks for: it dispatches by duck
+   * type on this method rather than on a class, which is how Mod+F reaches a
+   * GEDCOM view without a hotkey of ours claiming the key app-wide.
+   */
+  showSearch(replace = false): void {
     openSearch(this.editor, replace);
   }
 
@@ -309,6 +316,24 @@ export class GedcomView extends TextFileView {
     return Promise.resolve();
   }
 
+  /**
+   * The bar's keys answer wherever the focus sits, which is what a scope on
+   * app.keymap gives and a CodeMirror keymap cannot: the panel's own DOM is
+   * outside contentDOM. Parenting it on app.scope lets every key the bar does
+   * not register fall through untouched.
+   */
+  private pushScope(bindings: SearchKeyBinding[]): () => void {
+    const scope = new Scope(this.app.scope);
+    for (const binding of bindings) {
+      // Obsidian reads false as "the key was mine" and preventDefaults it.
+      scope.register(binding.modifiers, binding.key, () => !binding.run());
+    }
+    this.app.keymap.pushScope(scope);
+    return () => {
+      this.app.keymap.popScope(scope);
+    };
+  }
+
   private isDark(): boolean {
     return this.containerEl.ownerDocument.body.classList.contains("theme-dark");
   }
@@ -326,7 +351,10 @@ export class GedcomView extends TextFileView {
           gesture: previewGesture(this.settings.recordPreview, (event) =>
             Keymap.isModifier(event, "Mod"),
           ),
-          setIcon,
+          panel: {
+            setIcon,
+            pushScope: (bindings) => this.pushScope(bindings),
+          },
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
             openDocumentLink: (link) => this.openDocumentLink(link),

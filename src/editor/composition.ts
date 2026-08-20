@@ -13,7 +13,7 @@ import { ViewPlugin, type EditorView } from "@codemirror/view";
 
 import { createHostEditorExtensions } from "./hostExtensions";
 import type { PreviewGesture } from "./previewGesture";
-import type { IconSetter } from "./searchPanel";
+import type { PanelHost } from "./searchPanel";
 
 export interface GedcomCompositionOptions {
   language: EditorLanguageService;
@@ -21,7 +21,7 @@ export interface GedcomCompositionOptions {
   actions: GedcomEditorActions;
   dark: boolean;
   gesture: PreviewGesture;
-  setIcon: IconSetter;
+  panel: PanelHost;
   showPreview: (
     preview: RecordPreview,
     view: EditorView,
@@ -60,11 +60,7 @@ export function createGedcomComposition(
       hide: options.hidePreview,
     }),
     closePreviewOnRelease(options.gesture),
-    ...createHostEditorExtensions(
-      options.settings,
-      options.dark,
-      options.setIcon,
-    ),
+    ...createHostEditorExtensions(options.settings, options.dark, options.panel),
     ...createGedcomExtensions({
       language: options.language,
       settings: options.settings,
