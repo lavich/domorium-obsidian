@@ -6,6 +6,7 @@ import {
   SEARCH_KEY_CAPTIONS,
   type SearchKeyActions,
   type SearchKeyBinding,
+  type SearchKeyEvent,
 } from "./searchKeys";
 
 /** Every action the bar offers, so a test can see which one a key ran. */
@@ -30,6 +31,7 @@ function actions(overrides: Partial<SearchKeyActions> = {}): Actions {
     replaceNext: vi.fn(),
     replaceAll: vi.fn(),
     focused: vi.fn(() => "search" as const),
+    replacing: vi.fn(() => true),
     moveFocus: vi.fn(() => true),
     ...overrides,
   } as Actions;
@@ -42,14 +44,18 @@ const signature = (binding: SearchKeyBinding): string =>
   [...binding.modifiers, binding.key].join("+");
 
 /** The binding that answers these keys, run the way a scope would run it. */
-function press(fake: SearchKeyActions, keys: string): boolean {
+function press(
+  fake: SearchKeyActions,
+  keys: string,
+  event: SearchKeyEvent = { isComposing: false },
+): boolean {
   const binding = searchBindings(fake).find(
     (candidate) => signature(candidate) === keys,
   );
   if (!binding) {
     throw new Error(`no binding answers ${keys}`);
   }
-  return binding.run();
+  return binding.run(event);
 }
 
 describe("the keys the search bar answers", () => {
@@ -80,7 +86,6 @@ describe("the keys the search bar answers", () => {
     ["Mod+Shift+G", "findPrevious"],
     ["Escape", "close"],
     ["Alt+Enter", "selectAll"],
-    ["Mod+Alt+Enter", "replaceAll"],
     ["Enter", "findNext"],
     ["Shift+Enter", "findPrevious"],
     ["Tab", "moveFocus"],
@@ -99,6 +104,13 @@ describe("the keys the search bar answers", () => {
     expect(ran(fake)).toEqual(["replaceNext"]);
   });
 
+  it("replaces every match from the replace field, where the native bar does", () => {
+    const fake = actions({ focused: () => "replace" });
+
+    expect(press(fake, "Mod+Alt+Enter")).toBe(true);
+    expect(ran(fake)).toEqual(["replaceAll"]);
+  });
+
   it("moves forward on Tab and back on Shift-Tab", () => {
     const fake = actions();
     press(fake, "Tab");
@@ -111,20 +123,40 @@ describe("the keys the search bar answers", () => {
 });
 
 describe("the keys the bar leaves to the editor", () => {
-  it.each(["Enter", "Shift+Enter", "Tab", "Shift+Tab"])(
-    "leaves %s alone while the focus is in the document",
-    (keys) => {
-      const fake = actions({ focused: () => null });
+  it.each([
+    "Enter",
+    "Shift+Enter",
+    "Tab",
+    "Shift+Tab",
+    "Alt+Enter",
+    "Mod+Alt+Enter",
+  ])("leaves %s alone while the focus is in the document", (keys) => {
+    const fake = actions({ focused: () => null });
 
-      expect(press(fake, keys), "the key was not the bar's").toBe(false);
-      expect(ran(fake)).toEqual([]);
-    },
-  );
+    expect(press(fake, keys), "the key was not the bar's").toBe(false);
+    expect(ran(fake)).toEqual([]);
+  });
 
   it("leaves Tab alone while the replace row is collapsed", () => {
     const fake = actions({ moveFocus: () => false });
 
     expect(press(fake, "Tab")).toBe(false);
+  });
+
+  // The replacement is in the row the reader cannot see, so the key that
+  // rewrites the file with it is not the bar's — as it is not in Obsidian's.
+  it("leaves replace-all alone while the replace row is collapsed", () => {
+    const fake = actions({ replacing: () => false, focused: () => "replace" });
+
+    expect(press(fake, "Mod+Alt+Enter")).toBe(false);
+    expect(ran(fake)).toEqual([]);
+  });
+
+  it("leaves replace-all alone from the find field", () => {
+    const fake = actions({ focused: () => "search" });
+
+    expect(press(fake, "Mod+Alt+Enter")).toBe(false);
+    expect(ran(fake)).toEqual([]);
   });
 
   it.each([
@@ -133,13 +165,35 @@ describe("the keys the bar leaves to the editor", () => {
     ["Shift+F3", "findPrevious"],
     ["Mod+Shift+G", "findPrevious"],
     ["Escape", "close"],
-    ["Alt+Enter", "selectAll"],
-    ["Mod+Alt+Enter", "replaceAll"],
   ])("still answers %s from the document", (keys, action) => {
     const fake = actions({ focused: () => null });
 
     expect(press(fake, keys)).toBe(true);
     expect(ran(fake)).toEqual([action]);
+  });
+});
+
+describe("the keys the bar leaves to the input method", () => {
+  it.each([
+    "F3",
+    "Mod+G",
+    "Shift+F3",
+    "Mod+Shift+G",
+    "Enter",
+    "Shift+Enter",
+    "Escape",
+    "Tab",
+    "Shift+Tab",
+    "Alt+Enter",
+    "Mod+Alt+Enter",
+  ])("answers no %s while a composition is in progress", (keys) => {
+    const fake = actions({ focused: () => "replace" });
+
+    expect(
+      press(fake, keys, { isComposing: true }),
+      "Enter there commits a candidate, and the key is the IME's",
+    ).toBe(false);
+    expect(ran(fake)).toEqual([]);
   });
 });
 
@@ -199,7 +253,11 @@ describe("reading a keydown against the table", () => {
       "Shift+F3 is a binding of its own",
     ).toBe(false);
     expect(
-      matchesBinding(keydown("F3", { shift: true }), binding("Shift+F3"), false),
+      matchesBinding(
+        keydown("F3", { shift: true }),
+        binding("Shift+F3"),
+        false,
+      ),
     ).toBe(true);
   });
 
@@ -208,7 +266,11 @@ describe("reading a keydown against the table", () => {
       matchesBinding(keydown("F3", { alt: true }), binding("F3"), false),
     ).toBe(false);
     expect(
-      matchesBinding(keydown("Enter", { alt: true }), binding("Alt+Enter"), false),
+      matchesBinding(
+        keydown("Enter", { alt: true }),
+        binding("Alt+Enter"),
+        false,
+      ),
     ).toBe(true);
     expect(
       matchesBinding(

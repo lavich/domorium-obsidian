@@ -137,9 +137,10 @@ function closeMedia(): void {
 
 /*
  * What app.keymap does for the plugin, standing in the same place in the
- * bubble: a scope answers on the document, so CodeMirror has already seen the
- * key on contentDOM by the time it arrives here. The matching itself is the
- * plugin's own, so a spec drives the shipped table.
+ * bubble: Obsidian's Keymap listens on `window` in the capture phase, so a
+ * scope sees a key *before* CodeMirror's handlers on contentDOM, and claiming
+ * one keeps the editor from acting on it. The matching itself is the plugin's
+ * own, so a spec drives the shipped table.
  */
 // Not the userAgent: Playwright's "Desktop Chrome" emulates a Windows one,
 // while its ControlOrMeta follows the host, and platform is what still agrees.
@@ -150,14 +151,14 @@ function pushScope(bindings: SearchKeyBinding[]): () => void {
     const binding = bindings.find((candidate) =>
       matchesBinding(event, candidate, mac),
     );
-    if (binding?.run()) {
+    if (binding?.run(event)) {
       event.preventDefault();
       event.stopPropagation();
     }
   };
-  document.addEventListener("keydown", handle);
+  window.addEventListener("keydown", handle, true);
   return () => {
-    document.removeEventListener("keydown", handle);
+    window.removeEventListener("keydown", handle, true);
   };
 }
 

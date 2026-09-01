@@ -29,6 +29,17 @@ export default tseslint.config(
     },
   },
   {
+    files: ["src/main.ts"],
+    rules: {
+      // The one default the plugin claims is Obsidian's own for the job:
+      // editor:open-search-replace already binds Mod+Alt+F / Mod+H and fails
+      // its check in a GEDCOM view, and the hotkey manager then falls through
+      // to the next command bound to the key, which is ours. Reassignable in
+      // Settings → Hotkeys like any other.
+      "obsidianmd/commands/no-default-hotkeys": "off",
+    },
+  },
+  {
     files: ["**/*.{ts,cts,mts,tsx}"],
     languageOptions: {
       parser: tseslint.parser,

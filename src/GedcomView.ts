@@ -329,16 +329,46 @@ export class GedcomView extends TextFileView {
    * app.keymap gives and a CodeMirror keymap cannot: the panel's own DOM is
    * outside contentDOM. Parenting it on app.scope lets every key the bar does
    * not register fall through untouched.
+   *
+   * A scope on app.keymap answers app-wide, though, and the panel outlives the
+   * leaf being looked at — so the scope follows the active leaf rather than the
+   * panel alone. Obsidian's own bar does the same, popping its scope when the
+   * editor it belongs to is hidden; without it F3 would search, and
+   * Mod+Alt+Enter rewrite, a file in a background tab.
    */
   private pushScope(bindings: SearchKeyBinding[]): () => void {
     const scope = new Scope(this.app.scope);
     for (const binding of bindings) {
       // Obsidian reads false as "the key was mine" and preventDefaults it.
-      scope.register(binding.modifiers, binding.key, () => !binding.run());
+      scope.register(
+        binding.modifiers,
+        binding.key,
+        (event) => !binding.run(event),
+      );
     }
-    this.app.keymap.pushScope(scope);
+    let pushed = false;
+    const follow = (): void => {
+      const active =
+        this.app.workspace.getActiveViewOfType(GedcomView) === this;
+      if (active === pushed) {
+        return;
+      }
+      if (active) {
+        this.app.keymap.pushScope(scope);
+      } else {
+        this.app.keymap.popScope(scope);
+      }
+      pushed = active;
+    };
+    follow();
+    const ref = this.app.workspace.on("active-leaf-change", follow);
+    this.registerEvent(ref);
     return () => {
-      this.app.keymap.popScope(scope);
+      this.app.workspace.offref(ref);
+      if (pushed) {
+        this.app.keymap.popScope(scope);
+        pushed = false;
+      }
     };
   }
 

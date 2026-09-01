@@ -20,13 +20,18 @@ is Obsidian adaptation, so the work belongs in this repository, not upstream in
   `Shift+Enter` finds previous; `Escape` closes; `Tab` / `Shift+Tab` move
   between the find and replace fields; `Alt+Enter` selects all matches;
   `Mod+Alt+Enter` replaces all.
-- The keys answer wherever focus sits while the bar is open, the document
-  included. They live on an Obsidian `Scope` pushed on `app.keymap` when the
-  panel mounts and popped when it is destroyed, which is the mechanism the
-  native bar uses.
-- `Enter`, `Shift+Enter` and `Tab` / `Shift+Tab` stay inert unless a field has
-  the focus, so typing a line and indenting with Tab still work in the
-  document. `Tab` also does nothing while the replace row is collapsed.
+- Each key keeps the gate the native bar keeps on it. `F3`, `Mod+G`, `Shift+F3`,
+  `Mod+Shift+G` and `Escape` answer wherever focus sits, the document included;
+  `Enter`, `Shift+Enter`, `Tab` / `Shift+Tab` and `Alt+Enter` only from one of
+  the bar's fields, so typing a line and indenting with Tab still work in the
+  document; `Mod+Alt+Enter` only with the replace row open and the focus in it,
+  so a replacement the reader cannot see never rewrites the file. `Tab` also
+  does nothing while the replace row is collapsed, and no key answers while an
+  IME composition is in progress.
+- They live on an Obsidian `Scope` parented on `app.scope`, which is the
+  mechanism the native bar uses. It is pushed while the GEDCOM leaf is the one
+  being looked at and popped when it is not — again as the native bar does — so
+  a bar left open in a background tab takes no key.
 - `GedcomView` gains `showSearch(replace?: boolean)`. Obsidian's own
   `editor:open-search` dispatches by duck type on that method name, so `Mod+F`
   reaches the GEDCOM view with no `hotkeys` field of ours: the key stays on

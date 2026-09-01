@@ -3,20 +3,31 @@
  * its bundle rather than taken from `searchKeymap`: the library invents three
  * keys Obsidian has nowhere and misses five it has. The table is data so the
  * panel, the view and the browser harness all answer from the same one.
+ *
+ * Read out with it: the gate each key keeps. Obsidian's bar registers eleven
+ * keys and guards four of them — `Enter` and `Shift+Enter` on the focus being
+ * in one of its fields, `Alt+Enter` on the same, `Mod+Alt+Enter` on the replace
+ * row being open with the focus in it. Losing a gate is not a smaller change
+ * than losing a key: `Mod+Alt+Enter` rewrites the file.
  */
 
 /** What `Scope.register` takes, and what `Mod` means: Meta on macOS, Ctrl elsewhere. */
 export type KeyModifier = "Mod" | "Ctrl" | "Meta" | "Shift" | "Alt";
+
+/** The little of a keydown the table reads; the rest is the scope's business. */
+export interface SearchKeyEvent {
+  isComposing: boolean;
+}
 
 export interface SearchKeyBinding {
   modifiers: KeyModifier[];
   /** From `KeyboardEvent.key`, so `F3`, `G`, `Enter`, `Escape` name themselves. */
   key: string;
   /** True when the key was the bar's; false leaves it to the editor. */
-  run(): boolean;
+  run(event: SearchKeyEvent): boolean;
 }
 
-/** What the panel can do, and the two questions only the panel can answer. */
+/** What the panel can do, and the questions only the panel can answer. */
 export interface SearchKeyActions {
   findNext(): void;
   findPrevious(): void;
@@ -26,6 +37,8 @@ export interface SearchKeyActions {
   replaceAll(): void;
   /** Which of the bar's fields has the focus, if either. */
   focused(): "search" | "replace" | null;
+  /** Whether the replace row is open, which is what gates replace-all. */
+  replacing(): boolean;
   /** False while the replace row is collapsed, as the native bar's own no-op. */
   moveFocus(back: boolean): boolean;
 }
@@ -46,21 +59,26 @@ export const SEARCH_KEY_CAPTIONS = {
   replaceAll: "Mod+Alt+Enter",
 } as const;
 
-const claim =
-  (run: () => void) =>
-  (): boolean => {
-    run();
-    return true;
-  };
+/** One entry of the table before the composition guard wraps it. */
+interface KeyEntry {
+  modifiers: KeyModifier[];
+  key: string;
+  act: () => boolean;
+}
+
+const claim = (run: () => void) => (): boolean => {
+  run();
+  return true;
+};
 
 /**
  * A key the bar takes only while one of its fields has the focus. Returning
  * false is how Enter goes on opening a line, and Tab on indenting, in the
- * document under an open bar — the gate the native bar's own onEnter keeps.
+ * document under an open bar — the gate the native bar's own onEnter keeps,
+ * and its onAltEnter with it.
  */
 const inFields =
-  (actions: SearchKeyActions, run: () => void) =>
-  (): boolean => {
+  (actions: SearchKeyActions, run: () => void) => (): boolean => {
     if (actions.focused() === null) {
       return false;
     }
@@ -68,11 +86,23 @@ const inFields =
     return true;
   };
 
+/**
+ * Replace-all is the replace row's own key: the native bar's onModAltEnter
+ * wants the row open *and* the focus in it, which is what keeps a replacement
+ * the reader cannot see from rewriting the file.
+ */
+const inReplaceField =
+  (actions: SearchKeyActions, run: () => void) => (): boolean => {
+    if (!actions.replacing() || actions.focused() !== "replace") {
+      return false;
+    }
+    run();
+    return true;
+  };
+
 /** moveFocus answers false with the replace row collapsed, and so do we. */
-const moveFocus =
-  (actions: SearchKeyActions, back: boolean) =>
-  (): boolean =>
-    actions.focused() !== null && actions.moveFocus(back);
+const moveFocus = (actions: SearchKeyActions, back: boolean) => (): boolean =>
+  actions.focused() !== null && actions.moveFocus(back);
 
 /**
  * Whether a keydown is this binding's. Obsidian's own `Scope` answers this for
@@ -102,26 +132,24 @@ export function matchesBinding(
   );
 }
 
-export function searchBindings(
-  actions: SearchKeyActions,
-): SearchKeyBinding[] {
+function entries(actions: SearchKeyActions): KeyEntry[] {
   return [
-    { modifiers: [], key: "F3", run: claim(() => actions.findNext()) },
-    { modifiers: ["Mod"], key: "G", run: claim(() => actions.findNext()) },
+    { modifiers: [], key: "F3", act: claim(() => actions.findNext()) },
+    { modifiers: ["Mod"], key: "G", act: claim(() => actions.findNext()) },
     {
       modifiers: ["Shift"],
       key: "F3",
-      run: claim(() => actions.findPrevious()),
+      act: claim(() => actions.findPrevious()),
     },
     {
       modifiers: ["Mod", "Shift"],
       key: "G",
-      run: claim(() => actions.findPrevious()),
+      act: claim(() => actions.findPrevious()),
     },
     {
       modifiers: [],
       key: "Enter",
-      run: inFields(actions, () => {
+      act: inFields(actions, () => {
         if (actions.focused() === "replace") {
           actions.replaceNext();
         } else {
@@ -132,16 +160,35 @@ export function searchBindings(
     {
       modifiers: ["Shift"],
       key: "Enter",
-      run: inFields(actions, () => actions.findPrevious()),
+      act: inFields(actions, () => actions.findPrevious()),
     },
-    { modifiers: [], key: "Escape", run: claim(() => actions.close()) },
-    { modifiers: [], key: "Tab", run: moveFocus(actions, false) },
-    { modifiers: ["Shift"], key: "Tab", run: moveFocus(actions, true) },
-    { modifiers: ["Alt"], key: "Enter", run: claim(() => actions.selectAll()) },
+    { modifiers: [], key: "Escape", act: claim(() => actions.close()) },
+    { modifiers: [], key: "Tab", act: moveFocus(actions, false) },
+    { modifiers: ["Shift"], key: "Tab", act: moveFocus(actions, true) },
+    {
+      modifiers: ["Alt"],
+      key: "Enter",
+      act: inFields(actions, () => actions.selectAll()),
+    },
     {
       modifiers: ["Mod", "Alt"],
       key: "Enter",
-      run: claim(() => actions.replaceAll()),
+      act: inReplaceField(actions, () => actions.replaceAll()),
     },
   ];
+}
+
+export function searchBindings(actions: SearchKeyActions): SearchKeyBinding[] {
+  return entries(actions).map(({ modifiers, key, act }) => ({
+    modifiers,
+    key,
+    /*
+     * A keydown that is part of an IME composition belongs to the input method:
+     * `Enter` there commits a candidate. Obsidian's own onEnter opens with the
+     * same guard because `app.keymap` does not filter composition for it — and
+     * the panel's own keydown listeners, which used to keep this guard, are
+     * gone.
+     */
+    run: (event: SearchKeyEvent) => !event.isComposing && act(),
+  }));
 }

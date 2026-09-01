@@ -167,7 +167,7 @@ test.describe("the search bar", () => {
     await expect(page.locator(count)).toHaveText("2/2");
   });
 
-  test("replaces every match from the document, and selects on Alt-Enter", async ({
+  test("selects on Alt-Enter, and replaces every match from the replace field", async ({
     page,
   }) => {
     await mount(page, { doc: SAMPLE });
@@ -177,11 +177,10 @@ test.describe("the search bar", () => {
     await page.waitForSelector(".document-search-container");
     await page.fill(input, "@F1@");
     await page.fill(".document-replace-input", "@F2@");
-    await page.click(".cm-line");
 
     // The editor holds one range — allowMultipleSelections is off, upstream —
     // so select-all lands on a match, which is what the button does too.
-    await page.keyboard.press("Alt+Enter");
+    await page.press(input, "Alt+Enter");
     expect(
       await page.evaluate(() => {
         const main = window.gedcom.view?.state.selection.main;
@@ -190,12 +189,53 @@ test.describe("the search bar", () => {
       "select-all ran and the selection is on a match",
     ).toBe("@F1@");
 
-    await page.keyboard.press("ControlOrMeta+Alt+Enter");
+    await page.press(".document-replace-input", "ControlOrMeta+Alt+Enter");
     const text = await page.evaluate(() =>
       window.gedcom.view?.state.sliceDoc(),
     );
     expect(text).toContain("1 FAMS @F2@");
     expect(text).toContain("0 @F2@ FAM");
+  });
+
+  // #82: the two keys that write, gated the way Obsidian's own bar gates them.
+  // Replace-all wants the replace row open with the focus in it, so a
+  // replacement the reader cannot see never reaches the file.
+  test("leaves the writing keys alone from the document and from a collapsed row", async ({
+    page,
+  }) => {
+    await mount(page, { doc: SAMPLE });
+    await page.evaluate(() => {
+      window.gedcom.openSearch(true);
+    });
+    await page.waitForSelector(".document-search-container");
+    await page.fill(input, "@F1@");
+    await page.fill(".document-replace-input", "@F2@");
+    const doc = () =>
+      page.evaluate(() => window.gedcom.view?.state.sliceDoc() ?? "");
+    const before = await doc();
+
+    await page.click(".cm-line");
+    await page.keyboard.press("ControlOrMeta+Alt+Enter");
+    expect(
+      await doc(),
+      "the focus is in the document, so the key is not the bar's",
+    ).toBe(before);
+    await page.keyboard.press("Alt+Enter");
+    expect(
+      await page.evaluate(() => window.gedcom.view?.state.selection.main.empty),
+      "and neither is select-all",
+    ).toBe(true);
+
+    // Reopening on Find leaves the replacement in the query and out of sight.
+    await page.evaluate(() => {
+      window.gedcom.openSearch(false);
+    });
+    await expect(page.locator(".document-replace")).toBeHidden();
+    await page.press(input, "ControlOrMeta+Alt+Enter");
+    expect(
+      await doc(),
+      "a replacement the reader cannot see never reaches the file",
+    ).toBe(before);
   });
 
   test("leaves Enter and Tab to the document while the bar is open", async ({
@@ -250,7 +290,8 @@ test.describe("the search bar", () => {
     expect(
       await page.evaluate(
         () =>
-          document.activeElement?.closest(".document-search-container") !== null,
+          document.activeElement?.closest(".document-search-container") !==
+          null,
       ),
       "the focus moves on the way it would with no binding at all",
     ).toBe(true);
@@ -342,17 +383,16 @@ test.describe("the search bar", () => {
     ).toBeLessThan(24);
   });
 
-  // #82: the scope answers on the document, where CodeMirror has already seen
-  // the key on contentDOM. It cannot pre-empt the editor — Escape here also
-  // runs the editor's own simplifySelection — only close the bar, once.
-  test("closes from the document, where the editor sees the key first", async ({
+  // #82: the scope answers on `window` in the capture phase, as Obsidian's own
+  // Keymap does, so it sees the key before CodeMirror's handlers on contentDOM
+  // and claiming one keeps the editor from acting on it too.
+  test("closes from the document, where the scope sees the key first", async ({
     page,
   }) => {
     await openSearch(page);
     await page.fill(input, "NAME");
     await page.click(".cm-line");
-    const doc = () =>
-      page.evaluate(() => window.gedcom.view?.state.sliceDoc());
+    const doc = () => page.evaluate(() => window.gedcom.view?.state.sliceDoc());
     const before = await doc();
 
     await page.keyboard.press("Escape");
