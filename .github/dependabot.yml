@@ -11,3 +11,7 @@ updates:
           - "@codemirror/*"
           - "@lezer/*"
           - "obsidian"
+    ignore:
+      # obsidian pins @codemirror/* peers to exact versions, so independent
+      # bumps break `npm ci` with ERESOLVE. They come in with obsidian itself.
+      - dependency-name: "@codemirror/*"
