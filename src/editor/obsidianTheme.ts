@@ -1,4 +1,6 @@
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+
+import { MODIFIER_HELD_CLASS } from "./modifierHeld";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
@@ -59,26 +61,45 @@ export function obsidianEditorTheme(dark: boolean): Extension {
       },
 
       // What Obsidian writes for a link in a note's source: a colour and a
-      // weight, the underline only under the pointer. The names are minted by
-      // the highlight style below.
+      // weight. The names are minted by the highlight style below. The cursor
+      // and the underline wait for the modifier, because the click does.
       ".gedcom-internal-link": {
         color: link,
         fontWeight: linkWeight,
-        cursor: "var(--cursor-link)",
       },
-      ".gedcom-internal-link:hover": {
-        color: linkHover,
-        textDecorationLine: linkDecorationHover,
+
+      // A reference to a record is a link, and keeps the weight it had so a
+      // declaration still reads apart from it. A declaration carries both
+      // classes, so it is excluded by name rather than by specificity.
+      ".gedcom-reference-link:not(.gedcom-reference-declaration)": {
+        color: link,
       },
+      ".gedcom-reference-declaration": {
+        color: "var(--code-function)",
+        fontWeight: "var(--font-semibold)",
+      },
+
+      [`&.${MODIFIER_HELD_CLASS} .gedcom-internal-link,
+        &.${MODIFIER_HELD_CLASS} .gedcom-external-link,
+        &.${MODIFIER_HELD_CLASS} .gedcom-reference-link:not(.gedcom-reference-declaration)`]:
+        {
+          cursor: "var(--cursor-link)",
+        },
+      [`&.${MODIFIER_HELD_CLASS} .gedcom-internal-link:hover,
+        &.${MODIFIER_HELD_CLASS} .gedcom-reference-link:not(.gedcom-reference-declaration):hover`]:
+        {
+          color: linkHover,
+          textDecorationLine: linkDecorationHover,
+        },
+      [`&.${MODIFIER_HELD_CLASS} .gedcom-external-link:hover`]: {
+        color: linkExternalHover,
+        textDecorationLine: linkExternalDecorationHover,
+      },
+
       ".gedcom-external-link": {
         color: linkExternal,
         fontWeight: linkWeight,
         wordBreak: "break-word",
-        cursor: "var(--cursor-link)",
-      },
-      ".gedcom-external-link:hover": {
-        color: linkExternalHover,
-        textDecorationLine: linkExternalDecorationHover,
       },
 
       ".gedcom-indent-hint": {
@@ -207,14 +228,12 @@ export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--code-comment)" },
   { tag: tags.keyword, color: "var(--code-keyword)" },
   { tag: tags.string, color: "var(--code-string)" },
-  // A declaring pointer is `definition` over the tag its type maps to. The
-  // colours are the ones a GEDCOM block in a note is given: the same document,
-  // read in another place.
-  { tag: tags.variableName, color: "var(--code-property)" },
+  // A referring pointer is a link to the record it names; a declaring one is
+  // `definition` over the tag its type maps to.
+  { tag: tags.variableName, class: "gedcom-reference-link" },
   {
     tag: tags.definition(tags.variableName),
-    color: "var(--code-function)",
-    fontWeight: "var(--font-semibold)",
+    class: "gedcom-reference-declaration",
   },
   { tag: tags.link, class: "gedcom-internal-link" },
   { tag: tags.url, class: "gedcom-external-link" },

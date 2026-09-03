@@ -45,6 +45,9 @@ context: |
     - Conventional Commits. Release commits read `chore(release): X.Y.Z`.
     - A release bumps `package.json`, `manifest.json`, and adds the version to
       `versions.json` mapped to its `minAppVersion`; the tag is the bare version.
+    - `minAppVersion` is 1.5.0. An API above it is declined and the workaround
+      recorded in the table in CLAUDE.md, so that raising the floor collects
+      every entry at once. Do not raise it as a side effect of a change.
     - The plugin supports desktop AND mobile (`isDesktopOnly: false`). Node APIs
       are unavailable in plugin code — `eslint-plugin-obsidianmd` enforces this.
     - The GEDCOM file stays the source of truth. The plugin does not convert

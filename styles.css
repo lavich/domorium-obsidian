@@ -75,6 +75,8 @@
   color: var(--code-keyword);
 }
 
+/* A property, not the link the editor makes of the same token: nothing in a
+   rendered note goes anywhere on a click. */
 .gedcom-note-block .gedcom-token-variable {
   color: var(--code-property);
 }
@@ -157,4 +159,84 @@
 
 .gedcom-suggestion-detail {
   color: var(--text-muted);
+}
+
+/* A hover popover has a width of its own and hides what overflows it, so a
+   picture wider than it is cut off rather than scaled. What it holds is
+   already bounded by the pane, so it takes the size of its content. */
+.popover.hover-popover.gedcom-media-popover {
+  width: fit-content;
+  max-width: none;
+}
+
+/* The bound is the pane, not the window: with both sidebars open the window is
+   wider than the editor. previewBounds in src/editor/media.ts measures it into
+   the two properties, so the vw/vh here only covers a host that does not. */
+.gedcom-media-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+  padding: var(--size-4-2) var(--size-4-3);
+  /* The bound is the picture's, not the box's: with the padding inside it a
+     rectangle measured against the bound no longer fits the room left. */
+  box-sizing: content-box;
+  max-width: var(--gedcom-media-max-w, 60vw);
+}
+
+/* Not a flex container: a flex line stretches the image to the frame's height,
+   and a cropped image has to keep the size its rectangle was measured in.
+   Nothing is hidden here either: only a rectangle is a window. */
+.gedcom-media-frame {
+  position: relative;
+  max-width: 100%;
+}
+
+/* The bound, and then whatever room there actually is. */
+.gedcom-media-image {
+  display: block;
+  max-width: min(var(--gedcom-media-max-w, 60vw), 100%);
+  max-height: var(--gedcom-media-max-h, 40vh);
+  object-fit: contain;
+}
+
+/* The frame carries the size the view computed, and the image behind it is
+   placed and scaled from the corner the rectangle starts at. */
+.gedcom-media-cropped {
+  overflow: hidden;
+}
+
+.gedcom-media-cropped .gedcom-media-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  transform-origin: 0 0;
+}
+
+.gedcom-media-row {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.gedcom-media-icon {
+  display: flex;
+  color: var(--text-muted);
+}
+
+.gedcom-media-note {
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}
+
+.gedcom-media-name {
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-media-caption {
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
 }

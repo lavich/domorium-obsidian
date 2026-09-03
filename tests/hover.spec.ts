@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { mount, offsetOf, SAMPLE } from "./harness";
+import { mount, offsetOf, SAMPLE, type MountOptions } from "./harness";
 
 /** `1 FAMS @F1@` on line 6 — a reference to the record declared on line 7. */
 const POINTER = offsetOf(SAMPLE, "@F1@");
@@ -22,6 +22,11 @@ async function modHover(page: Page, offset: number): Promise<void> {
   await hover(page, offset);
 }
 
+/** This file is about the held modifier, so every mount in it names it. */
+function mountModifier(page: Page, options: MountOptions = {}): Promise<void> {
+  return mount(page, { recordPreview: "modifier", ...options });
+}
+
 function hovered(page: Page) {
   return page.evaluate(() => window.gedcom.hoveredSpan());
 }
@@ -37,7 +42,7 @@ test.describe("the hovered pointer", () => {
   test("answers for a pointer, over both of its delimiters", async ({
     page,
   }) => {
-    await mount(page);
+    await mountModifier(page);
     await modHover(page, POINTER + 2);
 
     expect(await hovered(page), "both @ are inside it").toEqual({
@@ -52,7 +57,7 @@ test.describe("the hovered pointer", () => {
   test("shows what it says on Obsidian's popover surface, not the library's grey", async ({
     page,
   }) => {
-    await mount(page, { dark: true });
+    await mountModifier(page, { dark: true });
     await hover(page, offsetOf(SAMPLE, "INDI") + 1);
     await page.waitForSelector(".cm-tooltip");
 
@@ -70,7 +75,7 @@ test.describe("the hovered pointer", () => {
   test("says nothing without the modifier, however long the mouse sits there", async ({
     page,
   }) => {
-    await mount(page);
+    await mountModifier(page);
     await hover(page, POINTER + 2);
 
     expect(await hovered(page)).toBeNull();
@@ -80,7 +85,7 @@ test.describe("the hovered pointer", () => {
   test("does not answer for the tag two characters to the left", async ({
     page,
   }) => {
-    await mount(page);
+    await mountModifier(page);
     await modHover(page, TAG + 2);
 
     expect(await hovered(page)).toBeNull();
@@ -88,7 +93,7 @@ test.describe("the hovered pointer", () => {
   });
 
   test("lets go when the mouse moves off the pointer", async ({ page }) => {
-    await mount(page);
+    await mountModifier(page);
     await modHover(page, POINTER + 2);
     expect(await hovered(page)).not.toBeNull();
 
@@ -103,7 +108,7 @@ test.describe("the hovered pointer", () => {
   }) => {
     const doc =
       "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n1 FAMC @I1@\n0 TRLR\n";
-    await mount(page, { doc });
+    await mountModifier(page, { doc });
     await expect(page.locator(".cm-lintRange-error")).toBeVisible();
 
     const pointer = doc.indexOf("@I1@", doc.indexOf("1 FAMC")) + 2;
@@ -121,7 +126,7 @@ test.describe("the hovered pointer", () => {
   test("lets go when the modifier is released over a focused editor", async ({
     page,
   }) => {
-    await mount(page);
+    await mountModifier(page);
     await page.locator(".cm-content").click();
     await modHover(page, POINTER + 2);
     await page.keyboard.up("Meta");
@@ -133,7 +138,7 @@ test.describe("the hovered pointer", () => {
   test("lets go when the modifier is released over an editor that never had focus", async ({
     page,
   }) => {
-    await mount(page);
+    await mountModifier(page);
     await modHover(page, POINTER + 2);
     await page.keyboard.up("Meta");
 
@@ -148,11 +153,27 @@ test.describe("the gesture the user has chosen", () => {
   }) => {
     await mount(page, { recordPreview: "hover" });
     await hover(page, POINTER + 2);
+    // A hover without a modifier waits for the pointer to rest, the way the tag
+    // tooltip does; travelling across a pointer is not asking for its record.
+    await expect
+      .poll(async () => (await calls(page)).previews.length)
+      .toBeGreaterThan(0);
 
     expect(await hovered(page)).not.toBeNull();
     expect((await calls(page)).previews).toEqual([
       { from: POINTER, to: POINTER + 4 },
     ]);
+  });
+
+  test("ignores a pointer that only passes across a reference", async ({
+    page,
+  }) => {
+    await mount(page, { recordPreview: "hover" });
+    await hover(page, POINTER + 2);
+    await hover(page, TAG);
+    await page.waitForTimeout(400);
+
+    expect((await calls(page)).previews).toEqual([]);
   });
 
   test("answers nothing at all once previews are off", async ({ page }) => {

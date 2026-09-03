@@ -1,6 +1,7 @@
+import { HOVER_TIME_MS } from "@domorium/codemirror";
 import { describe, expect, it } from "vitest";
 
-import { previewGesture } from "./previewGesture";
+import { hoverDelay, previewGesture } from "./previewGesture";
 
 const mouse = {} as MouseEvent;
 const key = {} as KeyboardEvent;
@@ -31,5 +32,16 @@ describe("what closes an open record preview", () => {
   it("ignores the keyboard for a gesture the keyboard has no part in", () => {
     expect(previewGesture("hover", released).closes(key)).toBe(false);
     expect(previewGesture("off", released).closes(key)).toBe(false);
+  });
+});
+
+describe("how long the pointer must rest before either preview opens", () => {
+  it("answers the first move for a gesture the modifier already declared", () => {
+    expect(hoverDelay("modifier")).toBe(0);
+    expect(hoverDelay("off")).toBe(0);
+  });
+
+  it("waits for a bare hover, as a tag tooltip does", () => {
+    expect(hoverDelay("hover")).toBe(HOVER_TIME_MS);
   });
 });

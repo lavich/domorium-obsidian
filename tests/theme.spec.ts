@@ -15,6 +15,7 @@ const LIGHT = {
   normal: "rgb(20, 40, 60)",
   faint: "rgb(10, 20, 30)",
   background: "rgb(255, 255, 255)",
+  link: "rgb(0, 0, 180)",
 };
 
 const DARK = {
@@ -26,6 +27,7 @@ const DARK = {
   normal: "rgb(220, 230, 240)",
   faint: "rgb(200, 210, 220)",
   background: "rgb(20, 20, 20)",
+  link: "rgb(150, 150, 255)",
 };
 
 async function tokenColours(
@@ -55,8 +57,9 @@ test.describe("the Obsidian theme", () => {
     expect(colours["@I1@"], "and a declaring identifier is a definition").toBe(
       LIGHT.definition,
     );
-    // The colours a GEDCOM block in a note is given: one record, one look.
-    expect(colours["@F1@"], "a reference is a property").toBe(LIGHT.property);
+    // A reference goes somewhere on a click and shows what is there on a
+    // hover, so it is dressed as what it is rather than as a property.
+    expect(colours["@F1@"], "a reference is a link").toBe(LIGHT.link);
     expect(colours["7.0"], "a payload is a string").toBe(LIGHT.string);
   });
 
@@ -69,7 +72,7 @@ test.describe("the Obsidian theme", () => {
     expect(colours["0"]).toBe(DARK.comment);
     expect(colours.HEAD).toBe(DARK.keyword);
     expect(colours["@I1@"]).toBe(DARK.definition);
-    expect(colours["@F1@"]).toBe(DARK.property);
+    expect(colours["@F1@"]).toBe(DARK.link);
     expect(colours["7.0"]).toBe(DARK.string);
   });
 
@@ -118,6 +121,42 @@ test.describe("the Obsidian theme", () => {
     expect(weights.reference, "a reference to it is not").toBe("400");
   });
 
+  test("dresses a reference to a record the way it dresses a file", async ({
+    page,
+  }) => {
+    await mount(page);
+    const reference = page
+      .locator(".gedcom-reference-link:not(.gedcom-reference-declaration)")
+      .filter({ hasText: "@F1@" })
+      .first();
+
+    await expect(reference).toHaveCSS("color", LIGHT.link);
+  });
+
+  test("promises a click only while the modifier that opens one is down", async ({
+    page,
+  }) => {
+    await mount(page);
+    const reference = page
+      .locator(".gedcom-reference-link:not(.gedcom-reference-declaration)")
+      .filter({ hasText: "@F1@" })
+      .first();
+
+    // Following a reference takes the modifier, because a plain click in an
+    // editor has to place the caret. The cursor says only what the click does.
+    await reference.hover();
+    await expect(reference).not.toHaveCSS("cursor", "pointer");
+    await expect(reference).toHaveCSS("text-decoration-line", "none");
+
+    await page.keyboard.down("Meta");
+    await reference.hover();
+    await expect(reference).toHaveCSS("cursor", "pointer");
+    await expect(reference).toHaveCSS("text-decoration-line", "underline");
+
+    await page.keyboard.up("Meta");
+    await expect(reference).not.toHaveCSS("cursor", "pointer");
+  });
+
   test("dresses a link the way a note's source does", async ({ page }) => {
     await mount(page, { doc: LINKS });
     const accent = "rgb(0, 0, 180)";
@@ -131,6 +170,7 @@ test.describe("the Obsidian theme", () => {
       "none",
     );
 
+    await page.keyboard.down("Meta");
     await file.hover();
     await expect(file).toHaveCSS("text-decoration-line", "underline");
   });

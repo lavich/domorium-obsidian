@@ -25,6 +25,8 @@ adapted per editor.
 - Find XREF references and highlight declarations and usages
 - Safe XREF rename as one undoable edit
 - Web links and vault-relative file links
+- Photographs previewed from a `FILE` payload, cropped to the part of the image
+  a multimedia link asks for
 - Quick fixes for broken references and invalid levels
 - Folding and visual indentation for nested records
 - Highlighted and checked `gedcom` code blocks in notes
@@ -58,6 +60,15 @@ the name the record carries rather than a path. **Copy Obsidian URL to
 record** writes the `obsidian://domorium?vault=…&file=…&xref=@I47@` form instead,
 which a browser or another application can follow. Either one opens the file with
 the cursor on that record.
+
+Hovering a `FILE` payload shows the photograph it names, and hovering the
+pointer of `1 OBJE @O1@` shows the part of that photograph the link's `CROP`
+asks for — so one group portrait shows a different face under each person who
+references it. Media that is not an image is named rather than drawn, and a
+`FILE` naming a web address says so instead of being fetched. **Media preview**
+in the plugin settings chooses the gesture, or turns it off, independently of
+**Record preview**. Both open on a resting hover by default; either can be set
+to ask for Ctrl/Cmd instead, and a gesture already chosen is kept.
 
 Typing `[[tree.ged#` in a note offers the records in that file, by name where
 the format gives one. Hovering a link to a record shows the record, highlighted,
@@ -94,7 +105,8 @@ which API you are holding.
 
 GEDCOM by Domorium works locally inside the vault. It does not require an account, make
 network requests, access files outside the vault, show advertisements, or
-collect analytics or telemetry.
+collect analytics or telemetry. A `FILE` payload naming a web address is no
+exception: the preview reports it as remote rather than loading it.
 
 ## Installation
 

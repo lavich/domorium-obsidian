@@ -22,6 +22,7 @@ import {
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
+import type { MediaReference } from "@domorium/language-service";
 import {
   HoverPopover,
   Keymap,
@@ -35,7 +36,10 @@ import {
 } from "obsidian";
 
 import { createGedcomComposition } from "./editor/composition";
-import { previewGesture } from "./editor/previewGesture";
+import { mediaPreviewContent, previewBounds } from "./editor/media";
+import { clearMediaPreview } from "./editor/mediaPreviewHover";
+import { renderMediaPreview } from "./editor/mediaPreviewView";
+import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
 import type { GedcomSettings } from "./settingsData";
@@ -46,6 +50,7 @@ import {
 } from "./editor/ephemeralState";
 import { openSearch } from "./editor/searchPanel";
 import { routeDocumentLink } from "./editor/service";
+import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
 import type { GedcomStatus } from "./editor/status";
@@ -63,6 +68,7 @@ export class GedcomView extends TextFileView {
   private readonly language = new EditorLanguageService();
   private applyingData = false;
   private preview: HoverPopover | null = null;
+  private mediaPreview: HoverPopover | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -98,9 +104,10 @@ export class GedcomView extends TextFileView {
     this.applyingData = true;
     try {
       if (clear) {
+        this.hidePreviews();
         this.editor.setState(this.createState(data));
       } else if (data !== this.getViewData()) {
-        this.hidePreview();
+        this.hidePreviews();
         const before = this.editor.state.doc;
         const head = this.editor.state.selection.main.head;
         const scroll = this.editor.scrollDOM.scrollTop;
@@ -120,6 +127,7 @@ export class GedcomView extends TextFileView {
   }
 
   clear(): void {
+    this.hidePreviews();
     this.language.clear();
     this.editor.setState(this.createState(""));
     this.host.statusChanged(this);
@@ -174,7 +182,7 @@ export class GedcomView extends TextFileView {
 
   refresh(): void {
     // setState throws away the state whose update would have reported this.
-    this.hidePreview();
+    this.hidePreviews();
     const data = this.getViewData();
     const selection = this.editor.state.selection;
     this.editor.setState(this.createState(data, selection.main.head));
@@ -326,6 +334,12 @@ export class GedcomView extends TextFileView {
           gesture: previewGesture(this.settings.recordPreview, (event) =>
             Keymap.isModifier(event, "Mod"),
           ),
+          mediaGesture: previewGesture(this.settings.mediaPreview, (event) =>
+            Keymap.isModifier(event, "Mod"),
+          ),
+          modifierHeld: (event) => Keymap.isModifier(event, "Mod"),
+          delay: hoverDelay(this.settings.recordPreview),
+          mediaDelay: hoverDelay(this.settings.mediaPreview),
           setIcon,
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
@@ -334,6 +348,9 @@ export class GedcomView extends TextFileView {
           showPreview: (preview, _view, event) =>
             this.showPreview(preview, event.target as HTMLElement),
           hidePreview: () => this.hidePreview(),
+          showMedia: (media, _view, event) =>
+            this.showMediaPreview(media, event.target as HTMLElement),
+          hideMedia: () => this.hideMediaPreview(),
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
@@ -346,6 +363,8 @@ export class GedcomView extends TextFileView {
   }
 
   private showPreview(preview: RecordPreview, target: HTMLElement): void {
+    // Moving from one XREF to the next asks to show without asking to hide.
+    this.hidePreview();
     this.preview = new HoverPopover(this.leaf, target);
     const block = this.preview.hoverEl.createEl("pre", {
       cls: "gedcom-record-preview",
@@ -366,9 +385,63 @@ export class GedcomView extends TextFileView {
     }
   }
 
+  /**
+   * Both previews, wherever the state they were opened from is replaced rather
+   * than edited: a `setState` reports no update, so the extension that would
+   * have closed them never hears about it. The media one goes through its
+   * session, which is keyed by the line and would otherwise answer the next
+   * movement over that line with "keep".
+   */
+  private hidePreviews(): void {
+    this.hidePreview();
+    clearMediaPreview(this.editor);
+  }
+
   private hidePreview(): void {
     this.preview?.unload();
     this.preview = null;
+  }
+
+  private showMediaPreview(media: MediaReference, target: HTMLElement): void {
+    // Moving between two rectangles of one photograph reopens rather than keeps.
+    this.hideMediaPreview();
+    const popover = new HoverPopover(this.leaf, target);
+    // Otherwise a fixed width with its overflow hidden, which cuts a picture
+    // off at the edge rather than scaling it. See styles.css.
+    popover.hoverEl.classList.add("gedcom-media-popover");
+    this.mediaPreview = popover;
+    const content = mediaPreviewContent(media, {
+      documentPath: this.file?.path ?? "",
+      resolve: (path) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
+      },
+    });
+    renderMediaPreview(content, {
+      container: popover.hoverEl,
+      bounds: previewBounds(
+        this.contentEl.clientWidth,
+        this.contentEl.clientHeight,
+      ),
+      setIcon,
+      isCurrent: () => this.mediaPreview === popover,
+    });
+  }
+
+  private hideMediaPreview(): void {
+    this.mediaPreview?.unload();
+    this.mediaPreview = null;
+  }
+
+  /**
+   * `iterateRootLeaves`, not `iterateAllLeaves`: `setActiveLeaf` will not
+   * uncollapse a sidebar, so a leaf found there would be found and not shown,
+   * and the reader's click would come to nothing.
+   */
+  private leafShowing(path: string): WorkspaceLeaf | null {
+    return leafShowingFile(path, (visit) =>
+      this.app.workspace.iterateRootLeaves(visit),
+    );
   }
 
   private openDocumentLink(link: DocumentLink): void {
@@ -387,7 +460,17 @@ export class GedcomView extends TextFileView {
           new Notice(`Vault file not found: ${path}`);
           return;
         }
-        void this.app.workspace.getLeaf(false).openFile(file);
+        // Where it already is, or else a tab of its own: replacing this one
+        // loses the reader's place in the file the link was followed from.
+        const open = this.leafShowing(path);
+        if (open) {
+          // Not `revealLeaf`, which wants Obsidian 1.7.2. See "The minimum
+          // app version, and what it costs" in CLAUDE.md.
+          this.app.workspace.setActiveLeaf(open, { focus: true });
+          return;
+        }
+        // Not `'window'`, which the mobile app has no popout for.
+        void this.app.workspace.getLeaf("tab").openFile(file);
       },
     });
     if (!routed) {

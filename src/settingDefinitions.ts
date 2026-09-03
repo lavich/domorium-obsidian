@@ -45,4 +45,14 @@ export const SETTING_DEFINITIONS: GedcomSettingDefinition[] = [
       defaultValue: DEFAULT_SETTINGS.recordPreview,
     },
   },
+  {
+    name: "Media preview",
+    desc: "Show the photograph a FILE payload names when the pointer is over it. A remote file is never fetched.",
+    control: {
+      type: "dropdown",
+      key: "mediaPreview",
+      options: RECORD_PREVIEW_OPTIONS,
+      defaultValue: DEFAULT_SETTINGS.mediaPreview,
+    },
+  },
 ];
