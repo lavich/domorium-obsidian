@@ -14,4 +14,7 @@ updates:
     ignore:
       # obsidian pins @codemirror/* peers to exact versions, so independent
       # bumps break `npm ci` with ERESOLVE. They come in with obsidian itself.
+      # That pin is also below what @codemirror/commands asks for, which is why
+      # package.json overrides @codemirror/state to the one obsidian provides:
+      # a second nested copy is one the editor cannot read its own state from.
       - dependency-name: "@codemirror/*"

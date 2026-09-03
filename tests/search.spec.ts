@@ -431,11 +431,23 @@ test.describe("the search bar", () => {
       before,
     );
 
+    const range = await page.evaluate(() => {
+      const view = window.gedcom.view!;
+      view.dispatch({ selection: { anchor: 0, head: 6 } });
+      return view.state.selection.main;
+    });
+    expect(range, "a range to collapse").toMatchObject({ from: 0, to: 6 });
+
     await page.keyboard.press("Escape");
     await expect(
       page.locator(".document-search-container"),
       "and the popped scope has nothing left to close",
     ).toHaveCount(0);
+
+    expect(
+      await page.evaluate(() => window.gedcom.view!.state.selection.main),
+      "the document collapsed it to a cursor rather than to nothing",
+    ).toMatchObject({ from: 6, to: 6 });
   });
 
   test("closes on Escape and on the button", async ({ page }) => {

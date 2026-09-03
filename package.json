@@ -29,6 +29,9 @@
     "@domorium/language-service": "^2.1.0",
     "@lezer/highlight": "^1.2.3"
   },
+  "overrides": {
+    "@codemirror/state": "6.5.0"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "1.62.1",
