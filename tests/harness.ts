@@ -1,5 +1,6 @@
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
+import { platform } from "node:process";
 
 import type { Page } from "@playwright/test";
 
@@ -134,7 +135,10 @@ export async function mount(
     (mountOptions) => {
       window.gedcom.mount(mountOptions);
     },
-    { doc: options.doc ?? SAMPLE, ...options },
+    // The host's platform is not a spec's choice, so it goes on last: the page
+    // cannot read it, Playwright's emulated userAgent disagreeing with the
+    // modifier ControlOrMeta actually sends.
+    { doc: options.doc ?? SAMPLE, ...options, mac: platform === "darwin" },
   );
   await page.waitForSelector(".cm-content");
 }

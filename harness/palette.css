@@ -432,3 +432,10 @@ body {
   background-color: var(--background-primary);
   border-radius: var(--radius-m);
 }
+
+/* Obsidian places a hover popover itself; nothing here does, so the harness
+   pins one where the hovered text is. Only the anchoring is static and belongs
+   in a class — the offsets are measured per hover and stay with the element. */
+.gedcom-harness-anchored {
+  position: fixed;
+}

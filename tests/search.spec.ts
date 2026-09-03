@@ -19,9 +19,10 @@ const input = ".document-search-input input";
 const count = ".document-search-count";
 
 /*
- * A tooltip spells its key for the reader's own platform, and the harness reads
- * that platform off `navigator.platform` — which follows the host, not the
- * userAgent Playwright emulates — so the expected spelling follows the host too.
+ * A tooltip spells its key for the reader's own platform. The host's platform is
+ * the one ControlOrMeta follows, not the userAgent Playwright emulates, so the
+ * spec is what knows it: `mount` tells the page, and the expected spelling here
+ * comes from the same place.
  */
 const mac = platform === "darwin";
 const spell = (...parts: string[]): string => parts.join(mac ? " " : " + ");
