@@ -30,9 +30,11 @@ export default tseslint.config(
   },
   {
     // A unit test's DOM is happy-dom's, and Obsidian's helpers are not on it
-    // either. Node built-ins stay refused here: what a test imports is not what
-    // ships, but the rule is cheap and the line is worth keeping straight.
-    files: ["src/**/*.test.ts"],
+    // either — src/testing is where they are put there, so telling that file to
+    // call them is circular. Node built-ins stay refused here: what a test
+    // imports is not what ships, but the rule is cheap and the line is worth
+    // keeping straight.
+    files: ["src/**/*.test.ts", "src/testing/**/*.ts"],
     rules: {
       "obsidianmd/prefer-create-el": "off",
     },

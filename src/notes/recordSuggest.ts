@@ -12,6 +12,7 @@ import {
 import { recordText, type GedcomRecord } from "../editor/records";
 import { isGedcomPath } from "../vault/renamedMedia";
 import { linkContext, type RecordIndex } from "./recordIndex";
+import { renderRecordSuggestion } from "./recordSuggestView";
 
 export class RecordSuggest extends EditorSuggest<GedcomRecord> {
   private path = "";
@@ -54,13 +55,7 @@ export class RecordSuggest extends EditorSuggest<GedcomRecord> {
   }
 
   renderSuggestion(record: GedcomRecord, element: HTMLElement): void {
-    element.createDiv({ text: record.label ?? record.identifier ?? "" });
-    element.createEl("small", {
-      cls: "gedcom-suggestion-detail",
-      text: record.label
-        ? `${record.identifier} · ${record.tag}`
-        : record.tag,
-    });
+    renderRecordSuggestion(record, element);
   }
 
   selectSuggestion(record: GedcomRecord): void {

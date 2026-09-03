@@ -1,6 +1,7 @@
 import { Component, TFile, type App } from "obsidian";
 
 import { recordPreview } from "./recordPreview";
+import { renderRecordEmbed } from "./recordPreviewView";
 
 /**
  * Obsidian renders a hover preview, and an embed in a note, by asking this
@@ -59,38 +60,11 @@ class RecordEmbed extends Component {
   }
 
   async loadFile(): Promise<void> {
-    const { containerEl } = this.context;
-    containerEl.empty();
-    containerEl.addClass("gedcom-embed");
     const preview = recordPreview(
       await this.context.app.vault.cachedRead(this.file),
       this.subpath,
       { indent: this.indent() },
     );
-    if (preview.kind === "missing") {
-      containerEl.createDiv({
-        cls: "gedcom-embed-missing",
-        text: `${this.file.name} has no record ${preview.xref}`,
-      });
-      return;
-    }
-    // A record says its own name on the line below; a whole file does not.
-    if (preview.kind === "file") {
-      containerEl.createDiv({
-        cls: "gedcom-embed-title",
-        text: this.file.name,
-      });
-    }
-    const block = containerEl.createEl("pre", { cls: "gedcom-note-block" });
-    for (const run of preview.runs) {
-      if (run.className) {
-        block.createSpan({ cls: run.className, text: run.text });
-      } else {
-        block.appendText(run.text);
-      }
-    }
-    if (preview.truncated) {
-      block.appendText("\n…");
-    }
+    renderRecordEmbed(this.context.containerEl, preview, this.file.name);
   }
 }

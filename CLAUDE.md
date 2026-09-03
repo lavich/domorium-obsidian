@@ -44,6 +44,7 @@ CI runs `lint`, `typecheck`, `test`, `build` and, in a second job,
 | `src/notes/` | GEDCOM inside Markdown notes: code blocks, record index, previews, embeds, suggest |
 | `src/vault/` | Vault-level concerns: `obsidian://` links, renamed media |
 | `src/settings*.ts` | Settings tab, definitions, persisted data |
+| `src/testing/` | Stand-ins a unit test needs and Obsidian does not ship |
 | `harness/` | Standalone browser harness the Playwright specs mount |
 | `tests/` | Playwright specs |
 | `demo-vault/` | A real Obsidian vault for manual testing |
