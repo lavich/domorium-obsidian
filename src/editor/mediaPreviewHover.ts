@@ -5,14 +5,30 @@ import type { MediaReference } from "@domorium/language-service";
 
 import { mediaLineAt } from "./mediaLine";
 
+export type PreviewHolder = (node: EventTarget) => boolean;
+
 export interface MediaPreviewHoverOptions {
   language: EditorLanguageService;
   /** Whether an event asks for a preview. Defaults to the platform modifier. */
   trigger?: (event: MouseEvent) => boolean;
   /** How long the pointer must rest before a preview opens. */
   delay?: number;
+  /** What the preview is drawn in, so that entering it is not leaving it. */
+  holds?: PreviewHolder;
   show(media: MediaReference, view: EditorView, event: MouseEvent): void;
   hide(view: EditorView): void;
+}
+
+/**
+ * A pointer that leaves the editor for the popover has not left the preview,
+ * and what it went to is what says so. A `relatedTarget` of null is the pointer
+ * gone to the window's own chrome, which is a leaving like any other.
+ */
+export function keptByPreview(
+  node: EventTarget | null,
+  holds: PreviewHolder | undefined,
+): boolean {
+  return node !== null && (holds?.(node) ?? false);
 }
 
 export interface MediaTransition {
@@ -168,9 +184,11 @@ export function mediaPreviewHover(
           resolve(view, event);
         }, delay);
       },
-      mouseleave: (_event, view) => {
+      mouseleave: (event, view) => {
         cancel(view);
-        sessionFor(view).clear(view);
+        if (!keptByPreview(event.relatedTarget, options.holds)) {
+          sessionFor(view).clear(view);
+        }
       },
     }),
   ];

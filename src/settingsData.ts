@@ -7,6 +7,7 @@ export interface GedcomSettings {
   indentationHints: boolean;
   recordPreview: RecordPreviewTrigger;
   mediaPreview: RecordPreviewTrigger;
+  remoteImages: boolean;
 }
 
 export const DEFAULT_SETTINGS: GedcomSettings = {
@@ -16,6 +17,9 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // solves the same problem without being told about.
   recordPreview: "hover",
   mediaPreview: "hover",
+  // Reaching a stranger's host is a statement about a family, not about a
+  // plugin, so it waits to be asked.
+  remoteImages: false,
 };
 
 function isRecordPreviewTrigger(value: unknown): value is RecordPreviewTrigger {
@@ -55,5 +59,9 @@ export function parseSettings(data: unknown): GedcomSettings {
     mediaPreview: isRecordPreviewTrigger(settings.mediaPreview)
       ? settings.mediaPreview
       : DEFAULT_SETTINGS.mediaPreview,
+    remoteImages:
+      typeof settings.remoteImages === "boolean"
+        ? settings.remoteImages
+        : DEFAULT_SETTINGS.remoteImages,
   };
 }

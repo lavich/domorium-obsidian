@@ -40,7 +40,10 @@ import {
 import { createGedcomComposition } from "./editor/composition";
 import { mediaPreviewContent, previewBounds } from "./editor/media";
 import { clearMediaPreview } from "./editor/mediaPreviewHover";
-import { renderMediaPreview } from "./editor/mediaPreviewView";
+import {
+  renderMediaPreview,
+  type AllowScope,
+} from "./editor/mediaPreviewView";
 import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
@@ -64,6 +67,10 @@ export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 export interface GedcomViewHost {
   fillMenu(menu: Menu, view: GedcomView): void;
   statusChanged(view: GedcomView): void;
+  /** Whether a remote image may be drawn: the setting, or the shorter answer. */
+  remoteImages(): boolean;
+  /** What the offer in the popover was answered with. */
+  allowRemoteImages(scope: AllowScope): void;
 }
 
 export class GedcomView extends TextFileView {
@@ -412,6 +419,8 @@ export class GedcomView extends TextFileView {
           showMedia: (media, _view, event) =>
             this.showMediaPreview(media, event.target as HTMLElement),
           hideMedia: () => this.hideMediaPreview(),
+          mediaHolds: (node) =>
+            this.mediaPreview?.hoverEl.contains(node as Node) ?? false,
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
@@ -471,13 +480,34 @@ export class GedcomView extends TextFileView {
     // off at the edge rather than scaling it. See styles.css.
     popover.hoverEl.classList.add("gedcom-media-popover");
     this.mediaPreview = popover;
-    const content = mediaPreviewContent(media, {
-      documentPath: this.file?.path ?? "",
-      resolve: (path) => {
-        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
-      },
+    // The popover keeps itself while the pointer is inside it and goes on its
+    // own once it is not. The session is keyed by the line and would answer the
+    // next movement over it with "keep", so it goes when the popover does.
+    popover.register(() => {
+      if (this.mediaPreview === popover) {
+        this.mediaPreview = null;
+        clearMediaPreview(this.editor);
+      }
     });
+    this.drawMediaPreview(popover, media);
+  }
+
+  /** Drawn again where an answer has been given, the content being the answer's. */
+  private drawMediaPreview(popover: HoverPopover, media: MediaReference): void {
+    const content = mediaPreviewContent(
+      media,
+      {
+        documentPath: this.file?.path ?? "",
+        resolve: (path) => {
+          const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+          return file instanceof TFile
+            ? this.app.vault.getResourcePath(file)
+            : null;
+        },
+      },
+      this.host.remoteImages(),
+    );
+    popover.hoverEl.empty();
     renderMediaPreview(content, {
       container: popover.hoverEl,
       bounds: previewBounds(
@@ -486,12 +516,17 @@ export class GedcomView extends TextFileView {
       ),
       setIcon,
       isCurrent: () => this.mediaPreview === popover,
+      allow: (scope) => {
+        this.host.allowRemoteImages(scope);
+        this.drawMediaPreview(popover, media);
+      },
     });
   }
 
   private hideMediaPreview(): void {
-    this.mediaPreview?.unload();
+    const popover = this.mediaPreview;
     this.mediaPreview = null;
+    popover?.unload();
   }
 
   /**

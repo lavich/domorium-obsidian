@@ -36,6 +36,7 @@ import {
   retargetMedia,
 } from "./vault/renamedMedia";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
+import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
 import {
@@ -52,6 +53,12 @@ interface SuggestRegistry {
 
 export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   settings: GedcomSettings = DEFAULT_SETTINGS;
+  /**
+   * The offer's shorter answer. A reader who says yes to one face in a group
+   * photograph has answered for the other four, and unloading is what forgets
+   * it: nothing about reaching the network belongs in a file on disk unasked.
+   */
+  private allowedOnce = false;
   private readonly vault: VaultReader = {
     read: async (path) => {
       const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
@@ -188,6 +195,18 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     }
   }
 
+  remoteImages(): boolean {
+    return this.settings.remoteImages || this.allowedOnce;
+  }
+
+  allowRemoteImages(scope: AllowScope): void {
+    if (scope === "always") {
+      void this.updateSettings({ remoteImages: true });
+      return;
+    }
+    this.allowedOnce = true;
+  }
+
   /** data.json was rewritten elsewhere — a sync, or a hand editing it. */
   async onExternalSettingsChange(): Promise<void> {
     this.settings = parseSettings(await this.loadData());
@@ -199,6 +218,11 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
 
   async updateSettings(changes: Partial<GedcomSettings>): Promise<void> {
     this.settings = { ...this.settings, ...changes };
+    // The setting is the stronger answer: turned off, it takes the shorter one
+    // with it rather than leaving a reader wondering why the row did not return.
+    if (!this.settings.remoteImages) {
+      this.allowedOnce = false;
+    }
     await this.saveData(this.settings);
     this.forEachView((view) => {
       view.applySettings(this.settings);

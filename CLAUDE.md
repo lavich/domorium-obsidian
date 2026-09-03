@@ -49,7 +49,9 @@ CI runs `lint`, `typecheck`, `test`, `build` and, in a second job,
 | `demo-vault/` | A real Obsidian vault for manual testing |
 
 Unit tests sit beside their subject as `*.test.ts`. Prefer extending an existing
-test file over adding a new one.
+test file over adding a new one. They run in Vitest's `node` environment; a test
+that needs a DOM opens with `// @vitest-environment happy-dom`. Painting and
+geometry still belong in the Playwright specs, which have a real browser.
 
 ## Constraints
 

@@ -18,6 +18,7 @@ import {
   clearMediaPreview,
   hoveredMedia,
   mediaPreviewHover,
+  type PreviewHolder,
 } from "./mediaPreviewHover";
 import { modifierHeldClass, type ModifierHeld } from "./modifierHeld";
 import type { PreviewGesture } from "./previewGesture";
@@ -48,6 +49,8 @@ export interface GedcomCompositionOptions {
     event: MouseEvent,
   ) => void;
   hideMedia: (view: EditorView) => void;
+  /** What the media preview is drawn in, so entering it is not leaving it. */
+  mediaHolds?: PreviewHolder;
 }
 
 // The editor sees a modifier released over itself; a modifier released over the
@@ -102,6 +105,7 @@ export function createGedcomComposition(
       language: options.language,
       trigger: (event) => options.mediaGesture.opens(event),
       delay: options.mediaDelay,
+      holds: options.mediaHolds,
       show: options.showMedia,
       hide: options.hideMedia,
     }),

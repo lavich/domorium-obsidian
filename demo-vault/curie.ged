@@ -36,6 +36,7 @@
 3 HEIGHT 240
 3 WIDTH 130
 2 TITL Marie, on the left
+1 OBJE @O6@
 1 SNOTE @N1@
 1 SOUR @S1@
 2 PAGE Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel
@@ -312,9 +313,9 @@
 2 FORM image/svg+xml
 2 TITL The Curie family, about 1908
 0 @O6@ OBJE
-1 FILE https://upload.wikimedia.org/marie-curie.jpg
+1 FILE https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/500px-Marie_Curie_c._1920s.jpg
 2 FORM image/jpeg
-2 TITL A portrait the plugin will not fetch
+2 TITL A portrait the plugin fetches only when asked
 0 @O7@ OBJE
 1 FILE Media/lost-daguerreotype.jpg
 2 FORM image/jpeg

@@ -53,7 +53,7 @@ describe("what the popover should draw", () => {
     });
   });
 
-  it("calls a remote target remote before it asks what the file is", () => {
+  it("leaves a remote target as a row until the reader has been asked", () => {
     expect(
       mediaPreviewContent(
         reference({
@@ -63,7 +63,89 @@ describe("what the popover should draw", () => {
         }),
         vault(),
       ),
-    ).toEqual({ kind: "remote", url: "https://example.org/marie.jpg" });
+    ).toEqual({
+      kind: "remote",
+      url: "https://example.org/marie.jpg",
+      state: "unasked",
+    });
+  });
+
+  it("draws it once the reader has said so, from the url the document wrote", () => {
+    expect(
+      mediaPreviewContent(
+        reference({
+          kind: "http",
+          targetText: "https://example.org/marie.jpg",
+          mediaKind: "image",
+        }),
+        vault(),
+        true,
+      ),
+    ).toEqual({
+      kind: "image",
+      url: "https://example.org/marie.jpg",
+      name: "marie.jpg",
+      remote: true,
+    });
+  });
+
+  it("carries the rectangle and the caption a remote link asks for", () => {
+    expect(
+      mediaPreviewContent(
+        reference({
+          kind: "http",
+          targetText: "https://example.org/family.jpg",
+          mediaKind: "image",
+          crop: { top: 10, left: 20, height: 30, width: 40 },
+          title: "Marie, second from the left",
+        }),
+        vault(),
+        true,
+      ),
+    ).toEqual({
+      kind: "image",
+      url: "https://example.org/family.jpg",
+      name: "family.jpg",
+      remote: true,
+      crop: { top: 10, left: 20, height: 30, width: 40 },
+      title: "Marie, second from the left",
+    });
+  });
+
+  it("refuses an unencrypted address whatever the reader answered", () => {
+    expect(
+      mediaPreviewContent(
+        reference({
+          kind: "http",
+          targetText: "http://example.org/marie.jpg",
+          mediaKind: "image",
+        }),
+        vault(),
+        true,
+      ),
+    ).toEqual({
+      kind: "remote",
+      url: "http://example.org/marie.jpg",
+      state: "insecure",
+    });
+  });
+
+  it("names remote media that is not an image rather than fetching it", () => {
+    expect(
+      mediaPreviewContent(
+        reference({
+          kind: "http",
+          targetText: "https://example.org/interview.mp3",
+          mediaKind: "audio",
+        }),
+        vault(),
+        true,
+      ),
+    ).toEqual({
+      kind: "remote",
+      url: "https://example.org/interview.mp3",
+      state: "not-an-image",
+    });
   });
 
   it("answers missing where the vault holds no such file", () => {

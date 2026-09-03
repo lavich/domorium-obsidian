@@ -29,6 +29,15 @@ export default tseslint.config(
     },
   },
   {
+    // A unit test's DOM is happy-dom's, and Obsidian's helpers are not on it
+    // either. Node built-ins stay refused here: what a test imports is not what
+    // ships, but the rule is cheap and the line is worth keeping straight.
+    files: ["src/**/*.test.ts"],
+    rules: {
+      "obsidianmd/prefer-create-el": "off",
+    },
+  },
+  {
     files: ["src/main.ts"],
     rules: {
       // The one default the plugin claims is Obsidian's own for the job:

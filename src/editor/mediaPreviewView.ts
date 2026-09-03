@@ -5,6 +5,7 @@ import {
   drawnCrop,
   type MediaPreviewContent,
   type PreviewBounds,
+  type RemoteState,
 } from "./media";
 import type { IconSetter } from "./searchPanel";
 
@@ -22,6 +23,8 @@ const ICONS: Record<string, string> = {
   missing: "file-question",
 };
 
+export type AllowScope = "once" | "always";
+
 export interface MediaPreviewHost {
   /** The element the popover's content goes in. */
   container: HTMLElement;
@@ -29,7 +32,20 @@ export interface MediaPreviewHost {
   setIcon: IconSetter;
   /** False once this popover is no longer the one on screen. */
   isCurrent: () => boolean;
+  /** Taking the offer a refused remote image carries. Absent where there is none. */
+  allow?: (scope: AllowScope) => void;
 }
+
+const REMOTE_NOTES: Record<RemoteState, string> = {
+  unasked: "Remote file, not loaded",
+  insecure: "Unencrypted address, not loaded",
+  "not-an-image": "Remote file, not loaded",
+};
+
+const OFFERS: { scope: AllowScope; label: string }[] = [
+  { scope: "once", label: "Show this image" },
+  { scope: "always", label: "Always show images from the web" },
+];
 
 export function renderMediaPreview(
   content: MediaPreviewContent,
@@ -47,7 +63,16 @@ export function renderMediaPreview(
       drawRow(root, ICONS[content.mediaKind] ?? ICONS.unknown, content.name, host);
       break;
     case "remote":
-      drawRow(root, ICONS.remote, content.url, host, "Remote file, not loaded");
+      drawRow(
+        root,
+        ICONS.remote,
+        content.url,
+        host,
+        REMOTE_NOTES[content.state],
+      );
+      if (content.state === "unasked" && host.allow) {
+        drawOffer(root, host.allow);
+      }
       break;
     case "missing":
       drawRow(root, ICONS.missing, content.target, host, "File not found");
@@ -59,9 +84,24 @@ export function renderMediaPreview(
   }
 }
 
+/** The way out, beside the refusal rather than in the settings tab. */
+function drawOffer(
+  root: HTMLElement,
+  allow: (scope: AllowScope) => void,
+): void {
+  const row = element(root, "div", "gedcom-media-offer");
+  for (const { scope, label } of OFFERS) {
+    const button = element(row, "button", "gedcom-media-allow");
+    button.textContent = label;
+    button.addEventListener("click", () => {
+      allow(scope);
+    });
+  }
+}
+
 function element(
   parent: HTMLElement,
-  tag: "div" | "img" | "span",
+  tag: "button" | "div" | "img" | "span",
   cls: string,
   before?: ChildNode,
 ): HTMLElement {
@@ -101,7 +141,13 @@ function drawRow(
  */
 function drawImage(
   root: HTMLElement,
-  content: { url: string; name: string; title?: string; crop?: MediaCrop },
+  content: {
+    url: string;
+    name: string;
+    title?: string;
+    crop?: MediaCrop;
+    remote?: true;
+  },
   host: MediaPreviewHost,
 ): void {
   const { url, crop } = content;
@@ -110,16 +156,17 @@ function drawImage(
   image.alt = content.title ?? content.name;
 
   // The file is there and will not draw; an empty frame would read as a bug.
+  // A remote one may never have arrived, which is a different thing to say.
   image.addEventListener("error", () => {
     if (!host.isCurrent()) {
       return;
     }
     drawRow(
       root,
-      ICONS.missing,
-      content.name,
+      content.remote ? ICONS.remote : ICONS.missing,
+      content.remote ? content.url : content.name,
       host,
-      "Image could not be drawn",
+      content.remote ? "Image could not be loaded" : "Image could not be drawn",
       frame,
     );
     frame.remove();

@@ -13,6 +13,7 @@ describe("GEDCOM settings", () => {
       indentationHints: true,
       recordPreview: "hover",
       mediaPreview: "hover",
+      remoteImages: false,
     });
   });
 
@@ -23,6 +24,7 @@ describe("GEDCOM settings", () => {
         indentationHints: false,
         recordPreview: "modifier",
         mediaPreview: "off",
+        remoteImages: true,
       }),
       "a trigger the reader chose outlives a change of default",
     ).toEqual({
@@ -30,6 +32,7 @@ describe("GEDCOM settings", () => {
       indentationHints: false,
       recordPreview: "modifier",
       mediaPreview: "off",
+      remoteImages: true,
     });
   });
 
@@ -46,7 +49,20 @@ describe("GEDCOM settings", () => {
       indentationHints: false,
       recordPreview: "hover",
       mediaPreview: "hover",
+      remoteImages: false,
     });
+  });
+
+  it("leaves the web off for a settings file written before it existed", () => {
+    expect(
+      parseSettings({
+        diagnostics: true,
+        indentationHints: true,
+        recordPreview: "hover",
+        mediaPreview: "hover",
+      }).remoteImages,
+      "a reader who never answered has not said yes",
+    ).toBe(false);
   });
 
   it("exposes every option to Obsidian settings search", () => {
@@ -73,12 +89,21 @@ describe("GEDCOM settings", () => {
       },
       {
         name: "Media preview",
-        desc: "Show the photograph a FILE payload names when the pointer is over it. A remote file is never fetched.",
+        desc: "Show the photograph a FILE payload names when the pointer is over it.",
         control: {
           type: "dropdown",
           key: "mediaPreview",
           options: RECORD_PREVIEW_OPTIONS,
           defaultValue: "hover",
+        },
+      },
+      {
+        name: "Load images from the web",
+        desc: "Draw a FILE payload naming an https address. Off, the preview says the file is remote and fetches nothing.",
+        control: {
+          type: "toggle",
+          key: "remoteImages",
+          defaultValue: false,
         },
       },
     ]);

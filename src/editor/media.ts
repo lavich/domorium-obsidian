@@ -6,6 +6,12 @@ import type {
 
 import { resolveVaultRelativePath } from "./service";
 
+/**
+ * Why a remote target is a row rather than a picture: the reader has not been
+ * asked yet, the address is unencrypted, or the file is not one to draw.
+ */
+export type RemoteState = "unasked" | "insecure" | "not-an-image";
+
 /** What the popover should draw, with no DOM in it. */
 export type MediaPreviewContent =
   | {
@@ -15,9 +21,11 @@ export type MediaPreviewContent =
       name: string;
       title?: string;
       crop?: MediaCrop;
+      /** Whether the url leaves the vault, which a failure to draw has to say. */
+      remote?: true;
     }
   | { kind: "file"; mediaKind: MediaKind; name: string; title?: string }
-  | { kind: "remote"; url: string; title?: string }
+  | { kind: "remote"; url: string; title?: string; state: RemoteState }
   | { kind: "missing"; target: string };
 
 /** A vault path to a URL an `<img>` can take, or null where there is no such file. */
@@ -39,14 +47,45 @@ const fileName = (target: string): string => {
   return parts[parts.length - 1] || target;
 };
 
-/** An http target is answered before its kind: it is never to be fetched. */
+const remoteRow = (
+  url: string,
+  state: RemoteState,
+  title: string | undefined,
+): MediaPreviewContent =>
+  withTitle({ kind: "remote" as const, url, state }, title);
+
+/**
+ * An http target is answered before any of it is resolved: whether it is drawn
+ * is the reader's to say, and until they have said it nothing is pointed at the
+ * url. `remoteImages` is that answer, whether it came from the setting or from
+ * the offer in the popover.
+ */
 export function mediaPreviewContent(
   reference: MediaReference,
   { documentPath, resolve }: MediaVault,
+  remoteImages = false,
 ): MediaPreviewContent {
   const { targetText, title } = reference;
   if (reference.kind === "http") {
-    return withTitle({ kind: "remote" as const, url: targetText }, title);
+    if (reference.mediaKind !== "image") {
+      return remoteRow(targetText, "not-an-image", title);
+    }
+    if (!/^https:\/\//i.test(targetText)) {
+      return remoteRow(targetText, "insecure", title);
+    }
+    if (!remoteImages) {
+      return remoteRow(targetText, "unasked", title);
+    }
+    return withTitle(
+      {
+        kind: "image" as const,
+        url: targetText,
+        name: fileName(targetText),
+        remote: true as const,
+        ...(reference.crop === undefined ? {} : { crop: reference.crop }),
+      },
+      title,
+    );
   }
   const vaultPath =
     reference.kind === "file-relative"
