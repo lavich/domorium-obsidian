@@ -114,8 +114,6 @@ describe("the keys the search bar answers", () => {
     expect(ran(fake)).toEqual(["replaceAll"]);
   });
 
-  // There are two fields, so the other one is the answer either way, and the
-  // native bar's own goToNextInput reads no direction either.
   it("moves to the other field on Tab and on Shift-Tab, asking for no direction", () => {
     const fake = actions();
     press(fake, "Tab");

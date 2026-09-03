@@ -333,9 +333,8 @@ export class GedcomView extends TextFileView {
    *
    * A scope on app.keymap answers app-wide, though, and the panel outlives the
    * leaf being looked at — so the scope follows the active leaf rather than the
-   * panel alone. Obsidian's own bar does the same, popping its scope when the
-   * editor it belongs to is hidden; without it F3 would search, and
-   * Mod+Alt+Enter rewrite, a file in a background tab.
+   * panel alone. Without it F3 would search, and Mod+Alt+Enter rewrite, a file
+   * in a background tab.
    */
   private pushScope(bindings: SearchKeyBinding[]): () => void {
     const scope = new Scope(this.app.scope);
@@ -362,12 +361,9 @@ export class GedcomView extends TextFileView {
       pushed = active;
     };
     follow();
-    /*
-     * Not registerEvent: the panel's own destroy ends this, and closing the
-     * view destroys the editor and with it the panel, so the ref is always
-     * dropped. Registering it too would leave a dead unload on the view for
-     * every time the bar has been opened.
-     */
+    // Not registerEvent: closing the view destroys the editor and with it the
+    // panel, so the panel's own destroy always drops this — while a registered
+    // unload would pile up, one per open of the bar.
     const ref = this.app.workspace.on("active-leaf-change", follow);
     return () => {
       this.app.workspace.offref(ref);

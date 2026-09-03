@@ -1,20 +1,15 @@
 /*
  * The keys Obsidian's own document search bar answers, key for key, read out of
  * its bundle rather than taken from `searchKeymap`: the library invents three
- * keys Obsidian has nowhere and misses five it has. The table is data so the
- * panel, the view and the browser harness all answer from the same one.
- *
- * Read out with it: the gate each key keeps. Obsidian's bar registers eleven
- * keys and guards four of them — `Enter` and `Shift+Enter` on the focus being
- * in one of its fields, `Alt+Enter` on the same, `Mod+Alt+Enter` on the replace
- * row being open with the focus in it. Losing a gate is not a smaller change
- * than losing a key: `Mod+Alt+Enter` rewrites the file.
+ * keys Obsidian has nowhere and misses five it has. Read out with them: the
+ * gate each key keeps, which is no smaller a part of the key than the key
+ * itself — `Mod+Alt+Enter` rewrites the file. The table is data so the panel,
+ * the view and the browser harness all answer from the same one.
  */
 
 /** What `Scope.register` takes, and what `Mod` means: Meta on macOS, Ctrl elsewhere. */
 export type KeyModifier = "Mod" | "Ctrl" | "Meta" | "Shift" | "Alt";
 
-/** The little of a keydown the table reads; the rest is the scope's business. */
 export interface SearchKeyEvent {
   isComposing: boolean;
 }
@@ -27,7 +22,6 @@ export interface SearchKeyBinding {
   run(event: SearchKeyEvent): boolean;
 }
 
-/** What the panel can do, and the questions only the panel can answer. */
 export interface SearchKeyActions {
   findNext(): void;
   findPrevious(): void;
@@ -35,15 +29,13 @@ export interface SearchKeyActions {
   selectAll(): void;
   replaceNext(): void;
   replaceAll(): void;
-  /** Which of the bar's fields has the focus, if either. */
   focused(): "search" | "replace" | null;
   /** Whether the replace row is open, which is what gates replace-all. */
   replacing(): boolean;
   /**
-   * Moves to the bar's other field, and answers false while the replace row is
-   * collapsed and there is no other field — the native bar's own no-op. There
-   * are two fields, so the direction is the other one either way, which is why
-   * this takes none: Obsidian's own goToNextInput takes none either.
+   * Moves to the bar's other field — there being two, the direction is the
+   * other one either way — and answers false while the replace row is
+   * collapsed and there is no other field, the native bar's own no-op.
    */
   moveFocus(): boolean;
 }
@@ -51,17 +43,15 @@ export interface SearchKeyActions {
 /** What the panel needs of `app.keymap`: push these, and pop them on destroy. */
 export type ScopePusher = (bindings: SearchKeyBinding[]) => () => void;
 
-/** As much of a binding as names it: enough to spell, and enough to find. */
 export interface SearchKeyName {
   modifiers: readonly KeyModifier[];
   key: string;
 }
 
 /**
- * The key each button names on the second line of its tooltip. Each is a
- * binding of the table below, held as the table holds it rather than as a
- * string, so a tooltip cannot promise a key that does nothing — and so
- * `spellKey` can spell it for the reader's own platform.
+ * The key each button names on the second line of its tooltip, held as the
+ * table below holds it rather than as a string: a tooltip cannot then promise
+ * a key that does nothing, and `spellKey` can spell it for the reader.
  */
 export const SEARCH_KEY_CAPTIONS = {
   findNext: { modifiers: [], key: "F3" },
@@ -156,7 +146,6 @@ const inReplaceField =
     return true;
   };
 
-/** moveFocus answers false with the replace row collapsed, and so do we. */
 const moveFocus = (actions: SearchKeyActions) => (): boolean =>
   actions.focused() !== null && actions.moveFocus();
 
@@ -241,9 +230,7 @@ export function searchBindings(actions: SearchKeyActions): SearchKeyBinding[] {
     /*
      * A keydown that is part of an IME composition belongs to the input method:
      * `Enter` there commits a candidate. Obsidian's own onEnter opens with the
-     * same guard because `app.keymap` does not filter composition for it — and
-     * the panel's own keydown listeners, which used to keep this guard, are
-     * gone.
+     * same guard because `app.keymap` does not filter composition for it.
      */
     run: (event: SearchKeyEvent) => !event.isComposing && act(),
   }));

@@ -20,10 +20,8 @@ const count = ".document-search-count";
 
 /*
  * A tooltip spells its key for the reader's own platform, and the harness reads
- * that platform off `navigator.platform`, which follows the host rather than
- * the userAgent Playwright emulates — so the expected spelling follows the host
- * too. The symbols and the separator are Obsidian's own, read out of its
- * bundle: glyphs joined by a space on macOS, names joined by " + " elsewhere.
+ * that platform off `navigator.platform` — which follows the host, not the
+ * userAgent Playwright emulates — so the expected spelling follows the host too.
  */
 const mac = platform === "darwin";
 const spell = (...parts: string[]): string => parts.join(mac ? " " : " + ");
@@ -414,9 +412,8 @@ test.describe("the search bar", () => {
     ).toBeLessThan(24);
   });
 
-  // #82: the scope answers on `window` in the capture phase, as Obsidian's own
-  // Keymap does, so it sees the key before CodeMirror's handlers on contentDOM
-  // and claiming one keeps the editor from acting on it too.
+  // #82: the scope sees the key before CodeMirror does, so claiming one keeps
+  // the editor from acting on it too.
   test("closes from the document, where the scope sees the key first", async ({
     page,
   }) => {

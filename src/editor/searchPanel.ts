@@ -214,7 +214,6 @@ export function obsidianSearchPanel(host: PanelHost) {
         return active === replaceInput ? "replace" : null;
       },
       replacing: () => replacing(view),
-      // Two fields, so either direction is the other one.
       moveFocus: () => {
         if (!replacing(view)) {
           return false;
