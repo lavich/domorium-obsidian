@@ -71,6 +71,38 @@ function textOf(page: Page, selector: string): Promise<string> {
   );
 }
 
+
+/**
+ * Which part of the source image the frame is a window onto, in the source's
+ * own pixels, read from the composited geometry rather than from the styles.
+ */
+async function shownRegion(page: Page): Promise<{
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  scale: number;
+}> {
+  return page.evaluate(() => {
+    const frame = document.querySelector(".gedcom-media-frame");
+    const image = document.querySelector(".gedcom-media-image");
+    if (!(frame instanceof HTMLElement) || !(image instanceof HTMLImageElement)) {
+      throw new Error("no frame");
+    }
+    const box = frame.getBoundingClientRect();
+    const drawn = image.getBoundingClientRect();
+    const scale = drawn.width / image.naturalWidth;
+    const round = (value: number): number => Math.round(value * 10) / 10;
+    return {
+      left: round((box.left - drawn.left) / scale),
+      top: round((box.top - drawn.top) / scale),
+      right: round((box.right - drawn.left) / scale),
+      bottom: round((box.bottom - drawn.top) / scale),
+      scale: round(scale),
+    };
+  });
+}
+
 test.describe("what a media position shows", () => {
   test("draws the photograph a FILE payload names", async ({ page }) => {
     await mount(page, { doc: MEDIA, media: VAULT });
@@ -225,7 +257,7 @@ test.describe("the rectangle a link asks for", () => {
     ).toHaveCount(0);
 
     const box = await page.evaluate(() =>
-      window.gedcom.rectOf(".gedcom-media-frame"),
+      window.gedcom.rectOf(".gedcom-media-image"),
     );
     expect(box?.width ?? 0, "the whole photograph, not an empty box").toBe(120);
   });
@@ -280,7 +312,12 @@ test.describe("the setting that governs the gesture", () => {
   test("leaves record previews working when media preview is off", async ({
     page,
   }) => {
-    await mount(page, { doc: MEDIA, media: VAULT, mediaPreview: "off" });
+    await mount(page, {
+      doc: MEDIA,
+      media: VAULT,
+      mediaPreview: "off",
+      recordPreview: "modifier",
+    });
     await modHover(page, FILE);
     expect(await page.locator(POPOVER).count()).toBe(0);
 
@@ -467,5 +504,274 @@ test.describe("a hover with no modifier", () => {
     expect(await page.evaluate(() => window.gedcom.calls.media)).toEqual([
       "media/family.jpg",
     ]);
+  });
+});
+
+/** Pictures painted red inside the rectangle a `CROP` names, and nowhere else. */
+const PAINTED = [
+  "0 HEAD",
+  "1 GEDC",
+  "2 VERS 7.0",
+  "0 @O1@ OBJE",
+  "1 FILE media/painted.svg",
+  "2 FORM image/svg+xml",
+  "0 @O2@ OBJE",
+  "1 FILE media/scan.svg",
+  "2 FORM image/svg+xml",
+  "0 @O3@ OBJE",
+  "1 FILE media/broken.png",
+  "2 FORM image/png",
+  "0 @O4@ OBJE",
+  "1 FILE media/wide.svg",
+  "2 FORM image/svg+xml",
+  "0 @I1@ INDI",
+  "1 NAME Marie /Curie/",
+  "1 OBJE @O1@",
+  "2 CROP",
+  "3 TOP 100",
+  "3 LEFT 200",
+  "3 HEIGHT 150",
+  "3 WIDTH 200",
+  "0 @I2@ INDI",
+  "1 NAME Pierre /Curie/",
+  "1 OBJE @O2@",
+  "2 CROP",
+  "3 TOP 400",
+  "3 LEFT 600",
+  "3 HEIGHT 900",
+  "3 WIDTH 1200",
+  "0 @I3@ INDI",
+  "1 NAME Irene /Curie/",
+  "1 OBJE @O4@",
+  "2 CROP",
+  "3 TOP 100",
+  "3 LEFT 400",
+  "3 HEIGHT 200",
+  "3 WIDTH 800",
+  "0 TRLR",
+  "",
+].join("\n");
+
+const PAINTED_VAULT = {
+  "media/painted.svg": "target",
+  "media/scan.svg": "scan",
+  "media/broken.png": "broken",
+  "media/wide.svg": "wide",
+};
+
+const BIG_FILE = offsetOf(PAINTED, "media/wide.svg");
+const SMALL_CROP = offsetOf(PAINTED, "@O1@\n2 CROP") + 1;
+const LARGE_CROP = offsetOf(PAINTED, "@O2@\n2 CROP") + 1;
+const WIDE_CROP = offsetOf(PAINTED, "@O4@\n2 CROP") + 1;
+const BROKEN = offsetOf(PAINTED, "media/broken.png");
+
+test.describe("which part of the picture the rectangle shows", () => {
+  test("is the rectangle itself, at the image's own scale", async ({ page }) => {
+    await mount(page, { doc: PAINTED, media: PAINTED_VAULT });
+    await modHover(page, SMALL_CROP);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-cropped`);
+
+    expect(
+      await shownRegion(page),
+      "TOP 100 LEFT 200 HEIGHT 150 WIDTH 200 of a 600x400 image",
+    ).toEqual({ left: 200, top: 100, right: 400, bottom: 250, scale: 1 });
+  });
+
+  test("is red all over, the ground around it being another colour", async ({
+    page,
+  }) => {
+    await mount(page, { doc: PAINTED, media: PAINTED_VAULT });
+    await modHover(page, SMALL_CROP);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-cropped`);
+
+    // The corners of what is on screen, sampled out of the source image.
+    const corners = await page.evaluate(() => {
+      const frame = document.querySelector(".gedcom-media-frame");
+      const image = document.querySelector(".gedcom-media-image");
+      if (
+        !(frame instanceof HTMLElement) ||
+        !(image instanceof HTMLImageElement)
+      ) {
+        throw new Error("no frame");
+      }
+      const box = frame.getBoundingClientRect();
+      const drawn = image.getBoundingClientRect();
+      const scale = drawn.width / image.naturalWidth;
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("no canvas");
+      }
+      context.drawImage(image, 0, 0);
+      const inset = 2;
+      return [
+        [box.left + inset, box.top + inset],
+        [box.right - inset, box.top + inset],
+        [box.left + inset, box.bottom - inset],
+        [box.right - inset, box.bottom - inset],
+      ].map(([x, y]) => {
+        const pixel = context.getImageData(
+          Math.round((x - drawn.left) / scale),
+          Math.round((y - drawn.top) / scale),
+          1,
+          1,
+        ).data;
+        return `${pixel[0]},${pixel[1]},${pixel[2]}`;
+      });
+    });
+
+    expect(corners, "every corner of the frame is inside the rectangle").toEqual(
+      ["255,0,0", "255,0,0", "255,0,0", "255,0,0"],
+    );
+  });
+
+  test("shrinks a rectangle larger than the bound rather than cutting it short", async ({
+    page,
+  }) => {
+    await mount(page, { doc: PAINTED, media: PAINTED_VAULT });
+    await modHover(page, LARGE_CROP);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-cropped`);
+
+    const region = await shownRegion(page);
+    expect(
+      { left: region.left, top: region.top, right: region.right, bottom: region.bottom },
+      "the whole of TOP 400 LEFT 600 HEIGHT 900 WIDTH 1200",
+    ).toEqual({ left: 600, top: 400, right: 1800, bottom: 1300 });
+    expect(region.scale, "and it got there by shrinking").toBeLessThan(1);
+
+    const box = await page.evaluate(() =>
+      window.gedcom.rectOf(".gedcom-media-frame"),
+    );
+    expect(box?.width ?? 0, "inside the bound").toBeLessThanOrEqual(560);
+    expect(box?.height ?? 0).toBeLessThanOrEqual(400);
+    expect(
+      (box?.width ?? 0) / (box?.height ?? 1),
+      "and undistorted: 1200 by 900",
+    ).toBeCloseTo(1200 / 900, 1);
+  });
+});
+
+test.describe("a file the vault holds and the renderer cannot draw", () => {
+  test("says so rather than leaving an empty box", async ({ page }) => {
+    await mount(page, { doc: PAINTED, media: PAINTED_VAULT });
+    await modHover(page, BROKEN);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-row`);
+
+    expect(await textOf(page, `${POPOVER} .gedcom-media-note`)).toBe(
+      "Image could not be drawn",
+    );
+    expect(await textOf(page, `${POPOVER} .gedcom-media-name`)).toBe(
+      "broken.png",
+    );
+    await expect(page.locator(`${POPOVER} img`)).toHaveCount(0);
+  });
+});
+
+test.describe("a pointer both previews could answer", () => {
+  test("shows the record where media preview is off", async ({ page }) => {
+    await mount(page, {
+      doc: MEDIA,
+      media: VAULT,
+      mediaPreview: "off",
+      recordPreview: "modifier",
+    });
+    await modHover(page, MARIE_LINK);
+
+    await expect(page.locator(POPOVER), "no picture was asked for").toHaveCount(
+      0,
+    );
+    expect(
+      (await page.evaluate(() => window.gedcom.calls.previews)).length,
+      "so the record the pointer names is what is left to show",
+    ).toBe(1);
+  });
+
+  test("shows the record for a gesture the media preview does not answer", async ({
+    page,
+  }) => {
+    await mount(page, {
+      doc: MEDIA,
+      media: VAULT,
+      recordPreview: "hover",
+      mediaPreview: "modifier",
+    });
+    await pointAt(page, MARIE_LINK);
+    await expect
+      .poll(() => page.evaluate(() => window.gedcom.calls.previews.length), {
+        message: "a bare hover is the record's gesture, not the picture's",
+      })
+      .toBe(1);
+    await expect(page.locator(POPOVER)).toHaveCount(0);
+  });
+
+  test("stands the record aside where the media preview answers", async ({
+    page,
+  }) => {
+    await mount(page, { doc: MEDIA, media: VAULT, mediaPreview: "modifier" });
+    await modHover(page, MARIE_LINK);
+    await page.waitForSelector(POPOVER);
+
+    expect(
+      await page.evaluate(() => window.gedcom.calls.previews),
+      "the picture is what the reader wanted",
+    ).toEqual([]);
+  });
+});
+
+/**
+ * How much of what was drawn the popover actually shows. A popover has a width
+ * of its own and hides what overflows it, which no measurement of the picture
+ * alone can see.
+ */
+async function clipping(page: Page): Promise<{
+  drawn: number;
+  visible: number;
+  ratio: number;
+}> {
+  return page.evaluate(() => {
+    const popover = document.querySelector(".hover-popover");
+    const image = document.querySelector(".gedcom-media-image");
+    if (!(popover instanceof HTMLElement) || !(image instanceof HTMLElement)) {
+      throw new Error("no popover");
+    }
+    const box = popover.getBoundingClientRect();
+    const drawn = image.getBoundingClientRect();
+    const visible = Math.max(
+      0,
+      Math.min(box.right, drawn.right) - Math.max(box.left, drawn.left),
+    );
+    const round = (value: number): number => Math.round(value);
+    return {
+      drawn: round(drawn.width),
+      visible: round(visible),
+      ratio: Math.round((drawn.width / drawn.height) * 100) / 100,
+    };
+  });
+}
+
+test.describe("a picture larger than the popover it hangs in", () => {
+  test("is scaled to fit it, not cut off at the edge", async ({ page }) => {
+    await mount(page, { doc: PAINTED, media: PAINTED_VAULT });
+    await modHover(page, BIG_FILE);
+    await page.waitForSelector(`${POPOVER} img`);
+
+    const box = await clipping(page);
+    expect(box.visible, "all of it is inside the popover").toBe(box.drawn);
+    expect(box.ratio, "and it kept its shape: 1600 by 400").toBeCloseTo(4, 1);
+  });
+
+  test("shows the whole of a rectangle wider than the popover", async ({
+    page,
+  }) => {
+    await mount(page, { doc: PAINTED, media: PAINTED_VAULT });
+    await modHover(page, WIDE_CROP);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-cropped`);
+
+    expect(
+      await shownRegion(page),
+      "the whole of TOP 100 LEFT 400 HEIGHT 200 WIDTH 800",
+    ).toMatchObject({ left: 400, top: 100, right: 1200, bottom: 300 });
   });
 });

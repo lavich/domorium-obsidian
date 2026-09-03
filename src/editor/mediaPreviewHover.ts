@@ -4,14 +4,10 @@ import { HOVER_TIME_MS, offsetToPosition } from "@domorium/codemirror";
 import type { EditorLanguageService } from "@domorium/codemirror";
 import type { MediaReference } from "@domorium/language-service";
 
-import { mediaSpans, spanAt } from "./mediaSpans";
+import { mediaLineAt } from "./mediaLine";
 import type { RecordPreviewTrigger } from "../settingsData";
 
-/**
- * A media hover, which `@domorium/codemirror` does not carry — it has
- * `recordPreviewHover` and nothing for media. The options read like that one so
- * the two sit together in the composition.
- */
+/** Shaped after upstream's `recordPreviewHover`, which has nothing for media. */
 export interface MediaPreviewHoverOptions {
   language: EditorLanguageService;
   /** Whether an event asks for a preview. Defaults to the platform modifier. */
@@ -37,9 +33,8 @@ export interface MediaTransition {
 }
 
 /**
- * A preview is keyed by the line it was opened from, not by the file it names:
- * two links to one photograph name the same file and different rectangles, so
- * moving between them must reopen rather than keep.
+ * Keyed by the line, not by the file: two links to one photograph name the same
+ * file and different rectangles, so moving between them must reopen.
  */
 export function mediaTransition(
   shown: number | null,
@@ -55,11 +50,7 @@ export function mediaTransition(
     : { action: "show", shown: line };
 }
 
-/**
- * What one editor is showing. Held beside the view rather than in a state
- * field: nothing in the document depends on it, and anything holding the view
- * can close it.
- */
+/** What one editor is showing. Beside the view, so anything holding it can close it. */
 export class MediaHoverSession {
   private shown: number | null = null;
 
@@ -95,7 +86,7 @@ export class MediaHoverSession {
 
 const sessions = new WeakMap<EditorView, MediaHoverSession>();
 
-/** Close an open media preview. Anything holding the view may say so. */
+/** Close an open media preview. */
 export function clearMediaPreview(view: EditorView): void {
   sessions.get(view)?.clear(view);
 }
@@ -105,12 +96,20 @@ export function hoveredMedia(view: EditorView): boolean {
 }
 
 /**
- * The modifier is already the intent, so it answers the first move. A bare
- * hover waits, as the tag tooltip does — a photograph appearing at every pixel
- * of an idle pointer's travel is worse than a record doing it.
+ * A bare hover waits, as the tag tooltip does. A held modifier is already the
+ * reader's intent and answers the first movement.
  */
 export function hoverDelay(trigger: RecordPreviewTrigger): number {
   return trigger === "hover" ? HOVER_TIME_MS : 0;
+}
+
+/**
+ * The rest a view is waiting out. Per view, one document being openable in two
+ * panes, and the window is the view's own: a popout has its own.
+ */
+interface Rest {
+  window: Window;
+  id: number | undefined;
 }
 
 export function mediaPreviewHover(
@@ -119,12 +118,24 @@ export function mediaPreviewHover(
   const trigger =
     options.trigger ?? ((event: MouseEvent) => event.metaKey || event.ctrlKey);
   const delay = options.delay ?? 0;
-  // The view's own window, not this file's: a popout has its own.
-  let timers: Window = window;
-  let timer: number | undefined;
-  const cancel = (): void => {
-    timers.clearTimeout(timer);
-    timer = undefined;
+  const rests = new WeakMap<EditorView, Rest>();
+
+  const restFor = (view: EditorView): Rest => {
+    let rest = rests.get(view);
+    if (!rest) {
+      rest = {
+        window: view.dom.ownerDocument.defaultView ?? window,
+        id: undefined,
+      };
+      rests.set(view, rest);
+    }
+    return rest;
+  };
+
+  const cancel = (view: EditorView): void => {
+    const rest = restFor(view);
+    rest.window.clearTimeout(rest.id);
+    rest.id = undefined;
   };
 
   const sessionFor = (view: EditorView): MediaHoverSession => {
@@ -136,34 +147,23 @@ export function mediaPreviewHover(
     return session;
   };
 
-  // Through the spans rather than by offset: the extent that answers is the
-  // extent that is dressed as a link, and the two must not drift apart.
   const resolve = (view: EditorView, event: MouseEvent): void => {
     const offset = view.posAtCoords({ x: event.clientX, y: event.clientY });
-    if (offset === null) {
-      sessionFor(view).moveTo(null, null, view, event);
-      return;
-    }
-    const span = spanAt(
-      mediaSpans(view.state, options.language, view.visibleRanges),
-      offset,
-    );
+    const found =
+      offset === null ? null : mediaLineAt(view.state, options.language, offset);
     sessionFor(view).moveTo(
-      span?.media ?? null,
-      span === null ? null : view.state.doc.lineAt(span.from).number,
+      found?.media ?? null,
+      found?.number ?? null,
       view,
       event,
     );
   };
 
   return [
-    ViewPlugin.define((view) => {
-      timers = view.dom.ownerDocument.defaultView ?? window;
-      return { destroy: cancel };
-    }),
+    ViewPlugin.define((view) => ({ destroy: () => cancel(view) })),
     EditorView.domEventHandlers({
       mousemove: (event, view) => {
-        cancel();
+        cancel(view);
         if (!trigger(event)) {
           sessionFor(view).moveTo(null, null, view, event);
           return;
@@ -172,13 +172,14 @@ export function mediaPreviewHover(
           resolve(view, event);
           return;
         }
-        timer = timers.setTimeout(() => {
-          timer = undefined;
+        const rest = restFor(view);
+        rest.id = rest.window.setTimeout(() => {
+          rest.id = undefined;
           resolve(view, event);
         }, delay);
       },
       mouseleave: (_event, view) => {
-        cancel();
+        cancel(view);
         sessionFor(view).clear(view);
       },
     }),

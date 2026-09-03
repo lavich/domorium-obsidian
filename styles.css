@@ -75,6 +75,8 @@
   color: var(--code-keyword);
 }
 
+/* A property, not the link the editor makes of the same token: nothing in a
+   rendered note goes anywhere on a click. */
 .gedcom-note-block .gedcom-token-variable {
   color: var(--code-property);
 }
@@ -159,41 +161,58 @@
   color: var(--text-muted);
 }
 
+/* A hover popover has a width of its own and hides what overflows it, so a
+   picture wider than it is cut off rather than scaled. What it holds is already
+   bounded — by the pane, below — so it takes the size of its content. */
+.popover.hover-popover.gedcom-media-popover {
+  width: fit-content;
+  max-width: none;
+}
+
 /* The bound is the pane, not the window: with both sidebars open the window is
-   wider than the editor, and vw alone overflows the pane the popover hangs in.
-   The view measures its own contentEl into the two properties; the vw/vh here
-   is the fallback for anything that mounts this without measuring. */
+   wider than the editor. The view measures its contentEl into the two
+   properties, px ceiling and all — previewBounds in src/editor/media.ts — so
+   the vw/vh here only covers a host that mounts this without measuring. */
 .gedcom-media-preview {
   display: flex;
   flex-direction: column;
   gap: var(--size-4-1);
   padding: var(--size-4-2) var(--size-4-3);
-  max-width: min(var(--gedcom-media-max-w, 60vw), 560px);
+  /* The bound is the picture's, not the box's: with the padding inside it a
+     rectangle measured against the bound no longer fits the room left. */
+  box-sizing: content-box;
+  max-width: var(--gedcom-media-max-w, 60vw);
 }
 
+/* Not a flex container: a flex line stretches the image to the frame's height,
+   and a cropped image has to keep the size its rectangle was measured in.
+   Nothing is hidden here either: only a rectangle is a window. */
 .gedcom-media-frame {
-  display: flex;
-  overflow: hidden;
+  position: relative;
   max-width: 100%;
 }
 
+/* The bound, and then whatever room there actually is. */
 .gedcom-media-image {
-  max-width: min(var(--gedcom-media-max-w, 60vw), 560px);
-  max-height: min(var(--gedcom-media-max-h, 40vh), 400px);
+  display: block;
+  max-width: min(var(--gedcom-media-max-w, 60vw), 100%);
+  max-height: var(--gedcom-media-max-h, 40vh);
   object-fit: contain;
 }
 
-/* A rectangle is a window onto the image, so the image keeps its own size and
-   the frame is what the bound applies to. */
+/* The frame carries the size the view computed, and the image behind it is
+   placed and scaled from the corner the rectangle starts at. */
 .gedcom-media-cropped {
-  max-width: min(var(--gedcom-media-max-w, 60vw), 560px);
-  max-height: min(var(--gedcom-media-max-h, 40vh), 400px);
+  overflow: hidden;
 }
 
 .gedcom-media-cropped .gedcom-media-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   max-width: none;
   max-height: none;
-  flex: none;
+  transform-origin: 0 0;
 }
 
 .gedcom-media-row {

@@ -6,21 +6,25 @@ import type {
 
 import { resolveVaultRelativePath } from "./service";
 
-/**
- * What the popover should draw. No DOM in it, so every branch the spec names is
- * decided in one place and tested without a vault or a browser.
- */
+/** What the popover should draw. No DOM in it, so it is testable on its own. */
 export type MediaPreviewContent =
-  | { kind: "image"; url: string; title?: string; crop?: MediaCrop }
+  | {
+      kind: "image";
+      url: string;
+      /** The `alt` text. */
+      name: string;
+      title?: string;
+      crop?: MediaCrop;
+    }
   | { kind: "file"; mediaKind: MediaKind; name: string; title?: string }
   | { kind: "remote"; url: string; title?: string }
   | { kind: "missing"; target: string };
 
-/** A vault path to something an `<img>` can take, or null where the vault holds no such file. */
+/** A vault path to a URL an `<img>` can take, or null where there is no such file. */
 export type MediaResolver = (vaultPath: string) => string | null;
 
 export interface MediaVault {
-  /** The GEDCOM file the payload is written in; a relative target is read from here. */
+  /** The GEDCOM file a relative target is read from. */
   documentPath: string;
   resolve: MediaResolver;
 }
@@ -35,10 +39,7 @@ const fileName = (target: string): string => {
   return parts[parts.length - 1] || target;
 };
 
-/**
- * The promise about network requests outranks the question of what the file is,
- * so an http target is answered before its kind is ever consulted.
- */
+/** An http target is answered before its kind: it is never to be fetched. */
 export function mediaPreviewContent(
   reference: MediaReference,
   { documentPath, resolve }: MediaVault,
@@ -60,6 +61,7 @@ export function mediaPreviewContent(
       {
         kind: "image" as const,
         url,
+        name: fileName(targetText),
         ...(reference.crop === undefined ? {} : { crop: reference.crop }),
       },
       title,
@@ -76,12 +78,8 @@ export function mediaPreviewContent(
 }
 
 /**
- * The rectangle to draw, or null for "show the whole image".
- *
- * The extent of an image is not knowable from the document — upstream says so
- * and declines to clamp — so the rectangle is measured against the image only
- * once the browser has loaded it. A rectangle the image does not reach at all
- * names nothing, and showing the whole photograph beats showing an empty box.
+ * The rectangle to draw, clamped to the loaded image, or null for "show the
+ * whole image" — which is what a rectangle the image does not reach comes to.
  */
 export function drawnCrop(
   crop: MediaCrop,
@@ -101,7 +99,7 @@ export function drawnCrop(
   return { top, left, width, height };
 }
 
-/** Ceilings, so a wide pane does not mean a wide popover. */
+/** Ceilings, so a wide pane does not mean a wide popover. Also read by styles.css. */
 export const MEDIA_PREVIEW_MAX_WIDTH = 560;
 export const MEDIA_PREVIEW_MAX_HEIGHT = 400;
 
@@ -114,12 +112,8 @@ export interface PreviewBounds {
 }
 
 /**
- * The box the popover may fill, taken from the pane rather than the window: with
- * both sidebars open the window is wider than the editor, and a preview bounded
- * by the window overflows the pane it hangs in.
- *
- * An unmeasurable pane yields the ceilings, which is what the CSS fallback
- * would have applied anyway.
+ * The box the popover may fill, from the pane rather than the window: with both
+ * sidebars open the window is wider than the editor.
  */
 export function previewBounds(
   paneWidth: number,
@@ -135,4 +129,15 @@ export function previewBounds(
         ? Math.min(paneHeight * HEIGHT_SHARE, MEDIA_PREVIEW_MAX_HEIGHT)
         : MEDIA_PREVIEW_MAX_HEIGHT,
   };
+}
+
+/**
+ * How far a rectangle has to shrink to fit the bound, never above 1. A larger
+ * rectangle is scaled rather than cut short: a corner of it is another picture.
+ */
+export function cropScale(crop: MediaCrop, bounds: PreviewBounds): number {
+  if (crop.width <= 0 || crop.height <= 0) {
+    return 1;
+  }
+  return Math.min(1, bounds.width / crop.width, bounds.height / crop.height);
 }

@@ -2,6 +2,7 @@ import type { MediaKind, MediaReference } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
 import {
+  cropScale,
   drawnCrop,
   mediaPreviewContent,
   previewBounds,
@@ -36,6 +37,7 @@ describe("what the popover should draw", () => {
     expect(mediaPreviewContent(reference(), vault())).toEqual({
       kind: "image",
       url: "app://marie",
+      name: "marie.jpg",
     });
   });
 
@@ -44,7 +46,11 @@ describe("what the popover should draw", () => {
       reference({ targetText: "../shared/marie.jpg" }),
       vault({ "shared/marie.jpg": "app://shared" }, "family/tree.ged"),
     );
-    expect(content).toEqual({ kind: "image", url: "app://shared" });
+    expect(content).toEqual({
+      kind: "image",
+      url: "app://shared",
+      name: "marie.jpg",
+    });
   });
 
   it("calls a remote target remote before it asks what the file is", () => {
@@ -137,6 +143,7 @@ describe("the rectangle a link asks for", () => {
     expect(mediaPreviewContent(reference({ crop }), vault())).toEqual({
       kind: "image",
       url: "app://marie",
+      name: "marie.jpg",
       crop,
     });
   });
@@ -166,6 +173,38 @@ describe("the rectangle a link asks for", () => {
 
   it("gives up before the image has a size to measure against", () => {
     expect(drawnCrop({ top: 0, left: 0, height: 10, width: 10 }, 0, 0)).toBeNull();
+  });
+});
+
+describe("how far a rectangle has to shrink to fit the bound", () => {
+  const bounds = { width: 560, height: 400 };
+
+  it("leaves a rectangle the bound already holds at its own size", () => {
+    expect(
+      cropScale({ top: 0, left: 0, width: 300, height: 200 }, bounds),
+    ).toBe(1);
+  });
+
+  it("shrinks a rectangle wider than the bound by its width", () => {
+    expect(
+      cropScale({ top: 0, left: 0, width: 1120, height: 400 }, bounds),
+    ).toBe(0.5);
+  });
+
+  it("shrinks a rectangle taller than the bound by its height", () => {
+    expect(
+      cropScale({ top: 0, left: 0, width: 400, height: 800 }, bounds),
+    ).toBe(0.5);
+  });
+
+  it("takes the tighter of the two, so both hold", () => {
+    expect(
+      cropScale({ top: 0, left: 0, width: 1120, height: 1600 }, bounds),
+    ).toBe(0.25);
+  });
+
+  it("declines to divide by a rectangle with no extent", () => {
+    expect(cropScale({ top: 0, left: 0, width: 0, height: 0 }, bounds)).toBe(1);
   });
 });
 

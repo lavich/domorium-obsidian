@@ -64,20 +64,16 @@ export function obsidianEditorTheme(dark: boolean): Extension {
       // weight. The names are minted by the highlight style below.
       //
       // The cursor and the underline wait for the modifier, because the click
-      // does: a plain click in an editor has to place the caret. Obsidian's own
-      // source editor gates them the same way, on a class it sets while the
-      // modifier is down.
+      // does. See modifierHeld.ts.
       ".gedcom-internal-link": {
         color: link,
         fontWeight: linkWeight,
       },
 
-      // A reference to a record is a link: it goes somewhere on a click, and
-      // shows what is there on a hover. The weight is left alone, which is what
-      // keeps a declaration apart from a reference to it. A declaration is
-      // where a reference goes rather than a way of going anywhere, and carries
-      // both classes — `definition` is a modifier over `variableName` — so it
-      // is excluded by name instead of by a fight over specificity.
+      // A reference to a record is a link, and keeps the weight it had so a
+      // declaration still reads apart from it. A declaration carries both
+      // classes — `definition` is a modifier over `variableName` — so it is
+      // excluded by name rather than by a fight over specificity.
       ".gedcom-reference-link:not(.gedcom-reference-declaration)": {
         color: link,
       },
@@ -235,9 +231,8 @@ export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--code-comment)" },
   { tag: tags.keyword, color: "var(--code-keyword)" },
   { tag: tags.string, color: "var(--code-string)" },
-  // A referring pointer is dressed as what it is — a link to the record it
-  // names — while a declaring pointer is `definition` over the tag its type
-  // maps to, and keeps the colour a GEDCOM block in a note gives it.
+  // A referring pointer is a link to the record it names; a declaring one is
+  // `definition` over the tag its type maps to.
   { tag: tags.variableName, class: "gedcom-reference-link" },
   {
     tag: tags.definition(tags.variableName),

@@ -61,10 +61,7 @@ export function offsetOf(doc: string, needle: string): number {
   return offset;
 }
 
-/**
- * A multimedia record and two links to it, so one photograph is asked for three
- * ways: whole, and through two different rectangles.
- */
+/** One photograph asked for three ways: whole, and through two rectangles. */
 export const MEDIA = [
   "0 HEAD",
   "1 GEDC",
@@ -120,6 +117,7 @@ export interface MountOptions {
   indentationHints?: boolean;
   recordPreview?: "modifier" | "hover" | "off";
   mediaPreview?: "modifier" | "hover" | "off";
+  /** Vault path to a name in the harness's own images, or bytes of its own. */
   media?: Record<string, string>;
   pane?: number;
   holdImages?: boolean;

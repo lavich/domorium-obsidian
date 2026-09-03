@@ -67,7 +67,8 @@ asks for — so one group portrait shows a different face under each person who
 references it. Media that is not an image is named rather than drawn, and a
 `FILE` naming a web address says so instead of being fetched. **Media preview**
 in the plugin settings chooses the gesture, or turns it off, independently of
-**Record preview**.
+**Record preview**. Both open on a resting hover by default; either can be set
+to ask for Ctrl/Cmd instead, and a gesture already chosen is kept.
 
 Typing `[[tree.ged#` in a note offers the records in that file, by name where
 the format gives one. Hovering a link to a record shows the record, highlighted,

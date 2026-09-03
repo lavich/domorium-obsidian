@@ -13,7 +13,10 @@ import { hoverDelay } from "../src/editor/mediaPreviewHover";
 import { renderMediaPreview } from "../src/editor/mediaPreviewView";
 import { openSearch } from "../src/editor/searchPanel";
 import { previewGesture } from "../src/editor/previewGesture";
-import type { RecordPreviewTrigger } from "../src/settingsData";
+import {
+  DEFAULT_SETTINGS,
+  type RecordPreviewTrigger,
+} from "../src/settingsData";
 import { stubSetIcon } from "./icons";
 
 export interface HarnessOptions {
@@ -74,10 +77,7 @@ let view: EditorView | undefined;
 let popover: HTMLElement | null = null;
 let held: (() => void)[] = [];
 
-/**
- * Images with a size a rectangle can be measured against. A spec names one of
- * these rather than carrying bytes of its own.
- */
+/** Images a spec names instead of carrying bytes of its own. */
 const IMAGES: Record<string, string> = {
   pixel:
     "data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==",
@@ -87,10 +87,44 @@ const IMAGES: Record<string, string> = {
       '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80">' +
         '<rect width="120" height="80" fill="#8899aa"/></svg>',
     ),
+  // One red rectangle on a plain ground: which part of the picture is shown is
+  // then a question with an answer.
+  target: painted(600, 400, 200, 100, 200, 150),
+  // The same, far larger than any bound, for a rectangle that has to shrink.
+  scan: painted(3000, 2000, 600, 400, 1200, 900),
+  // Wide enough that the bound's width binds, which is where a popover of its
+  // own width cuts a picture off.
+  wide: painted(1600, 400, 400, 100, 800, 200),
+  /** Bytes no decoder accepts, for the file that exists and cannot be drawn. */
+  broken: "data:image/png;base64,AAAAAAAA",
 };
+
+function painted(
+  width: number,
+  height: number,
+  left: number,
+  top: number,
+  region: number,
+  tall: number,
+): string {
+  return (
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+        `<rect width="${width}" height="${height}" fill="#224466"/>` +
+        `<rect x="${left}" y="${top}" width="${region}" height="${tall}" fill="#ff0000"/>` +
+        "</svg>",
+    )
+  );
+}
 
 function imageSource(bytes: string): string {
   return IMAGES[bytes] ?? bytes;
+}
+
+/** What `Keymap.isModifier(event, "Mod")` answers in the plugin. */
+function modifier(event: MouseEvent | KeyboardEvent): boolean {
+  return event.metaKey || event.ctrlKey;
 }
 
 function closeMedia(): void {
@@ -108,6 +142,10 @@ function mount(options: HarnessOptions): void {
   calls.requested = [];
   closeMedia();
   held = [];
+
+  // The shipped defaults, so a spec that names no trigger gets what a reader does.
+  const record = options.recordPreview ?? DEFAULT_SETTINGS.recordPreview;
+  const media = options.mediaPreview ?? DEFAULT_SETTINGS.mediaPreview;
 
   const parent = document.getElementById("editor");
   if (!parent) {
@@ -140,17 +178,11 @@ function mount(options: HarnessOptions): void {
         language,
         settings,
         dark: options.dark ?? false,
-        gesture: previewGesture(
-          options.recordPreview ?? "modifier",
-          (event) => event.metaKey || event.ctrlKey,
-        ),
-        mediaGesture: previewGesture(
-          options.mediaPreview ?? "modifier",
-          (event) => event.metaKey || event.ctrlKey,
-        ),
-        delay: hoverDelay(options.recordPreview ?? "modifier"),
-        mediaDelay: hoverDelay(options.mediaPreview ?? "modifier"),
-        modifierHeld: (event) => event.metaKey || event.ctrlKey,
+        gesture: previewGesture(record, modifier),
+        mediaGesture: previewGesture(media, modifier),
+        delay: hoverDelay(record),
+        mediaDelay: hoverDelay(media),
+        modifierHeld: modifier,
         setIcon: stubSetIcon,
         actions: {
           applyWorkspaceEdit: () => true,
@@ -171,7 +203,7 @@ function mount(options: HarnessOptions): void {
           calls.media.push(media.targetText);
           closeMedia();
           const host = document.createElement("div");
-          host.className = "popover hover-popover";
+          host.className = "popover hover-popover gedcom-media-popover";
           const target = (event.target as HTMLElement | null) ?? parent;
           const rect = target.getBoundingClientRect();
           host.style.position = "fixed";

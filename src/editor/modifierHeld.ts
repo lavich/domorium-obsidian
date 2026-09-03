@@ -7,10 +7,9 @@ export const MODIFIER_HELD_CLASS = "gedcom-mod-held";
 export type ModifierHeld = (event: MouseEvent | KeyboardEvent) => boolean;
 
 /**
- * A cursor should promise only what a click delivers. Following a link in this
- * editor takes the modifier — a plain click has to place the caret, or a path
- * could not be edited — so the pointer cursor appears only while the modifier
- * is down, which is what Obsidian's own source editor does.
+ * A cursor should promise only what a click delivers, and following a link here
+ * takes the modifier — a plain click has to place the caret. Obsidian's own
+ * source editor gates the affordance on a class the same way.
  */
 export function modifierHeldClass(held: ModifierHeld): Extension {
   return ViewPlugin.define((view: EditorView) => {
@@ -20,8 +19,7 @@ export function modifierHeldClass(held: ModifierHeld): Extension {
       view.dom.classList.toggle(MODIFIER_HELD_CLASS, down);
     };
     // A modifier already down when the pointer arrives sends no keydown here,
-    // and one released over another window sends no keyup, so the mouse says
-    // what the keyboard did not and losing focus clears it either way.
+    // and one released over another window sends no keyup.
     const fromKey = (event: KeyboardEvent): void => set(held(event));
     const fromMouse = (event: MouseEvent): void => set(held(event));
     const clear = (): void => set(false);

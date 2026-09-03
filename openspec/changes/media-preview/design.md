@@ -116,6 +116,13 @@ and, before passing a record preview on to the host, asks `getMediaAt` at the
 preview's pointer — if it answers, the record preview is declined and the media
 hover draws instead. No upstream filter is needed.
 
+It asks one more thing first: whether the media gesture opens on *this* event.
+Standing aside for a preview that is never coming is how `1 OBJE @O1@` became a
+position that showed nothing at all — media preview off, or asking for a
+modifier the pointer is not holding, and both previews declined. The rule is
+that the picture outranks the record where the picture will actually appear,
+which is a different sentence from the one the code first said.
+
 Implementation moved this from `GedcomView.showPreview`, where this document
 first put it, into `createGedcomComposition`. Same observable behaviour, but the
 browser harness mounts the composition and so inherits the rule rather than
@@ -162,7 +169,8 @@ the issue describes — no canvas, no decoding. The image's natural size is not
 known until it loads, and reading it is the one thing that needs the `load`
 event:
 
-- The container is sized to the rectangle and the image offset by `-left`/`-top`.
+- The container is sized to the rectangle and the image, behind it, moved so
+  the rectangle's corner meets the container's.
 - On `load`, `naturalWidth`/`naturalHeight` are compared with the rectangle. A
   rectangle reaching past an edge has its container shrunk to the overlap; a
   rectangle with no overlap drops the offset and shows the whole image.
@@ -171,6 +179,22 @@ event:
 
 Clamping arithmetic — rectangle plus natural size to a drawn rectangle — is a
 second pure function in `src/editor/media.ts`, unit-tested with numbers.
+
+**The container must not size the image.** The move is a `transform` and the
+container is not a flex container, both for the same reason: a flex line
+stretches its item to the line's height, and an item with a negative cross
+margin is stretched by that much again. The image then renders at a size the
+rectangle was never measured against, and the offset lands somewhere else
+entirely — every cropped preview showing the wrong part of the picture, while
+every assertion about the container's size still passes. Found in review, and
+the reason a spec now samples the pixels on screen rather than the geometry
+around them.
+
+**A rectangle larger than the bound is scaled, not cut.** `cropScale(crop,
+bounds)` is the third pure function: the tighter of the two ratios, never above
+1, and the container's size and the image's transform take it together. Cutting
+the rectangle down to the bound would answer the reference with a corner of what
+it asked for — for a face out of a large scan, with somebody else's shoulder.
 
 **`load` outlives the popover.** It fires whenever the browser finishes, which
 may be after the reader moved to another media position or closed the preview
@@ -203,13 +227,28 @@ a fallback:
 
 ```css
 .gedcom-media-preview {
-  max-width:  min(var(--gedcom-media-max-w, 60vw), 560px);
-  max-height: min(var(--gedcom-media-max-h, 40vh), 400px);
+  max-width:  var(--gedcom-media-max-w, 60vw);
+  max-height: var(--gedcom-media-max-h, 40vh);
   object-fit: contain;
 }
 ```
 
-The px ceilings stay: a wide pane should not mean a wide popover. The fractions
+**The popover has a width of its own.** `.popover.hover-popover` is a fixed
+`--popover-width` with its overflow hidden, and that width is narrower than the
+bound on any ordinary pane — 400px against 540. A picture scaled correctly to
+the bound was therefore cut off at the popover's right edge, and every
+measurement of the picture still agreed with the bound, which is why nothing
+caught it. The popover the media preview opens carries a class that lets it take
+the size of its content; the bound is what limits that content, so the popover
+needs no width of its own. The frame's clipping now belongs to the rectangle
+alone — an image shown whole is scaled to fit, never trimmed — and the harness
+grew Obsidian's popover box, without which a popover there shrink-wraps its
+content and the whole class of bug is invisible.
+
+The px ceilings stay, but only in `media.ts`: `previewBounds` already caps what
+it measures, so repeating the numbers in a `min()` here would be one more place
+for them to disagree. The `vw`/`vh` is the fallback for anything that mounts the
+popover without measuring a pane. The fractions
 of the pane (60% and 40%) keep the phone case working, where the pane _is_ the
 window. The rule stays in CSS, so the browser does the scaling and the file's
 own pixel count never matters.
@@ -222,8 +261,9 @@ stands); the bound can be revisited when there is. All rejected.
 
 ### Media preview gets its own setting
 
-`mediaPreview: RecordPreviewTrigger` in `GedcomSettings`, defaulting to
-`"modifier"` like `recordPreview`, reusing `RECORD_PREVIEW_TRIGGERS`,
+`mediaPreview: RecordPreviewTrigger` in `GedcomSettings`, taking its default
+from `recordPreview` — `"modifier"` at first, `"hover"` by the time both moved
+together below — and reusing `RECORD_PREVIEW_TRIGGERS`,
 `RECORD_PREVIEW_OPTIONS` and the existing dropdown definition shape.
 `parseSettings` gains one branch, `changedSetting` needs none — it reads
 `DEFAULT_SETTINGS` generically.
@@ -257,27 +297,32 @@ file being unshowable. The issue says as much, so the row wins.
 The cost is a branch and a small visual vocabulary — an icon per kind — which
 the `MediaPreviewContent` union already isolates.
 
-### One pass over the visible lines serves both the dressing and the hit area
+### The line under the pointer answers, and the highlight style dresses it
 
-The gesture answering the whole line and the line being dressed as a link are
-the same question asked twice — which lines name media, and over what extent.
-Answering it once is what keeps them from disagreeing, and the spec requires
-they not disagree.
+The gesture answering the whole line and the line looking like it would answer
+are the same question asked twice — which lines name media, and over what
+extent — and the spec requires the two not disagree.
 
-`src/editor/mediaSpans.ts` walks the view's visible ranges, skips any line whose
-tag is neither `FILE` nor `OBJE` with a cheap match on the line text, asks
-`getMediaAt` for the rest, and returns `{ from, to, media }` per answering line —
-`from` at the tag, `to` at the end of the line. A `ViewPlugin` turns those into
-mark decorations carrying a `gedcom-media-link` class, and the hover looks up
-the span under the pointer in the same list instead of querying by offset.
+They agree by being answered in different places, not by sharing a list. The
+dressing comes from the highlight style, which already calls a `FILE` payload a
+link and an `OBJE` pointer a reference to a record; nothing media-specific has
+to be drawn for a media line to look live. So the hover asks about one line:
+`mediaLineAt(state, language, offset)` in `src/editor/mediaLine.ts` takes the
+line under the pointer, skips it on a cheap match unless its tag is `FILE` or
+`OBJE`, refuses the level number that opens it, and otherwise asks `getMediaAt`
+at the payload. The whole line from the tag onward answers — a reader aiming
+near the thing should hit it.
 
-The prefilter matters: without it this is a `getMediaAt` per visible line on
-every viewport change, and resolving a pointer walks to its record. With it, a
-document of ordinary lines costs a regex per line and nothing else.
+The prefilter matters either way: without it this is a `getMediaAt` per movement
+of the pointer, and resolving a pointer walks to its record.
 
-_Alternative — query `getMediaAt` at the hovered offset, and decorate
-separately._ Two sources of truth for one extent, and the spec's "what looks
-live is live" would hold only by coincidence. Rejected.
+_Written first as a pass over every visible line_, `mediaSpans(state, language,
+ranges)`, so a `ViewPlugin` could turn the same list into mark decorations and
+the hover could look the pointer up in it. Once the dressing came from the
+highlight style, the decorations went — and with them the only reason to walk
+the viewport. What was left computed every visible span on every pointer
+movement in order to use one of them. Found in review; the walk is gone and the
+lookup is by line.
 
 _Alternative — dress the payload only._ It is what a `FILE` payload already gets
 for free, being a document link, and it leaves the `OBJE` pointer — where `CROP`

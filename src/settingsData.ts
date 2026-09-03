@@ -12,8 +12,8 @@ export interface GedcomSettings {
 export const DEFAULT_SETTINGS: GedcomSettings = {
   diagnostics: true,
   indentationHints: true,
-  // A held modifier is a gesture a reader has to be told about. The rest the
-  // pointer must make is what the modifier was really protecting against.
+  // A held modifier has to be discovered; the rest the pointer must make
+  // solves the same problem without being told about.
   recordPreview: "hover",
   mediaPreview: "hover",
 };

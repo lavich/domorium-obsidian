@@ -39,7 +39,7 @@ export class GedcomSettingTab extends PluginSettingTab {
    * Deprecated since Obsidian 1.13.0 and not called when
    * `getSettingDefinitions` answers, but `minAppVersion` is 1.5.0, so this is
    * what an older app shows. See "The minimum app version, and what it costs"
-   * in CLAUDE.md: the floor moves once, taking every such workaround with it.
+   * in CLAUDE.md.
    */
   display(): void {
     this.containerEl.empty();

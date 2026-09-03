@@ -361,6 +361,8 @@ export class GedcomView extends TextFileView {
   }
 
   private showPreview(preview: RecordPreview, target: HTMLElement): void {
+    // Moving from one XREF to the next asks to show without asking to hide.
+    this.hidePreview();
     this.preview = new HoverPopover(this.leaf, target);
     const block = this.preview.hoverEl.createEl("pre", {
       cls: "gedcom-record-preview",
@@ -387,7 +389,12 @@ export class GedcomView extends TextFileView {
   }
 
   private showMediaPreview(media: MediaReference, target: HTMLElement): void {
+    // Moving between two rectangles of one photograph reopens rather than keeps.
+    this.hideMediaPreview();
     const popover = new HoverPopover(this.leaf, target);
+    // Otherwise a fixed width with its overflow hidden, which cuts a picture
+    // off at the edge rather than scaling it. See styles.css.
+    popover.hoverEl.classList.add("gedcom-media-popover");
     this.mediaPreview = popover;
     const content = mediaPreviewContent(media, {
       documentPath: this.file?.path ?? "",
@@ -438,17 +445,14 @@ export class GedcomView extends TextFileView {
           new Notice(`Vault file not found: ${path}`);
           return;
         }
-        // Where it already is, if it is anywhere. Otherwise a tab of its own,
-        // not this one: the file being read is the reason the link was
-        // followed, and replacing it loses the reader's place. This is what
-        // Mod-click means everywhere else in Obsidian. Not `'window'`, which
-        // the mobile app has no popout for.
+        // Where it already is, or else a tab of its own: replacing this one
+        // loses the reader's place in the file the link was followed from. Not
+        // `'window'`, which the mobile app has no popout for.
         const open = this.leafShowing(path);
         if (open) {
-          // Not `revealLeaf`, which would also uncollapse a sidebar but wants
-          // Obsidian 1.7.2, above this plugin's floor. See "The minimum app
-          // version, and what it costs" in CLAUDE.md: the floor moves once,
-          // taking every such workaround with it.
+          // Not `revealLeaf`, which also uncollapses a sidebar but wants
+          // Obsidian 1.7.2. See "The minimum app version, and what it costs"
+          // in CLAUDE.md.
           this.app.workspace.setActiveLeaf(open, { focus: true });
           return;
         }

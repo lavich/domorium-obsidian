@@ -1,13 +1,17 @@
 import type { MediaCrop } from "@domorium/language-service";
 
-import { drawnCrop, type MediaPreviewContent, type PreviewBounds } from "./media";
+import {
+  cropScale,
+  drawnCrop,
+  type MediaPreviewContent,
+  type PreviewBounds,
+} from "./media";
 import type { IconSetter } from "./searchPanel";
 
 /**
  * Drawing the popover, kept out of `GedcomView` so the browser harness mounts
- * the same code against a stub resolver. Standard DOM rather than Obsidian's
- * element helpers for the same reason — the harness has no Obsidian, which is
- * also why `setIcon` is injected.
+ * the same code. Standard DOM and an injected `setIcon` for the same reason:
+ * the harness has no Obsidian.
  */
 
 const ICONS: Record<string, string> = {
@@ -38,7 +42,7 @@ export function renderMediaPreview(
 
   switch (content.kind) {
     case "image":
-      drawImage(root, content.url, content.crop, host);
+      drawImage(root, content, host);
       break;
     case "file":
       drawRow(root, ICONS[content.mediaKind] ?? ICONS.unknown, content.name, host);
@@ -56,10 +60,6 @@ export function renderMediaPreview(
   }
 }
 
-/**
- * The owner document's own element, not Obsidian's `createEl`: the browser
- * harness mounts this module and has no Obsidian to extend HTMLElement.
- */
 function element(
   parent: HTMLElement,
   tag: "div" | "img" | "span",
@@ -81,7 +81,7 @@ function drawRow(
   text: string,
   host: MediaPreviewHost,
   note?: string,
-): void {
+): HTMLElement {
   const row = element(root, "div", "gedcom-media-row");
   host.setIcon(element(row, "span", "gedcom-media-icon"), icon);
   const body = element(row, "div", "gedcom-media-body");
@@ -89,28 +89,42 @@ function drawRow(
     element(body, "div", "gedcom-media-note").textContent = note;
   }
   element(body, "div", "gedcom-media-name").textContent = text;
+  return row;
 }
 
 /**
- * A rectangle is a window with the image offset behind it — no canvas, nothing
- * decoded. The image's own size is unknown until it loads, so the rectangle is
- * measured against it then, and the handler checks the popover is still the one
- * on screen: a load outlives the gesture that asked for it.
+ * A rectangle is a window with the image behind it — no canvas, nothing
+ * decoded. Its own size is unknown until it loads, so the rectangle is measured
+ * against it then, and every late handler checks the popover is still the one on
+ * screen: a load outlives the gesture that asked for it.
  */
 function drawImage(
   root: HTMLElement,
-  url: string,
-  crop: MediaCrop | undefined,
+  content: { url: string; name: string; title?: string; crop?: MediaCrop },
   host: MediaPreviewHost,
 ): void {
+  const { url, crop } = content;
   const frame = element(root, "div", "gedcom-media-frame");
   const image = element(frame, "img", "gedcom-media-image") as HTMLImageElement;
+  image.alt = content.title ?? content.name;
+
+  // Not a missing file, and an empty frame reads as a bug rather than a fact
+  // about this one.
+  image.addEventListener("error", () => {
+    if (!host.isCurrent()) {
+      return;
+    }
+    frame.replaceWith(
+      drawRow(root, ICONS.missing, content.name, host, "Image could not be drawn"),
+    );
+  });
+
   if (crop === undefined) {
     image.src = url;
     return;
   }
   frame.classList.add("gedcom-media-cropped");
-  applyCrop(frame, image, crop);
+  applyCrop(frame, image, crop, host.bounds);
   image.addEventListener("load", () => {
     if (!host.isCurrent()) {
       return;
@@ -120,24 +134,29 @@ function drawImage(
       frame.classList.remove("gedcom-media-cropped");
       frame.style.removeProperty("width");
       frame.style.removeProperty("height");
-      frame.style.removeProperty("aspect-ratio");
-      image.style.removeProperty("margin-left");
-      image.style.removeProperty("margin-top");
+      image.style.removeProperty("transform");
       return;
     }
-    applyCrop(frame, image, drawn);
+    applyCrop(frame, image, drawn, host.bounds);
   });
   image.src = url;
 }
 
+/**
+ * The image sits behind the frame at its own size, moved so the rectangle's
+ * corner meets the frame's, and scaled about that same corner where the
+ * rectangle is larger than the bound.
+ */
 function applyCrop(
   frame: HTMLElement,
   image: HTMLElement,
   crop: MediaCrop,
+  bounds: PreviewBounds,
 ): void {
-  frame.style.width = `${crop.width}px`;
-  frame.style.height = `${crop.height}px`;
-  frame.style.aspectRatio = `${crop.width} / ${crop.height}`;
-  image.style.marginLeft = `${-crop.left}px`;
-  image.style.marginTop = `${-crop.top}px`;
+  const scale = cropScale(crop, bounds);
+  frame.style.width = `${crop.width * scale}px`;
+  frame.style.height = `${crop.height * scale}px`;
+  image.style.transform = `translate(${-crop.left * scale}px, ${
+    -crop.top * scale
+  }px) scale(${scale})`;
 }

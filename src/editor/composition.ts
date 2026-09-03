@@ -83,11 +83,14 @@ export function createGedcomComposition(
       language: options.language,
       trigger: (event) => options.gesture.opens(event),
       delay: options.delay,
-      // A multimedia link is a cross-reference too, so both previews answer the
-      // same pointer. The picture is what the reader wanted, so the record
-      // stands aside — and this is the one place that rule lives.
+      // A multimedia link is a cross-reference too, so both previews answer
+      // the same pointer and the picture wins — but only where the picture is
+      // actually coming, or the position would show nothing at all.
       show: (preview, view, event) => {
-        if (mediaAt(options.language, view.state.doc, preview.pointer.from)) {
+        if (
+          options.mediaGesture.opens(event) &&
+          mediaAt(options.language, view.state.doc, preview.pointer.from)
+        ) {
           return;
         }
         options.showPreview(preview, view, event);

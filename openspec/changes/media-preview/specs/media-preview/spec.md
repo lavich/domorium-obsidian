@@ -165,6 +165,11 @@ SHALL be clamped against the image once it is loaded: a rectangle reaching past
 an edge shows the part that exists, and one leaving no visible area SHALL fall
 back to the whole image rather than an empty box.
 
+What is on screen SHALL be the named rectangle of the image and nothing else:
+the region shown, measured in the image's own pixels, is the rectangle the
+reference asked for. A box of the rectangle's size showing some other part of
+the image does not satisfy this.
+
 #### Scenario: A link naming a rectangle
 
 - **WHEN** the gesture is held over the pointer of a link whose `CROP` names `TOP 100`, `LEFT 250`, `HEIGHT 400`, `WIDTH 300`
@@ -179,6 +184,11 @@ back to the whole image rather than an empty box.
 
 - **WHEN** the gesture is held over the `FILE` payload of a record that some link crops
 - **THEN** the popover shows the whole image, uncropped
+
+#### Scenario: The picture inside the rectangle
+
+- **WHEN** the gesture opens a preview of a link whose rectangle names a region of the image distinguishable from the rest of it
+- **THEN** every part of the popover's picture comes from inside that region
 
 #### Scenario: A rectangle past the edge of the image
 
@@ -254,6 +264,11 @@ file was not found, together with the target as the document wrote it.
 - **WHEN** the target resolves outside the vault
 - **THEN** the popover reports it as not found, and no file outside the vault is read
 
+#### Scenario: A file the vault holds and cannot draw
+
+- **WHEN** the target names a vault file whose bytes the renderer cannot draw as an image
+- **THEN** the popover says the image could not be drawn, naming the file, rather than showing an empty box
+
 ### Requirement: The rendered preview is bounded
 
 The preview SHALL bound the rendered box before the media is shown, in both
@@ -264,18 +279,40 @@ The image SHALL keep its aspect ratio within that bound.
 The bound SHALL be taken from the editor pane rather than the window, so that a
 preview does not exceed the pane when the window is wider than it.
 
+The popover SHALL be sized to what it holds. A hover popover has a width of its
+own, narrower than the bound, and hides what overflows it: a picture inside the
+bound that the popover cuts off at its edge does not satisfy this requirement,
+however correctly the picture itself was scaled.
+
 The bound applies to the rectangle as well: a cropped preview is bounded by the
-same rule as an uncropped one.
+same rule as an uncropped one, and a rectangle larger than the bound SHALL be
+scaled down whole rather than shown in part. The reference asked for the
+rectangle, and a corner of it is a different picture.
 
 #### Scenario: A very large image
 
 - **WHEN** the gesture is held over a `FILE` naming an image far larger than the pane
 - **THEN** the popover is no larger than the bound, and the image is shown whole within it, undistorted
 
+#### Scenario: A rectangle larger than the bound
+
+- **WHEN** a link's rectangle is larger in both dimensions than the bound the pane allows
+- **THEN** the popover shows the whole rectangle, scaled to fit and undistorted, and no part of it is cut off
+
 #### Scenario: A pane narrower than the window
 
 - **WHEN** the editor pane occupies part of the window, and the gesture opens a preview of a large image
 - **THEN** the popover stays within the pane
+
+#### Scenario: A picture wider than the popover's own width
+
+- **WHEN** the gesture opens a preview of an image whose bounded width exceeds the width a hover popover takes by default
+- **THEN** the whole picture is on screen, scaled to the bound, with nothing cut off at the popover's edge
+
+#### Scenario: A rectangle wider than the popover's own width
+
+- **WHEN** the same is true of a link's rectangle
+- **THEN** the whole rectangle is on screen
 
 #### Scenario: A narrow window
 
@@ -322,10 +359,20 @@ the change of default.
 - **WHEN** media preview is set to never and record preview to hold-and-hover
 - **THEN** the gesture over an XREF still shows the record, and the gesture over a `FILE` payload shows nothing
 
+#### Scenario: A multimedia link with media preview off
+
+- **WHEN** media preview is set to never and the gesture is held over the pointer of `1 OBJE @O1@`
+- **THEN** the record that pointer names is shown: a position where a picture is not coming is not a position that shows nothing
+
 #### Scenario: Different triggers for each
 
 - **WHEN** record preview is set to hover and media preview to hold-and-hover
 - **THEN** hovering an XREF shows the record without a modifier, and a media position shows nothing until the modifier is held
+
+#### Scenario: A multimedia link under the record's gesture alone
+
+- **WHEN** record preview is set to hover, media preview to hold-and-hover, and the pointer rests on `1 OBJE @O1@` with no modifier
+- **THEN** the record is shown, and holding the modifier there shows the picture instead
 
 #### Scenario: A setting changed with a file open
 
