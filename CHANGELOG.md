@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.9.0
+
+- **A photograph a line names can be seen from the line.** Resting the pointer on a
+  `FILE` payload, or on the pointer of a multimedia link, shows the picture the
+  reference names, cropped to the rectangle that reference asks for — so two links
+  to one photograph show two different pictures, while the record's own `FILE`
+  shows the whole of it — with the caption the author wrote beneath. Media that is
+  not a picture is named rather than hidden: audio, video and a document each say
+  what they are, a file the vault does not hold says so, and a remote address is
+  reported and never fetched, the plugin making no network request. Media preview
+  has a setting of its own beside the record one, and both now open on hover alone
+  rather than on a held modifier — a photograph should not need a gesture you have
+  to be told about.
+- **A payload that leads somewhere is dressed as a link, and following one keeps
+  your place.** A reference to a record, a vault file or a web address wears the
+  link colour before any gesture is made, and takes the link cursor and underline
+  while the platform modifier is down — the modifier being what following needs,
+  since a plain click in an editor has to place the caret. A followed file opens in
+  a tab of its own with the GEDCOM file still open behind it, and following the
+  same file twice brings that tab forward rather than making a second one, even
+  where the tab has not been looked at since the window opened.
+- **The search bar answers the keys you already know.** `Mod+F` opens it, the same
+  key that opens document search everywhere else in Obsidian, and it follows that
+  command if you have rebound it, the plugin claiming no key of its own for find;
+  replace opens on `Mod+Alt+F`, or `Mod+H` off macOS, listed in Settings → Hotkeys
+  where you can reassign it. `F3` and `Mod+G` step to the next match, `Shift+F3`
+  and `Mod+Shift+G` to the previous, and `Escape` closes the bar, each from the
+  document as well as from the bar's own fields, while `Enter`, `Tab` and the keys
+  that write stay inside those fields so an open bar leaves typing and indenting
+  alone. The keys belong to the file you are looking at: a bar left open in a
+  background tab no longer swallows an `Escape` you needed elsewhere, nor answers a
+  replace-all. Every button names its key in its tooltip, spelt for your platform.
+
 ## 1.8.2
 
 - **A file whose lines end in CR is read as a file, not as one line.** GEDCOM 5.5.1

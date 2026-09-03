@@ -78,4 +78,4 @@
 
 - [x] 7.1 Run `npm run check` and confirm lint, typecheck, the Vitest suites and the build all pass.
 - [x] 7.2 Run `npm run test:browser` and confirm every Playwright spec passes, the new ones included.
-- [ ] 7.3 Open `demo-vault/` in Obsidian and confirm by hand what the harness cannot: a real vault image under the gesture, a cropped link, the setting taking effect without reopening the file, and a Mod-click on a `FILE` payload opening the photograph in its own tab with the GEDCOM file still open behind it, a second Mod-click on the same payload bringing that tab forward rather than making another.
+- [x] 7.3 Open `demo-vault/` in Obsidian and confirm by hand what the harness cannot: a real vault image under the gesture, a cropped link, the setting taking effect without reopening the file, and a Mod-click on a `FILE` payload opening the photograph in its own tab with the GEDCOM file still open behind it, a second Mod-click on the same payload bringing that tab forward rather than making another.
