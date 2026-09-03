@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.9.1
+
+- **Nothing in the plugin itself changed.** `main.js` and `styles.css` are
+  byte-for-byte what 1.9.0 shipped. The release carries repository work only: the
+  two errors Obsidian's plugin review reported, both of them in the browser
+  harness the tests mount rather than in anything that reaches a vault, and the
+  lint rules that had been switched off there and so let them through.
+
 ## 1.9.0
 
 - **A photograph a line names can be seen from the line.** Resting the pointer on a
