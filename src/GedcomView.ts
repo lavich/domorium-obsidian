@@ -29,6 +29,7 @@ import {
   type Menu,
   normalizePath,
   Notice,
+  Platform,
   Scope,
   setIcon,
   TextFileView,
@@ -361,8 +362,13 @@ export class GedcomView extends TextFileView {
       pushed = active;
     };
     follow();
+    /*
+     * Not registerEvent: the panel's own destroy ends this, and closing the
+     * view destroys the editor and with it the panel, so the ref is always
+     * dropped. Registering it too would leave a dead unload on the view for
+     * every time the bar has been opened.
+     */
     const ref = this.app.workspace.on("active-leaf-change", follow);
-    this.registerEvent(ref);
     return () => {
       this.app.workspace.offref(ref);
       if (pushed) {
@@ -398,6 +404,7 @@ export class GedcomView extends TextFileView {
           panel: {
             setIcon,
             pushScope: (bindings) => this.pushScope(bindings),
+            mac: Platform.isMacOS,
           },
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),

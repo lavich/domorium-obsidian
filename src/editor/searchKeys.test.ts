@@ -4,9 +4,11 @@ import {
   matchesBinding,
   searchBindings,
   SEARCH_KEY_CAPTIONS,
+  spellKey,
   type SearchKeyActions,
   type SearchKeyBinding,
   type SearchKeyEvent,
+  type SearchKeyName,
 } from "./searchKeys";
 
 /** Every action the bar offers, so a test can see which one a key ran. */
@@ -20,7 +22,8 @@ const ACTIONS = [
   "moveFocus",
 ] as const;
 
-type Actions = SearchKeyActions & Record<(typeof ACTIONS)[number], ReturnType<typeof vi.fn>>;
+type Actions = SearchKeyActions &
+  Record<(typeof ACTIONS)[number], ReturnType<typeof vi.fn>>;
 
 function actions(overrides: Partial<SearchKeyActions> = {}): Actions {
   return {
@@ -40,7 +43,7 @@ function actions(overrides: Partial<SearchKeyActions> = {}): Actions {
 const ran = (fake: Actions): string[] =>
   ACTIONS.filter((name) => fake[name].mock.calls.length > 0);
 
-const signature = (binding: SearchKeyBinding): string =>
+const signature = (binding: SearchKeyName): string =>
   [...binding.modifiers, binding.key].join("+");
 
 /** The binding that answers these keys, run the way a scope would run it. */
@@ -111,14 +114,16 @@ describe("the keys the search bar answers", () => {
     expect(ran(fake)).toEqual(["replaceAll"]);
   });
 
-  it("moves forward on Tab and back on Shift-Tab", () => {
+  // There are two fields, so the other one is the answer either way, and the
+  // native bar's own goToNextInput reads no direction either.
+  it("moves to the other field on Tab and on Shift-Tab, asking for no direction", () => {
     const fake = actions();
     press(fake, "Tab");
-    expect(fake.moveFocus.mock.calls).toEqual([[false]]);
+    expect(fake.moveFocus.mock.calls).toEqual([[]]);
 
     const back = actions();
     press(back, "Shift+Tab");
-    expect(back.moveFocus.mock.calls).toEqual([[true]]);
+    expect(back.moveFocus.mock.calls).toEqual([[]]);
   });
 });
 
@@ -292,7 +297,7 @@ describe("the keys the buttons promise in their tooltips", () => {
     const signatures = searchBindings(actions()).map(signature);
 
     for (const caption of Object.values(SEARCH_KEY_CAPTIONS)) {
-      expect(signatures).toContain(caption);
+      expect(signatures).toContain(signature(caption));
     }
   });
 
@@ -301,8 +306,49 @@ describe("the keys the buttons promise in their tooltips", () => {
     (action, caption) => {
       const fake = actions({ focused: () => "replace" });
 
-      expect(press(fake, caption)).toBe(true);
+      expect(press(fake, signature(caption))).toBe(true);
       expect(ran(fake)).toEqual([action]);
     },
   );
+});
+
+describe("spelling a key the way Obsidian spells one", () => {
+  // Read out of obsidian-1.13.7: the symbols, the order and the separator are
+  // its own, and "Mod" — a token of the API — reaches no reader.
+  it("writes the glyph on the key on macOS, joined by a space", () => {
+    expect(spellKey(SEARCH_KEY_CAPTIONS.replaceAll, true)).toBe("⌘ ⌥ Enter");
+    expect(spellKey(SEARCH_KEY_CAPTIONS.findPrevious, true)).toBe("⇧ F3");
+    expect(spellKey(SEARCH_KEY_CAPTIONS.selectAll, true)).toBe("⌥ Enter");
+  });
+
+  it("writes the name of the key elsewhere, joined by a plus", () => {
+    expect(spellKey(SEARCH_KEY_CAPTIONS.replaceAll, false)).toBe(
+      "Ctrl + Alt + Enter",
+    );
+    expect(spellKey(SEARCH_KEY_CAPTIONS.findPrevious, false)).toBe(
+      "Shift + F3",
+    );
+    expect(spellKey(SEARCH_KEY_CAPTIONS.selectAll, false)).toBe("Alt + Enter");
+  });
+
+  it("spells a key with no modifier as itself", () => {
+    expect(spellKey(SEARCH_KEY_CAPTIONS.findNext, true)).toBe("F3");
+    expect(spellKey(SEARCH_KEY_CAPTIONS.replaceNext, false)).toBe("Enter");
+  });
+
+  it("spells the modifiers in Obsidian's order, not the order they were named", () => {
+    expect(
+      spellKey({ modifiers: ["Shift", "Mod", "Alt"], key: "K" }, false),
+    ).toBe("Ctrl + Alt + Shift + K");
+  });
+
+  it("names no key that the table does not carry", () => {
+    const signatures = searchBindings(actions()).map(signature);
+
+    for (const caption of Object.values(SEARCH_KEY_CAPTIONS)) {
+      expect(signatures, spellKey(caption, false)).toContain(
+        signature(caption),
+      );
+    }
+  });
 });

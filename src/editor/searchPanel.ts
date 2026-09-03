@@ -17,6 +17,7 @@ import { countMatches, describeMatches } from "./searchMatches";
 import {
   searchBindings,
   SEARCH_KEY_CAPTIONS,
+  spellKey,
   type ScopePusher,
   type SearchKeyActions,
 } from "./searchKeys";
@@ -27,18 +28,14 @@ export type IconSetter = (element: HTMLElement, icon: string) => void;
 export interface PanelHost {
   setIcon: IconSetter;
   pushScope: ScopePusher;
+  /** Which symbols a tooltip spells its key with; `Platform.isMacOS`. */
+  mac: boolean;
 }
 
 /** Obsidian's own delay before it acts on what is being typed into a search. */
 const SETTLE_MS = 150;
 
 const setReplaceMode = StateEffect.define<boolean>();
-
-/** Obsidian writes a tooltip as the label, then its key on a line of its own. */
-const tooltip = (
-  label: string,
-  action: keyof typeof SEARCH_KEY_CAPTIONS,
-): string => `${label}\n${SEARCH_KEY_CAPTIONS[action]}`;
 
 /** Replace has no control in the row, so the mode it opens in is state. */
 export const replaceMode: Extension = StateField.define<boolean>({
@@ -59,6 +56,12 @@ export function openSearch(view: EditorView, replace: boolean): void {
 }
 
 export function obsidianSearchPanel(host: PanelHost) {
+  /** Obsidian writes a tooltip as the label, then its key on a line below. */
+  const tooltip = (
+    label: string,
+    action: keyof typeof SEARCH_KEY_CAPTIONS,
+  ): string => `${label}\n${spellKey(SEARCH_KEY_CAPTIONS[action], host.mac)}`;
+
   return (view: EditorView): Panel => {
     // The view's own document and window, not this file's: a popout has both.
     const owner = view.dom.ownerDocument;

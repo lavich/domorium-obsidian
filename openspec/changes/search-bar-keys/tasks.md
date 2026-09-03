@@ -71,11 +71,10 @@
 ## 4. The tooltips
 
 - [x] 4.1 Give each button in `src/editor/searchPanel.ts` an `aria-label` of
-      `label\nkey` — "Next" with `F3`, "Previous" with `Shift+F3`, "Select all
-      matches" with `Alt+Enter`, "Replace" with `Enter`, "Replace all" with
-      `Mod+Alt+Enter` — and update the selectors that match on the old labels
-      in `tests/search.spec.ts`. Verify the chrome case in
-      `tests/search.spec.ts` passes with the new labels.
+      `label\nkey` — "Next", "Previous", "Select all matches", "Replace" and
+      "Replace all", each naming its binding — and update the selectors that
+      match on the old labels in `tests/search.spec.ts`. Verify the chrome case
+      in `tests/search.spec.ts` passes with the new labels.
 
 ## 5. The browser specs
 
@@ -131,3 +130,21 @@
       the job, rather than inline — `eslint-comments/no-restricted-disable`
       forbids inline disables of the plugin's rules. Verify `npm run lint`
       reports no new warning.
+- [x] 7.6 Spell a tooltip's key for the reader's platform rather than as the
+      API writes it (D10): hold each caption as a binding, add
+      `spellKey(name, mac)` with Obsidian's own symbols, order and separator,
+      and thread `mac` to the panel on `PanelHost` from `Platform.isMacOS` and
+      from `navigator.platform` in the harness. Verify in
+      `src/editor/searchKeys.test.ts` that both platforms spell every caption
+      the way the bundle does and that each still names a binding the table
+      carries, and in `tests/search.spec.ts` that no `aria-label` reads `Mod`.
+- [x] 7.7 Drop the direction from `SearchKeyActions.moveFocus`, which the panel
+      never read and the native `goToNextInput` does not take either, and
+      correct the case in `src/editor/searchKeys.test.ts` that asserted it.
+- [x] 7.8 Stop registering the `active-leaf-change` ref on the view as well as
+      dropping it in the disposer in `src/GedcomView.ts`: `registerEvent` left a
+      dead unload behind for every open of the bar. Verify `npm run check`.
+- [x] 7.9 Bring design.md D2 back in line with the shipped interface — `run`
+      takes a `SearchKeyEvent`, `SearchKeyActions` has `replacing()`, and
+      `moveFocus` takes no direction — reorder D8 and D9, and say in D5 what
+      the native bar actually does with a key it answers.

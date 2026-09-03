@@ -1,3 +1,5 @@
+import { platform } from "node:process";
+
 import { expect, test, type Page } from "@playwright/test";
 
 import { mount, SAMPLE, type MountOptions } from "./harness";
@@ -15,6 +17,19 @@ async function openSearch(
 
 const input = ".document-search-input input";
 const count = ".document-search-count";
+
+/*
+ * A tooltip spells its key for the reader's own platform, and the harness reads
+ * that platform off `navigator.platform`, which follows the host rather than
+ * the userAgent Playwright emulates — so the expected spelling follows the host
+ * too. The symbols and the separator are Obsidian's own, read out of its
+ * bundle: glyphs joined by a space on macOS, names joined by " + " elsewhere.
+ */
+const mac = platform === "darwin";
+const spell = (...parts: string[]): string => parts.join(mac ? " " : " + ");
+const MOD = mac ? "\u2318" : "Ctrl";
+const ALT = mac ? "\u2325" : "Alt";
+const SHIFT = mac ? "\u21e7" : "Shift";
 
 test.describe("the search bar", () => {
   test("wears Obsidian's own chrome rather than the library's", async ({
@@ -35,18 +50,32 @@ test.describe("the search bar", () => {
     expect(
       await page.evaluate(() =>
         [
-          ...document.querySelectorAll(".document-search-container [aria-label]"),
+          ...document.querySelectorAll(
+            ".document-search-container [aria-label]",
+          ),
         ].map((control) => control.getAttribute("aria-label")),
       ),
       "every control names its label, then its key, as Obsidian's own do",
     ).toEqual([
-      "Previous\nShift+F3",
+      `Previous\n${spell(SHIFT, "F3")}`,
       "Next\nF3",
-      "Select all matches\nAlt+Enter",
+      `Select all matches\n${spell(ALT, "Enter")}`,
       "Exit search",
       "Replace\nEnter",
-      "Replace all\nMod+Alt+Enter",
+      `Replace all\n${spell(MOD, ALT, "Enter")}`,
     ]);
+    expect(
+      await page.evaluate(() =>
+        [
+          ...document.querySelectorAll(
+            ".document-search-container [aria-label]",
+          ),
+        ].some((control) =>
+          control.getAttribute("aria-label")?.includes("Mod"),
+        ),
+      ),
+      "and none of them spells a modifier the way only the API does",
+    ).toBe(false);
     for (const label of ["Match case", "Whole word", "Regular expression"]) {
       await expect(
         page.locator(`[aria-label="${label}"]`),
@@ -184,7 +213,9 @@ test.describe("the search bar", () => {
     expect(
       await page.evaluate(() => {
         const main = window.gedcom.view?.state.selection.main;
-        return main ? window.gedcom.view?.state.sliceDoc(main.from, main.to) : "";
+        return main
+          ? window.gedcom.view?.state.sliceDoc(main.from, main.to)
+          : "";
       }),
       "select-all ran and the selection is on a match",
     ).toBe("@F1@");

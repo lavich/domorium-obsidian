@@ -169,13 +169,20 @@ the key is then not the bar's, as it is not in Obsidian's own bar.
 ### Requirement: Every button names its key
 
 Each of the bar's buttons SHALL carry its binding in its tooltip, on a second
-line below the label, the way Obsidian's own search bar spells one.
+line below the label, spelt for the reader's own platform the way Obsidian
+spells one: its own symbols, in its own order, joined by a space on macOS and
+by " + " elsewhere. `Mod` is a token of the API and SHALL reach no tooltip.
 
-#### Scenario: Reading a button's tooltip
-- **WHEN** the reader hovers a button of the bar
+#### Scenario: Reading a button's tooltip on macOS
+- **WHEN** the reader hovers a button of the bar on macOS
 - **THEN** the tooltip reads the label and then the key on a line of its own:
-  "Next" with `F3`, "Previous" with `Shift+F3`, "Select all matches" with
-  `Alt+Enter`, "Replace" with `Enter`, "Replace all" with `Mod+Alt+Enter`
+  "Next" with `F3`, "Previous" with `⇧ F3`, "Select all matches" with
+  `⌥ Enter`, "Replace" with `Enter`, "Replace all" with `⌘ ⌥ Enter`
+
+#### Scenario: Reading a button's tooltip off macOS
+- **WHEN** the reader hovers the same buttons on Windows or Linux
+- **THEN** the keys read `F3`, `Shift + F3`, `Alt + Enter`, `Enter` and
+  `Ctrl + Alt + Enter`, and no tooltip anywhere reads `Mod`
 
 #### Scenario: A tooltip promises only a key that works
 - **WHEN** a button's tooltip names a key

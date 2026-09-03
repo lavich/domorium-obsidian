@@ -213,7 +213,7 @@ function mount(options: HarnessOptions): void {
         delay: hoverDelay(record),
         mediaDelay: hoverDelay(media),
         modifierHeld: modifier,
-        panel: { setIcon: stubSetIcon, pushScope },
+        panel: { setIcon: stubSetIcon, pushScope, mac },
         actions: {
           applyWorkspaceEdit: () => true,
           openDocumentLink: (link) => {

@@ -59,11 +59,16 @@ document.
 ```ts
 export type KeyModifier = "Mod" | "Ctrl" | "Meta" | "Shift" | "Alt";
 
+/** The little of a keydown the table reads; the rest is the scope's business. */
+export interface SearchKeyEvent {
+  isComposing: boolean;
+}
+
 export interface SearchKeyBinding {
   modifiers: KeyModifier[];
   key: string;                    // from KeyboardEvent.key: "F3", "G", "Enter"…
   /** True when the key was the bar's; false leaves it to the editor. */
-  run(): boolean;
+  run(event: SearchKeyEvent): boolean;
 }
 
 export interface SearchKeyActions {
@@ -75,8 +80,10 @@ export interface SearchKeyActions {
   replaceAll(): void;
   /** Which field has the focus, if either. */
   focused(): "search" | "replace" | null;
+  /** Whether the replace row is open, which is what gates replace-all. */
+  replacing(): boolean;
   /** False while the replace row is collapsed, as the native bar's no-op. */
-  moveFocus(back: boolean): boolean;
+  moveFocus(): boolean;
 }
 
 export function searchBindings(actions: SearchKeyActions): SearchKeyBinding[];
@@ -86,9 +93,21 @@ export function matchesBinding(
   mac: boolean,
 ): boolean;
 
+/** A binding a tooltip names, and that binding spelt for a reader (D10). */
+export interface SearchKeyName {
+  modifiers: readonly KeyModifier[];
+  key: string;
+}
+export function spellKey(name: SearchKeyName, mac: boolean): string;
+
 /** What the panel needs of `app.keymap`; pushes bindings, returns the pop. */
 export type ScopePusher = (bindings: SearchKeyBinding[]) => () => void;
 ```
+
+`run` reads the event rather than nothing because one gate is the event's own:
+no binding answers mid-composition (D3). `moveFocus` reads no direction because
+there are two fields and the other one is the answer either way — Obsidian's
+own `goToNextInput` reads none either.
 
 Every action already exists as a CodeMirror command — `findNext`,
 `findPrevious`, `closeSearchPanel`, `selectMatches`, `replaceNext`,
@@ -97,8 +116,8 @@ plus the two focus questions only the panel can answer.
 
 `run()` returning a boolean rather than calling `preventDefault` keeps the table
 free of the event: the caller decides what claiming a key means. On the Obsidian
-side each binding is registered as `() => (binding.run() ? false : true)`,
-`false` being Obsidian's "claimed, preventDefault".
+side each binding is registered as `(event) => !binding.run(event)`, `false`
+being Obsidian's "claimed, preventDefault".
 
 ### D3. The focus gate lives in the table, not at the call site
 
@@ -158,10 +177,21 @@ the parent scope. A key the bar registers is a key the global hotkey manager
 will not see while the bar is open — which is the point for `F3`, and the reason
 the table registers nothing it does not mean to take.
 
-The one visible cost of winning the order: with the bar open, `Escape` no longer
-reaches CodeMirror's completion keymap, so it closes the bar rather than the
-autocomplete popup, and the second `Escape` dismisses the popup. Accepted — the
-alternative is letting the editor pre-empt the bar, which is worse.
+Claiming a key is a departure from the native bar, and worth naming as one.
+Obsidian's own handlers return `undefined`, never `false`: `findNext` and
+`hide` end on a statement rather than a `return`, so `onKeyEvent` never reaches
+its `preventDefault`. The native `Escape` therefore closes the bar *and* goes on
+to CodeMirror; only `goToNextInput` calls `preventDefault`, and it does so
+itself. We return `false` for every claimed key instead, because a key the bar
+has answered should not be answered twice — `F3` should not also reach the
+browser's find-again, and `Escape` should close the bar and stop.
+
+The one visible cost: with the bar open, `Escape` no longer reaches CodeMirror's
+completion keymap, so it closes the bar rather than the autocomplete popup, and
+the second `Escape` — with the bar gone and the scope popped — dismisses the
+popup. Accepted. The alternative is not letting the editor pre-empt the bar but
+letting both run, the way the native bar does, which trades one key answered
+twice for this one recoverable case.
 
 ### D6. `showSearch` for `Mod+F`; an own hotkey for replace
 
@@ -189,7 +219,8 @@ rejected in proposal.md — Non-goals.
 ### D7. One host object through the composition, not a second positional argument
 
 `obsidianSearchPanel(setIcon)` becomes `obsidianSearchPanel(host: PanelHost)`
-with `PanelHost = { setIcon: IconSetter; pushScope: ScopePusher }`, and
+with `PanelHost = { setIcon: IconSetter; pushScope: ScopePusher; mac: boolean }`
+(the `mac` is D10's), and
 `createHostEditorExtensions` and `createGedcomComposition` thread that one
 object. Threading a fourth positional argument through two layers instead would
 read worse at every call site and again at the next port.
@@ -199,6 +230,12 @@ read worse at every call site and again at the next port.
 The harness supplies a `window` `keydown` listener in the capture phase — the
 same position as `app.keymap`'s own, see D5 — that walks the bindings with
 `matchesBinding` and, on a claim, calls `preventDefault` and `stopPropagation`.
+
+### D8. The hand-wired input handlers go
+
+The two `keydown` listeners on the inputs are deleted rather than kept as a
+fallback: with them in place `Enter` would be handled twice, and a bug in either
+path would be invisible while the other worked.
 
 ### D9. The scope follows the active leaf, not the panel alone
 
@@ -221,11 +258,28 @@ would be swallowed rather than passed on. Pop on `blur` of the editor —
 `TextFileView` offers no such hook, and the focus legitimately sits in the
 panel's own input, which is outside `contentDOM`.
 
-### D8. The hand-wired input handlers go
+### D10. A tooltip spells its key for the reader, not for the API
 
-The two `keydown` listeners on the inputs are deleted rather than kept as a
-fallback: with them in place `Enter` would be handled twice, and a bug in either
-path would be invisible while the other worked.
+`SEARCH_KEY_CAPTIONS` holds each named key as a binding — `{ modifiers, key }` —
+rather than as a string, and `spellKey(name, mac)` renders it. Holding the
+binding is what lets a unit test find it in the table, so a tooltip still cannot
+promise a key that does nothing; rendering it is what keeps `Mod` out of the
+reader's way.
+
+The rendering is Obsidian's own, read out of the same bundle as the keys. It
+spells the modifiers in a fixed order — `Mod`, `Ctrl`, `Meta`, `Alt`, `Shift` —
+whatever order they were named in; on macOS as the glyphs on the keys
+(`⌘ ⌃ ⌘ ⌥ ⇧`) joined by a space, elsewhere as names (`Ctrl`, `Ctrl`, `Win`,
+`Alt`, `Shift`) joined by `" + "`. So "Replace all" reads `⌘ ⌥ Enter` on macOS
+and `Ctrl + Alt + Enter` off it. Obsidian also prettifies the key itself, but
+only for the arrows and the space bar, and the table names neither.
+
+`mac` reaches the panel on `PanelHost` (D7) from the same two sources as D4's:
+`Platform.isMacOS` in the plugin, `navigator.platform` in the harness.
+
+*Alternative:* keep the captions as `"Mod+Alt+Enter"` strings. That is the
+spelling of `Modifier` in `obsidian.d.ts` and appears nowhere a reader can see
+it — the tooltip would name a key in a notation the rest of Obsidian never uses.
 
 ## Risks / Trade-offs
 
@@ -242,14 +296,20 @@ path would be invisible while the other worked.
 - A scope handler that claims a key **does** stop CodeMirror from acting on it —
   asserted, and read out of the bundle: `app.keymap` listens on `window` in the
   capture phase, so it is reached first and `stopPropagation` keeps the editor
-  from ever seeing the key (D5). Cost: with the bar open, `Escape` no longer
-  reaches the completion keymap, so it closes the bar rather than the autocomplete
-  popup → accepted, the second `Escape` dismisses the popup.
+  from ever seeing the key (D5). The native bar claims none of them — its
+  handlers return `undefined` — so this is a deliberate departure, not parity.
+  Cost: with the bar open, `Escape` no longer reaches the completion keymap, so
+  it closes the bar rather than the autocomplete popup → accepted, the second
+  `Escape` dismisses the popup.
 - A pushed scope answers app-wide and outlives the tab being looked at → the
   scope follows the active leaf (D9), which is what keeps `Mod+Alt+Enter` from
   rewriting a background file. Not unit-testable — it is `app.workspace` — so a
   release checks it by hand: open the bar, switch tabs, press `Escape` and
-  `Mod+Alt+Enter`, and see neither reach the GEDCOM file.
+  `Mod+Alt+Enter`, and see neither reach the GEDCOM file. The
+  `active-leaf-change` ref is dropped by the same disposer that pops the scope
+  rather than by `registerEvent`: the panel's `destroy` always runs — closing
+  the view destroys the editor and with it the panel — and registering it on the
+  view as well would leave a dead unload behind for every open of the bar.
 - `app.keymap` does not filter IME composition, so moving the keys onto it would
   have broken committing a candidate with `Enter` in the find field → the table
   answers no key while `event.isComposing`, covered for every binding in

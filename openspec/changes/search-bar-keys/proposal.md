@@ -45,8 +45,10 @@ is Obsidian adaptation, so the work belongs in this repository, not upstream in
   gate needs a non-null `activeEditor` and has no second branch.
 - The three hand-wired `keydown` handlers on the inputs are removed. One keymap
   answers for the panel.
-- Each button's `aria-label` carries its binding as `label\nkey`, the way the
-  native bar spells a tooltip.
+- Each button's `aria-label` carries its binding as `label\nkey`, spelt the way
+  the native bar spells one and for the reader's own platform: "Replace all"
+  reads `⌘ ⌥ Enter` on macOS and `Ctrl + Alt + Enter` off it. `Mod` is a token
+  of the API and reaches no tooltip.
 
 ## Capabilities
 
@@ -62,7 +64,7 @@ is Obsidian adaptation, so the work belongs in this repository, not upstream in
 - `src/editor/searchKeys.ts` — new: the key table as data, the event matcher,
   and the port the panel pushes a scope through.
 - `src/editor/searchPanel.ts` — pushes and pops the scope; loses the input
-  `keydown` handlers; tooltips carry their keys.
+  `keydown` handlers; tooltips carry their keys, spelt for the platform.
 - `src/editor/hostExtensions.ts`, `src/editor/composition.ts` — thread a panel
   host (`setIcon` plus the scope port) instead of `setIcon` alone.
 - `src/GedcomView.ts` — `showSearch(replace?)`; builds the Obsidian `Scope`.

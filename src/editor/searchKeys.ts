@@ -39,25 +39,81 @@ export interface SearchKeyActions {
   focused(): "search" | "replace" | null;
   /** Whether the replace row is open, which is what gates replace-all. */
   replacing(): boolean;
-  /** False while the replace row is collapsed, as the native bar's own no-op. */
-  moveFocus(back: boolean): boolean;
+  /**
+   * Moves to the bar's other field, and answers false while the replace row is
+   * collapsed and there is no other field — the native bar's own no-op. There
+   * are two fields, so the direction is the other one either way, which is why
+   * this takes none: Obsidian's own goToNextInput takes none either.
+   */
+  moveFocus(): boolean;
 }
 
 /** What the panel needs of `app.keymap`: push these, and pop them on destroy. */
 export type ScopePusher = (bindings: SearchKeyBinding[]) => () => void;
 
+/** As much of a binding as names it: enough to spell, and enough to find. */
+export interface SearchKeyName {
+  modifiers: readonly KeyModifier[];
+  key: string;
+}
+
 /**
- * The key each button names on the second line of its tooltip, the way the
- * native bar spells one. Each is a binding of the table below, written as the
- * table writes it, so a tooltip cannot promise a key that does nothing.
+ * The key each button names on the second line of its tooltip. Each is a
+ * binding of the table below, held as the table holds it rather than as a
+ * string, so a tooltip cannot promise a key that does nothing — and so
+ * `spellKey` can spell it for the reader's own platform.
  */
 export const SEARCH_KEY_CAPTIONS = {
-  findNext: "F3",
-  findPrevious: "Shift+F3",
-  selectAll: "Alt+Enter",
-  replaceNext: "Enter",
-  replaceAll: "Mod+Alt+Enter",
-} as const;
+  findNext: { modifiers: [], key: "F3" },
+  findPrevious: { modifiers: ["Shift"], key: "F3" },
+  selectAll: { modifiers: ["Alt"], key: "Enter" },
+  replaceNext: { modifiers: [], key: "Enter" },
+  replaceAll: { modifiers: ["Mod", "Alt"], key: "Enter" },
+} as const satisfies Record<string, SearchKeyName>;
+
+/** The order Obsidian spells modifiers in, whatever order they were named. */
+const MODIFIER_ORDER: readonly KeyModifier[] = [
+  "Mod",
+  "Ctrl",
+  "Meta",
+  "Alt",
+  "Shift",
+];
+
+/** What Obsidian shows for each, which on macOS is the glyph on the key. */
+const MAC_MODIFIERS: Record<KeyModifier, string> = {
+  Mod: "⌘",
+  Ctrl: "⌃",
+  Meta: "⌘",
+  Alt: "⌥",
+  Shift: "⇧",
+};
+
+const OTHER_MODIFIERS: Record<KeyModifier, string> = {
+  Mod: "Ctrl",
+  Ctrl: "Ctrl",
+  Meta: "Win",
+  Alt: "Alt",
+  Shift: "Shift",
+};
+
+/**
+ * A binding spelt the way Obsidian spells one for a reader: its own symbols,
+ * in its own order, joined by a space on macOS and by " + " elsewhere. `Mod`
+ * is a token of the API and reaches no tooltip — a reader sees `⌘` or `Ctrl`.
+ *
+ * Obsidian also prettifies the key itself, but only for the arrows and the
+ * space bar; `F3` and `Enter` come through it unchanged, and the table names
+ * nothing else.
+ */
+export function spellKey(name: SearchKeyName, mac: boolean): string {
+  const symbols = mac ? MAC_MODIFIERS : OTHER_MODIFIERS;
+  const spelt = MODIFIER_ORDER.filter((modifier) =>
+    name.modifiers.includes(modifier),
+  ).map((modifier) => symbols[modifier]);
+  spelt.push(name.key);
+  return spelt.join(mac ? " " : " + ");
+}
 
 /** One entry of the table before the composition guard wraps it. */
 interface KeyEntry {
@@ -101,8 +157,8 @@ const inReplaceField =
   };
 
 /** moveFocus answers false with the replace row collapsed, and so do we. */
-const moveFocus = (actions: SearchKeyActions, back: boolean) => (): boolean =>
-  actions.focused() !== null && actions.moveFocus(back);
+const moveFocus = (actions: SearchKeyActions) => (): boolean =>
+  actions.focused() !== null && actions.moveFocus();
 
 /**
  * Whether a keydown is this binding's. Obsidian's own `Scope` answers this for
@@ -163,8 +219,8 @@ function entries(actions: SearchKeyActions): KeyEntry[] {
       act: inFields(actions, () => actions.findPrevious()),
     },
     { modifiers: [], key: "Escape", act: claim(() => actions.close()) },
-    { modifiers: [], key: "Tab", act: moveFocus(actions, false) },
-    { modifiers: ["Shift"], key: "Tab", act: moveFocus(actions, true) },
+    { modifiers: [], key: "Tab", act: moveFocus(actions) },
+    { modifiers: ["Shift"], key: "Tab", act: moveFocus(actions) },
     {
       modifiers: ["Alt"],
       key: "Enter",
