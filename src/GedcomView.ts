@@ -37,9 +37,9 @@ import {
 
 import { createGedcomComposition } from "./editor/composition";
 import { mediaPreviewContent, previewBounds } from "./editor/media";
-import { hoverDelay } from "./editor/mediaPreviewHover";
+import { clearMediaPreview } from "./editor/mediaPreviewHover";
 import { renderMediaPreview } from "./editor/mediaPreviewView";
-import { previewGesture } from "./editor/previewGesture";
+import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
 import type { GedcomSettings } from "./settingsData";
@@ -50,7 +50,7 @@ import {
 } from "./editor/ephemeralState";
 import { openSearch } from "./editor/searchPanel";
 import { routeDocumentLink } from "./editor/service";
-import { shownFilePath } from "./vault/openTabs";
+import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
 import type { GedcomStatus } from "./editor/status";
@@ -104,9 +104,10 @@ export class GedcomView extends TextFileView {
     this.applyingData = true;
     try {
       if (clear) {
+        this.hidePreviews();
         this.editor.setState(this.createState(data));
       } else if (data !== this.getViewData()) {
-        this.hidePreview();
+        this.hidePreviews();
         const before = this.editor.state.doc;
         const head = this.editor.state.selection.main.head;
         const scroll = this.editor.scrollDOM.scrollTop;
@@ -126,6 +127,7 @@ export class GedcomView extends TextFileView {
   }
 
   clear(): void {
+    this.hidePreviews();
     this.language.clear();
     this.editor.setState(this.createState(""));
     this.host.statusChanged(this);
@@ -180,7 +182,7 @@ export class GedcomView extends TextFileView {
 
   refresh(): void {
     // setState throws away the state whose update would have reported this.
-    this.hidePreview();
+    this.hidePreviews();
     const data = this.getViewData();
     const selection = this.editor.state.selection;
     this.editor.setState(this.createState(data, selection.main.head));
@@ -383,6 +385,18 @@ export class GedcomView extends TextFileView {
     }
   }
 
+  /**
+   * Both previews, wherever the state they were opened from is replaced rather
+   * than edited: a `setState` reports no update, so the extension that would
+   * have closed them never hears about it. The media one goes through its
+   * session, which is keyed by the line — closed any other way it would answer
+   * the next movement over that line with "keep" and show nothing at all.
+   */
+  private hidePreviews(): void {
+    this.hidePreview();
+    clearMediaPreview(this.editor);
+  }
+
   private hidePreview(): void {
     this.preview?.unload();
     this.preview = null;
@@ -419,14 +433,16 @@ export class GedcomView extends TextFileView {
     this.mediaPreview = null;
   }
 
+  /**
+   * `iterateRootLeaves`, not `iterateAllLeaves`: a sidebar leaf holding the
+   * same file would be found and then not shown, because `setActiveLeaf` will
+   * not uncollapse a sidebar, and the reader's click would come to nothing. The
+   * main area and the popouts are where a tab of its own would have gone.
+   */
   private leafShowing(path: string): WorkspaceLeaf | null {
-    let found: WorkspaceLeaf | null = null;
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      if (!found && shownFilePath(leaf.getViewState()) === path) {
-        found = leaf;
-      }
-    });
-    return found;
+    return leafShowingFile(path, (visit) =>
+      this.app.workspace.iterateRootLeaves(visit),
+    );
   }
 
   private openDocumentLink(link: DocumentLink): void {

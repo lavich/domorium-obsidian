@@ -60,14 +60,16 @@ export function renderMediaPreview(
   }
 }
 
+/** Appended to `parent`, or put in front of `before` where one is named. */
 function element(
   parent: HTMLElement,
   tag: "div" | "img" | "span",
   cls: string,
+  before?: ChildNode,
 ): HTMLElement {
   const node = parent.ownerDocument.createElement(tag);
   node.className = cls;
-  parent.append(node);
+  parent.insertBefore(node, before ?? null);
   return node;
 }
 
@@ -81,8 +83,9 @@ function drawRow(
   text: string,
   host: MediaPreviewHost,
   note?: string,
+  before?: ChildNode,
 ): HTMLElement {
-  const row = element(root, "div", "gedcom-media-row");
+  const row = element(root, "div", "gedcom-media-row", before);
   host.setIcon(element(row, "span", "gedcom-media-icon"), icon);
   const body = element(row, "div", "gedcom-media-body");
   if (note !== undefined) {
@@ -114,9 +117,17 @@ function drawImage(
     if (!host.isCurrent()) {
       return;
     }
-    frame.replaceWith(
-      drawRow(root, ICONS.missing, content.name, host, "Image could not be drawn"),
+    // In the frame's place, which is in front of the caption rather than after
+    // it, and not appended and then moved there.
+    drawRow(
+      root,
+      ICONS.missing,
+      content.name,
+      host,
+      "Image could not be drawn",
+      frame,
     );
+    frame.remove();
   });
 
   if (crop === undefined) {

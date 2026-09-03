@@ -99,7 +99,11 @@ export function drawnCrop(
   return { top, left, width, height };
 }
 
-/** Ceilings, so a wide pane does not mean a wide popover. Also read by styles.css. */
+/**
+ * Ceilings, so a wide pane does not mean a wide popover. They live here alone:
+ * what styles.css reads is the measured bound the view writes into
+ * `--gedcom-media-max-w` and `--gedcom-media-max-h`, these already inside it.
+ */
 export const MEDIA_PREVIEW_MAX_WIDTH = 560;
 export const MEDIA_PREVIEW_MAX_HEIGHT = 400;
 

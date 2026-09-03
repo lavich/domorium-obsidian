@@ -415,6 +415,39 @@ test.describe("a load that finishes after the gesture moved on", () => {
   });
 });
 
+test.describe("a document that moves under an open preview", () => {
+  test("closes it, and answers the line's new payload afterwards", async ({
+    page,
+  }) => {
+    await mount(page, { doc: MEDIA, media: VAULT, mediaPreview: "modifier" });
+    await modHover(page, FILE);
+    await expect(page.locator(POPOVER)).toBeVisible();
+
+    // The pointer has not moved; the line it opened for has. A popover left
+    // open would be saying what the document no longer says.
+    await page.evaluate((at) => {
+      window.gedcom.view?.dispatch({
+        changes: {
+          from: at,
+          to: at + "media/family.jpg".length,
+          insert: "media/gone.jpg",
+        },
+      });
+    }, FILE);
+
+    await expect(page.locator(POPOVER)).toHaveCount(0);
+
+    // And the session went with it: keyed by the line, it would otherwise
+    // answer the next movement over this same line by keeping what is gone.
+    await page.mouse.move(0, 0);
+    await modHover(page, FILE);
+
+    await expect(page.locator(POPOVER)).toContainText("File not found");
+    await expect(page.locator(POPOVER)).toContainText("media/gone.jpg");
+    expect(await page.locator(".gedcom-media-image").count()).toBe(0);
+  });
+});
+
 test.describe("where the gesture may be made", () => {
   test("answers on the tag as readily as on the payload", async ({ page }) => {
     await mount(page, { doc: MEDIA, media: VAULT });

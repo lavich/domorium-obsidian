@@ -1,11 +1,9 @@
-import type { Extension, Text } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import { EditorView, ViewPlugin } from "@codemirror/view";
-import { HOVER_TIME_MS, offsetToPosition } from "@domorium/codemirror";
 import type { EditorLanguageService } from "@domorium/codemirror";
 import type { MediaReference } from "@domorium/language-service";
 
 import { mediaLineAt } from "./mediaLine";
-import type { RecordPreviewTrigger } from "../settingsData";
 
 /** Shaped after upstream's `recordPreviewHover`, which has nothing for media. */
 export interface MediaPreviewHoverOptions {
@@ -16,15 +14,6 @@ export interface MediaPreviewHoverOptions {
   delay?: number;
   show(media: MediaReference, view: EditorView, event: MouseEvent): void;
   hide(view: EditorView): void;
-}
-
-/** The media one offset refers to, or nothing. */
-export function mediaAt(
-  language: EditorLanguageService,
-  doc: Text,
-  offset: number,
-): MediaReference | null {
-  return language.update(doc).getMediaAt(offsetToPosition(doc, offset));
 }
 
 export interface MediaTransition {
@@ -96,14 +85,6 @@ export function hoveredMedia(view: EditorView): boolean {
 }
 
 /**
- * A bare hover waits, as the tag tooltip does. A held modifier is already the
- * reader's intent and answers the first movement.
- */
-export function hoverDelay(trigger: RecordPreviewTrigger): number {
-  return trigger === "hover" ? HOVER_TIME_MS : 0;
-}
-
-/**
  * The rest a view is waiting out. Per view, one document being openable in two
  * panes, and the window is the view's own: a popout has its own.
  */
@@ -161,6 +142,19 @@ export function mediaPreviewHover(
 
   return [
     ViewPlugin.define((view) => ({ destroy: () => cancel(view) })),
+    // A document that has moved is no longer the one the popover was opened
+    // from, and the pointer need not move for that to happen. Closing it also
+    // clears the session, which is keyed by the line: left alone it would
+    // answer the next movement over that same line with "keep", and the reader
+    // would be left holding the picture the line named before the change. A
+    // `setState` reports no update at all, so the host closes the preview
+    // itself where it throws the state away.
+    EditorView.updateListener.of((update) => {
+      if (update.docChanged) {
+        cancel(update.view);
+        sessionFor(update.view).clear(update.view);
+      }
+    }),
     EditorView.domEventHandlers({
       mousemove: (event, view) => {
         cancel(view);

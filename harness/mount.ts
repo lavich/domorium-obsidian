@@ -9,10 +9,9 @@ import {
 
 import { createGedcomComposition } from "../src/editor/composition";
 import { mediaPreviewContent, previewBounds } from "../src/editor/media";
-import { hoverDelay } from "../src/editor/mediaPreviewHover";
 import { renderMediaPreview } from "../src/editor/mediaPreviewView";
 import { openSearch } from "../src/editor/searchPanel";
-import { previewGesture } from "../src/editor/previewGesture";
+import { hoverDelay, previewGesture } from "../src/editor/previewGesture";
 import {
   DEFAULT_SETTINGS,
   type RecordPreviewTrigger,

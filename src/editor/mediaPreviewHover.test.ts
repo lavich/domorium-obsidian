@@ -1,13 +1,8 @@
 import type { EditorView } from "@codemirror/view";
-import { HOVER_TIME_MS } from "@domorium/codemirror";
 import type { MediaReference } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
-import {
-  hoverDelay,
-  MediaHoverSession,
-  mediaTransition,
-} from "./mediaPreviewHover";
+import { MediaHoverSession, mediaTransition } from "./mediaPreviewHover";
 import { previewGesture } from "./previewGesture";
 
 const view = {} as EditorView;
@@ -135,16 +130,5 @@ describe("closing a media preview from outside the gesture", () => {
       hover.session.clear(view);
     }
     expect(hover.hides).toBe(0);
-  });
-});
-
-describe("how long the pointer must rest", () => {
-  it("answers the first move for a gesture the modifier already declared", () => {
-    expect(hoverDelay("modifier")).toBe(0);
-    expect(hoverDelay("off")).toBe(0);
-  });
-
-  it("waits for a bare hover, as a tag tooltip does", () => {
-    expect(hoverDelay("hover")).toBe(HOVER_TIME_MS);
   });
 });
