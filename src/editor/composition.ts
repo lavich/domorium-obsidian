@@ -21,7 +21,7 @@ import {
 } from "./mediaPreviewHover";
 import { modifierHeldClass, type ModifierHeld } from "./modifierHeld";
 import type { PreviewGesture } from "./previewGesture";
-import type { IconSetter } from "./searchPanel";
+import type { PanelHost } from "./searchPanel";
 
 export interface GedcomCompositionOptions {
   language: EditorLanguageService;
@@ -35,7 +35,7 @@ export interface GedcomCompositionOptions {
   /** How long a bare hover must rest before a preview opens; zero for a modifier. */
   delay: number;
   mediaDelay: number;
-  setIcon: IconSetter;
+  panel: PanelHost;
   showPreview: (
     preview: RecordPreview,
     view: EditorView,
@@ -107,11 +107,7 @@ export function createGedcomComposition(
     }),
     closePreviewOnRelease(options.gesture, options.mediaGesture),
     modifierHeldClass(options.modifierHeld),
-    ...createHostEditorExtensions(
-      options.settings,
-      options.dark,
-      options.setIcon,
-    ),
+    ...createHostEditorExtensions(options.settings, options.dark, options.panel),
     ...createGedcomExtensions({
       language: options.language,
       settings: options.settings,

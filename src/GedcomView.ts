@@ -29,6 +29,8 @@ import {
   type Menu,
   normalizePath,
   Notice,
+  Platform,
+  Scope,
   setIcon,
   TextFileView,
   TFile,
@@ -49,6 +51,7 @@ import {
   positionFromOffset,
 } from "./editor/ephemeralState";
 import { openSearch } from "./editor/searchPanel";
+import type { SearchKeyBinding } from "./editor/searchKeys";
 import { routeDocumentLink } from "./editor/service";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
@@ -295,7 +298,12 @@ export class GedcomView extends TextFileView {
     this.editor.focus();
   }
 
-  openSearch(replace = false): void {
+  /**
+   * The name Obsidian's own editor:open-search looks for: it dispatches by duck
+   * type on this method rather than on a class, which is how Mod+F reaches a
+   * GEDCOM view without a hotkey of ours claiming the key app-wide.
+   */
+  showSearch(replace = false): void {
     openSearch(this.editor, replace);
   }
 
@@ -315,6 +323,55 @@ export class GedcomView extends TextFileView {
   onClose(): Promise<void> {
     this.editor.destroy();
     return Promise.resolve();
+  }
+
+  /**
+   * The bar's keys answer wherever the focus sits, which is what a scope on
+   * app.keymap gives and a CodeMirror keymap cannot: the panel's own DOM is
+   * outside contentDOM. Parenting it on app.scope lets every key the bar does
+   * not register fall through untouched.
+   *
+   * A scope on app.keymap answers app-wide, though, and the panel outlives the
+   * leaf being looked at — so the scope follows the active leaf rather than the
+   * panel alone. Without it F3 would search, and Mod+Alt+Enter rewrite, a file
+   * in a background tab.
+   */
+  private pushScope(bindings: SearchKeyBinding[]): () => void {
+    const scope = new Scope(this.app.scope);
+    for (const binding of bindings) {
+      // Obsidian reads false as "the key was mine" and preventDefaults it.
+      scope.register(
+        binding.modifiers,
+        binding.key,
+        (event) => !binding.run(event),
+      );
+    }
+    let pushed = false;
+    const follow = (): void => {
+      const active =
+        this.app.workspace.getActiveViewOfType(GedcomView) === this;
+      if (active === pushed) {
+        return;
+      }
+      if (active) {
+        this.app.keymap.pushScope(scope);
+      } else {
+        this.app.keymap.popScope(scope);
+      }
+      pushed = active;
+    };
+    follow();
+    // Not registerEvent: closing the view destroys the editor and with it the
+    // panel, so the panel's own destroy always drops this — while a registered
+    // unload would pile up, one per open of the bar.
+    const ref = this.app.workspace.on("active-leaf-change", follow);
+    return () => {
+      this.app.workspace.offref(ref);
+      if (pushed) {
+        this.app.keymap.popScope(scope);
+        pushed = false;
+      }
+    };
   }
 
   private isDark(): boolean {
@@ -340,7 +397,11 @@ export class GedcomView extends TextFileView {
           modifierHeld: (event) => Keymap.isModifier(event, "Mod"),
           delay: hoverDelay(this.settings.recordPreview),
           mediaDelay: hoverDelay(this.settings.mediaPreview),
-          setIcon,
+          panel: {
+            setIcon,
+            pushScope: (bindings) => this.pushScope(bindings),
+            mac: Platform.isMacOS,
+          },
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
             openDocumentLink: (link) => this.openDocumentLink(link),

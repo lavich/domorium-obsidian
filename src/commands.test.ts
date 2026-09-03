@@ -25,7 +25,7 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     goToNextProblem: vi.fn(() => true),
     goToPreviousProblem: vi.fn(() => true),
     toggleProblemsPanel: vi.fn(),
-    openSearch: vi.fn<(replace: boolean) => void>(),
+    showSearch: vi.fn<(replace: boolean) => void>(),
     ...overrides,
   };
 }
@@ -210,5 +210,42 @@ describe("what a command does when it runs", () => {
     expect(some.notify).toHaveBeenCalledWith(
       "3 GEDCOM reference(s); moved to next",
     );
+  });
+});
+
+describe("what the search commands ask the view for", () => {
+  it("opens the bar with the replace row collapsed, and expanded", () => {
+    const showSearch = vi.fn<(replace: boolean) => void>();
+
+    command("search-in-gedcom-file").run(host().host, view({ showSearch }));
+    expect(showSearch.mock.calls).toEqual([[false]]);
+
+    command("replace-in-gedcom-file").run(host().host, view({ showSearch }));
+    expect(showSearch.mock.calls).toEqual([[false], [true]]);
+  });
+});
+
+describe("the keys a command carries by default", () => {
+  it("opens replace on Mod+Alt+F where Obsidian's own does, and Mod+H elsewhere", () => {
+    const replace = command("replace-in-gedcom-file");
+
+    expect(replace.hotkeys?.(true)).toEqual([
+      { modifiers: ["Mod", "Alt"], key: "F" },
+    ]);
+    expect(replace.hotkeys?.(false)).toEqual([
+      { modifiers: ["Mod"], key: "H" },
+    ]);
+  });
+
+  it("claims no key for find, which is Obsidian's own to give", () => {
+    expect(command("search-in-gedcom-file").hotkeys).toBeUndefined();
+  });
+
+  it("leaves every other command without a default", () => {
+    const claimed = COMMANDS.filter((entry) => entry.hotkeys).map(
+      (entry) => entry.id,
+    );
+
+    expect(claimed).toEqual(["replace-in-gedcom-file"]);
   });
 });
