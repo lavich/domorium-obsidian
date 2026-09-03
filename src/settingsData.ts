@@ -6,12 +6,16 @@ export interface GedcomSettings {
   diagnostics: boolean;
   indentationHints: boolean;
   recordPreview: RecordPreviewTrigger;
+  mediaPreview: RecordPreviewTrigger;
 }
 
 export const DEFAULT_SETTINGS: GedcomSettings = {
   diagnostics: true,
   indentationHints: true,
-  recordPreview: "modifier",
+  // A held modifier is a gesture a reader has to be told about. The rest the
+  // pointer must make is what the modifier was really protecting against.
+  recordPreview: "hover",
+  mediaPreview: "hover",
 };
 
 function isRecordPreviewTrigger(value: unknown): value is RecordPreviewTrigger {
@@ -48,5 +52,8 @@ export function parseSettings(data: unknown): GedcomSettings {
     recordPreview: isRecordPreviewTrigger(settings.recordPreview)
       ? settings.recordPreview
       : DEFAULT_SETTINGS.recordPreview,
+    mediaPreview: isRecordPreviewTrigger(settings.mediaPreview)
+      ? settings.mediaPreview
+      : DEFAULT_SETTINGS.mediaPreview,
   };
 }

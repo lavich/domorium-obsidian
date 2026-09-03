@@ -21,6 +21,10 @@ export default tseslint.config(
     files: ["tests/**/*.ts", "harness/**/*.ts"],
     rules: {
       "obsidianmd/no-nodejs-modules": "off",
+      // The harness mounts the editor without Obsidian, so the element and
+      // style helpers those rules ask for do not exist there.
+      "obsidianmd/prefer-create-el": "off",
+      "obsidianmd/no-static-styles-assignment": "off",
     },
   },
   {

@@ -11,7 +11,8 @@ describe("GEDCOM settings", () => {
     expect(DEFAULT_SETTINGS).toEqual({
       diagnostics: true,
       indentationHints: true,
-      recordPreview: "modifier",
+      recordPreview: "hover",
+      mediaPreview: "hover",
     });
   });
 
@@ -20,12 +21,15 @@ describe("GEDCOM settings", () => {
       parseSettings({
         diagnostics: false,
         indentationHints: false,
-        recordPreview: "hover",
+        recordPreview: "modifier",
+        mediaPreview: "off",
       }),
+      "a trigger the reader chose outlives a change of default",
     ).toEqual({
       diagnostics: false,
       indentationHints: false,
-      recordPreview: "hover",
+      recordPreview: "modifier",
+      mediaPreview: "off",
     });
   });
 
@@ -40,7 +44,8 @@ describe("GEDCOM settings", () => {
     ).toEqual({
       diagnostics: true,
       indentationHints: false,
-      recordPreview: "modifier",
+      recordPreview: "hover",
+      mediaPreview: "hover",
     });
   });
 
@@ -63,7 +68,17 @@ describe("GEDCOM settings", () => {
           type: "dropdown",
           key: "recordPreview",
           options: RECORD_PREVIEW_OPTIONS,
-          defaultValue: "modifier",
+          defaultValue: "hover",
+        },
+      },
+      {
+        name: "Media preview",
+        desc: "Show the photograph a FILE payload names when the pointer is over it. A remote file is never fetched.",
+        control: {
+          type: "dropdown",
+          key: "mediaPreview",
+          options: RECORD_PREVIEW_OPTIONS,
+          defaultValue: "hover",
         },
       },
     ]);
@@ -103,12 +118,16 @@ describe("one setting the user has changed", () => {
     expect(changedSetting("recordPreview", "off")).toEqual({
       recordPreview: "off",
     });
+    expect(changedSetting("mediaPreview", "hover")).toEqual({
+      mediaPreview: "hover",
+    });
   });
 
   it("declines a value of the wrong kind rather than resetting the setting", () => {
     expect(changedSetting("diagnostics", "no")).toBeNull();
     expect(changedSetting("recordPreview", "sometimes")).toBeNull();
     expect(changedSetting("recordPreview", true)).toBeNull();
+    expect(changedSetting("mediaPreview", "sometimes")).toBeNull();
   });
 
   it("declines a key that is not a setting", () => {

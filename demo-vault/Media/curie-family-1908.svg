@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" width="480" height="320" role="img" aria-label="The Curie family, about 1908">
+  <rect width="480" height="320" fill="#efece6"/>
+  <rect x="10" y="10" width="460" height="300" fill="none" stroke="#7a5c8f" stroke-width="2"/>
+
+  <!-- Marie, left: the rectangle 30,40 130x240 names this figure -->
+  <g>
+    <circle cx="95" cy="105" r="38" fill="#c8b6d6"/>
+    <path d="M45 280 q50-105 100 0z" fill="#7a5c8f"/>
+    <text x="95" y="300" font-family="Georgia, serif" font-size="14" fill="#4a3a55" text-anchor="middle">Marie</text>
+  </g>
+
+  <!-- Pierre, centre: 175,40 130x240 -->
+  <g>
+    <circle cx="240" cy="105" r="38" fill="#b6c8d6"/>
+    <path d="M190 280 q50-105 100 0z" fill="#3f5c7a"/>
+    <text x="240" y="300" font-family="Georgia, serif" font-size="14" fill="#2f4155" text-anchor="middle">Pierre</text>
+  </g>
+
+  <!-- Irène, right: 320,40 130x240 -->
+  <g>
+    <circle cx="385" cy="105" r="38" fill="#d6c8b6"/>
+    <path d="M335 280 q50-105 100 0z" fill="#7a5f3f"/>
+    <text x="385" y="300" font-family="Georgia, serif" font-size="14" fill="#55452f" text-anchor="middle">Irène</text>
+  </g>
+</svg>

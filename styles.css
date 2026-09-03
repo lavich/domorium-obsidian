@@ -158,3 +158,67 @@
 .gedcom-suggestion-detail {
   color: var(--text-muted);
 }
+
+/* The bound is the pane, not the window: with both sidebars open the window is
+   wider than the editor, and vw alone overflows the pane the popover hangs in.
+   The view measures its own contentEl into the two properties; the vw/vh here
+   is the fallback for anything that mounts this without measuring. */
+.gedcom-media-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
+  padding: var(--size-4-2) var(--size-4-3);
+  max-width: min(var(--gedcom-media-max-w, 60vw), 560px);
+}
+
+.gedcom-media-frame {
+  display: flex;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.gedcom-media-image {
+  max-width: min(var(--gedcom-media-max-w, 60vw), 560px);
+  max-height: min(var(--gedcom-media-max-h, 40vh), 400px);
+  object-fit: contain;
+}
+
+/* A rectangle is a window onto the image, so the image keeps its own size and
+   the frame is what the bound applies to. */
+.gedcom-media-cropped {
+  max-width: min(var(--gedcom-media-max-w, 60vw), 560px);
+  max-height: min(var(--gedcom-media-max-h, 40vh), 400px);
+}
+
+.gedcom-media-cropped .gedcom-media-image {
+  max-width: none;
+  max-height: none;
+  flex: none;
+}
+
+.gedcom-media-row {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+}
+
+.gedcom-media-icon {
+  display: flex;
+  color: var(--text-muted);
+}
+
+.gedcom-media-note {
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}
+
+.gedcom-media-name {
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-media-caption {
+  color: var(--text-muted);
+  font-size: var(--font-smaller);
+}

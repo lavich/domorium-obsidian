@@ -148,11 +148,27 @@ test.describe("the gesture the user has chosen", () => {
   }) => {
     await mount(page, { recordPreview: "hover" });
     await hover(page, POINTER + 2);
+    // A hover without a modifier waits for the pointer to rest, the way the tag
+    // tooltip does; travelling across a pointer is not asking for its record.
+    await expect
+      .poll(async () => (await calls(page)).previews.length)
+      .toBeGreaterThan(0);
 
     expect(await hovered(page)).not.toBeNull();
     expect((await calls(page)).previews).toEqual([
       { from: POINTER, to: POINTER + 4 },
     ]);
+  });
+
+  test("ignores a pointer that only passes across a reference", async ({
+    page,
+  }) => {
+    await mount(page, { recordPreview: "hover" });
+    await hover(page, POINTER + 2);
+    await hover(page, TAG);
+    await page.waitForTimeout(400);
+
+    expect((await calls(page)).previews).toEqual([]);
   });
 
   test("answers nothing at all once previews are off", async ({ page }) => {

@@ -29,6 +29,13 @@
 1 FAMC @F1@
 1 FAMS @F3@
 1 OBJE @O1@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 30
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Marie, on the left
 1 SNOTE @N1@
 1 SOUR @S1@
 2 PAGE Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel
@@ -49,6 +56,13 @@
 1 FAMC @F2@
 1 FAMS @F3@
 1 OBJE @O2@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 175
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Pierre, in the middle
 1 SOUR @S1@
 2 PAGE Nobel Prize in Physics 1903
 0 @I3@ INDI
@@ -293,6 +307,18 @@
 1 FILE Media/irene-joliot-curie.svg
 2 FORM image/svg+xml
 2 TITL Irène Joliot-Curie
+0 @O5@ OBJE
+1 FILE Media/curie-family-1908.svg
+2 FORM image/svg+xml
+2 TITL The Curie family, about 1908
+0 @O6@ OBJE
+1 FILE https://upload.wikimedia.org/marie-curie.jpg
+2 FORM image/jpeg
+2 TITL A portrait the plugin will not fetch
+0 @O7@ OBJE
+1 FILE Media/lost-daguerreotype.jpg
+2 FORM image/jpeg
+2 TITL A plate nobody can find
 0 @S1@ SOUR
 1 TITL The Nobel Prize in Physics 1903
 1 AUTH Nobel Prize Outreach

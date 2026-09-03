@@ -1,4 +1,6 @@
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+
+import { MODIFIER_HELD_CLASS } from "./modifierHeld";
 import type { Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
@@ -59,26 +61,52 @@ export function obsidianEditorTheme(dark: boolean): Extension {
       },
 
       // What Obsidian writes for a link in a note's source: a colour and a
-      // weight, the underline only under the pointer. The names are minted by
-      // the highlight style below.
+      // weight. The names are minted by the highlight style below.
+      //
+      // The cursor and the underline wait for the modifier, because the click
+      // does: a plain click in an editor has to place the caret. Obsidian's own
+      // source editor gates them the same way, on a class it sets while the
+      // modifier is down.
       ".gedcom-internal-link": {
         color: link,
         fontWeight: linkWeight,
-        cursor: "var(--cursor-link)",
       },
-      ".gedcom-internal-link:hover": {
-        color: linkHover,
-        textDecorationLine: linkDecorationHover,
+
+      // A reference to a record is a link: it goes somewhere on a click, and
+      // shows what is there on a hover. The weight is left alone, which is what
+      // keeps a declaration apart from a reference to it. A declaration is
+      // where a reference goes rather than a way of going anywhere, and carries
+      // both classes — `definition` is a modifier over `variableName` — so it
+      // is excluded by name instead of by a fight over specificity.
+      ".gedcom-reference-link:not(.gedcom-reference-declaration)": {
+        color: link,
       },
+      ".gedcom-reference-declaration": {
+        color: "var(--code-function)",
+        fontWeight: "var(--font-semibold)",
+      },
+
+      [`&.${MODIFIER_HELD_CLASS} .gedcom-internal-link,
+        &.${MODIFIER_HELD_CLASS} .gedcom-external-link,
+        &.${MODIFIER_HELD_CLASS} .gedcom-reference-link:not(.gedcom-reference-declaration)`]:
+        {
+          cursor: "var(--cursor-link)",
+        },
+      [`&.${MODIFIER_HELD_CLASS} .gedcom-internal-link:hover,
+        &.${MODIFIER_HELD_CLASS} .gedcom-reference-link:not(.gedcom-reference-declaration):hover`]:
+        {
+          color: linkHover,
+          textDecorationLine: linkDecorationHover,
+        },
+      [`&.${MODIFIER_HELD_CLASS} .gedcom-external-link:hover`]: {
+        color: linkExternalHover,
+        textDecorationLine: linkExternalDecorationHover,
+      },
+
       ".gedcom-external-link": {
         color: linkExternal,
         fontWeight: linkWeight,
         wordBreak: "break-word",
-        cursor: "var(--cursor-link)",
-      },
-      ".gedcom-external-link:hover": {
-        color: linkExternalHover,
-        textDecorationLine: linkExternalDecorationHover,
       },
 
       ".gedcom-indent-hint": {
@@ -207,14 +235,13 @@ export const obsidianHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "var(--code-comment)" },
   { tag: tags.keyword, color: "var(--code-keyword)" },
   { tag: tags.string, color: "var(--code-string)" },
-  // A declaring pointer is `definition` over the tag its type maps to. The
-  // colours are the ones a GEDCOM block in a note is given: the same document,
-  // read in another place.
-  { tag: tags.variableName, color: "var(--code-property)" },
+  // A referring pointer is dressed as what it is — a link to the record it
+  // names — while a declaring pointer is `definition` over the tag its type
+  // maps to, and keeps the colour a GEDCOM block in a note gives it.
+  { tag: tags.variableName, class: "gedcom-reference-link" },
   {
     tag: tags.definition(tags.variableName),
-    color: "var(--code-function)",
-    fontWeight: "var(--font-semibold)",
+    class: "gedcom-reference-declaration",
   },
   { tag: tags.link, class: "gedcom-internal-link" },
   { tag: tags.url, class: "gedcom-external-link" },

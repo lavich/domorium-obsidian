@@ -22,6 +22,7 @@ import {
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
+import type { MediaReference } from "@domorium/language-service";
 import {
   HoverPopover,
   Keymap,
@@ -35,6 +36,9 @@ import {
 } from "obsidian";
 
 import { createGedcomComposition } from "./editor/composition";
+import { mediaPreviewContent, previewBounds } from "./editor/media";
+import { hoverDelay } from "./editor/mediaPreviewHover";
+import { renderMediaPreview } from "./editor/mediaPreviewView";
 import { previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
@@ -46,6 +50,7 @@ import {
 } from "./editor/ephemeralState";
 import { openSearch } from "./editor/searchPanel";
 import { routeDocumentLink } from "./editor/service";
+import { shownFilePath } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
 import type { GedcomStatus } from "./editor/status";
@@ -63,6 +68,7 @@ export class GedcomView extends TextFileView {
   private readonly language = new EditorLanguageService();
   private applyingData = false;
   private preview: HoverPopover | null = null;
+  private mediaPreview: HoverPopover | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -326,6 +332,12 @@ export class GedcomView extends TextFileView {
           gesture: previewGesture(this.settings.recordPreview, (event) =>
             Keymap.isModifier(event, "Mod"),
           ),
+          mediaGesture: previewGesture(this.settings.mediaPreview, (event) =>
+            Keymap.isModifier(event, "Mod"),
+          ),
+          modifierHeld: (event) => Keymap.isModifier(event, "Mod"),
+          delay: hoverDelay(this.settings.recordPreview),
+          mediaDelay: hoverDelay(this.settings.mediaPreview),
           setIcon,
           actions: {
             applyWorkspaceEdit: (edit) => this.applyWorkspaceEdit(edit),
@@ -334,6 +346,9 @@ export class GedcomView extends TextFileView {
           showPreview: (preview, _view, event) =>
             this.showPreview(preview, event.target as HTMLElement),
           hidePreview: () => this.hidePreview(),
+          showMedia: (media, _view, event) =>
+            this.showMediaPreview(media, event.target as HTMLElement),
+          hideMedia: () => this.hideMediaPreview(),
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
@@ -371,6 +386,42 @@ export class GedcomView extends TextFileView {
     this.preview = null;
   }
 
+  private showMediaPreview(media: MediaReference, target: HTMLElement): void {
+    const popover = new HoverPopover(this.leaf, target);
+    this.mediaPreview = popover;
+    const content = mediaPreviewContent(media, {
+      documentPath: this.file?.path ?? "",
+      resolve: (path) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
+      },
+    });
+    renderMediaPreview(content, {
+      container: popover.hoverEl,
+      bounds: previewBounds(
+        this.contentEl.clientWidth,
+        this.contentEl.clientHeight,
+      ),
+      setIcon,
+      isCurrent: () => this.mediaPreview === popover,
+    });
+  }
+
+  private hideMediaPreview(): void {
+    this.mediaPreview?.unload();
+    this.mediaPreview = null;
+  }
+
+  private leafShowing(path: string): WorkspaceLeaf | null {
+    let found: WorkspaceLeaf | null = null;
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (!found && shownFilePath(leaf.getViewState()) === path) {
+        found = leaf;
+      }
+    });
+    return found;
+  }
+
   private openDocumentLink(link: DocumentLink): void {
     const routed = routeDocumentLink(link, this.file?.path ?? "", {
       openExternal: (url) => {
@@ -387,7 +438,21 @@ export class GedcomView extends TextFileView {
           new Notice(`Vault file not found: ${path}`);
           return;
         }
-        void this.app.workspace.getLeaf(false).openFile(file);
+        // Where it already is, if it is anywhere. Otherwise a tab of its own,
+        // not this one: the file being read is the reason the link was
+        // followed, and replacing it loses the reader's place. This is what
+        // Mod-click means everywhere else in Obsidian. Not `'window'`, which
+        // the mobile app has no popout for.
+        const open = this.leafShowing(path);
+        if (open) {
+          // Not `revealLeaf`, which would also uncollapse a sidebar but wants
+          // Obsidian 1.7.2, above this plugin's floor. See "The minimum app
+          // version, and what it costs" in CLAUDE.md: the floor moves once,
+          // taking every such workaround with it.
+          this.app.workspace.setActiveLeaf(open, { focus: true });
+          return;
+        }
+        void this.app.workspace.getLeaf("tab").openFile(file);
       },
     });
     if (!routed) {
