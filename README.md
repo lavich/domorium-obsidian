@@ -103,10 +103,17 @@ which API you are holding.
 
 ## Privacy
 
-GEDCOM by Domorium works locally inside the vault. It does not require an account, make
-network requests, access files outside the vault, show advertisements, or
-collect analytics or telemetry. A `FILE` payload naming a web address is no
-exception: the preview reports it as remote rather than loading it.
+GEDCOM by Domorium works locally inside the vault. It does not require an account, access
+files outside the vault, show advertisements, or collect analytics or
+telemetry.
+
+It makes no network request until you ask it to. There is one thing you can
+ask for: **Load images from the web**, off until you turn it on, which lets the
+media preview draw a `FILE` payload naming an `https` address. Until then the
+preview says the file is remote and fetches nothing, and offers to draw it —
+this one, or every one from now on. Nothing else reaches the network, an
+unencrypted `http` address is refused whatever the setting says, and no
+photograph is copied into the vault.
 
 ## Installation
 

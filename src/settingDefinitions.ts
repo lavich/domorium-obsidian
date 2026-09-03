@@ -47,12 +47,21 @@ export const SETTING_DEFINITIONS: GedcomSettingDefinition[] = [
   },
   {
     name: "Media preview",
-    desc: "Show the photograph a FILE payload names when the pointer is over it. A remote file is never fetched.",
+    desc: "Show the photograph a FILE payload names when the pointer is over it.",
     control: {
       type: "dropdown",
       key: "mediaPreview",
       options: RECORD_PREVIEW_OPTIONS,
       defaultValue: DEFAULT_SETTINGS.mediaPreview,
+    },
+  },
+  {
+    name: "Load images from the web",
+    desc: "Draw a FILE payload naming an https address. Off, the preview says the file is remote and fetches nothing.",
+    control: {
+      type: "toggle",
+      key: "remoteImages",
+      defaultValue: DEFAULT_SETTINGS.remoteImages,
     },
   },
 ];

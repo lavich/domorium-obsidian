@@ -2,7 +2,11 @@ import type { EditorView } from "@codemirror/view";
 import type { MediaReference } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
-import { MediaHoverSession, mediaTransition } from "./mediaPreviewHover";
+import {
+  keptByPreview,
+  MediaHoverSession,
+  mediaTransition,
+} from "./mediaPreviewHover";
 import { previewGesture } from "./previewGesture";
 
 const view = {} as EditorView;
@@ -102,6 +106,28 @@ describe("a media preview over the life of one gesture", () => {
     hover.session.moveTo(null, 5, view, mouse);
     expect(hover.shows).toHaveLength(0);
     expect(hover.hides).toBe(0);
+  });
+});
+
+describe("where the pointer went when it left the editor", () => {
+  const popover = {} as EventTarget;
+  const elsewhere = {} as EventTarget;
+  const holds = (node: EventTarget): boolean => node === popover;
+
+  it("keeps the preview for the popover the preview opened", () => {
+    expect(keptByPreview(popover, holds)).toBe(true);
+  });
+
+  it("lets it close for anything else on the page", () => {
+    expect(keptByPreview(elsewhere, holds)).toBe(false);
+  });
+
+  it("lets it close for the window's own chrome, which names no node", () => {
+    expect(keptByPreview(null, holds)).toBe(false);
+  });
+
+  it("lets it close where nothing holds the preview at all", () => {
+    expect(keptByPreview(popover, undefined)).toBe(false);
   });
 });
 

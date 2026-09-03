@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+
 import { expect, test, type Page } from "@playwright/test";
 
 import { MEDIA, mount, offsetOf } from "./harness";
@@ -13,6 +15,9 @@ const POPOVER = ".gedcom-media-preview";
 const FILE = offsetOf(MEDIA, "media/family.jpg");
 const AUDIO = offsetOf(MEDIA, "media/interview.mp3");
 const REMOTE = offsetOf(MEDIA, "https://example.org/marie.jpg");
+/** A second remote photograph, and one at an address that is not encrypted. */
+const REMOTE_AGAIN = offsetOf(MEDIA, "https://example.org/pierre.jpg");
+const INSECURE = offsetOf(MEDIA, "http://example.org/irene.jpg");
 const MISSING = offsetOf(MEDIA, "media/gone.jpg");
 /** Inside the image, overhanging its edge, and nowhere near it. */
 const MARIE_LINK = offsetOf(MEDIA, "@O1@\n2 CROP\n3 TOP 10") + 1;
@@ -151,12 +156,16 @@ test.describe("what a media position shows", () => {
     );
     expect(
       requests.filter((url) => url.startsWith("https://example.org")),
-      "the plugin promises in writing that it makes no network requests",
+      "the plugin asks before it makes a network request",
     ).toEqual([]);
     expect(
       await page.evaluate(() => window.gedcom.calls.requested),
       "nothing was even pointed at the url",
     ).toEqual([]);
+    expect(
+      await page.locator(`${POPOVER} .gedcom-media-allow`).allTextContents(),
+      "and the way out is beside the refusal, not in the settings tab",
+    ).toEqual(["Show this image", "Always show images from the web"]);
   });
 
   test("says a file the vault does not hold was not found", async ({
@@ -172,6 +181,195 @@ test.describe("what a media position shows", () => {
     expect(await textOf(page, `${POPOVER} .gedcom-media-name`)).toBe(
       "media/gone.jpg",
     );
+  });
+});
+
+/** One pixel of PNG, served as the host would serve a photograph. */
+const PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+/** Answers example.org from the spec, and counts what was asked of it. */
+async function serveRemote(
+  page: Page,
+  body: Buffer | string = PNG,
+): Promise<string[]> {
+  const asked: string[] = [];
+  await page.route("https://example.org/**", async (route, request) => {
+    asked.push(request.url());
+    await route.fulfill({
+      status: 200,
+      contentType: typeof body === "string" ? "text/html" : "image/png",
+      body,
+    });
+  });
+  return asked;
+}
+
+const take = (page: Page, label: string): Promise<void> =>
+  page.locator(`${POPOVER} .gedcom-media-allow`, { hasText: label }).click();
+
+test.describe("an image the reader asks for", () => {
+  test("draws it, and asks the host only then", async ({ page }) => {
+    const asked = await serveRemote(page);
+    await mount(page, { doc: MEDIA, media: VAULT });
+    await modHover(page, REMOTE);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-allow`);
+
+    expect(asked, "nothing before the reader answered").toEqual([]);
+
+    await take(page, "Show this image");
+    await page.waitForSelector(`${POPOVER} img`);
+
+    expect(
+      await page.locator(`${POPOVER} img`).getAttribute("src"),
+      "the url the document wrote, not a copy of it",
+    ).toBe("https://example.org/marie.jpg");
+    expect(asked).toEqual(["https://example.org/marie.jpg"]);
+    expect(
+      await page.locator(`${POPOVER} .gedcom-media-allow`).count(),
+      "the question is answered, so it is not asked again in the same popover",
+    ).toBe(0);
+  });
+
+  test("does not ask again for the next remote file in the session", async ({
+    page,
+  }) => {
+    await serveRemote(page);
+    await mount(page, { doc: MEDIA, media: VAULT });
+    await modHover(page, REMOTE);
+    await take(page, "Show this image");
+    await page.waitForSelector(`${POPOVER} img`);
+
+    await modHover(page, REMOTE_AGAIN);
+    await page.waitForSelector(`${POPOVER} img`);
+
+    expect(await page.locator(`${POPOVER} img`).getAttribute("src")).toBe(
+      "https://example.org/pierre.jpg",
+    );
+    expect(await page.locator(`${POPOVER} .gedcom-media-allow`).count()).toBe(0);
+  });
+
+  test("shows the row again once the setting goes off", async ({ page }) => {
+    await serveRemote(page);
+    await mount(page, { doc: MEDIA, media: VAULT, remoteImages: true });
+    await modHover(page, REMOTE);
+    await page.waitForSelector(`${POPOVER} img`);
+
+    await page.evaluate(() => {
+      window.gedcom.setRemoteImages(false);
+    });
+    await modHover(page, REMOTE_AGAIN);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-note`);
+
+    expect(await textOf(page, `${POPOVER} .gedcom-media-note`)).toBe(
+      "Remote file, not loaded",
+    );
+  });
+
+  test("refuses an address that is not encrypted, and says which", async ({
+    page,
+  }) => {
+    const requests: string[] = [];
+    page.on("request", (request) => requests.push(request.url()));
+
+    await mount(page, { doc: MEDIA, media: VAULT, remoteImages: true });
+    await modHover(page, INSECURE);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-note`);
+
+    expect(await textOf(page, `${POPOVER} .gedcom-media-note`)).toBe(
+      "Unencrypted address, not loaded",
+    );
+    expect(
+      await page.locator(`${POPOVER} .gedcom-media-allow`).count(),
+      "there is no answer that would draw it",
+    ).toBe(0);
+    expect(
+      requests.filter((url) => url.startsWith("http://example.org")),
+    ).toEqual([]);
+  });
+
+  test("says an image that did not arrive could not be loaded", async ({
+    page,
+  }) => {
+    await serveRemote(page, "<html>not a photograph</html>");
+    await mount(page, { doc: MEDIA, media: VAULT, remoteImages: true });
+    await modHover(page, REMOTE);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-note`);
+
+    expect(await textOf(page, `${POPOVER} .gedcom-media-note`)).toBe(
+      "Image could not be loaded",
+    );
+    expect(await textOf(page, `${POPOVER} .gedcom-media-name`)).toBe(
+      "https://example.org/marie.jpg",
+    );
+  });
+
+  for (const dark of [false, true]) {
+    test(`wears Obsidian's button colours in ${dark ? "dark" : "light"}`, async ({
+      page,
+    }) => {
+      await mount(page, { doc: MEDIA, media: VAULT, dark });
+      await modHover(page, REMOTE);
+      await page.waitForSelector(`${POPOVER} .gedcom-media-allow`);
+
+      const painted = await page.evaluate(() => {
+        const button = document.querySelector(".gedcom-media-allow");
+        if (!button) {
+          throw new Error("no offer");
+        }
+        const styles = getComputedStyle(button);
+        const root = getComputedStyle(document.body);
+        return {
+          background: styles.backgroundColor,
+          normal: root.getPropertyValue("--interactive-normal").trim(),
+        };
+      });
+
+      expect(painted.background).toBe(painted.normal);
+    });
+  }
+});
+
+test.describe("a popover the pointer can reach", () => {
+  test("stays open when the pointer moves into it", async ({ page }) => {
+    await mount(page, { doc: MEDIA, media: VAULT });
+    await modHover(page, FILE);
+    await page.waitForSelector(`${POPOVER} img`);
+
+    const box = await page.evaluate(
+      (target) => window.gedcom.rectOf(target),
+      POPOVER,
+    );
+    if (!box) {
+      throw new Error("no popover");
+    }
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+
+    await expect(page.locator(POPOVER)).toHaveCount(1);
+    expect(
+      await page.evaluate(() => window.gedcom.calls.mediaHides),
+      "the pointer went to the popover, which is not away from it",
+    ).toBe(0);
+  });
+
+  test("closes when the pointer leaves it for elsewhere", async ({ page }) => {
+    await mount(page, { doc: MEDIA, media: VAULT });
+    await modHover(page, FILE);
+    await page.waitForSelector(`${POPOVER} img`);
+
+    const box = await page.evaluate(
+      (target) => window.gedcom.rectOf(target),
+      POPOVER,
+    );
+    if (!box) {
+      throw new Error("no popover");
+    }
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(box.x + box.width + 40, box.y - 60);
+
+    await expect(page.locator(POPOVER)).toHaveCount(0);
   });
 });
 

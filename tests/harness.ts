@@ -79,6 +79,12 @@ export const MEDIA = [
   "0 @O4@ OBJE",
   "1 FILE media/gone.jpg",
   "2 FORM image/jpeg",
+  "0 @O5@ OBJE",
+  "1 FILE https://example.org/pierre.jpg",
+  "2 FORM image/jpeg",
+  "0 @O6@ OBJE",
+  "1 FILE http://example.org/irene.jpg",
+  "2 FORM image/jpeg",
   "0 @I1@ INDI",
   "1 NAME Marie /Curie/",
   "1 OBJE @O1@",
@@ -121,6 +127,7 @@ export interface MountOptions {
   /** Vault path to a name in the harness's own images, or bytes of its own. */
   media?: Record<string, string>;
   pane?: number;
+  remoteImages?: boolean;
   holdImages?: boolean;
   mobile?: boolean;
   keyboard?: number;

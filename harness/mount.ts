@@ -9,6 +9,7 @@ import {
 
 import { createGedcomComposition } from "../src/editor/composition";
 import { mediaPreviewContent, previewBounds } from "../src/editor/media";
+import { clearMediaPreview } from "../src/editor/mediaPreviewHover";
 import { renderMediaPreview } from "../src/editor/mediaPreviewView";
 import {
   matchesBinding,
@@ -33,6 +34,7 @@ export interface HarnessOptions {
   media?: Record<string, string>;
   /** Narrow the pane, so a spec can tell the pane from the window. */
   pane?: number;
+  remoteImages?: boolean;
   /** Hold every image load until the spec releases it. */
   holdImages?: boolean;
   mobile?: boolean;
@@ -62,6 +64,7 @@ declare global {
       nextProblem(): void;
       hoveredSpan(): { from: number; to: number } | null;
       releaseImages(): void;
+      setRemoteImages(value: boolean): void;
       openSearch(replace?: boolean): void;
       classOf(selector: string): string | null;
       rectOf(selector: string): DOMRect | null;
@@ -80,6 +83,9 @@ const calls: HarnessCalls = {
 };
 let view: EditorView | undefined;
 let popover: HTMLElement | null = null;
+/** The setting, and the answer that lasts only as long as the session. */
+let remoteImages = false;
+let allowedOnce = false;
 let held: (() => void)[] = [];
 
 /** Images a spec names instead of carrying bytes of its own. */
@@ -176,6 +182,8 @@ function mount(options: HarnessOptions): void {
   calls.requested = [];
   closeMedia();
   held = [];
+  remoteImages = options.remoteImages ?? false;
+  allowedOnce = false;
 
   // The shipped defaults, so a spec that names no trigger gets what a reader does.
   const record = options.recordPreview ?? DEFAULT_SETTINGS.recordPreview;
@@ -246,30 +254,56 @@ function mount(options: HarnessOptions): void {
           host.style.top = `${rect.bottom}px`;
           document.body.append(host);
           popover = host;
-          const content = mediaPreviewContent(media, {
-            documentPath: "tree.ged",
-            resolve: (path) => {
-              const bytes = (options.media ?? {})[path];
-              return bytes === undefined ? null : imageSource(bytes);
-            },
-          });
-          renderMediaPreview(content, {
-            container: host,
-            bounds: previewBounds(parent.clientWidth, parent.clientHeight),
-            setIcon: stubSetIcon,
-            isCurrent: () => popover === host,
-          });
-          for (const image of host.querySelectorAll("img")) {
-            calls.requested.push(image.getAttribute("src") ?? "");
-            if (options.holdImages) {
-              const source = image.getAttribute("src") ?? "";
-              image.removeAttribute("src");
-              held.push(() => {
-                image.setAttribute("src", source);
-              });
+          // Standing in for HoverPopover, which keeps itself while the pointer
+          // is inside it and goes once it is not. The session goes with it.
+          host.addEventListener("mouseleave", () => {
+            if (view) {
+              clearMediaPreview(view);
             }
-          }
+          });
+          // An answer redraws the popover it was given in, which is what the
+          // view does with the same content function and the same renderer.
+          const draw = (): void => {
+            host.replaceChildren();
+            const content = mediaPreviewContent(
+              media,
+              {
+                documentPath: "tree.ged",
+                resolve: (path) => {
+                  const bytes = (options.media ?? {})[path];
+                  return bytes === undefined ? null : imageSource(bytes);
+                },
+              },
+              remoteImages || allowedOnce,
+            );
+            renderMediaPreview(content, {
+              container: host,
+              bounds: previewBounds(parent.clientWidth, parent.clientHeight),
+              setIcon: stubSetIcon,
+              isCurrent: () => popover === host,
+              allow: (scope) => {
+                if (scope === "always") {
+                  remoteImages = true;
+                } else {
+                  allowedOnce = true;
+                }
+                draw();
+              },
+            });
+            for (const image of host.querySelectorAll("img")) {
+              calls.requested.push(image.getAttribute("src") ?? "");
+              if (options.holdImages) {
+                const source = image.getAttribute("src") ?? "";
+                image.removeAttribute("src");
+                held.push(() => {
+                  image.setAttribute("src", source);
+                });
+              }
+            }
+          };
+          draw();
         },
+        mediaHolds: (node) => popover?.contains(node as Node) ?? false,
         hideMedia: () => {
           calls.mediaHides += 1;
           closeMedia();
@@ -295,6 +329,10 @@ window.gedcom = {
     }
   },
   hoveredSpan: () => (view ? hoveredPointer(view.state) : null),
+  setRemoteImages: (value: boolean) => {
+    remoteImages = value;
+    allowedOnce = false;
+  },
   releaseImages: () => {
     const pending = held;
     held = [];

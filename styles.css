@@ -240,3 +240,25 @@
   color: var(--text-muted);
   font-size: var(--font-smaller);
 }
+
+/* The offer beside the refusal. Obsidian's own button colours, so the row
+   reads as part of the application rather than as the plugin's own furniture,
+   and wrapping rather than overflowing: the second label is a sentence. */
+.gedcom-media-offer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
+}
+
+.gedcom-media-allow {
+  padding: var(--size-4-1) var(--size-4-2);
+  border-radius: var(--radius-s);
+  background-color: var(--interactive-normal);
+  color: var(--text-normal);
+  font-size: var(--font-smaller);
+  cursor: pointer;
+}
+
+.gedcom-media-allow:hover {
+  background-color: var(--interactive-hover);
+}
