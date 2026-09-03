@@ -38,6 +38,8 @@ export interface HarnessOptions {
   mobile?: boolean;
   /** Height iOS reports as the bottom inset while the keyboard is up. */
   keyboard?: number;
+  /** Whether the host is a Mac, which only the spec running the page knows. */
+  mac?: boolean;
 }
 
 export interface HarnessCalls {
@@ -142,9 +144,11 @@ function closeMedia(): void {
  * one keeps the editor from acting on it. The matching itself is the plugin's
  * own, so a spec drives the shipped table.
  */
-// Not the userAgent: Playwright's "Desktop Chrome" emulates a Windows one,
-// while its ControlOrMeta follows the host, and platform is what still agrees.
-const mac = navigator.platform.includes("Mac");
+// The host's platform, which the spec knows and the page cannot ask for:
+// Playwright's "Desktop Chrome" emulates a Windows userAgent while its
+// ControlOrMeta follows the host, so the two disagree and only the spec is
+// right. `mount` is told, rather than the page guessing off `navigator`.
+let mac = false;
 
 function pushScope(bindings: SearchKeyBinding[]): () => void {
   const handle = (event: KeyboardEvent): void => {
@@ -176,6 +180,7 @@ function mount(options: HarnessOptions): void {
   // The shipped defaults, so a spec that names no trigger gets what a reader does.
   const record = options.recordPreview ?? DEFAULT_SETTINGS.recordPreview;
   const media = options.mediaPreview ?? DEFAULT_SETTINGS.mediaPreview;
+  mac = options.mac ?? false;
 
   const parent = document.getElementById("editor");
   if (!parent) {
@@ -233,10 +238,10 @@ function mount(options: HarnessOptions): void {
           calls.media.push(media.targetText);
           closeMedia();
           const host = document.createElement("div");
-          host.className = "popover hover-popover gedcom-media-popover";
+          host.className =
+            "popover hover-popover gedcom-media-popover gedcom-harness-anchored";
           const target = (event.target as HTMLElement | null) ?? parent;
           const rect = target.getBoundingClientRect();
-          host.style.position = "fixed";
           host.style.left = `${rect.left}px`;
           host.style.top = `${rect.bottom}px`;
           document.body.append(host);

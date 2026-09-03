@@ -65,6 +65,9 @@ function element(
   cls: string,
   before?: ChildNode,
 ): HTMLElement {
+  // Not `createEl`: it is a helper Obsidian puts on Node at runtime, and the
+  // browser harness mounts this view without Obsidian, so the call would be
+  // undefined there and every media spec would go dark.
   const node = parent.ownerDocument.createElement(tag);
   node.className = cls;
   parent.insertBefore(node, before ?? null);

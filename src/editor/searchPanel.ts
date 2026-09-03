@@ -72,6 +72,10 @@ export function obsidianSearchPanel(host: PanelHost) {
       tag: K,
       cls: string,
     ): HTMLElementTagNameMap[K] => {
+      // Detached on purpose, and in the view's own document: the panel is
+      // assembled before it has a parent. Obsidian's `createEl` either appends
+      // to a node it is given or, called globally, takes the main window's
+      // document — a popout would then build its panel in the wrong one.
       const node = owner.createElement(tag);
       node.className = cls;
       return node;

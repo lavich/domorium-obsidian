@@ -21,11 +21,11 @@ export default tseslint.config(
     files: ["tests/**/*.ts", "harness/**/*.ts"],
     rules: {
       "obsidianmd/no-nodejs-modules": "off",
-      // The harness mounts the editor without Obsidian, so the element, style
-      // and platform helpers those rules ask for do not exist there.
+      // The harness mounts the editor without Obsidian, so `createEl` — which
+      // Obsidian puts on Node at runtime — is not there to call. The platform
+      // and style rules are on: the harness is told the host's platform by the
+      // spec, and what it does set is measured per hover rather than static.
       "obsidianmd/prefer-create-el": "off",
-      "obsidianmd/no-static-styles-assignment": "off",
-      "obsidianmd/platform": "off",
     },
   },
   {
