@@ -422,11 +422,9 @@ body {
   justify-content: flex-end;
 }
 
-/* The box Obsidian's own `.popover.hover-popover` is: a width from the variable
-   above, and its overflow hidden. A popover left to itself here shrink-wraps
-   its content, which is the one thing the real one never does — so anything
-   drawn wider than the popover looks right in the harness and is cut off in the
-   vault. */
+/* The box Obsidian's own `.popover.hover-popover` is. Left to itself a popover
+   here shrink-wraps its content, which the real one never does, and anything
+   drawn too wide would look right in the harness and be cut off in the vault. */
 .popover.hover-popover {
   width: var(--popover-width);
   max-height: var(--popover-max-height);

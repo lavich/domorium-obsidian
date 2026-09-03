@@ -85,10 +85,8 @@ export function createGedcomComposition(
       delay: options.delay,
       // A multimedia link is a cross-reference too, so both previews answer
       // the same pointer and the picture wins — but only where the picture is
-      // actually coming, or the position would show nothing at all. Asked
-      // through `mediaLineAt`, which is what the media hover itself resolves
-      // with: two resolvers here could disagree, and standing aside for a
-      // picture the other one declines to draw shows the reader nothing.
+      // actually coming. Asked through `mediaLineAt`, the media hover's own
+      // resolver: a second one could disagree and leave the reader neither.
       show: (preview, view, event) => {
         if (
           options.mediaGesture.opens(event) &&

@@ -5,7 +5,6 @@ import type { MediaReference } from "@domorium/language-service";
 
 import { mediaLineAt } from "./mediaLine";
 
-/** Shaped after upstream's `recordPreviewHover`, which has nothing for media. */
 export interface MediaPreviewHoverOptions {
   language: EditorLanguageService;
   /** Whether an event asks for a preview. Defaults to the platform modifier. */
@@ -142,13 +141,10 @@ export function mediaPreviewHover(
 
   return [
     ViewPlugin.define((view) => ({ destroy: () => cancel(view) })),
-    // A document that has moved is no longer the one the popover was opened
-    // from, and the pointer need not move for that to happen. Closing it also
-    // clears the session, which is keyed by the line: left alone it would
-    // answer the next movement over that same line with "keep", and the reader
-    // would be left holding the picture the line named before the change. A
-    // `setState` reports no update at all, so the host closes the preview
-    // itself where it throws the state away.
+    // A moved document is no longer the one the popover was opened from, and
+    // the pointer need not move for that to happen. The session goes with it:
+    // keyed by the line, it would answer the next movement with "keep". A
+    // `setState` reports no update, which is why the host closes them too.
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
         cancel(update.view);

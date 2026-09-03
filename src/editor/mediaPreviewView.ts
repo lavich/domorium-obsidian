@@ -9,9 +9,8 @@ import {
 import type { IconSetter } from "./searchPanel";
 
 /**
- * Drawing the popover, kept out of `GedcomView` so the browser harness mounts
- * the same code. Standard DOM and an injected `setIcon` for the same reason:
- * the harness has no Obsidian.
+ * Drawing the popover. Standard DOM and an injected `setIcon`, so the browser
+ * harness mounts the same code without Obsidian.
  */
 
 const ICONS: Record<string, string> = {
@@ -60,7 +59,6 @@ export function renderMediaPreview(
   }
 }
 
-/** Appended to `parent`, or put in front of `before` where one is named. */
 function element(
   parent: HTMLElement,
   tag: "div" | "img" | "span",
@@ -97,9 +95,9 @@ function drawRow(
 
 /**
  * A rectangle is a window with the image behind it — no canvas, nothing
- * decoded. Its own size is unknown until it loads, so the rectangle is measured
- * against it then, and every late handler checks the popover is still the one on
- * screen: a load outlives the gesture that asked for it.
+ * decoded. The image's own size is unknown until it loads, so the rectangle is
+ * re-measured then, and every late handler checks the popover is still the one
+ * on screen: a load outlives the gesture that asked for it.
  */
 function drawImage(
   root: HTMLElement,
@@ -111,14 +109,11 @@ function drawImage(
   const image = element(frame, "img", "gedcom-media-image") as HTMLImageElement;
   image.alt = content.title ?? content.name;
 
-  // Not a missing file, and an empty frame reads as a bug rather than a fact
-  // about this one.
+  // The file is there and will not draw; an empty frame would read as a bug.
   image.addEventListener("error", () => {
     if (!host.isCurrent()) {
       return;
     }
-    // In the frame's place, which is in front of the caption rather than after
-    // it, and not appended and then moved there.
     drawRow(
       root,
       ICONS.missing,

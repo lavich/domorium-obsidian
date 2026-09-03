@@ -26,8 +26,7 @@ export function previewGesture(
 
 /**
  * A bare hover waits, as the tag tooltip does. A held modifier is already the
- * reader's intent and answers the first movement. Beside the gesture rather
- * than in either preview, both of them reading it from here.
+ * reader's intent and answers the first movement.
  */
 export function hoverDelay(trigger: RecordPreviewTrigger): number {
   return trigger === "hover" ? HOVER_TIME_MS : 0;

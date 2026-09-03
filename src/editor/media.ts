@@ -6,7 +6,7 @@ import type {
 
 import { resolveVaultRelativePath } from "./service";
 
-/** What the popover should draw. No DOM in it, so it is testable on its own. */
+/** What the popover should draw, with no DOM in it. */
 export type MediaPreviewContent =
   | {
       kind: "image";
@@ -100,9 +100,9 @@ export function drawnCrop(
 }
 
 /**
- * Ceilings, so a wide pane does not mean a wide popover. They live here alone:
- * what styles.css reads is the measured bound the view writes into
- * `--gedcom-media-max-w` and `--gedcom-media-max-h`, these already inside it.
+ * Ceilings, so a wide pane does not mean a wide popover. Nothing reads them
+ * but `previewBounds`: styles.css reads the measured bound the view writes
+ * into `--gedcom-media-max-w` and `--gedcom-media-max-h`, these already in it.
  */
 export const MEDIA_PREVIEW_MAX_WIDTH = 560;
 export const MEDIA_PREVIEW_MAX_HEIGHT = 400;

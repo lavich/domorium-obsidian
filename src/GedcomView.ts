@@ -389,8 +389,8 @@ export class GedcomView extends TextFileView {
    * Both previews, wherever the state they were opened from is replaced rather
    * than edited: a `setState` reports no update, so the extension that would
    * have closed them never hears about it. The media one goes through its
-   * session, which is keyed by the line — closed any other way it would answer
-   * the next movement over that line with "keep" and show nothing at all.
+   * session, which is keyed by the line and would otherwise answer the next
+   * movement over that line with "keep".
    */
   private hidePreviews(): void {
     this.hidePreview();
@@ -434,10 +434,9 @@ export class GedcomView extends TextFileView {
   }
 
   /**
-   * `iterateRootLeaves`, not `iterateAllLeaves`: a sidebar leaf holding the
-   * same file would be found and then not shown, because `setActiveLeaf` will
-   * not uncollapse a sidebar, and the reader's click would come to nothing. The
-   * main area and the popouts are where a tab of its own would have gone.
+   * `iterateRootLeaves`, not `iterateAllLeaves`: `setActiveLeaf` will not
+   * uncollapse a sidebar, so a leaf found there would be found and not shown,
+   * and the reader's click would come to nothing.
    */
   private leafShowing(path: string): WorkspaceLeaf | null {
     return leafShowingFile(path, (visit) =>
@@ -462,16 +461,15 @@ export class GedcomView extends TextFileView {
           return;
         }
         // Where it already is, or else a tab of its own: replacing this one
-        // loses the reader's place in the file the link was followed from. Not
-        // `'window'`, which the mobile app has no popout for.
+        // loses the reader's place in the file the link was followed from.
         const open = this.leafShowing(path);
         if (open) {
-          // Not `revealLeaf`, which also uncollapses a sidebar but wants
-          // Obsidian 1.7.2. See "The minimum app version, and what it costs"
-          // in CLAUDE.md.
+          // Not `revealLeaf`, which wants Obsidian 1.7.2. See "The minimum
+          // app version, and what it costs" in CLAUDE.md.
           this.app.workspace.setActiveLeaf(open, { focus: true });
           return;
         }
+        // Not `'window'`, which the mobile app has no popout for.
         void this.app.workspace.getLeaf("tab").openFile(file);
       },
     });

@@ -12,8 +12,8 @@ export function shownFilePath(state: ViewState): string | null {
 
 /**
  * The first leaf showing `path`, or null where none does. `iterate` is handed
- * in so the walk can be tested without a workspace, and so that the caller
- * chooses which leaves count: only the ones a reader can actually be sent to.
+ * in so the caller chooses which leaves count: only the ones a reader can
+ * actually be sent to.
  */
 export function leafShowingFile(
   path: string,

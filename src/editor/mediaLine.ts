@@ -19,8 +19,8 @@ export interface MediaLine {
 const MEDIA_LINE = /^(\s*\d+\s+)(FILE|OBJE)(\s+)\S/;
 
 /**
- * The media under one offset, or nothing. The whole line answers, from the tag
- * to its end, but not the level number that opens it: nothing there looks live.
+ * The media under one offset, or nothing. The line answers from its tag
+ * onwards, but not the level number that opens it: nothing there looks live.
  */
 export function mediaLineAt(
   state: EditorState,

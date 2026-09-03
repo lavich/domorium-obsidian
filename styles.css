@@ -162,17 +162,16 @@
 }
 
 /* A hover popover has a width of its own and hides what overflows it, so a
-   picture wider than it is cut off rather than scaled. What it holds is already
-   bounded — by the pane, below — so it takes the size of its content. */
+   picture wider than it is cut off rather than scaled. What it holds is
+   already bounded by the pane, so it takes the size of its content. */
 .popover.hover-popover.gedcom-media-popover {
   width: fit-content;
   max-width: none;
 }
 
 /* The bound is the pane, not the window: with both sidebars open the window is
-   wider than the editor. The view measures its contentEl into the two
-   properties, px ceiling and all — previewBounds in src/editor/media.ts — so
-   the vw/vh here only covers a host that mounts this without measuring. */
+   wider than the editor. previewBounds in src/editor/media.ts measures it into
+   the two properties, so the vw/vh here only covers a host that does not. */
 .gedcom-media-preview {
   display: flex;
   flex-direction: column;

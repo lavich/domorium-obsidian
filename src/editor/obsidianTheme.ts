@@ -61,10 +61,8 @@ export function obsidianEditorTheme(dark: boolean): Extension {
       },
 
       // What Obsidian writes for a link in a note's source: a colour and a
-      // weight. The names are minted by the highlight style below.
-      //
-      // The cursor and the underline wait for the modifier, because the click
-      // does. See modifierHeld.ts.
+      // weight. The names are minted by the highlight style below. The cursor
+      // and the underline wait for the modifier, because the click does.
       ".gedcom-internal-link": {
         color: link,
         fontWeight: linkWeight,
@@ -72,8 +70,7 @@ export function obsidianEditorTheme(dark: boolean): Extension {
 
       // A reference to a record is a link, and keeps the weight it had so a
       // declaration still reads apart from it. A declaration carries both
-      // classes — `definition` is a modifier over `variableName` — so it is
-      // excluded by name rather than by a fight over specificity.
+      // classes, so it is excluded by name rather than by specificity.
       ".gedcom-reference-link:not(.gedcom-reference-declaration)": {
         color: link,
       },
