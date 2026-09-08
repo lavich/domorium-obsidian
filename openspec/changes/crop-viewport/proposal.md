@@ -18,12 +18,16 @@ moving down a list of links reshapes the popover at every line.
   size — the bound the pane already allows — instead of a frame cut to the
   rectangle. One shape for every reference in the file.
 - The rectangle is what the viewport opens on: clamped against the loaded image
-  as it is today, then fitted into the viewport and centred. Fitting may
+  as it is today, then fitted into the viewport and centred, whole. Fitting may
   magnify, which the current scaling never does, so a small region is legible
   rather than a stamp. The magnification is capped.
+- Because the viewport does not take the rectangle's shape, the photograph
+  around the rectangle is ordinarily on screen from the start. That is the
+  change of behaviour: the popover no longer shows the rectangle *and nothing
+  else*, and the requirement that said so is rewritten rather than kept.
 - The reader can pan the photograph inside the viewport and change the scale,
-  out as far as the whole photograph fitted into it. That is the answer to
-  "what is around this", at full size rather than in a thumbnail.
+  out as far as the whole photograph and no further than its own pixels. That is
+  the answer to "what is around this", at full size rather than in a thumbnail.
 - One button beside the picture toggles between the region the line names and
   the whole photograph. A wheel gesture has to be guessed at; a button is the
   discoverable form of the same answer, and it takes the reader back to what the
@@ -52,9 +56,10 @@ None. This is the media preview's behaviour and it has a spec.
 ### Modified Capabilities
 
 - `media-preview`: the requirement that the rectangle is what the link shows
-  becomes a requirement about where the preview *opens* — the rectangle is the
-  initial state of a viewport the reader can move — and gains the degenerate
-  rectangle being named rather than passed off as an uncropped image. New
+  becomes a requirement about where the preview *opens* — the whole rectangle,
+  centred, as the initial state of a viewport the reader can move, with the
+  photograph around it on screen beside it — and gains the degenerate rectangle
+  being named rather than passed off as an uncropped image. New
   requirements cover the fixed viewport, panning, the scale and its two limits,
   the toggle, and the untouched uncropped case. The bounding requirement's
   cropped clause changes: a rectangle larger than the bound is no longer scaled
@@ -63,29 +68,44 @@ None. This is the media preview's behaviour and it has a spec.
 ## Impact
 
 - `src/editor/media.ts` — `cropScale` goes; `cropView`, the scale limits and the
-  pan clamp arrive as pure functions. `drawnCrop` and `previewBounds` are
-  untouched.
+  pan clamp arrive as pure functions over one `MediaGeometry` value. `drawnCrop`
+  and `previewBounds` are untouched.
 - `src/editor/media.test.ts` — `cropScale`'s five cases are replaced by the new
   functions', still numbers and no DOM.
 - `src/editor/mediaPreviewView.ts` — `applyCrop` stops sizing the frame to the
   rectangle; the frame becomes the viewport, gains pointer and wheel handlers
-  and the toggle button, and draws the note for a rectangle that misses.
+  and the toggle button, and draws the note for a rectangle that misses. The
+  view is absent until `load`, which is what the handlers, the button and the
+  `error` path all read.
 - `src/editor/mediaPreviewView.test.ts` — the toggle, the note, and the
-  handlers being installed only for a cropped reference.
-- `styles.css` — the viewport's fixed size, the toggle's row, and the two
-  properties a drag needs (`touch-action`, `user-select`).
-- `tests/mediaPreview.spec.ts` — the two assertions on the frame's width move to
-  what is drawn inside a frame that no longer changes size, read by sampling
-  pixels; the drag, the wheel and the toggle are proved here.
-- `harness/mount.ts` — the sample image needs a region distinguishable from the
-  rest of the photograph at more than one scale, which the current two-tone
-  bytes may not give.
+  handlers being installed only for a cropped reference, doing nothing before
+  the image arrives, and going with the frame where it cannot be drawn.
+- `styles.css` — the viewport's fixed size from the two bound properties already
+  written there, the toggle's row, and the two properties a drag needs
+  (`touch-action`, `user-select`).
+- `tests/mediaPreview.spec.ts` — **seven** assertions were written against a
+  frame the size of the rectangle and every one is now false; each is rewritten
+  to say the rectangle is contained in and centred within what is on screen.
+  The drag, the wheel and the toggle are proved here.
+- `harness/mount.ts`, `tests/harness.ts` — the crop fixtures point `family.jpg`
+  at `photo`, a flat 120×80 field: no region to tell from its surroundings, and
+  small enough that the zoom range all but disappears. They move to one of the
+  `painted` images the harness already builds, which moves the `CROP` numbers
+  written against a 120×80 image.
+- `README.md` — it promises the preview shows "the part of that photograph the
+  link's `CROP` asks for", which this change replaces, and says nothing yet
+  about moving the picture.
 
 ## Non-goals
 
 - **A minimap.** A whole-photograph thumbnail with the rectangle outlined
   answers the same question in 120 pixels that zooming out answers at full
   size, and two devices for one answer is one too many.
+- **Marking the rectangle inside the viewport.** An outline over the region
+  would say which part of the picture the four numbers named, and it is the
+  likeliest follow-up to this change; it is not in it. It needs its own
+  arithmetic in step with every drag and zoom, and the viewport should first
+  say whether a centred rectangle and the button are answer enough.
 - **Interaction for an uncropped image.** See above: it poses no question, and a
   click already opens the file.
 - **Pinch-zoom, and mobile as a criterion.** Touch drag arrives free with

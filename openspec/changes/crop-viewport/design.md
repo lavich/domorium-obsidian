@@ -123,8 +123,10 @@ the jumpiness stays. Rejected.
 `cropScale` is replaced by
 
 ```ts
-cropView(crop: MediaCrop, naturalWidth, naturalHeight, bounds): MediaView
-// MediaView = { scale: number; tx: number; ty: number }
+cropView(crop: MediaCrop, geometry: MediaGeometry): MediaView
+// MediaView     = { scale: number; tx: number; ty: number }
+// MediaGeometry = { naturalWidth: number; naturalHeight: number;
+//                   bounds: PreviewBounds }
 ```
 
 taking the rectangle **already clamped by `drawnCrop`**, and returning the
@@ -132,28 +134,48 @@ transform that puts it in the middle of the viewport:
 
 - `fit(w, h, bounds) = min(bounds.width / w, bounds.height / h)` — not capped at
   1, which is the whole difference from `cropScale`. A 40×30 region today draws
-  at 40×30 in a 40×30 box; fitted into a 560×400 viewport it draws at 13×.
+  at 40×30 in a 40×30 box; fitted into a 560×400 viewport it asks for 13×,
+  which the clamp below then takes down to the magnification cap.
 - `scale = clamp(fit(crop.width, crop.height, bounds), scaleMin, scaleMax)`.
 - `tx`, `ty` centre the scaled rectangle in the viewport and are then put
   through the pan clamp, so a rectangle against an edge of the photograph is not
   centred by leaving a gap.
 
-`MediaView` is the one value the renderer needs; `applyCrop` becomes
-`applyView(frame, image, view)` writing `translate(${tx}px, ${ty}px)
-scale(${scale})` and nothing to the frame's size.
+`MediaGeometry` is the image's own size and the box it is drawn in — the same
+three arguments every one of these functions needs, passed as one value so
+`zoomTo` does not take seven of them and no call site can pair one image's size
+with another's bound. `MediaView` is the one value the renderer needs;
+`applyCrop` becomes `applyView(frame, image, view)` writing
+`translate(${tx}px, ${ty}px) scale(${scale})` and nothing to the frame's size.
+
+**The viewport is not the rectangle's shape, so the rectangle rarely fills it.**
+`fit` binds on one axis; along the other the viewport shows the photograph
+around the rectangle. A 130×240 region of the demo vault's 480×320 photograph
+opens at 1.33× and occupies 173 of the viewport's 560 pixels, the rest being
+picture the reference did not ask for. That is the feature working — it is the
+answer to "what is around this", given without a gesture — but it means the
+old promise that the popover shows *the rectangle and nothing else* is gone,
+and the spec says so instead of repeating it.
+
+What does still hold, and what the tests pin, is that the rectangle is **wholly
+visible and centred**: the pan clamp moves the picture only when centring the
+rectangle would leave the viewport short of photograph, and it can only move it
+by less than the slack, so the rectangle never leaves the box. Non-obvious
+enough to be worth a unit case per edge.
 
 ### The magnification cap is 4
 
-`MEDIA_PREVIEW_MAX_MAGNIFY = 4`, so `scaleMax = max(4, scaleMin)`.
+`MEDIA_PREVIEW_MAX_MAGNIFY = 4`, and `scaleMax` is that number flat.
 
 Unbounded fitting turns a 20×15 rectangle into a 28× wall of four colours. Four
 is chosen because at that point a JPEG's own artifacts are larger than anything
 they might be hiding — the reader is being shown the compressor's work, not the
 photograph's — while a face of 80×100 pixels out of an old scan, which is the
-case this cap exists for, still reaches 320×400 and is legible. The `max(4,
-scaleMin)` is not cosmetic: a photograph small enough that the whole of it fits
-at more than 4× must still reach its own zoom-out limit, or the two limits cross
-and the range is empty.
+case this cap exists for, still reaches 320×400 and is legible.
+
+Nothing guards the cap from below, because the limit below it is never above 1
+— see the next decision. Two constants that cannot cross are worth more than an
+arithmetic guard that hides the case where they would have.
 
 _Alternative — no cap, or a cap on the resulting pixel size rather than the
 factor._ A pixel-size cap makes the limit depend on the pane, so the same
@@ -163,19 +185,40 @@ factor is the property the reader can reason about.
 ### Out as far as the whole photograph, and no further
 
 ```
-scaleMin = fit(naturalWidth, naturalHeight, bounds)
-scaleMax = max(MEDIA_PREVIEW_MAX_MAGNIFY, scaleMin)
+scaleLimits(geometry) ->
+scaleMin = min(1, fit(naturalWidth, naturalHeight, bounds))
+scaleMax = MEDIA_PREVIEW_MAX_MAGNIFY
 ```
 
-`scaleMin` is the whole photograph fitted into the viewport. Further out is a
-picture adrift in an empty box, which answers nothing; and stopping exactly
-there means the zoom-out limit and the toggle's whole-photograph state are the
-same view, reached two ways, rather than two views a pixel apart.
+`scaleMin` is the whole photograph fitted into the viewport, and never
+magnified to get there. Further out is a picture adrift in an empty box, which
+answers nothing; and stopping exactly there means the zoom-out limit and the
+toggle's whole-photograph state are the same view, reached two ways, rather
+than two views a pixel apart.
+
+For a photograph larger than the viewport — the case the feature is for — `fit`
+is below 1 and the `min` does nothing. It bites on a photograph *smaller* than
+the viewport, and it has to: without it the whole of a small photograph would
+be magnified to fill the box, and both limits would be driven up together. A
+120×80 scan in a 560×288 viewport fits at 3.5×, which as a floor leaves the
+range [3.5, 4] — 14% of a range, no zooming worth the name — and, worse,
+`cropView`'s clamp then forces **every rectangle in that file to open on the
+whole photograph**, the cap being below the floor's own view. `min(1, …)` gives
+[1, 4] instead: the rectangle opens magnified up to the cap, and zooming out
+ends at the photograph's own pixels, centred, which is exactly what an
+uncropped preview of the same file shows.
+
+_Alternative — `scaleMin = fit`, the photograph always filling the viewport._
+It keeps the box full, and it is what the first draft of this design said. It
+costs the collapse above, and it magnifies a thumbnail 3–5× to do it. Rejected.
+The empty ground around a small photograph at the zoom-out limit is the honest
+picture: the box is a fixed size because the popover must not jump, and a small
+photograph is small.
 
 ### The pan clamp is per axis: cover if larger, centre if smaller
 
-`clampPan(view, naturalWidth, naturalHeight, bounds): MediaView`, applied to
-every result — the initial framing, every drag, every zoom:
+`clampPan(view, geometry): MediaView`, applied to every result — the initial
+framing, every drag, every zoom:
 
 - Where `naturalWidth * scale >= bounds.width`, `tx` is clamped to
   `[bounds.width - naturalWidth * scale, 0]`: the photograph covers the
@@ -186,13 +229,16 @@ every result — the initial framing, every drag, every zoom:
 - The same for `ty`, independently. A panorama in a square viewport pans
   sideways and is pinned vertically, which is right.
 
-At `scaleMin` both axes are at the boundary, so the whole photograph is centred
-and immovable. The zoom-out limit needs no separate rule about position.
+At `scaleMin` neither axis can move: the one `fit` was taken from is covered
+exactly, the other is smaller than the viewport and therefore centred — as are
+both of them for a photograph smaller than the viewport, where `scaleMin` is 1.
+So the whole photograph is centred and immovable, and the zoom-out limit needs
+no separate rule about position.
 
 ### Zoom keeps the point under the pointer still
 
-`zoomTo(view, factor, px, py, naturalWidth, naturalHeight, bounds): MediaView`,
-where `px`/`py` are in the frame's own coordinates: the new scale is
+`zoomTo(view, factor, px, py, geometry): MediaView`, where `px`/`py` are in the
+frame's own coordinates: the new scale is
 `clamp(scale * factor, scaleMin, scaleMax)`, and `tx`/`ty` are adjusted so the
 image point under the pointer stays under it, then clamped. Zooming about the
 viewport's corner instead makes the picture run away from the pointer, and
@@ -240,13 +286,24 @@ show images from the web*). A label naming the current state instead would need
 the reader to work out which way it points.
 
 Taking it does not toggle a stored mode; it recomputes one of the two views —
-`cropView(...)` for the region, `fit`-and-centre for the whole photograph — so
-"show the region again" means the rectangle as the popover opened on it,
-whatever was dragged in between, and needs nothing remembered but which of the
-two was asked for last.
+`cropView(...)` for the region, and for the whole photograph the zoom-out limit
+centred, which is `scaleMin` and not a `fit` of its own, so the button's state
+and the end of the wheel's travel are one view rather than two a pixel apart.
+"Show the region again" therefore means the rectangle as the popover opened on
+it, whatever was dragged in between, and needs nothing remembered but which of
+the two was asked for last.
+
+That is the label's whole state, and it does not follow the picture: a
+reader who reaches the whole photograph with the wheel instead of the button is
+still offered *Show the whole photograph*, and taking it changes little. The
+alternative is deriving the label from the current view, which means deciding
+how near `scaleMin` counts as "the whole photograph" — a threshold on a float,
+in a popover, to relabel a button. Not worth it; the spec asks only that each
+press names what the next one will do.
 
 It is not drawn for a reference with no rectangle, nor for a rectangle that
-falls outside the image: in both cases there is no second view to move to.
+falls outside the image, and it does not survive an image that could not be
+drawn: in each case there is no second view to move to.
 
 _Rejected — a minimap._ A whole-photograph thumbnail with the rectangle
 outlined, beside or over the picture. It answers "what is around this" in 120
@@ -254,6 +311,24 @@ pixels, where zooming out answers it at full size; it needs its own scaling,
 its own layout in a popover already tight, and its own outline arithmetic; and
 having built it there would be two devices for one answer, which is one too
 many. Rejected in favour of the zoom-out limit and the button that reaches it.
+
+### Nothing marks the region inside the viewport
+
+The rectangle rarely fills the viewport (see above), so a reader looking at an
+opened preview cannot tell by eye where the four numbers put its edges. What
+answers that is position and the button: the rectangle is centred when the
+popover opens, and the button takes the picture between that view and the whole
+photograph, so the difference between the two presses is the rectangle.
+
+_Rejected — outlining the rectangle inside the viewport._ A one-pixel border on
+the region, drawn as an absolutely positioned box over the image, would say
+exactly which part the link named. It is cheap, it is not a minimap, and it is
+the strongest candidate for a follow-up. It is left out here because it needs
+its own arithmetic (the outline moves and scales with every drag and zoom, a
+second thing to keep in step with `MediaView`), its own decision about the
+degenerate cases, and its own place in both themes — and because the whole
+point of this change is to stop treating the rectangle as the only picture in
+the popover. Shipping the viewport first says whether the outline is missed.
 
 ### A rectangle that misses the image is named
 
@@ -263,21 +338,48 @@ case in which the numbers are certainly wrong is the one case that says nothing
 about them, and a spec asserts it (`tests/mediaPreview.spec.ts:446`).
 
 It keeps showing the whole photograph — there is nothing else to show — and
-gains a note above the picture in the `gedcom-media-note` element the renderer
-already has, reading **Rectangle outside the image**. Terse, like *File not
-found* and *Image could not be drawn* beside it; the fact is the whole message,
-and the reader can see for themselves what is being shown instead.
+gains a note above the picture reading **Rectangle outside the image**. Terse,
+like *File not found* and *Image could not be drawn* beside it; the fact is the
+whole message, and the reader can see for themselves what is being shown
+instead. `gedcom-media-note` is the class those two already use and it is
+already styled, but the renderer only ever creates it inside a `drawRow`, with
+an icon and a name; here it is that class on its own, put before the frame by
+the `element(parent, tag, cls, before)` helper.
 
 Beyond the note it renders exactly as the uncropped case: fitted, popover sized
 to the image, no interaction, no button. Making it interactive would offer to
 navigate away from a picture that is already whole, and the button would have no
 second view to name.
 
+This is the one case where the popover **does** change shape on `load`: the
+viewport-sized box is given up for a box the size of the image, because the
+alternative is a small photograph adrift in a large frame with a note over it
+saying the numbers were wrong. Nothing is left of the cropped rendering — the
+class, the size, the listeners and the button all go — so the case is the
+uncropped one plus a note, and the spec carries the exception rather than
+leaving the two requirements to contradict each other.
+
 **A rectangle merely overhanging an edge gets no note.** The clamped part is
 picture the reference asked for, the overhang is one number too large rather
 than four numbers wrong, and a rectangle at the edge of a photograph is
 ordinary. The reader who wants to know zooms out and sees the edge. A note here
 would fire on the common case and teach the reader to ignore notes.
+
+### Until the image loads there is no view, and the gesture says nothing
+
+The frame takes the viewport's size when it is built, but `MediaView` cannot be
+computed before `load`: it needs the natural size. So between the popover
+opening and the image arriving there is a sized empty box with listeners on it
+and a button under it, and both have to do nothing rather than something
+undefined. The view is the state: it starts absent, every handler returns while
+it is absent, and the button — drawn with the frame, so the popover does not
+gain a row on `load` and change shape twice — is `disabled` until the view
+exists. One flag, checked in the same breath as `host.isCurrent()`.
+
+The same state answers the `error` path, which today draws a row and removes
+the frame. It removes the button with it and leaves the view absent, so a file
+that exists and will not decode says *Image could not be drawn* and offers
+nothing beside it: there is no picture to move and no second view to name.
 
 ### The held-modifier gesture still ends on release, mid-drag included
 
@@ -297,13 +399,27 @@ dismiss with the gesture they opened it with.
 ### The harness needs a photograph with more than one thing in it
 
 The specs must assert that a drag brings something *else* into view and that
-zooming out shows the whole photograph. The harness's current sample bytes
-cannot carry that: the assertions have to distinguish region from surroundings
-at several scales, by sampling pixels. `harness/mount.ts` gets a generated
-image with a distinguishable region — a marked block inside a differently
-coloured field, at a size the existing `120×80` crop fixtures still address —
-and the specs sample it. This is harness data, not plugin behaviour, and no
-spec requirement rests on the particular bytes.
+zooming out shows the whole photograph. `harness/mount.ts` can already draw
+that: `painted(width, height, left, top, region, tall)` puts a red rectangle on
+a plain ground, and `target` (600×400), `scan` (3000×2000) and `wide` (1600×400)
+are already built from it — the pixel-sampling spec at
+`tests/mediaPreview.spec.ts:811` reads one of them today.
+
+What cannot carry the new assertions is the image the *crop fixtures* point at:
+`media/family.jpg` maps to `photo`, a flat 120×80 field of one colour. Two
+things are wrong with it. It has no region to tell from its surroundings; and it
+is a fraction of the viewport, so the cap stops every rectangle in it at 4×
+while the whole photograph is 480×320 in a box of 560×288 — most of the picture
+is on screen whatever the `CROP` says, and a spec asserting that the popover
+opened on a region could not fail if the arithmetic were wrong. The fixtures
+move to a `painted` image larger than the bound — `target`, at 600×400, is one
+— which moves the `CROP` numbers in `tests/harness.ts` that were written
+against a 120×80 image, the overhanging rectangle among them, and the offsets
+in `tests/mediaPreview.spec.ts` that are keyed by those numbers.
+
+This is harness data, not plugin behaviour, and no spec requirement rests on the
+particular bytes — but a spec that cannot fail is worse than no spec, and at
+120×80 several of these cannot.
 
 ## Risks / Trade-offs
 
@@ -320,6 +436,19 @@ spec requirement rests on the particular bytes.
   a portrait region sits in a landscape box with empty space around it at the
   opening scale → the space is filled by the rest of the photograph, which is
   the point; only a region at the very edge shows the viewport's own background.
+- **The reader cannot see where the rectangle's edges are**, the region rarely
+  filling the viewport → it is centred on opening and the button moves between
+  the two views, which is the answer this change makes; an outline is the
+  follow-up if that turns out not to be enough. See the decision above.
+- **A photograph smaller than the picture area can be zoomed out until it sits
+  small in a large box** → its own pixels are the floor, which is what an
+  uncropped preview of the same file shows; the alternative magnifies a
+  thumbnail 3–5× and collapses the zoom range with it.
+- **Seven browser assertions were written against a frame the size of the
+  rectangle** and every one of them is now false → they are the specs that
+  proved the old behaviour, so each is rewritten rather than deleted: the
+  rectangle is *contained in* and centred within what is on screen, where it
+  used to *be* what was on screen. Task 7.2 names all seven.
 - **The pixel-sampling assertions are the only ones that can catch the flex
   bug** described in Context → they are also slower and fussier than reading a
   width. Kept anyway; a green suite over a preview drawing the wrong part of the
@@ -327,9 +456,10 @@ spec requirement rests on the particular bytes.
   once.
 - **Four functions where there was one** (`cropView`, `scaleLimits`,
   `clampPan`, `zoomTo`) → each is arithmetic over numbers with no DOM and no
-  vault, which is where this repository can afford tests. `drawnCrop` and
-  `previewBounds` are untouched, so the two behaviours already specified do not
-  move.
+  vault, which is where this repository can afford tests, and they share one
+  `MediaGeometry` argument rather than passing three numbers around. `drawnCrop`
+  and `previewBounds` are untouched, so the two behaviours already specified do
+  not move.
 - **No keyboard way to pan or zoom** → the button is focusable and reaches the
   whole photograph, which is the answer the feature exists to give; a hover
   popover that vanishes when the pointer leaves it is not a place to build a

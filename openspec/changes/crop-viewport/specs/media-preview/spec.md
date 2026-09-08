@@ -24,10 +24,19 @@ A rectangle merely reaching past an edge SHALL NOT be noted. The part that
 exists is picture the reference asked for, and the preview lets the reader see
 the edge of the photograph for themselves.
 
-What the preview opens on SHALL be the named rectangle of the image and nothing
-else: the region on screen when the popover appears, measured in the image's own
-pixels, is the rectangle the reference asked for, clamped to the image. A box of
-the rectangle's size showing some other part of the image does not satisfy this.
+What the preview opens on SHALL be the named rectangle of the image: when the
+popover appears the whole of that rectangle, clamped to the image, SHALL be
+visible in the picture area and centred in it. A picture showing some other part
+of the image does not satisfy this, and neither does one showing a part of the
+rectangle.
+
+The picture area does not take the rectangle's shape, so what is on screen at
+that moment SHALL ordinarily include the photograph around the rectangle as
+well — along whichever axis the rectangle does not fill, and wherever a small
+rectangle has been magnified only as far as the limit allows. That surrounding
+picture is the point of the viewport and not a failure of this requirement.
+What identifies the rectangle is that it is centred, and that the control named
+below moves between it and the whole photograph.
 
 Where the reader has since moved the picture, what is on screen is what they
 moved it to — see "A cropped preview is a viewport the reader can move".
@@ -35,7 +44,7 @@ moved it to — see "A cropped preview is a viewport the reader can move".
 #### Scenario: A link naming a rectangle
 
 - **WHEN** the gesture is held over the pointer of a link whose `CROP` names `TOP 100`, `LEFT 250`, `HEIGHT 400`, `WIDTH 300`
-- **THEN** the popover opens on that 300×400 region of the image, and not the rest of it
+- **THEN** the whole of that 300×400 region of the image is on screen and centred in the picture area
 
 #### Scenario: Two links, one photograph
 
@@ -49,13 +58,18 @@ moved it to — see "A cropped preview is a viewport the reader can move".
 
 #### Scenario: The picture inside the rectangle
 
-- **WHEN** the gesture opens a preview of a link whose rectangle names a region of the image distinguishable from the rest of it
+- **WHEN** the gesture opens a preview of a link whose rectangle names a region of the image distinguishable from the rest of it, the rectangle being larger than the picture area
 - **THEN** every part of the popover's picture, before the reader moves anything, comes from inside that region
+
+#### Scenario: A rectangle the picture area is larger than
+
+- **WHEN** the same, for a rectangle the picture area is larger than in one dimension or both
+- **THEN** the whole rectangle is on screen and centred, with the photograph around it filling what is left, and no part of the picture area is the popover's own background except where the photograph ends
 
 #### Scenario: A rectangle past the edge of the image
 
 - **WHEN** the rectangle names an area extending beyond the loaded image
-- **THEN** the popover opens on the part of the rectangle the image covers, with no note
+- **THEN** the part of the rectangle the image covers is on screen and centred, with no note
 
 #### Scenario: A rectangle outside the image entirely
 
@@ -82,13 +96,14 @@ own, narrower than the bound, and hides what overflows it: a picture inside the
 bound that the popover cuts off at its edge does not satisfy this requirement,
 however correctly the picture itself was scaled.
 
-Where the reference carries a rectangle the bound is the viewport's own size,
-not a ceiling the rectangle is fitted under: the picture area SHALL be that
-size whatever the rectangle measures, and the rectangle SHALL be scaled to fit
-inside it. A rectangle larger than the bound is therefore scaled down whole
-rather than shown in part — the reference asked for the rectangle, and a corner
-of it is a different picture — and a rectangle smaller than the bound is
-magnified into it rather than left as a stamp in a box its own size.
+Where the preview draws an image for a reference carrying a rectangle, the
+bound is the viewport's own size rather than a ceiling the rectangle is fitted
+under: the picture area SHALL be that size whatever the rectangle measures, and
+the rectangle SHALL be scaled to fit inside it. A rectangle larger than the
+bound is therefore scaled down whole rather than shown in part — the reference
+asked for the rectangle, and a corner of it is a different picture — and a
+rectangle smaller than the bound is magnified into it rather than left as a
+stamp in a box its own size, as far as the magnification limit allows.
 
 #### Scenario: A very large image
 
@@ -129,13 +144,20 @@ magnified into it rather than left as a stamp in a box its own size.
 
 ### Requirement: A cropped preview's picture area is one size
 
-Where a media reference carries a rectangle, the popover's picture area SHALL be
-a box of the bound the pane allows, and its size SHALL NOT depend on the
-rectangle's own size. Two references to one photograph with rectangles of
-different sizes SHALL give popovers whose picture areas measure the same.
+Where the preview draws an image for a reference carrying a rectangle, the
+popover's picture area SHALL be a box of the bound the pane allows, and its size
+SHALL NOT depend on the rectangle's own size. Two references to one photograph
+with rectangles of different sizes SHALL give popovers whose picture areas
+measure the same.
 
 The picture area SHALL take that size before the image arrives, so that the
 popover does not change shape when it loads.
+
+The one exception is a rectangle the loaded image does not overlap at all: there
+being no region to look around, that preview gives the viewport up on `load` and
+is sized to the image like an uncropped one, with its note. A preview whose
+image cannot be drawn at all keeps neither, the picture area going with the
+picture.
 
 #### Scenario: Two rectangles of different sizes
 
@@ -145,12 +167,17 @@ popover does not change shape when it loads.
 #### Scenario: A rectangle smaller than the picture area
 
 - **WHEN** a link's rectangle is far smaller than the bound the pane allows
-- **THEN** the picture area is still the bound, and the rectangle is magnified to fill it rather than drawn at its own size
+- **THEN** the picture area is still the bound, and the rectangle is magnified toward it as far as the magnification limit allows rather than drawn at its own size in a box that size
 
 #### Scenario: The image arriving
 
 - **WHEN** a cropped preview opens and the image finishes loading
 - **THEN** the picture area is the same size before and after, and the popover does not change shape
+
+#### Scenario: The image the rectangle misses arriving
+
+- **WHEN** the rectangle names an area the loaded image does not overlap at all
+- **THEN** the picture area is given up for one the size of the image, that preview being the uncropped one with a note
 
 ### Requirement: A cropped preview is a viewport the reader can move
 
@@ -167,11 +194,20 @@ photograph is larger than the picture area in a direction it SHALL continue to
 cover it, and where it is smaller it SHALL stay centred in it.
 
 Changing the scale SHALL be bounded in both directions. Out, the limit SHALL be
-the whole photograph fitted into the picture area — far enough to answer what is
-around the rectangle, and no further, an image adrift in a large empty box being
-of no use to anybody. In, the limit SHALL be a fixed magnification of the
-photograph's own pixels, so that a rectangle of a few dozen pixels cannot be
+the whole photograph inside the picture area — fitted to it where the photograph
+is the larger, and at its own pixels where the picture area is, a photograph
+smaller than the box being magnified by no gesture the reader can make. That is
+far enough to answer what is around the rectangle and no further. In, the limit
+SHALL be a fixed magnification of the photograph's own pixels, the same factor
+whatever the pane measures, so that a rectangle of a few dozen pixels cannot be
 stretched without end.
+
+The two limits SHALL NOT cross or meet, whatever the image measures against the
+picture area: a reader who has a viewport has something to move in it.
+
+Until the image has loaded there is nothing to move and no scale to change, and
+the preview SHALL do nothing rather than something arbitrary — the gesture is
+answered from the loaded image's own size or not at all.
 
 A gesture that changes the scale SHALL NOT scroll the document under the
 popover.
@@ -192,12 +228,22 @@ position.
 #### Scenario: Dragging past the edge of the photograph
 
 - **WHEN** the reader drags a photograph larger than the picture area far past the end of it
-- **THEN** the photograph stops when its edge meets the edge of the picture area, and no empty space appears inside it
+- **THEN** the photograph stops when its edge meets the edge of the picture area, and no empty space appears along the direction it was dragged
 
 #### Scenario: Zooming out to the whole photograph
 
 - **WHEN** the reader zooms a cropped preview out as far as it will go
 - **THEN** the whole photograph is inside the picture area, fitted to it, and no further zooming out changes what is on screen
+
+#### Scenario: Zooming out a photograph smaller than the picture area
+
+- **WHEN** the reader does the same where the photograph is smaller than the picture area
+- **THEN** it stops at its own pixels, centred, rather than being magnified to fill the box
+
+#### Scenario: A photograph the picture area holds several times over
+
+- **WHEN** a cropped preview opens on a photograph small enough that the whole of it would fit the picture area several times magnified
+- **THEN** the rectangle is still what the preview opens on, and the reader can still zoom out to the whole photograph and in to the magnification limit
 
 #### Scenario: Zooming in as far as it will go
 
@@ -219,6 +265,11 @@ position.
 - **WHEN** the reader has moved one cropped preview and then opens a preview of another reference, or the same one again
 - **THEN** that preview opens on its own rectangle, the movement not being remembered
 
+#### Scenario: A gesture before the image has arrived
+
+- **WHEN** the reader drags or uses a wheel gesture over the picture area before the image has finished loading
+- **THEN** nothing moves and nothing is drawn wrongly, and the preview opens on its rectangle once the image arrives
+
 ### Requirement: One button offers the whole photograph and the way back
 
 A gesture has to be guessed at. Where a media reference carries a rectangle the
@@ -232,7 +283,9 @@ first opened on it, whatever the reader has dragged or scaled in between.
 
 The control SHALL NOT appear where the reference carries no rectangle, nor where
 the rectangle falls outside the image, there being no region in either case to
-move between.
+move between; nor SHALL it remain where the image could not be drawn at all,
+there being no picture. Where the image has not yet arrived the control SHALL
+NOT act, for the same reason the gestures do not.
 
 #### Scenario: Asking for the whole photograph
 
@@ -251,8 +304,13 @@ move between.
 
 #### Scenario: What the control says
 
-- **WHEN** the region is on screen, and again when the whole photograph is
-- **THEN** the control names the other one, so that the reader is told what taking it will do
+- **WHEN** the preview opens, and again after each press of the control
+- **THEN** it names the view the next press will show — the whole photograph while the region was last asked for, the region while the whole photograph was — so that the reader is told what taking it will do
+
+#### Scenario: An image that could not be drawn
+
+- **WHEN** a cropped preview's image fails to load
+- **THEN** the preview says so and no such control is left beside the message
 
 #### Scenario: A reference with no rectangle
 
