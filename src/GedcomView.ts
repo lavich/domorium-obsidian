@@ -507,7 +507,6 @@ export class GedcomView extends TextFileView {
       },
       this.host.remoteImages(),
     );
-    popover.hoverEl.empty();
     renderMediaPreview(content, {
       container: popover.hoverEl,
       bounds: previewBounds(

@@ -136,3 +136,63 @@ describe("an image that does not draw", () => {
     expect(container.querySelectorAll("img")).toHaveLength(1);
   });
 });
+
+describe("a popover drawn again", () => {
+  const remote = (): void => {
+    draw({ kind: "remote", url: "https://example.org/marie.jpg", state: "unasked" });
+  };
+  const image = (): void => {
+    draw({
+      kind: "image",
+      url: "https://example.org/marie.jpg",
+      name: "marie.jpg",
+      remote: true,
+    });
+  };
+  const root = (): HTMLElement =>
+    container.querySelector(".gedcom-media-preview") as HTMLElement;
+
+  /** happy-dom lays nothing out, so a child says how big it is when asked. */
+  const measure = (
+    child: Element,
+    box: { width: number; top: number; bottom: number },
+  ): void => {
+    (child as HTMLElement).getBoundingClientRect = () =>
+      ({ ...box, height: box.bottom - box.top }) as DOMRect;
+  };
+
+  it("takes the place of what the container held, rather than a place beside it", () => {
+    remote();
+    image();
+
+    expect(container.querySelectorAll(".gedcom-media-preview")).toHaveLength(1);
+    expect(container.querySelectorAll(".gedcom-media-allow")).toHaveLength(0);
+    expect(container.querySelectorAll("img")).toHaveLength(1);
+  });
+
+  it("keeps the footprint of the question it answers", () => {
+    remote();
+    const [row, offer] = root().children;
+    measure(row, { width: 180, top: 100, bottom: 120 });
+    measure(offer, { width: 150, top: 124, bottom: 152 });
+    image();
+
+    expect(root().style.minWidth).toBe("180px");
+    expect(root().style.minHeight).toBe("52px");
+  });
+
+  it("holds nothing on a first draw", () => {
+    image();
+
+    expect(root().style.minWidth).toBe("");
+    expect(root().style.minHeight).toBe("");
+  });
+
+  it("holds nothing where what it replaces was never laid out", () => {
+    remote();
+    image();
+
+    expect(root().style.minWidth).toBe("");
+    expect(root().style.minHeight).toBe("");
+  });
+});
