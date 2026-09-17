@@ -47,13 +47,25 @@ const OFFERS: { scope: AllowScope; label: string }[] = [
   { scope: "always", label: "Always show images from the web" },
 ];
 
+/**
+ * Draws into the container in place of whatever it held. A popover redrawn by
+ * the reader's answer keeps the footprint the question had, as a minimum: the
+ * image it draws has no size until it arrives, and a popover that shrinks under
+ * the pointer is a popover the pointer has left, which closes it.
+ */
 export function renderMediaPreview(
   content: MediaPreviewContent,
   host: MediaPreviewHost,
 ): void {
+  const kept = footprintOf(previousPreview(host.container));
+  host.container.replaceChildren();
   const root = element(host.container, "div", "gedcom-media-preview");
   root.style.setProperty("--gedcom-media-max-w", `${host.bounds.width}px`);
   root.style.setProperty("--gedcom-media-max-h", `${host.bounds.height}px`);
+  if (kept !== null) {
+    root.style.minWidth = `${kept.width}px`;
+    root.style.minHeight = `${kept.height}px`;
+  }
 
   switch (content.kind) {
     case "image":
@@ -82,6 +94,40 @@ export function renderMediaPreview(
   if (content.kind !== "missing" && content.title !== undefined) {
     caption(root, content.title);
   }
+}
+
+function previousPreview(container: HTMLElement): HTMLElement | null {
+  for (const child of container.children) {
+    if (child.classList.contains("gedcom-media-preview")) {
+      return child as HTMLElement;
+    }
+  }
+  return null;
+}
+
+/**
+ * The content box of a drawn preview: the extent of its children, not the
+ * root's own rectangle, which has the padding in it that the root's content-box
+ * sizing would then count again. Nothing drawn, or nothing laid out, is no
+ * footprint to keep.
+ */
+function footprintOf(
+  root: HTMLElement | null,
+): { width: number; height: number } | null {
+  if (root === null || root.children.length === 0) {
+    return null;
+  }
+  let width = 0;
+  let top = Infinity;
+  let bottom = -Infinity;
+  for (const child of root.children) {
+    const rect = child.getBoundingClientRect();
+    width = Math.max(width, rect.width);
+    top = Math.min(top, rect.top);
+    bottom = Math.max(bottom, rect.bottom);
+  }
+  const height = bottom - top;
+  return width > 0 && height > 0 ? { width, height } : null;
 }
 
 /** The way out, beside the refusal rather than in the settings tab. */

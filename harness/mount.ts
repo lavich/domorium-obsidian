@@ -264,7 +264,6 @@ function mount(options: HarnessOptions): void {
           // An answer redraws the popover it was given in, which is what the
           // view does with the same content function and the same renderer.
           const draw = (): void => {
-            host.replaceChildren();
             const content = mediaPreviewContent(
               media,
               {

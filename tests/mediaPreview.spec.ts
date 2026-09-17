@@ -251,6 +251,41 @@ test.describe("an image the reader asks for", () => {
     expect(await page.locator(`${POPOVER} .gedcom-media-allow`).count()).toBe(0);
   });
 
+  test("is no smaller after the answer than the question was", async ({
+    page,
+  }) => {
+    await serveRemote(page);
+    await mount(page, { doc: MEDIA, media: VAULT, holdImages: true });
+    await modHover(page, REMOTE);
+    await page.waitForSelector(`${POPOVER} .gedcom-media-allow`);
+    const question = await page.locator(POPOVER).boundingBox();
+    if (!question) {
+      throw new Error("no popover to measure");
+    }
+
+    const atLeastTheQuestion = async (moment: string): Promise<void> => {
+      const box = await page.locator(POPOVER).boundingBox();
+      expect(box, `${moment}: the popover is still on screen`).not.toBeNull();
+      expect(box!.width, `${moment}: no narrower`).toBeGreaterThanOrEqual(
+        question.width,
+      );
+      expect(box!.height, `${moment}: no shorter`).toBeGreaterThanOrEqual(
+        question.height,
+      );
+    };
+
+    await take(page, "Show this image");
+    // The harness holds the picture back, so this is the popover between the
+    // answer and the image: an empty frame, were nothing keeping its size.
+    await page.waitForSelector(`${POPOVER} img`, { state: "attached" });
+    await atLeastTheQuestion("between the answer and the image");
+
+    await page.evaluate(() => window.gedcom.releaseImages());
+    // One pixel of PNG: a picture smaller than the question was.
+    await page.waitForSelector(`${POPOVER} img`);
+    await atLeastTheQuestion("with the picture drawn");
+  });
+
   test("shows the row again once the setting goes off", async ({ page }) => {
     await serveRemote(page);
     await mount(page, { doc: MEDIA, media: VAULT, remoteImages: true });
