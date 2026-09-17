@@ -274,6 +274,15 @@ way a vault image is shown: cropped to the rectangle the reference names,
 bounded by the same rule, captioned by the same title, and no more able to alter
 a popover the gesture has moved on from.
 
+An answer SHALL NOT close the popover it was given in. The image is drawn in
+place of the row, and it has no size until it arrives; in the meantime, and
+after, the popover SHALL be no smaller than it was when the question was asked,
+so that the pointer that pressed the answer is still inside it. The picture
+grows the popover where it is larger; nothing the answer draws — the picture,
+the row that says it did not arrive, or the frame between the two — shrinks it
+under the pointer. A popover that has never asked a question is sized to what it
+holds, as before.
+
 A remote target that is not an image SHALL be named and not fetched, whatever
 the setting says, as it is today.
 
@@ -287,6 +296,21 @@ the setting says, as it is today.
 
 - **WHEN** the reader takes the offer to show this image
 - **THEN** the popover draws it in place of the row
+
+#### Scenario: The popover between the answer and the image
+
+- **WHEN** the reader takes the offer and the image has not yet arrived
+- **THEN** the popover is still open and no smaller than it was with the offer in it, and the pointer that pressed the answer is still inside it
+
+#### Scenario: A picture smaller than the question
+
+- **WHEN** the image the reader asked for arrives and is smaller than the row and its offer were
+- **THEN** the popover stays the size it was, with the picture in it, rather than shrinking around the picture
+
+#### Scenario: A picture larger than the question
+
+- **WHEN** the image the reader asked for arrives and is larger than the row and its offer were
+- **THEN** the popover grows to the picture, bounded as any picture is
 
 #### Scenario: The next remote image in the same session
 
