@@ -90,6 +90,15 @@ describe("filling a message", () => {
       "link",
     );
   });
+
+  // Half of this line is the plugin's and half is the language service's, which
+  // writes in English whatever the reader's language.
+  it("opens a note's problem line in Russian and passes the message through", () => {
+    setLanguage("ru");
+    expect(
+      t("note.problemLine", { line: 3, message: "Missing required tag" }),
+    ).toBe("Строка 3: Missing required tag");
+  });
 });
 
 describe("spelling a count", () => {
