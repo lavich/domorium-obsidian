@@ -13,6 +13,7 @@ import {
 import { StateEffect, StateField, type Extension } from "@codemirror/state";
 import type { EditorView, Panel } from "@codemirror/view";
 
+import { t, type MessageKey } from "../i18n";
 import { countMatches, describeMatches } from "./searchMatches";
 import {
   searchBindings,
@@ -55,12 +56,25 @@ export function openSearch(view: EditorView, replace: boolean): void {
   openSearchPanel(view);
 }
 
+const BUTTON_LABELS: Record<keyof typeof SEARCH_KEY_CAPTIONS, MessageKey> = {
+  findNext: "search.next",
+  findPrevious: "search.previous",
+  selectAll: "search.selectAll",
+  replaceNext: "search.replaceNext",
+  replaceAll: "search.replaceAll",
+};
+
+/** Obsidian writes a tooltip as the label, then its key on a line below. */
+export function buttonLabel(
+  action: keyof typeof SEARCH_KEY_CAPTIONS,
+  mac: boolean,
+): string {
+  return `${t(BUTTON_LABELS[action])}\n${spellKey(SEARCH_KEY_CAPTIONS[action], mac)}`;
+}
+
 export function obsidianSearchPanel(host: PanelHost) {
-  /** Obsidian writes a tooltip as the label, then its key on a line below. */
-  const tooltip = (
-    label: string,
-    action: keyof typeof SEARCH_KEY_CAPTIONS,
-  ): string => `${label}\n${spellKey(SEARCH_KEY_CAPTIONS[action], host.mac)}`;
+  const tooltip = (action: keyof typeof SEARCH_KEY_CAPTIONS): string =>
+    buttonLabel(action, host.mac);
 
   return (view: EditorView): Panel => {
     // The view's own document and window, not this file's: a popout has both.
@@ -89,12 +103,12 @@ export function obsidianSearchPanel(host: PanelHost) {
       "div",
       "search-input-container document-search-input",
     );
-    const searchInput = field("Find...");
+    const searchInput = field(t("search.findPlaceholder"));
     searchInput.setAttribute("main-field", "true");
     const countEl = element("div", "document-search-count");
     const buttons = element("div", "document-search-buttons");
     const replaceRow = element("div", "document-replace");
-    const replaceInput = field("Replace...");
+    const replaceInput = field(t("search.replacePlaceholder"));
     replaceInput.classList.add("document-replace-input");
     const replaceButtons = element("div", "document-replace-buttons");
 
@@ -151,32 +165,32 @@ export function obsidianSearchPanel(host: PanelHost) {
       return control;
     };
 
-    button(buttons, "arrow-up", tooltip("Previous", "findPrevious"), () =>
+    button(buttons, "arrow-up", tooltip("findPrevious"), () =>
       findPrevious(view),
     );
-    button(buttons, "arrow-down", tooltip("Next", "findNext"), () =>
+    button(buttons, "arrow-down", tooltip("findNext"), () =>
       findNext(view),
     );
     button(
       buttons,
       "text-select",
-      tooltip("Select all matches", "selectAll"),
+      tooltip("selectAll"),
       () => selectMatches(view),
     );
 
-    const close = button(buttons, "x", "Exit search", () =>
+    const close = button(buttons, "x", t("search.close"), () =>
       closeSearchPanel(view),
     );
     close.classList.remove("document-search-button");
     close.classList.add("document-search-close-button");
 
-    button(replaceButtons, "replace", tooltip("Replace", "replaceNext"), () =>
+    button(replaceButtons, "replace", tooltip("replaceNext"), () =>
       replaceNext(view),
     );
     button(
       replaceButtons,
       "replace-all",
-      tooltip("Replace all", "replaceAll"),
+      tooltip("replaceAll"),
       () => replaceAll(view),
     );
 

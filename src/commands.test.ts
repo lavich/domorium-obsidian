@@ -1,7 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { COMMANDS, type CommandHost, type CommandView } from "./commands";
 import type { GedcomRecord } from "./editor/records";
+import { resetLanguage, setLanguage, t } from "./i18n";
+
+afterEach(resetLanguage);
 
 const RECORD: GedcomRecord = {
   tag: "INDI",
@@ -208,8 +211,47 @@ describe("what a command does when it runs", () => {
       view({ goToNextReference: () => 3 }),
     );
     expect(some.notify).toHaveBeenCalledWith(
-      "3 GEDCOM reference(s); moved to next",
+      "3 GEDCOM references; moved to next",
     );
+
+    const one = host();
+    command("find-gedcom-references").run(
+      one.host,
+      view({ goToNextReference: () => 1 }),
+    );
+    expect(one.notify).toHaveBeenCalledWith(
+      "1 GEDCOM reference; moved to next",
+    );
+  });
+
+  it("speaks the reader's language, and leaves the identifier in it alone", async () => {
+    setLanguage("ru");
+    const { host: commandHost, notify } = host();
+
+    command("copy-gedcom-record-link").run(commandHost, view());
+    await vi.waitFor(() => expect(notify).toHaveBeenCalled());
+
+    const said = notify.mock.calls[0]?.[0] as string;
+    expect(said).toContain("@I1@");
+    expect(said).not.toContain("copied");
+    expect(said).toMatch(/[а-я]/);
+  });
+});
+
+describe("what a command is called", () => {
+  it("carries a name the palette can show in English", () => {
+    expect(t(command("go-to-gedcom-record").name)).toBe("Go to record");
+    expect(t(command("replace-in-gedcom-file").name)).toBe("Replace...");
+  });
+
+  it("carries the same name in Russian", () => {
+    setLanguage("ru");
+    expect(t(command("go-to-gedcom-record").name)).toBe("Перейти к записи");
+  });
+
+  it("gives every command a name of its own", () => {
+    const names = COMMANDS.map((entry) => t(entry.name));
+    expect(new Set(names).size).toBe(names.length);
   });
 });
 

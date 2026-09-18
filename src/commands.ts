@@ -1,4 +1,5 @@
 import type { GedcomRecord } from "./editor/records";
+import { plural, t, type MessageKey } from "./i18n";
 import {
   gedcomLinkUrl,
   recordLinkText,
@@ -44,7 +45,7 @@ export interface CommandHotkey {
 
 export interface GedcomCommand {
   id: string;
-  name: string;
+  name: MessageKey;
   icon: string;
   section?: string;
   /** The default binding, which differs by platform where Obsidian's own do. */
@@ -64,15 +65,15 @@ function copyRecordLink(
   const record = view.recordAtCursor();
   const identifier = record?.identifier;
   if (!record || !identifier || !view.file) {
-    host.notify("GEDCOM: no record with an identifier at the cursor");
+    host.notify(t("notice.noRecordAtCursor"));
     return;
   }
   void host.copy(write(view.file.path, identifier, recordLinkText(record))).then(
     () => {
-      host.notify(`GEDCOM: link to ${identifier} copied`);
+      host.notify(t("notice.linkCopied", { identifier }));
     },
     () => {
-      host.notify("GEDCOM: the link could not be copied");
+      host.notify(t("notice.linkNotCopied"));
     },
   );
 }
@@ -80,7 +81,7 @@ function copyRecordLink(
 export const COMMANDS: GedcomCommand[] = [
   {
     id: "go-to-gedcom-record",
-    name: "Go to record",
+    name: "command.goToRecord",
     icon: "list-tree",
     isAvailable: (view) => view.records().length > 0,
     run: (host, view) => {
@@ -91,7 +92,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "copy-gedcom-record-wikilink",
-    name: "Copy link to record",
+    name: "command.copyLink",
     icon: "link",
     section: "copy",
     isAvailable: identifiedRecord,
@@ -102,7 +103,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "copy-gedcom-record-link",
-    name: "Copy Obsidian URL to record",
+    name: "command.copyUrl",
     icon: "globe",
     section: "copy",
     isAvailable: identifiedRecord,
@@ -113,7 +114,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "go-to-gedcom-definition",
-    name: "Go to definition",
+    name: "command.goToDefinition",
     icon: "arrow-right",
     isAvailable: () => true,
     run: (_host, view) => {
@@ -122,34 +123,34 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "find-gedcom-references",
-    name: "Find references",
+    name: "command.findReferences",
     icon: "search",
     isAvailable: () => true,
     run: (host, view) => {
       const referenceCount = view.goToNextReference();
       host.notify(
         referenceCount === 0
-          ? "No GEDCOM references found"
-          : `${referenceCount} GEDCOM reference(s); moved to next`,
+          ? t("notice.noReferences")
+          : plural("notice.references", referenceCount),
       );
     },
   },
   {
     id: "rename-gedcom-reference",
-    name: "Rename reference",
+    name: "command.renameReference",
     icon: "pencil",
     isAvailable: (view) => view.canRenameReference(),
     run: (host, view) => {
       host.askForName((newName) => {
         if (!view.renameReference(newName)) {
-          host.notify("GEDCOM reference could not be renamed");
+          host.notify(t("notice.renameFailed"));
         }
       });
     },
   },
   {
     id: "go-to-next-gedcom-problem",
-    name: "Go to next problem",
+    name: "command.nextProblem",
     icon: "chevron-down",
     isAvailable: (view) => view.problemCount() > 0,
     run: (_host, view) => {
@@ -158,7 +159,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "go-to-previous-gedcom-problem",
-    name: "Go to previous problem",
+    name: "command.previousProblem",
     icon: "chevron-up",
     isAvailable: (view) => view.problemCount() > 0,
     run: (_host, view) => {
@@ -167,7 +168,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "toggle-gedcom-problems-panel",
-    name: "Toggle problems panel",
+    name: "command.toggleProblems",
     icon: "list-checks",
     isAvailable: (view) => view.canShowProblems(),
     run: (_host, view) => {
@@ -176,7 +177,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "search-in-gedcom-file",
-    name: "Find...",
+    name: "command.find",
     icon: "file-search",
     section: "find",
     isAvailable: () => true,
@@ -186,7 +187,7 @@ export const COMMANDS: GedcomCommand[] = [
   },
   {
     id: "replace-in-gedcom-file",
-    name: "Replace...",
+    name: "command.replace",
     icon: "file-search",
     section: "find",
     // Find needs no default: Obsidian's own editor:open-search finds the view

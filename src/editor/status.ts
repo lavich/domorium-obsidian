@@ -1,3 +1,5 @@
+import { plural, t } from "../i18n";
+
 export interface VersionStatus {
   kind: string;
   version?: string;
@@ -20,15 +22,20 @@ export function formatStatus(status: GedcomStatus): string {
 function formatVersion(version: VersionStatus | undefined): string {
   switch (version?.kind) {
     case "supported":
-      return `GEDCOM ${version.version}`;
+      return t("status.supported", { version: version.version ?? "" });
     case "substituted":
-      return `GEDCOM ${version.version}, checked as ${version.dialect}`;
+      return t("status.substituted", {
+        version: version.version ?? "",
+        dialect: version.dialect ?? "",
+      });
     case "unsupported":
-      return `GEDCOM ${version.version}, not checked`;
+      return t("status.unsupported", { version: version.version ?? "" });
     case "paf":
-      return `${version.system ?? "Personal Ancestral File"}, not checked`;
+      return t("status.paf", {
+        system: version.system ?? "Personal Ancestral File",
+      });
     case "undetermined":
-      return "GEDCOM version missing, not checked";
+      return t("status.undetermined");
     default:
       return "GEDCOM";
   }
@@ -39,7 +46,7 @@ function formatProblems(problems: number | undefined): string | undefined {
     return undefined;
   }
   if (problems === 0) {
-    return "no problems";
+    return t("status.noProblems");
   }
-  return problems === 1 ? "1 problem" : `${problems} problems`;
+  return plural("status.problems", problems);
 }

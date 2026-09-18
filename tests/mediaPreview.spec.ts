@@ -1041,3 +1041,16 @@ test.describe("a picture larger than the popover it hangs in", () => {
     ).toMatchObject({ left: 400, top: 100, right: 1200, bottom: 300 });
   });
 });
+
+test.describe("the popover in Russian", () => {
+  test("says a file was not found in Russian, and keeps the path as written", async ({
+    page,
+  }) => {
+    await mount(page, { doc: MEDIA, media: VAULT, language: "ru" });
+    await modHover(page, MISSING);
+
+    await expect(page.locator(POPOVER)).toContainText("Файл не найден");
+    await expect(page.locator(POPOVER)).toContainText("media/gone.jpg");
+    await expect(page.locator(POPOVER)).not.toContainText("File not found");
+  });
+});

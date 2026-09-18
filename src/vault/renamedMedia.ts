@@ -5,6 +5,7 @@ import {
 } from "@domorium/language-service";
 
 import { relativeToDocument } from "../editor/service";
+import { plural, t } from "../i18n";
 
 const GEDCOM_EXTENSIONS = ["ged", "gedcom"];
 
@@ -94,17 +95,18 @@ export function retargetMedia(
 }
 
 export function describeRetarget(payloads: number, files: number): string {
-  return `GEDCOM: repointed ${count(payloads, "media link")} in ${count(files, "file")}`;
+  return t("notice.retargeted", {
+    links: plural("count.mediaLinks", payloads),
+    files: plural("count.filesIn", files),
+  });
 }
 
 export function describeUnreadable(files: number): string {
-  return `GEDCOM: could not check ${count(files, "file")} for links to the renamed file`;
+  return t("notice.unreadable", { files: plural("count.files", files) });
 }
 
 export function describeStranded(payloads: number): string {
-  return `GEDCOM: left ${count(payloads, "media link")} pointing at the old path — GEDCOM 7 cannot name a file outside the folder its own file is in`;
-}
-
-function count(amount: number, noun: string): string {
-  return `${amount} ${noun}${amount === 1 ? "" : "s"}`;
+  return t("notice.stranded", {
+    links: plural("count.mediaLinks", payloads),
+  });
 }

@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
+import { resetLanguage, setLanguage } from "../i18n";
 import {
   describeRetarget,
   describeStranded,
@@ -205,5 +206,35 @@ describe("what the notice says", () => {
   it("says what was left behind, and why nothing could be written", () => {
     expect(describeStranded(2)).toContain("left 2 media links");
     expect(describeStranded(2)).toContain("outside the folder");
+  });
+});
+
+describe("what the notice says in Russian", () => {
+  afterEach(resetLanguage);
+
+  it("declines each noun by its own count", () => {
+    setLanguage("ru");
+    expect(describeRetarget(1, 1)).toBe(
+      "GEDCOM: новый путь записан в 1 медиассылке в 1 файле",
+    );
+    expect(describeRetarget(3, 2)).toBe(
+      "GEDCOM: новый путь записан в 3 медиассылках в 2 файлах",
+    );
+    expect(describeRetarget(5, 5)).toBe(
+      "GEDCOM: новый путь записан в 5 медиассылках в 5 файлах",
+    );
+  });
+
+  it("declines a file it could not check in the accusative", () => {
+    setLanguage("ru");
+    expect(describeUnreadable(1)).toContain("проверить 1 файл на");
+    expect(describeUnreadable(3)).toContain("проверить 3 файла на");
+    expect(describeUnreadable(5)).toContain("проверить 5 файлов на");
+  });
+
+  it("keeps GEDCOM 7 in the reason", () => {
+    setLanguage("ru");
+    expect(describeStranded(1)).toContain("в 1 медиассылке");
+    expect(describeStranded(1)).toContain("GEDCOM 7");
   });
 });

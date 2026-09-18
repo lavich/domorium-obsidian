@@ -47,6 +47,7 @@ import {
 import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
+import { t } from "./i18n";
 import type { GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
@@ -528,14 +529,9 @@ export class GedcomView extends TextFileView {
     popover?.unload();
   }
 
-  /**
-   * `iterateRootLeaves`, not `iterateAllLeaves`: `setActiveLeaf` will not
-   * uncollapse a sidebar, so a leaf found there would be found and not shown,
-   * and the reader's click would come to nothing.
-   */
   private leafShowing(path: string): WorkspaceLeaf | null {
     return leafShowingFile(path, (visit) =>
-      this.app.workspace.iterateRootLeaves(visit),
+      this.app.workspace.iterateAllLeaves(visit),
     );
   }
 
@@ -552,16 +548,14 @@ export class GedcomView extends TextFileView {
         const path = normalizePath(relativePath);
         const file = this.app.vault.getAbstractFileByPath(path);
         if (!(file instanceof TFile)) {
-          new Notice(`Vault file not found: ${path}`);
+          new Notice(t("notice.vaultFileNotFound", { path }));
           return;
         }
         // Where it already is, or else a tab of its own: replacing this one
         // loses the reader's place in the file the link was followed from.
         const open = this.leafShowing(path);
         if (open) {
-          // Not `revealLeaf`, which wants Obsidian 1.7.2. See "The minimum
-          // app version, and what it costs" in CLAUDE.md.
-          this.app.workspace.setActiveLeaf(open, { focus: true });
+          void this.app.workspace.revealLeaf(open);
           return;
         }
         // Not `'window'`, which the mobile app has no popout for.
@@ -569,7 +563,7 @@ export class GedcomView extends TextFileView {
       },
     });
     if (!routed) {
-      new Notice("File link cannot be opened safely");
+      new Notice(t("notice.unsafeFileLink"));
     }
   }
 }

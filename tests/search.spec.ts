@@ -462,3 +462,20 @@ test.describe("the search bar", () => {
     await expect(page.locator(".document-search-container")).toHaveCount(0);
   });
 });
+
+test.describe("the search bar in Russian", () => {
+  test("labels its controls in Russian and spells the keys as before", async ({
+    page,
+  }) => {
+    await openSearch(page, { language: "ru" });
+
+    await expect(page.locator(input)).toHaveAttribute("placeholder", "Найти...");
+    await expect(
+      page.locator('[aria-label^="Следующее"]'),
+      "the label is Russian; the key below it is spelt as Obsidian spells it",
+    ).toHaveAttribute("aria-label", "Следующее\nF3");
+    await expect(
+      page.locator(".document-search-close-button"),
+    ).toHaveAttribute("aria-label", "Закрыть поиск");
+  });
+});
