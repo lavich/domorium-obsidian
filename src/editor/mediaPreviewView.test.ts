@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { resetLanguage, setLanguage } from "../i18n";
 import type { MediaPreviewContent } from "./media";
 import {
   renderMediaPreview,
@@ -40,6 +41,30 @@ const labels = (): string[] =>
 beforeEach(() => {
   container = document.createElement("div");
   answers = [];
+});
+
+afterEach(resetLanguage);
+
+describe("the row a remote file is shown as, in Russian", () => {
+  it("says the file is remote in Russian, and keeps the URL as written", () => {
+    setLanguage("ru");
+    draw({ kind: "remote", url: "https://example.org/marie.jpg", state: "unasked" });
+
+    expect(text(".gedcom-media-note")).toBe("Удалённый файл, не загружен");
+    expect(text(".gedcom-media-name")).toBe("https://example.org/marie.jpg");
+    expect(labels()).toEqual([
+      "Показать это изображение",
+      "Всегда показывать изображения из интернета",
+    ]);
+  });
+
+  it("says a file was not found in Russian", () => {
+    setLanguage("ru");
+    draw({ kind: "missing", target: "media/gone.jpg" });
+
+    expect(text(".gedcom-media-note")).toBe("Файл не найден");
+    expect(text(".gedcom-media-name")).toBe("media/gone.jpg");
+  });
 });
 
 describe("the row a remote file is shown as", () => {

@@ -1,10 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
+import { resetLanguage, setLanguage } from "./i18n";
 import {
-  RECORD_PREVIEW_OPTIONS,
-  SETTING_DEFINITIONS,
+  recordPreviewOptions,
+  settingDefinitions,
 } from "./settingDefinitions";
 import { changedSetting, DEFAULT_SETTINGS, parseSettings } from "./settingsData";
+
+afterEach(resetLanguage);
 
 describe("GEDCOM settings", () => {
   it("enables language assistance by default", () => {
@@ -66,7 +69,7 @@ describe("GEDCOM settings", () => {
   });
 
   it("exposes every option to Obsidian settings search", () => {
-    expect(SETTING_DEFINITIONS).toEqual([
+    expect(settingDefinitions()).toEqual([
       {
         name: "Diagnostics",
         desc: "Underline GEDCOM errors and warnings in the editor.",
@@ -83,7 +86,7 @@ describe("GEDCOM settings", () => {
         control: {
           type: "dropdown",
           key: "recordPreview",
-          options: RECORD_PREVIEW_OPTIONS,
+          options: recordPreviewOptions(),
           defaultValue: "hover",
         },
       },
@@ -93,7 +96,7 @@ describe("GEDCOM settings", () => {
         control: {
           type: "dropdown",
           key: "mediaPreview",
-          options: RECORD_PREVIEW_OPTIONS,
+          options: recordPreviewOptions(),
           defaultValue: "hover",
         },
       },
@@ -109,20 +112,29 @@ describe("GEDCOM settings", () => {
     ]);
   });
 
+  it("speaks the reader's language when Obsidian asks for the definitions", () => {
+    setLanguage("ru");
+    const [first] = settingDefinitions();
+
+    expect(first?.name).toBe("Диагностика");
+    expect(first?.desc).toMatch(/GEDCOM/);
+    expect(recordPreviewOptions().off).toBe("Никогда");
+  });
+
   it("has a definition for every setting, and a setting for every definition", () => {
-    expect(SETTING_DEFINITIONS.map((item) => item.control.key).sort()).toEqual(
+    expect(settingDefinitions().map((item) => item.control.key).sort()).toEqual(
       Object.keys(DEFAULT_SETTINGS).sort(),
     );
   });
 
   it("defaults every control to what the setting itself defaults to", () => {
-    for (const { control } of SETTING_DEFINITIONS) {
+    for (const { control } of settingDefinitions()) {
       expect(control.defaultValue).toBe(DEFAULT_SETTINGS[control.key]);
     }
   });
 
   it("offers a dropdown only values the setting accepts", () => {
-    for (const { control } of SETTING_DEFINITIONS) {
+    for (const { control } of settingDefinitions()) {
       if (control.type !== "dropdown") {
         continue;
       }

@@ -68,29 +68,27 @@ geometry still belong in the Playwright specs, which have a real browser.
 
 ## The minimum app version, and what it costs
 
-`minAppVersion` is **1.5.0** and has never moved: every release in
-`versions.json` maps to it. Raising it does not break anyone — Obsidian installs
-the newest plugin version its app supports, so a reader below the floor simply
-stops receiving updates — but it does strand them, so the floor moves only when
+`minAppVersion` is **1.8.7**. It was 1.5.0 from the first release through
+1.10.1 and moved once, for `getLanguage()`, which is how the plugin learns the
+app's language. Raising it does not break anyone — Obsidian installs the newest
+plugin version its app supports, so a reader below the floor simply stops
+receiving updates — but it does strand them, so the floor moves only when
 something is worth the trade.
 
-Nothing so far has been. Each time a newer API was declined, the workaround was
-cheap and is recorded here. **Raise the floor once, and collect every entry at
-or below the new floor in the same release** — that is what this table is for,
-rather than paying the cost twice for one API.
+Each time a newer API is declined, the workaround is cheap and is recorded
+here. **Raise the floor once, and collect every entry at or below the new floor
+in the same release** — that is what this table is for, rather than paying the
+cost twice for one API. The move to 1.8.7 cleared `Workspace.revealLeaf`
+(1.7.2) this way.
 
 | Wanted | Needs | What is done instead | Where |
 | --- | --- | --- | --- |
-| `Workspace.revealLeaf` | 1.7.2 | `setActiveLeaf(leaf, { focus: true })`, which brings a tab forward but will not uncollapse a sidebar | `src/GedcomView.ts` |
 | Only `getSettingDefinitions` | 1.13.0 | The deprecated `display()` and its `render()` are kept beside it, for an app that does not call the new one | `src/settings.ts` |
 
 `eslint-plugin-obsidianmd` catches a call above the floor
 (`obsidianmd/no-unsupported-api`), so a new entry announces itself at lint time
 rather than in someone's vault. When one arrives, add a row; when the floor
 moves, delete the rows it clears along with the code they describe.
-
-Obsidian 1.7.2 is from September 2024 and 1.13.0 is recent, so the two rows are
-not equally cheap to clear.
 
 ## Spec-driven changes with OpenSpec
 

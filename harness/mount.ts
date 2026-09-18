@@ -17,6 +17,7 @@ import {
 } from "../src/editor/searchKeys";
 import { openSearch } from "../src/editor/searchPanel";
 import { hoverDelay, previewGesture } from "../src/editor/previewGesture";
+import { setLanguage } from "../src/i18n";
 import {
   DEFAULT_SETTINGS,
   type RecordPreviewTrigger,
@@ -42,6 +43,7 @@ export interface HarnessOptions {
   keyboard?: number;
   /** Whether the host is a Mac, which only the spec running the page knows. */
   mac?: boolean;
+  language?: string;
 }
 
 export interface HarnessCalls {
@@ -189,6 +191,7 @@ function mount(options: HarnessOptions): void {
   const record = options.recordPreview ?? DEFAULT_SETTINGS.recordPreview;
   const media = options.mediaPreview ?? DEFAULT_SETTINGS.mediaPreview;
   mac = options.mac ?? false;
+  setLanguage(options.language ?? "en");
 
   const parent = document.getElementById("editor");
   if (!parent) {

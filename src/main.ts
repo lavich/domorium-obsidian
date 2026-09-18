@@ -2,6 +2,7 @@ import {
   addIcon,
   type App,
   FuzzySuggestModal,
+  getLanguage,
   type Menu,
   Modal,
   normalizePath,
@@ -17,6 +18,7 @@ import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
+import { setLanguage, t } from "./i18n";
 import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
@@ -76,6 +78,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   private statusBar: HTMLElement | undefined;
 
   async onload(): Promise<void> {
+    setLanguage(getLanguage());
     this.settings = parseSettings(await this.loadData());
     addIcon(GEDCOM_ICON_ID, GEDCOM_ICON_SVG);
     this.registerView(
@@ -105,7 +108,10 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       for (const problem of problems) {
         list.createEl("li", {
           cls: `gedcom-note-problem-${problem.level}`,
-          text: `Line ${problem.line}: ${problem.message}`,
+          text: t("note.problemLine", {
+            line: problem.line,
+            message: problem.message,
+          }),
         });
       }
     });
@@ -121,7 +127,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.registerObsidianProtocolHandler(PROTOCOL_ACTION, (params) => {
       const target = parseGedcomLink(params);
       if (!target) {
-        new Notice("GEDCOM: the link names no file");
+        new Notice(t("notice.linkNamesNoFile"));
         return;
       }
       void this.openGedcomLink(target);
@@ -129,7 +135,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     for (const command of COMMANDS) {
       this.addCommand({
         id: command.id,
-        name: command.name,
+        name: t(command.name),
         hotkeys: command.hotkeys?.(Platform.isMacOS),
         checkCallback: (checking) => {
           const view = this.app.workspace.getActiveViewOfType(GedcomView);
@@ -177,7 +183,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       }
       menu.addItem((item) => {
         item
-          .setTitle(command.name)
+          .setTitle(t(command.name))
           .setIcon(command.icon)
           .onClick(() => {
             command.run(this.commandHost(), view);
@@ -252,7 +258,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     const path = normalizePath(target.file);
     const file = this.app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {
-      new Notice(`GEDCOM: ${path} is not in this vault`);
+      new Notice(t("notice.fileNotInVault", { path }));
       return;
     }
     const leaf = this.app.workspace.getLeaf(false);
@@ -262,7 +268,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     }
     const view = leaf.view;
     if (!(view instanceof GedcomView) || !view.goToXref(target.xref)) {
-      new Notice(`GEDCOM: ${target.xref} is not in ${file.name}`);
+      new Notice(
+        t("notice.xrefNotInFile", { xref: target.xref, file: file.name }),
+      );
     }
   }
 
@@ -381,7 +389,7 @@ class RecordSwitcherModal extends FuzzySuggestModal<GedcomRecord> {
     private readonly onChoose: (record: GedcomRecord) => void,
   ) {
     super(app);
-    this.setPlaceholder("Find a record by name, identifier or tag");
+    this.setPlaceholder(t("switcher.placeholder"));
   }
 
   getItems(): GedcomRecord[] {
@@ -406,10 +414,10 @@ class RenameReferenceModal extends Modal {
   }
 
   onOpen(): void {
-    this.setTitle("Rename GEDCOM reference");
+    this.setTitle(t("rename.title"));
     let value = "";
     new Setting(this.contentEl)
-      .setName("New identifier")
+      .setName(t("rename.field"))
       .addText((text) => {
         text.setPlaceholder("@i2@").onChange((nextValue) => {
           value = nextValue;
@@ -423,7 +431,7 @@ class RenameReferenceModal extends Modal {
       })
       .addButton((button) =>
         button
-          .setButtonText("Rename")
+          .setButtonText(t("rename.button"))
           .setCta()
           .onClick(() => {
             this.close();

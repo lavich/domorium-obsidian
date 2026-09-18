@@ -131,6 +131,7 @@ export interface MountOptions {
   holdImages?: boolean;
   mobile?: boolean;
   keyboard?: number;
+  language?: string;
 }
 
 export async function mount(

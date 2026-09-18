@@ -1,5 +1,6 @@
 import type { MediaCrop } from "@domorium/language-service";
 
+import { t, type MessageKey } from "../i18n";
 import {
   cropScale,
   drawnCrop,
@@ -36,15 +37,15 @@ export interface MediaPreviewHost {
   allow?: (scope: AllowScope) => void;
 }
 
-const REMOTE_NOTES: Record<RemoteState, string> = {
-  unasked: "Remote file, not loaded",
-  insecure: "Unencrypted address, not loaded",
-  "not-an-image": "Remote file, not loaded",
+const REMOTE_NOTES: Record<RemoteState, MessageKey> = {
+  unasked: "media.remoteNotLoaded",
+  insecure: "media.insecureNotLoaded",
+  "not-an-image": "media.remoteNotLoaded",
 };
 
-const OFFERS: { scope: AllowScope; label: string }[] = [
-  { scope: "once", label: "Show this image" },
-  { scope: "always", label: "Always show images from the web" },
+const OFFERS: { scope: AllowScope; label: MessageKey }[] = [
+  { scope: "once", label: "media.showOnce" },
+  { scope: "always", label: "media.showAlways" },
 ];
 
 /**
@@ -80,14 +81,14 @@ export function renderMediaPreview(
         ICONS.remote,
         content.url,
         host,
-        REMOTE_NOTES[content.state],
+        t(REMOTE_NOTES[content.state]),
       );
       if (content.state === "unasked" && host.allow) {
         drawOffer(root, host.allow);
       }
       break;
     case "missing":
-      drawRow(root, ICONS.missing, content.target, host, "File not found");
+      drawRow(root, ICONS.missing, content.target, host, t("media.fileNotFound"));
       break;
   }
 
@@ -138,7 +139,7 @@ function drawOffer(
   const row = element(root, "div", "gedcom-media-offer");
   for (const { scope, label } of OFFERS) {
     const button = element(row, "button", "gedcom-media-allow");
-    button.textContent = label;
+    button.textContent = t(label);
     button.addEventListener("click", () => {
       allow(scope);
     });
@@ -212,7 +213,7 @@ function drawImage(
       content.remote ? ICONS.remote : ICONS.missing,
       content.remote ? content.url : content.name,
       host,
-      content.remote ? "Image could not be loaded" : "Image could not be drawn",
+      t(content.remote ? "media.loadFailed" : "media.drawFailed"),
       frame,
     );
     frame.remove();

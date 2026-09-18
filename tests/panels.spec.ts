@@ -165,3 +165,26 @@ test.describe("the panels CodeMirror paints", () => {
     expect(order.lint).toBeGreaterThan(order.content);
   });
 });
+
+const CLEAN = ["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 TRLR", ""].join("\n");
+
+test.describe("the problems panel in Russian", () => {
+  test("names itself, its close button and a clean file in Russian", async ({
+    page,
+  }) => {
+    await mount(page, { doc: CLEAN, language: "ru" });
+    await page.evaluate(() => {
+      window.gedcom.openProblems();
+    });
+    await page.waitForSelector(".cm-panel-lint li");
+
+    await expect(page.locator(".cm-panel-lint ul")).toHaveAttribute(
+      "aria-label",
+      "Проблемы",
+    );
+    await expect(page.locator(".cm-panel-lint li")).toHaveText(/Проблем нет/);
+    await expect(
+      page.locator('.cm-panel-lint [name="close"]'),
+    ).toHaveAttribute("aria-label", "закрыть");
+  });
+});
