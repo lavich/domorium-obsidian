@@ -18,6 +18,11 @@ into a note to read something comes back to the list they left.
 
 The list SHALL say how many people it is showing.
 
+A person the model reports as unaddressable — a record declaring no
+cross-reference — SHALL be left out of the list, having no identifier to open
+and no way to be linked to. The model still reports such a record; leaving it
+out is this view's decision, not the model's.
+
 #### Scenario: Opening a GEDCOM file
 - **WHEN** the reader opens a GEDCOM file holding 17 people and the sidebar view
   is showing
@@ -30,6 +35,10 @@ The list SHALL say how many people it is showing.
 #### Scenario: Moving to a note
 - **WHEN** the reader moves from a GEDCOM file to a markdown note
 - **THEN** the list still shows the GEDCOM file's people
+
+#### Scenario: A record that cannot be addressed
+- **WHEN** the document holds an `INDI` record declaring no cross-reference
+- **THEN** it is not listed, and the count does not include it
 
 #### Scenario: No GEDCOM has been opened
 - **WHEN** the sidebar view is showing and no GEDCOM file has been opened in
@@ -88,6 +97,12 @@ Clearing the field SHALL restore the whole list.
 - **THEN** the list shows the people whose record states that year, and then
   those whose record states that place
 
+#### Scenario: An identifier that is the start of others
+- **WHEN** the reader types `I1` in a document declaring `@I1@`, `@I10@` and
+  `@I100@`
+- **THEN** all three are among the matches, in document order; ordering an exact
+  identifier first is not part of this change
+
 #### Scenario: Nothing matches
 - **WHEN** the reader types text no person matches
 - **THEN** the list says that no people were found
@@ -105,13 +120,17 @@ show that person, without leaving a second Person view behind.
 - **WHEN** the reader chooses another row while a Person view is open
 - **THEN** that view shows the second person, and only one Person view is open
 
-### Requirement: The list stays usable on a document of any size
+### Requirement: The list stays usable on a document of at least twenty thousand people
 
 The sidebar SHALL remain responsive to typing and scrolling on a document
-holding tens of thousands of people. Opening such a document SHALL NOT block the
-application for longer than reading the document itself already costs.
+holding at least 20,000 people, which is the size this change is measured
+against. Opening such a document SHALL NOT block the application for longer than
+reading the document itself already costs.
 
-#### Scenario: A large document
+Nothing is claimed for a document larger than that. A document an order of
+magnitude bigger may need work this change does not do.
+
+#### Scenario: A document of twenty thousand people
 - **WHEN** the reader opens a GEDCOM file holding 20,000 people
 - **THEN** the list appears, scrolls and filters without the interface ceasing
   to answer

@@ -25,16 +25,20 @@ expensive later; getting them right is most of the value of this change.
 - A **Person view** opens as a workspace tab: who they were, their parents,
   partners and children, the events the record carries, and a way back into the
   file. Every relative in it is a link to that relative's own Person view, and
-  Obsidian's Back and Forward walk the trail.
+  the reader can retrace the trail they followed. Whether that is Obsidian's own
+  Back and Forward is measured before it is promised: the design prefers them
+  and names the fallback.
 - **Open in GEDCOM** puts the cursor on the person's `INDI` line, using the
   same mechanism the plugin's `obsidian://` links already use.
 - A new **`src/genealogy/`** module reads people, families and events out of
   the document symbols the language service already produces. It imports
-  nothing from `obsidian` and knows nothing about views, so it can move
-  upstream when a second client wants it. See the Non-goals on why it starts
-  here.
-- A person is addressed by **document and identifier together**, never by
-  identifier alone, because two files may both call someone `@I123@`.
+  nothing from `obsidian`, knows nothing about views, and names nothing in a
+  reader's language, so that extracting it later is adaptation rather than
+  rewriting. See the Non-goals on why it starts here.
+- A person is addressed by a **document reference and an identifier**, never by
+  identifier alone, because two files may both call someone `@I123@`. The
+  document half is a reference in its own right, holding a path today, so that
+  a stable identity can replace the path later without every holder changing.
 
 This change belongs in **this repository**. It adds no parsing, no validation
 rule and no language-service behaviour: the family graph is assembled from
@@ -96,15 +100,29 @@ strings to the existing catalogue rather than by changing that requirement.
 - **Putting the read model upstream in this change.** It belongs in
   [lavich/domorium](https://github.com/lavich/domorium) eventually, beside the
   clients that would share it. It starts here because its shape is not yet
-  known: designing an API upstream with no consumer invites a wrong one, and
-  because it is a pure function over an already-public interface, the module is
-  the same text in either repository and moves in an afternoon. CLAUDE.md
-  records the condition for moving it: the second client that wants it.
+  known, and designing an API upstream with no consumer invites a wrong one.
+  It is built to be extracted with little adaptation, which is not the same as
+  moved unchanged: it is shaped by the symbol interface it reads, it takes a
+  naming function from its caller, and the bookkeeping that decides when a
+  document has changed is the host's and would have to be handed in. Each of
+  those is a named seam. CLAUDE.md records the condition for extracting it: the
+  second client that wants it.
 - **A correct GEDCOM date parser.** The list and the heading need a year, so a
   year is read out of `DATE` — a four-digit group, with `ABT` and `BET`
-  understood. A Hebrew date, a French Republican one or a dual `1867/68` is
-  shown as the file wrote it, with no year. Doing this properly means exporting
-  the calendar knowledge the validator already has, which is upstream's.
+  understood — and reported as a hint that says how exactly the payload stated
+  it, never as the year an event happened. A Hebrew date, a French Republican
+  one or a dual `1867/68` is shown as the file wrote it, with no year. Doing
+  this properly means exporting the calendar knowledge the validator already
+  has, which is upstream's.
+- **Deciding what is an event by reading the data.** Nothing in the symbol data
+  distinguishes an event from any other structure: a bare `1 DEAT` looks exactly
+  like `1 SEX M`. The set of event tags is therefore named, not inferred, and
+  the specification says so. The schema that knows the difference is private to
+  the validator; exposing it is an upstream request, not a prerequisite.
+- **Following a renamed GEDCOM file.** An address names a path, so moving a
+  GEDCOM invalidates addresses that named it, and the reader is told the file is
+  not there. The plugin already listens to the vault's rename event for media,
+  so following one is a later change against an interface built to allow it.
 - **Translating the schema's event labels.** The validator carries the official
   names and they are `en-US` only, and some read badly in an interface —
   `BURI` is "Depositing remains". Event labels go in the plugin's own catalogue,

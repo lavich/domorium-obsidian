@@ -51,9 +51,10 @@ measured rather than assumed:
 
 **Goals:**
 
-- One reading of a document, shared by both views, paid for once per version.
-- A read model whose every function could be moved to another repository
-  unchanged — no `obsidian` import, no vault, no file system, own tests.
+- One reading of a document, shared by both views, paid for once per revision.
+- A read model designed to be extracted with little adaptation — no `obsidian`
+  import, no vault, no file system, no reader-facing text, own tests — rather
+  than one that can be moved without reading it.
 - A person address that is the same value in a view's state, in a link, and in
   the model, so nothing has to translate between two spellings.
 - Answers for the two unknowns — navigation history and list size — obtained by
@@ -75,15 +76,23 @@ measured rather than assumed:
 ### The read model is a projection built once, addressed by document and xref
 
 `src/genealogy/` exports a `GenealogyIndex` built from the symbol tree of one
-document version. Building it is one pass that produces:
+revision of one document. Building it is one pass that produces:
 
-- `people`: an array of compact person rows — identifier, display name, other
-  names, birth year, death year, a place, and the searchable text — in document
+- `people`: an array of compact person rows — identifier or a mark that the
+  record declares none, display name, other names, the birth and death date
+  readings described below, a place, and the searchable text — in document
   order. This is what the sidebar renders and filters.
 - `byXref`: identifier to the symbol that declares it, for both `INDI` and
   `FAM`, so a person or family is a lookup rather than a scan.
 - `familiesOfPerson`: identifier to the `FAMC` and `FAMS` identifiers it
   carries, so relatives are resolved without re-walking.
+
+Spouses and children are read from a named set of family roles — GEDCOM's spouse
+roles and its child role — for the same reason the event set is named: a family
+record may carry pointers to people in roles that are neither, and "any pointer
+to a person inside a `FAM`" would make a witness into a parent. Within those
+roles nothing is constrained: a role may repeat, and a recorded sex need not
+agree with the role that names it.
 
 Detail — events, and the resolved relative lists — is computed when a person is
 opened, from `byXref`, not stored for all. At twenty thousand people the row
@@ -94,28 +103,43 @@ person touches a handful of symbols.
 time. Simpler to call, but it doubles the resident structure for data that
 almost none of it is ever read, and the measurements say the lookup is free.
 
-### A person address is the pair, and it is the view's state
+### A person address names a document, not a path
 
 ```ts
-interface PersonRef { file: string; xref: string; }
+interface DocumentRef { path: string; }
+interface PersonRef { document: DocumentRef; xref: string; }
 ```
 
-The vault-relative path and the identifier, together, in that order everywhere.
-This is the value the Person view returns from `getState()` and receives in
-`setState()`, which means Obsidian persists and restores it for free, and it is
-the same pair `protocolLink.ts` already spells into an `obsidian://` URL. A
-person is therefore addressable from a workspace file, a link, and the model
-without a second spelling to keep in step.
+The document half is a reference of its own even though it currently holds only
+a path. Nothing today needs more, but a vault-relative path identifies a
+document only while nobody moves it, and this address is about to become the
+thing a link, a workspace file, a duplicate result and a cross-tree reference
+are all spelt in. Wrapping the path now means a later change can add a stable
+identity — a header identifier, a fingerprint of the file — beside or instead of
+the path without touching every holder of an address.
 
-*Alternative considered:* a single opaque string, `path#@I1@`. One field instead
-of two, and it is what a subpath already looks like — but every consumer then
-parses it, and a vault path may contain a `#`.
+`PersonRef` is what the Person view returns from `getState()` and receives in
+`setState()`, so Obsidian persists and restores it, and it is the same pair
+`protocolLink.ts` already spells into an `obsidian://` URL.
+
+What this does **not** do is survive a rename. A GEDCOM file moved in the vault
+invalidates every stored address that named it, and the specification says so
+rather than promising otherwise. The plugin already listens to the vault's
+rename event for media links, so following a rename is a small later change
+against an interface that will not have to move.
+
+*Alternative considered:* a bare `{ file: string; xref: string }`. One field
+fewer, and every consumer that later wants a stable identity has to change.
+
+*Alternative considered:* a single opaque string, `path#@I1@`. It is what a
+subpath already looks like — but every consumer then parses it, and a vault path
+may contain a `#`.
 
 ### Navigation rides Obsidian's history, and a spike says whether it can
 
 The intended route: Person view sets `navigation = true`, holds the `PersonRef`
 as its view state, and moves between people by
-`leaf.setViewState({ type, state: { file, xref } })`. Obsidian records leaf
+`leaf.setViewState({ type, state: personRef })`. Obsidian records leaf
 history for navigable views, so Back and Forward should walk the people the
 reader visited, and a restored workspace should reopen the last person.
 
@@ -131,9 +155,13 @@ Cmd+[ and Cmd+]. Its outcome selects the branch:
 - **Back walks the states** — the route above stands, and Person view keeps no
   history of its own.
 - **Back does not** — Person view keeps its own trail in its state, and offers
-  its own back control in the page. The specification is written in terms of
-  what the reader sees ("Back shows William, then John"), so it holds either
-  way; only the design's route and two tasks change.
+  its own back control in the page.
+
+The specification requires only that the reader can retrace their steps, and
+says explicitly that which control does it is settled here. So neither outcome
+sends anyone back to rewrite a requirement; it was worded that way after the
+first draft promised the application's own Back and Forward, which is a promise
+this design cannot yet make.
 
 *Alternative considered:* writing the fallback stack unconditionally, which
 always works. It duplicates a facility the application has and puts a second
@@ -149,13 +177,40 @@ Obsidian ships none.
 
 Whether the filtered list needs it at all is measured first: the second spike
 times building a plain list of 1,000, 5,000 and 20,000 rows in the sidebar. If
-the plain list is comfortable to the size a real document reaches, the window
-is dropped from this change and the spec's requirement is met without it.
+the plain list is comfortable at 20,000 — the size the specification names and
+the only size measured — the window is dropped from this change and the
+requirement is met without it. Nothing is claimed above that size.
 
 Filtering runs over the precomputed searchable text of each row, which is one
 lowercase string per person built at index time. Twenty thousand substring tests
 are sub-millisecond; no index, no ranking, no debounce beyond the one the search
 bar already uses elsewhere.
+
+### A revision follows the text, not the file on disk
+
+The index is cached per document, keyed by a revision, and what counts as a
+revision differs by whether the document is open.
+
+For an open document the plugin owns a counter. It already drives
+`GedcomLanguageService.update(text)` from `GedcomView.setViewData`, so it
+increments its own revision at the same moment. This is deliberate: the language
+service keeps a `DocumentVersion` internally and **does not expose it** — the
+method that looks like it would, `getVersionResolution()`, returns the GEDCOM
+format version, `7.0`, which is a different thing entirely and an easy mistake
+to make. Asking upstream to expose the document version would be reasonable; it
+is not needed, because the plugin is the one calling `update`.
+
+For a closed document, read through `VaultReader`, the revision is the
+`mtime:size` pair `recordIndex.ts` already uses.
+
+A revision is therefore never derived from the file's timestamp while the
+document is open, which is the trap: a reader types, the path does not change,
+the modification time does not change, and an index keyed on disk metadata goes
+stale while showing a reader their own edit back as the old value.
+
+*Alternative considered:* hashing the text. Correct without any bookkeeping, but
+it is a pass over five megabytes on every keystroke to answer a question a
+counter answers for nothing.
 
 ### The active document is followed, not owned
 
@@ -170,6 +225,39 @@ reading the file through the existing `VaultReader` where it is not — a Person
 view restored after a restart, before its GEDCOM has been opened, must still
 show someone.
 
+### The event set is named, because nothing in the data distinguishes one
+
+`src/genealogy/` carries a named set of the event and attribute tags GEDCOM
+defines for an individual record, for both dialects, and reports a structure as
+an event when its tag is in that set.
+
+A generic rule would be better, and was tested. It is not available. The symbol
+data reports two kinds only, `Field` and `Object`, so every level-one structure
+under an `INDI` arrives as a `Field`. Nor does shape help:
+
+```
+NAME  kind=8 detail="A /B/"   children=0
+SEX   kind=8 detail="M"       children=0
+DEAT  kind=8 detail=null      children=0     <- an event
+FAMC  kind=8 detail="@F1@"    children=0
+CENS  kind=8 detail=null      children=1     <- an event
+```
+
+A bare `1 DEAT` is indistinguishable from `1 SEX M` and `1 FAMC @F1@`: same
+kind, no payload, no children. A heuristic of "has a `DATE` or a `PLAC` beneath
+it" therefore fails on exactly the case the specification has a scenario for.
+
+The knowledge that would settle it does exist — the validator's schema knows
+`record-INDI`'s 62 substructures and which are events — but
+`GedcomDocument.scheme` is private and the package exports none of it. Exposing
+it is a reasonable upstream request and a real improvement; it is not a
+prerequisite, because a named set of forty-odd tags is a table, and the
+specification says plainly that it is named rather than inferred.
+
+*Alternative considered:* reporting every level-one structure and letting the
+view decide. It moves the same table into the view and makes `SOUR` and `SNOTE`
+events on the way.
+
 ### Event names come from the plugin's catalogue, not the schema
 
 `src/i18n/en.json` and `ru.json` gain a key per supported event tag. The schema's
@@ -180,12 +268,45 @@ the tag itself, which is honest and needs no fallback table.
 This also keeps the event names inside the mechanism that already translates
 them, rather than adding a second source of user-visible English.
 
+### The renderers are handed their dependencies, including how to name a tag
+
+`src/people/peopleList.ts` and `src/person/personPage.ts` take their container,
+their callbacks, and a naming function:
+
+```ts
+renderPersonPage(container, person, { t, onPersonClick, onOpenSource });
+```
+
+They do not import `t` from `src/i18n/`. That module is honest about being
+module state — one language for the whole plugin, set once at load — and a
+renderer reaching for it is a renderer that cannot be drawn twice in two
+languages, and whose test has to set global state to say anything. Handing the
+function in is what `PanelHost`, `MediaPreviewHost` and `CommandHost` already do
+for everything Obsidian-shaped in this repository, and a naming function belongs
+in the same category.
+
+The views built on Obsidian supply `t` from the catalogue, as they do today.
+
 ### Dates yield a year only when they plainly state one
 
 `src/genealogy/` reads a year with a small, stated rule: strip a leading `ABT`,
 `CAL`, `EST`, `BEF`, `AFT`, or a `BET … AND …`, take the first four-digit group,
 and refuse anything carrying a calendar escape or a `1867/68` dual year. The
 payload is always carried through unchanged beside the year.
+
+What comes back is not called a birth year. `BET 1867 AND 1870` yields 1867, and
+that is the lower end of a range, not the year anyone was born. The reading is
+reported as a hint carrying how exactly the payload stated it:
+
+```ts
+interface DateReading { text: string; year?: number; precision?: "exact" | "approximate" | "range" }
+```
+
+The naming is the point. A field called `birthYear` holding 1867 for
+`BET 1867 AND 1870` is a trap for the first caller that compares two people by
+it — which is precisely what duplicate detection will do, and precisely where a
+wrong match is expensive. A caller that needs an exact year can now ask for one
+and be refused.
 
 This is deliberately less than GEDCOM allows, and the specification says so in
 its scenarios rather than leaving it to be discovered. Doing it properly means
@@ -199,9 +320,14 @@ reason to hold this change.
   names the fallback and the specification is written to survive it. The spike
   is task 1.1 precisely so this is known before anything depends on it.
 - [The read model never moves upstream and a second client reimplements it] →
-  The module has no `obsidian` import and its own tests, so moving it is a file
-  move; the proposal and CLAUDE.md record the condition. This is a real risk and
-  the honest mitigation is that the cost of moving stays near zero.
+  The module has no `obsidian` import, no reader-facing text and its own tests,
+  so extracting it is adaptation rather than rewriting; the proposal and
+  CLAUDE.md record the condition. It is not a file move, and calling it one
+  would be wrong: the module is shaped by `DocumentSymbol[]`, which upstream may
+  want to bypass for its own AST; it takes a naming function that upstream may
+  want to define differently; and the revision bookkeeping above is the host's
+  and would have to be handed in. What the design buys is that each of those is
+  a named seam rather than a tangle.
 - [Symbol trees add materially to memory on a large document] → Measured in the
   same spike as the list. If they do, the index can be built from the symbol
   tree and the tree dropped, since the model keeps only its own rows.
@@ -211,7 +337,7 @@ reason to hold this change.
 - [A GEDCOM the reader never opened, restored into a Person view, reads slowly]
   → It costs one parse of that file, once, the same as opening it would.
 - [Two views reading the same document build two indexes] → They share one,
-  keyed by path and version, held by the plugin rather than by either view.
+  keyed by path and revision, held by the plugin rather than by either view.
 
 ## Migration Plan
 

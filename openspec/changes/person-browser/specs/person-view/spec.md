@@ -91,23 +91,33 @@ show that person in the same Person view rather than in a new tab.
 - **THEN** nothing opens, the view is unchanged, and the reader is told the
   record is not in this file
 
-### Requirement: Back and Forward walk the people the reader visited
+### Requirement: The reader can retrace the people they visited
 
-Moving from one person to another SHALL be a step the application's own Back and
-Forward move through, so that a reader who follows a father and then a
-grandmother returns the same way they came.
+Moving from one person to another SHALL be retraceable: a reader who follows a
+father and then a grandmother SHALL be able to go back the way they came, and
+forward again, without retyping a search or reopening the sidebar.
 
-Back from the first person shown in a view SHALL behave as Back does anywhere
-else in the application, and SHALL NOT leave the view showing nothing.
+Going back from the first person a view showed SHALL NOT leave the view showing
+nothing.
+
+Which control does this — the application's own Back and Forward, or a control
+the page carries — is a design decision, settled by measuring what the
+application's own history does with a view of this kind. The application's own
+is preferred, so that the reader uses the control they already know, and the
+requirement is met either way.
 
 #### Scenario: Walking back up a line
 - **WHEN** the reader opens John, then his father William, then William's mother
-  Elizabeth, and then goes Back twice
+  Elizabeth, and then goes back twice
 - **THEN** the view shows William, and then John
 
 #### Scenario: Forward after going back
-- **WHEN** the reader then goes Forward
+- **WHEN** the reader then goes forward
 - **THEN** the view shows William again
+
+#### Scenario: Back from where the trail began
+- **WHEN** the reader opens one person and goes back
+- **THEN** the view does not end up showing nothing
 
 #### Scenario: A person shown after a restart
 - **WHEN** Obsidian restarts with a Person view open
@@ -115,9 +125,14 @@ else in the application, and SHALL NOT leave the view showing nothing.
 
 ### Requirement: The page shows the events the record carries
 
-The page SHALL show the person's events, each named in the language the plugin
-speaks, with its date and place as the record writes them and its own text where
-it carries one. Events SHALL appear in the order the record writes them.
+The page SHALL show the events the model reports for the person, each named in
+the language the plugin speaks, with its date and place as the record writes them
+and its own text where it carries one. Events SHALL appear in the order the
+record writes them.
+
+The set of structures the model reads as events is named there, not here. A
+structure the model does not report as an event SHALL NOT appear in this
+section.
 
 An event whose date could not be read as a year SHALL still be shown, with its
 date as written.
@@ -130,9 +145,9 @@ section.
   that order
 - **THEN** the page lists those three events in that order, each named
 
-#### Scenario: An event the plugin has no name for
-- **WHEN** a record carries an event whose tag the plugin's catalogue does not
-  name
+#### Scenario: An event the catalogue has no name for
+- **WHEN** the model reports an event whose tag the plugin's catalogue does not
+  name — the model reads more tags than the catalogue names
 - **THEN** the event is shown, labelled by its tag as written, rather than
   omitted
 
@@ -157,9 +172,24 @@ SHALL be told so and nothing SHALL open.
 - **WHEN** the file is already open in another tab
 - **THEN** that tab is revealed and the cursor moves to the record
 
-#### Scenario: The file has been removed
-- **WHEN** the file is no longer in the vault
+#### Scenario: The file has been removed or renamed
+- **WHEN** the document the person was read from is no longer at the path the
+  address names, whether it was deleted or renamed
 - **THEN** nothing opens and the reader is told the file is not there
+
+### Requirement: The page is drawn by something that could be drawn elsewhere
+
+What draws the page SHALL be given the person to draw, how to name a tag in the
+reader's language, and what to do when a person or the source record is chosen.
+It SHALL NOT reach for the plugin's language state, its settings, or the
+application, so that the same drawing can be tested without either and reused by
+another client.
+
+#### Scenario: The page drawn without the application
+- **WHEN** the page is drawn into a plain container, given a person and a naming
+  function, with no application present
+- **THEN** it draws the same sections, and choosing a relative calls back rather
+  than opening anything itself
 
 ### Requirement: The page looks like part of the application
 
