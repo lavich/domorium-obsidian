@@ -15,6 +15,9 @@ import {
 } from "obsidian";
 
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
+import { IndexCache } from "./genealogy/cache";
+import { documentRef, type DocumentRef, type PersonRef } from "./genealogy";
+import { PeopleView, PEOPLE_VIEW_TYPE, type PeopleViewHost } from "./people/PeopleView";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
@@ -76,6 +79,8 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   /** Reachable as app.plugins.plugins["domorium"].api — see README. */
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
+  /** One reading per revision of a document, shared by every view that reads. */
+  private readonly genealogy = new IndexCache();
 
   async onload(): Promise<void> {
     setLanguage(getLanguage());
@@ -86,6 +91,17 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
+    this.registerView(
+      PEOPLE_VIEW_TYPE,
+      (leaf) => new PeopleView(leaf, this.peopleHost()),
+    );
+    this.addCommand({
+      id: "open-people",
+      name: t("people.command"),
+      callback: () => {
+        void this.revealPeople();
+      },
+    });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
       const section = ctx.getSectionInfo(element);
       const { runs, problems } = renderGedcomBlock(
@@ -153,6 +169,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
         this.refreshStatusBar();
+        this.forEachPeopleView((view) => {
+          view.refresh();
+        });
       }),
     );
     this.registerEvent(
@@ -363,6 +382,72 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         new RenameReferenceModal(this.app, entered).open();
       },
     };
+  }
+
+  /**
+   * The people list, revealed rather than opened a second time. A reader who
+   * runs the command with the view already in a collapsed sidebar wants that
+   * one brought forward.
+   */
+  private async revealPeople(): Promise<void> {
+    const existing = this.app.workspace.getLeavesOfType(PEOPLE_VIEW_TYPE)[0];
+    if (existing) {
+      await this.app.workspace.revealLeaf(existing);
+      return;
+    }
+    const leaf = this.app.workspace.getLeftLeaf(false);
+    if (!leaf) {
+      return;
+    }
+    await leaf.setViewState({ type: PEOPLE_VIEW_TYPE, active: true });
+    await this.app.workspace.revealLeaf(leaf);
+  }
+
+  private peopleHost(): PeopleViewHost {
+    return {
+      activeDocument: () => {
+        const view = this.app.workspace.getActiveViewOfType(GedcomView);
+        const path = view?.file?.path;
+        if (!view || !path) {
+          return null;
+        }
+        return {
+          document: documentRef(path),
+          revision: view.documentRevision(),
+        };
+      },
+      symbolsOf: (document: DocumentRef) =>
+        this.gedcomViewOf(document)?.documentSymbols() ?? [],
+      openPerson: (person: PersonRef) => {
+        void this.openPerson(person);
+      },
+      indexes: () => this.genealogy,
+    };
+  }
+
+  /** The open view showing a document, where one is open. */
+  private gedcomViewOf(document: DocumentRef): GedcomView | undefined {
+    let found: GedcomView | undefined;
+    this.forEachView((view) => {
+      if (found === undefined && view.file?.path === document.path) {
+        found = view;
+      }
+    });
+    return found;
+  }
+
+  /** Wired in the change that adds the Person view; a notice until then. */
+  private async openPerson(person: PersonRef): Promise<void> {
+    new Notice(`${person.document.path} ${person.xref}`);
+    await Promise.resolve();
+  }
+
+  private forEachPeopleView(run: (view: PeopleView) => void): void {
+    this.app.workspace.getLeavesOfType(PEOPLE_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof PeopleView) {
+        run(leaf.view);
+      }
+    });
   }
 
   private forEachView(run: (view: GedcomView) => void): void {

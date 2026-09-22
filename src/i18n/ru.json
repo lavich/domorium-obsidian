@@ -97,5 +97,17 @@
   "cm.close": "закрыть",
   "cm.foldedCode": "свёрнутые строки",
   "cm.unfold": "развернуть",
-  "cm.completions": "Автодополнение"
+  "cm.completions": "Автодополнение",
+  "people.viewTitle": "Люди",
+  "people.command": "Открыть список людей",
+  "people.searchPlaceholder": "Поиск людей...",
+  "people.noResults": "Люди не найдены",
+  "people.noDocument": "Откройте файл GEDCOM, чтобы просмотреть людей из него.",
+  "people.unnamed": "Без имени",
+  "people.count": {
+    "one": "{count} человек",
+    "few": "{count} человека",
+    "many": "{count} человек",
+    "other": "{count} человека"
+  }
 }

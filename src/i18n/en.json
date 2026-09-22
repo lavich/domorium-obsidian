@@ -87,5 +87,15 @@
   "cm.close": "close",
   "cm.foldedCode": "folded code",
   "cm.unfold": "unfold",
-  "cm.completions": "Completions"
+  "cm.completions": "Completions",
+  "people.viewTitle": "People",
+  "people.command": "Open people",
+  "people.searchPlaceholder": "Search people...",
+  "people.noResults": "No people found",
+  "people.noDocument": "Open a GEDCOM file to browse its people.",
+  "people.unnamed": "Unnamed",
+  "people.count": {
+    "one": "{count} person",
+    "other": "{count} people"
+  }
 }

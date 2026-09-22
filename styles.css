@@ -277,3 +277,66 @@
   left: 0;
   right: 0;
 }
+
+.gedcom-people-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
+
+.gedcom-people-search {
+  margin: var(--size-4-2);
+  width: calc(100% - var(--size-4-4));
+}
+
+.gedcom-people-scroller {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.gedcom-people-count,
+.gedcom-people-empty,
+.gedcom-people-none {
+  padding: var(--size-4-1) var(--size-4-3);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-people-count {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gedcom-person-row {
+  /* Fixed: the window counts rows rather than measuring them. */
+  height: 44px;
+  padding: var(--size-4-1) var(--size-4-3);
+  cursor: var(--cursor-link);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+.gedcom-person-row:hover {
+  background-color: var(--nav-item-background-hover);
+}
+
+.gedcom-person-name,
+.gedcom-person-sub {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gedcom-person-name {
+  color: var(--nav-item-color);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-person-sub {
+  display: flex;
+  gap: var(--size-4-2);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
