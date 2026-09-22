@@ -40,8 +40,6 @@ import {
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
-// TASK 1.1, THROWAWAY — remove with src/spike/.
-import { NavigationSpikeView, SPIKE_VIEW_TYPE } from "./spike/NavigationSpikeView";
 import { GedcomSettingTab } from "./settings";
 import {
   DEFAULT_SETTINGS,
@@ -88,17 +86,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
-    // TASK 1.1, THROWAWAY — remove with src/spike/.
-    this.registerView(SPIKE_VIEW_TYPE, (leaf) => new NavigationSpikeView(leaf));
-    this.addCommand({
-      id: "domorium-navigation-spike",
-      name: "Spike: navigation history",
-      callback: () => {
-        void this.app.workspace
-          .getLeaf("tab")
-          .setViewState({ type: SPIKE_VIEW_TYPE, active: true, state: { step: 1 } });
-      },
-    });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
       const section = ctx.getSectionInfo(element);
       const { runs, problems } = renderGedcomBlock(

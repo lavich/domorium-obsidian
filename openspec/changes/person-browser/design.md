@@ -58,7 +58,8 @@ measured rather than assumed:
 - A person address that is the same value in a view's state, in a link, and in
   the model, so nothing has to translate between two spellings.
 - Answers for the two unknowns — navigation history and list size — obtained by
-  measurement before the code that depends on them is written.
+  measurement before the code that depends on them is written. Both were, and
+  both decisions below record what came back.
 
 **Non-Goals:**
 
@@ -135,7 +136,7 @@ fewer, and every consumer that later wants a stable identity has to change.
 subpath already looks like — but every consumer then parses it, and a vault path
 may contain a `#`.
 
-### Navigation rides Obsidian's history, and a spike says whether it can
+### Navigation rides Obsidian's own history
 
 The intended route: Person view sets `navigation = true`, holds the `PersonRef`
 as its view state, and moves between people by
@@ -148,20 +149,29 @@ that a custom view's state transitions are what Back walks. That is an
 empirical question, and the browser harness cannot answer it: it mounts
 CodeMirror without Obsidian, and workspace history is Obsidian's.
 
-So the first task is a spike in the demo vault: a throwaway view that shows a
-number, moves to the next number through `setViewState`, and is tested against
-Cmd+[ and Cmd+]. Its outcome selects the branch:
+**Measured, and the route stands.** A throwaway view holding a number moved
+between four states through `setViewState`; running Obsidian's own
+`app:go-back` twice produced:
 
-- **Back walks the states** — the route above stands, and Person view keeps no
-  history of its own.
-- **Back does not** — Person view keeps its own trail in its state, and offers
-  its own back control in the page.
+```
+ran app:go-back -> the command accepted it
+setState -> step 2 (was 3)  <-- BACKWARDS
+ran app:go-back -> the command accepted it
+setState -> step 3 (was 4)  <-- BACKWARDS
+```
 
-The specification requires only that the reader can retrace their steps, and
-says explicitly that which control does it is settled here. So neither outcome
-sends anyone back to rewrite a requirement; it was worded that way after the
-first draft promised the application's own Back and Forward, which is a promise
-this design cannot yet make.
+Obsidian's own history walks a custom view's states. Person view therefore
+keeps no trail of its own, and the reader uses the Back and Forward they
+already know.
+
+One detail the spike cost a run to learn, so that the implementation does not
+repeat it: **`setState` must set `result.history = true`**. The first attempt
+set it to `false` — which is the documented way to say "do not record this" —
+and nothing was written to the history at all, so Back had nothing to walk. The
+failure looks exactly like the API not working.
+
+The fallback the specification allows — Person view keeping its own trail and
+carrying its own back control — is not needed and is not built.
 
 *Alternative considered:* writing the fallback stack unconditionally, which
 always works. It duplicates a facility the application has and puts a second
