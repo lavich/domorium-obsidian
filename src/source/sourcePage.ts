@@ -17,7 +17,7 @@ export interface SourcePageHost {
   fieldLabel: (tag: string) => string;
   /** Says what a citation hung from, already phrased. */
   within: (tag: string) => string;
-  /** The name a citing record goes by, or the identifier where there is none. */
+  /** A citing record's name, or its identifier where it has none. */
   nameOf: (xref: string) => string;
   source: { document: string; xref: string };
   citations: Citation[];
@@ -87,9 +87,8 @@ function drawRepository(
 }
 
 /**
- * The substance of the page: what in this document rests on this source. A
- * source nothing cites says so, because that is a fact about the tree worth
- * seeing rather than an empty section.
+ * The substance of the page. A source nothing cites says so, because that is a
+ * fact about the tree worth seeing rather than an empty section.
  */
 function drawCitedBy(page: HTMLElement, host: SourcePageHost): void {
   const group = element(page, "div", "gedcom-person-group is-events");

@@ -1,6 +1,5 @@
 import { UNTITLED, type SourceRow } from "../genealogy";
 
-/** What a source's row says. The list draws it; it knows nothing of lists. */
 export function drawSourceRow(
   row: HTMLElement,
   source: SourceRow,

@@ -52,9 +52,9 @@ export interface PersonPageHost {
   portraitBounds?: PreviewBounds;
   /** Names an event's tag. The model reads more tags than a catalogue names. */
   eventLabel: (tag: string) => string;
-  /** What this person cites. Empty where the record cites nothing. */
+  /** Empty where the record cites nothing. */
   citations?: Citation[];
-  /** The title of a source cited, or the identifier where it has none. */
+  /** A cited source's title, or its identifier where it has none. */
   titleOf?: (xref: string) => string;
   /** Phrases where in the record a citation hung, already named. */
   within?: (what: string) => string;
@@ -315,9 +315,8 @@ function drawEvent(
 }
 
 /**
- * What the record leans on. A person citing nothing shows no section at all:
- * unlike a source, which is defined by what cites it, a person without
- * citations is the ordinary case and an empty heading would only be noise.
+ * A person citing nothing shows no section at all. Unlike a source, which is
+ * defined by what cites it, a person without citations is the ordinary case.
  */
 function drawSources(page: HTMLElement, host: PersonPageHost): void {
   const citations = host.citations ?? [];

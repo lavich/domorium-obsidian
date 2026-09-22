@@ -52,7 +52,6 @@ export interface Row {
   search: string;
 }
 
-/** One case of a row. */
 export interface PersonRow extends Row {
   name: string;
   otherNames: string[];
@@ -62,7 +61,7 @@ export interface PersonRow extends Row {
   place?: string;
 }
 
-/** One case of a row. A family record carries no name of its own. */
+/** A family record carries no name of its own. */
 export interface FamilyRow extends Row {
   /** The names of the people it joins, in the order the record names them. */
   spouseNames: string[];
@@ -90,7 +89,6 @@ export interface Repository {
   web?: string;
 }
 
-/** One case of a row. */
 export interface SourceRow extends Row {
   title: string;
   author?: string;
@@ -514,8 +512,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   }
 
   /**
-   * A repository's name, address and web address. The address is the `ADDR`
-   * line and the lines beneath it — city, country — joined as one line: the
+   * The address is the `ADDR` line and the lines beneath it joined as one: the
    * record writes them apart, but nobody reads an address in pieces.
    */
   function repositoryRead(held: DocumentSymbol): Repository {

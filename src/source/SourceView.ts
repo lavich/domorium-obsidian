@@ -18,7 +18,7 @@ export interface SourceViewHost {
   read(source: RecordRef): Source | null;
   warm(document: DocumentRef): Promise<void>;
   citedBy(source: RecordRef): Citation[];
-  /** What a citing record is called, so the page need not read it itself. */
+  /** So the page need not read a citing record itself. */
   nameOf(document: DocumentRef, xref: string): string;
   /** Reveals the source's own lines in the GEDCOM file. */
   openRecord(source: RecordRef): void;

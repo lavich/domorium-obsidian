@@ -201,8 +201,8 @@ export class PeopleView extends ItemView {
       return;
     }
     if (this.subject === "sources") {
-      // A source with no title travels without one, so the tab falls back to
-      // the word for a source rather than showing the placeholder.
+      // Travelling without a title lets the tab fall back to the word for a
+      // source, rather than carrying the placeholder into the header.
       const title = (record as SourceRow).title;
       this.host.openSource(at, title === UNTITLED ? undefined : title);
       return;

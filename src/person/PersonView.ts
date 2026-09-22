@@ -24,7 +24,6 @@ export interface PersonViewHost {
   openFamily(family: RecordRef, name?: string): void;
   /** What this person cites, in the order the record writes them. */
   citesBy(person: RecordRef): Citation[];
-  /** The title of a source in the same document, for a citation's row. */
   titleOf(document: DocumentRef, xref: string): string;
   openSource(source: RecordRef, title?: string): void;
 }
@@ -209,7 +208,7 @@ export class PersonView extends ItemView {
     };
   }
 
-  /** A source the document does not declare is named by its identifier. */
+  /** A source stating no title of its own is named by its identifier. */
   private titleOf(xref: string): string {
     if (!this.person) {
       return xref;

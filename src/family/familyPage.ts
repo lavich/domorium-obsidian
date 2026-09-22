@@ -27,9 +27,9 @@ export interface FamilyPageHost {
   source: { document: string; xref: string };
   onPerson: (member: FamilyMember) => void;
   onOpenRecord: () => void;
-  /** What this family cites. Empty where the record cites nothing. */
+  /** Empty where the record cites nothing. */
   citations?: Citation[];
-  /** The title of a source cited, or the identifier where it has none. */
+  /** A cited source's title, or its identifier where it has none. */
   titleOf?: (xref: string) => string;
   /** Phrases where in the record a citation hung, already named. */
   within?: (what: string) => string;

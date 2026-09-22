@@ -600,8 +600,8 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   }
 
   /**
-   * What a record goes by, whichever kind it is. A citing record the document
-   * does not declare is named by its identifier, which is all anyone has.
+   * What a record goes by, whichever kind it is. One the document does not
+   * declare is named by its identifier, which is all anyone has.
    */
   private nameOf(document: DocumentRef, xref: string): string {
     const index = this.indexOf(document);

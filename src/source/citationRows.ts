@@ -1,13 +1,11 @@
 import type { Citation } from "../genealogy";
 
-/** One citation as a row, on whichever page shows it. */
 export interface CitationRow {
   /** What the row names: the citing record, or the source cited. */
   title: string;
   /** What within the citing record it hung from, already named. */
   within?: string;
   page?: string;
-  /** Absent where there is nothing to open. */
   open?: () => void;
 }
 
@@ -36,7 +34,6 @@ export function drawCitations(
   }
 }
 
-/** What a citation is `within`, named, or nothing where it hung from nothing. */
 export function withinOf(
   citation: Citation,
   name: (tag: string) => string,
