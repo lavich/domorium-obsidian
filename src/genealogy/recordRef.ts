@@ -11,7 +11,8 @@ export interface DocumentRef {
   path: string;
 }
 
-export interface PersonRef {
+/** A record: the document it lives in, and its identifier within it. */
+export interface RecordRef {
   document: DocumentRef;
   xref: string;
 }
@@ -20,7 +21,7 @@ export function documentRef(path: string): DocumentRef {
   return { path };
 }
 
-export function personRef(document: DocumentRef, xref: string): PersonRef {
+export function recordRef(document: DocumentRef, xref: string): RecordRef {
   return { document, xref: normalizeXref(xref) };
 }
 
@@ -28,16 +29,16 @@ export function sameDocument(one: DocumentRef, other: DocumentRef): boolean {
   return one.path === other.path;
 }
 
-export function samePerson(one: PersonRef, other: PersonRef): boolean {
+export function sameRecord(one: RecordRef, other: RecordRef): boolean {
   return sameDocument(one.document, other.document) && one.xref === other.xref;
 }
 
 /** Bounded by `@`, so the last `#` separates; a path may carry its own. */
-export function personPath(person: PersonRef): string {
+export function recordPath(person: RecordRef): string {
   return `${person.document.path}#${person.xref}`;
 }
 
-export function parsePersonPath(written: string): PersonRef | null {
+export function parseRecordPath(written: string): RecordRef | null {
   const separator = written.lastIndexOf("#");
   if (separator <= 0) {
     return null;
@@ -47,5 +48,5 @@ export function parsePersonPath(written: string): PersonRef | null {
   if (!path || !xref) {
     return null;
   }
-  return personRef(documentRef(path), xref);
+  return recordRef(documentRef(path), xref);
 }

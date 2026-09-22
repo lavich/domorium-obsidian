@@ -2,10 +2,10 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 
 import {
   documentRef,
-  personRef,
+  recordRef,
   type DocumentRef,
   type Person,
-  type PersonRef,
+  type RecordRef,
   type PersonRow,
 } from "../genealogy";
 import { named, t } from "../i18n";
@@ -14,9 +14,9 @@ import { renderPersonPage, type PersonPageHost } from "./personPage";
 export const PERSON_VIEW_TYPE = "domorium-person";
 
 export interface PersonViewHost {
-  read(person: PersonRef): Person | null;
+  read(person: RecordRef): Person | null;
   warm(document: DocumentRef): Promise<void>;
-  openSource(person: PersonRef): void;
+  openSource(person: RecordRef): void;
   resolveMedia(file: string): string | null;
   openPicture(file: string): void;
 }
@@ -36,7 +36,7 @@ export class PersonView extends ItemView {
   /** With `result.history` below, this is what makes Back walk the trail. */
   navigation = true;
 
-  private person: PersonRef | null = null;
+  private person: RecordRef | null = null;
   private name: string | null = null;
 
   constructor(
@@ -72,7 +72,7 @@ export class PersonView extends ItemView {
   setState(state: unknown, result: ViewStateResult): Promise<void> {
     const { path, xref, name } = (state ?? {}) as PersonViewState;
     if (path && xref) {
-      this.person = personRef(documentRef(path), xref);
+      this.person = recordRef(documentRef(path), xref);
       this.name = name ?? null;
     }
     // Without this nothing is written to the leaf's history, and Back has
@@ -90,7 +90,7 @@ export class PersonView extends ItemView {
     this.draw();
   }
 
-  showing(): PersonRef | null {
+  showing(): RecordRef | null {
     return this.person;
   }
 

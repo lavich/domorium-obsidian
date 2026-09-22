@@ -144,6 +144,9 @@ export const FIXTURE = [
   // Her own family, with a child the document does not declare, and an
   // associate, which is a pointer to a person in neither family role.
   "0 @F2@ FAM",
+  "1 MARR",
+  "2 DATE 26 JUL 1895",
+  "2 PLAC Sceaux, France",
   "1 HUSB @I4@",
   "1 WIFE @I1@",
   "1 CHIL @I5@",
@@ -156,6 +159,24 @@ export const FIXTURE = [
   "0 @F3@ FAM",
   "1 HUSB @I10@",
   "1 WIFE @I11@",
+
+  // A family that records only the people in it: no marriage, no child.
+  "0 @F4@ FAM",
+  "1 HUSB @I2@",
+  "1 WIFE @I3@",
+
+  // A family naming a spouse the document does not declare.
+  "0 @F5@ FAM",
+  "1 HUSB @I98@",
+  "1 WIFE @I4@",
+
+  // A family naming nobody at all.
+  "0 @F6@ FAM",
+  "1 MARR",
+
+  // A family declaring no identifier.
+  "0 FAM",
+  "1 HUSB @I2@",
 
   "0 TRLR",
   "",

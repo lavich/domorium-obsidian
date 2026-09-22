@@ -50,6 +50,8 @@ function person(overrides: Partial<Person> = {}): Person {
   return {
     ...row({ xref: "@I1@", name: "John Smith" }),
     media: [],
+    childFamilies: [],
+    spouseFamilies: [],
     parents: [],
     partners: [],
     children: [],

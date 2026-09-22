@@ -20,7 +20,7 @@ import {
   documentRef,
   type DocumentRef,
   type GenealogyIndex,
-  type PersonRef,
+  type RecordRef,
 } from "./genealogy";
 import { GedcomLanguageService } from "@domorium/language-service";
 import { PeopleView, PEOPLE_VIEW_TYPE, type PeopleViewHost } from "./people/PeopleView";
@@ -437,11 +437,11 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
           .sort((one, other) => one.path.localeCompare(other.path)),
       indexOf: (document) => this.indexOf(document),
       warm: (document) => this.warm(document),
-      openPerson: (person: PersonRef, name?: string) => {
+      openPerson: (person: RecordRef, name?: string) => {
         void this.openPerson(person, name);
       },
       shownPerson: () => {
-        let found: PersonRef | null = null;
+        let found: RecordRef | null = null;
         this.forEachPersonView((view) => {
           found = found ?? view.showing();
         });
@@ -496,7 +496,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
    * One Person view, reused. Choosing a second person shows them in the tab
    * the first was in, which is also what makes Back walk the trail.
    */
-  private async openPerson(person: PersonRef, name?: string): Promise<void> {
+  private async openPerson(person: RecordRef, name?: string): Promise<void> {
     const named = name === undefined ? {} : { name };
     const existing = this.app.workspace.getLeavesOfType(PERSON_VIEW_TYPE)[0];
     const leaf = existing ?? this.app.workspace.getLeaf("tab");
@@ -560,7 +560,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     await this.app.workspace.getLeaf("tab").openFile(file);
   }
 
-  private async openRecord(person: PersonRef): Promise<void> {
+  private async openRecord(person: RecordRef): Promise<void> {
     const path = normalizePath(person.document.path);
     const file = this.app.vault.getAbstractFileByPath(path);
     if (!(file instanceof TFile)) {

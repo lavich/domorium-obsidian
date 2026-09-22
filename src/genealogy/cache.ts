@@ -1,7 +1,7 @@
 import type { DocumentSymbol } from "@domorium/language-service";
 
 import { buildIndex, type GenealogyIndex } from "./index";
-import type { DocumentRef } from "./personRef";
+import type { DocumentRef } from "./recordRef";
 
 /*
  * Imported by its consumers directly rather than re-exported from index.ts:

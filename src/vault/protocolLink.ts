@@ -1,5 +1,5 @@
 import type { GedcomRecord } from "../editor/records";
-import { normalizeXref } from "../genealogy/personRef";
+import { normalizeXref } from "../genealogy/recordRef";
 
 export { normalizeXref };
 

@@ -2,7 +2,7 @@ import { GedcomLanguageService } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
 import { IndexCache } from "./cache";
-import { documentRef, personRef, samePerson } from "./personRef";
+import { documentRef, recordRef, sameRecord } from "./recordRef";
 
 /** Two files, each declaring @I1@ as a different person. */
 const CURIE = [
@@ -24,10 +24,10 @@ const symbols = (text: string) =>
 
 describe("two documents declaring the same identifier", () => {
   it("are different people, and an address tells them apart", () => {
-    const one = personRef(documentRef("curie.ged"), "@I1@");
-    const other = personRef(documentRef("joliot.ged"), "@I1@");
+    const one = recordRef(documentRef("curie.ged"), "@I1@");
+    const other = recordRef(documentRef("joliot.ged"), "@I1@");
 
-    expect(samePerson(one, other)).toBe(false);
+    expect(sameRecord(one, other)).toBe(false);
   });
 
   it("are read apart, whichever is asked for", () => {
@@ -54,8 +54,8 @@ describe("two documents declaring the same identifier", () => {
 
   it("survive an address written down and read back, as a stored tab is", () => {
     const stored = JSON.parse(
-      JSON.stringify(personRef(documentRef("joliot.ged"), "@I1@")),
-    ) as ReturnType<typeof personRef>;
+      JSON.stringify(recordRef(documentRef("joliot.ged"), "@I1@")),
+    ) as ReturnType<typeof recordRef>;
     const cache = new IndexCache();
     cache.at(documentRef("curie.ged"), "r1", () => symbols(CURIE));
     const index = cache.at(stored.document, "r1", () => symbols(JOLIOT));

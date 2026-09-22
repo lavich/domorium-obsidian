@@ -14,6 +14,12 @@ export const PERSON_EVENT_TAGS: ReadonlySet<string> = new Set([
   "RELI", "RESI", "SSN", "TITL", "FACT",
 ]);
 
+/** Events of a family, in both dialects. Named for the reason above. */
+export const FAMILY_EVENT_TAGS: ReadonlySet<string> = new Set([
+  "ANUL", "CENS", "DIV", "DIVF", "ENGA", "MARB", "MARC", "MARL", "MARR",
+  "MARS", "EVEN",
+]);
+
 /** A pointer in any other role — an associate, a witness — is not a spouse. */
 export const SPOUSE_ROLE_TAGS: ReadonlySet<string> = new Set(["HUSB", "WIFE"]);
 

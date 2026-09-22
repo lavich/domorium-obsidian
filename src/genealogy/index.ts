@@ -5,6 +5,7 @@ import { readName } from "./names";
 import {
   CHILD_FAMILY_TAG,
   CHILD_ROLE_TAGS,
+  FAMILY_EVENT_TAGS,
   PERSON_EVENT_TAGS,
   SPOUSE_FAMILY_TAG,
   SPOUSE_ROLE_TAGS,
@@ -12,7 +13,7 @@ import {
 
 export type { DatePrecision, DateReading } from "./dates";
 export { UNNAMED } from "./names";
-export * from "./personRef";
+export * from "./recordRef";
 
 export interface PersonEvent {
   /** The tag as written. Naming it for a reader is the caller's. */
@@ -36,19 +37,50 @@ export interface PersonMedia {
   crop?: MediaCrop;
 }
 
-/** Held for every person in the document, so it stays small. */
-export interface PersonRow {
+/**
+ * What any record needs to be a row in the sidebar's list, whatever it is.
+ * Held for every one of them in the document, so it stays small.
+ */
+export interface Row {
   xref?: string;
   /** No identifier: cannot be addressed, linked to, or opened. */
   unaddressable: boolean;
+  /** One lowercase string covering every field the sidebar filters on. */
+  search: string;
+}
+
+/** One case of a row. */
+export interface PersonRow extends Row {
   name: string;
   otherNames: string[];
   sex?: string;
   birth?: DateReading;
   death?: DateReading;
   place?: string;
-  /** One lowercase string covering every field the sidebar filters on. */
-  search: string;
+}
+
+/** One case of a row. A family record carries no name of its own. */
+export interface FamilyRow extends Row {
+  /** The names of the people it joins, in the order the record names them. */
+  spouseNames: string[];
+  /** Those names joined, so a caller need not join them a second way. */
+  name?: string;
+  marriage?: DateReading;
+  place?: string;
+  childCount: number;
+}
+
+/** A person, with the role that named them where one did. */
+export interface FamilyMember extends PersonRow {
+  role: string;
+}
+
+/** Read in full when a family is opened, rather than for all of them. */
+export interface Family extends FamilyRow {
+  spouses: FamilyMember[];
+  children: FamilyMember[];
+  events: PersonEvent[];
+  unresolved: string[];
 }
 
 /** Read in full when a person is opened, rather than for all of them. */
@@ -60,6 +92,9 @@ export interface Person extends PersonRow {
   partners: PersonRow[];
   children: PersonRow[];
   events: PersonEvent[];
+  /** The families the record points at, each kind kept apart. */
+  childFamilies: FamilyRow[];
+  spouseFamilies: FamilyRow[];
   /** Identifiers this person's record pointed at and the document does not hold. */
   unresolved: string[];
 }
@@ -67,7 +102,9 @@ export interface Person extends PersonRow {
 export interface GenealogyIndex {
   /** In the order the file declares them. */
   people: PersonRow[];
+  families: FamilyRow[];
   person(xref: string): Person | undefined;
+  family(xref: string): Family | undefined;
 }
 
 const childOf = (symbol: DocumentSymbol, tag: string): DocumentSymbol | undefined =>
@@ -136,10 +173,13 @@ function cropOf(link: DocumentSymbol): MediaCrop | undefined {
   return { top, left, height, width };
 }
 
-function eventsOf(record: DocumentSymbol): PersonEvent[] {
+function eventsOf(
+  record: DocumentSymbol,
+  reading: ReadonlySet<string>,
+): PersonEvent[] {
   const events: PersonEvent[] = [];
   for (const child of record.children) {
-    if (!PERSON_EVENT_TAGS.has(child.name)) {
+    if (!reading.has(child.name)) {
       continue;
     }
     const date = payload(childOf(child, "DATE"));
@@ -153,6 +193,11 @@ function eventsOf(record: DocumentSymbol): PersonEvent[] {
     });
   }
   return events;
+}
+
+/** The spouses' names joined, which is the only name a family record has. */
+function familyName(names: string[]): string | undefined {
+  return names.length > 0 ? names.join(" / ") : undefined;
 }
 
 function rowOf(record: DocumentSymbol): PersonRow {
@@ -212,9 +257,11 @@ function searchTextOf(row: PersonRow): string {
  */
 export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   const people: PersonRow[] = [];
+  const familyRows: FamilyRow[] = [];
   const rows = new Map<string, PersonRow>();
   const records = new Map<string, DocumentSymbol>();
   const families = new Map<string, DocumentSymbol>();
+  const familySymbols: DocumentSymbol[] = [];
   const objects = new Map<string, DocumentSymbol>();
 
   for (const symbol of symbols) {
@@ -225,11 +272,88 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
         rows.set(row.xref, row);
         records.set(row.xref, symbol);
       }
-    } else if (symbol.name === "FAM" && symbol.detail) {
-      families.set(symbol.detail, symbol);
+    } else if (symbol.name === "FAM") {
+      if (symbol.detail) {
+        families.set(symbol.detail, symbol);
+      }
+      familySymbols.push(symbol);
     } else if (symbol.name === "OBJE" && symbol.detail) {
       objects.set(symbol.detail, symbol);
     }
+  }
+
+  /** A family's row. People are resolved because the name needs them. */
+  function familyRowOf(record: DocumentSymbol): FamilyRow {
+    const spouseNames: string[] = [];
+    for (const pointer of rolePointers(record, SPOUSE_ROLE_TAGS)) {
+      const spouse = rows.get(pointer);
+      if (spouse) {
+        spouseNames.push(spouse.name);
+      }
+    }
+    const marriageEvent = record.children.find(
+      (child) => child.name === "MARR",
+    );
+    const date = payload(marriageEvent && childOf(marriageEvent, "DATE"));
+    const place = payload(marriageEvent && childOf(marriageEvent, "PLAC"));
+    const xref = record.detail || undefined;
+    const name = familyName(spouseNames);
+
+    const row: FamilyRow = {
+      ...(xref === undefined ? {} : { xref }),
+      unaddressable: xref === undefined,
+      spouseNames,
+      ...(name === undefined ? {} : { name }),
+      ...(date === undefined ? {} : { marriage: readDate(date) }),
+      ...(place === undefined ? {} : { place }),
+      childCount: rolePointers(record, CHILD_ROLE_TAGS).length,
+      search: "",
+    };
+    row.search = [
+      ...spouseNames,
+      xref ?? "",
+      row.marriage?.year?.toString() ?? "",
+      place ?? "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return row;
+  }
+
+  function family(xref: string): Family | undefined {
+    const record = families.get(xref);
+    if (!record) {
+      return undefined;
+    }
+    const unresolved: string[] = [];
+    const members = (roles: ReadonlySet<string>): FamilyMember[] => {
+      const found: FamilyMember[] = [];
+      for (const child of record.children) {
+        if (!roles.has(child.name)) {
+          continue;
+        }
+        const pointer = payload(child);
+        if (!pointer) {
+          continue;
+        }
+        const who = rows.get(pointer);
+        if (who) {
+          found.push({ ...who, role: child.name });
+        } else if (!unresolved.includes(pointer)) {
+          unresolved.push(pointer);
+        }
+      }
+      return found;
+    };
+
+    return {
+      ...familyRowOf(record),
+      spouses: members(SPOUSE_ROLE_TAGS),
+      children: members(CHILD_ROLE_TAGS),
+      events: eventsOf(record, FAMILY_EVENT_TAGS),
+      unresolved,
+    };
   }
 
   function person(xref: string): Person | undefined {
@@ -314,6 +438,18 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     }
     const portrait = media.find(looksLikeAnImage);
 
+    const familiesOf = (tag: string): FamilyRow[] => {
+      const found: FamilyRow[] = [];
+      for (const link of childrenOf(record, tag)) {
+        const pointer = payload(link);
+        const symbol = pointer ? families.get(pointer) : undefined;
+        if (symbol) {
+          found.push(familyRowOf(symbol));
+        }
+      }
+      return found;
+    };
+
     return {
       ...row,
       media,
@@ -321,10 +457,16 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       parents: [...parents.values()],
       partners: [...partners.values()],
       children: [...children.values()],
-      events: eventsOf(record),
+      events: eventsOf(record, PERSON_EVENT_TAGS),
+      childFamilies: familiesOf(CHILD_FAMILY_TAG),
+      spouseFamilies: familiesOf(SPOUSE_FAMILY_TAG),
       unresolved,
     };
   }
 
-  return { people, person };
+  for (const symbol of familySymbols) {
+    familyRows.push(familyRowOf(symbol));
+  }
+
+  return { people, families: familyRows, person, family };
 }

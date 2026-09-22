@@ -3,9 +3,9 @@ import { ItemView, type WorkspaceLeaf } from "obsidian";
 import type { GenealogyIndex } from "../genealogy";
 import {
   documentRef,
-  personRef,
+  recordRef,
   type DocumentRef,
-  type PersonRef,
+  type RecordRef,
   type PersonRow,
 } from "../genealogy";
 import { GEDCOM_ICON_ID } from "../icon";
@@ -19,8 +19,8 @@ export interface PeopleViewHost {
   documents(): DocumentRef[];
   indexOf(document: DocumentRef): GenealogyIndex | null;
   warm(document: DocumentRef): Promise<void>;
-  openPerson(person: PersonRef, name?: string): void;
-  shownPerson(): PersonRef | null;
+  openPerson(person: RecordRef, name?: string): void;
+  shownPerson(): RecordRef | null;
 }
 
 
@@ -141,6 +141,6 @@ export class PeopleView extends ItemView {
     if (!this.showing || !person.xref) {
       return;
     }
-    this.host.openPerson(personRef(this.showing, person.xref), person.name);
+    this.host.openPerson(recordRef(this.showing, person.xref), person.name);
   }
 }

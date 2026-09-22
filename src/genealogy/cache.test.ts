@@ -2,7 +2,7 @@ import type { DocumentSymbol } from "@domorium/language-service";
 import { describe, expect, it, vi } from "vitest";
 
 import { IndexCache } from "./cache";
-import { documentRef } from "./personRef";
+import { documentRef } from "./recordRef";
 
 const symbol = (xref: string): DocumentSymbol => ({
   name: "INDI",
