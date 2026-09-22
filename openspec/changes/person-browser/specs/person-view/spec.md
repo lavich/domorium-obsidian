@@ -73,6 +73,47 @@ the two SHALL be allowed to state the same event.
 - **THEN** that name is shown as well, marked as another name rather than
   replacing the heading
 
+### Requirement: The page shows the person's picture where the record names one
+
+Where the model reports a portrait for the person, the page SHALL show it
+beside their name, cut to the rectangle the record names where it names one, so
+that a group photograph shows this person rather than the group.
+
+The picture SHALL be bounded, so that a large file does not push the rest of
+the page off the screen, and SHALL keep its proportions within that bound.
+
+A person with no portrait SHALL be shown without a space where one would go.
+A portrait whose file the host cannot resolve, or which cannot be drawn, SHALL
+leave the page as if the record had named none: a missing picture is not worth
+an error in place of a person.
+
+The page SHALL NOT fetch a file from the network to draw a portrait. Whether a
+remote address may be fetched at all is the media preview's question and its
+setting, and this change does not answer it a second way.
+
+#### Scenario: A person whose record names a picture
+- **WHEN** the record points at a multimedia record naming an image in the
+  vault
+- **THEN** the page shows that image beside the person's name
+
+#### Scenario: A face within a group photograph
+- **WHEN** the record names a rectangle within that image
+- **THEN** the page shows that rectangle rather than the whole image
+
+#### Scenario: A person with no picture
+- **WHEN** the record points at no image
+- **THEN** the page shows the name and the rest as it does today, with no gap
+  where a picture would be
+
+#### Scenario: A picture that cannot be drawn
+- **WHEN** the file the record names is not in the vault
+- **THEN** the page shows the person, without a picture and without an error in
+  place of one
+
+#### Scenario: A picture at a web address
+- **WHEN** the record names a picture at an `https` address
+- **THEN** the page does not fetch it
+
 ### Requirement: The page says which record it is a reading of
 
 The page SHALL show, near the person's name and without competing with it, the

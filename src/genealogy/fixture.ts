@@ -50,6 +50,61 @@ export const FIXTURE = [
   "1 NAME Ève /Curie/",
   "1 FAMC @F2@",
 
+  // A person whose picture is a face inside a group photograph, a second
+  // picture that is a sound recording, and a pointer to a record that is not
+  // declared.
+  "0 @I12@ INDI",
+  "1 NAME Pictured /Person/",
+  "1 OBJE @O1@",
+  "2 CROP",
+  "3 TOP 10",
+  "3 LEFT 20",
+  "3 HEIGHT 30",
+  "3 WIDTH 40",
+  "2 TITL Second from the left",
+  "1 OBJE @O2@",
+  "1 OBJE @O9@",
+  "0 @O1@ OBJE",
+  "1 FILE Media/family.svg",
+  "2 FORM image/svg+xml",
+  "0 @O2@ OBJE",
+  "1 FILE Media/interview.mp3",
+  "2 FORM audio/mpeg",
+
+  // A record naming its file on the spot rather than through a record.
+  "0 @I13@ INDI",
+  "1 NAME Inline /Picture/",
+  "1 OBJE",
+  "2 FILE Media/inline.jpg",
+  "2 FORM image/jpeg",
+
+  // The sound recording comes first, so "the first one" is not the same
+  // answer as "the first image".
+  "0 @I15@ INDI",
+  "1 NAME Sound /First/",
+  "1 OBJE @O2@",
+  "1 OBJE @O4@",
+  "0 @O4@ OBJE",
+  "1 FILE Media/portrait.png",
+  "2 FORM image/png",
+
+  // A rectangle missing a side, which is not a rectangle.
+  "0 @I16@ INDI",
+  "1 NAME Partial /Crop/",
+  "1 OBJE @O4@",
+  "2 CROP",
+  "3 TOP 10",
+  "3 LEFT 20",
+  "3 HEIGHT 30",
+
+  // A picture at a web address, which must never be fetched to draw a page.
+  "0 @I14@ INDI",
+  "1 NAME Remote /Picture/",
+  "1 OBJE @O3@",
+  "0 @O3@ OBJE",
+  "1 FILE https://example.org/portrait.jpg",
+  "2 FORM image/jpeg",
+
   // A person with nothing but a name.
   "0 @I7@ INDI",
   "1 NAME Anonymous /Cousin/",

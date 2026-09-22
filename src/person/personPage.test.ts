@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Person, PersonRow } from "../genealogy";
+import type { Person, PersonMedia, PersonRow } from "../genealogy";
 import { renderPersonPage, type PersonPageHost } from "./personPage";
 
 let container: HTMLElement;
@@ -26,6 +26,8 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
     // The model reads more tags than the catalogue names, on purpose.
     eventLabel: (tag) => ({ BIRT: "Birth", DEAT: "Death", OCCU: "Occupation" })[tag] ?? tag,
     source: { document: "curie.ged", xref: "@I1@" },
+    resolveMedia: (file) =>
+      file.startsWith("https://") ? null : `app://vault/${file}`,
     onPerson: vi.fn(),
     onOpenSource: vi.fn(),
     ...overrides,
@@ -46,6 +48,7 @@ function row(overrides: Partial<PersonRow> = {}): PersonRow {
 function person(overrides: Partial<Person> = {}): Person {
   return {
     ...row({ xref: "@I1@", name: "John Smith" }),
+    media: [],
     parents: [],
     partners: [],
     children: [],
@@ -167,6 +170,71 @@ describe("who the person was", () => {
     expect(texts(".gedcom-person-title")).toEqual(["John Smith"]);
     expect(container.textContent).toContain("Also known as");
     expect(container.textContent).toContain("Jonathan Smith");
+  });
+});
+
+describe("the face beside the name", () => {
+  const pictured = (extra: Partial<PersonMedia> = {}): Person => {
+    const portrait: PersonMedia = { file: "Media/family.svg", ...extra };
+    return person({ media: [portrait], portrait });
+  };
+
+  it("draws the picture the record names", () => {
+    draw(pictured());
+
+    const image = container.querySelector<HTMLImageElement>(
+      ".gedcom-person-portrait-image",
+    );
+    expect(image?.getAttribute("src")).toBe("app://vault/Media/family.svg");
+  });
+
+  it("marks a picture the record cuts a rectangle from", () => {
+    draw(pictured({ crop: { top: 10, left: 20, height: 30, width: 40 } }));
+
+    expect(
+      container.querySelector(".gedcom-person-portrait")?.classList.contains("is-cropped"),
+    ).toBe(true);
+  });
+
+  it("uses the caption the record gives, so the picture is described", () => {
+    draw(pictured({ title: "Second from the left" }));
+
+    expect(
+      container
+        .querySelector<HTMLImageElement>(".gedcom-person-portrait-image")
+        ?.getAttribute("alt"),
+    ).toBe("Second from the left");
+  });
+
+  it("leaves no frame where the record names no picture", () => {
+    draw(person());
+
+    expect(container.querySelector(".gedcom-person-portrait")).toBeNull();
+  });
+
+  it("leaves no frame where the host will not resolve the file", () => {
+    draw(pictured(), host({ resolveMedia: () => null }));
+
+    expect(container.querySelector(".gedcom-person-portrait")).toBeNull();
+  });
+
+  it("requests nothing for a picture at a web address", () => {
+    draw(
+      person({
+        portrait: { file: "https://example.org/portrait.jpg" },
+        media: [{ file: "https://example.org/portrait.jpg" }],
+      }),
+    );
+
+    expect(container.querySelector(".gedcom-person-portrait")).toBeNull();
+    expect(container.innerHTML).not.toContain("https://example.org");
+  });
+
+  it("asks the host to resolve, rather than reaching for a vault itself", () => {
+    const resolveMedia = vi.fn(() => "app://vault/x");
+    draw(pictured(), host({ resolveMedia }));
+
+    expect(resolveMedia).toHaveBeenCalledWith("Media/family.svg");
   });
 });
 

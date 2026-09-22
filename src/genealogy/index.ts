@@ -1,4 +1,4 @@
-import type { DocumentSymbol } from "@domorium/language-service";
+import type { DocumentSymbol, MediaCrop } from "@domorium/language-service";
 
 import { readDate, type DateReading } from "./dates";
 import { readName } from "./names";
@@ -25,6 +25,22 @@ export interface PersonEvent {
 }
 
 /**
+ * A picture a record points at, as the document names it.
+ *
+ * Nothing here is read from disk: the file may not exist, may not be an image
+ * whatever the document says, and is never fetched. The rectangle is how a
+ * GEDCOM says "this person is the second face from the left".
+ */
+export interface PersonMedia {
+  /** The file as the document wrote it: a vault path, or a web address. */
+  file: string;
+  /** What the document says the file is, where it says anything. */
+  form?: string;
+  title?: string;
+  crop?: MediaCrop;
+}
+
+/**
  * What the list needs to show a person and tell them from another, held for
  * every person in the document.
  */
@@ -45,6 +61,10 @@ export interface PersonRow {
 
 /** A person read in full, resolved when one is opened rather than for all. */
 export interface Person extends PersonRow {
+  /** Every picture the record points at, in the order it writes them. */
+  media: PersonMedia[];
+  /** The first of those the document calls an image, where there is one. */
+  portrait?: PersonMedia;
   parents: PersonRow[];
   partners: PersonRow[];
   children: PersonRow[];
@@ -84,6 +104,47 @@ function rolePointers(
     }
   }
   return found;
+}
+
+/** Extensions a document that says nothing about a file may still be judged by. */
+const IMAGE_EXTENSIONS = new Set([
+  "png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "tif", "tiff", "avif",
+]);
+
+/**
+ * Whether the document calls this an image. Where it says what the file is,
+ * that is believed; where it says nothing, the name is the only evidence left.
+ */
+function looksLikeAnImage(media: PersonMedia): boolean {
+  if (media.form) {
+    return media.form.toLowerCase().startsWith("image/");
+  }
+  const dot = media.file.lastIndexOf(".");
+  return (
+    dot > 0 && IMAGE_EXTENSIONS.has(media.file.slice(dot + 1).toLowerCase())
+  );
+}
+
+function cropOf(link: DocumentSymbol): MediaCrop | undefined {
+  const crop = childOf(link, "CROP");
+  if (!crop) {
+    return undefined;
+  }
+  const number = (tag: string): number | undefined => {
+    const written = payload(childOf(crop, tag));
+    const value = written === undefined ? Number.NaN : Number(written);
+    return Number.isFinite(value) ? value : undefined;
+  };
+  const top = number("TOP");
+  const left = number("LEFT");
+  const height = number("HEIGHT");
+  const width = number("WIDTH");
+  // A rectangle missing a side is not a rectangle. The whole picture is a
+  // better answer than a guessed one.
+  if (top === undefined || left === undefined || height === undefined || width === undefined) {
+    return undefined;
+  }
+  return { top, left, height, width };
 }
 
 function eventsOf(record: DocumentSymbol): PersonEvent[] {
@@ -165,6 +226,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   const rows = new Map<string, PersonRow>();
   const records = new Map<string, DocumentSymbol>();
   const families = new Map<string, DocumentSymbol>();
+  const objects = new Map<string, DocumentSymbol>();
 
   for (const symbol of symbols) {
     if (symbol.name === "INDI") {
@@ -176,6 +238,8 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       }
     } else if (symbol.name === "FAM" && symbol.detail) {
       families.set(symbol.detail, symbol);
+    } else if (symbol.name === "OBJE" && symbol.detail) {
+      objects.set(symbol.detail, symbol);
     }
   }
 
@@ -233,8 +297,38 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       }
     }
 
+    const media: PersonMedia[] = [];
+    for (const link of childrenOf(record, "OBJE")) {
+      const pointer = payload(link);
+      // Either the link names a multimedia record, or it carries the file
+      // itself, which 5.5.1 allows and 7.0 does not.
+      const holder = pointer ? objects.get(pointer) : link;
+      if (!holder) {
+        if (pointer && !unresolved.includes(pointer)) {
+          unresolved.push(pointer);
+        }
+        continue;
+      }
+      const file = payload(childOf(holder, "FILE"));
+      if (!file) {
+        continue;
+      }
+      const form = payload(childOf(childOf(holder, "FILE") ?? holder, "FORM"));
+      const title = payload(childOf(link, "TITL")) ?? payload(childOf(holder, "TITL"));
+      const crop = cropOf(link);
+      media.push({
+        file,
+        ...(form === undefined ? {} : { form }),
+        ...(title === undefined ? {} : { title }),
+        ...(crop === undefined ? {} : { crop }),
+      });
+    }
+    const portrait = media.find(looksLikeAnImage);
+
     return {
       ...row,
+      media,
+      ...(portrait === undefined ? {} : { portrait }),
       parents: [...parents.values()],
       partners: [...partners.values()],
       children: [...children.values()],

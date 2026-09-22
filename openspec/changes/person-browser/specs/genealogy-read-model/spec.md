@@ -229,6 +229,57 @@ record states a death at all is worth showing.
 - **WHEN** a record carries `1 SEX M`, `1 FAMC @F1@` and `1 SOUR @S1@`
 - **THEN** none of the three is reported as an event
 
+### Requirement: The pictures a person's record points at
+
+The model SHALL report the multimedia a person's record points at, in the order
+the record writes them, whether the record names a file directly or points at a
+multimedia record that names it.
+
+Each SHALL carry the file the document names, the caption the record gives it
+where there is one, and the rectangle the record names within that file where
+it names one. The rectangle is how a GEDCOM says "this person is the second
+face from the left", and is already understood elsewhere in the plugin.
+
+The model SHALL NOT fetch, read, decode or measure a file. It reports what the
+document says and nothing about what is on disk.
+
+One of those pictures SHALL be marked as the person's portrait: the first the
+document names that it says is an image. Where the document says what a file is
+the model SHALL believe it; where it says nothing the model MAY judge by the
+name the file carries. A person whose record points at no picture the document
+calls an image SHALL have no portrait, and a caller SHALL NOT guess one.
+
+#### Scenario: A person pointing at a multimedia record
+- **WHEN** a person's record carries `1 OBJE @O1@`, and `@O1@` carries
+  `1 FILE Media/marie.svg` and `2 FORM image/svg+xml`
+- **THEN** one picture is reported, naming that file, and it is the person's
+  portrait
+
+#### Scenario: A rectangle within the picture
+- **WHEN** that `1 OBJE @O1@` line carries `2 CROP` with `3 TOP 10`,
+  `3 LEFT 20`, `3 HEIGHT 30` and `3 WIDTH 40`
+- **THEN** the picture carries that rectangle
+
+#### Scenario: A caption
+- **WHEN** that line carries `2 TITL Marie, second from the left`
+- **THEN** the picture carries that caption
+
+#### Scenario: A record naming its file directly
+- **WHEN** a person's record carries `1 OBJE` with `2 FILE Media/marie.jpg`
+  beneath it
+- **THEN** one picture is reported, naming that file
+
+#### Scenario: A picture the document does not call an image
+- **WHEN** a person points at a multimedia record whose form says it is a sound
+  recording
+- **THEN** the picture is reported and it is not the portrait
+
+#### Scenario: A multimedia record that is not there
+- **WHEN** a person's record carries `1 OBJE @O9@` and no such record is
+  declared
+- **THEN** no picture is reported for it, the identifier is reported as
+  unresolved, and the person's other pictures are reported
+
 ### Requirement: A pointer that leads nowhere is reported, not followed
 
 Where a pointer from a person to a family, or from a family to a person, names a

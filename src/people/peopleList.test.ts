@@ -370,3 +370,64 @@ describe("the height the window counts by", () => {
     ).toBe("60px");
   });
 });
+
+describe("marking the person the reader is looking at", () => {
+  const three = [
+    row({ xref: "@I1@", name: "Marie", search: "marie @i1@" }),
+    row({ xref: "@I2@", name: "Pierre", search: "pierre @i2@" }),
+    row({ xref: "@I3@", name: "Irène", search: "irène @i3@" }),
+  ];
+
+  const marks = (): string[] =>
+    [...container.querySelectorAll(".gedcom-person-row.is-marked")].map(
+      (node) => node.querySelector(".gedcom-person-name")?.textContent ?? "",
+    );
+
+  it("marks one row, and only one", () => {
+    const made = list(three);
+    made.setMarked("@I2@");
+
+    expect(marks()).toEqual(["Pierre"]);
+  });
+
+  it("moves the mark rather than adding a second", () => {
+    const made = list(three);
+    made.setMarked("@I2@");
+    made.setMarked("@I3@");
+
+    expect(marks()).toEqual(["Irène"]);
+  });
+
+  it("marks nothing when told nobody is shown", () => {
+    const made = list(three);
+    made.setMarked("@I2@");
+    made.setMarked(null);
+
+    expect(marks()).toEqual([]);
+  });
+
+  it("marks nothing for a person this list does not hold", () => {
+    const made = list(three);
+    made.setMarked("@I99@");
+
+    expect(marks()).toEqual([]);
+  });
+
+  it("does not show a marked person the filter has excluded", () => {
+    const made = list(three);
+    made.setMarked("@I2@");
+    made.setFilter("marie");
+
+    expect(texts(".gedcom-person-name")).toEqual(["Marie"]);
+    expect(marks()).toEqual([]);
+  });
+
+  it("keeps the mark when the filter lets the person back in", () => {
+    const made = list(three);
+    made.setMarked("@I2@");
+    made.setFilter("marie");
+    made.setFilter("");
+
+    expect(marks()).toEqual(["Pierre"]);
+  });
+});

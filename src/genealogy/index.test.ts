@@ -27,6 +27,7 @@ describe("the people a document declares", () => {
     expect(rows[0]?.name).toBe("Marie Skłodowska-Curie");
     expect(rows.map((row) => row.xref).filter(Boolean)).toEqual([
       "@I1@", "@I2@", "@I3@", "@I4@", "@I5@", "@I6@",
+      "@I12@", "@I13@", "@I15@", "@I16@", "@I14@",
       "@I7@", "@I8@", "@I9@", "@I10@", "@I11@",
     ]);
   });
@@ -256,5 +257,78 @@ describe("reading paid for once per revision", () => {
 
     cache.at("r2", FIXTURE);
     expect(read).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("the pictures a record points at", () => {
+  it("reads a picture through the multimedia record it points at", () => {
+    const pictured = person("@I12@");
+
+    expect(pictured.media[0]?.file).toBe("Media/family.svg");
+    expect(pictured.portrait?.file).toBe("Media/family.svg");
+  });
+
+  it("carries the rectangle the record names within that picture", () => {
+    expect(person("@I12@").portrait?.crop).toEqual({
+      top: 10,
+      left: 20,
+      height: 30,
+      width: 40,
+    });
+  });
+
+  it("carries the caption the record gives it", () => {
+    expect(person("@I12@").portrait?.title).toBe("Second from the left");
+  });
+
+  it("reads a picture the record names on the spot", () => {
+    expect(person("@I13@").portrait?.file).toBe("Media/inline.jpg");
+  });
+
+  it("reports what is not an image, and does not make it the portrait", () => {
+    const files = person("@I12@").media.map((one) => one.file);
+
+    expect(files).toContain("Media/interview.mp3");
+    expect(person("@I12@").portrait?.file).not.toBe("Media/interview.mp3");
+  });
+
+  it("takes the first image, not the first picture of any kind", () => {
+    // @I15@ points at the sound recording first and the image second.
+    const sounded = person("@I15@");
+
+    expect(sounded.media[0]?.file).toBe("Media/interview.mp3");
+    expect(sounded.portrait?.file).toBe("Media/portrait.png");
+  });
+
+  it("refuses a rectangle the record states only part of", () => {
+    // A rectangle missing a side is not a rectangle, and the whole picture is
+    // a better answer than a guessed one.
+    expect(person("@I16@").portrait?.crop).toBeUndefined();
+    expect(person("@I16@").portrait?.file).toBe("Media/portrait.png");
+  });
+
+  it("reports an unresolved multimedia pointer without losing the rest", () => {
+    const pictured = person("@I12@");
+
+    expect(pictured.unresolved).toContain("@O9@");
+    expect(pictured.media).toHaveLength(2);
+  });
+
+  it("has no portrait for a person whose record names no picture", () => {
+    expect(person("@I1@").portrait).toBeUndefined();
+    expect(person("@I1@").media).toEqual([]);
+  });
+
+  it("reports a remote picture as the document wrote it, fetching nothing", () => {
+    expect(person("@I14@").portrait?.file).toBe(
+      "https://example.org/portrait.jpg",
+    );
+  });
+
+  it("reads nothing about what is on disk", () => {
+    // The model names a file. Whether it exists, its size and its pixels are
+    // all the host's business.
+    expect(person("@I12@").portrait).not.toHaveProperty("width");
+    expect(person("@I12@").portrait).not.toHaveProperty("exists");
   });
 });

@@ -1,4 +1,12 @@
-import { UNNAMED, type Person, type PersonEvent, type PersonRow } from "../genealogy";
+import { drawnCrop, type PreviewBounds } from "../editor/media";
+import { applyCrop } from "../editor/mediaPreviewView";
+import {
+  UNNAMED,
+  type Person,
+  type PersonEvent,
+  type PersonMedia,
+  type PersonRow,
+} from "../genealogy";
 
 /** The page's own words, already in the reader's language. */
 export interface PersonPageLabels {
@@ -32,6 +40,15 @@ export interface PersonPageHost {
   labels: PersonPageLabels;
   /** Which record this is a reading of, shown and reachable from the page. */
   source: { document: string; xref: string };
+  /**
+   * A vault path made drawable, or nothing for a file the host will not or
+   * cannot serve. Answering nothing for a web address is how the page keeps
+   * its promise not to fetch one: that question belongs to the media preview
+   * and its setting, and is not answered a second way here.
+   */
+  resolveMedia?: (file: string) => string | null;
+  /** How large the portrait may be. The host measures; the page does not. */
+  portraitBounds?: PreviewBounds;
   /** Names an event's tag. The model reads more tags than a catalogue names. */
   eventLabel: (tag: string) => string;
   onPerson: (relative: PersonRow) => void;
@@ -52,12 +69,16 @@ export function renderPersonPage(
   drawEvents(page, person, host);
 }
 
+const PORTRAIT_BOUNDS: PreviewBounds = { width: 120, height: 120 };
+
 function drawIdentity(
   page: HTMLElement,
   person: Person,
   host: PersonPageHost,
 ): void {
-  const head = element(page, "div", "gedcom-person-head");
+  const top = element(page, "div", "gedcom-person-top");
+  drawPortrait(top, person.portrait, host);
+  const head = element(top, "div", "gedcom-person-head");
   element(head, "h1", "gedcom-person-title").textContent =
     person.name === UNNAMED ? host.labels.unnamed : person.name;
 
@@ -94,6 +115,53 @@ function drawIdentity(
       element(other, "div", "gedcom-person-other-name").textContent = name;
     }
   }
+}
+
+/**
+ * The face beside the name, cut to the rectangle the record names.
+ *
+ * The cutting is the media preview's, not a second implementation: the image
+ * sits behind a frame at its own size, moved so the rectangle's corner meets
+ * the frame's. Its size is unknown until it loads, so the rectangle is applied
+ * then; a file that will not load leaves the page as if none were named, since
+ * a missing picture is not worth an error in place of a person.
+ */
+function drawPortrait(
+  top: HTMLElement,
+  portrait: PersonMedia | undefined,
+  host: PersonPageHost,
+): void {
+  const url = portrait && host.resolveMedia?.(portrait.file);
+  if (!portrait || !url) {
+    return;
+  }
+  const bounds = host.portraitBounds ?? PORTRAIT_BOUNDS;
+  const frame = element(top, "div", "gedcom-person-portrait");
+  const image = top.ownerDocument.createElement("img");
+  image.className = "gedcom-person-portrait-image";
+  image.alt = portrait.title ?? "";
+  frame.append(image);
+
+  image.addEventListener("error", () => {
+    frame.remove();
+  });
+
+  if (!portrait.crop) {
+    image.src = url;
+    return;
+  }
+  const wanted = portrait.crop;
+  frame.classList.add("is-cropped");
+  image.addEventListener("load", () => {
+    const crop = drawnCrop(wanted, image.naturalWidth, image.naturalHeight);
+    if (!crop) {
+      // A rectangle the image does not reach means show the whole image.
+      frame.classList.remove("is-cropped");
+      return;
+    }
+    applyCrop(frame, image, crop, bounds);
+  });
+  image.src = url;
 }
 
 /**

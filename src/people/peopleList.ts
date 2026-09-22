@@ -49,6 +49,7 @@ const MARGIN_ROWS = 6;
 export class PeopleList {
   private people: PersonRow[] = [];
   private document = "";
+  private marked: string | null = null;
   private shown: PersonRow[] = [];
   private filter = "";
   private readonly countEl: HTMLElement;
@@ -95,6 +96,20 @@ export class PeopleList {
     // A new filter is a new list; keeping the old offset would land the reader
     // somewhere in the middle of it, or past its end.
     this.scrollTop = 0;
+    this.draw();
+  }
+
+  /**
+   * The person a Person view is showing, so the reader can see where in the
+   * list they now are after following a father and a grandfather. Nothing is
+   * marked for somebody from another document, which the host decides by not
+   * naming them here.
+   */
+  setMarked(xref: string | null): void {
+    if (xref === this.marked) {
+      return;
+    }
+    this.marked = xref;
     this.draw();
   }
 
@@ -165,6 +180,9 @@ export class PeopleList {
   private drawRow(person: PersonRow, top: number | null): void {
     const row = element(this.rowsEl, "div", "gedcom-person-row");
     row.tabIndex = 0;
+    if (person.xref !== undefined && person.xref === this.marked) {
+      row.classList.add("is-marked");
+    }
     if (top !== null) {
       row.classList.add("is-windowed");
       row.style.setProperty("--gedcom-person-top", `${top}px`);

@@ -123,6 +123,41 @@ show that person, without leaving a second Person view behind.
 - **WHEN** the reader chooses another row while a Person view is open
 - **THEN** that view shows the second person, and only one Person view is open
 
+### Requirement: The list marks the person the reader is looking at
+
+Where a Person view is showing somebody from the document the list is showing,
+that person's row SHALL be marked, so that a reader who has followed a father
+and a grandfather can see where in the list they now are.
+
+The mark SHALL follow the reader wherever they moved from: choosing a relative
+on the page, or going back, marks the row of whoever is now shown, not the row
+last chosen in the list.
+
+At most one row SHALL be marked. A row filtered out of view SHALL not be shown
+in order to mark it, and no row SHALL be marked where the person shown belongs
+to another document.
+
+#### Scenario: Choosing a person from the list
+- **WHEN** the reader chooses a row
+- **THEN** that row is marked, and no other row is
+
+#### Scenario: Following a relative on the page
+- **WHEN** the reader then opens that person's father from the Person view
+- **THEN** the father's row is marked and the first row is not
+
+#### Scenario: Going back
+- **WHEN** the reader then goes back
+- **THEN** the row of the person now shown is marked again
+
+#### Scenario: A person from another document
+- **WHEN** the Person view is showing somebody from a different GEDCOM than the
+  list is showing
+- **THEN** no row is marked
+
+#### Scenario: The marked person filtered out
+- **WHEN** the reader types a filter the marked person does not match
+- **THEN** that person is not listed, and no row is marked
+
 ### Requirement: The list stays usable on a document of at least twenty thousand people
 
 The sidebar SHALL remain responsive to typing and scrolling on a document

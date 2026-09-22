@@ -20,6 +20,8 @@ export interface PeopleViewHost {
   /** The symbols of that document, read from the open view rather than disk. */
   symbolsOf(document: DocumentRef): DocumentSymbol[];
   openPerson(person: PersonRef): void;
+  /** The person a Person view is showing, where one is open. */
+  shownPerson(): PersonRef | null;
   /** One reading per revision, shared with the Person view. */
   indexes(): IndexCache;
 }
@@ -82,6 +84,7 @@ export class PeopleView extends ItemView {
     this.emptyEl?.remove();
     this.emptyEl = null;
     this.list?.setPeople(index.people, baseName(active.document.path));
+    this.markShownPerson();
   }
 
   private draw(): void {
@@ -127,6 +130,18 @@ export class PeopleView extends ItemView {
         text: t("people.noDocument"),
       });
     }
+  }
+
+  /**
+   * Which row to mark: the person a Person view is showing, where that person
+   * belongs to the document this list is showing. Two documents may declare
+   * the same identifier, so the document is checked and not only the xref.
+   */
+  markShownPerson(): void {
+    const shown = this.host.shownPerson();
+    const here =
+      shown && this.showing && shown.document.path === this.showing.path;
+    this.list?.setMarked(here ? shown.xref : null);
   }
 
   private choose(person: PersonRow): void {

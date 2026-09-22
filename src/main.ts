@@ -434,6 +434,13 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       openPerson: (person: PersonRef) => {
         void this.openPerson(person);
       },
+      shownPerson: () => {
+        let found: PersonRef | null = null;
+        this.forEachPersonView((view) => {
+          found = found ?? view.showing();
+        });
+        return found;
+      },
       indexes: () => this.genealogy,
     };
   }
@@ -462,6 +469,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       state: { path: person.document.path, xref: person.xref },
     });
     await this.app.workspace.revealLeaf(leaf);
+    this.forEachPeopleView((view) => {
+      view.markShownPerson();
+    });
   }
 
   private personHost(): PersonViewHost {
@@ -480,6 +490,16 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       },
       openSource: (person) => {
         void this.openRecord(person);
+      },
+      // A vault file only. A web address answers nothing, which is how the
+      // page keeps its promise not to fetch one: that question is the media
+      // preview's, with a setting of its own, and is not answered twice.
+      resolveMedia: (target) => {
+        if (/^[a-z][a-z0-9+.-]*:/iu.test(target)) {
+          return null;
+        }
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(target));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
       },
     };
   }

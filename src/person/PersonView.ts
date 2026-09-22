@@ -18,6 +18,8 @@ export interface PersonViewHost {
   read(person: PersonRef): Person | null;
   /** Put the cursor on the record that declares this person. */
   openSource(person: PersonRef): void;
+  /** A vault path made drawable, or nothing for a file that is not there. */
+  resolveMedia(file: string): string | null;
 }
 
 /** The view's own state, which Obsidian persists and restores. */
@@ -135,6 +137,7 @@ export class PersonView extends ItemView {
         document: baseName(this.person?.document.path ?? ""),
         xref: this.person?.xref ?? "",
       },
+      resolveMedia: (file) => this.host.resolveMedia(file),
       eventLabel: (tag) => namedEvent(tag),
       onPerson: (relative) => {
         this.follow(relative);

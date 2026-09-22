@@ -500,3 +500,51 @@
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
+
+/* The person a Person view is showing, so a reader who has followed a father
+   and a grandfather can see where in the list they now are. */
+.gedcom-person-row.is-marked {
+  background-color: var(--nav-item-background-selected);
+}
+
+.gedcom-person-row.is-marked .gedcom-person-name {
+  color: var(--nav-item-color-selected);
+  font-weight: var(--nav-item-weight-active);
+}
+
+/* The face beside the name. Bounded so a large file cannot push the page off
+   the screen, and cut to the record's rectangle where it names one. */
+.gedcom-person-top {
+  display: flex;
+  gap: var(--size-4-4);
+  align-items: flex-start;
+}
+
+.gedcom-person-portrait {
+  flex: none;
+  max-width: 120px;
+  max-height: 120px;
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  background-color: var(--background-secondary);
+}
+
+.gedcom-person-portrait-image {
+  display: block;
+  max-width: 120px;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+/* A cut rectangle is a window with the image behind it at its own size, moved
+   by the crop application the media preview already uses. */
+.gedcom-person-portrait.is-cropped {
+  max-width: none;
+  max-height: none;
+}
+
+.gedcom-person-portrait.is-cropped .gedcom-person-portrait-image {
+  max-width: none;
+  max-height: none;
+  transform-origin: top left;
+}
