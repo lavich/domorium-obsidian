@@ -455,11 +455,30 @@
   font-size: var(--font-ui-smaller);
 }
 
-/* Which record this is a reading of: present, and not competing with the name. */
+/* The trail: which file, then which record in it. It opens the page, above
+   the name, and stays out of the name's way. */
 .gedcom-person-source {
-  margin-top: var(--size-4-1);
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-3);
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
+}
+
+.gedcom-person-source-file,
+.gedcom-person-source-link {
+  color: var(--text-muted);
+}
+
+.gedcom-person-source-file {
+  cursor: var(--cursor-link);
+  text-decoration: none;
+}
+
+.gedcom-person-source-file:hover {
+  color: var(--link-color);
+  text-decoration: underline;
 }
 
 .gedcom-person-source-link {

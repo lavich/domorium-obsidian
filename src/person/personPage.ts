@@ -53,6 +53,8 @@ export interface PersonPageHost {
   eventLabel: (tag: string) => string;
   onPerson: (relative: PersonRow) => void;
   onOpenSource: () => void;
+  /** The reader asked for the document itself, not one record within it. */
+  onOpenDocument?: () => void;
   /** The reader asked to see the picture itself, whole rather than cut. */
   onOpenPicture?: (picture: PersonMedia) => void;
 }
@@ -78,6 +80,10 @@ function drawIdentity(
   person: Person,
   host: PersonPageHost,
 ): void {
+  // The trail first: which file, then which record in it. It says where the
+  // reader is before it says who they are looking at.
+  drawSource(page, host);
+
   const top = element(page, "div", "gedcom-person-top");
   drawPortrait(top, person.portrait, host);
   const head = element(top, "div", "gedcom-person-head");
@@ -88,8 +94,6 @@ function drawIdentity(
   if (span) {
     element(head, "div", "gedcom-person-lifespan").textContent = span;
   }
-
-  drawSource(head, host);
 
   // A summary of who the person was, labelled so the reader does not have to
   // infer which date is which from the order. It does not replace the events
@@ -292,11 +296,16 @@ function drawEvent(
  * identifier. The identifier is also the way to the record, so the page does
  * not carry a second control saying the same thing.
  */
-function drawSource(head: HTMLElement, host: PersonPageHost): void {
-  const line = element(head, "div", "gedcom-person-source");
-  element(line, "span", "gedcom-person-source-file").textContent =
-    host.source.document;
-  element(line, "span", "gedcom-person-source-sep").textContent = " · ";
+function drawSource(page: HTMLElement, host: PersonPageHost): void {
+  const line = element(page, "div", "gedcom-person-source");
+  const file = element(line, "a", "gedcom-person-source-file");
+  file.textContent = host.source.document;
+  file.setAttribute("role", "button");
+  file.tabIndex = 0;
+  file.addEventListener("click", () => {
+    host.onOpenDocument?.();
+  });
+  element(line, "span", "gedcom-person-source-sep").textContent = "›";
   const link = element(line, "a", "gedcom-person-source-link");
   link.textContent = host.source.xref;
   link.setAttribute("role", "button");

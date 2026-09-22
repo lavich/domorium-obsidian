@@ -3,6 +3,7 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import {
   documentRef,
   personRef,
+  type DocumentRef,
   type Person,
   type PersonRef,
   type PersonRow,
@@ -22,6 +23,8 @@ export interface PersonViewHost {
   resolveMedia(file: string): string | null;
   /** Show the picture's own file, whole rather than cut to a rectangle. */
   openPicture(file: string): void;
+  /** Open the GEDCOM itself, without moving the cursor to any record. */
+  openDocument(document: DocumentRef): void;
 }
 
 /** The view's own state, which Obsidian persists and restores. */
@@ -115,6 +118,20 @@ export class PersonView extends ItemView {
     }
 
     renderPersonPage(root, read, this.pageHost());
+    this.retitle();
+  }
+
+  /**
+   * The tab's header is drawn when the view is created, before any person has
+   * been set, so it keeps saying the view's name while the tab itself goes on
+   * to say the person's. `updateHeader` is what redraws it and is not in
+   * `obsidian.d.ts`; it is reached for here with the same care `main.ts` takes
+   * over the suggest registry, and its absence is survivable — the tab is
+   * right either way.
+   */
+  private retitle(): void {
+    const leaf = this.leaf as unknown as { updateHeader?: () => void };
+    leaf.updateHeader?.();
   }
 
   private pageHost(): PersonPageHost {
@@ -140,6 +157,11 @@ export class PersonView extends ItemView {
         xref: this.person?.xref ?? "",
       },
       resolveMedia: (file) => this.host.resolveMedia(file),
+      onOpenDocument: () => {
+        if (this.person) {
+          this.host.openDocument(this.person.document);
+        }
+      },
       onOpenPicture: (picture) => {
         this.host.openPicture(picture.file);
       },

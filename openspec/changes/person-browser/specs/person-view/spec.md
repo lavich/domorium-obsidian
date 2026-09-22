@@ -126,21 +126,27 @@ setting, and this change does not answer it a second way.
 
 ### Requirement: The page says which record it is a reading of
 
-The page SHALL show, near the person's name and without competing with it, the
-document the person was read from and the identifier that declares them.
+The page SHALL open with a trail naming the document the person was read from
+and then the identifier that declares them, in that order, above the person's
+name and in text that does not compete with it. The trail says where the
+reader is: this person, inside this file.
 
 Person view is a reading of a GEDCOM record, not a replacement for one, and a
 reader who has two GEDCOM files open needs to know which of them they are
 looking at. Where two documents declare the same identifier this is the only
 thing on the page that tells them apart.
 
-That identifier SHALL be the way the reader reaches the record, so the page
-does not carry two separate controls for the same thing.
+That identifier SHALL be the way the reader reaches the record, and the
+document's name beside it SHALL be the way the reader reaches the document
+itself, so the page does not carry separate controls repeating either.
+
+The tab SHALL be titled with the person's name, not with the name of the view,
+so that a reader with several people open can tell them apart.
 
 #### Scenario: A person read from a file
 - **WHEN** the page shows `@I1@` of `curie.ged`
-- **THEN** it shows the file's name and `@I1@` beneath the person's name, in
-  text that does not compete with it
+- **THEN** its first line reads `curie.ged` then `@I1@`, above the person's
+  name and in text that does not compete with it
 
 #### Scenario: The same identifier in two files
 - **WHEN** the reader opens `@I1@` of `curie.ged` and then `@I1@` of
@@ -151,6 +157,16 @@ does not carry two separate controls for the same thing.
 - **WHEN** the reader chooses the identifier shown there
 - **THEN** the record is reached exactly as the action described below reaches
   it
+
+#### Scenario: Reaching the document from it
+- **WHEN** the reader chooses the document's name shown there
+- **THEN** that GEDCOM file opens, without the cursor being moved to any
+  particular record
+
+#### Scenario: The tab a person is shown in
+- **WHEN** a person is shown, and then a relative is followed
+- **THEN** the tab is titled with the name of whoever is shown, not with the
+  name of the view
 
 ### Requirement: The page shows the family around the person
 
