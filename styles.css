@@ -589,3 +589,9 @@
 .gedcom-people-bar select {
   height: var(--input-height);
 }
+
+/* A family's child count sits with the years and the place, at their weight. */
+.gedcom-family-children {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}

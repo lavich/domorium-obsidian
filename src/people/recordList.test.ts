@@ -633,3 +633,20 @@ describe("what a family's row says", () => {
     expect(texts(".gedcom-person-name")).toHaveLength(1);
   });
 });
+
+describe("marking while families are listed", () => {
+  it("marks the family whose page is open", () => {
+    const made = new RecordList(container, LABELS, vi.fn(), (row, record) =>
+      drawFamilyRow(row, record as FamilyRow, (n) => `${n}`),
+    );
+    made.setRecords([
+      { xref: "@F1@", unaddressable: false, spouseNames: [], name: "One", childCount: 0, search: "one" },
+      { xref: "@F2@", unaddressable: false, spouseNames: [], name: "Two", childCount: 0, search: "two" },
+    ] as FamilyRow[]);
+    made.setMarked("@F2@");
+
+    const marked = [...container.querySelectorAll(".gedcom-person-row.is-marked")];
+    expect(marked).toHaveLength(1);
+    expect(marked[0]?.textContent).toContain("Two");
+  });
+});

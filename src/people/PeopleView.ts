@@ -1,6 +1,6 @@
 import { ItemView, type WorkspaceLeaf } from "obsidian";
 
-import type { FamilyRow, GenealogyIndex } from "../genealogy";
+import type { FamilyRow, GenealogyIndex, Row } from "../genealogy";
 import {
   documentRef,
   recordRef,
@@ -23,6 +23,8 @@ export interface PeopleViewHost {
   warm(document: DocumentRef): Promise<void>;
   openPerson(person: RecordRef, name?: string): void;
   shownPerson(): RecordRef | null;
+  shownFamily(): RecordRef | null;
+  openFamily(family: RecordRef, name?: string): void;
 }
 
 
@@ -138,7 +140,7 @@ export class PeopleView extends ItemView {
         noResults: t("people.noResults"),
         searchPlaceholder: t("people.searchPlaceholder"),
       },
-      (record) => this.choose(record as PersonRow),
+      (record) => this.choose(record),
       (row, record) => drawPersonRow(row, record as PersonRow, t("people.unnamed")),
       // The sidebar can measure itself; the list cannot, and must not try.
       { viewport: root.clientHeight || 600, rowHeight: ROW_HEIGHT },
@@ -150,6 +152,7 @@ export class PeopleView extends ItemView {
     this.list.onSubjectChosen((chosen) => {
       this.subject = chosen === "families" ? "families" : "people";
       this.redraw();
+      this.markShownPerson();
     });
     this.refreshDocuments();
 
@@ -161,18 +164,30 @@ export class PeopleView extends ItemView {
     }
   }
 
-  /** Two documents may declare one identifier, so the document is checked. */
+  /**
+   * Two documents may declare one identifier, so the document is checked; and
+   * a person's page open while families are listed marks nothing, the subject
+   * not being the one shown.
+   */
   markShownPerson(): void {
-    const shown = this.host.shownPerson();
+    const shown =
+      this.subject === "families"
+        ? this.host.shownFamily()
+        : this.host.shownPerson();
     const here =
       shown && this.showing && shown.document.path === this.showing.path;
     this.list?.setMarked(here ? shown.xref : null);
   }
 
-  private choose(person: PersonRow): void {
-    if (!this.showing || !person.xref) {
+  private choose(record: Row): void {
+    if (!this.showing || !record.xref) {
       return;
     }
-    this.host.openPerson(recordRef(this.showing, person.xref), person.name);
+    const at = recordRef(this.showing, record.xref);
+    if (this.subject === "families") {
+      this.host.openFamily(at, (record as FamilyRow).name);
+      return;
+    }
+    this.host.openPerson(at, (record as PersonRow).name);
   }
 }

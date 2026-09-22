@@ -2,6 +2,7 @@ import { drawnCrop, type PreviewBounds } from "../editor/media";
 import { applyCrop } from "../editor/mediaPreviewView";
 import {
   UNNAMED,
+  type FamilyRow,
   type Person,
   type PersonEvent,
   type PersonMedia,
@@ -15,6 +16,8 @@ export interface PersonPageLabels {
   partners: string;
   children: string;
   events: string;
+  childFamilies: string;
+  spouseFamilies: string;
   openInGedcom: string;
   born: string;
   died: string;
@@ -47,6 +50,8 @@ export interface PersonPageHost {
   /** Names an event's tag. The model reads more tags than a catalogue names. */
   eventLabel: (tag: string) => string;
   onPerson: (relative: PersonRow) => void;
+  /** The reader asked for the marriage itself, not the people around it. */
+  onFamily?: (family: FamilyRow) => void;
   onOpenSource: () => void;
   /** The picture itself, whole rather than cut. */
   onOpenPicture?: (picture: PersonMedia) => void;
@@ -209,10 +214,42 @@ function drawFamily(
     }
   }
 
+  // A family answers what the record says about the marriage — its date, its
+  // place — which the people around a person do not.
+  drawFamilies(page, host.labels.childFamilies, person.childFamilies, host);
+  drawFamilies(page, host.labels.spouseFamilies, person.spouseFamilies, host);
+
   // Named rather than swallowed: the reader can go and fix it.
   for (const xref of person.unresolved) {
     element(page, "div", "gedcom-person-unresolved").textContent =
       host.labels.unresolved(xref);
+  }
+}
+
+function drawFamilies(
+  page: HTMLElement,
+  title: string,
+  families: FamilyRow[],
+  host: PersonPageHost,
+): void {
+  if (families.length === 0) {
+    return;
+  }
+  const group = element(page, "div", "gedcom-person-group");
+  element(group, "h2", "gedcom-person-group-title").textContent = title;
+  for (const family of families) {
+    const row = element(group, "div", "gedcom-person-relative");
+    row.tabIndex = 0;
+    element(row, "span", "gedcom-person-relative-name").textContent =
+      family.name ?? family.xref ?? "";
+    const year = family.marriage?.year;
+    if (year !== undefined) {
+      element(row, "span", "gedcom-person-relative-years").textContent =
+        String(year);
+    }
+    row.addEventListener("click", () => {
+      host.onFamily?.(family);
+    });
   }
 }
 

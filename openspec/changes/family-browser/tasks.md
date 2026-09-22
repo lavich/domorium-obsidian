@@ -17,22 +17,22 @@
 - [x] 3.1 Make the list draw a row it is given rather than a person it assumes, in `src/people/peopleList.ts`: the window, the filter, the mark, the count and the bar unchanged. Verify in `src/people/peopleList.test.ts` that every existing assertion holds with a person-drawing function handed in
 - [x] 3.2 Draw a family row — the people it joins, the year, the place, the child count, and the identifier where it names nobody — and build its searchable string from names, identifier, year and place. Verify in `src/people/peopleList.test.ts`: a family with a marriage and children; one recording only its people; one naming nobody; `curie` and `sceaux` each matching
 - [x] 3.3 Offer families in the subject control and keep the two selections independent, in `src/people/peopleList.ts` and `src/people/PeopleView.ts`. Add the subject strings to `src/i18n/en.json` and `ru.json`. Verify in `src/people/peopleList.test.ts`: both subjects offered; choosing one calls back; changing the document keeps the subject. Verify by hand in `demo-vault/` that the list switches
-- [ ] 3.4 Mark the open family's row, and mark nothing where the subject is not the one shown. Verify in `src/people/peopleList.test.ts`: a family row marks; a person shown while families are listed marks nothing
+- [x] 3.4 Mark the open family's row, and mark nothing where the subject is not the one shown. Verify in `src/people/peopleList.test.ts`: a family row marks; a person shown while families are listed marks nothing
 
 ## 4. The family page
 
-- [ ] 4.1 Create `src/family/familyPage.ts` drawing one family into a plain container: the heading from the people it joins or its identifier, the year, the spouses and children as openable rows, the events, and the identifier back to the record. It imports nothing from `obsidian` and nothing from the catalogue, taking its words and its callbacks as the person page does. Verify in new `src/family/familyPage.test.ts` (happy-dom): a full family; one with no children; one naming nobody; an unresolved child stated; choosing a person calls back
-- [ ] 4.2 Add the family sections and the family event names to `src/i18n/en.json` and `ru.json`, both sides. Verify in `src/i18n/i18n.test.ts` that the new keys carry matching placeholders, and in `src/family/familyPage.test.ts` that an unnamed tag is shown as the tag
-- [ ] 4.3 Create `src/family/FamilyView.ts`, the workspace view: `navigation = true`, a `RecordRef` as its state, `result.history = true` in `setState`, the document named in the header and the people it joins on the tab. Verify by hand in `demo-vault/`: opening a family from the list shows it; restarting shows the same family
-- [ ] 4.4 Register the view and open one in `src/main.ts`, reusing one tab as Person view does, and reading a closed document through the same warm step. Verify by hand in `demo-vault/`: choosing a family from the list opens it; choosing a person from that page opens them; going back twice returns through both
-- [ ] 4.5 Wire the identifier to the record, over the path Person view already uses. Verify by hand in `demo-vault/`: the cursor lands on `0 @F1@ FAM`; with the file removed, a notice says so
+- [x] 4.1 Create `src/family/familyPage.ts` drawing one family into a plain container: the heading from the people it joins or its identifier, the year, the spouses and children as openable rows, the events, and the identifier back to the record. It imports nothing from `obsidian` and nothing from the catalogue, taking its words and its callbacks as the person page does. Verify in new `src/family/familyPage.test.ts` (happy-dom): a full family; one with no children; one naming nobody; an unresolved child stated; choosing a person calls back
+- [x] 4.2 Add the family sections and the family event names to `src/i18n/en.json` and `ru.json`, both sides. Verify in `src/i18n/i18n.test.ts` that the new keys carry matching placeholders, and in `src/family/familyPage.test.ts` that an unnamed tag is shown as the tag
+- [x] 4.3 Create `src/family/FamilyView.ts`, the workspace view: `navigation = true`, a `RecordRef` as its state, `result.history = true` in `setState`, the document named in the header and the people it joins on the tab. Verify by hand in `demo-vault/`: opening a family from the list shows it; restarting shows the same family
+- [x] 4.4 Register the view and open one in `src/main.ts`, reusing one tab as Person view does, and reading a closed document through the same warm step. Verify by hand in `demo-vault/`: choosing a family from the list opens it; choosing a person from that page opens them; going back twice returns through both
+- [x] 4.5 Wire the identifier to the record, over the path Person view already uses. Verify by hand in `demo-vault/`: the cursor lands on `0 @F1@ FAM`; with the file removed, a notice says so
 
 ## 5. Both ways round
 
-- [ ] 5.1 Show the families a person belongs to on their page, in `src/person/personPage.ts`, as openable rows in two named groups beside the people already there. Verify in `src/person/personPage.test.ts`: a person who is a child and a spouse; a person in none; choosing one calls back
-- [ ] 5.2 Open a family from a person's page in `src/person/PersonView.ts`, into the same leaf, so the trail spans both kinds. Verify by hand in `demo-vault/`: from Marie to her marriage to Pierre and back
-- [ ] 5.3 Style the family page in `styles.css` on Obsidian's own variables only, adding no colour and no new pattern. Verify with `grep -nE '#[0-9a-fA-F]{3,8}|rgb\(' styles.css` showing no new literals, and by hand in both themes
+- [x] 5.1 Show the families a person belongs to on their page, in `src/person/personPage.ts`, as openable rows in two named groups beside the people already there. Verify in `src/person/personPage.test.ts`: a person who is a child and a spouse; a person in none; choosing one calls back
+- [x] 5.2 Open a family from a person's page in `src/person/PersonView.ts`, into the same leaf, so the trail spans both kinds. Verify by hand in `demo-vault/`: from Marie to her marriage to Pierre and back
+- [x] 5.3 Style the family page in `styles.css` on Obsidian's own variables only, adding no colour and no new pattern. Verify with `grep -nE '#[0-9a-fA-F]{3,8}|rgb\(' styles.css` showing no new literals, and by hand in both themes
 
 ## 6. Check
 
-- [ ] 6.1 Run `npm run check` and `npm run test:browser`, both green
+- [x] 6.1 Run `npm run check` and `npm run test:browser`, both green

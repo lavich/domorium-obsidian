@@ -29,6 +29,11 @@ import {
   PERSON_VIEW_TYPE,
   type PersonViewHost,
 } from "./person/PersonView";
+import {
+  FamilyView,
+  FAMILY_VIEW_TYPE,
+  type FamilyViewHost,
+} from "./family/FamilyView";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
@@ -111,6 +116,10 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       PERSON_VIEW_TYPE,
       (leaf) => new PersonView(leaf, this.personHost()),
     );
+    this.registerView(
+      FAMILY_VIEW_TYPE,
+      (leaf) => new FamilyView(leaf, this.familyHost()),
+    );
     this.addCommand({
       id: "open-people",
       name: t("people.command"),
@@ -189,6 +198,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
           view.refresh();
         });
         this.forEachPersonView((view) => {
+          view.refresh();
+        });
+        this.forEachFamilyView((view) => {
           view.refresh();
         });
       }),
@@ -447,6 +459,16 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         });
         return found;
       },
+      shownFamily: () => {
+        let found: RecordRef | null = null;
+        this.forEachFamilyView((view) => {
+          found = found ?? view.showing();
+        });
+        return found;
+      },
+      openFamily: (family, name) => {
+        void this.openFamily(family, name);
+      },
     };
   }
 
@@ -511,6 +533,43 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     });
   }
 
+  /** One Family view, reused, as one Person view is. */
+  private async openFamily(family: RecordRef, name?: string): Promise<void> {
+    const named = name === undefined ? {} : { name };
+    const existing = this.app.workspace.getLeavesOfType(FAMILY_VIEW_TYPE)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: FAMILY_VIEW_TYPE,
+      active: true,
+      state: { path: family.document.path, xref: family.xref, ...named },
+    });
+    await this.app.workspace.revealLeaf(leaf);
+    this.forEachPeopleView((view) => {
+      view.markShownPerson();
+    });
+  }
+
+  private familyHost(): FamilyViewHost {
+    return {
+      read: (family) => this.indexOf(family.document)?.family(family.xref) ?? null,
+      warm: (document) => this.warm(document),
+      openSource: (family) => {
+        void this.openRecord(family);
+      },
+      openPerson: (person, name) => {
+        void this.openPerson(person, name);
+      },
+    };
+  }
+
+  private forEachFamilyView(run: (view: FamilyView) => void): void {
+    this.app.workspace.getLeavesOfType(FAMILY_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof FamilyView) {
+        run(leaf.view);
+      }
+    });
+  }
+
   private personHost(): PersonViewHost {
     return {
       read: (person) => this.indexOf(person.document)?.person(person.xref) ?? null,
@@ -523,6 +582,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       // preview's, with a setting of its own, and is not answered twice.
       openPicture: (target) => {
         void this.openPicture(target);
+      },
+      openFamily: (family, name) => {
+        void this.openFamily(family, name);
       },
       resolveMedia: (target) => {
         if (/^[a-z][a-z0-9+.-]*:/iu.test(target)) {

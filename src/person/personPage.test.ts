@@ -15,6 +15,8 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
       partners: "Partners",
       children: "Children",
       events: "Events",
+      childFamilies: "Family they were a child in",
+      spouseFamilies: "Families they married into",
       openInGedcom: "Open in GEDCOM",
       born: "Born",
       died: "Died",
@@ -468,5 +470,59 @@ describe("what the page hands back to its caller", () => {
     draw(person({ parents: [row({ name: "William Smith" })] }));
 
     expect(container.querySelector(".gedcom-person-page")).not.toBeNull();
+  });
+});
+
+describe("the families the person belongs to", () => {
+  const married = (overrides: Partial<import("../genealogy").FamilyRow> = {}) => ({
+    xref: "@F1@",
+    unaddressable: false,
+    spouseNames: ["Pierre Curie", "Marie Skłodowska-Curie"],
+    name: "Pierre Curie / Marie Skłodowska-Curie",
+    childCount: 2,
+    search: "",
+    ...overrides,
+  });
+
+  it("shows the one they were a child in apart from the ones they married into", () => {
+    draw(
+      person({
+        childFamilies: [married({ xref: "@F0@", name: "Parents" })],
+        spouseFamilies: [married()],
+      }),
+    );
+
+    expect(texts(".gedcom-person-group-title")).toEqual([
+      "Family they were a child in",
+      "Families they married into",
+    ]);
+  });
+
+  it("shows the year of the marriage beside the family", () => {
+    draw(
+      person({
+        spouseFamilies: [
+          married({ marriage: { text: "1895", year: 1895, precision: "exact" } }),
+        ],
+      }),
+    );
+
+    expect(texts(".gedcom-person-relative-years")).toEqual(["1895"]);
+  });
+
+  it("shows no family groups where the record points at none", () => {
+    draw(person());
+
+    expect(texts(".gedcom-person-group-title")).toEqual([]);
+  });
+
+  it("hands a chosen family back rather than opening anything", () => {
+    const onFamily = vi.fn();
+    const one = married();
+    draw(person({ spouseFamilies: [one] }), host({ onFamily }));
+
+    container.querySelector<HTMLElement>(".gedcom-person-relative")?.click();
+
+    expect(onFamily).toHaveBeenCalledWith(one);
   });
 });

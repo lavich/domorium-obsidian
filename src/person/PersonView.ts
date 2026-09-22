@@ -19,6 +19,7 @@ export interface PersonViewHost {
   openSource(person: RecordRef): void;
   resolveMedia(file: string): string | null;
   openPicture(file: string): void;
+  openFamily(family: RecordRef, name?: string): void;
 }
 
 /**
@@ -151,6 +152,8 @@ export class PersonView extends ItemView {
         partners: t("person.partners"),
         children: t("person.children"),
         events: t("person.events"),
+        childFamilies: t("person.childFamilies"),
+        spouseFamilies: t("person.spouseFamilies"),
         openInGedcom: t("person.openInGedcom"),
         born: t("person.born"),
         died: t("person.died"),
@@ -170,6 +173,14 @@ export class PersonView extends ItemView {
       eventLabel: (tag) => namedEvent(tag),
       onPerson: (relative) => {
         this.follow(relative);
+      },
+      onFamily: (family) => {
+        if (this.person && family.xref) {
+          this.host.openFamily(
+            recordRef(this.person.document, family.xref),
+            family.name,
+          );
+        }
       },
       onOpenSource: () => {
         if (this.person) {
