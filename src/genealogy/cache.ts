@@ -9,17 +9,12 @@ import type { DocumentRef } from "./personRef";
  */
 
 /**
- * One reading per revision of a document, shared by everything that reads it.
+ * One reading per revision, and only the newest kept.
  *
- * What counts as a revision is the caller's to decide, and the distinction
- * matters: a document open in an editor changes when the reader types, while
- * the file on disk does not. A revision taken from the file's modification
- * time would go stale the moment someone edits without saving, and would show
- * the reader their own edit back as the old value. An open document's caller
- * therefore counts its own updates; a closed one may use the file's metadata.
- *
- * Only the newest revision of a document is kept. The older reading has no
- * reader and the syntax tree behind it is the expensive thing in the process.
+ * What counts as a revision is the caller's, and it matters: a document open
+ * in an editor changes when the reader types while the file on disk does not,
+ * so a revision taken from the file's modification time goes stale on an
+ * unsaved edit and shows the reader their own edit back as the old value.
  */
 export class IndexCache {
   private readonly held_ = new Map<
@@ -31,7 +26,6 @@ export class IndexCache {
     return this.held_.size;
   }
 
-  /** `read` runs only for a revision not already held. */
   at(
     document: DocumentRef,
     revision: string,
@@ -47,7 +41,6 @@ export class IndexCache {
     return index;
   }
 
-  /** A reading already held for a document, whatever its revision. */
   held(document: DocumentRef): GenealogyIndex | null {
     return this.held_.get(document.path)?.index ?? null;
   }

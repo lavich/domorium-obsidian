@@ -14,15 +14,10 @@ import { PeopleList, ROW_HEIGHT } from "./peopleList";
 
 export const PEOPLE_VIEW_TYPE = "domorium-people";
 
-/** What the sidebar needs of the plugin, which is where `obsidian` stays. */
 export interface PeopleViewHost {
-  /** The document the reader is looking at, or null where it is not a GEDCOM. */
   activeDocument(): { document: DocumentRef } | null;
-  /** Every GEDCOM the vault holds, so the reader can choose one. */
   documents(): DocumentRef[];
-  /** A reading to be had without waiting, or null. */
   indexOf(document: DocumentRef): GenealogyIndex | null;
-  /** Read a document nobody has open; ask again once it resolves. */
   warm(document: DocumentRef): Promise<void>;
   openPerson(person: PersonRef, name?: string): void;
   shownPerson(): PersonRef | null;
@@ -60,11 +55,7 @@ export class PeopleView extends ItemView {
     this.refresh();
   }
 
-  /**
-   * Called when the reader moves between leaves. A move to something that is
-   * not a GEDCOM leaves the list as it was: stepping into a note to read
-   * something should not cost the reader the list they were using.
-   */
+  /** A move to something that is not a GEDCOM leaves the list as it was. */
   refresh(): void {
     this.refreshDocuments();
     const active = this.host.activeDocument();
@@ -72,8 +63,7 @@ export class PeopleView extends ItemView {
       this.show(active.document);
       return;
     }
-    // Nothing open and nothing chosen yet: a view that opens on a list is
-    // more use than one that opens on an instruction.
+    // A view that opens on a list is more use than one on an instruction.
     if (!this.showing) {
       const first = this.host.documents()[0];
       if (first) {
@@ -82,11 +72,9 @@ export class PeopleView extends ItemView {
     }
   }
 
-  /** List a document, whether the reader chose it here or opened the file. */
   private show(document: DocumentRef): void {
     const index = this.host.indexOf(document);
     if (!index) {
-      // Nobody has it open, so the vault must be read first.
       void this.host.warm(document).then(() => {
         if (this.host.indexOf(document)) {
           this.show(document);

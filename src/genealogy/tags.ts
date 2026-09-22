@@ -1,13 +1,8 @@
 /**
- * Which structures the model reads as what.
- *
- * These sets are named rather than inferred, and that is a decision with a
- * reason. Nothing in the document data distinguishes an event from anything
- * else: a bare `1 DEAT` carries no payload and no children, which makes it
+ * Named rather than inferred, because nothing in the data distinguishes an
+ * event: a bare `1 DEAT` has no payload and no children, so it is
  * indistinguishable from `1 SEX M` or `1 FAMC @F1@`. The schema that knows the
- * difference lives inside the validator and is not exported. So the tables are
- * written out, from the structures GEDCOM defines for an individual and a
- * family record in both supported dialects.
+ * difference is private to the validator.
  */
 
 export const PERSON_EVENT_TAGS: ReadonlySet<string> = new Set([
@@ -19,10 +14,7 @@ export const PERSON_EVENT_TAGS: ReadonlySet<string> = new Set([
   "RELI", "RESI", "SSN", "TITL", "FACT",
 ]);
 
-/**
- * The roles a family record names its spouses in. A pointer to a person in any
- * other role — an associate, a witness, a submitter — is not a spouse.
- */
+/** A pointer in any other role — an associate, a witness — is not a spouse. */
 export const SPOUSE_ROLE_TAGS: ReadonlySet<string> = new Set(["HUSB", "WIFE"]);
 
 export const CHILD_ROLE_TAGS: ReadonlySet<string> = new Set(["CHIL"]);

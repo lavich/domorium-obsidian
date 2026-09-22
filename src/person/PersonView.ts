@@ -13,22 +13,18 @@ import { renderPersonPage, type PersonPageHost } from "./personPage";
 
 export const PERSON_VIEW_TYPE = "domorium-person";
 
-/** What the page needs of the plugin, which is where `obsidian` stays. */
 export interface PersonViewHost {
   read(person: PersonRef): Person | null;
-  /** Read the document nobody has open; the page redraws once it resolves. */
   warm(document: DocumentRef): Promise<void>;
-  /** Put the cursor on the record that declares this person. */
   openSource(person: PersonRef): void;
   resolveMedia(file: string): string | null;
-  /** The picture's own file, whole rather than cut. */
   openPicture(file: string): void;
 }
 
 /**
- * Persisted and restored by Obsidian. The name travels with it because
- * `getDisplayText` is called as soon as the view exists, before a document has
- * been read, and reading one needs that document open.
+ * The name travels with it because `getDisplayText` is called as soon as the
+ * view exists, before a document has been read, and reading one needs that
+ * document open.
  */
 interface PersonViewState {
   path?: string;
@@ -200,7 +196,6 @@ export class PersonView extends ItemView {
   }
 }
 
-/** The model reads more tags than the catalogue names, on purpose. */
 function namedEvent(tag: string): string {
   return named(`event.${tag}`) ?? tag;
 }
