@@ -27,7 +27,12 @@ npm run test          # Vitest unit tests only
 npm run test:browser  # Playwright specs against the standalone harness
 npm run dev           # esbuild watch build
 npm run build         # typecheck, then production bundle into dist/
+npm run build:demo    # build, then copy into demo-vault so Obsidian sees it
 ```
+
+`demo-vault/.obsidian/` is git-ignored and nothing copies into it on its own,
+so a vault showing old behaviour is almost always a stale build there. Run
+`build:demo` and reload the plugin in Obsidian.
 
 CI runs `lint`, `typecheck`, `test`, `build` and, in a second job,
 `test:browser`. `npm run check` covers everything except the browser specs.
