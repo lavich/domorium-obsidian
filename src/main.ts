@@ -136,12 +136,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         void this.revealPeople();
       },
     });
-    // The only way in that a reader can see. Without it the panel is reachable
-    // through the command palette alone, which on a tablet means nothing is
-    // visible at all: the mobile toolbar is where a ribbon action shows up.
-    this.addRibbonIcon(GEDCOM_ICON_ID, t("people.command"), () => {
-      void this.revealPeople();
-    });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
       const section = ctx.getSectionInfo(element);
       const { runs, problems } = renderGedcomBlock(
