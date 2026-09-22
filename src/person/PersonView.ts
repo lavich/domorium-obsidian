@@ -27,10 +27,19 @@ export interface PersonViewHost {
   openDocument(document: DocumentRef): void;
 }
 
-/** The view's own state, which Obsidian persists and restores. */
+/**
+ * The view's own state, which Obsidian persists and restores.
+ *
+ * The name travels with it. Obsidian draws the tab's header from
+ * `getDisplayText` as soon as the view exists, which is before anything has
+ * been read out of a document, and reading one needs the document to be open.
+ * Carrying the name means the header is right from the first draw rather than
+ * falling back to the view's own name and staying there.
+ */
 interface PersonViewState {
   path?: string;
   xref?: string;
+  name?: string;
 }
 
 export class PersonView extends ItemView {
@@ -42,6 +51,7 @@ export class PersonView extends ItemView {
   navigation = true;
 
   private person: PersonRef | null = null;
+  private name: string | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -60,19 +70,24 @@ export class PersonView extends ItemView {
 
   getDisplayText(): string {
     const read = this.person && this.host.read(this.person);
-    return read?.name ?? t("people.viewTitle");
+    return read?.name ?? this.name ?? t("people.viewTitle");
   }
 
   getState(): Record<string, unknown> {
     return this.person
-      ? { path: this.person.document.path, xref: this.person.xref }
+      ? {
+          path: this.person.document.path,
+          xref: this.person.xref,
+          ...(this.name === null ? {} : { name: this.name }),
+        }
       : {};
   }
 
   setState(state: unknown, result: ViewStateResult): Promise<void> {
-    const { path, xref } = (state ?? {}) as PersonViewState;
+    const { path, xref, name } = (state ?? {}) as PersonViewState;
     if (path && xref) {
       this.person = personRef(documentRef(path), xref);
+      this.name = name ?? null;
     }
     // Without this the change is not written to the leaf's history, and Back
     // has nothing to walk. Saying `false` here looks exactly like the whole
@@ -117,21 +132,30 @@ export class PersonView extends ItemView {
       return;
     }
 
+    this.name = read.name;
     renderPersonPage(root, read, this.pageHost());
     this.retitle();
   }
 
   /**
-   * The tab's header is drawn when the view is created, before any person has
-   * been set, so it keeps saying the view's name while the tab itself goes on
-   * to say the person's. `updateHeader` is what redraws it and is not in
-   * `obsidian.d.ts`; it is reached for here with the same care `main.ts` takes
-   * over the suggest registry, and its absence is survivable — the tab is
-   * right either way.
+   * The tab says who; the header says which file they came from.
+   *
+   * Obsidian draws both from `getDisplayText`, one string, so they cannot
+   * differ through the API. Returning the document there would leave every
+   * open person's tab reading `curie.ged`, which is the one thing a tab must
+   * not do, so the header is written directly instead.
+   *
+   * `.view-header-title` is a class themes rely on rather than an API. If it
+   * ever goes, this writes nothing and the header falls back to the person's
+   * name — the same thing the tab says, which is wrong for nobody.
    */
   private retitle(): void {
     const leaf = this.leaf as unknown as { updateHeader?: () => void };
     leaf.updateHeader?.();
+    const title = this.containerEl.querySelector(".view-header-title");
+    if (title && this.person) {
+      title.textContent = baseName(this.person.document.path);
+    }
   }
 
   private pageHost(): PersonPageHost {
@@ -189,7 +213,11 @@ export class PersonView extends ItemView {
     void this.leaf.setViewState({
       type: PERSON_VIEW_TYPE,
       active: true,
-      state: { path: this.person.document.path, xref: relative.xref },
+      state: {
+        path: this.person.document.path,
+        xref: relative.xref,
+        name: relative.name,
+      },
     });
   }
 }

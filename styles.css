@@ -581,3 +581,8 @@
 .gedcom-person-portrait:hover {
   box-shadow: 0 0 0 var(--border-width-alt, 2px) var(--interactive-accent);
 }
+
+/* The header names the document, the tab names the person. */
+.workspace-leaf-content[data-type="domorium-person"] .view-header-title {
+  color: var(--text-muted);
+}

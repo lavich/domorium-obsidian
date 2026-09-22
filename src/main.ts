@@ -431,8 +431,8 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       },
       symbolsOf: (document: DocumentRef) =>
         this.gedcomViewOf(document)?.documentSymbols() ?? [],
-      openPerson: (person: PersonRef) => {
-        void this.openPerson(person);
+      openPerson: (person: PersonRef, name?: string) => {
+        void this.openPerson(person, name);
       },
       shownPerson: () => {
         let found: PersonRef | null = null;
@@ -460,13 +460,14 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
    * One Person view, reused. Choosing a second person shows them in the tab
    * the first was in, which is also what makes Back walk the trail.
    */
-  private async openPerson(person: PersonRef): Promise<void> {
+  private async openPerson(person: PersonRef, name?: string): Promise<void> {
+    const named = name === undefined ? {} : { name };
     const existing = this.app.workspace.getLeavesOfType(PERSON_VIEW_TYPE)[0];
     const leaf = existing ?? this.app.workspace.getLeaf("tab");
     await leaf.setViewState({
       type: PERSON_VIEW_TYPE,
       active: true,
-      state: { path: person.document.path, xref: person.xref },
+      state: { path: person.document.path, xref: person.xref, ...named },
     });
     await this.app.workspace.revealLeaf(leaf);
     this.forEachPeopleView((view) => {

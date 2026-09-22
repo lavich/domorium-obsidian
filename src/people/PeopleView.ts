@@ -19,7 +19,7 @@ export interface PeopleViewHost {
   activeDocument(): { document: DocumentRef; revision: string } | null;
   /** The symbols of that document, read from the open view rather than disk. */
   symbolsOf(document: DocumentRef): DocumentSymbol[];
-  openPerson(person: PersonRef): void;
+  openPerson(person: PersonRef, name?: string): void;
   /** The person a Person view is showing, where one is open. */
   shownPerson(): PersonRef | null;
   /** One reading per revision, shared with the Person view. */
@@ -148,6 +148,6 @@ export class PeopleView extends ItemView {
     if (!this.showing || !person.xref) {
       return;
     }
-    this.host.openPerson(personRef(this.showing, person.xref));
+    this.host.openPerson(personRef(this.showing, person.xref), person.name);
   }
 }

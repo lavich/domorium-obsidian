@@ -141,7 +141,9 @@ document's name beside it SHALL be the way the reader reaches the document
 itself, so the page does not carry separate controls repeating either.
 
 The tab SHALL be titled with the person's name, not with the name of the view,
-so that a reader with several people open can tell them apart.
+so that a reader with several people open can tell them apart. The header above
+the page SHALL name the document instead, so that the two together say who is
+shown and where they came from.
 
 #### Scenario: A person read from a file
 - **WHEN** the page shows `@I1@` of `curie.ged`
@@ -167,6 +169,14 @@ so that a reader with several people open can tell them apart.
 - **WHEN** a person is shown, and then a relative is followed
 - **THEN** the tab is titled with the name of whoever is shown, not with the
   name of the view
+
+#### Scenario: Several people open at once
+- **WHEN** two people are open in two tabs
+- **THEN** each tab names its own person, and neither names the document
+
+#### Scenario: What sits above the page
+- **WHEN** a person from `curie.ged` is shown
+- **THEN** the header above the page reads `curie.ged`
 
 ### Requirement: The page shows the family around the person
 
