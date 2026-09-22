@@ -54,6 +54,7 @@ export class PeopleList {
   private filter = "";
   private readonly countEl: HTMLElement;
   private readonly rowsEl: HTMLElement;
+  private readonly scrollEl: HTMLElement;
 
   private scrollTop = 0;
 
@@ -92,8 +93,28 @@ export class PeopleList {
     only.textContent = labels.subject;
     subject.append(only);
 
+    // The search sits under the bar and above the count, and all three stay
+    // put while the rows beneath them scroll.
+    const wrap = element(root, "div", "search-input-container");
+    const search = element(wrap, "input", "") as HTMLInputElement;
+    search.type = "search";
+    search.placeholder = labels.searchPlaceholder;
+    search.addEventListener("input", () => {
+      this.setFilter(search.value);
+      this.scrollEl.scrollTop = 0;
+    });
+
     this.countEl = element(root, "div", "gedcom-people-count");
-    this.rowsEl = element(root, "div", "gedcom-people-rows");
+    this.scrollEl = element(root, "div", "gedcom-people-scroller");
+    this.scrollEl.addEventListener("scroll", () => {
+      this.onScrolled(this.scrollEl.scrollTop);
+    });
+    this.rowsEl = element(this.scrollEl, "div", "gedcom-people-rows");
+  }
+
+  /** Where the empty-vault message goes, above the rows and below the count. */
+  get emptyHost(): HTMLElement {
+    return this.scrollEl;
   }
 
   /** Every GEDCOM the vault holds, and whichever is being listed. */
@@ -145,7 +166,6 @@ export class PeopleList {
     this.draw();
   }
 
-  /** Told by the host, which owns the scrolling element and can measure it. */
   onScrolled(scrollTop: number): void {
     if (scrollTop === this.scrollTop) {
       return;

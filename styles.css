@@ -278,15 +278,18 @@
   right: 0;
 }
 
-.gedcom-people-view {
+.gedcom-people-view,
+.gedcom-people {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
   padding: 0;
 }
 
 .gedcom-people-scroller {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -578,11 +581,11 @@
   min-width: 0;
 }
 
-.gedcom-people-view .search-input-container {
+.gedcom-people .search-input-container {
   margin: var(--size-4-2);
 }
 
-.gedcom-people-view .search-input-container input,
+.gedcom-people .search-input-container input,
 .gedcom-people-bar select {
   height: var(--input-height);
 }

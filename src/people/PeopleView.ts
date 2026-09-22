@@ -33,7 +33,6 @@ export class PeopleView extends ItemView {
   navigation = false;
 
   private list: PeopleList | null = null;
-  private scroller: HTMLElement | null = null;
   private showing: DocumentRef | null = null;
   private emptyEl: HTMLElement | null = null;
 
@@ -115,27 +114,8 @@ export class PeopleView extends ItemView {
     root.empty();
     root.addClass("gedcom-people-view");
 
-    // Obsidian styles a search field through this wrapper — radius, padding
-    // and the clear button all hang off it — which is how `searchPanel.ts`
-    // builds the one in the editor. A bare input gets the browser's.
-    const wrap = root.createDiv({ cls: "search-input-container" });
-    const search = wrap.createEl("input", { type: "search" });
-    search.placeholder = t("people.searchPlaceholder");
-    search.addEventListener("input", () => {
-      this.list?.setFilter(search.value);
-      if (this.scroller) {
-        this.scroller.scrollTop = 0;
-      }
-    });
-
-    const scroller = root.createDiv({ cls: "gedcom-people-scroller" });
-    this.scroller = scroller;
-    scroller.addEventListener("scroll", () => {
-      this.list?.onScrolled(scroller.scrollTop);
-    });
-
     this.list = new PeopleList(
-      scroller,
+      root,
       {
         count: (total) => plural("people.count", total),
         subject: t("people.viewTitle"),
@@ -145,7 +125,7 @@ export class PeopleView extends ItemView {
       },
       (person) => this.choose(person),
       // The sidebar can measure itself; the list cannot, and must not try.
-      { viewport: scroller.clientHeight || 600, rowHeight: ROW_HEIGHT },
+      { viewport: root.clientHeight || 600, rowHeight: ROW_HEIGHT },
     );
 
     this.list.onDocumentChosen((path) => {
@@ -154,7 +134,7 @@ export class PeopleView extends ItemView {
     this.refreshDocuments();
 
     if (!this.showing) {
-      this.emptyEl = scroller.createDiv({
+      this.emptyEl = this.list.emptyHost.createDiv({
         cls: "gedcom-people-none",
         text: t("people.noDocument"),
       });

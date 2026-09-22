@@ -481,3 +481,48 @@ describe("marking the person the reader is looking at", () => {
     expect(marks()).toEqual(["Pierre"]);
   });
 });
+
+describe("the order the view is built in", () => {
+  it("puts the bar first, the search under it, then the count, then the rows", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setDocuments(["curie.ged"], "curie.ged");
+    made.setPeople([row({ xref: "@I1@" })]);
+
+    const root = container.querySelector(".gedcom-people");
+    const order = [...(root?.children ?? [])].map((node) => node.className);
+
+    expect(order).toEqual([
+      "gedcom-people-bar",
+      "search-input-container",
+      "gedcom-people-count",
+      "gedcom-people-scroller",
+    ]);
+  });
+
+  it("keeps the bar, the search and the count out of the scrolling part", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setPeople([row({ xref: "@I1@" })]);
+
+    const scroller = container.querySelector(".gedcom-people-scroller");
+
+    expect(scroller?.querySelector(".gedcom-people-bar")).toBeNull();
+    expect(scroller?.querySelector(".search-input-container")).toBeNull();
+    expect(scroller?.querySelector(".gedcom-person-row")).not.toBeNull();
+  });
+
+  it("filters from its own search field", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setPeople([
+      row({ xref: "@I1@", name: "Marie", search: "marie" }),
+      row({ xref: "@I2@", name: "Pierre", search: "pierre" }),
+    ]);
+
+    const search = container.querySelector<HTMLInputElement>(
+      ".search-input-container input",
+    );
+    search!.value = "marie";
+    search?.dispatchEvent(new Event("input"));
+
+    expect(texts(".gedcom-person-name")).toEqual(["Marie"]);
+  });
+});
