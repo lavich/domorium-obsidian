@@ -63,7 +63,7 @@ export class PersonView extends ItemView {
 
   getDisplayText(): string {
     const read = this.person && this.host.read(this.person);
-    return read?.name ?? this.name ?? t("people.viewTitle");
+    return read?.name ?? this.name ?? t("person.viewTitle");
   }
 
   getState(): Record<string, unknown> {

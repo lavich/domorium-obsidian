@@ -98,8 +98,8 @@
   "cm.foldedCode": "свёрнутые строки",
   "cm.unfold": "развернуть",
   "cm.completions": "Автодополнение",
-  "people.viewTitle": "Люди",
-  "people.command": "Открыть список людей",
+  "people.viewTitle": "Domorium",
+  "people.command": "Открыть список записей",
   "people.searchPlaceholder": "Поиск людей...",
   "people.noResults": "Люди не найдены",
   "people.noDocument": "Откройте файл GEDCOM, чтобы просмотреть людей из него.",
@@ -204,5 +204,6 @@
     "few": "{count} источника",
     "many": "{count} источников",
     "other": "{count} источника"
-  }
+  },
+  "person.viewTitle": "Человек"
 }

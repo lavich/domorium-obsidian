@@ -88,8 +88,8 @@
   "cm.foldedCode": "folded code",
   "cm.unfold": "unfold",
   "cm.completions": "Completions",
-  "people.viewTitle": "People",
-  "people.command": "Open people",
+  "people.viewTitle": "Domorium",
+  "people.command": "Open the record browser",
   "people.searchPlaceholder": "Search people...",
   "people.noResults": "No people found",
   "people.noDocument": "Open a GEDCOM file to browse its people.",
@@ -186,5 +186,6 @@
   "sources.count": {
     "one": "{count} source",
     "other": "{count} sources"
-  }
+  },
+  "person.viewTitle": "Person"
 }
