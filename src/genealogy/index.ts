@@ -13,6 +13,9 @@ import {
 
 export type { DatePrecision, DateReading } from "./dates";
 export { UNNAMED } from "./names";
+
+/** As UNNAMED is for a person: a marker the caller names, not a title. */
+export const UNTITLED = "@untitled@";
 export * from "./recordRef";
 
 export interface PersonEvent {
@@ -75,6 +78,53 @@ export interface FamilyMember extends PersonRow {
   role: string;
 }
 
+/** What the format says about a source, tag by tag, in record order. */
+export interface SourceField {
+  tag: string;
+  value: string;
+}
+
+export interface Repository {
+  name?: string;
+  address?: string;
+  web?: string;
+}
+
+/** One case of a row. */
+export interface SourceRow extends Row {
+  title: string;
+  author?: string;
+  /** The name of the repository it points at, where the document declares one. */
+  repository?: string;
+}
+
+/** Read in full when a source is opened, rather than for all of them. */
+export interface Source extends SourceRow {
+  fields: SourceField[];
+  heldAt?: Repository;
+  media: PersonMedia[];
+  portrait?: PersonMedia;
+  unresolved: string[];
+}
+
+/**
+ * A `SOUR` pointer from within a record to a source record, reported to both
+ * sides from one reading.
+ */
+export interface Citation {
+  /** The record that makes it. */
+  record: string;
+  /** The source it names, declared or not. */
+  source: string;
+  /**
+   * The tag of the structure the pointer sat beneath. Absent where it sat on
+   * the record itself: a citation of a birth is not a citation of the person,
+   * and a structure has no identifier to name it by.
+   */
+  within?: string;
+  page?: string;
+}
+
 /** Read in full when a family is opened, rather than for all of them. */
 export interface Family extends FamilyRow {
   spouses: FamilyMember[];
@@ -103,8 +153,14 @@ export interface GenealogyIndex {
   /** In the order the file declares them. */
   people: PersonRow[];
   families: FamilyRow[];
+  sources: SourceRow[];
   person(xref: string): Person | undefined;
   family(xref: string): Family | undefined;
+  source(xref: string): Source | undefined;
+  /** What this record cites, in the order it writes the citations. */
+  citesBy(xref: string): Citation[];
+  /** What cites this source, in the order the file declares the citers. */
+  citedBy(xref: string): Citation[];
 }
 
 const childOf = (symbol: DocumentSymbol, tag: string): DocumentSymbol | undefined =>
@@ -130,6 +186,87 @@ function rolePointers(
     }
   }
   return found;
+}
+
+/** The pictures a record points at, whichever kind of record it is. */
+function mediaOf(
+  record: DocumentSymbol,
+  objects: Map<string, DocumentSymbol>,
+  unresolved: string[],
+): PersonMedia[] {
+  const media: PersonMedia[] = [];
+  for (const link of childrenOf(record, "OBJE")) {
+    const pointer = payload(link);
+    // Either the link names a multimedia record, or it carries the file
+    // itself, which 5.5.1 allows and 7.0 does not.
+    const holder = pointer ? objects.get(pointer) : link;
+    if (!holder) {
+      if (pointer && !unresolved.includes(pointer)) {
+        unresolved.push(pointer);
+      }
+      continue;
+    }
+    const file = payload(childOf(holder, "FILE"));
+    if (!file) {
+      continue;
+    }
+    const form = payload(childOf(childOf(holder, "FILE") ?? holder, "FORM"));
+    const title =
+      payload(childOf(link, "TITL")) ?? payload(childOf(holder, "TITL"));
+    const crop = cropOf(link);
+    media.push({
+      file,
+      ...(form === undefined ? {} : { form }),
+      ...(title === undefined ? {} : { title }),
+      ...(crop === undefined ? {} : { crop }),
+    });
+  }
+  return media;
+}
+
+/** What a source record states about itself, as the format writes it. */
+const SOURCE_FIELD_TAGS: ReadonlySet<string> = new Set([
+  "TITL", "AUTH", "PUBL", "ABBR", "TEXT", "REFN", "RIN",
+]);
+
+/**
+ * Every `SOUR` pointer beneath a record, to both sides at once. `within` names
+ * the level-one structure a citation hung from; a citation on the record
+ * itself has none.
+ */
+function collectCitations(
+  record: DocumentSymbol,
+  xref: string,
+  byCiter: Map<string, Citation[]>,
+  byCited: Map<string, Citation[]>,
+): void {
+  const add = (node: DocumentSymbol, within: string | undefined): void => {
+    for (const child of node.children) {
+      if (child.name === "SOUR" && child.detail?.startsWith("@")) {
+        const page = payload(childOf(child, "PAGE"));
+        const citation: Citation = {
+          record: xref,
+          source: child.detail,
+          ...(within === undefined ? {} : { within }),
+          ...(page === undefined ? {} : { page }),
+        };
+        push(byCiter, xref, citation);
+        push(byCited, child.detail, citation);
+        continue;
+      }
+      add(child, within ?? child.name);
+    }
+  };
+  add(record, undefined);
+}
+
+function push(into: Map<string, Citation[]>, key: string, one: Citation): void {
+  const held = into.get(key);
+  if (held) {
+    held.push(one);
+  } else {
+    into.set(key, [one]);
+  }
 }
 
 /** Extensions a document that says nothing about a file may still be judged by. */
@@ -258,11 +395,17 @@ function searchTextOf(row: PersonRow): string {
 export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   const people: PersonRow[] = [];
   const familyRows: FamilyRow[] = [];
+  const sourceRows: SourceRow[] = [];
   const rows = new Map<string, PersonRow>();
   const records = new Map<string, DocumentSymbol>();
   const families = new Map<string, DocumentSymbol>();
   const familySymbols: DocumentSymbol[] = [];
   const objects = new Map<string, DocumentSymbol>();
+  const sourceSymbols: DocumentSymbol[] = [];
+  const sourceRecords = new Map<string, DocumentSymbol>();
+  const repositories = new Map<string, DocumentSymbol>();
+  const byCiter = new Map<string, Citation[]>();
+  const byCited = new Map<string, Citation[]>();
 
   for (const symbol of symbols) {
     if (symbol.name === "INDI") {
@@ -279,6 +422,20 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       familySymbols.push(symbol);
     } else if (symbol.name === "OBJE" && symbol.detail) {
       objects.set(symbol.detail, symbol);
+    } else if (symbol.name === "SOUR") {
+      if (symbol.detail) {
+        sourceRecords.set(symbol.detail, symbol);
+      }
+      sourceSymbols.push(symbol);
+    } else if (symbol.name === "REPO" && symbol.detail) {
+      repositories.set(symbol.detail, symbol);
+    }
+
+    // Citations, collected by the walk this loop already makes rather than by
+    // walking the document again per source. `within` is the level-one
+    // structure the pointer sat beneath, which is the one a reader recognises.
+    if (symbol.detail && symbol.name !== "SOUR") {
+      collectCitations(symbol, symbol.detail, byCiter, byCited);
     }
   }
 
@@ -356,6 +513,80 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     };
   }
 
+  function repositoryOf(record: DocumentSymbol): DocumentSymbol | undefined {
+    const pointer = payload(childOf(record, "REPO"));
+    return pointer ? repositories.get(pointer) : undefined;
+  }
+
+  function sourceRowOf(record: DocumentSymbol): SourceRow {
+    const xref = record.detail || undefined;
+    const title = payload(childOf(record, "TITL")) ?? UNTITLED;
+    const author = payload(childOf(record, "AUTH"));
+    const repository = payload(
+      repositoryOf(record) && childOf(repositoryOf(record)!, "NAME"),
+    );
+    const row: SourceRow = {
+      ...(xref === undefined ? {} : { xref }),
+      unaddressable: xref === undefined,
+      title,
+      ...(author === undefined ? {} : { author }),
+      ...(repository === undefined ? {} : { repository }),
+      search: "",
+    };
+    row.search = [title, author ?? "", repository ?? "", xref ?? ""]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return row;
+  }
+
+  function source(xref: string): Source | undefined {
+    const record = sourceRecords.get(xref);
+    if (!record) {
+      return undefined;
+    }
+    const unresolved: string[] = [];
+    const pointer = payload(childOf(record, "REPO"));
+    const held = pointer ? repositories.get(pointer) : undefined;
+    if (pointer && !held) {
+      unresolved.push(pointer);
+    }
+    const media = mediaOf(record, objects, unresolved);
+    const portrait = media.find(looksLikeAnImage);
+
+    const fields: SourceField[] = [];
+    for (const child of record.children) {
+      const value = payload(child);
+      if (value && !child.name.startsWith("@") && SOURCE_FIELD_TAGS.has(child.name)) {
+        fields.push({ tag: child.name, value });
+      }
+    }
+
+    const heldAt: Repository | undefined = held
+      ? {
+          ...(payload(childOf(held, "NAME")) === undefined
+            ? {}
+            : { name: payload(childOf(held, "NAME")) }),
+          ...(payload(childOf(childOf(held, "NAME") ?? held, "ADDR")) ===
+          undefined
+            ? {}
+            : { address: payload(childOf(childOf(held, "NAME") ?? held, "ADDR")) }),
+          ...(payload(childOf(held, "WWW")) === undefined
+            ? {}
+            : { web: payload(childOf(held, "WWW")) }),
+        }
+      : undefined;
+
+    return {
+      ...sourceRowOf(record),
+      fields,
+      ...(heldAt === undefined ? {} : { heldAt }),
+      media,
+      ...(portrait === undefined ? {} : { portrait }),
+      unresolved,
+    };
+  }
+
   function person(xref: string): Person | undefined {
     const record = records.get(xref);
     const row = rows.get(xref);
@@ -410,32 +641,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       }
     }
 
-    const media: PersonMedia[] = [];
-    for (const link of childrenOf(record, "OBJE")) {
-      const pointer = payload(link);
-      // Either the link names a multimedia record, or it carries the file
-      // itself, which 5.5.1 allows and 7.0 does not.
-      const holder = pointer ? objects.get(pointer) : link;
-      if (!holder) {
-        if (pointer && !unresolved.includes(pointer)) {
-          unresolved.push(pointer);
-        }
-        continue;
-      }
-      const file = payload(childOf(holder, "FILE"));
-      if (!file) {
-        continue;
-      }
-      const form = payload(childOf(childOf(holder, "FILE") ?? holder, "FORM"));
-      const title = payload(childOf(link, "TITL")) ?? payload(childOf(holder, "TITL"));
-      const crop = cropOf(link);
-      media.push({
-        file,
-        ...(form === undefined ? {} : { form }),
-        ...(title === undefined ? {} : { title }),
-        ...(crop === undefined ? {} : { crop }),
-      });
-    }
+    const media = mediaOf(record, objects, unresolved);
     const portrait = media.find(looksLikeAnImage);
 
     const familiesOf = (tag: string): FamilyRow[] => {
@@ -467,6 +673,18 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   for (const symbol of familySymbols) {
     familyRows.push(familyRowOf(symbol));
   }
+  for (const symbol of sourceSymbols) {
+    sourceRows.push(sourceRowOf(symbol));
+  }
 
-  return { people, families: familyRows, person, family };
+  return {
+    people,
+    families: familyRows,
+    sources: sourceRows,
+    person,
+    family,
+    source,
+    citesBy: (xref) => byCiter.get(xref) ?? [],
+    citedBy: (xref) => byCited.get(xref) ?? [],
+  };
 }

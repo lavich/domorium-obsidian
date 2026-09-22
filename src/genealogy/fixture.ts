@@ -174,6 +174,44 @@ export const FIXTURE = [
   "0 @F6@ FAM",
   "1 MARR",
 
+  // Sources: one stating everything, one a title only, one with no title at
+  // all, and one naming a repository the document does not declare.
+  "0 @S1@ SOUR",
+  "1 TITL Parish registers of Warsaw",
+  "1 AUTH Parish of the Holy Cross",
+  "1 PUBL Warsaw, 1867",
+  "1 REPO @R1@",
+  "1 OBJE @O4@",
+  "0 @S2@ SOUR",
+  "1 TITL A title and nothing else",
+  "0 @S3@ SOUR",
+  "1 AUTH Anonymous",
+  "0 @S4@ SOUR",
+  "1 TITL Held nowhere the file declares",
+  "1 REPO @R9@",
+  "0 @R1@ REPO",
+  "1 NAME State Archive in Warsaw",
+  "2 ADDR Krzywe Koło 7",
+  "1 WWW https://example.org/archive",
+
+  // A person citing one source on the record and another under an event, and
+  // one citing a source the document does not declare.
+  "0 @I17@ INDI",
+  "1 NAME Cited /Person/",
+  "1 SOUR @S1@",
+  "2 PAGE volume 3, page 214",
+  "1 BIRT",
+  "2 DATE 1867",
+  "2 SOUR @S1@",
+  "3 PAGE birth entry 88",
+  "1 SOUR @S9@",
+  "0 @I18@ INDI",
+  "1 NAME Second /Citer/",
+  "1 SOUR @S1@",
+  "0 @I19@ INDI",
+  "1 NAME Third /Citer/",
+  "1 SOUR @S1@",
+
   // A family declaring no identifier.
   "0 FAM",
   "1 HUSB @I2@",
