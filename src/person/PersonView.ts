@@ -3,7 +3,6 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import {
   documentRef,
   personRef,
-  type DocumentRef,
   type Person,
   type PersonRef,
   type PersonRow,
@@ -23,8 +22,6 @@ export interface PersonViewHost {
   resolveMedia(file: string): string | null;
   /** Show the picture's own file, whole rather than cut to a rectangle. */
   openPicture(file: string): void;
-  /** Open the GEDCOM itself, without moving the cursor to any record. */
-  openDocument(document: DocumentRef): void;
 }
 
 /**
@@ -181,11 +178,6 @@ export class PersonView extends ItemView {
         xref: this.person?.xref ?? "",
       },
       resolveMedia: (file) => this.host.resolveMedia(file),
-      onOpenDocument: () => {
-        if (this.person) {
-          this.host.openDocument(this.person.document);
-        }
-      },
       onOpenPicture: (picture) => {
         this.host.openPicture(picture.file);
       },

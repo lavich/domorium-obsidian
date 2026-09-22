@@ -126,19 +126,13 @@ setting, and this change does not answer it a second way.
 
 ### Requirement: The page says which record it is a reading of
 
-The page SHALL open with a trail naming the document the person was read from
-and then the identifier that declares them, in that order, above the person's
-name and in text that does not compete with it. The trail says where the
-reader is: this person, inside this file.
+The page SHALL show the identifier that declares the person, near their name
+and in text that does not compete with it, and that identifier SHALL be the way
+the reader reaches the record.
 
-Person view is a reading of a GEDCOM record, not a replacement for one, and a
-reader who has two GEDCOM files open needs to know which of them they are
-looking at. Where two documents declare the same identifier this is the only
-thing on the page that tells them apart.
-
-That identifier SHALL be the way the reader reaches the record, and the
-document's name beside it SHALL be the way the reader reaches the document
-itself, so the page does not carry separate controls repeating either.
+Person view is a reading of a GEDCOM record, not a replacement for one, and the
+identifier is what a reader takes back to the file. The document it came from
+is named in the header above the page rather than repeated here.
 
 The tab SHALL be titled with the person's name, not with the name of the view,
 so that a reader with several people open can tell them apart. The header above
@@ -147,23 +141,18 @@ shown and where they came from.
 
 #### Scenario: A person read from a file
 - **WHEN** the page shows `@I1@` of `curie.ged`
-- **THEN** its first line reads `curie.ged` then `@I1@`, above the person's
-  name and in text that does not compete with it
-
-#### Scenario: The same identifier in two files
-- **WHEN** the reader opens `@I1@` of `curie.ged` and then `@I1@` of
-  `joliot.ged`
-- **THEN** each page names the file it was read from
+- **THEN** it shows `@I1@` near the person's name, and the header above the
+  page reads `curie.ged`
 
 #### Scenario: Reaching the record from it
 - **WHEN** the reader chooses the identifier shown there
 - **THEN** the record is reached exactly as the action described below reaches
   it
 
-#### Scenario: Reaching the document from it
-- **WHEN** the reader chooses the document's name shown there
-- **THEN** that GEDCOM file opens, without the cursor being moved to any
-  particular record
+#### Scenario: The same identifier in two files
+- **WHEN** the reader opens `@I1@` of `curie.ged` and then `@I1@` of
+  `joliot.ged`
+- **THEN** each page is headed by the file it was read from
 
 #### Scenario: The tab a person is shown in
 - **WHEN** a person is shown, and then a relative is followed
@@ -173,10 +162,6 @@ shown and where they came from.
 #### Scenario: Several people open at once
 - **WHEN** two people are open in two tabs
 - **THEN** each tab names its own person, and neither names the document
-
-#### Scenario: What sits above the page
-- **WHEN** a person from `curie.ged` is shown
-- **THEN** the header above the page reads `curie.ged`
 
 ### Requirement: The page shows the family around the person
 

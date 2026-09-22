@@ -455,30 +455,12 @@
   font-size: var(--font-ui-smaller);
 }
 
-/* The trail: which file, then which record in it. It opens the page, above
-   the name, and stays out of the name's way. */
+/* The identifier, which is what a reader takes back to the file. The document
+   it came from is named in the header above the page. */
 .gedcom-person-source {
-  display: flex;
-  align-items: baseline;
-  gap: var(--size-4-2);
-  margin-bottom: var(--size-4-3);
+  margin-top: var(--size-4-1);
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
-}
-
-.gedcom-person-source-file,
-.gedcom-person-source-link {
-  color: var(--text-muted);
-}
-
-.gedcom-person-source-file {
-  cursor: var(--cursor-link);
-  text-decoration: none;
-}
-
-.gedcom-person-source-file:hover {
-  color: var(--link-color);
-  text-decoration: underline;
 }
 
 .gedcom-person-source-link {

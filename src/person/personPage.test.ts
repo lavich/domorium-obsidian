@@ -30,7 +30,6 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
       file.startsWith("https://") ? null : `app://vault/${file}`,
     onPerson: vi.fn(),
     onOpenSource: vi.fn(),
-    onOpenDocument: vi.fn(),
     onOpenPicture: vi.fn(),
     ...overrides,
   };
@@ -175,15 +174,6 @@ describe("who the person was", () => {
   });
 });
 
-describe("where the trail sits", () => {
-  it("opens the page, above the name", () => {
-    draw(person());
-
-    const page = container.querySelector(".gedcom-person-page");
-    expect(page?.firstElementChild?.className).toContain("gedcom-person-source");
-  });
-});
-
 describe("the face beside the name", () => {
   const pictured = (extra: Partial<PersonMedia> = {}): Person => {
     const portrait: PersonMedia = { file: "Media/family.svg", ...extra };
@@ -321,32 +311,16 @@ describe("the face beside the name", () => {
 });
 
 describe("which record the page is a reading of", () => {
-  it("names the document and the identifier beneath the name", () => {
+  it("shows the identifier that declares the person", () => {
     draw(person({ xref: "@I1@" }), host({ source: { document: "curie.ged", xref: "@I1@" } }));
 
-    const line = texts(".gedcom-person-source")[0] ?? "";
-
-    expect(line).toContain("curie.ged");
-    expect(line).toContain("@I1@");
-    // The file, then the record in it: a trail reads in one direction.
-    expect(line.indexOf("curie.ged")).toBeLessThan(line.indexOf("@I1@"));
+    expect(texts(".gedcom-person-source")[0]).toBe("@I1@");
   });
 
-  it("names whichever document the person was read from", () => {
-    draw(person({ xref: "@I1@" }), host({ source: { document: "joliot.ged", xref: "@I1@" } }));
+  it("does not repeat the document, which the header above the page names", () => {
+    draw(person({ xref: "@I1@" }), host({ source: { document: "curie.ged", xref: "@I1@" } }));
 
-    expect(texts(".gedcom-person-source")[0]).toContain("joliot.ged");
-  });
-
-  it("reaches the document from its name", () => {
-    const onOpenDocument = vi.fn();
-    const onOpenSource = vi.fn();
-    draw(person(), host({ onOpenDocument, onOpenSource }));
-
-    container.querySelector<HTMLElement>(".gedcom-person-source-file")?.click();
-
-    expect(onOpenDocument).toHaveBeenCalled();
-    expect(onOpenSource, "the file, not the record's line").not.toHaveBeenCalled();
+    expect(texts(".gedcom-person-source")[0]).not.toContain("curie.ged");
   });
 
   it("reaches the record from the identifier, with no second control", () => {

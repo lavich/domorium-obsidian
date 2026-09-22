@@ -498,9 +498,6 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       openPicture: (target) => {
         void this.openPicture(target);
       },
-      openDocument: (document) => {
-        void this.openPicture(document.path);
-      },
       resolveMedia: (target) => {
         if (/^[a-z][a-z0-9+.-]*:/iu.test(target)) {
           return null;
