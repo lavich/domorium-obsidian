@@ -138,5 +138,26 @@
   "event.FACT": "Fact",
   "person.born": "Born",
   "person.died": "Died",
-  "person.sex": "Sex"
+  "person.sex": "Sex",
+  "people.subjectPeople": "People",
+  "people.subjectFamilies": "Families",
+  "family.viewTitle": "Family",
+  "family.spouses": "Spouses",
+  "family.children": "Children",
+  "family.events": "Events",
+  "family.unnamed": "Unnamed family",
+  "person.childFamilies": "Family they were a child in",
+  "person.spouseFamilies": "Families they married into",
+  "family.childCount": {
+    "one": "{count} child",
+    "other": "{count} children"
+  },
+  "event.DIV": "Divorce",
+  "event.ENGA": "Engagement",
+  "event.ANUL": "Annulment",
+  "event.MARB": "Marriage banns",
+  "event.MARC": "Marriage contract",
+  "event.MARL": "Marriage licence",
+  "event.MARS": "Marriage settlement",
+  "event.DIVF": "Divorce filed"
 }

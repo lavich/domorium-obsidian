@@ -1,17 +1,18 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { PersonRow } from "../genealogy";
-import { PeopleList, ROW_HEIGHT, type PeopleListLabels } from "./peopleList";
+import type { FamilyRow, PersonRow } from "../genealogy";
+import { drawFamilyRow } from "./familyRowView";
+import { drawPersonRow } from "./personRowView";
+import { RecordList, ROW_HEIGHT, type RecordListLabels } from "./recordList";
 
 let container: HTMLElement;
 
 /** Resolved strings, so the renderer never reaches for the plugin's language. */
-const LABELS: PeopleListLabels = {
+const LABELS: RecordListLabels = {
   count: (total) => `${total} people`,
-  subject: "People",
+  subjects: [{ id: "people", name: "People" }, { id: "families", name: "Families" }],
   noResults: "No people found",
-  unnamed: "Unnamed",
   searchPlaceholder: "Search people...",
 };
 
@@ -27,11 +28,22 @@ function row(overrides: Partial<PersonRow> = {}): PersonRow {
   return base;
 }
 
-const list = (people: PersonRow[], onChoose = vi.fn()): PeopleList => {
-  const made = new PeopleList(container, LABELS, onChoose);
-  made.setPeople(people);
+/** The subject's drawing is handed in; the list itself knows nothing of it. */
+const drawPerson = (row: HTMLElement, record: unknown): void => {
+  drawPersonRow(row, record as PersonRow, "Unnamed");
+};
+
+const listOf = (
+  people: PersonRow[],
+  onChoose = vi.fn(),
+  metrics?: { viewport: number; rowHeight?: number },
+): RecordList => {
+  const made = new RecordList(container, LABELS, onChoose, drawPerson, metrics);
+  made.setRecords(people);
   return made;
 };
+
+const list = listOf;
 
 const options = (): string[] =>
   [...container.querySelectorAll(".gedcom-people-document option")].map(
@@ -133,7 +145,7 @@ describe("which people the list shows", () => {
   it("replaces what it showed when given another document's people", () => {
     const made = list([row({ xref: "@I1@", name: "First" })]);
 
-    made.setPeople([row({ xref: "@I9@", name: "Second" })]);
+    made.setRecords([row({ xref: "@I9@", name: "Second" })]);
 
     expect(texts(".gedcom-person-name")).toEqual(["Second"]);
     expect(rowCount()).toBe(1);
@@ -176,7 +188,7 @@ describe("typing into the search field", () => {
 
   const shown = (): string[] => texts(".gedcom-person-name");
 
-  const typed = (text: string): PeopleList => {
+  const typed = (text: string): RecordList => {
     const made = list(people);
     made.setFilter(text);
     return made;
@@ -245,7 +257,7 @@ describe("typing into the search field", () => {
   it("keeps the filter when the document's people are replaced", () => {
     const made = typed("curie");
 
-    made.setPeople([row({ xref: "@I1@", name: "Other Curie", search: "other curie" })]);
+    made.setRecords([row({ xref: "@I1@", name: "Other Curie", search: "other curie" })]);
 
     expect(shown()).toEqual(["Other Curie"]);
   });
@@ -262,11 +274,8 @@ describe("a list too long to draw whole", () => {
     );
 
   /** happy-dom lays nothing out, so the viewport is stated rather than measured. */
-  const sized = (people: PersonRow[]): PeopleList => {
-    const made = new PeopleList(container, LABELS, vi.fn(), { viewport: 600 });
-    made.setPeople(people);
-    return made;
-  };
+  const sized = (people: PersonRow[]): RecordList =>
+    listOf(people, vi.fn(), { viewport: 600 });
 
   it("draws a bounded number of rows for twenty thousand people", () => {
     sized(many(20000));
@@ -330,10 +339,10 @@ describe("a list too long to draw whole", () => {
 });
 
 describe("the bar above the list", () => {
-  const withDocuments = (current?: string): PeopleList => {
-    const made = new PeopleList(container, LABELS, vi.fn());
+  const withDocuments = (current?: string): RecordList => {
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
     made.setDocuments(["curie.ged", "joliot.ged"], current);
-    made.setPeople([row({ xref: "@I1@" })]);
+    made.setRecords([row({ xref: "@I1@" })]);
     return made;
   };
 
@@ -344,15 +353,46 @@ describe("the bar above the list", () => {
     expect(chosen()).toBe("curie.ged");
   });
 
-  it("names what of the document is being listed", () => {
-    withDocuments("curie.ged");
+  it("offers both subjects and shows which is being listed", () => {
+    const made = withDocuments("curie.ged");
+    made.setSubject("families");
 
-    expect(texts(".gedcom-people-subject option")).toEqual(["People"]);
+    expect(texts(".gedcom-people-subject option")).toEqual([
+      "People",
+      "Families",
+    ]);
+    expect(
+      container.querySelector<HTMLSelectElement>(".gedcom-people-subject")?.value,
+    ).toBe("families");
+  });
+
+  it("hands a subject back rather than acting on it", () => {
+    const onSubject = vi.fn();
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    made.onSubjectChosen(onSubject);
+
+    const select = container.querySelector<HTMLSelectElement>(
+      ".gedcom-people-subject",
+    );
+    select!.value = "families";
+    select?.dispatchEvent(new Event("change"));
+
+    expect(onSubject).toHaveBeenCalledWith("families");
+  });
+
+  it("keeps the subject when the document changes", () => {
+    const made = withDocuments("curie.ged");
+    made.setSubject("families");
+    made.setDocuments(["curie.ged", "joliot.ged"], "joliot.ged");
+
+    expect(
+      container.querySelector<HTMLSelectElement>(".gedcom-people-subject")?.value,
+    ).toBe("families");
   });
 
   it("hands a choice back rather than acting on it", () => {
     const onDocument = vi.fn();
-    const made = new PeopleList(container, LABELS, vi.fn());
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
     made.onDocumentChosen(onDocument);
     made.setDocuments(["curie.ged", "joliot.ged"], "curie.ged");
 
@@ -374,7 +414,7 @@ describe("the bar above the list", () => {
   });
 
   it("offers one where the vault holds one", () => {
-    const made = new PeopleList(container, LABELS, vi.fn());
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
     made.setDocuments(["curie.ged"], "curie.ged");
 
     expect(options()).toEqual(["curie.ged"]);
@@ -396,8 +436,8 @@ describe("the bar above the list", () => {
 
 describe("the height the window counts by", () => {
   it("is published to the stylesheet, so the two cannot disagree", () => {
-    const made = new PeopleList(container, LABELS, vi.fn(), { viewport: 600 });
-    made.setPeople([row({ xref: "@I1@" })]);
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson, { viewport: 600 });
+    made.setRecords([row({ xref: "@I1@" })]);
 
     const root = container.querySelector<HTMLElement>(".gedcom-people");
 
@@ -407,11 +447,11 @@ describe("the height the window counts by", () => {
   });
 
   it("follows a height the host asked for", () => {
-    const made = new PeopleList(container, LABELS, vi.fn(), {
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson, {
       viewport: 600,
       rowHeight: 60,
     });
-    made.setPeople([row({ xref: "@I1@" })]);
+    made.setRecords([row({ xref: "@I1@" })]);
 
     expect(
       container
@@ -484,9 +524,9 @@ describe("marking the person the reader is looking at", () => {
 
 describe("the order the view is built in", () => {
   it("puts the bar first, the search under it, then the count, then the rows", () => {
-    const made = new PeopleList(container, LABELS, vi.fn());
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
     made.setDocuments(["curie.ged"], "curie.ged");
-    made.setPeople([row({ xref: "@I1@" })]);
+    made.setRecords([row({ xref: "@I1@" })]);
 
     const root = container.querySelector(".gedcom-people");
     const order = [...(root?.children ?? [])].map((node) => node.className);
@@ -500,8 +540,8 @@ describe("the order the view is built in", () => {
   });
 
   it("keeps the bar, the search and the count out of the scrolling part", () => {
-    const made = new PeopleList(container, LABELS, vi.fn());
-    made.setPeople([row({ xref: "@I1@" })]);
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    made.setRecords([row({ xref: "@I1@" })]);
 
     const scroller = container.querySelector(".gedcom-people-scroller");
 
@@ -511,8 +551,8 @@ describe("the order the view is built in", () => {
   });
 
   it("filters from its own search field", () => {
-    const made = new PeopleList(container, LABELS, vi.fn());
-    made.setPeople([
+    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    made.setRecords([
       row({ xref: "@I1@", name: "Marie", search: "marie" }),
       row({ xref: "@I2@", name: "Pierre", search: "pierre" }),
     ]);
@@ -524,5 +564,72 @@ describe("the order the view is built in", () => {
     search?.dispatchEvent(new Event("input"));
 
     expect(texts(".gedcom-person-name")).toEqual(["Marie"]);
+  });
+});
+
+describe("what a family's row says", () => {
+  const family = (overrides: Partial<FamilyRow> = {}): FamilyRow => ({
+    xref: "@F1@",
+    unaddressable: false,
+    spouseNames: ["Pierre Curie", "Marie Skłodowska-Curie"],
+    name: "Pierre Curie / Marie Skłodowska-Curie",
+    childCount: 0,
+    search: "pierre curie marie skłodowska-curie @f1@",
+    ...overrides,
+  });
+
+  const families = (rows: FamilyRow[]): RecordList => {
+    const made = new RecordList(container, LABELS, vi.fn(), (row, record) =>
+      drawFamilyRow(row, record as FamilyRow, (n) => `${n} children`),
+    );
+    made.setRecords(rows);
+    return made;
+  };
+
+  it("names the people it joins, with the year, the place and the children", () => {
+    families([
+      family({
+        marriage: { text: "26 JUL 1895", year: 1895, precision: "exact" },
+        place: "Sceaux, France",
+        childCount: 2,
+      }),
+    ]);
+
+    expect(texts(".gedcom-person-name")).toEqual([
+      "Pierre Curie / Marie Skłodowska-Curie",
+    ]);
+    expect(texts(".gedcom-person-years")).toEqual(["1895"]);
+    expect(texts(".gedcom-person-place")).toEqual(["Sceaux, France"]);
+    expect(texts(".gedcom-family-children")).toEqual(["2 children"]);
+  });
+
+  it("shows only the people where the record says nothing else", () => {
+    families([family()]);
+
+    expect(texts(".gedcom-person-name")).toEqual([
+      "Pierre Curie / Marie Skłodowska-Curie",
+    ]);
+    expect(texts(".gedcom-person-years")).toEqual([]);
+    expect(texts(".gedcom-person-place")).toEqual([]);
+    expect(texts(".gedcom-family-children")).toEqual([]);
+  });
+
+  it("shows the identifier where the record names nobody", () => {
+    families([family({ name: undefined, spouseNames: [] })]);
+
+    expect(texts(".gedcom-person-name")).toEqual(["@F1@"]);
+  });
+
+  it("filters on a spouse's name and on the place of the marriage", () => {
+    const made = families([
+      family({ search: "pierre curie marie skłodowska-curie @f1@ 1895 sceaux, france" }),
+      family({ xref: "@F2@", name: "Other / Family", search: "other family @f2@" }),
+    ]);
+
+    made.setFilter("curie");
+    expect(texts(".gedcom-person-name")).toHaveLength(1);
+
+    made.setFilter("sceaux");
+    expect(texts(".gedcom-person-name")).toHaveLength(1);
   });
 });

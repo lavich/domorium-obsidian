@@ -1,4 +1,4 @@
-import { UNNAMED, type PersonRow } from "../genealogy";
+import type { Row } from "../genealogy";
 
 /**
  * The strings the list shows, already in the reader's language.
@@ -8,18 +8,16 @@ import { UNNAMED, type PersonRow } from "../genealogy";
  * load, and a test can say what it expects without setting global state. The
  * view built on Obsidian fills these from the catalogue.
  */
-export interface PeopleListLabels {
+export interface RecordListLabels {
   count: (total: number) => string;
-  /** What of the document is being listed. Only people, for now. */
-  subject: string;
+  /** What of the document may be listed, and what each is called. */
+  subjects: { id: string; name: string }[];
   noResults: string;
-  /** What to call a person whose record carries no name. */
-  unnamed: string;
   searchPlaceholder: string;
 }
 
 /** What the list needs to know about the space it is drawn in. */
-export interface PeopleListMetrics {
+export interface RecordListMetrics {
   /** The visible height in pixels. Measured by the host, which can lay out. */
   viewport: number;
   /** One row's height. The rows are a fixed height so the window can count. */
@@ -45,12 +43,15 @@ const MARGIN_ROWS = 6;
  * a quarter of a second to build and hold eighty thousand elements, and a
  * filter matching most people pays that again on a keystroke.
  */
-export class PeopleList {
-  private people: PersonRow[] = [];
+export class RecordList {
+  private people: Row[] = [];
   private marked: string | null = null;
   private onDocument: ((document: string) => void) | null = null;
+  private drawing: (row: HTMLElement, record: Row) => void;
   private readonly documentEl: HTMLSelectElement;
-  private shown: PersonRow[] = [];
+  private readonly subjectEl: HTMLSelectElement;
+  private onSubject: ((subject: string) => void) | null = null;
+  private shown: Row[] = [];
   private filter = "";
   private readonly countEl: HTMLElement;
   private readonly rowsEl: HTMLElement;
@@ -60,10 +61,12 @@ export class PeopleList {
 
   constructor(
     container: HTMLElement,
-    private readonly labels: PeopleListLabels,
-    private readonly onChoose: (person: PersonRow) => void,
-    private readonly metrics?: PeopleListMetrics,
+    private readonly labels: RecordListLabels,
+    private readonly onChoose: (record: Row) => void,
+    drawInto: (row: HTMLElement, record: Row) => void,
+    private readonly metrics?: RecordListMetrics,
   ) {
+    this.drawing = drawInto;
     container.replaceChildren();
     const root = element(container, "div", "gedcom-people");
     root.style.setProperty(
@@ -83,15 +86,20 @@ export class PeopleList {
     this.documentEl.addEventListener("change", () => {
       this.onDocument?.(this.documentEl.value);
     });
-    const subject = element(
+    this.subjectEl = element(
       bar,
       "select",
       "dropdown gedcom-people-subject",
     ) as HTMLSelectElement;
-    const only = subject.ownerDocument.createElement("option");
-    only.value = "people";
-    only.textContent = labels.subject;
-    subject.append(only);
+    for (const { id, name } of labels.subjects) {
+      const option = this.subjectEl.ownerDocument.createElement("option");
+      option.value = id;
+      option.textContent = name;
+      this.subjectEl.append(option);
+    }
+    this.subjectEl.addEventListener("change", () => {
+      this.onSubject?.(this.subjectEl.value);
+    });
 
     // The search sits under the bar and above the count, and all three stay
     // put while the rows beneath them scroll.
@@ -133,7 +141,25 @@ export class PeopleList {
     this.onDocument = run;
   }
 
-  setPeople(people: PersonRow[]): void {
+  onSubjectChosen(run: (subject: string) => void): void {
+    this.onSubject = run;
+  }
+
+  /**
+   * Which subject is being listed. The two selections are independent: a
+   * change of document keeps the subject, and a change of subject keeps the
+   * document.
+   */
+  setSubject(subject: string): void {
+    this.subjectEl.value = subject;
+  }
+
+  /** What a row is drawn as. Changed when the subject does. */
+  setDrawing(draw: (row: HTMLElement, record: Row) => void): void {
+    this.drawing = draw;
+  }
+
+  setRecords(people: Row[]): void {
     // A record with no identifier cannot be opened or linked to, so it is not
     // listed. The model still reports it; leaving it out is this view's call.
     this.people = people.filter((person) => !person.unaddressable);
@@ -220,45 +246,23 @@ export class PeopleList {
     }
   }
 
-  private drawRow(person: PersonRow, top: number | null): void {
+  private drawRow(record: Row, top: number | null): void {
     const row = element(this.rowsEl, "div", "gedcom-person-row");
     row.tabIndex = 0;
-    if (person.xref !== undefined && person.xref === this.marked) {
+    if (record.xref !== undefined && record.xref === this.marked) {
       row.classList.add("is-marked");
     }
     if (top !== null) {
       row.classList.add("is-windowed");
       row.style.setProperty("--gedcom-person-top", `${top}px`);
     }
-    element(row, "div", "gedcom-person-name").textContent =
-      person.name === UNNAMED ? this.labels.unnamed : person.name;
-
-    const years = spanOfYears(person);
-    const place = person.place;
-    if (years || place) {
-      const sub = element(row, "div", "gedcom-person-sub");
-      if (years) {
-        element(sub, "span", "gedcom-person-years").textContent = years;
-      }
-      if (place) {
-        element(sub, "span", "gedcom-person-place").textContent = place;
-      }
-    }
-
+    // What a row says is the subject's business; the window, the filter and
+    // the mark are not.
+    this.drawing(row, record);
     row.addEventListener("click", () => {
-      this.onChoose(person);
+      this.onChoose(record);
     });
   }
-}
-
-/** `1901–1975`, `1931–`, `–1975`, or nothing rather than a bare dash. */
-function spanOfYears(person: PersonRow): string | null {
-  const born = person.birth?.year;
-  const died = person.death?.year;
-  if (born === undefined && died === undefined) {
-    return null;
-  }
-  return `${born ?? ""}–${died ?? ""}`;
 }
 
 function element(

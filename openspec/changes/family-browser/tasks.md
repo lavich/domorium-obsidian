@@ -14,9 +14,9 @@
 
 ## 3. The list draws either subject
 
-- [ ] 3.1 Make the list draw a row it is given rather than a person it assumes, in `src/people/peopleList.ts`: the window, the filter, the mark, the count and the bar unchanged. Verify in `src/people/peopleList.test.ts` that every existing assertion holds with a person-drawing function handed in
-- [ ] 3.2 Draw a family row — the people it joins, the year, the place, the child count, and the identifier where it names nobody — and build its searchable string from names, identifier, year and place. Verify in `src/people/peopleList.test.ts`: a family with a marriage and children; one recording only its people; one naming nobody; `curie` and `sceaux` each matching
-- [ ] 3.3 Offer families in the subject control and keep the two selections independent, in `src/people/peopleList.ts` and `src/people/PeopleView.ts`. Add the subject strings to `src/i18n/en.json` and `ru.json`. Verify in `src/people/peopleList.test.ts`: both subjects offered; choosing one calls back; changing the document keeps the subject. Verify by hand in `demo-vault/` that the list switches
+- [x] 3.1 Make the list draw a row it is given rather than a person it assumes, in `src/people/peopleList.ts`: the window, the filter, the mark, the count and the bar unchanged. Verify in `src/people/peopleList.test.ts` that every existing assertion holds with a person-drawing function handed in
+- [x] 3.2 Draw a family row — the people it joins, the year, the place, the child count, and the identifier where it names nobody — and build its searchable string from names, identifier, year and place. Verify in `src/people/peopleList.test.ts`: a family with a marriage and children; one recording only its people; one naming nobody; `curie` and `sceaux` each matching
+- [x] 3.3 Offer families in the subject control and keep the two selections independent, in `src/people/peopleList.ts` and `src/people/PeopleView.ts`. Add the subject strings to `src/i18n/en.json` and `ru.json`. Verify in `src/people/peopleList.test.ts`: both subjects offered; choosing one calls back; changing the document keeps the subject. Verify by hand in `demo-vault/` that the list switches
 - [ ] 3.4 Mark the open family's row, and mark nothing where the subject is not the one shown. Verify in `src/people/peopleList.test.ts`: a family row marks; a person shown while families are listed marks nothing
 
 ## 4. The family page

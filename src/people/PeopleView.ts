@@ -1,6 +1,6 @@
 import { ItemView, type WorkspaceLeaf } from "obsidian";
 
-import type { GenealogyIndex } from "../genealogy";
+import type { FamilyRow, GenealogyIndex } from "../genealogy";
 import {
   documentRef,
   recordRef,
@@ -10,7 +10,9 @@ import {
 } from "../genealogy";
 import { GEDCOM_ICON_ID } from "../icon";
 import { plural, t } from "../i18n";
-import { PeopleList, ROW_HEIGHT } from "./peopleList";
+import { drawFamilyRow } from "./familyRowView";
+import { drawPersonRow } from "./personRowView";
+import { RecordList, ROW_HEIGHT } from "./recordList";
 
 export const PEOPLE_VIEW_TYPE = "domorium-people";
 
@@ -27,8 +29,9 @@ export interface PeopleViewHost {
 export class PeopleView extends ItemView {
   navigation = false;
 
-  private list: PeopleList | null = null;
+  private list: RecordList | null = null;
   private showing: DocumentRef | null = null;
+  private subject: "people" | "families" = "people";
   private emptyEl: HTMLElement | null = null;
 
   constructor(
@@ -85,9 +88,31 @@ export class PeopleView extends ItemView {
     this.showing = document;
     this.emptyEl?.remove();
     this.emptyEl = null;
-    this.list?.setPeople(index.people);
+    this.redraw();
     this.refreshDocuments();
     this.markShownPerson();
+  }
+
+  /** The subject decides both what is listed and how a row of it is drawn. */
+  private redraw(): void {
+    const index = this.showing && this.host.indexOf(this.showing);
+    if (!index || !this.list) {
+      return;
+    }
+    if (this.subject === "families") {
+      this.list.setDrawing((row, record) =>
+        drawFamilyRow(row, record as FamilyRow, (count) =>
+          plural("family.childCount", count),
+        ),
+      );
+      this.list.setRecords(index.families);
+    } else {
+      this.list.setDrawing((row, record) =>
+        drawPersonRow(row, record as PersonRow, t("people.unnamed")),
+      );
+      this.list.setRecords(index.people);
+    }
+    this.list.setSubject(this.subject);
   }
 
   private refreshDocuments(): void {
@@ -102,22 +127,29 @@ export class PeopleView extends ItemView {
     root.empty();
     root.addClass("gedcom-people-view");
 
-    this.list = new PeopleList(
+    this.list = new RecordList(
       root,
       {
         count: (total) => plural("people.count", total),
-        subject: t("people.viewTitle"),
+        subjects: [
+          { id: "people", name: t("people.subjectPeople") },
+          { id: "families", name: t("people.subjectFamilies") },
+        ],
         noResults: t("people.noResults"),
-        unnamed: t("people.unnamed"),
         searchPlaceholder: t("people.searchPlaceholder"),
       },
-      (person) => this.choose(person),
+      (record) => this.choose(record as PersonRow),
+      (row, record) => drawPersonRow(row, record as PersonRow, t("people.unnamed")),
       // The sidebar can measure itself; the list cannot, and must not try.
       { viewport: root.clientHeight || 600, rowHeight: ROW_HEIGHT },
     );
 
     this.list.onDocumentChosen((path) => {
       this.show(documentRef(path));
+    });
+    this.list.onSubjectChosen((chosen) => {
+      this.subject = chosen === "families" ? "families" : "people";
+      this.redraw();
     });
     this.refreshDocuments();
 

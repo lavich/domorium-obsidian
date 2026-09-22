@@ -150,5 +150,28 @@
   "event.FACT": "Факт",
   "person.born": "Родился",
   "person.died": "Умер",
-  "person.sex": "Пол"
+  "person.sex": "Пол",
+  "people.subjectPeople": "Люди",
+  "people.subjectFamilies": "Семьи",
+  "family.viewTitle": "Семья",
+  "family.spouses": "Супруги",
+  "family.children": "Дети",
+  "family.events": "События",
+  "family.unnamed": "Семья без имени",
+  "person.childFamilies": "Семья, в которой родился",
+  "person.spouseFamilies": "Семьи, которые создал",
+  "family.childCount": {
+    "one": "{count} ребёнок",
+    "few": "{count} ребёнка",
+    "many": "{count} детей",
+    "other": "{count} ребёнка"
+  },
+  "event.DIV": "Развод",
+  "event.ENGA": "Помолвка",
+  "event.ANUL": "Аннулирование брака",
+  "event.MARB": "Оглашение брака",
+  "event.MARC": "Брачный договор",
+  "event.MARL": "Разрешение на брак",
+  "event.MARS": "Брачное соглашение",
+  "event.DIVF": "Заявление о разводе"
 }
