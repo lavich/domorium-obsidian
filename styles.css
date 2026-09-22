@@ -564,8 +564,9 @@
   color: var(--text-muted);
 }
 
-/* Which document, and what of it. Dense: the bar must not cost the list a row
-   of height in a sidebar that is mostly list. */
+/* Which document, and what of it. The bar and the search field below it share
+   one inset and one height, so the three controls read as one block rather
+   than as three that happen to be stacked. */
 .gedcom-people-bar {
   display: flex;
   gap: var(--size-4-2);
@@ -575,10 +576,13 @@
 .gedcom-people-bar select {
   flex: 1;
   min-width: 0;
-  height: var(--input-height, auto);
-  font-size: var(--font-ui-smaller);
 }
 
 .gedcom-people-view .search-input-container {
   margin: var(--size-4-2);
+}
+
+.gedcom-people-view .search-input-container input,
+.gedcom-people-bar select {
+  height: var(--input-height);
 }

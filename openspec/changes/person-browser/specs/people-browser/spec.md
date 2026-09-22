@@ -41,10 +41,15 @@ out is this view's decision, not the model's.
 - **THEN** it is not listed, and the count does not include it
 
 #### Scenario: No GEDCOM has been opened
-- **WHEN** the sidebar view is showing and no GEDCOM file has been opened in
-  this session
-- **THEN** it says that opening a GEDCOM file will list its people, and shows no
-  list
+- **WHEN** the sidebar view is showing, no GEDCOM file has been opened in this
+  session, and the vault holds at least one
+- **THEN** the first of them is listed, so the view opens on something rather
+  than on an instruction
+
+#### Scenario: A vault holding no GEDCOM at all
+- **WHEN** the sidebar view is showing and the vault holds no GEDCOM file
+- **THEN** it says that opening a GEDCOM file will list its people, and shows
+  no list
 
 ### Requirement: The reader can see and choose which document, and what of it
 
@@ -83,8 +88,9 @@ several before there are several.
 - **THEN** the bar still names it, and offers nothing else to choose
 
 #### Scenario: Before any GEDCOM has been opened
-- **WHEN** no document is being listed
-- **THEN** the bar offers the vault's GEDCOM files and names none as chosen
+- **WHEN** the view is opened and no GEDCOM has been opened in this session
+- **THEN** the bar names the first of the vault's GEDCOM files, and that
+  document is the one listed
 
 ### Requirement: A row tells one person from another
 

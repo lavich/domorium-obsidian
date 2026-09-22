@@ -71,6 +71,15 @@ export class PeopleView extends ItemView {
     const active = this.host.activeDocument();
     if (active) {
       this.show(active.document);
+      return;
+    }
+    // Nothing open and nothing chosen yet: a view that opens on a list is
+    // more use than one that opens on an instruction.
+    if (!this.showing) {
+      const first = this.host.documents()[0];
+      if (first) {
+        this.show(first);
+      }
     }
   }
 
