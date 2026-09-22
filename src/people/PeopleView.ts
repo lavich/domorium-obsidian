@@ -8,6 +8,7 @@ import {
   type PersonRef,
   type PersonRow,
 } from "../genealogy";
+import { GEDCOM_ICON_ID } from "../icon";
 import { plural, t } from "../i18n";
 import { PeopleList, ROW_HEIGHT } from "./peopleList";
 
@@ -53,7 +54,7 @@ export class PeopleView extends ItemView {
   }
 
   getIcon(): string {
-    return "users";
+    return GEDCOM_ICON_ID;
   }
 
   async onOpen(): Promise<void> {
