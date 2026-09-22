@@ -34,8 +34,8 @@
 
 - [x] 5.1 Register both views in `src/main.ts`, add the command that opens the people list, reveal an existing sidebar view rather than creating a second, and restore the sidebar through `onLayoutReady`. Verify by hand in `demo-vault/`: the command opens the view; running it again with the view in a collapsed sidebar reveals that one; restarting keeps it in place
 - [x] 5.2 Style the list and the page in `styles.css` on Obsidian's own variables only, with no colour literals. Verify with `grep -nE '#[0-9a-fA-F]{3,8}|rgb\(' styles.css` showing no new literals, and by hand in `demo-vault/` in both a light and a dark theme
-- [ ] 5.3 Prove two documents with overlapping identifiers stay apart: add a second GEDCOM to `demo-vault/` declaring its own `@I1@`, and verify by hand that opening `@I1@` from each file shows that file's person, and that a Person view restored after a restart shows the one it was opened from
+- [x] 5.3 Prove two documents with overlapping identifiers stay apart: add a second GEDCOM to `demo-vault/` declaring its own `@I1@`, and verify by hand that opening `@I1@` from each file shows that file's person, and that a Person view restored after a restart shows the one it was opened from
 
 ## 6. Check
 
-- [ ] 6.1 Run `npm run check` and `npm run test:browser`, both green
+- [x] 6.1 Run `npm run check` and `npm run test:browser`, both green
