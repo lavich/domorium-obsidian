@@ -340,3 +340,90 @@
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
+
+.gedcom-person-page {
+  padding: var(--size-4-4) var(--size-4-6);
+  max-width: 50rem;
+}
+
+.gedcom-person-title {
+  margin: 0;
+}
+
+.gedcom-person-lifespan {
+  color: var(--text-muted);
+  font-size: var(--font-ui-medium);
+}
+
+.gedcom-person-fields {
+  margin-top: var(--size-4-2);
+  color: var(--text-normal);
+}
+
+.gedcom-person-field,
+.gedcom-person-other-name {
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-person-other-names,
+.gedcom-person-group {
+  margin-top: var(--size-4-6);
+  border-top: var(--border-width) solid var(--background-modifier-border);
+  padding-top: var(--size-4-3);
+}
+
+.gedcom-person-group-title {
+  margin: 0 0 var(--size-4-2);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gedcom-person-group-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gedcom-person-relative {
+  display: flex;
+  gap: var(--size-4-2);
+  align-items: baseline;
+  padding: var(--size-4-1) var(--size-4-2);
+  border-radius: var(--radius-s);
+  cursor: var(--cursor-link);
+}
+
+.gedcom-person-relative:hover {
+  background-color: var(--nav-item-background-hover);
+}
+
+.gedcom-person-relative-name {
+  color: var(--link-color);
+}
+
+.gedcom-person-relative-years,
+.gedcom-person-event-detail {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-person-event {
+  margin-bottom: var(--size-4-2);
+}
+
+.gedcom-person-event-label {
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-person-unresolved {
+  margin-top: var(--size-4-2);
+  color: var(--text-warning);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-person-source {
+  margin-top: var(--size-4-6);
+}

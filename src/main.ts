@@ -18,6 +18,11 @@ import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
 import { IndexCache } from "./genealogy/cache";
 import { documentRef, type DocumentRef, type PersonRef } from "./genealogy";
 import { PeopleView, PEOPLE_VIEW_TYPE, type PeopleViewHost } from "./people/PeopleView";
+import {
+  PersonView,
+  PERSON_VIEW_TYPE,
+  type PersonViewHost,
+} from "./person/PersonView";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
@@ -26,6 +31,7 @@ import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
+import { leafShowingFile } from "./vault/openTabs";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -94,6 +100,10 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.registerView(
       PEOPLE_VIEW_TYPE,
       (leaf) => new PeopleView(leaf, this.peopleHost()),
+    );
+    this.registerView(
+      PERSON_VIEW_TYPE,
+      (leaf) => new PersonView(leaf, this.personHost()),
     );
     this.addCommand({
       id: "open-people",
@@ -170,6 +180,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       this.app.workspace.on("active-leaf-change", () => {
         this.refreshStatusBar();
         this.forEachPeopleView((view) => {
+          view.refresh();
+        });
+        this.forEachPersonView((view) => {
           view.refresh();
         });
       }),
@@ -436,10 +449,72 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     return found;
   }
 
-  /** Wired in the change that adds the Person view; a notice until then. */
+  /**
+   * One Person view, reused. Choosing a second person shows them in the tab
+   * the first was in, which is also what makes Back walk the trail.
+   */
   private async openPerson(person: PersonRef): Promise<void> {
-    new Notice(`${person.document.path} ${person.xref}`);
-    await Promise.resolve();
+    const existing = this.app.workspace.getLeavesOfType(PERSON_VIEW_TYPE)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: PERSON_VIEW_TYPE,
+      active: true,
+      state: { path: person.document.path, xref: person.xref },
+    });
+    await this.app.workspace.revealLeaf(leaf);
+  }
+
+  private personHost(): PersonViewHost {
+    return {
+      read: (person) => {
+        const view = this.gedcomViewOf(person.document);
+        if (!view) {
+          return null;
+        }
+        const index = this.genealogy.at(
+          person.document,
+          view.documentRevision(),
+          () => view.documentSymbols(),
+        );
+        return index.person(person.xref) ?? null;
+      },
+      openSource: (person) => {
+        void this.openRecord(person);
+      },
+    };
+  }
+
+  /**
+   * The record behind a person. The same path an `obsidian://` link already
+   * takes: open or reveal the file, then put the cursor on the record.
+   */
+  private async openRecord(person: PersonRef): Promise<void> {
+    const path = normalizePath(person.document.path);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(t("person.notInVault", { path }));
+      return;
+    }
+    const open = leafShowingFile(path, (visit) =>
+      this.app.workspace.iterateAllLeaves(visit),
+    );
+    if (open) {
+      await this.app.workspace.revealLeaf(open);
+    } else {
+      await this.app.workspace.getLeaf("tab").openFile(file);
+    }
+    const view = this.gedcomViewOf(person.document);
+    if (!view?.goToXref(person.xref)) {
+      new Notice(t("notice.xrefNotInFile", { xref: person.xref, file: file.name }));
+    }
+  }
+
+  private forEachPersonView(run: (view: PersonView) => void): void {
+    this.app.workspace.getLeavesOfType(PERSON_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof PersonView) {
+        run(leaf.view);
+      }
+    });
   }
 
   private forEachPeopleView(run: (view: PeopleView) => void): void {
