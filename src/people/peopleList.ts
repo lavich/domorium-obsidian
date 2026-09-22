@@ -16,10 +16,27 @@ export interface PeopleListLabels {
   searchPlaceholder: string;
 }
 
+/** What the list needs to know about the space it is drawn in. */
+export interface PeopleListMetrics {
+  /** The visible height in pixels. Measured by the host, which can lay out. */
+  viewport: number;
+  /** One row's height. The rows are a fixed height so the window can count. */
+  rowHeight?: number;
+}
+
+const DEFAULT_ROW_HEIGHT = 44;
+/** Rows drawn above and below the viewport, so a scroll does not flash. */
+const MARGIN_ROWS = 6;
+
 /**
  * The list of people, drawn into a plain container. It imports nothing from
  * `obsidian` and nothing from the catalogue, so the browser harness and a unit
  * test mount the same code the sidebar does.
+ *
+ * Only the rows in view are in the document. Measured in Chromium at the
+ * sidebar's width, twenty thousand styled rows cost a quarter of a second to
+ * build and hold eighty thousand elements, and a filter that matches most
+ * people pays that again on a keystroke. The window costs a subtraction.
  */
 export class PeopleList {
   private people: PersonRow[] = [];
@@ -28,10 +45,13 @@ export class PeopleList {
   private readonly countEl: HTMLElement;
   private readonly rowsEl: HTMLElement;
 
+  private scrollTop = 0;
+
   constructor(
     container: HTMLElement,
     private readonly labels: PeopleListLabels,
     private readonly onChoose: (person: PersonRow) => void,
+    private readonly metrics?: PeopleListMetrics,
   ) {
     container.replaceChildren();
     const root = element(container, "div", "gedcom-people");
@@ -54,6 +74,18 @@ export class PeopleList {
    */
   setFilter(text: string): void {
     this.filter = text.trim().toLowerCase();
+    // A new filter is a new list; keeping the old offset would land the reader
+    // somewhere in the middle of it, or past its end.
+    this.scrollTop = 0;
+    this.draw();
+  }
+
+  /** Told by the host, which owns the scrolling element and can measure it. */
+  onScrolled(scrollTop: number): void {
+    if (scrollTop === this.scrollTop) {
+      return;
+    }
+    this.scrollTop = scrollTop;
     this.draw();
   }
 
@@ -72,14 +104,50 @@ export class PeopleList {
         this.labels.noResults;
       return;
     }
-    for (const person of this.shown) {
-      this.drawRow(person);
+    this.drawWindow();
+  }
+
+  /**
+   * The rows the reader can see, positioned inside a box as tall as the whole
+   * list would be, so that the scrollbar tells the truth about its length.
+   */
+  private drawWindow(): void {
+    if (!this.metrics) {
+      for (const person of this.shown) {
+        this.drawRow(person, null);
+      }
+      return;
+    }
+
+    const rowHeight = this.metrics.rowHeight ?? DEFAULT_ROW_HEIGHT;
+    // The only two values that cannot be a class: how tall the whole list
+    // would be, and where each drawn row sits inside it. Both go through
+    // custom properties, which styles.css reads; everything static is a class.
+    this.rowsEl.classList.add("is-windowed");
+    this.rowsEl.style.setProperty(
+      "--gedcom-people-height",
+      `${this.shown.length * rowHeight}px`,
+    );
+
+    const visible = Math.ceil(this.metrics.viewport / rowHeight);
+    const first = Math.max(0, Math.floor(this.scrollTop / rowHeight) - MARGIN_ROWS);
+    const last = Math.min(this.shown.length, first + visible + MARGIN_ROWS * 2);
+
+    for (let i = first; i < last; i++) {
+      const person = this.shown[i];
+      if (person) {
+        this.drawRow(person, i * rowHeight);
+      }
     }
   }
 
-  private drawRow(person: PersonRow): void {
+  private drawRow(person: PersonRow, top: number | null): void {
     const row = element(this.rowsEl, "div", "gedcom-person-row");
     row.tabIndex = 0;
+    if (top !== null) {
+      row.classList.add("is-windowed");
+      row.style.setProperty("--gedcom-person-top", `${top}px`);
+    }
     element(row, "div", "gedcom-person-name").textContent =
       person.name === UNNAMED ? this.labels.unnamed : person.name;
 

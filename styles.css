@@ -262,3 +262,18 @@
 .gedcom-media-allow:hover {
   background-color: var(--interactive-hover);
 }
+
+/* The people list. Only the window's mechanics are here; the look follows in
+   the same file's Obsidian-variable rules. A row is a fixed height because the
+   window counts rows rather than measuring them. */
+.gedcom-people-rows.is-windowed {
+  position: relative;
+  height: var(--gedcom-people-height, auto);
+}
+
+.gedcom-person-row.is-windowed {
+  position: absolute;
+  top: var(--gedcom-person-top, 0);
+  left: 0;
+  right: 0;
+}

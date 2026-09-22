@@ -240,3 +240,81 @@ describe("typing into the search field", () => {
     expect(shown()).toEqual(["Other Curie"]);
   });
 });
+
+describe("a list too long to draw whole", () => {
+  const many = (total: number): PersonRow[] =>
+    Array.from({ length: total }, (_, i) =>
+      row({
+        xref: `@I${i}@`,
+        name: `Given${i} Surname${i % 500}`,
+        search: `given${i} surname${i % 500} @i${i}@`,
+      }),
+    );
+
+  /** happy-dom lays nothing out, so the viewport is stated rather than measured. */
+  const sized = (people: PersonRow[]): PeopleList => {
+    const made = new PeopleList(container, LABELS, vi.fn(), { viewport: 600 });
+    made.setPeople(people);
+    return made;
+  };
+
+  it("draws a bounded number of rows for twenty thousand people", () => {
+    sized(many(20000));
+
+    expect(rowCount()).toBeGreaterThan(0);
+    expect(rowCount()).toBeLessThan(200);
+  });
+
+  it("still says how many there are, not how many it drew", () => {
+    sized(many(20000));
+
+    expect(texts(".gedcom-people-count")).toEqual(["20000 people"]);
+  });
+
+  it("reserves the height the whole list would take, so the bar is honest", () => {
+    sized(many(20000));
+
+    const rows = container.querySelector<HTMLElement>(".gedcom-people-rows");
+    const height = rows?.style.getPropertyValue("--gedcom-people-height") ?? "";
+
+    expect(rows?.classList.contains("is-windowed")).toBe(true);
+    expect(height).toMatch(/^\d+px$/);
+    expect(Number.parseInt(height, 10)).toBeGreaterThan(20000);
+  });
+
+  it("places each drawn row where it belongs in that height", () => {
+    sized(many(20000));
+
+    const tops = [...container.querySelectorAll<HTMLElement>(".gedcom-person-row")]
+      .map((node) => node.style.getPropertyValue("--gedcom-person-top"));
+
+    expect(tops[0]).toBe("0px");
+    expect(new Set(tops).size).toBe(tops.length);
+  });
+
+  it("draws the rows the reader has scrolled to", () => {
+    const made = sized(many(20000));
+
+    const firstNames = texts(".gedcom-person-name");
+    made.onScrolled(10000);
+    const laterNames = texts(".gedcom-person-name");
+
+    expect(laterNames[0]).not.toBe(firstNames[0]);
+    expect(laterNames.length).toBeLessThan(200);
+  });
+
+  it("draws a short list whole, with no window to speak of", () => {
+    sized(many(12));
+
+    expect(rowCount()).toBe(12);
+  });
+
+  it("goes back to the top when the filter changes", () => {
+    const made = sized(many(20000));
+    made.onScrolled(10000);
+
+    made.setFilter("surname7");
+
+    expect(texts(".gedcom-person-name")[0]).toBe("Given7 Surname7");
+  });
+});
