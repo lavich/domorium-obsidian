@@ -1,7 +1,9 @@
 import { drawnCrop, type PreviewBounds } from "../editor/media";
 import { applyCrop } from "../editor/mediaPreviewView";
+import { drawCitations, withinOf } from "../source/citationRows";
 import {
   UNNAMED,
+  type Citation,
   type FamilyRow,
   type Person,
   type PersonEvent,
@@ -16,6 +18,7 @@ export interface PersonPageLabels {
   partners: string;
   children: string;
   events: string;
+  sources: string;
   childFamilies: string;
   spouseFamilies: string;
   openInGedcom: string;
@@ -49,10 +52,17 @@ export interface PersonPageHost {
   portraitBounds?: PreviewBounds;
   /** Names an event's tag. The model reads more tags than a catalogue names. */
   eventLabel: (tag: string) => string;
+  /** What this person cites. Empty where the record cites nothing. */
+  citations?: Citation[];
+  /** The title of a source cited, or the identifier where it has none. */
+  titleOf?: (xref: string) => string;
+  /** Phrases where in the record a citation hung, already named. */
+  within?: (what: string) => string;
+  onSource?: (citation: Citation) => void;
   onPerson: (relative: PersonRow) => void;
   /** The reader asked for the marriage itself, not the people around it. */
   onFamily?: (family: FamilyRow) => void;
-  onOpenSource: () => void;
+  onOpenRecord: () => void;
   /** The picture itself, whole rather than cut. */
   onOpenPicture?: (picture: PersonMedia) => void;
 }
@@ -68,6 +78,7 @@ export function renderPersonPage(
   drawIdentity(page, person, host);
   drawFamily(page, person, host);
   drawEvents(page, person, host);
+  drawSources(page, host);
 }
 
 const PORTRAIT_BOUNDS: PreviewBounds = { width: 120, height: 120 };
@@ -303,6 +314,36 @@ function drawEvent(
   }
 }
 
+/**
+ * What the record leans on. A person citing nothing shows no section at all:
+ * unlike a source, which is defined by what cites it, a person without
+ * citations is the ordinary case and an empty heading would only be noise.
+ */
+function drawSources(page: HTMLElement, host: PersonPageHost): void {
+  const citations = host.citations ?? [];
+  if (citations.length === 0) {
+    return;
+  }
+  const group = element(page, "div", "gedcom-person-group is-events");
+  element(group, "h2", "gedcom-person-group-title").textContent =
+    host.labels.sources;
+  const phrase = host.within ?? ((what: string) => what);
+  drawCitations(
+    group,
+    citations.map((citation) => {
+      const within = withinOf(citation, host.eventLabel, phrase);
+      return {
+        title: host.titleOf?.(citation.source) ?? citation.source,
+        ...(within === undefined ? {} : { within }),
+        ...(citation.page === undefined ? {} : { page: citation.page }),
+        open: () => {
+          host.onSource?.(citation);
+        },
+      };
+    }),
+  );
+}
+
 /** The document it came from is named in the header, not repeated here. */
 function drawSource(head: HTMLElement, host: PersonPageHost): void {
   const line = element(head, "div", "gedcom-person-source");
@@ -312,7 +353,7 @@ function drawSource(head: HTMLElement, host: PersonPageHost): void {
   link.tabIndex = 0;
   link.setAttribute("aria-label", host.labels.openInGedcom);
   link.addEventListener("click", () => {
-    host.onOpenSource();
+    host.onOpenRecord();
   });
 }
 

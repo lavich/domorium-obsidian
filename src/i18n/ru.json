@@ -181,5 +181,28 @@
     "few": "{count} семьи",
     "many": "{count} семей",
     "other": "{count} семьи"
+  },
+  "people.subjectSources": "Источники",
+  "sources.searchPlaceholder": "Поиск источников...",
+  "sources.noResults": "Источники не найдены",
+  "source.viewTitle": "Источник",
+  "source.untitled": "Источник без названия",
+  "source.heldAt": "Хранится",
+  "source.citedBy": "На это опирается",
+  "source.citedByNobody": "Ничто в этом файле не ссылается на этот источник.",
+  "source.citations": "Источники",
+  "source.within": "для {what}",
+  "field.TITL": "Название",
+  "field.AUTH": "Автор",
+  "field.PUBL": "Издание",
+  "field.ABBR": "Краткое название",
+  "field.TEXT": "Текст",
+  "repo.address": "Адрес",
+  "repo.web": "Сайт",
+  "sources.count": {
+    "one": "{count} источник",
+    "few": "{count} источника",
+    "many": "{count} источников",
+    "other": "{count} источника"
   }
 }

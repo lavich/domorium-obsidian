@@ -34,6 +34,11 @@ import {
   FAMILY_VIEW_TYPE,
   type FamilyViewHost,
 } from "./family/FamilyView";
+import {
+  SourceView,
+  SOURCE_VIEW_TYPE,
+  type SourceViewHost,
+} from "./source/SourceView";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
@@ -119,6 +124,10 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.registerView(
       FAMILY_VIEW_TYPE,
       (leaf) => new FamilyView(leaf, this.familyHost()),
+    );
+    this.registerView(
+      SOURCE_VIEW_TYPE,
+      (leaf) => new SourceView(leaf, this.sourceHost()),
     );
     this.addCommand({
       id: "open-people",
@@ -469,6 +478,16 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       openFamily: (family, name) => {
         void this.openFamily(family, name);
       },
+      shownSource: () => {
+        let found: RecordRef | null = null;
+        this.forEachSourceView((view) => {
+          found = found ?? view.showing();
+        });
+        return found;
+      },
+      openSource: (source, title) => {
+        void this.openSource(source, title);
+      },
     };
   }
 
@@ -549,15 +568,93 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     });
   }
 
+  /** One Source view, reused, as the other two are. */
+  private async openSource(source: RecordRef, title?: string): Promise<void> {
+    const named = title === undefined ? {} : { title };
+    const existing = this.app.workspace.getLeavesOfType(SOURCE_VIEW_TYPE)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: SOURCE_VIEW_TYPE,
+      active: true,
+      state: { path: source.document.path, xref: source.xref, ...named },
+    });
+    await this.app.workspace.revealLeaf(leaf);
+    this.forEachPeopleView((view) => {
+      view.markShownPerson();
+    });
+  }
+
+  private sourceHost(): SourceViewHost {
+    return {
+      read: (source) => this.indexOf(source.document)?.source(source.xref) ?? null,
+      warm: (document) => this.warm(document),
+      citedBy: (source) => this.indexOf(source.document)?.citedBy(source.xref) ?? [],
+      nameOf: (document, xref) => this.nameOf(document, xref),
+      openRecord: (source) => {
+        void this.openRecord(source);
+      },
+      openCiter: (document, xref) => {
+        void this.openCiter(documentRef(document.path), xref);
+      },
+    };
+  }
+
+  /**
+   * What a record goes by, whichever kind it is. A citing record the document
+   * does not declare is named by its identifier, which is all anyone has.
+   */
+  private nameOf(document: DocumentRef, xref: string): string {
+    const index = this.indexOf(document);
+    const person = index?.person(xref);
+    if (person) {
+      return person.name;
+    }
+    const family = index?.family(xref);
+    if (family) {
+      const joined = family.spouses.map((spouse) => spouse.name).join(" & ");
+      return joined === "" ? xref : joined;
+    }
+    return xref;
+  }
+
+  /** A citing record opens as its own kind, and otherwise in the file. */
+  private async openCiter(document: DocumentRef, xref: string): Promise<void> {
+    const index = this.indexOf(document);
+    const at = { document, xref };
+    if (index?.person(xref)) {
+      await this.openPerson(at, this.nameOf(document, xref));
+      return;
+    }
+    if (index?.family(xref)) {
+      await this.openFamily(at, this.nameOf(document, xref));
+      return;
+    }
+    await this.openRecord(at);
+  }
+
+  private forEachSourceView(run: (view: SourceView) => void): void {
+    this.app.workspace.getLeavesOfType(SOURCE_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof SourceView) {
+        run(leaf.view);
+      }
+    });
+  }
+
   private familyHost(): FamilyViewHost {
     return {
       read: (family) => this.indexOf(family.document)?.family(family.xref) ?? null,
       warm: (document) => this.warm(document),
-      openSource: (family) => {
+      openRecord: (family) => {
         void this.openRecord(family);
       },
       openPerson: (person, name) => {
         void this.openPerson(person, name);
+      },
+      citesBy: (family) => this.indexOf(family.document)?.citesBy(family.xref) ?? [],
+      titleOf: (document, xref) =>
+        this.indexOf(document)?.source(xref)?.title ?? xref,
+      openSource: (source, title) => {
+        void this.openSource(source, title);
       },
     };
   }
@@ -574,7 +671,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     return {
       read: (person) => this.indexOf(person.document)?.person(person.xref) ?? null,
       warm: (document) => this.warm(document),
-      openSource: (person) => {
+      openRecord: (person) => {
         void this.openRecord(person);
       },
       // A vault file only. A web address answers nothing, which is how the
@@ -585,6 +682,12 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       },
       openFamily: (family, name) => {
         void this.openFamily(family, name);
+      },
+      citesBy: (person) => this.indexOf(person.document)?.citesBy(person.xref) ?? [],
+      titleOf: (document, xref) =>
+        this.indexOf(document)?.source(xref)?.title ?? xref,
+      openSource: (source, title) => {
+        void this.openSource(source, title);
       },
       resolveMedia: (target) => {
         if (/^[a-z][a-z0-9+.-]*:/iu.test(target)) {

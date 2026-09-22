@@ -1,10 +1,17 @@
-import type { Family, FamilyMember, PersonEvent } from "../genealogy";
+import type {
+  Citation,
+  Family,
+  FamilyMember,
+  PersonEvent,
+} from "../genealogy";
+import { drawCitations, withinOf } from "../source/citationRows";
 
 /** Already in the reader's language. */
 export interface FamilyPageLabels {
   spouses: string;
   children: string;
   events: string;
+  sources: string;
   /** What to call a family whose record names nobody and has no identifier. */
   unnamed: string;
   unresolved: (xref: string) => string;
@@ -19,7 +26,14 @@ export interface FamilyPageHost {
   eventLabel: (tag: string) => string;
   source: { document: string; xref: string };
   onPerson: (member: FamilyMember) => void;
-  onOpenSource: () => void;
+  onOpenRecord: () => void;
+  /** What this family cites. Empty where the record cites nothing. */
+  citations?: Citation[];
+  /** The title of a source cited, or the identifier where it has none. */
+  titleOf?: (xref: string) => string;
+  /** Phrases where in the record a citation hung, already named. */
+  within?: (what: string) => string;
+  onSource?: (citation: Citation) => void;
 }
 
 export function renderFamilyPage(
@@ -49,6 +63,33 @@ export function renderFamilyPage(
   }
 
   drawEvents(page, family.events, host);
+  drawSources(page, host);
+}
+
+/** As on a person's page, and silent for the same reason where empty. */
+function drawSources(page: HTMLElement, host: FamilyPageHost): void {
+  const citations = host.citations ?? [];
+  if (citations.length === 0) {
+    return;
+  }
+  const group = element(page, "div", "gedcom-person-group is-events");
+  element(group, "h2", "gedcom-person-group-title").textContent =
+    host.labels.sources;
+  const phrase = host.within ?? ((what: string) => what);
+  drawCitations(
+    group,
+    citations.map((citation) => {
+      const within = withinOf(citation, host.eventLabel, phrase);
+      return {
+        title: host.titleOf?.(citation.source) ?? citation.source,
+        ...(within === undefined ? {} : { within }),
+        ...(citation.page === undefined ? {} : { page: citation.page }),
+        open: () => {
+          host.onSource?.(citation);
+        },
+      };
+    }),
+  );
 }
 
 function drawGroup(
@@ -108,7 +149,7 @@ function drawSource(head: HTMLElement, host: FamilyPageHost): void {
   link.setAttribute("role", "button");
   link.tabIndex = 0;
   link.addEventListener("click", () => {
-    host.onOpenSource();
+    host.onOpenRecord();
   });
 }
 

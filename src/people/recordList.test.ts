@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { FamilyRow, PersonRow } from "../genealogy";
+import { UNTITLED, type FamilyRow, type PersonRow, type SourceRow } from "../genealogy";
 import { drawFamilyRow } from "./familyRowView";
+import { drawSourceRow } from "./sourceRowView";
 import { drawPersonRow } from "./personRowView";
 import {
   RecordList,
@@ -18,6 +19,7 @@ const LABELS: RecordListLabels = {
   subjects: [
     { id: "people", name: "People" },
     { id: "families", name: "Families" },
+    { id: "sources", name: "Sources" },
   ],
 };
 
@@ -34,6 +36,14 @@ const FAMILIES: SubjectPresentation = {
   searchPlaceholder: "Search families...",
   draw: (row, record) =>
     drawFamilyRow(row, record as FamilyRow, (n) => `${n} children`),
+};
+
+const SOURCES: SubjectPresentation = {
+  count: (total) => `${total} sources`,
+  noResults: "No sources found",
+  searchPlaceholder: "Search sources...",
+  draw: (row, record) =>
+    drawSourceRow(row, record as SourceRow, "Untitled source"),
 };
 
 function row(overrides: Partial<PersonRow> = {}): PersonRow {
@@ -368,13 +378,14 @@ describe("the bar above the list", () => {
     expect(chosen()).toBe("curie.ged");
   });
 
-  it("offers both subjects and shows which is being listed", () => {
+  it("offers every subject and shows which is being listed", () => {
     const made = withDocuments("curie.ged");
     made.setSubjectPresentation("families", FAMILIES);
 
     expect(texts(".gedcom-people-subject option")).toEqual([
       "People",
       "Families",
+      "Sources",
     ]);
     expect(
       container.querySelector<HTMLSelectElement>(".gedcom-people-subject")?.value,
@@ -712,5 +723,113 @@ describe("everything the list says follows the subject", () => {
       container.querySelector<HTMLInputElement>(".search-input-container input")
         ?.placeholder,
     ).toBe("Search people...");
+  });
+});
+
+describe("what a source's row says", () => {
+  const source = (overrides: Partial<SourceRow> = {}): SourceRow => ({
+    xref: "@S1@",
+    unaddressable: false,
+    title: "Paris parish register",
+    search: "paris parish register @s1@",
+    ...overrides,
+  });
+
+  const sources = (rows: SourceRow[]): RecordList => {
+    const made = new RecordList(container, LABELS, vi.fn(), SOURCES);
+    made.setRecords(rows);
+    return made;
+  };
+
+  it("names the source, who wrote it and where it is held", () => {
+    sources([
+      source({ author: "Bureau of Paris", repository: "Warsaw archive" }),
+    ]);
+
+    expect(texts(".gedcom-person-name")).toEqual(["Paris parish register"]);
+    expect(texts(".gedcom-source-author")).toEqual(["Bureau of Paris"]);
+    expect(texts(".gedcom-source-repository")).toEqual(["Warsaw archive"]);
+  });
+
+  it("shows only the title where the record states nothing else", () => {
+    sources([source()]);
+
+    expect(texts(".gedcom-person-name")).toEqual(["Paris parish register"]);
+    expect(texts(".gedcom-source-author")).toEqual([]);
+    expect(texts(".gedcom-source-repository")).toEqual([]);
+  });
+
+  it("shows the identifier where the record states no title", () => {
+    sources([source({ title: UNTITLED })]);
+
+    expect(texts(".gedcom-person-name")).toEqual(["@S1@"]);
+  });
+
+  it("filters on the title and on the repository", () => {
+    const made = sources([
+      source({
+        repository: "Warsaw archive",
+        search: "paris parish register warsaw archive @s1@",
+      }),
+      source({ xref: "@S2@", title: "Nobel citation", search: "nobel citation @s2@" }),
+    ]);
+
+    made.setFilter("parish");
+    expect(texts(".gedcom-person-name")).toEqual(["Paris parish register"]);
+
+    made.setFilter("warsaw");
+    expect(texts(".gedcom-person-name")).toEqual(["Paris parish register"]);
+  });
+});
+
+describe("sources as the third subject", () => {
+  const source = (xref: string): SourceRow => ({
+    xref,
+    unaddressable: false,
+    title: xref,
+    search: xref.toLowerCase(),
+  });
+
+  const listed = (): RecordList => {
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
+    made.setSubjectPresentation("sources", SOURCES);
+    made.setRecords([source("@S1@"), source("@S2@"), source("@S3@")]);
+    return made;
+  };
+
+  it("offers all three subjects to choose between", () => {
+    listed();
+
+    expect(texts(".gedcom-people-subject option")).toEqual([
+      "People",
+      "Families",
+      "Sources",
+    ]);
+  });
+
+  it("counts sources and invites a search of them", () => {
+    listed();
+
+    expect(texts(".gedcom-people-count")).toEqual(["3 sources"]);
+    expect(
+      container.querySelector<HTMLInputElement>(".search-input-container input")
+        ?.placeholder,
+    ).toBe("Search sources...");
+  });
+
+  it("says no sources were found", () => {
+    const made = listed();
+    made.setFilter("nothing at all");
+
+    expect(texts(".gedcom-people-empty")).toEqual(["No sources found"]);
+  });
+
+  it("marks the source whose page is open", () => {
+    const made = listed();
+    made.setMarked("@S2@");
+
+    const marked = [...container.querySelectorAll(".gedcom-person-row.is-marked")];
+    expect(marked).toHaveLength(1);
+    expect(marked[0]?.textContent).toContain("@S2@");
   });
 });

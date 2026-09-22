@@ -12,13 +12,14 @@ function host(overrides: Partial<FamilyPageHost> = {}): FamilyPageHost {
       spouses: "Spouses",
       children: "Children",
       events: "Events",
+      sources: "Sources",
       unnamed: "Unnamed family",
       unresolved: (xref) => `Not in this file: ${xref}`,
     },
     eventLabel: (tag) => ({ MARR: "Marriage", DIV: "Divorce" })[tag] ?? tag,
     source: { document: "curie.ged", xref: "@F1@" },
     onPerson: vi.fn(),
-    onOpenSource: vi.fn(),
+    onOpenRecord: vi.fn(),
     ...overrides,
   };
 }
@@ -174,18 +175,61 @@ describe("what the record says happened", () => {
 
 describe("returning to the record", () => {
   it("shows the identifier and reaches the record from it", () => {
-    const onOpenSource = vi.fn();
-    draw(family(), host({ onOpenSource }));
+    const onOpenRecord = vi.fn();
+    draw(family(), host({ onOpenRecord }));
 
     expect(texts(".gedcom-person-source")[0]).toBe("@F1@");
 
     container.querySelector<HTMLElement>(".gedcom-person-source-link")?.click();
-    expect(onOpenSource).toHaveBeenCalled();
+    expect(onOpenRecord).toHaveBeenCalled();
   });
 
   it("draws with no application present", () => {
     draw(family());
 
     expect(container.querySelector(".gedcom-person-page")).not.toBeNull();
+  });
+});
+
+describe("what the family is sourced from", () => {
+  const citing = (): FamilyPageHost =>
+    host({
+      citations: [
+        { record: "@F1@", source: "@S1@", within: "MARR", page: "act 42" },
+        { record: "@F1@", source: "@S3@" },
+      ],
+      titleOf: (xref) =>
+        ({ "@S1@": "Marriage register", "@S3@": "Family letters" })[xref] ?? xref,
+      within: (tag) => `in ${tag}`,
+      onSource: vi.fn(),
+    });
+
+  it("names every source the family cites", () => {
+    draw(family(), citing());
+    expect(texts(".gedcom-citation-title")).toEqual([
+      "Marriage register",
+      "Family letters",
+    ]);
+  });
+
+  it("says where in the record the citation hung, and the page it gives", () => {
+    draw(family(), citing());
+    expect(texts(".gedcom-citation-within")).toEqual(["in Marriage"]);
+    expect(texts(".gedcom-citation-page")).toEqual(["act 42"]);
+  });
+
+  it("says nothing at all where the family cites nothing", () => {
+    draw(family(), host({ ...citing(), citations: [] }));
+    expect(container.textContent).not.toContain("Sources");
+    expect(texts(".gedcom-citation")).toEqual([]);
+  });
+
+  it("opens the source when a citation is chosen", () => {
+    const using = citing();
+    draw(family(), using);
+    container.querySelectorAll<HTMLElement>(".gedcom-citation")[1].click();
+    expect(using.onSource).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "@S3@" }),
+    );
   });
 });

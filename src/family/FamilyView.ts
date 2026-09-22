@@ -3,6 +3,8 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import {
   documentRef,
   recordRef,
+  UNTITLED,
+  type Citation,
   type DocumentRef,
   type Family,
   type FamilyMember,
@@ -16,8 +18,13 @@ export const FAMILY_VIEW_TYPE = "domorium-family";
 export interface FamilyViewHost {
   read(family: RecordRef): Family | null;
   warm(document: DocumentRef): Promise<void>;
-  openSource(family: RecordRef): void;
+  openRecord(family: RecordRef): void;
   openPerson(person: RecordRef, name?: string): void;
+  /** What this family cites, in the order the record writes them. */
+  citesBy(family: RecordRef): Citation[];
+  /** The title of a source in the same document, for a citation's row. */
+  titleOf(document: DocumentRef, xref: string): string;
+  openSource(source: RecordRef, title?: string): void;
 }
 
 /**
@@ -132,6 +139,7 @@ export class FamilyView extends ItemView {
         spouses: t("family.spouses"),
         children: t("family.children"),
         events: t("family.events"),
+        sources: t("source.citations"),
         unnamed: t("family.unnamed"),
         unresolved: (xref) => t("person.unresolved", { xref }),
       },
@@ -139,6 +147,17 @@ export class FamilyView extends ItemView {
       source: {
         document: baseName(this.family?.document.path ?? ""),
         xref: this.family?.xref ?? "",
+      },
+      citations: this.family ? this.host.citesBy(this.family) : [],
+      titleOf: (xref) => this.titleOf(xref),
+      within: (what) => t("source.within", { what }),
+      onSource: (citation) => {
+        if (this.family) {
+          this.host.openSource(
+            recordRef(this.family.document, citation.source),
+            this.titleOf(citation.source),
+          );
+        }
       },
       onPerson: (member: FamilyMember) => {
         if (this.family && member.xref) {
@@ -148,12 +167,21 @@ export class FamilyView extends ItemView {
           );
         }
       },
-      onOpenSource: () => {
+      onOpenRecord: () => {
         if (this.family) {
-          this.host.openSource(this.family);
+          this.host.openRecord(this.family);
         }
       },
     };
+  }
+
+  /** A source the document does not declare is named by its identifier. */
+  private titleOf(xref: string): string {
+    if (!this.family) {
+      return xref;
+    }
+    const title = this.host.titleOf(this.family.document, xref);
+    return title === UNTITLED ? xref : title;
   }
 }
 

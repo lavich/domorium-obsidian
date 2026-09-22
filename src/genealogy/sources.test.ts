@@ -67,7 +67,7 @@ describe("a source read in full", () => {
     const held = source("@S1@").heldAt;
 
     expect(held?.name).toBe("State Archive in Warsaw");
-    expect(held?.address).toBe("Krzywe Koło 7");
+    expect(held?.address).toBe("Krzywe Koło 7, Warsaw, Poland");
     expect(held?.web).toBe("https://example.org/archive");
   });
 

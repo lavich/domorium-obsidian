@@ -3,6 +3,8 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import {
   documentRef,
   recordRef,
+  UNTITLED,
+  type Citation,
   type DocumentRef,
   type Person,
   type RecordRef,
@@ -16,10 +18,15 @@ export const PERSON_VIEW_TYPE = "domorium-person";
 export interface PersonViewHost {
   read(person: RecordRef): Person | null;
   warm(document: DocumentRef): Promise<void>;
-  openSource(person: RecordRef): void;
+  openRecord(person: RecordRef): void;
   resolveMedia(file: string): string | null;
   openPicture(file: string): void;
   openFamily(family: RecordRef, name?: string): void;
+  /** What this person cites, in the order the record writes them. */
+  citesBy(person: RecordRef): Citation[];
+  /** The title of a source in the same document, for a citation's row. */
+  titleOf(document: DocumentRef, xref: string): string;
+  openSource(source: RecordRef, title?: string): void;
 }
 
 /**
@@ -152,6 +159,7 @@ export class PersonView extends ItemView {
         partners: t("person.partners"),
         children: t("person.children"),
         events: t("person.events"),
+        sources: t("source.citations"),
         childFamilies: t("person.childFamilies"),
         spouseFamilies: t("person.spouseFamilies"),
         openInGedcom: t("person.openInGedcom"),
@@ -171,6 +179,17 @@ export class PersonView extends ItemView {
         this.host.openPicture(picture.file);
       },
       eventLabel: (tag) => namedEvent(tag),
+      citations: this.person ? this.host.citesBy(this.person) : [],
+      titleOf: (xref) => this.titleOf(xref),
+      within: (what) => t("source.within", { what }),
+      onSource: (citation) => {
+        if (this.person) {
+          this.host.openSource(
+            recordRef(this.person.document, citation.source),
+            this.titleOf(citation.source),
+          );
+        }
+      },
       onPerson: (relative) => {
         this.follow(relative);
       },
@@ -182,12 +201,21 @@ export class PersonView extends ItemView {
           );
         }
       },
-      onOpenSource: () => {
+      onOpenRecord: () => {
         if (this.person) {
-          this.host.openSource(this.person);
+          this.host.openRecord(this.person);
         }
       },
     };
+  }
+
+  /** A source the document does not declare is named by its identifier. */
+  private titleOf(xref: string): string {
+    if (!this.person) {
+      return xref;
+    }
+    const title = this.host.titleOf(this.person.document, xref);
+    return title === UNTITLED ? xref : title;
   }
 
   /** Through the leaf rather than by redrawing: that is what records history. */

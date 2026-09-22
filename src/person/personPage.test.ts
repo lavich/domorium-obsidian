@@ -15,6 +15,7 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
       partners: "Partners",
       children: "Children",
       events: "Events",
+      sources: "Sources",
       childFamilies: "Family they were a child in",
       spouseFamilies: "Families they married into",
       openInGedcom: "Open in GEDCOM",
@@ -31,7 +32,7 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
     resolveMedia: (file) =>
       file.startsWith("https://") ? null : `app://vault/${file}`,
     onPerson: vi.fn(),
-    onOpenSource: vi.fn(),
+    onOpenRecord: vi.fn(),
     onOpenPicture: vi.fn(),
     ...overrides,
   };
@@ -328,15 +329,15 @@ describe("which record the page is a reading of", () => {
   });
 
   it("reaches the record from the identifier, with no second control", () => {
-    const onOpenSource = vi.fn();
+    const onOpenRecord = vi.fn();
     draw(
       person(),
-      host({ source: { document: "curie.ged", xref: "@I1@" }, onOpenSource }),
+      host({ source: { document: "curie.ged", xref: "@I1@" }, onOpenRecord }),
     );
 
     container.querySelector<HTMLElement>(".gedcom-person-source-link")?.click();
 
-    expect(onOpenSource).toHaveBeenCalled();
+    expect(onOpenRecord).toHaveBeenCalled();
     expect(
       container.querySelectorAll("button.gedcom-person-source-action"),
       "one way to the record, not two",
@@ -458,12 +459,12 @@ describe("what the page hands back to its caller", () => {
   });
 
   it("carries an action that asks its caller for the record", () => {
-    const onOpenSource = vi.fn();
-    draw(person(), host({ onOpenSource }));
+    const onOpenRecord = vi.fn();
+    draw(person(), host({ onOpenRecord }));
 
     container.querySelector<HTMLElement>(".gedcom-person-source-link")?.click();
 
-    expect(onOpenSource).toHaveBeenCalled();
+    expect(onOpenRecord).toHaveBeenCalled();
   });
 
   it("draws with no application present, reaching for nothing global", () => {
@@ -524,5 +525,48 @@ describe("the families the person belongs to", () => {
     container.querySelector<HTMLElement>(".gedcom-person-relative")?.click();
 
     expect(onFamily).toHaveBeenCalledWith(one);
+  });
+});
+
+describe("what the person is sourced from", () => {
+  const citing = (): PersonPageHost =>
+    host({
+      citations: [
+        { record: "@I1@", source: "@S1@", within: "BIRT", page: "p. 14" },
+        { record: "@I1@", source: "@S2@" },
+      ],
+      titleOf: (xref) =>
+        ({ "@S1@": "Parish register", "@S2@": "Nobel citation" })[xref] ?? xref,
+      within: (tag) => `in ${tag}`,
+      onSource: vi.fn(),
+    });
+
+  it("names every source the person cites", () => {
+    draw(person(), citing());
+    expect(texts(".gedcom-citation-title")).toEqual([
+      "Parish register",
+      "Nobel citation",
+    ]);
+  });
+
+  it("says where in the record the citation hung, and the page it gives", () => {
+    draw(person(), citing());
+    expect(texts(".gedcom-citation-within")).toEqual(["in Birth"]);
+    expect(texts(".gedcom-citation-page")).toEqual(["p. 14"]);
+  });
+
+  it("says nothing at all where the person cites nothing", () => {
+    draw(person(), host({ ...citing(), citations: [] }));
+    expect(container.textContent).not.toContain("Sources");
+    expect(texts(".gedcom-citation")).toEqual([]);
+  });
+
+  it("opens the source when a citation is chosen", () => {
+    const using = citing();
+    draw(person(), using);
+    container.querySelectorAll<HTMLElement>(".gedcom-citation")[1].click();
+    expect(using.onSource).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "@S2@" }),
+    );
   });
 });

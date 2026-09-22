@@ -513,6 +513,27 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     };
   }
 
+  /**
+   * A repository's name, address and web address. The address is the `ADDR`
+   * line and the lines beneath it — city, country — joined as one line: the
+   * record writes them apart, but nobody reads an address in pieces.
+   */
+  function repositoryRead(held: DocumentSymbol): Repository {
+    const name = payload(childOf(held, "NAME"));
+    const web = payload(childOf(held, "WWW"));
+    const at = childOf(held, "ADDR");
+    const address = at
+      ? [payload(at), ...at.children.map((line) => payload(line))]
+          .filter((part): part is string => Boolean(part))
+          .join(", ")
+      : undefined;
+    return {
+      ...(name === undefined ? {} : { name }),
+      ...(address === undefined || address === "" ? {} : { address }),
+      ...(web === undefined ? {} : { web }),
+    };
+  }
+
   function repositoryOf(record: DocumentSymbol): DocumentSymbol | undefined {
     const pointer = payload(childOf(record, "REPO"));
     return pointer ? repositories.get(pointer) : undefined;
@@ -562,20 +583,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       }
     }
 
-    const heldAt: Repository | undefined = held
-      ? {
-          ...(payload(childOf(held, "NAME")) === undefined
-            ? {}
-            : { name: payload(childOf(held, "NAME")) }),
-          ...(payload(childOf(childOf(held, "NAME") ?? held, "ADDR")) ===
-          undefined
-            ? {}
-            : { address: payload(childOf(childOf(held, "NAME") ?? held, "ADDR")) }),
-          ...(payload(childOf(held, "WWW")) === undefined
-            ? {}
-            : { web: payload(childOf(held, "WWW")) }),
-        }
-      : undefined;
+    const heldAt = held ? repositoryRead(held) : undefined;
 
     return {
       ...sourceRowOf(record),

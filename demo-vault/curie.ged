@@ -89,6 +89,8 @@
 1 BIRT
 2 DATE 1835
 2 PLAC Warsaw, Congress Poland
+2 SOUR @S2@
+3 PAGE Baptismal entry, 1835
 1 DEAT
 2 DATE 9 MAY 1878
 2 PLAC Warsaw, Congress Poland
@@ -289,6 +291,8 @@
 1 MARR
 2 DATE 1860
 2 PLAC Warsaw, Congress Poland
+2 SOUR @S2@
+3 PAGE Marriage act of 1860
 0 @F2@ FAM
 1 HUSB @I9@
 1 WIFE @I10@

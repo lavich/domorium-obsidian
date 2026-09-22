@@ -165,5 +165,26 @@
   "families.count": {
     "one": "{count} family",
     "other": "{count} families"
+  },
+  "people.subjectSources": "Sources",
+  "sources.searchPlaceholder": "Search sources...",
+  "sources.noResults": "No sources found",
+  "source.viewTitle": "Source",
+  "source.untitled": "Untitled source",
+  "source.heldAt": "Held at",
+  "source.citedBy": "What rests on this",
+  "source.citedByNobody": "Nothing in this file cites this source.",
+  "source.citations": "Sources",
+  "source.within": "of {what}",
+  "field.TITL": "Title",
+  "field.AUTH": "Author",
+  "field.PUBL": "Publisher",
+  "field.ABBR": "Short title",
+  "field.TEXT": "Text",
+  "repo.address": "Address",
+  "repo.web": "Web",
+  "sources.count": {
+    "one": "{count} source",
+    "other": "{count} sources"
   }
 }

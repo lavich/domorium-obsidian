@@ -189,9 +189,13 @@ export const FIXTURE = [
   "0 @S4@ SOUR",
   "1 TITL Held nowhere the file declares",
   "1 REPO @R9@",
+  // The address sits beside the name, not beneath it, and carries its own
+  // lines, which is how both GEDCOM versions write a repository's address.
   "0 @R1@ REPO",
   "1 NAME State Archive in Warsaw",
-  "2 ADDR Krzywe Koło 7",
+  "1 ADDR Krzywe Koło 7",
+  "2 CITY Warsaw",
+  "2 CTRY Poland",
   "1 WWW https://example.org/archive",
 
   // A person citing one source on the record and another under an event, and

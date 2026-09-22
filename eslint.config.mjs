@@ -53,8 +53,11 @@ export default tseslint.config(
       "src/people/recordList.ts",
       "src/people/personRowView.ts",
       "src/people/familyRowView.ts",
+      "src/people/sourceRowView.ts",
       "src/person/personPage.ts",
       "src/family/familyPage.ts",
+      "src/source/citationRows.ts",
+      "src/source/sourcePage.ts",
     ],
     rules: {
       "obsidianmd/prefer-create-el": "off",

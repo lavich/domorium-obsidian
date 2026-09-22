@@ -447,6 +447,62 @@
   font-size: var(--font-ui-small);
 }
 
+/* A citation reads the same on all three pages: what it points at, where in
+   the record it hung, and the page it gives. Only an openable one is a
+   target, so a citation of a source the document does not declare does not
+   invite a click it cannot honour. */
+.gedcom-citation {
+  display: flex;
+  gap: var(--size-4-2);
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: var(--size-4-1) var(--size-4-2);
+  margin: 0 calc(-1 * var(--size-4-2));
+  border-radius: var(--radius-s);
+}
+
+.gedcom-citation.is-openable {
+  cursor: var(--cursor-link);
+}
+
+.gedcom-citation.is-openable:hover,
+.gedcom-citation.is-openable:focus-visible {
+  background-color: var(--nav-item-background-hover);
+}
+
+.gedcom-citation-title {
+  color: var(--text-normal);
+}
+
+.gedcom-citation.is-openable:hover .gedcom-citation-title {
+  color: var(--link-color);
+}
+
+.gedcom-citation-within {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+/* On its own line: a page reference is what the reader copies out, and it
+   should not be mistaken for part of the title beside it. */
+.gedcom-citation-page {
+  flex-basis: 100%;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+/* A source's row in the sidebar carries two facts under the title. */
+.gedcom-source-author,
+.gedcom-source-repository {
+  color: var(--text-faint);
+}
+
+ /* Only between the two: a repository standing alone needs no separator. */
+.gedcom-source-repository:not(:first-child)::before {
+  content: "·";
+  margin: 0 var(--size-4-1);
+}
+
 .gedcom-person-unresolved {
   margin-top: var(--size-4-2);
   color: var(--text-warning);

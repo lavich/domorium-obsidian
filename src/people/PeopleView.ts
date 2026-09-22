@@ -1,9 +1,15 @@
 import { ItemView, type WorkspaceLeaf } from "obsidian";
 
-import type { FamilyRow, GenealogyIndex, Row } from "../genealogy";
+import type {
+  FamilyRow,
+  GenealogyIndex,
+  Row,
+  SourceRow,
+} from "../genealogy";
 import {
   documentRef,
   recordRef,
+  UNTITLED,
   type DocumentRef,
   type RecordRef,
   type PersonRow,
@@ -12,6 +18,7 @@ import { GEDCOM_ICON_ID } from "../icon";
 import { plural, t } from "../i18n";
 import { drawFamilyRow } from "./familyRowView";
 import { drawPersonRow } from "./personRowView";
+import { drawSourceRow } from "./sourceRowView";
 import {
   RecordList,
   ROW_HEIGHT,
@@ -20,7 +27,7 @@ import {
 
 export const PEOPLE_VIEW_TYPE = "domorium-people";
 
-type Subject = "people" | "families";
+type Subject = "people" | "families" | "sources";
 
 export interface PeopleViewHost {
   activeDocument(): { document: DocumentRef } | null;
@@ -31,6 +38,8 @@ export interface PeopleViewHost {
   shownPerson(): RecordRef | null;
   shownFamily(): RecordRef | null;
   openFamily(family: RecordRef, name?: string): void;
+  openSource(source: RecordRef, title?: string): void;
+  shownSource(): RecordRef | null;
 }
 
 
@@ -112,7 +121,11 @@ export class PeopleView extends ItemView {
     }
     this.list.setSubjectPresentation(this.subject, presentationOf(this.subject));
     this.list.setRecords(
-      this.subject === "families" ? index.families : index.people,
+      this.subject === "families"
+        ? index.families
+        : this.subject === "sources"
+          ? index.sources
+          : index.people,
     );
   }
 
@@ -134,6 +147,7 @@ export class PeopleView extends ItemView {
         subjects: [
           { id: "people", name: t("people.subjectPeople") },
           { id: "families", name: t("people.subjectFamilies") },
+          { id: "sources", name: t("people.subjectSources") },
         ],
       },
       (record) => this.choose(record),
@@ -146,7 +160,7 @@ export class PeopleView extends ItemView {
       this.show(documentRef(path));
     });
     this.list.onSubjectChosen((chosen) => {
-      this.subject = chosen === "families" ? "families" : "people";
+      this.subject = asSubject(chosen);
       this.redraw();
       this.markShownPerson();
     });
@@ -169,7 +183,9 @@ export class PeopleView extends ItemView {
     const shown =
       this.subject === "families"
         ? this.host.shownFamily()
-        : this.host.shownPerson();
+        : this.subject === "sources"
+          ? this.host.shownSource()
+          : this.host.shownPerson();
     const here =
       shown && this.showing && shown.document.path === this.showing.path;
     this.list?.setMarked(here ? shown.xref : null);
@@ -184,12 +200,32 @@ export class PeopleView extends ItemView {
       this.host.openFamily(at, (record as FamilyRow).name);
       return;
     }
+    if (this.subject === "sources") {
+      // A source with no title travels without one, so the tab falls back to
+      // the word for a source rather than showing the placeholder.
+      const title = (record as SourceRow).title;
+      this.host.openSource(at, title === UNTITLED ? undefined : title);
+      return;
+    }
     this.host.openPerson(at, (record as PersonRow).name);
   }
 }
 
+function asSubject(chosen: string): Subject {
+  return chosen === "families" || chosen === "sources" ? chosen : "people";
+}
+
 /** One subject, and every word and drawing that follows it. */
 function presentationOf(subject: Subject): SubjectPresentation {
+  if (subject === "sources") {
+    return {
+      count: (total) => plural("sources.count", total),
+      noResults: t("sources.noResults"),
+      searchPlaceholder: t("sources.searchPlaceholder"),
+      draw: (row, record) =>
+        drawSourceRow(row, record as SourceRow, t("source.untitled")),
+    };
+  }
   if (subject === "families") {
     return {
       count: (total) => plural("families.count", total),
