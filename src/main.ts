@@ -136,6 +136,12 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         void this.revealPeople();
       },
     });
+    // The ribbon is the only place a plugin may put a button of its own:
+    // Obsidian's top bar has no API. On a tablet the ribbon lives in the left
+    // drawer rather than in a strip of its own.
+    this.addRibbonIcon(GEDCOM_ICON_ID, t("people.command"), () => {
+      void this.revealPeople();
+    });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
       const section = ctx.getSectionInfo(element);
       const { runs, problems } = renderGedcomBlock(
