@@ -10,8 +10,8 @@ import { UNNAMED, type PersonRow } from "../genealogy";
  */
 export interface PeopleListLabels {
   count: (total: number) => string;
-  /** The document and the count together: `curie.ged · 17 people`. */
-  heading: (document: string, count: string) => string;
+  /** What of the document is being listed. Only people, for now. */
+  subject: string;
   noResults: string;
   /** What to call a person whose record carries no name. */
   unnamed: string;
@@ -47,8 +47,9 @@ const MARGIN_ROWS = 6;
  */
 export class PeopleList {
   private people: PersonRow[] = [];
-  private document = "";
   private marked: string | null = null;
+  private onDocument: ((document: string) => void) | null = null;
+  private readonly documentEl: HTMLSelectElement;
   private shown: PersonRow[] = [];
   private filter = "";
   private readonly countEl: HTMLElement;
@@ -68,13 +69,50 @@ export class PeopleList {
       "--gedcom-person-row-height",
       `${metrics?.rowHeight ?? ROW_HEIGHT}px`,
     );
+
+    // Which document, and what of it. The second offers one thing today;
+    // families and the rest are the same list with another subject, and a
+    // reader should see that this is one of several before there are several.
+    const bar = element(root, "div", "gedcom-people-bar");
+    this.documentEl = element(
+      bar,
+      "select",
+      "dropdown gedcom-people-document",
+    ) as HTMLSelectElement;
+    this.documentEl.addEventListener("change", () => {
+      this.onDocument?.(this.documentEl.value);
+    });
+    const subject = element(
+      bar,
+      "select",
+      "dropdown gedcom-people-subject",
+    ) as HTMLSelectElement;
+    const only = subject.ownerDocument.createElement("option");
+    only.value = "people";
+    only.textContent = labels.subject;
+    subject.append(only);
+
     this.countEl = element(root, "div", "gedcom-people-count");
     this.rowsEl = element(root, "div", "gedcom-people-rows");
   }
 
-  /** The document's name too: a list of names says nothing about whose. */
-  setPeople(people: PersonRow[], document = this.document): void {
-    this.document = document;
+  /** Every GEDCOM the vault holds, and whichever is being listed. */
+  setDocuments(documents: string[], current?: string): void {
+    this.documentEl.replaceChildren();
+    for (const name of documents) {
+      const option = this.documentEl.ownerDocument.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      this.documentEl.append(option);
+    }
+    this.documentEl.value = current ?? "";
+  }
+
+  onDocumentChosen(run: (document: string) => void): void {
+    this.onDocument = run;
+  }
+
+  setPeople(people: PersonRow[]): void {
     // A record with no identifier cannot be opened or linked to, so it is not
     // listed. The model still reports it; leaving it out is this view's call.
     this.people = people.filter((person) => !person.unaddressable);
@@ -120,10 +158,7 @@ export class PeopleList {
     this.shown = this.filter
       ? this.people.filter((person) => person.search.includes(this.filter))
       : this.people;
-    const count = this.labels.count(this.shown.length);
-    this.countEl.textContent = this.document
-      ? this.labels.heading(this.document, count)
-      : count;
+    this.countEl.textContent = this.labels.count(this.shown.length);
     this.rowsEl.replaceChildren();
     // A search that found nothing is not the same as a document with nobody
     // in it, which the view above says.
@@ -208,7 +243,7 @@ function spanOfYears(person: PersonRow): string | null {
 
 function element(
   parent: HTMLElement,
-  tag: "div" | "span" | "input",
+  tag: "div" | "span" | "input" | "select",
   cls: string,
 ): HTMLElement {
   const node = parent.ownerDocument.createElement(tag);

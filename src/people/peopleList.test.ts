@@ -9,7 +9,7 @@ let container: HTMLElement;
 /** Resolved strings, so the renderer never reaches for the plugin's language. */
 const LABELS: PeopleListLabels = {
   count: (total) => `${total} people`,
-  heading: (document, count) => `${document} · ${count}`,
+  subject: "People",
   noResults: "No people found",
   unnamed: "Unnamed",
   searchPlaceholder: "Search people...",
@@ -32,6 +32,15 @@ const list = (people: PersonRow[], onChoose = vi.fn()): PeopleList => {
   made.setPeople(people);
   return made;
 };
+
+const options = (): string[] =>
+  [...container.querySelectorAll(".gedcom-people-document option")].map(
+    (node) => node.textContent ?? "",
+  );
+
+const chosen = (): string =>
+  container.querySelector<HTMLSelectElement>(".gedcom-people-document")?.value ??
+  "";
 
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map(
@@ -320,25 +329,66 @@ describe("a list too long to draw whole", () => {
   });
 });
 
-describe("which document the list is showing", () => {
-  it("names it beside the count", () => {
+describe("the bar above the list", () => {
+  const withDocuments = (current?: string): PeopleList => {
     const made = new PeopleList(container, LABELS, vi.fn());
-    made.setPeople([row({ xref: "@I1@" })], "curie.ged");
-
-    expect(texts(".gedcom-people-count")).toEqual(["curie.ged · 1 people"]);
-  });
-
-  it("follows when the document is replaced", () => {
-    const made = new PeopleList(container, LABELS, vi.fn());
-    made.setPeople([row({ xref: "@I1@" })], "curie.ged");
-    made.setPeople([row({ xref: "@I1@" })], "joliot.ged");
-
-    expect(texts(".gedcom-people-count")).toEqual(["joliot.ged · 1 people"]);
-  });
-
-  it("says the count alone where no document has been named", () => {
-    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setDocuments(["curie.ged", "joliot.ged"], current);
     made.setPeople([row({ xref: "@I1@" })]);
+    return made;
+  };
+
+  it("names the document being listed and offers the others", () => {
+    withDocuments("curie.ged");
+
+    expect(options()).toEqual(["curie.ged", "joliot.ged"]);
+    expect(chosen()).toBe("curie.ged");
+  });
+
+  it("names what of the document is being listed", () => {
+    withDocuments("curie.ged");
+
+    expect(texts(".gedcom-people-subject option")).toEqual(["People"]);
+  });
+
+  it("hands a choice back rather than acting on it", () => {
+    const onDocument = vi.fn();
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.onDocumentChosen(onDocument);
+    made.setDocuments(["curie.ged", "joliot.ged"], "curie.ged");
+
+    const select = container.querySelector<HTMLSelectElement>(
+      ".gedcom-people-document",
+    );
+    select!.value = "joliot.ged";
+    select?.dispatchEvent(new Event("change"));
+
+    expect(onDocument).toHaveBeenCalledWith("joliot.ged");
+  });
+
+  it("moves when the document is changed from elsewhere", () => {
+    const made = withDocuments("curie.ged");
+
+    made.setDocuments(["curie.ged", "joliot.ged"], "joliot.ged");
+
+    expect(chosen()).toBe("joliot.ged");
+  });
+
+  it("offers one where the vault holds one", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setDocuments(["curie.ged"], "curie.ged");
+
+    expect(options()).toEqual(["curie.ged"]);
+  });
+
+  it("chooses none where no document is being listed", () => {
+    withDocuments(undefined);
+
+    expect(chosen()).toBe("");
+    expect(options()).toContain("curie.ged");
+  });
+
+  it("leaves the document out of the count, the bar having it", () => {
+    withDocuments("curie.ged");
 
     expect(texts(".gedcom-people-count")).toEqual(["1 people"]);
   });

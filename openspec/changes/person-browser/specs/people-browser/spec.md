@@ -16,9 +16,7 @@ Moving to something that is not a GEDCOM file — a note, a setting, a canvas �
 SHALL leave the list as it was rather than empty it, so that a reader who steps
 into a note to read something comes back to the list they left.
 
-The list SHALL say how many people it is showing, and which document they are
-from. A vault may hold more than one GEDCOM, and a list of names says nothing
-about which tree they belong to.
+The list SHALL say how many people it is showing.
 
 A person the model reports as unaddressable — a record declaring no
 cross-reference — SHALL be left out of the list, having no identifier to open
@@ -28,12 +26,11 @@ out is this view's decision, not the model's.
 #### Scenario: Opening a GEDCOM file
 - **WHEN** the reader opens a GEDCOM file holding 17 people and the sidebar view
   is showing
-- **THEN** the list shows those 17 people, says there are 17, and names the file
-  they came from
+- **THEN** the list shows those 17 people and says there are 17
 
 #### Scenario: Moving to a second GEDCOM file
 - **WHEN** the reader moves from one GEDCOM file to another
-- **THEN** the list shows the second file's people, and names the second file
+- **THEN** the list shows the second file's people
 
 #### Scenario: Moving to a note
 - **WHEN** the reader moves from a GEDCOM file to a markdown note
@@ -48,6 +45,46 @@ out is this view's decision, not the model's.
   this session
 - **THEN** it says that opening a GEDCOM file will list its people, and shows no
   list
+
+### Requirement: The reader can see and choose which document, and what of it
+
+The view SHALL carry a bar above the search field naming two things: the
+document being listed, and what of that document is being listed.
+
+Each SHALL be a control rather than a label. Choosing another document from the
+first SHALL list that document's people without the reader having to open the
+file. A vault may hold more than one GEDCOM, and a list of names says nothing
+about which tree they belong to.
+
+The first SHALL offer every GEDCOM file in the vault, and SHALL show whichever
+document is being listed, however the reader arrived at it — by choosing it
+here, or by opening the file.
+
+The second SHALL show what is being listed. Only people are listed in this
+change; it exists because families and the rest are the same list with a
+different subject, and a reader should be able to see that this is one of
+several before there are several.
+
+#### Scenario: Naming the document being listed
+- **WHEN** the list is showing the people of `curie.ged`
+- **THEN** the bar names `curie.ged`, and names people beside it
+
+#### Scenario: Choosing another document
+- **WHEN** the vault holds `curie.ged` and `joliot.ged`, and the reader chooses
+  `joliot.ged` from the bar
+- **THEN** the list shows that document's people, and the bar names it
+
+#### Scenario: Arriving by opening the file instead
+- **WHEN** the reader opens `joliot.ged` in the editor
+- **THEN** the bar names `joliot.ged`, as though it had been chosen there
+
+#### Scenario: A vault with one GEDCOM
+- **WHEN** the vault holds one GEDCOM file
+- **THEN** the bar still names it, and offers nothing else to choose
+
+#### Scenario: Before any GEDCOM has been opened
+- **WHEN** no document is being listed
+- **THEN** the bar offers the vault's GEDCOM files and names none as chosen
 
 ### Requirement: A row tells one person from another
 

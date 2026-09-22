@@ -22,13 +22,13 @@ import type { DocumentRef } from "./personRef";
  * reader and the syntax tree behind it is the expensive thing in the process.
  */
 export class IndexCache {
-  private readonly held = new Map<
+  private readonly held_ = new Map<
     string,
     { revision: string; index: GenealogyIndex }
   >();
 
   get size(): number {
-    return this.held.size;
+    return this.held_.size;
   }
 
   /** `read` runs only for a revision not already held. */
@@ -38,20 +38,25 @@ export class IndexCache {
     read: () => DocumentSymbol[],
   ): GenealogyIndex {
     const key = document.path;
-    const found = this.held.get(key);
+    const found = this.held_.get(key);
     if (found?.revision === revision) {
       return found.index;
     }
     const index = buildIndex(read());
-    this.held.set(key, { revision, index });
+    this.held_.set(key, { revision, index });
     return index;
   }
 
+  /** A reading already held for a document, whatever its revision. */
+  held(document: DocumentRef): GenealogyIndex | null {
+    return this.held_.get(document.path)?.index ?? null;
+  }
+
   forget(document: DocumentRef): void {
-    this.held.delete(document.path);
+    this.held_.delete(document.path);
   }
 
   clear(): void {
-    this.held.clear();
+    this.held_.clear();
   }
 }

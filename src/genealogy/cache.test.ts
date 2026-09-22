@@ -80,3 +80,17 @@ describe("reading paid for once per revision", () => {
     expect(cache.size).toBe(1);
   });
 });
+
+describe("a reading already held", () => {
+  it("is answered without a revision, for a caller that has none", () => {
+    const cache = new IndexCache();
+    const tree = documentRef("tree.ged");
+    cache.at(tree, "r1", () => [symbol("@I1@")]);
+
+    expect(cache.held(tree)?.person("@I1@")?.xref).toBe("@I1@");
+  });
+
+  it("is nothing for a document never read", () => {
+    expect(new IndexCache().held(documentRef("tree.ged"))).toBeNull();
+  });
+});

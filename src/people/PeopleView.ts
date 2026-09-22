@@ -1,8 +1,8 @@
-import type { DocumentSymbol } from "@domorium/language-service";
 import { ItemView, type WorkspaceLeaf } from "obsidian";
 
-import { IndexCache } from "../genealogy/cache";
+import type { GenealogyIndex } from "../genealogy";
 import {
+  documentRef,
   personRef,
   type DocumentRef,
   type PersonRef,
@@ -17,18 +17,17 @@ export const PEOPLE_VIEW_TYPE = "domorium-people";
 /** What the sidebar needs of the plugin, which is where `obsidian` stays. */
 export interface PeopleViewHost {
   /** The document the reader is looking at, or null where it is not a GEDCOM. */
-  activeDocument(): { document: DocumentRef; revision: string } | null;
-  /** The symbols of that document, read from the open view rather than disk. */
-  symbolsOf(document: DocumentRef): DocumentSymbol[];
+  activeDocument(): { document: DocumentRef } | null;
+  /** Every GEDCOM the vault holds, so the reader can choose one. */
+  documents(): DocumentRef[];
+  /** A reading to be had without waiting, or null. */
+  indexOf(document: DocumentRef): GenealogyIndex | null;
+  /** Read a document nobody has open; ask again once it resolves. */
+  warm(document: DocumentRef): Promise<void>;
   openPerson(person: PersonRef, name?: string): void;
   shownPerson(): PersonRef | null;
-  indexes(): IndexCache;
 }
 
-function baseName(path: string): string {
-  const cut = path.lastIndexOf("/");
-  return cut === -1 ? path : path.slice(cut + 1);
-}
 
 export class PeopleView extends ItemView {
   navigation = false;
@@ -68,20 +67,38 @@ export class PeopleView extends ItemView {
    * something should not cost the reader the list they were using.
    */
   refresh(): void {
+    this.refreshDocuments();
     const active = this.host.activeDocument();
-    if (!active) {
+    if (active) {
+      this.show(active.document);
+    }
+  }
+
+  /** List a document, whether the reader chose it here or opened the file. */
+  private show(document: DocumentRef): void {
+    const index = this.host.indexOf(document);
+    if (!index) {
+      // Nobody has it open, so the vault must be read first.
+      void this.host.warm(document).then(() => {
+        if (this.host.indexOf(document)) {
+          this.show(document);
+        }
+      });
       return;
     }
-    const index = this.host
-      .indexes()
-      .at(active.document, active.revision, () =>
-        this.host.symbolsOf(active.document),
-      );
-    this.showing = active.document;
+    this.showing = document;
     this.emptyEl?.remove();
     this.emptyEl = null;
-    this.list?.setPeople(index.people, baseName(active.document.path));
+    this.list?.setPeople(index.people);
+    this.refreshDocuments();
     this.markShownPerson();
+  }
+
+  private refreshDocuments(): void {
+    this.list?.setDocuments(
+      this.host.documents().map((one) => one.path),
+      this.showing?.path,
+    );
   }
 
   private draw(): void {
@@ -89,10 +106,11 @@ export class PeopleView extends ItemView {
     root.empty();
     root.addClass("gedcom-people-view");
 
-    const search = root.createEl("input", {
-      cls: "gedcom-people-search",
-      type: "search",
-    });
+    // Obsidian styles a search field through this wrapper — radius, padding
+    // and the clear button all hang off it — which is how `searchPanel.ts`
+    // builds the one in the editor. A bare input gets the browser's.
+    const wrap = root.createDiv({ cls: "search-input-container" });
+    const search = wrap.createEl("input", { type: "search" });
     search.placeholder = t("people.searchPlaceholder");
     search.addEventListener("input", () => {
       this.list?.setFilter(search.value);
@@ -111,7 +129,7 @@ export class PeopleView extends ItemView {
       scroller,
       {
         count: (total) => plural("people.count", total),
-        heading: (document, count) => `${document} · ${count}`,
+        subject: t("people.viewTitle"),
         noResults: t("people.noResults"),
         unnamed: t("people.unnamed"),
         searchPlaceholder: t("people.searchPlaceholder"),
@@ -120,6 +138,11 @@ export class PeopleView extends ItemView {
       // The sidebar can measure itself; the list cannot, and must not try.
       { viewport: scroller.clientHeight || 600, rowHeight: ROW_HEIGHT },
     );
+
+    this.list.onDocumentChosen((path) => {
+      this.show(documentRef(path));
+    });
+    this.refreshDocuments();
 
     if (!this.showing) {
       this.emptyEl = scroller.createDiv({

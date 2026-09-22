@@ -16,7 +16,13 @@ import {
 
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
 import { IndexCache } from "./genealogy/cache";
-import { documentRef, type DocumentRef, type PersonRef } from "./genealogy";
+import {
+  documentRef,
+  type DocumentRef,
+  type GenealogyIndex,
+  type PersonRef,
+} from "./genealogy";
+import { GedcomLanguageService } from "@domorium/language-service";
 import { PeopleView, PEOPLE_VIEW_TYPE, type PeopleViewHost } from "./people/PeopleView";
 import {
   PersonView,
@@ -419,18 +425,18 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   private peopleHost(): PeopleViewHost {
     return {
       activeDocument: () => {
-        const view = this.app.workspace.getActiveViewOfType(GedcomView);
-        const path = view?.file?.path;
-        if (!view || !path) {
-          return null;
-        }
-        return {
-          document: documentRef(path),
-          revision: view.documentRevision(),
-        };
+        const path = this.app.workspace.getActiveViewOfType(GedcomView)?.file
+          ?.path;
+        return path ? { document: documentRef(path) } : null;
       },
-      symbolsOf: (document: DocumentRef) =>
-        this.gedcomViewOf(document)?.documentSymbols() ?? [],
+      documents: () =>
+        this.app.vault
+          .getFiles()
+          .filter((file) => isGedcomPath(file.path))
+          .map((file) => documentRef(file.path))
+          .sort((one, other) => one.path.localeCompare(other.path)),
+      indexOf: (document) => this.indexOf(document),
+      warm: (document) => this.warm(document),
       openPerson: (person: PersonRef, name?: string) => {
         void this.openPerson(person, name);
       },
@@ -441,8 +447,38 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         });
         return found;
       },
-      indexes: () => this.genealogy,
     };
+  }
+
+  /**
+   * A reading of a document, where one can be had without waiting: the view
+   * showing it, so an unsaved edit is read, or a reading already held.
+   */
+  private indexOf(document: DocumentRef): GenealogyIndex | null {
+    const open = this.gedcomViewOf(document);
+    if (open) {
+      return this.genealogy.at(document, open.documentRevision(), () =>
+        open.documentSymbols(),
+      );
+    }
+    return this.genealogy.held(document);
+  }
+
+  /**
+   * Read a document nobody has open. The vault reads asynchronously, so a
+   * caller that wants a closed document waits once and asks again.
+   */
+  private async warm(document: DocumentRef): Promise<void> {
+    if (this.indexOf(document)) {
+      return;
+    }
+    const file = await this.vault.read(document.path);
+    if (!file) {
+      return;
+    }
+    this.genealogy.at(document, file.revision, () =>
+      new GedcomLanguageService(file.text).getDocumentSymbols(),
+    );
   }
 
   /** The open view showing a document, where one is open. */
@@ -477,18 +513,8 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
 
   private personHost(): PersonViewHost {
     return {
-      read: (person) => {
-        const view = this.gedcomViewOf(person.document);
-        if (!view) {
-          return null;
-        }
-        const index = this.genealogy.at(
-          person.document,
-          view.documentRevision(),
-          () => view.documentSymbols(),
-        );
-        return index.person(person.xref) ?? null;
-      },
+      read: (person) => this.indexOf(person.document)?.person(person.xref) ?? null,
+      warm: (document) => this.warm(document),
       openSource: (person) => {
         void this.openRecord(person);
       },

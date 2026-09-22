@@ -3,6 +3,7 @@ import { ItemView, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 import {
   documentRef,
   personRef,
+  type DocumentRef,
   type Person,
   type PersonRef,
   type PersonRow,
@@ -15,6 +16,8 @@ export const PERSON_VIEW_TYPE = "domorium-person";
 /** What the page needs of the plugin, which is where `obsidian` stays. */
 export interface PersonViewHost {
   read(person: PersonRef): Person | null;
+  /** Read the document nobody has open; the page redraws once it resolves. */
+  warm(document: DocumentRef): Promise<void>;
   /** Put the cursor on the record that declares this person. */
   openSource(person: PersonRef): void;
   resolveMedia(file: string): string | null;
@@ -108,6 +111,12 @@ export class PersonView extends ItemView {
 
     const read = this.host.read(this.person);
     if (!read) {
+      const wanted = this.person;
+      void this.host.warm(wanted.document).then(() => {
+        if (this.person === wanted && this.host.read(wanted)) {
+          this.draw();
+        }
+      });
       root.empty();
       root.createDiv({
         cls: "gedcom-person-unresolved",

@@ -285,11 +285,6 @@
   padding: 0;
 }
 
-.gedcom-people-search {
-  margin: var(--size-4-2);
-  width: calc(100% - var(--size-4-4));
-}
-
 .gedcom-people-scroller {
   flex: 1;
   overflow-y: auto;
@@ -567,4 +562,23 @@
 /* The header names the document, the tab names the person. */
 .workspace-leaf-content[data-type="domorium-person"] .view-header-title {
   color: var(--text-muted);
+}
+
+/* Which document, and what of it. Dense: the bar must not cost the list a row
+   of height in a sidebar that is mostly list. */
+.gedcom-people-bar {
+  display: flex;
+  gap: var(--size-4-2);
+  padding: var(--size-4-2) var(--size-4-2) 0;
+}
+
+.gedcom-people-bar select {
+  flex: 1;
+  min-width: 0;
+  height: var(--input-height, auto);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-people-view .search-input-container {
+  margin: var(--size-4-2);
 }
