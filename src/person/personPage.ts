@@ -152,11 +152,20 @@ function drawPortrait(
   }
   const wanted = portrait.crop;
   frame.classList.add("is-cropped");
+  // Cut it now, from the rectangle the record states, rather than waiting for
+  // the picture to load. A cropped frame carries no bound until it is sized,
+  // so a photograph left unsized paints whole for the length of the load —
+  // which for a group photograph is a flash of somebody else's face.
+  applyCrop(frame, image, wanted, bounds);
   image.addEventListener("load", () => {
+    // Now the picture's own size is known, the rectangle can be clamped to it.
     const crop = drawnCrop(wanted, image.naturalWidth, image.naturalHeight);
     if (!crop) {
-      // A rectangle the image does not reach means show the whole image.
+      // A rectangle the picture does not reach means show the whole picture.
       frame.classList.remove("is-cropped");
+      frame.style.removeProperty("width");
+      frame.style.removeProperty("height");
+      image.style.removeProperty("transform");
       return;
     }
     applyCrop(frame, image, crop, bounds);

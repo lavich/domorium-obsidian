@@ -196,6 +196,59 @@ describe("the face beside the name", () => {
     ).toBe(true);
   });
 
+  it("cuts the rectangle before the picture loads, not after", () => {
+    // Otherwise the whole photograph is painted at its own size for the
+    // length of the load, which is a flash of somebody else's face.
+    draw(pictured({ crop: { top: 10, left: 20, height: 30, width: 40 } }));
+
+    const frame = container.querySelector<HTMLElement>(".gedcom-person-portrait");
+    const image = container.querySelector<HTMLElement>(
+      ".gedcom-person-portrait-image",
+    );
+
+    expect(frame?.style.width, "the frame is sized from the first paint").toBe(
+      "40px",
+    );
+    expect(frame?.style.height).toBe("30px");
+    expect(image?.style.transform).toContain("translate(-20px, -10px)");
+  });
+
+  const loadedAt = (width: number, height: number): void => {
+    const image = container.querySelector<HTMLImageElement>(
+      ".gedcom-person-portrait-image",
+    );
+    Object.defineProperty(image, "naturalWidth", { value: width, configurable: true });
+    Object.defineProperty(image, "naturalHeight", { value: height, configurable: true });
+    image?.dispatchEvent(new Event("load"));
+  };
+
+  it("clamps the rectangle to the picture once its size is known", () => {
+    draw(pictured({ crop: { top: 10, left: 20, height: 30, width: 40 } }));
+
+    // The picture is smaller than the rectangle reaches: it is cut short,
+    // rather than framing space the picture does not have.
+    loadedAt(25, 25);
+
+    const frame = container.querySelector<HTMLElement>(".gedcom-person-portrait");
+    expect(frame?.classList.contains("is-cropped")).toBe(true);
+    expect(frame?.style.width).toBe("5px");
+    expect(frame?.style.height).toBe("15px");
+  });
+
+  it("shows the whole picture where the rectangle misses it entirely", () => {
+    draw(pictured({ crop: { top: 10, left: 20, height: 30, width: 40 } }));
+
+    loadedAt(15, 5);
+
+    const frame = container.querySelector<HTMLElement>(".gedcom-person-portrait");
+    expect(frame?.classList.contains("is-cropped")).toBe(false);
+    expect(frame?.style.width).toBe("");
+    expect(
+      container.querySelector<HTMLElement>(".gedcom-person-portrait-image")
+        ?.style.transform,
+    ).toBe("");
+  });
+
   it("uses the caption the record gives, so the picture is described", () => {
     draw(pictured({ title: "Second from the left" }));
 
