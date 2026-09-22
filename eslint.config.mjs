@@ -45,11 +45,16 @@ export default tseslint.config(
     // Obsidian puts on Node at runtime — does not exist. Telling them to call
     // it would make them unmountable outside the application, which is the one
     // property they are built for.
+    // A new host-free renderer belongs on this list; there is no naming
+    // convention that separates them from the views, which should call it.
     files: [
       "src/editor/mediaPreviewView.ts",
       "src/editor/searchPanel.ts",
-      "src/people/peopleList.ts",
+      "src/people/recordList.ts",
+      "src/people/personRowView.ts",
+      "src/people/familyRowView.ts",
       "src/person/personPage.ts",
+      "src/family/familyPage.ts",
     ],
     rules: {
       "obsidianmd/prefer-create-el": "off",
