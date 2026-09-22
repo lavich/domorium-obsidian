@@ -334,16 +334,25 @@
   text-overflow: ellipsis;
 }
 
+/* The name is what the reader is scanning for, so it carries the page's own
+   text colour rather than the navigation colour, which several themes set to
+   the same muted value the line beneath uses. */
 .gedcom-person-name {
-  color: var(--nav-item-color);
+  color: var(--text-normal);
   font-size: var(--font-ui-small);
 }
 
+/* Years and place tell two people apart once the eye has stopped on a name.
+   They are not what the eye is moving across, so they stay out of its way. */
 .gedcom-person-sub {
   display: flex;
   gap: var(--size-4-2);
-  color: var(--text-muted);
+  color: var(--text-faint);
   font-size: var(--font-ui-smaller);
+}
+
+.gedcom-person-row:hover .gedcom-person-name {
+  color: var(--text-normal);
 }
 
 .gedcom-person-page {
