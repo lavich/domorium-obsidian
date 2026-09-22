@@ -40,6 +40,22 @@ export default tseslint.config(
     },
   },
   {
+    // Renderers that must mount without Obsidian: the browser harness and the
+    // unit tests draw them into a plain container, where `createEl` — which
+    // Obsidian puts on Node at runtime — does not exist. Telling them to call
+    // it would make them unmountable outside the application, which is the one
+    // property they are built for.
+    files: [
+      "src/editor/mediaPreviewView.ts",
+      "src/editor/searchPanel.ts",
+      "src/people/peopleList.ts",
+      "src/person/personPage.ts",
+    ],
+    rules: {
+      "obsidianmd/prefer-create-el": "off",
+    },
+  },
+  {
     files: ["src/main.ts"],
     rules: {
       // The one default the plugin claims is Obsidian's own for the job:
