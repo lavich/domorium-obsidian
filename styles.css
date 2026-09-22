@@ -502,13 +502,18 @@
 }
 
 /* The person a Person view is showing, so a reader who has followed a father
-   and a grandfather can see where in the list they now are. */
+   and a grandfather can see where in the list they now are.
+
+   The active variables, not the selected ones: Obsidian's own file explorer
+   marks the file you have open with `--nav-item-background-active`, which is
+   neutral, and reserves the accent-tinted `-selected` for picking several
+   things at once. One person is open, so this is the same state. */
 .gedcom-person-row.is-marked {
-  background-color: var(--nav-item-background-selected);
+  background-color: var(--nav-item-background-active);
 }
 
 .gedcom-person-row.is-marked .gedcom-person-name {
-  color: var(--nav-item-color-selected);
+  color: var(--nav-item-color-active);
   font-weight: var(--nav-item-weight-active);
 }
 
