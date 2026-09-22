@@ -14,40 +14,32 @@ export type { DatePrecision, DateReading } from "./dates";
 export { UNNAMED } from "./names";
 export * from "./personRef";
 
-/** One event or recorded attribute, as the record states it. */
 export interface PersonEvent {
   /** The tag as written. Naming it for a reader is the caller's. */
   tag: string;
   date?: DateReading;
   place?: string;
-  /** What the event line itself carried, as an occupation does. */
+  /** What the line itself carried, as an occupation does. */
   value?: string;
 }
 
 /**
- * A picture a record points at, as the document names it.
- *
  * Nothing here is read from disk: the file may not exist, may not be an image
  * whatever the document says, and is never fetched. The rectangle is how a
  * GEDCOM says "this person is the second face from the left".
  */
 export interface PersonMedia {
-  /** The file as the document wrote it: a vault path, or a web address. */
+  /** A vault path, or a web address, as the document wrote it. */
   file: string;
-  /** What the document says the file is, where it says anything. */
   form?: string;
   title?: string;
   crop?: MediaCrop;
 }
 
-/**
- * What the list needs to show a person and tell them from another, held for
- * every person in the document.
- */
+/** Held for every person in the document, so it stays small. */
 export interface PersonRow {
-  /** Absent where the record declares no cross-reference: see `unaddressable`. */
   xref?: string;
-  /** A record declaring no identifier cannot be addressed, linked or opened. */
+  /** No identifier: cannot be addressed, linked to, or opened. */
   unaddressable: boolean;
   name: string;
   otherNames: string[];
@@ -59,11 +51,10 @@ export interface PersonRow {
   search: string;
 }
 
-/** A person read in full, resolved when one is opened rather than for all. */
+/** Read in full when a person is opened, rather than for all of them. */
 export interface Person extends PersonRow {
-  /** Every picture the record points at, in the order it writes them. */
   media: PersonMedia[];
-  /** The first of those the document calls an image, where there is one. */
+  /** The first picture the document calls an image. */
   portrait?: PersonMedia;
   parents: PersonRow[];
   partners: PersonRow[];
@@ -74,9 +65,8 @@ export interface Person extends PersonRow {
 }
 
 export interface GenealogyIndex {
-  /** Every `INDI` record, in the order the file declares them. */
+  /** In the order the file declares them. */
   people: PersonRow[];
-  /** One person read in full, or undefined where the document holds none. */
   person(xref: string): Person | undefined;
 }
 
@@ -89,7 +79,6 @@ const childrenOf = (symbol: DocumentSymbol, tag: string): DocumentSymbol[] =>
 const payload = (symbol: DocumentSymbol | undefined): string | undefined =>
   symbol?.detail || undefined;
 
-/** The identifiers a family names in the given roles, in document order. */
 function rolePointers(
   family: DocumentSymbol,
   roles: ReadonlySet<string>,

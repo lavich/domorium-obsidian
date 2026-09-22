@@ -37,14 +37,13 @@ export const ROW_HEIGHT = 34;
 const MARGIN_ROWS = 6;
 
 /**
- * The list of people, drawn into a plain container. It imports nothing from
- * `obsidian` and nothing from the catalogue, so the browser harness and a unit
- * test mount the same code the sidebar does.
+ * Drawn into a plain container, importing nothing from `obsidian` and nothing
+ * from the catalogue, so a test and the browser harness mount what the sidebar
+ * mounts.
  *
- * Only the rows in view are in the document. Measured in Chromium at the
- * sidebar's width, twenty thousand styled rows cost a quarter of a second to
- * build and hold eighty thousand elements, and a filter that matches most
- * people pays that again on a keystroke. The window costs a subtraction.
+ * Only the rows in view are in the document: twenty thousand styled rows cost
+ * a quarter of a second to build and hold eighty thousand elements, and a
+ * filter matching most people pays that again on a keystroke.
  */
 export class PeopleList {
   private people: PersonRow[] = [];
@@ -73,11 +72,7 @@ export class PeopleList {
     this.rowsEl = element(root, "div", "gedcom-people-rows");
   }
 
-  /**
-   * The people of one document, in the order the file declares them, and the
-   * document's name: a vault may hold more than one GEDCOM, and a list of
-   * names says nothing about which tree they belong to.
-   */
+  /** The document's name too: a list of names says nothing about whose. */
   setPeople(people: PersonRow[], document = this.document): void {
     this.document = document;
     // A record with no identifier cannot be opened or linked to, so it is not
@@ -87,9 +82,9 @@ export class PeopleList {
   }
 
   /**
-   * What the reader typed. Matching is a substring test against the one
-   * lowercase string the model built per person, so a name, another name, an
-   * identifier, a year and a place all match without a second index.
+   * A substring test against the one lowercase string the model built per
+   * person, so name, other names, identifier, years and place all match
+   * without a second index.
    */
   setFilter(text: string): void {
     this.filter = text.trim().toLowerCase();
@@ -101,9 +96,8 @@ export class PeopleList {
 
   /**
    * The person a Person view is showing, so the reader can see where in the
-   * list they now are after following a father and a grandfather. Nothing is
-   * marked for somebody from another document, which the host decides by not
-   * naming them here.
+   * list they now are. The host passes nothing for somebody from another
+   * document.
    */
   setMarked(xref: string | null): void {
     if (xref === this.marked) {
@@ -131,10 +125,8 @@ export class PeopleList {
       ? this.labels.heading(this.document, count)
       : count;
     this.rowsEl.replaceChildren();
-    // A search that found nothing is worth saying, and it is not the same as a
-    // document with nobody in it — the view above says that one. The message
-    // is drawn where the rows would be, and is absent when it does not apply
-    // rather than present and hidden.
+    // A search that found nothing is not the same as a document with nobody
+    // in it, which the view above says.
     if (this.filter !== "" && this.shown.length === 0) {
       element(this.rowsEl, "div", "gedcom-people-empty").textContent =
         this.labels.noResults;
@@ -143,10 +135,7 @@ export class PeopleList {
     this.drawWindow();
   }
 
-  /**
-   * The rows the reader can see, positioned inside a box as tall as the whole
-   * list would be, so that the scrollbar tells the truth about its length.
-   */
+  /** Inside a box as tall as the whole list, so the scrollbar is honest. */
   private drawWindow(): void {
     if (!this.metrics) {
       for (const person of this.shown) {
@@ -156,9 +145,8 @@ export class PeopleList {
     }
 
     const rowHeight = this.metrics.rowHeight ?? ROW_HEIGHT;
-    // The only two values that cannot be a class: how tall the whole list
-    // would be, and where each drawn row sits inside it. Both go through
-    // custom properties, which styles.css reads; everything static is a class.
+    // The two values that cannot be a class go through custom properties,
+    // which styles.css reads.
     this.rowsEl.classList.add("is-windowed");
     this.rowsEl.style.setProperty(
       "--gedcom-people-height",
@@ -208,11 +196,7 @@ export class PeopleList {
   }
 }
 
-/**
- * `1901–1975`, or `1931–` where the record states no death, or `–1975` where it
- * states no birth. Neither year read shows nothing at all rather than a dash
- * standing on its own.
- */
+/** `1901–1975`, `1931–`, `–1975`, or nothing rather than a bare dash. */
 function spanOfYears(person: PersonRow): string | null {
   const born = person.birth?.year;
   const died = person.death?.year;

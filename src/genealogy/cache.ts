@@ -27,15 +27,11 @@ export class IndexCache {
     { revision: string; index: GenealogyIndex }
   >();
 
-  /** How many documents are held. One revision each. */
   get size(): number {
     return this.held.size;
   }
 
-  /**
-   * `read` is called only when this revision has not been read, so a caller
-   * may hand in something expensive without paying for it on every ask.
-   */
+  /** `read` runs only for a revision not already held. */
   at(
     document: DocumentRef,
     revision: string,

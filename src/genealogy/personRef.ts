@@ -1,9 +1,5 @@
-/**
- * An identifier as GEDCOM writes one, bounded by `@` however the caller spelt
- * it. This lives here rather than beside the vault's link spelling because it
- * is GEDCOM vocabulary, and this module imports nothing from the rest of the
- * plugin.
- */
+/** Here rather than beside the vault's link spelling: this module imports
+ * nothing from the rest of the plugin. */
 export function normalizeXref(value: string): string {
   return `@${value.replace(/^@+|@+$/gu, "")}@`;
 }
@@ -21,7 +17,6 @@ export interface DocumentRef {
   path: string;
 }
 
-/** A person: the document they live in, and their identifier within it. */
 export interface PersonRef {
   document: DocumentRef;
   xref: string;

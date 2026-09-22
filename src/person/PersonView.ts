@@ -14,24 +14,18 @@ export const PERSON_VIEW_TYPE = "domorium-person";
 
 /** What the page needs of the plugin, which is where `obsidian` stays. */
 export interface PersonViewHost {
-  /** The person as the document currently states them, or null. */
   read(person: PersonRef): Person | null;
   /** Put the cursor on the record that declares this person. */
   openSource(person: PersonRef): void;
-  /** A vault path made drawable, or nothing for a file that is not there. */
   resolveMedia(file: string): string | null;
-  /** Show the picture's own file, whole rather than cut to a rectangle. */
+  /** The picture's own file, whole rather than cut. */
   openPicture(file: string): void;
 }
 
 /**
- * The view's own state, which Obsidian persists and restores.
- *
- * The name travels with it. Obsidian draws the tab's header from
- * `getDisplayText` as soon as the view exists, which is before anything has
- * been read out of a document, and reading one needs the document to be open.
- * Carrying the name means the header is right from the first draw rather than
- * falling back to the view's own name and staying there.
+ * Persisted and restored by Obsidian. The name travels with it because
+ * `getDisplayText` is called as soon as the view exists, before a document has
+ * been read, and reading one needs that document open.
  */
 interface PersonViewState {
   path?: string;
@@ -40,11 +34,7 @@ interface PersonViewState {
 }
 
 export class PersonView extends ItemView {
-  /**
-   * The property that makes the leaf's history record this view's states.
-   * With it, and with `result.history` set below, Obsidian's own Back and
-   * Forward walk the people the reader visited — measured, not assumed.
-   */
+  /** With `result.history` below, this is what makes Back walk the trail. */
   navigation = true;
 
   private person: PersonRef | null = null;
@@ -86,9 +76,8 @@ export class PersonView extends ItemView {
       this.person = personRef(documentRef(path), xref);
       this.name = name ?? null;
     }
-    // Without this the change is not written to the leaf's history, and Back
-    // has nothing to walk. Saying `false` here looks exactly like the whole
-    // mechanism not working.
+    // Without this nothing is written to the leaf's history, and Back has
+    // nothing to walk — a failure that looks like the API not working.
     result.history = true;
     this.draw();
     return Promise.resolve();
@@ -98,12 +87,10 @@ export class PersonView extends ItemView {
     this.draw();
   }
 
-  /** Called when the document this person was read from has changed. */
   refresh(): void {
     this.draw();
   }
 
-  /** The person this view is showing, for a host deciding whether to refresh. */
   showing(): PersonRef | null {
     return this.person;
   }
@@ -135,16 +122,12 @@ export class PersonView extends ItemView {
   }
 
   /**
-   * The tab says who; the header says which file they came from.
-   *
-   * Obsidian draws both from `getDisplayText`, one string, so they cannot
-   * differ through the API. Returning the document there would leave every
-   * open person's tab reading `curie.ged`, which is the one thing a tab must
-   * not do, so the header is written directly instead.
+   * The tab says who; the header says which file. Obsidian draws both from
+   * `getDisplayText`, one string, so they cannot differ through the API, and
+   * naming the document there would leave every tab reading `curie.ged`.
    *
    * `.view-header-title` is a class themes rely on rather than an API. If it
-   * ever goes, this writes nothing and the header falls back to the person's
-   * name — the same thing the tab says, which is wrong for nobody.
+   * goes, this writes nothing and the header falls back to the person's name.
    */
   private retitle(): void {
     const leaf = this.leaf as unknown as { updateHeader?: () => void };
@@ -172,8 +155,6 @@ export class PersonView extends ItemView {
         sex: (value) => namedSex(value),
       },
       source: {
-        // The file's own name, not the path: the page is narrow and the
-        // reader is distinguishing two documents, not filing them.
         document: baseName(this.person?.document.path ?? ""),
         xref: this.person?.xref ?? "",
       },
@@ -193,11 +174,7 @@ export class PersonView extends ItemView {
     };
   }
 
-  /**
-   * Moving to a relative is a change of this view's state, so it goes through
-   * the leaf rather than by redrawing: that is what puts it in the history the
-   * reader walks back through.
-   */
+  /** Through the leaf rather than by redrawing: that is what records history. */
   private follow(relative: PersonRow): void {
     if (!this.person || !relative.xref) {
       return;
@@ -214,16 +191,11 @@ export class PersonView extends ItemView {
   }
 }
 
-/**
- * A tag the catalogue does not name is shown as the tag. The model reads more
- * structures than the catalogue names, on purpose: an unnamed event is still
- * worth showing.
- */
+/** The model reads more tags than the catalogue names, on purpose. */
 function namedEvent(tag: string): string {
   return named(`event.${tag}`) ?? tag;
 }
 
-/** `family/curie.ged` reads as `curie.ged`. */
 function baseName(path: string): string {
   const cut = path.lastIndexOf("/");
   return cut === -1 ? path : path.slice(cut + 1);

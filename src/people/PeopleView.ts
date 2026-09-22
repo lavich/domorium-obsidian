@@ -20,20 +20,16 @@ export interface PeopleViewHost {
   /** The symbols of that document, read from the open view rather than disk. */
   symbolsOf(document: DocumentRef): DocumentSymbol[];
   openPerson(person: PersonRef, name?: string): void;
-  /** The person a Person view is showing, where one is open. */
   shownPerson(): PersonRef | null;
-  /** One reading per revision, shared with the Person view. */
   indexes(): IndexCache;
 }
 
-/** `family/curie.ged` reads as `curie.ged`. */
 function baseName(path: string): string {
   const cut = path.lastIndexOf("/");
   return cut === -1 ? path : path.slice(cut + 1);
 }
 
 export class PeopleView extends ItemView {
-  /** A list is not something a reader navigates away from. */
   navigation = false;
 
   private list: PeopleList | null = null;
@@ -132,11 +128,7 @@ export class PeopleView extends ItemView {
     }
   }
 
-  /**
-   * Which row to mark: the person a Person view is showing, where that person
-   * belongs to the document this list is showing. Two documents may declare
-   * the same identifier, so the document is checked and not only the xref.
-   */
+  /** Two documents may declare one identifier, so the document is checked. */
   markShownPerson(): void {
     const shown = this.host.shownPerson();
     const here =

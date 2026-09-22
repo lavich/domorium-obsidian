@@ -10,15 +10,11 @@
  * family record in both supported dialects.
  */
 
-/** Events and recorded attributes of a person, in both dialects. */
 export const PERSON_EVENT_TAGS: ReadonlySet<string> = new Set([
-  // Events.
   "ADOP", "BAPM", "BARM", "BASM", "BIRT", "BLES", "BURI", "CENS", "CHR",
   "CHRA", "CONF", "CREM", "DEAT", "EMIG", "FCOM", "GRAD", "IMMI", "NATU",
   "ORDN", "PROB", "RETI", "WILL", "EVEN",
-  // 5.5.1 also writes these as events of a person.
   "BAPL", "CONL", "ENDL", "SLGC",
-  // Recorded attributes, which a reader reads beside events.
   "CAST", "DSCR", "EDUC", "IDNO", "NATI", "NCHI", "NMR", "OCCU", "PROP",
   "RELI", "RESI", "SSN", "TITL", "FACT",
 ]);
@@ -29,9 +25,7 @@ export const PERSON_EVENT_TAGS: ReadonlySet<string> = new Set([
  */
 export const SPOUSE_ROLE_TAGS: ReadonlySet<string> = new Set(["HUSB", "WIFE"]);
 
-/** The role a family record names its children in. */
 export const CHILD_ROLE_TAGS: ReadonlySet<string> = new Set(["CHIL"]);
 
-/** How a person points at the family they were a child in, and a spouse of. */
 export const CHILD_FAMILY_TAG = "FAMC";
 export const SPOUSE_FAMILY_TAG = "FAMS";

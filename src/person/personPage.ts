@@ -8,7 +8,7 @@ import {
   type PersonRow,
 } from "../genealogy";
 
-/** The page's own words, already in the reader's language. */
+/** Already in the reader's language. */
 export interface PersonPageLabels {
   otherNames: string;
   parents: string;
@@ -18,46 +18,40 @@ export interface PersonPageLabels {
   openInGedcom: string;
   born: string;
   died: string;
-  /** The label beside the recorded sex; `sex` below names the value. */
+  /** The label; `sex` below names the value. */
   sexLabel: string;
   /** What to call a person whose record carries no name. */
   unnamed: string;
-  /** Said of an identifier the document does not declare. */
   unresolved: (xref: string) => string;
   /** `M`, `F` or whatever else the record states. */
   sex: (value: string) => string;
 }
 
 /**
- * Everything the page needs, handed in.
- *
- * It reaches for nothing global: not the plugin's language state, which is set
- * once at load and would make the page undrawable twice in two languages, and
- * not the application, which a test and the browser harness do not have. What
- * it does when a relative is chosen is its caller's business too.
+ * Everything the page needs, handed in: it reaches for nothing global, neither
+ * the plugin's language state — set once at load, so the page could not be
+ * drawn twice in two languages — nor the application, which a test does not
+ * have.
  */
 export interface PersonPageHost {
   labels: PersonPageLabels;
-  /** Which record this is a reading of, shown and reachable from the page. */
   source: { document: string; xref: string };
   /**
-   * A vault path made drawable, or nothing for a file the host will not or
-   * cannot serve. Answering nothing for a web address is how the page keeps
-   * its promise not to fetch one: that question belongs to the media preview
-   * and its setting, and is not answered a second way here.
+   * A vault path made drawable, or nothing. Answering nothing for a web
+   * address is how the page keeps its promise not to fetch one; that question
+   * is the media preview's, with a setting of its own.
    */
   resolveMedia?: (file: string) => string | null;
-  /** How large the portrait may be. The host measures; the page does not. */
+  /** The host measures; the page does not. */
   portraitBounds?: PreviewBounds;
   /** Names an event's tag. The model reads more tags than a catalogue names. */
   eventLabel: (tag: string) => string;
   onPerson: (relative: PersonRow) => void;
   onOpenSource: () => void;
-  /** The reader asked to see the picture itself, whole rather than cut. */
+  /** The picture itself, whole rather than cut. */
   onOpenPicture?: (picture: PersonMedia) => void;
 }
 
-/** Draws one person into the container, in place of whatever it held. */
 export function renderPersonPage(
   container: HTMLElement,
   person: Person,
@@ -120,13 +114,9 @@ function drawIdentity(
 }
 
 /**
- * The face beside the name, cut to the rectangle the record names.
- *
- * The cutting is the media preview's, not a second implementation: the image
- * sits behind a frame at its own size, moved so the rectangle's corner meets
- * the frame's. Its size is unknown until it loads, so the rectangle is applied
- * then; a file that will not load leaves the page as if none were named, since
- * a missing picture is not worth an error in place of a person.
+ * The cutting is the media preview's, not a second implementation. A file that
+ * will not load leaves the page as if none were named: a missing picture is
+ * not worth an error in place of a person.
  */
 function drawPortrait(
   top: HTMLElement,
@@ -139,8 +129,7 @@ function drawPortrait(
   }
   const bounds = host.portraitBounds ?? PORTRAIT_BOUNDS;
   const frame = element(top, "div", "gedcom-person-portrait");
-  // A face cut out of a group is a reason to want the group. Choosing the
-  // portrait asks for the file it came from, whole.
+  // A face cut out of a group is a reason to want the group.
   frame.setAttribute("role", "button");
   frame.tabIndex = 0;
   frame.addEventListener("click", () => {
@@ -161,13 +150,11 @@ function drawPortrait(
   }
   const wanted = portrait.crop;
   frame.classList.add("is-cropped");
-  // Cut it now, from the rectangle the record states, rather than waiting for
-  // the picture to load. A cropped frame carries no bound until it is sized,
-  // so a photograph left unsized paints whole for the length of the load —
-  // which for a group photograph is a flash of somebody else's face.
+  // Now, not on load: a cropped frame carries no bound until it is sized, so
+  // an unsized photograph paints whole for the length of the load — for a
+  // group photograph, a flash of somebody else's face.
   applyCrop(frame, image, wanted, bounds);
   image.addEventListener("load", () => {
-    // Now the picture's own size is known, the rectangle can be clamped to it.
     const crop = drawnCrop(wanted, image.naturalWidth, image.naturalHeight);
     if (!crop) {
       // A rectangle the picture does not reach means show the whole picture.
@@ -182,10 +169,7 @@ function drawPortrait(
   image.src = url;
 }
 
-/**
- * One labelled fact, with its place beneath the date it belongs to so that the
- * two read as one thing. A label never appears without the field it names.
- */
+/** A label never appears without the field it names. */
 function drawFact(
   facts: HTMLElement,
   label: string,
@@ -225,8 +209,7 @@ function drawFamily(
     }
   }
 
-  // Named rather than swallowed: a pointer the document does not answer is
-  // something the reader can go and fix.
+  // Named rather than swallowed: the reader can go and fix it.
   for (const xref of person.unresolved) {
     element(page, "div", "gedcom-person-unresolved").textContent =
       host.labels.unresolved(xref);
@@ -259,8 +242,7 @@ function drawEvents(
   if (person.events.length === 0) {
     return;
   }
-  // The one separator on the page hangs on this class: it divides the summary
-  // of a person from the record of their life.
+  // The page's one separator hangs on this class.
   const group = element(page, "div", "gedcom-person-group is-events");
   element(group, "h2", "gedcom-person-group-title").textContent =
     host.labels.events;
@@ -277,7 +259,6 @@ function drawEvent(
   const row = element(group, "div", "gedcom-person-event");
   element(row, "div", "gedcom-person-event-label").textContent =
     host.eventLabel(event.tag);
-  // The date as the record wrote it, whether or not a year was read from it.
   for (const value of [event.date?.text, event.place, event.value]) {
     if (value) {
       element(row, "div", "gedcom-person-event-detail").textContent = value;
@@ -285,11 +266,7 @@ function drawEvent(
   }
 }
 
-/**
- * The identifier that declares this person, which is what a reader takes back
- * to the file, and the way to the record. The document it came from is named
- * in the header above the page rather than repeated here.
- */
+/** The document it came from is named in the header, not repeated here. */
 function drawSource(head: HTMLElement, host: PersonPageHost): void {
   const line = element(head, "div", "gedcom-person-source");
   const link = element(line, "a", "gedcom-person-source-link");
@@ -302,7 +279,7 @@ function drawSource(head: HTMLElement, host: PersonPageHost): void {
   });
 }
 
-/** `1901–1975`, `1931–`, `–1975`, or nothing where neither year was read. */
+/** `1901–1975`, `1931–`, `–1975`, or nothing at all. */
 function lifespan(person: PersonRow): string | null {
   const born = person.birth?.year;
   const died = person.death?.year;
