@@ -494,6 +494,9 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       // A vault file only. A web address answers nothing, which is how the
       // page keeps its promise not to fetch one: that question is the media
       // preview's, with a setting of its own, and is not answered twice.
+      openPicture: (target) => {
+        void this.openPicture(target);
+      },
       resolveMedia: (target) => {
         if (/^[a-z][a-z0-9+.-]*:/iu.test(target)) {
           return null;
@@ -508,6 +511,28 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
    * The record behind a person. The same path an `obsidian://` link already
    * takes: open or reveal the file, then put the cursor on the record.
    */
+  /**
+   * The picture itself, whole. A tab rather than a popout window: the mobile
+   * app has no popout, which is the same reason `GedcomView` opens a vault
+   * file in a tab.
+   */
+  private async openPicture(target: string): Promise<void> {
+    const path = normalizePath(target);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(t("notice.vaultFileNotFound", { path }));
+      return;
+    }
+    const open = leafShowingFile(path, (visit) =>
+      this.app.workspace.iterateAllLeaves(visit),
+    );
+    if (open) {
+      await this.app.workspace.revealLeaf(open);
+      return;
+    }
+    await this.app.workspace.getLeaf("tab").openFile(file);
+  }
+
   private async openRecord(person: PersonRef): Promise<void> {
     const path = normalizePath(person.document.path);
     const file = this.app.vault.getAbstractFileByPath(path);

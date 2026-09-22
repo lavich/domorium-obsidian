@@ -20,6 +20,8 @@ export interface PersonViewHost {
   openSource(person: PersonRef): void;
   /** A vault path made drawable, or nothing for a file that is not there. */
   resolveMedia(file: string): string | null;
+  /** Show the picture's own file, whole rather than cut to a rectangle. */
+  openPicture(file: string): void;
 }
 
 /** The view's own state, which Obsidian persists and restores. */
@@ -138,6 +140,9 @@ export class PersonView extends ItemView {
         xref: this.person?.xref ?? "",
       },
       resolveMedia: (file) => this.host.resolveMedia(file),
+      onOpenPicture: (picture) => {
+        this.host.openPicture(picture.file);
+      },
       eventLabel: (tag) => namedEvent(tag),
       onPerson: (relative) => {
         this.follow(relative);

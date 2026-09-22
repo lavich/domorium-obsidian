@@ -53,6 +53,8 @@ export interface PersonPageHost {
   eventLabel: (tag: string) => string;
   onPerson: (relative: PersonRow) => void;
   onOpenSource: () => void;
+  /** The reader asked to see the picture itself, whole rather than cut. */
+  onOpenPicture?: (picture: PersonMedia) => void;
 }
 
 /** Draws one person into the container, in place of whatever it held. */
@@ -137,6 +139,13 @@ function drawPortrait(
   }
   const bounds = host.portraitBounds ?? PORTRAIT_BOUNDS;
   const frame = element(top, "div", "gedcom-person-portrait");
+  // A face cut out of a group is a reason to want the group. Choosing the
+  // portrait asks for the file it came from, whole.
+  frame.setAttribute("role", "button");
+  frame.tabIndex = 0;
+  frame.addEventListener("click", () => {
+    host.onOpenPicture?.(portrait);
+  });
   const image = top.ownerDocument.createElement("img");
   image.className = "gedcom-person-portrait-image";
   image.alt = portrait.title ?? "";

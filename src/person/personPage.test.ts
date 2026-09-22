@@ -30,6 +30,7 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
       file.startsWith("https://") ? null : `app://vault/${file}`,
     onPerson: vi.fn(),
     onOpenSource: vi.fn(),
+    onOpenPicture: vi.fn(),
     ...overrides,
   };
 }
@@ -281,6 +282,24 @@ describe("the face beside the name", () => {
 
     expect(container.querySelector(".gedcom-person-portrait")).toBeNull();
     expect(container.innerHTML).not.toContain("https://example.org");
+  });
+
+  it("opens the picture it was cut from when chosen", () => {
+    const onOpenPicture = vi.fn();
+    const one = pictured({ crop: { top: 10, left: 20, height: 30, width: 40 } });
+    draw(one, host({ onOpenPicture }));
+
+    container.querySelector<HTMLElement>(".gedcom-person-portrait")?.click();
+
+    expect(onOpenPicture).toHaveBeenCalledWith(one.portrait);
+  });
+
+  it("says the picture can be opened, so it does not look inert", () => {
+    draw(pictured());
+
+    const frame = container.querySelector<HTMLElement>(".gedcom-person-portrait");
+    expect(frame?.getAttribute("role")).toBe("button");
+    expect(frame?.tabIndex).toBe(0);
   });
 
   it("asks the host to resolve, rather than reaching for a vault itself", () => {

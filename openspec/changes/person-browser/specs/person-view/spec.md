@@ -114,6 +114,16 @@ setting, and this change does not answer it a second way.
 - **WHEN** the record names a picture at an `https` address
 - **THEN** the page does not fetch it
 
+#### Scenario: Opening the picture itself
+- **WHEN** the reader chooses the portrait
+- **THEN** the file it was cut from opens in a tab of its own, whole rather
+  than cut, so that the reader can see the photograph the person was taken out
+  of
+
+#### Scenario: Opening a picture the vault no longer holds
+- **WHEN** the reader chooses a portrait whose file has since left the vault
+- **THEN** nothing opens and the reader is told the file is not there
+
 ### Requirement: The page says which record it is a reading of
 
 The page SHALL show, near the person's name and without competing with it, the
