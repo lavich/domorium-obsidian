@@ -175,11 +175,31 @@ renders only the rows in view plus a margin, on a fixed row height, positioned
 inside a spacer of the full height — the usual approach, written here because
 Obsidian ships none.
 
-Whether the filtered list needs it at all is measured first: the second spike
-times building a plain list of 1,000, 5,000 and 20,000 rows in the sidebar. If
-the plain list is comfortable at 20,000 — the size the specification names and
-the only size measured — the window is dropped from this change and the
-requirement is met without it. Nothing is claimed above that size.
+**Measured, and the window stays.** A plain list of styled rows, built in
+Chromium at the sidebar's width:
+
+| What | Cost |
+| --- | --- |
+| 20,000 rows, first build with layout | 253 ms |
+| 20,000 rows, rebuilt | 237 ms |
+| Filtering down to 440 rows | 23 ms |
+| Filtering to text every row matches | 256 ms |
+| Scrolling twenty steps | 2 ms |
+| Resident elements at 20,000 rows | 80,000 |
+
+Scrolling is free — the browser does it — and a filter that narrows is cheap,
+which is the common case. What is not cheap is a rebuild that keeps every row:
+clearing the filter, or typing a letter most people match, costs a quarter of a
+second, and the search field's existing 150 ms settle sits on top of that. Near
+half a second after a keystroke is sluggish, and 80,000 resident elements is a
+weight the whole application carries, not just this view.
+
+So the window is built. The alternative — a plain list — is not comfortable at
+the size the specification names, which is what this spike was for.
+
+Nothing is claimed above 20,000. The heap figure Chromium reports was identical
+at all three sizes and is too coarse to be worth recording; the element count
+is the honest number.
 
 Filtering runs over the precomputed searchable text of each row, which is one
 lowercase string per person built at index time. Twenty thousand substring tests

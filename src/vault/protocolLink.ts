@@ -1,14 +1,13 @@
 import type { GedcomRecord } from "../editor/records";
+import { normalizeXref } from "../genealogy/personRef";
+
+export { normalizeXref };
 
 export const PROTOCOL_ACTION = "domorium";
 
 export interface GedcomLinkTarget {
   file: string;
   xref?: string;
-}
-
-export function normalizeXref(value: string): string {
-  return `@${value.replace(/^@+|@+$/gu, "")}@`;
 }
 
 export function parseGedcomLink(
