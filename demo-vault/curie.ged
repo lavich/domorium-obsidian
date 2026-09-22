@@ -31,11 +31,11 @@
 1 OBJE @O1@
 1 OBJE @O5@
 2 CROP
-3 TOP 40
-3 LEFT 30
-3 HEIGHT 240
-3 WIDTH 130
-2 TITL Marie, on the left
+3 TOP 278
+3 LEFT 208
+3 HEIGHT 132
+3 WIDTH 60
+2 TITL Marie, standing on the left
 1 OBJE @O6@
 1 SNOTE @N1@
 1 SOUR @S1@
@@ -59,11 +59,11 @@
 1 OBJE @O2@
 1 OBJE @O5@
 2 CROP
-3 TOP 40
-3 LEFT 175
-3 HEIGHT 240
-3 WIDTH 130
-2 TITL Pierre, in the middle
+3 TOP 276
+3 LEFT 292
+3 HEIGHT 132
+3 WIDTH 62
+2 TITL Pierre, standing on the right
 1 SOUR @S1@
 2 PAGE Nobel Prize in Physics 1903
 0 @I3@ INDI
@@ -195,6 +195,19 @@
 1 FAMC @F3@
 1 FAMS @F4@
 1 OBJE @O3@
+2 CROP
+3 TOP 22
+3 LEFT 338
+3 HEIGHT 440
+3 WIDTH 236
+2 TITL Irène, on the right of the pair
+1 OBJE @O5@
+2 CROP
+3 TOP 330
+3 LEFT 256
+3 HEIGHT 76
+3 WIDTH 46
+2 TITL Irène as a child, between her parents
 1 SOUR @S3@
 2 PAGE Nobel Prize in Chemistry 1935, shared with Frédéric Joliot
 0 @I13@ INDI
@@ -217,6 +230,13 @@
 2 GIVN Frédéric
 2 SURN Joliot
 1 SEX M
+1 OBJE @O3@
+2 CROP
+3 TOP 22
+3 LEFT 62
+3 HEIGHT 440
+3 WIDTH 236
+2 TITL Frédéric, on the left of the pair
 1 BIRT
 2 DATE 19 MAR 1900
 2 PLAC Paris, France
@@ -297,21 +317,21 @@
 2 DATE 19 NOV 1954
 2 PLAC New York, New York, United States
 0 @O1@ OBJE
-1 FILE Media/marie-sklodowska-curie.svg
-2 FORM image/svg+xml
-2 TITL Marie Skłodowska-Curie
+1 FILE Media/marie-sklodowska-curie.jpg
+2 FORM image/jpeg
+2 TITL Marie Skłodowska-Curie, photographed by Henri Manuel in the 1920s
 0 @O2@ OBJE
-1 FILE Media/pierre-curie.svg
-2 FORM image/svg+xml
-2 TITL Pierre Curie
+1 FILE Media/pierre-curie.jpg
+2 FORM image/jpeg
+2 TITL Pierre Curie, photographed by Dujardin about 1906
 0 @O3@ OBJE
-1 FILE Media/irene-joliot-curie.svg
-2 FORM image/svg+xml
-2 TITL Irène Joliot-Curie
+1 FILE Media/joliot-curie-couple.jpg
+2 FORM image/jpeg
+2 TITL Frédéric and Irène Joliot-Curie, photographed by Harcourt
 0 @O5@ OBJE
-1 FILE Media/curie-family-1908.svg
-2 FORM image/svg+xml
-2 TITL The Curie family, about 1908
+1 FILE Media/curie-family-1908.jpg
+2 FORM image/jpeg
+2 TITL The Curies in the garden of their house on Boulevard Kellermann
 0 @O6@ OBJE
 1 FILE https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/500px-Marie_Curie_c._1920s.jpg
 2 FORM image/jpeg
