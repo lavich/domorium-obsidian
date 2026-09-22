@@ -159,5 +159,11 @@
   "event.MARC": "Marriage contract",
   "event.MARL": "Marriage licence",
   "event.MARS": "Marriage settlement",
-  "event.DIVF": "Divorce filed"
+  "event.DIVF": "Divorce filed",
+  "families.searchPlaceholder": "Search families...",
+  "families.noResults": "No families found",
+  "families.count": {
+    "one": "{count} family",
+    "other": "{count} families"
+  }
 }

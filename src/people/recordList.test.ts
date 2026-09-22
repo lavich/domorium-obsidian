@@ -4,16 +4,36 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FamilyRow, PersonRow } from "../genealogy";
 import { drawFamilyRow } from "./familyRowView";
 import { drawPersonRow } from "./personRowView";
-import { RecordList, ROW_HEIGHT, type RecordListLabels } from "./recordList";
+import {
+  RecordList,
+  ROW_HEIGHT,
+  type RecordListLabels,
+  type SubjectPresentation,
+} from "./recordList";
 
 let container: HTMLElement;
 
 /** Resolved strings, so the renderer never reaches for the plugin's language. */
 const LABELS: RecordListLabels = {
+  subjects: [
+    { id: "people", name: "People" },
+    { id: "families", name: "Families" },
+  ],
+};
+
+const PEOPLE: SubjectPresentation = {
   count: (total) => `${total} people`,
-  subjects: [{ id: "people", name: "People" }, { id: "families", name: "Families" }],
   noResults: "No people found",
   searchPlaceholder: "Search people...",
+  draw: (row, record) => drawPersonRow(row, record as PersonRow, "Unnamed"),
+};
+
+const FAMILIES: SubjectPresentation = {
+  count: (total) => `${total} families`,
+  noResults: "No families found",
+  searchPlaceholder: "Search families...",
+  draw: (row, record) =>
+    drawFamilyRow(row, record as FamilyRow, (n) => `${n} children`),
 };
 
 function row(overrides: Partial<PersonRow> = {}): PersonRow {
@@ -28,17 +48,12 @@ function row(overrides: Partial<PersonRow> = {}): PersonRow {
   return base;
 }
 
-/** The subject's drawing is handed in; the list itself knows nothing of it. */
-const drawPerson = (row: HTMLElement, record: unknown): void => {
-  drawPersonRow(row, record as PersonRow, "Unnamed");
-};
-
 const listOf = (
   people: PersonRow[],
   onChoose = vi.fn(),
   metrics?: { viewport: number; rowHeight?: number },
 ): RecordList => {
-  const made = new RecordList(container, LABELS, onChoose, drawPerson, metrics);
+  const made = new RecordList(container, LABELS, onChoose, PEOPLE, metrics);
   made.setRecords(people);
   return made;
 };
@@ -340,7 +355,7 @@ describe("a list too long to draw whole", () => {
 
 describe("the bar above the list", () => {
   const withDocuments = (current?: string): RecordList => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.setDocuments(["curie.ged", "joliot.ged"], current);
     made.setRecords([row({ xref: "@I1@" })]);
     return made;
@@ -355,7 +370,7 @@ describe("the bar above the list", () => {
 
   it("offers both subjects and shows which is being listed", () => {
     const made = withDocuments("curie.ged");
-    made.setSubject("families");
+    made.setSubjectPresentation("families", FAMILIES);
 
     expect(texts(".gedcom-people-subject option")).toEqual([
       "People",
@@ -368,7 +383,7 @@ describe("the bar above the list", () => {
 
   it("hands a subject back rather than acting on it", () => {
     const onSubject = vi.fn();
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.onSubjectChosen(onSubject);
 
     const select = container.querySelector<HTMLSelectElement>(
@@ -382,7 +397,7 @@ describe("the bar above the list", () => {
 
   it("keeps the subject when the document changes", () => {
     const made = withDocuments("curie.ged");
-    made.setSubject("families");
+    made.setSubjectPresentation("families", FAMILIES);
     made.setDocuments(["curie.ged", "joliot.ged"], "joliot.ged");
 
     expect(
@@ -392,7 +407,7 @@ describe("the bar above the list", () => {
 
   it("hands a choice back rather than acting on it", () => {
     const onDocument = vi.fn();
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.onDocumentChosen(onDocument);
     made.setDocuments(["curie.ged", "joliot.ged"], "curie.ged");
 
@@ -414,7 +429,7 @@ describe("the bar above the list", () => {
   });
 
   it("offers one where the vault holds one", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.setDocuments(["curie.ged"], "curie.ged");
 
     expect(options()).toEqual(["curie.ged"]);
@@ -436,7 +451,7 @@ describe("the bar above the list", () => {
 
 describe("the height the window counts by", () => {
   it("is published to the stylesheet, so the two cannot disagree", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson, { viewport: 600 });
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE, { viewport: 600 });
     made.setRecords([row({ xref: "@I1@" })]);
 
     const root = container.querySelector<HTMLElement>(".gedcom-people");
@@ -447,7 +462,7 @@ describe("the height the window counts by", () => {
   });
 
   it("follows a height the host asked for", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson, {
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE, {
       viewport: 600,
       rowHeight: 60,
     });
@@ -524,7 +539,7 @@ describe("marking the person the reader is looking at", () => {
 
 describe("the order the view is built in", () => {
   it("puts the bar first, the search under it, then the count, then the rows", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.setDocuments(["curie.ged"], "curie.ged");
     made.setRecords([row({ xref: "@I1@" })]);
 
@@ -540,7 +555,7 @@ describe("the order the view is built in", () => {
   });
 
   it("keeps the bar, the search and the count out of the scrolling part", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.setRecords([row({ xref: "@I1@" })]);
 
     const scroller = container.querySelector(".gedcom-people-scroller");
@@ -551,7 +566,7 @@ describe("the order the view is built in", () => {
   });
 
   it("filters from its own search field", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), drawPerson);
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
     made.setRecords([
       row({ xref: "@I1@", name: "Marie", search: "marie" }),
       row({ xref: "@I2@", name: "Pierre", search: "pierre" }),
@@ -579,9 +594,7 @@ describe("what a family's row says", () => {
   });
 
   const families = (rows: FamilyRow[]): RecordList => {
-    const made = new RecordList(container, LABELS, vi.fn(), (row, record) =>
-      drawFamilyRow(row, record as FamilyRow, (n) => `${n} children`),
-    );
+    const made = new RecordList(container, LABELS, vi.fn(), FAMILIES);
     made.setRecords(rows);
     return made;
   };
@@ -636,9 +649,7 @@ describe("what a family's row says", () => {
 
 describe("marking while families are listed", () => {
   it("marks the family whose page is open", () => {
-    const made = new RecordList(container, LABELS, vi.fn(), (row, record) =>
-      drawFamilyRow(row, record as FamilyRow, (n) => `${n}`),
-    );
+    const made = new RecordList(container, LABELS, vi.fn(), FAMILIES);
     made.setRecords([
       { xref: "@F1@", unaddressable: false, spouseNames: [], name: "One", childCount: 0, search: "one" },
       { xref: "@F2@", unaddressable: false, spouseNames: [], name: "Two", childCount: 0, search: "two" },
@@ -648,5 +659,58 @@ describe("marking while families are listed", () => {
     const marked = [...container.querySelectorAll(".gedcom-person-row.is-marked")];
     expect(marked).toHaveLength(1);
     expect(marked[0]?.textContent).toContain("Two");
+  });
+});
+
+describe("everything the list says follows the subject", () => {
+  const family = (xref: string): FamilyRow => ({
+    xref,
+    unaddressable: false,
+    spouseNames: [],
+    name: xref,
+    childCount: 0,
+    search: xref.toLowerCase(),
+  });
+
+  const switched = (): RecordList => {
+    const made = new RecordList(container, LABELS, vi.fn(), PEOPLE);
+    made.setRecords([row({ xref: "@I1@" })]);
+    made.setSubjectPresentation("families", FAMILIES);
+    made.setRecords([family("@F1@"), family("@F2@")]);
+    return made;
+  };
+
+  it("counts families, not people", () => {
+    switched();
+
+    expect(texts(".gedcom-people-count")).toEqual(["2 families"]);
+  });
+
+  it("invites a search of families", () => {
+    switched();
+
+    expect(
+      container.querySelector<HTMLInputElement>(".search-input-container input")
+        ?.placeholder,
+    ).toBe("Search families...");
+  });
+
+  it("says no families were found", () => {
+    const made = switched();
+    made.setFilter("nobody");
+
+    expect(texts(".gedcom-people-empty")).toEqual(["No families found"]);
+  });
+
+  it("says all three again for people when the subject goes back", () => {
+    const made = switched();
+    made.setSubjectPresentation("people", PEOPLE);
+    made.setRecords([row({ xref: "@I1@" })]);
+
+    expect(texts(".gedcom-people-count")).toEqual(["1 people"]);
+    expect(
+      container.querySelector<HTMLInputElement>(".search-input-container input")
+        ?.placeholder,
+    ).toBe("Search people...");
   });
 });

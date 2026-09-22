@@ -9,11 +9,20 @@ import type { Row } from "../genealogy";
  * view built on Obsidian fills these from the catalogue.
  */
 export interface RecordListLabels {
-  count: (total: number) => string;
   /** What of the document may be listed, and what each is called. */
   subjects: { id: string; name: string }[];
+}
+
+/**
+ * Everything that changes when the subject does, set in one call so that
+ * changing the subject and forgetting one of them is not possible. Saying
+ * "5 people" over a list of families is what that mistake looks like.
+ */
+export interface SubjectPresentation {
+  count: (total: number) => string;
   noResults: string;
   searchPlaceholder: string;
+  draw: (row: HTMLElement, record: Row) => void;
 }
 
 /** What the list needs to know about the space it is drawn in. */
@@ -47,7 +56,7 @@ export class RecordList {
   private people: Row[] = [];
   private marked: string | null = null;
   private onDocument: ((document: string) => void) | null = null;
-  private drawing: (row: HTMLElement, record: Row) => void;
+  private readonly searchEl: HTMLInputElement;
   private readonly documentEl: HTMLSelectElement;
   private readonly subjectEl: HTMLSelectElement;
   private onSubject: ((subject: string) => void) | null = null;
@@ -63,10 +72,9 @@ export class RecordList {
     container: HTMLElement,
     private readonly labels: RecordListLabels,
     private readonly onChoose: (record: Row) => void,
-    drawInto: (row: HTMLElement, record: Row) => void,
+    private subject: SubjectPresentation,
     private readonly metrics?: RecordListMetrics,
   ) {
-    this.drawing = drawInto;
     container.replaceChildren();
     const root = element(container, "div", "gedcom-people");
     root.style.setProperty(
@@ -106,7 +114,8 @@ export class RecordList {
     const wrap = element(root, "div", "search-input-container");
     const search = element(wrap, "input", "") as HTMLInputElement;
     search.type = "search";
-    search.placeholder = labels.searchPlaceholder;
+    this.searchEl = search;
+    search.placeholder = subject.searchPlaceholder;
     search.addEventListener("input", () => {
       this.setFilter(search.value);
       this.scrollEl.scrollTop = 0;
@@ -145,18 +154,12 @@ export class RecordList {
     this.onSubject = run;
   }
 
-  /**
-   * Which subject is being listed. The two selections are independent: a
-   * change of document keeps the subject, and a change of subject keeps the
-   * document.
-   */
-  setSubject(subject: string): void {
-    this.subjectEl.value = subject;
-  }
-
-  /** What a row is drawn as. Changed when the subject does. */
-  setDrawing(draw: (row: HTMLElement, record: Row) => void): void {
-    this.drawing = draw;
+  /** The subject, and everything the list says and draws for it. */
+  setSubjectPresentation(id: string, subject: SubjectPresentation): void {
+    this.subject = subject;
+    this.subjectEl.value = id;
+    this.searchEl.placeholder = subject.searchPlaceholder;
+    this.draw();
   }
 
   setRecords(people: Row[]): void {
@@ -204,13 +207,13 @@ export class RecordList {
     this.shown = this.filter
       ? this.people.filter((person) => person.search.includes(this.filter))
       : this.people;
-    this.countEl.textContent = this.labels.count(this.shown.length);
+    this.countEl.textContent = this.subject.count(this.shown.length);
     this.rowsEl.replaceChildren();
     // A search that found nothing is not the same as a document with nobody
     // in it, which the view above says.
     if (this.filter !== "" && this.shown.length === 0) {
       element(this.rowsEl, "div", "gedcom-people-empty").textContent =
-        this.labels.noResults;
+        this.subject.noResults;
       return;
     }
     this.drawWindow();
@@ -258,7 +261,7 @@ export class RecordList {
     }
     // What a row says is the subject's business; the window, the filter and
     // the mark are not.
-    this.drawing(row, record);
+    this.subject.draw(row, record);
     row.addEventListener("click", () => {
       this.onChoose(record);
     });

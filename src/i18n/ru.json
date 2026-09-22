@@ -173,5 +173,13 @@
   "event.MARC": "Брачный договор",
   "event.MARL": "Разрешение на брак",
   "event.MARS": "Брачное соглашение",
-  "event.DIVF": "Заявление о разводе"
+  "event.DIVF": "Заявление о разводе",
+  "families.searchPlaceholder": "Поиск семей...",
+  "families.noResults": "Семьи не найдены",
+  "families.count": {
+    "one": "{count} семья",
+    "few": "{count} семьи",
+    "many": "{count} семей",
+    "other": "{count} семьи"
+  }
 }

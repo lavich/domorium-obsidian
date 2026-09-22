@@ -52,6 +52,28 @@ the document.
 
 ## ADDED Requirements
 
+### Requirement: Everything the list says follows the subject
+
+Every word the list writes about what it is showing SHALL name the subject
+being shown: the count above the rows, the placeholder in the search field, and
+what it says when a search finds nothing.
+
+A count SHALL say how many of that subject are shown, spelt by the plural rules
+of the language shown, as a count of people already is.
+
+#### Scenario: Counting families
+- **WHEN** families are being listed and there are five
+- **THEN** the count says there are five families, not five people
+
+#### Scenario: Searching families
+- **WHEN** families are being listed
+- **THEN** the search field invites a search of families
+
+#### Scenario: A search of families finding nothing
+- **WHEN** families are being listed and the reader types text no family
+  matches
+- **THEN** the list says that no families were found
+
 ### Requirement: A family row tells one family from another
 
 Where families are being listed, each row SHALL show the people the family

@@ -12,9 +12,15 @@ import { GEDCOM_ICON_ID } from "../icon";
 import { plural, t } from "../i18n";
 import { drawFamilyRow } from "./familyRowView";
 import { drawPersonRow } from "./personRowView";
-import { RecordList, ROW_HEIGHT } from "./recordList";
+import {
+  RecordList,
+  ROW_HEIGHT,
+  type SubjectPresentation,
+} from "./recordList";
 
 export const PEOPLE_VIEW_TYPE = "domorium-people";
+
+type Subject = "people" | "families";
 
 export interface PeopleViewHost {
   activeDocument(): { document: DocumentRef } | null;
@@ -33,7 +39,7 @@ export class PeopleView extends ItemView {
 
   private list: RecordList | null = null;
   private showing: DocumentRef | null = null;
-  private subject: "people" | "families" = "people";
+  private subject: Subject = "people";
   private emptyEl: HTMLElement | null = null;
 
   constructor(
@@ -95,26 +101,19 @@ export class PeopleView extends ItemView {
     this.markShownPerson();
   }
 
-  /** The subject decides both what is listed and how a row of it is drawn. */
+  /**
+   * Everything the subject decides, set together: what is listed, how a row of
+   * it is drawn, and every word the list says about it.
+   */
   private redraw(): void {
     const index = this.showing && this.host.indexOf(this.showing);
     if (!index || !this.list) {
       return;
     }
-    if (this.subject === "families") {
-      this.list.setDrawing((row, record) =>
-        drawFamilyRow(row, record as FamilyRow, (count) =>
-          plural("family.childCount", count),
-        ),
-      );
-      this.list.setRecords(index.families);
-    } else {
-      this.list.setDrawing((row, record) =>
-        drawPersonRow(row, record as PersonRow, t("people.unnamed")),
-      );
-      this.list.setRecords(index.people);
-    }
-    this.list.setSubject(this.subject);
+    this.list.setSubjectPresentation(this.subject, presentationOf(this.subject));
+    this.list.setRecords(
+      this.subject === "families" ? index.families : index.people,
+    );
   }
 
   private refreshDocuments(): void {
@@ -132,16 +131,13 @@ export class PeopleView extends ItemView {
     this.list = new RecordList(
       root,
       {
-        count: (total) => plural("people.count", total),
         subjects: [
           { id: "people", name: t("people.subjectPeople") },
           { id: "families", name: t("people.subjectFamilies") },
         ],
-        noResults: t("people.noResults"),
-        searchPlaceholder: t("people.searchPlaceholder"),
       },
       (record) => this.choose(record),
-      (row, record) => drawPersonRow(row, record as PersonRow, t("people.unnamed")),
+      presentationOf("people"),
       // The sidebar can measure itself; the list cannot, and must not try.
       { viewport: root.clientHeight || 600, rowHeight: ROW_HEIGHT },
     );
@@ -190,4 +186,26 @@ export class PeopleView extends ItemView {
     }
     this.host.openPerson(at, (record as PersonRow).name);
   }
+}
+
+/** One subject, and every word and drawing that follows it. */
+function presentationOf(subject: Subject): SubjectPresentation {
+  if (subject === "families") {
+    return {
+      count: (total) => plural("families.count", total),
+      noResults: t("families.noResults"),
+      searchPlaceholder: t("families.searchPlaceholder"),
+      draw: (row, record) =>
+        drawFamilyRow(row, record as FamilyRow, (count) =>
+          plural("family.childCount", count),
+        ),
+    };
+  }
+  return {
+    count: (total) => plural("people.count", total),
+    noResults: t("people.noResults"),
+    searchPlaceholder: t("people.searchPlaceholder"),
+    draw: (row, record) =>
+      drawPersonRow(row, record as PersonRow, t("people.unnamed")),
+  };
 }
