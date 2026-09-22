@@ -2,13 +2,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { PersonRow } from "../genealogy";
-import { PeopleList, type PeopleListLabels } from "./peopleList";
+import { PeopleList, ROW_HEIGHT, type PeopleListLabels } from "./peopleList";
 
 let container: HTMLElement;
 
 /** Resolved strings, so the renderer never reaches for the plugin's language. */
 const LABELS: PeopleListLabels = {
   count: (total) => `${total} people`,
+  heading: (document, count) => `${document} · ${count}`,
   noResults: "No people found",
   unnamed: "Unnamed",
   searchPlaceholder: "Search people...",
@@ -316,5 +317,56 @@ describe("a list too long to draw whole", () => {
     made.setFilter("surname7");
 
     expect(texts(".gedcom-person-name")[0]).toBe("Given7 Surname7");
+  });
+});
+
+describe("which document the list is showing", () => {
+  it("names it beside the count", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setPeople([row({ xref: "@I1@" })], "curie.ged");
+
+    expect(texts(".gedcom-people-count")).toEqual(["curie.ged · 1 people"]);
+  });
+
+  it("follows when the document is replaced", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setPeople([row({ xref: "@I1@" })], "curie.ged");
+    made.setPeople([row({ xref: "@I1@" })], "joliot.ged");
+
+    expect(texts(".gedcom-people-count")).toEqual(["joliot.ged · 1 people"]);
+  });
+
+  it("says the count alone where no document has been named", () => {
+    const made = new PeopleList(container, LABELS, vi.fn());
+    made.setPeople([row({ xref: "@I1@" })]);
+
+    expect(texts(".gedcom-people-count")).toEqual(["1 people"]);
+  });
+});
+
+describe("the height the window counts by", () => {
+  it("is published to the stylesheet, so the two cannot disagree", () => {
+    const made = new PeopleList(container, LABELS, vi.fn(), { viewport: 600 });
+    made.setPeople([row({ xref: "@I1@" })]);
+
+    const root = container.querySelector<HTMLElement>(".gedcom-people");
+
+    expect(root?.style.getPropertyValue("--gedcom-person-row-height")).toBe(
+      `${ROW_HEIGHT}px`,
+    );
+  });
+
+  it("follows a height the host asked for", () => {
+    const made = new PeopleList(container, LABELS, vi.fn(), {
+      viewport: 600,
+      rowHeight: 60,
+    });
+    made.setPeople([row({ xref: "@I1@" })]);
+
+    expect(
+      container
+        .querySelector<HTMLElement>(".gedcom-people")
+        ?.style.getPropertyValue("--gedcom-person-row-height"),
+    ).toBe("60px");
   });
 });

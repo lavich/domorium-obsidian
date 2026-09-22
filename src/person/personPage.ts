@@ -8,6 +8,10 @@ export interface PersonPageLabels {
   children: string;
   events: string;
   openInGedcom: string;
+  born: string;
+  died: string;
+  /** The label beside the recorded sex; `sex` below names the value. */
+  sexLabel: string;
   /** What to call a person whose record carries no name. */
   unnamed: string;
   /** Said of an identifier the document does not declare. */
@@ -26,6 +30,8 @@ export interface PersonPageLabels {
  */
 export interface PersonPageHost {
   labels: PersonPageLabels;
+  /** Which record this is a reading of, shown and reachable from the page. */
+  source: { document: string; xref: string };
   /** Names an event's tag. The model reads more tags than a catalogue names. */
   eventLabel: (tag: string) => string;
   onPerson: (relative: PersonRow) => void;
@@ -44,7 +50,6 @@ export function renderPersonPage(
   drawIdentity(page, person, host);
   drawFamily(page, person, host);
   drawEvents(page, person, host);
-  drawSource(page, host);
 }
 
 function drawIdentity(
@@ -61,20 +66,24 @@ function drawIdentity(
     element(head, "div", "gedcom-person-lifespan").textContent = span;
   }
 
-  // A field the record does not state is left out. No dash, no "unknown".
-  const fields = element(page, "div", "gedcom-person-fields");
-  for (const value of [
-    person.birth?.text,
-    person.death?.text,
-    person.place,
+  drawSource(head, host);
+
+  // A summary of who the person was, labelled so the reader does not have to
+  // infer which date is which from the order. It does not replace the events
+  // below, which are the record in full and in its own order.
+  const facts = element(page, "div", "gedcom-person-facts");
+  const birth = person.events.find((event) => event.tag === "BIRT");
+  const death = person.events.find((event) => event.tag === "DEAT");
+  drawFact(facts, host.labels.born, person.birth?.text, birth?.place);
+  drawFact(facts, host.labels.died, person.death?.text, death?.place);
+  drawFact(
+    facts,
+    host.labels.sexLabel,
     person.sex === undefined ? undefined : host.labels.sex(person.sex),
-  ]) {
-    if (value) {
-      element(fields, "div", "gedcom-person-field").textContent = value;
-    }
-  }
-  if (!fields.hasChildNodes()) {
-    fields.remove();
+    undefined,
+  );
+  if (!facts.hasChildNodes()) {
+    facts.remove();
   }
 
   if (person.otherNames.length > 0) {
@@ -84,6 +93,28 @@ function drawIdentity(
     for (const name of person.otherNames) {
       element(other, "div", "gedcom-person-other-name").textContent = name;
     }
+  }
+}
+
+/**
+ * One labelled fact, with its place beneath the date it belongs to so that the
+ * two read as one thing. A label never appears without the field it names.
+ */
+function drawFact(
+  facts: HTMLElement,
+  label: string,
+  value: string | undefined,
+  place: string | undefined,
+): void {
+  if (!value) {
+    return;
+  }
+  const fact = element(facts, "div", "gedcom-person-fact");
+  element(fact, "div", "gedcom-person-fact-label").textContent = label;
+  const body = element(fact, "div", "gedcom-person-fact-body");
+  element(body, "div", "gedcom-person-fact-value").textContent = value;
+  if (place) {
+    element(body, "div", "gedcom-person-fact-place").textContent = place;
   }
 }
 
@@ -142,7 +173,9 @@ function drawEvents(
   if (person.events.length === 0) {
     return;
   }
-  const group = element(page, "div", "gedcom-person-group");
+  // The one separator on the page hangs on this class: it divides the summary
+  // of a person from the record of their life.
+  const group = element(page, "div", "gedcom-person-group is-events");
   element(group, "h2", "gedcom-person-group-title").textContent =
     host.labels.events;
   for (const event of person.events) {
@@ -166,10 +199,24 @@ function drawEvent(
   }
 }
 
-function drawSource(page: HTMLElement, host: PersonPageHost): void {
-  const action = element(page, "button", "gedcom-person-source");
-  action.textContent = host.labels.openInGedcom;
-  action.addEventListener("click", () => {
+/**
+ * Which record this page is a reading of. Person view does not replace a
+ * GEDCOM record and should not look as though it has; with two documents open
+ * this line is the only thing distinguishing two people who share an
+ * identifier. The identifier is also the way to the record, so the page does
+ * not carry a second control saying the same thing.
+ */
+function drawSource(head: HTMLElement, host: PersonPageHost): void {
+  const line = element(head, "div", "gedcom-person-source");
+  element(line, "span", "gedcom-person-source-file").textContent =
+    host.source.document;
+  element(line, "span", "gedcom-person-source-sep").textContent = " · ";
+  const link = element(line, "a", "gedcom-person-source-link");
+  link.textContent = host.source.xref;
+  link.setAttribute("role", "button");
+  link.tabIndex = 0;
+  link.setAttribute("aria-label", host.labels.openInGedcom);
+  link.addEventListener("click", () => {
     host.onOpenSource();
   });
 }
@@ -186,7 +233,7 @@ function lifespan(person: PersonRow): string | null {
 
 function element(
   parent: HTMLElement,
-  tag: "div" | "span" | "h1" | "h2" | "button",
+  tag: "div" | "span" | "h1" | "h2" | "a",
   cls: string,
 ): HTMLElement {
   const node = parent.ownerDocument.createElement(tag);

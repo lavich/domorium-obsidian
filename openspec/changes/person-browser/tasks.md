@@ -39,3 +39,12 @@
 ## 6. Check
 
 - [x] 6.1 Run `npm run check` and `npm run test:browser`, both green
+
+## 7. What the first reading of the built thing asked for
+
+- [x] 7.1 Label the identity summary in `src/person/personPage.ts`: Born, Died and Sex, each with its place beneath the date it belongs to, read from the person's own birth and death events so that both places are available rather than the single one the list row carries. A label appears only with the field it names. Verify in `src/person/personPage.test.ts`: a full record shows both labelled dates each above its own place; a birth with no place shows no empty line; a person with only a death shows no Born label
+- [x] 7.2 Show the document and the identifier beneath the name in `src/person/personPage.ts`, and make the identifier the way the reader reaches the record, replacing the separate control. Add the keys to `src/i18n/en.json` and `ru.json`. Verify in `src/person/personPage.test.ts`: the file's name and `@I1@` are shown; choosing the identifier calls back for the source; two people from different documents each name their own file
+- [x] 7.3 Name the document above the list in `src/people/peopleList.ts`, beside the count. Verify in `src/people/peopleList.test.ts`: the name and the count are shown together; the name follows when the document is replaced
+- [x] 7.4 Make a relative's whole row read as the target it already is, in `styles.css`: the hover covers the row, the years are not dimmed away from it, and the name is not the only thing that looks chooseable. Verify by hand in `demo-vault/` that the row highlights and opens wherever it is clicked
+- [x] 7.5 Tighten the sidebar rows by about a fifth and weaken the separators between the family groups in `styles.css`, keeping one before the events section. Verify by hand in `demo-vault/` in both themes, and re-check that the row height the window counts by still matches the styled height
+- [x] 7.6 Run `npm run check` and `npm run test:browser`, both green

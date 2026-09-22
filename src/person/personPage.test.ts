@@ -16,12 +16,16 @@ function host(overrides: Partial<PersonPageHost> = {}): PersonPageHost {
       children: "Children",
       events: "Events",
       openInGedcom: "Open in GEDCOM",
+      born: "Born",
+      died: "Died",
+      sexLabel: "Sex",
       unnamed: "Unnamed",
       unresolved: (xref) => `Not in this file: ${xref}`,
       sex: (value) => ({ M: "Male", F: "Female" })[value] ?? value,
     },
     // The model reads more tags than the catalogue names, on purpose.
     eventLabel: (tag) => ({ BIRT: "Birth", DEAT: "Death", OCCU: "Occupation" })[tag] ?? tag,
+    source: { document: "curie.ged", xref: "@I1@" },
     onPerson: vi.fn(),
     onOpenSource: vi.fn(),
     ...overrides,
@@ -65,21 +69,69 @@ beforeEach(() => {
 });
 
 describe("who the person was", () => {
+  const full = (): Person =>
+    person({
+      birth: { text: "12 MAR 1901", year: 1901, precision: "exact" },
+      death: { text: "7 MAY 1975", year: 1975, precision: "exact" },
+      place: "London, England",
+      sex: "M",
+      events: [
+        { tag: "BIRT", date: { text: "12 MAR 1901", year: 1901 }, place: "London, England" },
+        { tag: "DEAT", date: { text: "7 MAY 1975", year: 1975 }, place: "New York, USA" },
+      ],
+    });
+
   it("heads with the name and shows the dates and places as written", () => {
-    draw(
-      person({
-        birth: { text: "12 MAR 1901", year: 1901, precision: "exact" },
-        death: { text: "7 MAY 1975", year: 1975, precision: "exact" },
-        place: "London, England",
-        sex: "M",
-      }),
-    );
+    draw(full());
 
     expect(texts(".gedcom-person-title")).toEqual(["John Smith"]);
     expect(container.textContent).toContain("12 MAR 1901");
     expect(container.textContent).toContain("7 MAY 1975");
     expect(container.textContent).toContain("London, England");
     expect(container.textContent).toContain("Male");
+  });
+
+  it("labels each fact, so the reader need not infer it from the order", () => {
+    draw(full());
+
+    expect(texts(".gedcom-person-fact-label")).toEqual(["Born", "Died", "Sex"]);
+  });
+
+  it("puts each place beneath the date it belongs to, not in one list", () => {
+    draw(full());
+
+    const facts = [...container.querySelectorAll(".gedcom-person-fact")].map(
+      (node) => node.textContent ?? "",
+    );
+
+    expect(facts[0]).toContain("12 MAR 1901");
+    expect(facts[0]).toContain("London, England");
+    expect(facts[0]).not.toContain("New York");
+    expect(facts[1]).toContain("7 MAY 1975");
+    expect(facts[1]).toContain("New York, USA");
+  });
+
+  it("shows a date whose event states no place, with nothing beneath it", () => {
+    draw(
+      person({
+        birth: { text: "1901", year: 1901 },
+        events: [{ tag: "BIRT", date: { text: "1901", year: 1901 } }],
+      }),
+    );
+
+    expect(texts(".gedcom-person-fact-label")).toEqual(["Born"]);
+    expect(texts(".gedcom-person-fact-place")).toEqual([]);
+  });
+
+  it("shows no Born label for a person the record states only a death for", () => {
+    draw(
+      person({
+        death: { text: "1975", year: 1975 },
+        events: [{ tag: "DEAT", date: { text: "1975", year: 1975 } }],
+      }),
+    );
+
+    expect(texts(".gedcom-person-fact-label")).toEqual(["Died"]);
   });
 
   it("shows the span of years beside the name", () => {
@@ -98,7 +150,7 @@ describe("who the person was", () => {
 
     expect(texts(".gedcom-person-title")).toEqual(["John Smith"]);
     expect(texts(".gedcom-person-lifespan")).toEqual([]);
-    expect(texts(".gedcom-person-field")).toEqual([]);
+    expect(texts(".gedcom-person-fact-label")).toEqual([]);
     expect(container.textContent).not.toContain("—");
     expect(container.textContent).not.toContain("unknown");
   });
@@ -115,6 +167,39 @@ describe("who the person was", () => {
     expect(texts(".gedcom-person-title")).toEqual(["John Smith"]);
     expect(container.textContent).toContain("Also known as");
     expect(container.textContent).toContain("Jonathan Smith");
+  });
+});
+
+describe("which record the page is a reading of", () => {
+  it("names the document and the identifier beneath the name", () => {
+    draw(person({ xref: "@I1@" }), host({ source: { document: "curie.ged", xref: "@I1@" } }));
+
+    const line = texts(".gedcom-person-source")[0] ?? "";
+
+    expect(line).toContain("curie.ged");
+    expect(line).toContain("@I1@");
+  });
+
+  it("names whichever document the person was read from", () => {
+    draw(person({ xref: "@I1@" }), host({ source: { document: "joliot.ged", xref: "@I1@" } }));
+
+    expect(texts(".gedcom-person-source")[0]).toContain("joliot.ged");
+  });
+
+  it("reaches the record from the identifier, with no second control", () => {
+    const onOpenSource = vi.fn();
+    draw(
+      person(),
+      host({ source: { document: "curie.ged", xref: "@I1@" }, onOpenSource }),
+    );
+
+    container.querySelector<HTMLElement>(".gedcom-person-source-link")?.click();
+
+    expect(onOpenSource).toHaveBeenCalled();
+    expect(
+      container.querySelectorAll("button.gedcom-person-source-action"),
+      "one way to the record, not two",
+    ).toHaveLength(0);
   });
 });
 
@@ -235,10 +320,8 @@ describe("what the page hands back to its caller", () => {
     const onOpenSource = vi.fn();
     draw(person(), host({ onOpenSource }));
 
-    const action = container.querySelector<HTMLElement>(".gedcom-person-source");
-    expect(action?.textContent).toBe("Open in GEDCOM");
+    container.querySelector<HTMLElement>(".gedcom-person-source-link")?.click();
 
-    action?.click();
     expect(onOpenSource).toHaveBeenCalled();
   });
 

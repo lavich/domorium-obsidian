@@ -9,7 +9,7 @@ import {
   type PersonRow,
 } from "../genealogy";
 import { plural, t } from "../i18n";
-import { PeopleList } from "./peopleList";
+import { PeopleList, ROW_HEIGHT } from "./peopleList";
 
 export const PEOPLE_VIEW_TYPE = "domorium-people";
 
@@ -24,8 +24,11 @@ export interface PeopleViewHost {
   indexes(): IndexCache;
 }
 
-/** The height of a row, which styles.css sets and the window counts by. */
-const ROW_HEIGHT = 44;
+/** `family/curie.ged` reads as `curie.ged`. */
+function baseName(path: string): string {
+  const cut = path.lastIndexOf("/");
+  return cut === -1 ? path : path.slice(cut + 1);
+}
 
 export class PeopleView extends ItemView {
   /** A list is not something a reader navigates away from. */
@@ -78,7 +81,7 @@ export class PeopleView extends ItemView {
     this.showing = active.document;
     this.emptyEl?.remove();
     this.emptyEl = null;
-    this.list?.setPeople(index.people);
+    this.list?.setPeople(index.people, baseName(active.document.path));
   }
 
   private draw(): void {
@@ -108,6 +111,7 @@ export class PeopleView extends ItemView {
       scroller,
       {
         count: (total) => plural("people.count", total),
+        heading: (document, count) => `${document} · ${count}`,
         noResults: t("people.noResults"),
         unnamed: t("people.unnamed"),
         searchPlaceholder: t("people.searchPlaceholder"),

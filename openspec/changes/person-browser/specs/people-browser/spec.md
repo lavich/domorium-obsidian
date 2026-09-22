@@ -16,7 +16,9 @@ Moving to something that is not a GEDCOM file — a note, a setting, a canvas �
 SHALL leave the list as it was rather than empty it, so that a reader who steps
 into a note to read something comes back to the list they left.
 
-The list SHALL say how many people it is showing.
+The list SHALL say how many people it is showing, and which document they are
+from. A vault may hold more than one GEDCOM, and a list of names says nothing
+about which tree they belong to.
 
 A person the model reports as unaddressable — a record declaring no
 cross-reference — SHALL be left out of the list, having no identifier to open
@@ -26,11 +28,12 @@ out is this view's decision, not the model's.
 #### Scenario: Opening a GEDCOM file
 - **WHEN** the reader opens a GEDCOM file holding 17 people and the sidebar view
   is showing
-- **THEN** the list shows those 17 people and says there are 17
+- **THEN** the list shows those 17 people, says there are 17, and names the file
+  they came from
 
 #### Scenario: Moving to a second GEDCOM file
 - **WHEN** the reader moves from one GEDCOM file to another
-- **THEN** the list shows the second file's people
+- **THEN** the list shows the second file's people, and names the second file
 
 #### Scenario: Moving to a note
 - **WHEN** the reader moves from a GEDCOM file to a markdown note

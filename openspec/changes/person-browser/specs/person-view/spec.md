@@ -36,13 +36,32 @@ years they lived, the dates of birth and death as the record writes them, the
 places of birth and death where stated, and their sex where the record states
 it.
 
+Each of those SHALL be labelled, so that a reader knows which date is which
+without inferring it from the order they appear in. A birth SHALL be shown with
+its place beneath it rather than in a separate list, so that a date and the
+place it happened read as one fact; a death the same.
+
 A field the record does not state SHALL be left out. The page SHALL NOT show an
-empty row, a dash, or the word "unknown" to keep its shape.
+empty row, a dash, or the word "unknown" to keep its shape. A label SHALL NOT
+appear without the field it names.
+
+This section is a summary of who the person was. It does not replace the events
+section below it, which is the full record in the order the file writes it, and
+the two SHALL be allowed to state the same event.
 
 #### Scenario: A person with a full record
 - **WHEN** the record states a birth on 12 Mar 1901 in London and a death on
   7 May 1975 in New York
-- **THEN** the page heads with the name and shows both dates and both places
+- **THEN** the page heads with the name and shows both dates and both places,
+  each labelled, with each place beneath the date it belongs to
+
+#### Scenario: A birth the record gives no place for
+- **WHEN** the record states a birth date and no birth place
+- **THEN** the date is shown under its label and no empty place sits beneath it
+
+#### Scenario: A person the record states nothing but a death for
+- **WHEN** the record states a death and no birth
+- **THEN** the death is shown under its label and no birth label appears
 
 #### Scenario: A person with only a name
 - **WHEN** the record carries nothing but `1 NAME John /Smith/`
@@ -54,6 +73,34 @@ empty row, a dash, or the word "unknown" to keep its shape.
 - **THEN** that name is shown as well, marked as another name rather than
   replacing the heading
 
+### Requirement: The page says which record it is a reading of
+
+The page SHALL show, near the person's name and without competing with it, the
+document the person was read from and the identifier that declares them.
+
+Person view is a reading of a GEDCOM record, not a replacement for one, and a
+reader who has two GEDCOM files open needs to know which of them they are
+looking at. Where two documents declare the same identifier this is the only
+thing on the page that tells them apart.
+
+That identifier SHALL be the way the reader reaches the record, so the page
+does not carry two separate controls for the same thing.
+
+#### Scenario: A person read from a file
+- **WHEN** the page shows `@I1@` of `curie.ged`
+- **THEN** it shows the file's name and `@I1@` beneath the person's name, in
+  text that does not compete with it
+
+#### Scenario: The same identifier in two files
+- **WHEN** the reader opens `@I1@` of `curie.ged` and then `@I1@` of
+  `joliot.ged`
+- **THEN** each page names the file it was read from
+
+#### Scenario: Reaching the record from it
+- **WHEN** the reader chooses the identifier shown there
+- **THEN** the record is reached exactly as the action described below reaches
+  it
+
 ### Requirement: The page shows the family around the person
 
 The page SHALL show the person's parents, partners and children, each group
@@ -61,6 +108,11 @@ named, and each group left out entirely when the record yields nobody for it.
 
 Each person shown in those groups SHALL be shown the way a row in the people
 list is: their name and the years they lived.
+
+The whole of a relative's row SHALL be what the reader chooses, not the name
+alone, and SHALL look like it: following a line up a tree is the most repeated
+action on this page, and a target the width of a name is a target the reader
+has to aim at.
 
 #### Scenario: A person with parents, a partner and children
 - **WHEN** the record resolves to two parents, one partner and two children
@@ -85,6 +137,10 @@ show that person in the same Person view rather than in a new tab.
 #### Scenario: Following a father
 - **WHEN** the reader opens the person shown as a parent
 - **THEN** the view shows that parent, and no second Person view is opened
+
+#### Scenario: Choosing a relative by the years rather than the name
+- **WHEN** the reader chooses the part of a relative's row that shows the years
+- **THEN** that relative opens, as it does from the name
 
 #### Scenario: An unresolved relative
 - **WHEN** the reader attempts to open a relative the document does not declare

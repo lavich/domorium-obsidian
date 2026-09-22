@@ -10,6 +10,8 @@ import { UNNAMED, type PersonRow } from "../genealogy";
  */
 export interface PeopleListLabels {
   count: (total: number) => string;
+  /** The document and the count together: `curie.ged · 17 people`. */
+  heading: (document: string, count: string) => string;
   noResults: string;
   /** What to call a person whose record carries no name. */
   unnamed: string;
@@ -24,7 +26,13 @@ export interface PeopleListMetrics {
   rowHeight?: number;
 }
 
-const DEFAULT_ROW_HEIGHT = 44;
+/**
+ * One row's height, and the only place it is written. styles.css reads it from
+ * `--gedcom-person-row-height`, because the window positions rows by
+ * arithmetic rather than by measuring them: a stylesheet and a constant
+ * disagreeing by a pixel makes a list that drifts the further it is scrolled.
+ */
+export const ROW_HEIGHT = 34;
 /** Rows drawn above and below the viewport, so a scroll does not flash. */
 const MARGIN_ROWS = 6;
 
@@ -40,6 +48,7 @@ const MARGIN_ROWS = 6;
  */
 export class PeopleList {
   private people: PersonRow[] = [];
+  private document = "";
   private shown: PersonRow[] = [];
   private filter = "";
   private readonly countEl: HTMLElement;
@@ -55,12 +64,21 @@ export class PeopleList {
   ) {
     container.replaceChildren();
     const root = element(container, "div", "gedcom-people");
+    root.style.setProperty(
+      "--gedcom-person-row-height",
+      `${metrics?.rowHeight ?? ROW_HEIGHT}px`,
+    );
     this.countEl = element(root, "div", "gedcom-people-count");
     this.rowsEl = element(root, "div", "gedcom-people-rows");
   }
 
-  /** The people of one document, in the order the file declares them. */
-  setPeople(people: PersonRow[]): void {
+  /**
+   * The people of one document, in the order the file declares them, and the
+   * document's name: a vault may hold more than one GEDCOM, and a list of
+   * names says nothing about which tree they belong to.
+   */
+  setPeople(people: PersonRow[], document = this.document): void {
+    this.document = document;
     // A record with no identifier cannot be opened or linked to, so it is not
     // listed. The model still reports it; leaving it out is this view's call.
     this.people = people.filter((person) => !person.unaddressable);
@@ -93,7 +111,10 @@ export class PeopleList {
     this.shown = this.filter
       ? this.people.filter((person) => person.search.includes(this.filter))
       : this.people;
-    this.countEl.textContent = this.labels.count(this.shown.length);
+    const count = this.labels.count(this.shown.length);
+    this.countEl.textContent = this.document
+      ? this.labels.heading(this.document, count)
+      : count;
     this.rowsEl.replaceChildren();
     // A search that found nothing is worth saying, and it is not the same as a
     // document with nobody in it — the view above says that one. The message
@@ -119,7 +140,7 @@ export class PeopleList {
       return;
     }
 
-    const rowHeight = this.metrics.rowHeight ?? DEFAULT_ROW_HEIGHT;
+    const rowHeight = this.metrics.rowHeight ?? ROW_HEIGHT;
     // The only two values that cannot be a class: how tall the whole list
     // would be, and where each drawn row sits inside it. Both go through
     // custom properties, which styles.css reads; everything static is a class.

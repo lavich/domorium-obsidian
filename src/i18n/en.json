@@ -135,5 +135,8 @@
   "event.NCHI": "Number of children",
   "event.DSCR": "Description",
   "event.EVEN": "Event",
-  "event.FACT": "Fact"
+  "event.FACT": "Fact",
+  "person.born": "Born",
+  "person.died": "Died",
+  "person.sex": "Sex"
 }

@@ -147,5 +147,8 @@
   "event.NCHI": "Число детей",
   "event.DSCR": "Описание",
   "event.EVEN": "Событие",
-  "event.FACT": "Факт"
+  "event.FACT": "Факт",
+  "person.born": "Родился",
+  "person.died": "Умер",
+  "person.sex": "Пол"
 }

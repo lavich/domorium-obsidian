@@ -310,9 +310,14 @@
 }
 
 .gedcom-person-row {
-  /* Fixed: the window counts rows rather than measuring them. */
-  height: 44px;
-  padding: var(--size-4-1) var(--size-4-3);
+  /* Set from src/people/peopleList.ts, which is where the number lives: the
+     window positions rows arithmetically rather than measuring them, so a
+     stylesheet disagreeing by a pixel makes a list that drifts. */
+  height: var(--gedcom-person-row-height, 34px);
+  padding: 0 var(--size-4-3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   cursor: var(--cursor-link);
   border-radius: var(--radius-s);
   overflow: hidden;
@@ -365,11 +370,18 @@
   font-size: var(--font-ui-small);
 }
 
+/* Groups sit apart by space rather than by a line. Five rules across one page
+   chopped it up; the one that earns its place divides the summary of a person
+   from the record of their life. */
 .gedcom-person-other-names,
 .gedcom-person-group {
-  margin-top: var(--size-4-6);
+  margin-top: var(--size-4-4);
+}
+
+.gedcom-person-group.is-events {
+  margin-top: var(--size-4-8);
   border-top: var(--border-width) solid var(--background-modifier-border);
-  padding-top: var(--size-4-3);
+  padding-top: var(--size-4-4);
 }
 
 .gedcom-person-group-title {
@@ -387,20 +399,30 @@
   letter-spacing: 0.05em;
 }
 
+/* The whole row is the target, and looks like it. Following a line up a tree
+   is the most repeated action on this page, and a target the width of a name
+   is one the reader has to aim at. */
 .gedcom-person-relative {
   display: flex;
-  gap: var(--size-4-2);
+  gap: var(--size-4-3);
   align-items: baseline;
+  justify-content: space-between;
   padding: var(--size-4-1) var(--size-4-2);
+  margin: 0 calc(-1 * var(--size-4-2));
   border-radius: var(--radius-s);
   cursor: var(--cursor-link);
 }
 
-.gedcom-person-relative:hover {
+.gedcom-person-relative:hover,
+.gedcom-person-relative:focus-visible {
   background-color: var(--nav-item-background-hover);
 }
 
 .gedcom-person-relative-name {
+  color: var(--text-normal);
+}
+
+.gedcom-person-relative:hover .gedcom-person-relative-name {
   color: var(--link-color);
 }
 
@@ -424,6 +446,48 @@
   font-size: var(--font-ui-smaller);
 }
 
+/* Which record this is a reading of: present, and not competing with the name. */
 .gedcom-person-source {
-  margin-top: var(--size-4-6);
+  margin-top: var(--size-4-1);
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-person-source-link {
+  color: var(--text-muted);
+  cursor: var(--cursor-link);
+  text-decoration: none;
+}
+
+.gedcom-person-source-link:hover {
+  color: var(--link-color);
+  text-decoration: underline;
+}
+
+.gedcom-person-facts {
+  margin-top: var(--size-4-4);
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--size-4-1) var(--size-4-4);
+}
+
+.gedcom-person-fact {
+  display: contents;
+}
+
+.gedcom-person-fact-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+}
+
+.gedcom-person-fact-value {
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-person-fact-place {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
 }

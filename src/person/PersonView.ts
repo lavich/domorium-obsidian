@@ -122,9 +122,18 @@ export class PersonView extends ItemView {
         children: t("person.children"),
         events: t("person.events"),
         openInGedcom: t("person.openInGedcom"),
+        born: t("person.born"),
+        died: t("person.died"),
+        sexLabel: t("person.sex"),
         unnamed: t("people.unnamed"),
         unresolved: (xref) => t("person.unresolved", { xref }),
         sex: (value) => namedSex(value),
+      },
+      source: {
+        // The file's own name, not the path: the page is narrow and the
+        // reader is distinguishing two documents, not filing them.
+        document: baseName(this.person?.document.path ?? ""),
+        xref: this.person?.xref ?? "",
       },
       eventLabel: (tag) => namedEvent(tag),
       onPerson: (relative) => {
@@ -162,6 +171,12 @@ export class PersonView extends ItemView {
  */
 function namedEvent(tag: string): string {
   return named(`event.${tag}`) ?? tag;
+}
+
+/** `family/curie.ged` reads as `curie.ged`. */
+function baseName(path: string): string {
+  const cut = path.lastIndexOf("/");
+  return cut === -1 ? path : path.slice(cut + 1);
 }
 
 function namedSex(value: string): string {
