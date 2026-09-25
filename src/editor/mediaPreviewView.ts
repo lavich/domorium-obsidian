@@ -247,7 +247,7 @@ function drawImage(
  * corner meets the frame's, and scaled about that same corner where the
  * rectangle is larger than the bound.
  */
-function applyCrop(
+export function applyCrop(
   frame: HTMLElement,
   image: HTMLElement,
   crop: MediaCrop,

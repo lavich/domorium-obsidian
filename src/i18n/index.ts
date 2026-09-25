@@ -80,3 +80,21 @@ export function plural(key: MessageKey, count: number, params?: Params): string 
       : (message[rules.select(count)] ?? message.other);
   return fill(text, { ...params, count });
 }
+
+/**
+ * A key the catalogue may or may not carry, answered without failing.
+ *
+ * For text whose key is not known until it runs — an event's tag, a recorded
+ * sex — where not naming it is a valid outcome and the caller shows the raw
+ * value instead. `t` refuses an unknown key at compile time, which is right
+ * for every key that is known when the code is written.
+ */
+export function named(key: string, params?: Params): string | undefined {
+  const message =
+    CATALOGUES[language][key as MessageKey] ?? en[key as MessageKey];
+  if (message === undefined) {
+    return undefined;
+  }
+  const text = typeof message === "string" ? message : message.other;
+  return fill(text, params);
+}

@@ -22,7 +22,10 @@ import {
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
-import type { MediaReference } from "@domorium/language-service";
+import type {
+  DocumentSymbol,
+  MediaReference,
+} from "@domorium/language-service";
 import {
   HoverPopover,
   Keymap,
@@ -78,6 +81,14 @@ export class GedcomView extends TextFileView {
   private editor: EditorView;
   private readonly language = new EditorLanguageService();
   private applyingData = false;
+  /**
+   * What changed since this view opened. A revision for anything reading this
+   * document must follow the text the reader sees, not the file on disk: an
+   * unsaved edit leaves the file's modification time and size untouched, so a
+   * reading keyed on those would show the reader their own edit back as the
+   * old value.
+   */
+  private edits = 0;
   private preview: HoverPopover | null = null;
   private mediaPreview: HoverPopover | null = null;
 
@@ -142,6 +153,21 @@ export class GedcomView extends TextFileView {
     this.language.clear();
     this.editor.setState(this.createState(""));
     this.host.statusChanged(this);
+  }
+
+  /**
+   * A revision of the text this view is showing, which changes on every edit,
+   * saved or not. `createState` replaces the whole editor, so the count is
+   * paired with the document's length: the two together change whenever the
+   * text does.
+   */
+  documentRevision(): string {
+    return `${this.edits}:${this.editor.state.doc.length}`;
+  }
+
+  /** The symbols of the text this view is showing, as the model reads them. */
+  documentSymbols(): DocumentSymbol[] {
+    return this.language.update(this.editor.state.doc).getDocumentSymbols();
   }
 
   getStatus(): GedcomStatus {
@@ -424,8 +450,11 @@ export class GedcomView extends TextFileView {
             this.mediaPreview?.hoverEl.contains(node as Node) ?? false,
         }),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged && !this.applyingData) {
-            this.requestSave();
+          if (update.docChanged) {
+            this.edits += 1;
+            if (!this.applyingData) {
+              this.requestSave();
+            }
           }
           this.host.statusChanged(this);
         }),

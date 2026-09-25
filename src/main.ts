@@ -15,6 +15,30 @@ import {
 } from "obsidian";
 
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
+import { IndexCache } from "./genealogy/cache";
+import {
+  documentRef,
+  type DocumentRef,
+  type GenealogyIndex,
+  type RecordRef,
+} from "./genealogy";
+import { GedcomLanguageService } from "@domorium/language-service";
+import { PeopleView, PEOPLE_VIEW_TYPE, type PeopleViewHost } from "./people/PeopleView";
+import {
+  PersonView,
+  PERSON_VIEW_TYPE,
+  type PersonViewHost,
+} from "./person/PersonView";
+import {
+  FamilyView,
+  FAMILY_VIEW_TYPE,
+  type FamilyViewHost,
+} from "./family/FamilyView";
+import {
+  SourceView,
+  SOURCE_VIEW_TYPE,
+  type SourceViewHost,
+} from "./source/SourceView";
 import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
@@ -23,6 +47,7 @@ import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
+import { leafShowingFile } from "./vault/openTabs";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -76,6 +101,8 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   /** Reachable as app.plugins.plugins["domorium"].api — see README. */
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
+  /** One reading per revision of a document, shared by every view that reads. */
+  private readonly genealogy = new IndexCache();
 
   async onload(): Promise<void> {
     setLanguage(getLanguage());
@@ -86,6 +113,35 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
+    this.registerView(
+      PEOPLE_VIEW_TYPE,
+      (leaf) => new PeopleView(leaf, this.peopleHost()),
+    );
+    this.registerView(
+      PERSON_VIEW_TYPE,
+      (leaf) => new PersonView(leaf, this.personHost()),
+    );
+    this.registerView(
+      FAMILY_VIEW_TYPE,
+      (leaf) => new FamilyView(leaf, this.familyHost()),
+    );
+    this.registerView(
+      SOURCE_VIEW_TYPE,
+      (leaf) => new SourceView(leaf, this.sourceHost()),
+    );
+    this.addCommand({
+      id: "open-people",
+      name: t("people.command"),
+      callback: () => {
+        void this.revealPeople();
+      },
+    });
+    // The ribbon is the only place a plugin may put a button of its own:
+    // Obsidian's top bar has no API. On a tablet the ribbon lives in the left
+    // drawer rather than in a strip of its own.
+    this.addRibbonIcon(GEDCOM_ICON_ID, t("people.command"), () => {
+      void this.revealPeople();
+    });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
       const section = ctx.getSectionInfo(element);
       const { runs, problems } = renderGedcomBlock(
@@ -153,6 +209,15 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
         this.refreshStatusBar();
+        this.forEachPeopleView((view) => {
+          view.refresh();
+        });
+        this.forEachPersonView((view) => {
+          view.refresh();
+        });
+        this.forEachFamilyView((view) => {
+          view.refresh();
+        });
       }),
     );
     this.registerEvent(
@@ -363,6 +428,344 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         new RenameReferenceModal(this.app, entered).open();
       },
     };
+  }
+
+  /**
+   * The people list, revealed rather than opened a second time. A reader who
+   * runs the command with the view already in a collapsed sidebar wants that
+   * one brought forward.
+   */
+  private async revealPeople(): Promise<void> {
+    const existing = this.app.workspace.getLeavesOfType(PEOPLE_VIEW_TYPE)[0];
+    if (existing) {
+      await this.app.workspace.revealLeaf(existing);
+      return;
+    }
+    const leaf = this.app.workspace.getLeftLeaf(false);
+    if (!leaf) {
+      return;
+    }
+    await leaf.setViewState({ type: PEOPLE_VIEW_TYPE, active: true });
+    await this.app.workspace.revealLeaf(leaf);
+  }
+
+  private peopleHost(): PeopleViewHost {
+    return {
+      activeDocument: () => {
+        const path = this.app.workspace.getActiveViewOfType(GedcomView)?.file
+          ?.path;
+        return path ? { document: documentRef(path) } : null;
+      },
+      documents: () =>
+        this.app.vault
+          .getFiles()
+          .filter((file) => isGedcomPath(file.path))
+          .map((file) => documentRef(file.path))
+          .sort((one, other) => one.path.localeCompare(other.path)),
+      indexOf: (document) => this.indexOf(document),
+      warm: (document) => this.warm(document),
+      openPerson: (person: RecordRef, name?: string) => {
+        void this.openPerson(person, name);
+      },
+      shownPerson: () => {
+        let found: RecordRef | null = null;
+        this.forEachPersonView((view) => {
+          found = found ?? view.showing();
+        });
+        return found;
+      },
+      shownFamily: () => {
+        let found: RecordRef | null = null;
+        this.forEachFamilyView((view) => {
+          found = found ?? view.showing();
+        });
+        return found;
+      },
+      openFamily: (family, name) => {
+        void this.openFamily(family, name);
+      },
+      shownSource: () => {
+        let found: RecordRef | null = null;
+        this.forEachSourceView((view) => {
+          found = found ?? view.showing();
+        });
+        return found;
+      },
+      openSource: (source, title) => {
+        void this.openSource(source, title);
+      },
+    };
+  }
+
+  /**
+   * A reading of a document, where one can be had without waiting: the view
+   * showing it, so an unsaved edit is read, or a reading already held.
+   */
+  private indexOf(document: DocumentRef): GenealogyIndex | null {
+    const open = this.gedcomViewOf(document);
+    if (open) {
+      return this.genealogy.at(document, open.documentRevision(), () =>
+        open.documentSymbols(),
+      );
+    }
+    return this.genealogy.held(document);
+  }
+
+  /**
+   * Read a document nobody has open. The vault reads asynchronously, so a
+   * caller that wants a closed document waits once and asks again.
+   */
+  private async warm(document: DocumentRef): Promise<void> {
+    if (this.indexOf(document)) {
+      return;
+    }
+    const file = await this.vault.read(document.path);
+    if (!file) {
+      return;
+    }
+    this.genealogy.at(document, file.revision, () =>
+      new GedcomLanguageService(file.text).getDocumentSymbols(),
+    );
+  }
+
+  /** The open view showing a document, where one is open. */
+  private gedcomViewOf(document: DocumentRef): GedcomView | undefined {
+    let found: GedcomView | undefined;
+    this.forEachView((view) => {
+      if (found === undefined && view.file?.path === document.path) {
+        found = view;
+      }
+    });
+    return found;
+  }
+
+  /**
+   * One Person view, reused. Choosing a second person shows them in the tab
+   * the first was in, which is also what makes Back walk the trail.
+   */
+  private async openPerson(person: RecordRef, name?: string): Promise<void> {
+    const named = name === undefined ? {} : { name };
+    const existing = this.app.workspace.getLeavesOfType(PERSON_VIEW_TYPE)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: PERSON_VIEW_TYPE,
+      active: true,
+      state: { path: person.document.path, xref: person.xref, ...named },
+    });
+    await this.app.workspace.revealLeaf(leaf);
+    this.forEachPeopleView((view) => {
+      view.markShownPerson();
+    });
+  }
+
+  /** One Family view, reused, as one Person view is. */
+  private async openFamily(family: RecordRef, name?: string): Promise<void> {
+    const named = name === undefined ? {} : { name };
+    const existing = this.app.workspace.getLeavesOfType(FAMILY_VIEW_TYPE)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: FAMILY_VIEW_TYPE,
+      active: true,
+      state: { path: family.document.path, xref: family.xref, ...named },
+    });
+    await this.app.workspace.revealLeaf(leaf);
+    this.forEachPeopleView((view) => {
+      view.markShownPerson();
+    });
+  }
+
+  /** One Source view, reused, as the other two are. */
+  private async openSource(source: RecordRef, title?: string): Promise<void> {
+    const named = title === undefined ? {} : { title };
+    const existing = this.app.workspace.getLeavesOfType(SOURCE_VIEW_TYPE)[0];
+    const leaf = existing ?? this.app.workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: SOURCE_VIEW_TYPE,
+      active: true,
+      state: { path: source.document.path, xref: source.xref, ...named },
+    });
+    await this.app.workspace.revealLeaf(leaf);
+    this.forEachPeopleView((view) => {
+      view.markShownPerson();
+    });
+  }
+
+  private sourceHost(): SourceViewHost {
+    return {
+      read: (source) => this.indexOf(source.document)?.source(source.xref) ?? null,
+      warm: (document) => this.warm(document),
+      citedBy: (source) => this.indexOf(source.document)?.citedBy(source.xref) ?? [],
+      nameOf: (document, xref) => this.nameOf(document, xref),
+      openRecord: (source) => {
+        void this.openRecord(source);
+      },
+      openCiter: (document, xref) => {
+        void this.openCiter(documentRef(document.path), xref);
+      },
+    };
+  }
+
+  /**
+   * What a record goes by, whichever kind it is. One the document does not
+   * declare is named by its identifier, which is all anyone has.
+   */
+  private nameOf(document: DocumentRef, xref: string): string {
+    const index = this.indexOf(document);
+    const person = index?.person(xref);
+    if (person) {
+      return person.name;
+    }
+    const family = index?.family(xref);
+    if (family) {
+      const joined = family.spouses.map((spouse) => spouse.name).join(" & ");
+      return joined === "" ? xref : joined;
+    }
+    return xref;
+  }
+
+  /** A citing record opens as its own kind, and otherwise in the file. */
+  private async openCiter(document: DocumentRef, xref: string): Promise<void> {
+    const index = this.indexOf(document);
+    const at = { document, xref };
+    if (index?.person(xref)) {
+      await this.openPerson(at, this.nameOf(document, xref));
+      return;
+    }
+    if (index?.family(xref)) {
+      await this.openFamily(at, this.nameOf(document, xref));
+      return;
+    }
+    await this.openRecord(at);
+  }
+
+  private forEachSourceView(run: (view: SourceView) => void): void {
+    this.app.workspace.getLeavesOfType(SOURCE_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof SourceView) {
+        run(leaf.view);
+      }
+    });
+  }
+
+  private familyHost(): FamilyViewHost {
+    return {
+      read: (family) => this.indexOf(family.document)?.family(family.xref) ?? null,
+      warm: (document) => this.warm(document),
+      openRecord: (family) => {
+        void this.openRecord(family);
+      },
+      openPerson: (person, name) => {
+        void this.openPerson(person, name);
+      },
+      citesBy: (family) => this.indexOf(family.document)?.citesBy(family.xref) ?? [],
+      titleOf: (document, xref) =>
+        this.indexOf(document)?.source(xref)?.title ?? xref,
+      openSource: (source, title) => {
+        void this.openSource(source, title);
+      },
+    };
+  }
+
+  private forEachFamilyView(run: (view: FamilyView) => void): void {
+    this.app.workspace.getLeavesOfType(FAMILY_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof FamilyView) {
+        run(leaf.view);
+      }
+    });
+  }
+
+  private personHost(): PersonViewHost {
+    return {
+      read: (person) => this.indexOf(person.document)?.person(person.xref) ?? null,
+      warm: (document) => this.warm(document),
+      openRecord: (person) => {
+        void this.openRecord(person);
+      },
+      // A vault file only. A web address answers nothing, which is how the
+      // page keeps its promise not to fetch one: that question is the media
+      // preview's, with a setting of its own, and is not answered twice.
+      openPicture: (target) => {
+        void this.openPicture(target);
+      },
+      openFamily: (family, name) => {
+        void this.openFamily(family, name);
+      },
+      citesBy: (person) => this.indexOf(person.document)?.citesBy(person.xref) ?? [],
+      titleOf: (document, xref) =>
+        this.indexOf(document)?.source(xref)?.title ?? xref,
+      openSource: (source, title) => {
+        void this.openSource(source, title);
+      },
+      resolveMedia: (target) => {
+        if (/^[a-z][a-z0-9+.-]*:/iu.test(target)) {
+          return null;
+        }
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(target));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
+      },
+    };
+  }
+
+  /**
+   * The record behind a person. The same path an `obsidian://` link already
+   * takes: open or reveal the file, then put the cursor on the record.
+   */
+  /**
+   * The picture itself, whole. A tab rather than a popout window: the mobile
+   * app has no popout, which is the same reason `GedcomView` opens a vault
+   * file in a tab.
+   */
+  private async openPicture(target: string): Promise<void> {
+    const path = normalizePath(target);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(t("notice.vaultFileNotFound", { path }));
+      return;
+    }
+    const open = leafShowingFile(path, (visit) =>
+      this.app.workspace.iterateAllLeaves(visit),
+    );
+    if (open) {
+      await this.app.workspace.revealLeaf(open);
+      return;
+    }
+    await this.app.workspace.getLeaf("tab").openFile(file);
+  }
+
+  private async openRecord(person: RecordRef): Promise<void> {
+    const path = normalizePath(person.document.path);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(t("person.notInVault", { path }));
+      return;
+    }
+    const open = leafShowingFile(path, (visit) =>
+      this.app.workspace.iterateAllLeaves(visit),
+    );
+    if (open) {
+      await this.app.workspace.revealLeaf(open);
+    } else {
+      await this.app.workspace.getLeaf("tab").openFile(file);
+    }
+    const view = this.gedcomViewOf(person.document);
+    if (!view?.goToXref(person.xref)) {
+      new Notice(t("notice.xrefNotInFile", { xref: person.xref, file: file.name }));
+    }
+  }
+
+  private forEachPersonView(run: (view: PersonView) => void): void {
+    this.app.workspace.getLeavesOfType(PERSON_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof PersonView) {
+        run(leaf.view);
+      }
+    });
+  }
+
+  private forEachPeopleView(run: (view: PeopleView) => void): void {
+    this.app.workspace.getLeavesOfType(PEOPLE_VIEW_TYPE).forEach((leaf) => {
+      if (leaf.view instanceof PeopleView) {
+        run(leaf.view);
+      }
+    });
   }
 
   private forEachView(run: (view: GedcomView) => void): void {

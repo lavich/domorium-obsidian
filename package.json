@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit && node esbuild.config.mjs production",
+    "build:demo": "npm run build && node -e \"const{copyFileSync,mkdirSync}=require('node:fs');const d='demo-vault/.obsidian/plugins/domorium';mkdirSync(d,{recursive:true});for(const f of ['main.js','manifest.json','styles.css'])copyFileSync('dist/'+f,d+'/'+f);console.log('copied into '+d)\"",
     "dev": "node esbuild.config.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
