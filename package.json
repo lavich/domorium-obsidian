@@ -27,7 +27,7 @@
     "@codemirror/view": "6.38.6",
     "@domorium/codemirror": "^2.1.0",
     "@domorium/language-service": "^2.1.0",
-    "@lezer/highlight": "^1.2.3"
+    "@lezer/highlight": "^1.2.4"
   },
   "overrides": {
     "@codemirror/state": "6.5.0"
