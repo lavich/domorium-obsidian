@@ -1,0 +1,28 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SOUR DOMORIUM
+2 NAME A second tree, to prove two files stay apart
+1 NOTE This file declares @I1@ as somebody else entirely. The same identifier
+2 CONT lives in curie.ged as Marie. Opening one must never show the other.
+0 @I1@ INDI
+1 NAME Frédéric /Joliot/
+1 SEX M
+1 BIRT
+2 DATE 19 MAR 1900
+2 PLAC Paris, France
+1 DEAT
+2 DATE 14 AUG 1958
+2 PLAC Arcouest, France
+1 OCCU Physicist
+1 FAMS @F1@
+0 @I2@ INDI
+1 NAME Hélène /Langevin-Joliot/
+1 SEX F
+1 BIRT
+2 DATE 17 NOV 1927
+1 FAMC @F1@
+0 @F1@ FAM
+1 HUSB @I1@
+1 CHIL @I2@
+0 TRLR

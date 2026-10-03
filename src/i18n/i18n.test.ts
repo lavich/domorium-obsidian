@@ -5,6 +5,7 @@ import {
   CATALOGUES,
   currentLanguage,
   en,
+  named,
   type Message,
   type MessageKey,
   plural,
@@ -147,7 +148,7 @@ describe("the two sides of the catalogue", () => {
   it("spell the English side in sentence case", () => {
     const options = {
       acronyms: ["GEDCOM", "URL"],
-      brands: ["Obsidian"],
+      brands: ["Obsidian", "Domorium"],
       // A GEDCOM tag, and two modifier keys.
       ignoreWords: ["FILE", "Ctrl", "Cmd"],
       // A status-bar fragment, and three phrases CodeMirror looks up as it
@@ -166,6 +167,16 @@ describe("the two sides of the catalogue", () => {
     }
   });
 
+  it("name fewer event tags than the model reads, which is deliberate", () => {
+    // The page shows an unnamed tag as the tag, so the catalogue need not
+    // chase every structure GEDCOM defines. This asserts the gap exists,
+    // because a scenario in person-view depends on it.
+    const named = Object.keys(en).filter((key) => key.startsWith("event."));
+
+    expect(named.length).toBeGreaterThan(20);
+    expect(named).not.toContain("event.BASM");
+  });
+
   it("give every Russian plural table the forms Russian has", () => {
     for (const [key, message] of Object.entries(ru)) {
       if (typeof message === "string") {
@@ -178,5 +189,24 @@ describe("the two sides of the catalogue", () => {
         "other",
       ]);
     }
+  });
+});
+
+describe("a key that is only known at runtime", () => {
+  it("answers where the catalogue carries it", () => {
+    expect(named("event.BIRT")).toBe("Birth");
+    setLanguage("ru");
+    expect(named("event.BIRT")).toBe("Рождение");
+  });
+
+  it("answers with nothing where it does not, rather than failing", () => {
+    expect(named("event.BASM")).toBeUndefined();
+    expect(named("nothing.at.all")).toBeUndefined();
+  });
+
+  it("fills a hole the way t does", () => {
+    expect(named("person.unresolved", { xref: "@I99@" })).toBe(
+      "Not in this file: @I99@",
+    );
   });
 });
