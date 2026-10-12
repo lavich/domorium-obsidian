@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Domorium — исследовательский стол</title>
+<style>
+:root{
+  --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",sans-serif;
+}
+.theme-dark{
+  --bg1:#1e1e1e;--bg2:#262626;--bg3:#2f2f2f;--hover:rgba(255,255,255,.065);--active:rgba(255,255,255,.1);
+  --border:#363636;--text:#dadada;--muted:#a3a3a3;--faint:#6f6f6f;
+  --accent:#8a5cf5;--accent-text:#a88bfa;--accent-soft:rgba(138,92,245,.16);--accent-softer:rgba(138,92,245,.09);
+  --warn:#e5b567;--warn-soft:rgba(229,181,103,.12);--ok:#7bc28c;--ok-soft:rgba(123,194,140,.13);
+  --shadow:0 8px 28px rgba(0,0,0,.45);--input:#191919;
+}
+.theme-light{
+  --bg1:#ffffff;--bg2:#f6f6f6;--bg3:#ececec;--hover:rgba(0,0,0,.045);--active:rgba(0,0,0,.075);
+  --border:#e0e0e0;--text:#222222;--muted:#5c5c5c;--faint:#9a9a9a;
+  --accent:#7852ee;--accent-text:#6a45e0;--accent-soft:rgba(120,82,238,.13);--accent-softer:rgba(120,82,238,.07);
+  --warn:#a86b00;--warn-soft:rgba(214,145,20,.12);--ok:#2f8a46;--ok-soft:rgba(47,138,70,.1);
+  --shadow:0 8px 28px rgba(0,0,0,.14);--input:#ffffff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:transparent;font-family:var(--font-ui);-webkit-font-smoothing:antialiased}
+::selection{background:var(--accent-soft)}
+button,input{font:inherit;color:inherit}
+.stage{padding:20px 0 28px;color:var(--text)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:13px;color:var(--muted-foreground,#666)}.toolbar b{color:var(--foreground,#222)}
+.toolbar .seg{background:var(--bg2);border:1px solid var(--border)}
+.scroll{overflow-x:auto;border-radius:10px;box-shadow:var(--shadow)}
+.scroll::-webkit-scrollbar{height:8px}.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* Obsidian window */
+.app{min-width:1040px;height:720px;display:grid;grid-template-columns:42px 248px 1fr 292px;grid-template-rows:36px 1fr;background:var(--bg1);color:var(--text);font-size:13.5px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.titlebar{grid-column:1/-1;display:grid;grid-template-columns:42px 248px 1fr 292px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.lights{display:flex;gap:6px;align-items:center;padding-left:12px}
+.lights i{width:10px;height:10px;border-radius:50%;background:var(--bg3);display:block}
+.side-tabs{display:flex;align-items:center;gap:2px;padding:0 8px}
+.tabstrip{display:flex;align-items:flex-end;padding:0 8px;gap:2px;border-left:1px solid var(--border);border-right:1px solid var(--border)}
+.tab{height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:8px 8px 0 0;font-size:12.5px;color:var(--muted);max-width:240px;white-space:nowrap}
+.tab.on{background:var(--bg1);color:var(--text)}
+.tab svg{flex:none}
+.iconbtn{width:26px;height:26px;display:grid;place-items:center;border-radius:5px;color:var(--muted);background:none;border:0;cursor:pointer}
+.iconbtn:hover{background:var(--hover);color:var(--text)}
+.iconbtn.on{color:var(--accent-text);background:var(--accent-softer)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.ribbon{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:4px}
+
+/* left: index */
+.left{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.panel-head{padding:12px 12px 8px}
+.panel-title{display:flex;align-items:baseline;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.panel-title b{color:var(--text);font-weight:600;font-size:13px}
+.search{margin-top:10px;display:flex;align-items:center;gap:6px;background:var(--input);border:1px solid var(--border);border-radius:6px;padding:0 8px;height:30px;color:var(--faint)}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.search input{border:0;background:none;outline:none;flex:1;min-width:0;font-size:13px}
+.search input::placeholder{color:var(--faint)}
+.filters{display:flex;gap:4px;margin-top:8px}
+.chip{border:1px solid var(--border);background:none;border-radius:999px;padding:2px 9px;font-size:12px;color:var(--muted);cursor:pointer;font-variant-numeric:tabular-nums}
+.chip:hover{background:var(--hover)}
+.chip.on{background:var(--accent-soft);border-color:transparent;color:var(--accent-text)}
+.list{overflow:auto;padding:2px 6px 10px;flex:1}
+.list::-webkit-scrollbar{width:8px}.list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.letter{font-size:11px;color:var(--faint);padding:10px 8px 4px;font-weight:600;letter-spacing:.04em}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:5px 8px;border-radius:5px;cursor:pointer}
+.row:hover{background:var(--hover)}
+.row.on{background:var(--active)}
+.row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .y{color:var(--faint);font-size:12px;font-variant-numeric:tabular-nums}
+.row .p{grid-column:1/-1;color:var(--faint);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .gap{width:6px;height:6px;border-radius:50%;background:var(--warn);display:inline-block;margin-left:6px;vertical-align:middle}
+.empty-note{padding:16px 10px;color:var(--faint);font-size:12.5px}
+
+/* main */
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
+.viewhead{height:40px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border)}
+.crumbs{flex:1;white-space:nowrap;overflow:hidden;display:flex;align-items:center;gap:6px;color:var(--faint);font-size:13px;min-width:0;justify-content:center}
+.crumbs b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;background:var(--bg2);border-radius:6px;padding:2px;gap:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:4px;font-size:12px;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--bg1);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--bg1);border-radius:6px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--text)}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.on{background:var(--accent-soft);border-color:transparent;color:var(--accent-text)}
+.pro{font-size:10px;font-weight:600;letter-spacing:.03em;padding:1px 5px;border-radius:4px;background:var(--accent-soft);color:var(--accent-text)}
+.btn.on .pro{background:var(--accent);color:#fff}
+.body{overflow:auto;flex:1;padding:22px 34px 90px}
+.body::-webkit-scrollbar{width:9px}.body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.who{display:flex;gap:18px;align-items:flex-start;max-width:720px;margin:0 auto}
+.portrait{width:76px;height:95px;border-radius:6px;overflow:hidden;flex:none;background:var(--bg2);border:1px solid var(--border)}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.who h1{font-size:24px;line-height:1.2;margin:2px 0 6px;font-weight:650;letter-spacing:-.015em}
+.who .sub{color:var(--muted);line-height:1.55}
+.who .sub span{color:var(--faint)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);max-width:720px;margin:20px auto 0}
+.tabs button{border:0;background:none;padding:8px 12px 9px;color:var(--muted);cursor:pointer;font-size:13px;position:relative;display:flex;gap:6px;align-items:center}
+.tabs button:hover{color:var(--text)}
+.tabs button.on{color:var(--text)}
+.tabs button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--accent);border-radius:2px}
+.pane{max-width:720px;margin:0 auto;padding-top:18px}
+.pane[hidden]{display:none}
+h3{font-size:12px;font-weight:600;color:var(--faint);letter-spacing:.04em;margin:22px 0 6px;text-transform:uppercase}
+h3:first-child{margin-top:4px}
+.facts{border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.fact{display:grid;grid-template-columns:118px 1fr auto;gap:12px;align-items:center;padding:9px 12px;border-top:1px solid var(--border);cursor:pointer;transition:background .25s}
+.fact:first-child{border-top:0}
+.fact:hover{background:var(--hover)}
+.fact.sel{background:var(--accent-softer);box-shadow:inset 0 0 0 1px var(--accent-soft)}
+.fact .k{color:var(--muted)}
+.fact .v{min-width:0}
+.fact .v .d{font-variant-numeric:tabular-nums}
+.fact .v .pl{color:var(--muted)}
+.fact .v .pl::before{content:" · ";color:var(--faint)}
+.ev{font-size:11.5px;padding:2px 7px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ev.none{color:var(--warn);background:var(--warn-soft)}
+.ev.has{color:var(--muted);background:var(--bg2)}
+.fact input{width:100%;background:var(--input);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:13px;outline:none}
+.fact input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.fact .ed{display:none;gap:6px;grid-template-columns:130px 1fr}
+.editing .fact .ed{display:grid}
+.editing .fact .ro{display:none}
+.fact.dirty,.fact.dirty.sel{background:var(--warn-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 45%,transparent)}
+.fact.dirty .k::after{content:"изменено";display:block;font-size:11px;color:var(--warn);margin-top:2px}
+.fact.saved,.fact.saved.sel{background:var(--ok-soft);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 40%,transparent)}
+.fact.saved .k::after{content:"записано · curie.ged";display:block;font-size:11px;color:var(--ok);margin-top:2px}
+.kin{display:grid;grid-template-columns:118px 1fr;gap:4px 12px;padding:2px 0}
+.kin .k{color:var(--muted);padding:6px 0}
+.people{display:flex;flex-direction:column}
+.person{display:flex;align-items:baseline;gap:8px;padding:6px 8px;margin:0 -8px;border-radius:5px;cursor:pointer;color:var(--accent-text)}
+.person:hover{background:var(--hover)}
+.person .yy{color:var(--faint);font-size:12px;font-variant-numeric:tabular-nums}
+.person .note{color:var(--muted);font-size:12px}
+.more{color:var(--faint);font-size:12.5px;padding:6px 0}
+.add{color:var(--faint);font-size:12.5px;padding:6px 8px;margin:0 -8px;border-radius:5px;cursor:pointer;display:none;align-items:center;gap:6px}
+.add:hover{background:var(--hover);color:var(--text)}
+.editing .add{display:flex}
+
+/* tree */
+.tree{position:relative;padding:8px 0 10px}
+.tree svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.tree svg.lines path{fill:none;stroke:var(--border);stroke-width:1.5}
+.gen{display:flex;justify-content:center;gap:14px;margin-bottom:34px;position:relative}
+.gen:last-child{margin-bottom:0}
+.couple{display:flex;gap:6px;align-items:center}
+.couple .and{width:14px;height:1.5px;background:var(--border)}
+.node{background:var(--bg1);border:1px solid var(--border);border-radius:7px;padding:5px 9px;max-width:132px;cursor:pointer;position:relative;z-index:1}
+.node:hover{border-color:var(--faint)}
+.node b{display:block;font-weight:500;font-size:12px;line-height:1.3}
+.node span{font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.node.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.node.dim{opacity:.62}
+.node.gap::after{content:"";position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--warn)}
+.legend{display:flex;gap:16px;justify-content:center;color:var(--faint);font-size:12px;margin-top:16px}
+.legend i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--warn);margin-right:6px;vertical-align:middle}
+
+/* timeline */
+.tl{position:relative;padding-left:0}
+.ti{display:grid;grid-template-columns:52px 22px 1fr 54px;align-items:start;gap:0 8px;padding:5px 0}
+.ti .yr{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;padding-top:1px}
+.ti .dot{position:relative;height:100%}
+.ti .dot::before{content:"";position:absolute;left:10px;top:-6px;bottom:-6px;width:1.5px;background:var(--border)}
+.ti:first-child .dot::before{top:8px}.ti:last-child .dot::before{bottom:calc(100% - 8px)}
+.ti .dot::after{content:"";position:absolute;left:6px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--bg1);border:1.5px solid var(--faint)}
+.ti.own .dot::after{background:var(--accent);border-color:var(--accent)}
+.ti .tx{line-height:1.45}
+.ti .tx small{display:block;color:var(--faint);font-size:12px}
+.ti.kin .tx{color:var(--muted)}
+.ti .age{color:var(--faint);font-size:12px;text-align:right;padding-top:2px;font-variant-numeric:tabular-nums}
+.ti.own .tx b{font-weight:600}
+
+/* places */
+.mapbox{border:1px dashed var(--border);border-radius:8px;padding:22px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;color:var(--muted);background:var(--bg2)}
+.mapbox .ic{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;background:var(--bg1);color:var(--faint);border:1px solid var(--border)}
+.mapbox p{margin:0 0 10px;line-height:1.5}
+.mapbox .acts{display:flex;gap:8px;flex-wrap:wrap}
+.places{margin-top:6px}
+.place{display:grid;grid-template-columns:1fr auto;padding:8px 0;border-bottom:1px solid var(--border)}
+.place b{font-weight:500}
+.place small{display:block;color:var(--faint);font-size:12px;margin-top:2px}
+.place .c{color:var(--faint);font-size:12px;align-self:center}
+
+/* save bar */
+.savebar{position:absolute;left:50%;bottom:16px;transform:translate(-50%,16px);opacity:0;pointer-events:none;background:var(--bg2);border:1px solid var(--border);box-shadow:var(--shadow);border-radius:10px;padding:8px 8px 8px 14px;display:flex;align-items:center;gap:12px;transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .25s}
+.savebar.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.savebar .msg{font-size:12.5px;color:var(--muted);white-space:nowrap}.savebar .btn{white-space:nowrap}
+.savebar .msg b{color:var(--text);font-weight:600}
+
+/* right: evidence */
+.right{background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.right .panel-head{border-bottom:1px solid var(--border);padding-bottom:10px}
+.ctx{margin-top:6px;font-size:14px;font-weight:600;color:var(--text)}
+.ctx small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px}
+.evbody{overflow:auto;padding:4px 12px 16px;flex:1}
+.evbody::-webkit-scrollbar{width:8px}.evbody::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.evbody h3{margin-top:18px}
+.warnbox{background:var(--warn-soft);border-radius:7px;padding:10px 11px;color:var(--text);line-height:1.45;font-size:12.5px}
+.warnbox b{color:var(--warn);font-weight:600;display:block;margin-bottom:3px}
+.suggest b{display:inline;color:var(--text);margin:0}.warnbox .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.suggest{display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--warn) 25%,transparent);color:var(--muted)}
+.cite{padding:8px 9px;border-radius:6px;margin:0 -4px;cursor:pointer}
+.cite:hover{background:var(--hover)}
+.cite b{font-weight:500;color:var(--accent-text);display:block}
+.cite span{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+.cite em{font-style:normal;color:var(--faint);font-size:12px}
+.note-l{padding:8px 9px;border-radius:6px;margin:0 -4px;cursor:pointer;display:grid;grid-template-columns:16px 1fr;gap:8px}
+.note-l:hover{background:var(--hover)}
+.note-l svg{margin-top:2px;color:var(--faint)}
+.note-l b{font-weight:500;display:block}
+.note-l span{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+.note-l mark{background:var(--accent-soft);color:var(--accent-text);border-radius:3px;padding:0 2px}
+.media{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.thumb{aspect-ratio:4/5;border-radius:5px;overflow:hidden;border:1px solid var(--border);background:var(--bg1);position:relative;cursor:pointer}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb.crop img{object-fit:none;object-position:-30px -40px;transform:scale(.62);transform-origin:0 0;width:auto;height:auto}
+.thumb.remote{display:grid;place-items:center;text-align:center;color:var(--faint);font-size:11px;padding:6px;line-height:1.3}
+.thumb .cap{position:absolute;left:0;right:0;bottom:0;padding:10px 5px 4px;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.newnote{margin-top:14px;width:100%;justify-content:center}
+
+/* phone */
+.below{display:grid;grid-template-columns:auto 1fr;gap:32px;margin-top:28px;align-items:start}
+.phone{width:300px;height:600px;border-radius:34px;padding:10px;background:#0c0c0c;box-shadow:var(--shadow)}
+.screen{width:100%;height:100%;border-radius:26px;overflow:hidden;background:var(--bg1);color:var(--text);display:flex;flex-direction:column;font-size:13px}
+.sbar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11.5px;font-weight:600}
+.mhead{display:flex;align-items:center;gap:8px;padding:4px 10px 8px;border-bottom:1px solid var(--border)}
+.mhead b{flex:1;text-align:center;font-weight:600;font-size:13.5px}
+.mbody{flex:1;overflow:hidden;padding:12px 14px}
+.mwho{display:flex;gap:12px;align-items:center}
+.mwho .portrait{width:52px;height:65px}
+.mwho h2{margin:0;font-size:17px;line-height:1.2;letter-spacing:-.01em}
+.mwho p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.mtabs{display:flex;gap:2px;margin:12px -14px 10px;padding:0 10px;border-bottom:1px solid var(--border);overflow:hidden}
+.mtabs span{padding:6px 5px 8px;color:var(--muted);font-size:12.5px;position:relative;white-space:nowrap}
+.mtabs span.on{color:var(--text)}
+.mtabs span.on::after{content:"";position:absolute;left:6px;right:6px;bottom:-1px;height:2px;background:var(--accent);border-radius:2px}
+.mfact{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:9px 0;border-bottom:1px solid var(--border)}
+.mfact .k{color:var(--faint);font-size:11.5px;grid-column:1/-1}
+.mfact .v{font-size:13px}
+.mnav{height:58px;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg2);padding-bottom:6px}
+.mnav span{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--faint)}
+.mnav span.on{color:var(--accent-text)}
+.notes{color:var(--muted-foreground,#666);font-size:13.5px;line-height:1.6;max-width:62ch}
+.notes h4{margin:0 0 8px;font-size:14px;color:var(--foreground,#222)}
+.notes ol{margin:0;padding-left:20px}
+.notes li{margin-bottom:8px}
+.notes b{color:var(--foreground,#222)}
+.notes small{color:var(--muted-foreground,#888)}
+
+.below{grid-template-columns:auto 1fr}
+.phones{display:flex;gap:22px;align-items:flex-start}
+.ph{margin:0;width:270px}
+.ph .phone{width:270px;height:560px}
+.ph figcaption{font-size:12.5px;line-height:1.5;color:var(--muted-foreground,#666);margin-top:10px}
+.ph figcaption b{color:var(--foreground,#222)}
+.mhead b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.mfact.open{background:var(--accent-softer);margin:0 -14px;padding:9px 14px}
+.inl{grid-column:1/-1;margin-top:8px;padding:9px 10px;border-radius:7px;background:var(--warn-soft);font-size:12px;line-height:1.45}
+.inl b{display:block;color:var(--warn);font-weight:600}
+.inl span{color:var(--muted)}
+.inl .row2{display:flex;gap:6px;margin-top:7px}
+.inl .btn{font-size:11.5px;padding:3px 8px;white-space:nowrap}
+.onav{height:52px;border-top:1px solid var(--border);background:var(--bg2);display:flex;justify-content:space-around;align-items:center;color:var(--muted);padding-bottom:6px}
+.onav .cnt{width:18px;height:18px;border:1.6px solid currentColor;border-radius:4px;font-size:10.5px;display:grid;place-items:center;font-weight:600}
+.drawer-host{position:relative}
+.ghost{flex:1;background:var(--bg1);filter:brightness(.55)}
+.drawer{position:absolute;top:30px;bottom:0;left:0;width:84%;background:var(--bg2);border-right:1px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column}
+.dtabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);color:var(--muted)}
+.dtabs>svg,.dtabs>span{box-sizing:content-box;padding:5px;border-radius:5px;display:grid}.dtabs>span svg{padding:0}
+.dtabs .on{background:var(--accent-softer);color:var(--accent-text)}
+.dl{padding:8px 6px;overflow:hidden}
+.dl .letter{padding-top:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage theme-dark" id="stage">
+  <div class="toolbar">
+    <span>Макет на данных <b>demo-vault/curie.ged</b>. Кликабельно: факты, вкладки, «Править», поиск.</span>
+    <div class="seg" role="group" aria-label="Тема">
+      <button class="on" data-theme="dark">Тёмная</button><button data-theme="light">Светлая</button>
+    </div>
+  </div>
+
+  <div class="scroll">
+  <div class="app" id="app">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i></div>
+      <div class="side-tabs">
+        <button class="iconbtn on" title="Domorium"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M12 8.5v4M12 12.5l-5 3.5M12 12.5l5 3.5"/></svg></button>
+        <button class="iconbtn" title="Файлы"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h6l2 2h8v10H4z"/></svg></button>
+        <button class="iconbtn" title="Поиск"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></button>
+      </div>
+      <div class="tabstrip">
+        <div class="tab on"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1.5-4 4-5.5 7-5.5s5.5 1.5 7 5.5"/></svg>Marie Skłodowska-Curie</div>
+        <div class="tab">Radium</div>
+        <div class="tab">Nobel Prizes in the family</div>
+      </div>
+      <div class="side-tabs" style="justify-content:flex-start">
+        <button class="iconbtn on" title="Доказательства"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4M10 13h6M10 16.5h4"/></svg></button>
+        <button class="iconbtn" title="Обратные ссылки"><svg class="i" viewBox="0 0 24 24"><path d="M9 15 15 9M10 6.5l1.5-1.5a4 4 0 0 1 5.7 5.7L15.7 12M14 17.5 12.5 19a4 4 0 0 1-5.7-5.7L8.3 12"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ribbon">
+      <button class="iconbtn" title="Быстрый переход"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="iconbtn" title="Граф"><svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="10" cy="18" r="2"/><path d="m7.6 7.2 1.8 9M8 6.3l8 1.4M16.6 9.4 11.4 16.6"/></svg></button>
+      <button class="iconbtn on" title="Domorium"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M12 8.5v4M12 12.5l-5 3.5M12 12.5l5 3.5"/></svg></button>
+    </div>
+
+    <!-- index -->
+    <aside class="left">
+      <div class="panel-head">
+        <div class="panel-title"><b>curie.ged</b><span>GEDCOM 7.0 · 17 человек</span></div>
+        <label class="search"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" placeholder="Имя, год, место…" aria-label="Поиск людей"></label>
+        <div class="filters">
+          <button class="chip on" data-f="all">Все 17</button>
+          <button class="chip" data-f="gap">Без источника 11</button>
+        </div>
+      </div>
+      <div class="list" id="list"></div>
+    </aside>
+
+    <!-- record -->
+    <section class="main">
+      <div class="viewhead">
+        <button class="iconbtn" title="Назад"><svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+        <button class="iconbtn" title="Вперёд" style="opacity:.45"><svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+        <div class="crumbs">curie.ged <span>/</span> <b>Marie Skłodowska-Curie</b></div>
+        <div class="seg" role="group" aria-label="Режим файла"><button class="on">Генеалогия</button><button>Исходник</button></div>
+        <button class="btn" id="editBtn" aria-pressed="false"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Править <span class="pro">PRO</span></button>
+      </div>
+      <div class="body" id="body">
+        <div class="who">
+          <div class="portrait"><img alt="Marie Skłodowska-Curie" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgNDAwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjQwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJNYXJpZSBTa8WCb2Rvd3NrYS1DdXJpZSI+CiAgPHJlY3Qgd2lkdGg9IjMyMCIgaGVpZ2h0PSI0MDAiIGZpbGw9IiNmM2YxZWMiLz4KICA8cmVjdCB4PSIxNiIgeT0iMTYiIHdpZHRoPSIyODgiIGhlaWdodD0iMzY4IiBmaWxsPSJub25lIiBzdHJva2U9IiM3YTVjOGYiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE2MCIgY3k9IjE2OCIgcj0iNzYiIGZpbGw9IiM3YTVjOGYiIG9wYWNpdHk9IjAuMTQiLz4KICA8dGV4dCB4PSIxNjAiIHk9IjE5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjY0IiBmaWxsPSIjN2E1YzhmIj5NQzwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjMwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjIwIiBmaWxsPSIjMmIyYTI3Ij5NYXJpZSBTa8WCb2Rvd3NrYS1DdXJpZTwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjMyNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNmI2ODYyIj4xODY34oCTMTkzNDwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjM2MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzhiODc3ZiI+cGxhY2Vob2xkZXIg4oCUIG5vIHBob3RvZ3JhcGggaW5jbHVkZWQ8L3RleHQ+Cjwvc3ZnPgo="></div>
+          <div>
+            <h1>Marie Skłodowska-Curie</h1>
+            <div class="sub">1867–1934 · Warsaw → Passy<br><span>Урождённая Maria Salomea Skłodowska · Physicist and chemist</span></div>
+          </div>
+        </div>
+
+        <nav class="tabs" role="tablist">
+          <button class="on" data-tab="card">Карточка</button>
+          <button data-tab="tree">Дерево</button>
+          <button data-tab="time">Хронология</button>
+          <button data-tab="map">Места</button>
+        </nav>
+
+        <div class="pane" data-pane="card">
+          <h3>Факты</h3>
+          <div class="facts" id="facts">
+            <div class="fact sel" data-ev="birth">
+              <div class="k">Рождение</div>
+              <div class="v"><span class="ro"><span class="d">7 ноября 1867</span><span class="pl">Warsaw, Congress Poland</span></span>
+                <span class="ed"><input value="7 NOV 1867" aria-label="Дата рождения"><input value="Warsaw, Congress Poland" aria-label="Место рождения"></span></div>
+              <span class="ev none">нет источника</span>
+            </div>
+            <div class="fact" data-ev="death">
+              <div class="k">Смерть</div>
+              <div class="v"><span class="ro"><span class="d">4 июля 1934</span><span class="pl">Passy, Haute-Savoie, France</span></span>
+                <span class="ed"><input value="4 JUL 1934" aria-label="Дата смерти"><input value="Passy, Haute-Savoie, France" aria-label="Место смерти"></span></div>
+              <span class="ev none">нет источника</span>
+            </div>
+            <div class="fact" data-ev="occu">
+              <div class="k">Занятие</div>
+              <div class="v"><span class="ro">Physicist and chemist</span><span class="ed" style="grid-template-columns:1fr"><input value="Physicist and chemist" aria-label="Занятие"></span></div>
+              <span class="ev none">нет источника</span>
+            </div>
+            <div class="fact" data-ev="record">
+              <div class="k">Запись целиком</div>
+              <div class="v"><span class="ro">Нобелевские премии 1903 и 1911</span><span class="ed" style="grid-template-columns:1fr"><input value="Нобелевские премии 1903 и 1911" aria-label="Описание" disabled></span></div>
+              <span class="ev has">2 источника</span>
+            </div>
+          </div>
+          <div class="add" style="margin-top:6px"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Добавить событие</div>
+
+          <h3>Семья</h3>
+          <div class="kin">
+            <div class="k">Родители</div>
+            <div class="people">
+              <div class="person">Władysław Skłodowski <span class="yy">1832–1902</span></div>
+              <div class="person">Bronisława Boguska <span class="yy">1835–1878</span></div>
+            </div>
+            <div class="k">Братья и сёстры</div>
+            <div class="people">
+              <div class="person">Zofia <span class="yy">1862–1876</span></div>
+              <div class="person">Józef <span class="yy">1863–1937</span></div>
+              <div class="person">Bronisława Dłuska <span class="yy">1865–1939</span></div>
+              <div class="person">Helena Szalay <span class="yy">1866–1961</span></div>
+            </div>
+            <div class="k">Супруг</div>
+            <div class="people">
+              <div class="person">Pierre Curie <span class="yy">1859–1906</span> <span class="note">брак 26 июля 1895, Sceaux</span></div>
+              <div class="add"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Добавить супруга</div>
+            </div>
+            <div class="k">Дети</div>
+            <div class="people">
+              <div class="person">Irène Joliot-Curie <span class="yy">1897–1956</span></div>
+              <div class="person">Ève Curie <span class="yy">1904–2007</span></div>
+              <div class="add"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M12 5v14M5 12h14"/></svg>Добавить ребёнка</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="tree" hidden>
+          <div class="tree" id="tree">
+            <svg class="lines" id="lines"></svg>
+            <div class="gen">
+              <div class="couple"><div class="node" id="t-wl"><b>Władysław Skłodowski</b><span>1832–1902</span></div><div class="and"></div><div class="node" id="t-bb"><b>Bronisława Boguska</b><span>1835–1878</span></div></div>
+              <div class="couple"><div class="node gap" id="t-ec"><b>Eugène Curie</b><span>1827–1910</span></div><div class="and"></div><div class="node gap" id="t-sd"><b>Sophie-Claire Depouilly</b><span>1832–1897</span></div></div>
+            </div>
+            <div class="gen">
+              <div class="node dim gap" id="t-sib"><b>4 брата и сестры</b><span>1862–1866</span></div>
+              <div class="couple"><div class="node focus" id="t-mc"><b>Marie Skłodowska-Curie</b><span>1867–1934</span></div><div class="and"></div><div class="node" id="t-pc"><b>Pierre Curie</b><span>1859–1906</span></div></div>
+              <div class="node dim gap" id="t-jc"><b>Jacques Curie</b><span>1855–1941</span></div>
+            </div>
+            <div class="gen">
+              <div class="couple"><div class="node" id="t-ij"><b>Irène Joliot-Curie</b><span>1897–1956</span></div><div class="and"></div><div class="node" id="t-fj"><b>Frédéric Joliot</b><span>1900–1958</span></div></div>
+              <div class="couple"><div class="node gap" id="t-ev"><b>Ève Curie</b><span>1904–2007</span></div><div class="and"></div><div class="node gap" id="t-hl"><b>Henry R. Labouisse</b><span>1904–1987</span></div></div>
+            </div>
+            <div class="gen">
+              <div class="node gap" id="t-hj"><b>Hélène Langevin-Joliot</b><span>род. 1927</span></div>
+              <div class="node gap" id="t-pj"><b>Pierre Joliot</b><span>род. 1932</span></div>
+            </div>
+          </div>
+          <div class="legend"><span><i></i>нет ни одного источника</span><span>Клик по человеку переносит фокус</span></div>
+        </div>
+
+        <div class="pane" data-pane="time" hidden>
+          <div class="tl">
+            <div class="ti kin"><div class="yr">1860</div><div class="dot"></div><div class="tx">Брак родителей<small>Warsaw, Congress Poland</small></div><div class="age"></div></div>
+            <div class="ti kin"><div class="yr">1862</div><div class="dot"></div><div class="tx">Рождение сестры Zofia; затем Józef, Bronisława, Helena<small>1862–1866 · Warsaw</small></div><div class="age"></div></div>
+            <div class="ti own"><div class="yr">1867</div><div class="dot"></div><div class="tx"><b>Рождение</b> · 7 ноября<small>Warsaw, Congress Poland</small></div><div class="age"></div></div>
+            <div class="ti kin"><div class="yr">1876</div><div class="dot"></div><div class="tx">Смерть сестры Zofia<small>Warsaw</small></div><div class="age">8 лет</div></div>
+            <div class="ti kin"><div class="yr">1878</div><div class="dot"></div><div class="tx">Смерть матери · 9 мая<small>Warsaw</small></div><div class="age">10 лет</div></div>
+            <div class="ti own"><div class="yr">1895</div><div class="dot"></div><div class="tx"><b>Брак с Pierre Curie</b> · 26 июля<small>Sceaux, France</small></div><div class="age">27 лет</div></div>
+            <div class="ti kin"><div class="yr">1897</div><div class="dot"></div><div class="tx">Рождение дочери Irène · 12 сентября<small>Paris</small></div><div class="age">29 лет</div></div>
+            <div class="ti kin"><div class="yr">1902</div><div class="dot"></div><div class="tx">Смерть отца · 14 мая<small>Warsaw</small></div><div class="age">34 года</div></div>
+            <div class="ti kin"><div class="yr">1904</div><div class="dot"></div><div class="tx">Рождение дочери Ève · 6 декабря<small>Paris</small></div><div class="age">37 лет</div></div>
+            <div class="ti kin"><div class="yr">1906</div><div class="dot"></div><div class="tx">Смерть мужа · 19 апреля<small>Paris</small></div><div class="age">38 лет</div></div>
+            <div class="ti kin"><div class="yr">1926</div><div class="dot"></div><div class="tx">Брак Irène и Frédéric Joliot · 9 октября<small>Paris</small></div><div class="age">58 лет</div></div>
+            <div class="ti kin"><div class="yr">1927</div><div class="dot"></div><div class="tx">Рождение внучки Hélène</div><div class="age">59 лет</div></div>
+            <div class="ti kin"><div class="yr">1932</div><div class="dot"></div><div class="tx">Рождение внука Pierre</div><div class="age">64 года</div></div>
+            <div class="ti own"><div class="yr">1934</div><div class="dot"></div><div class="tx"><b>Смерть</b> · 4 июля<small>Passy, Haute-Savoie, France</small></div><div class="age">66 лет</div></div>
+          </div>
+        </div>
+
+        <div class="pane" data-pane="map" hidden>
+          <div class="mapbox">
+            <div class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg></div>
+            <div>
+              <p><b style="color:var(--text)">У мест нет координат.</b> В файле нет <code>MAP</code> с широтой и долготой, а подложка карты требует сети — плагин её не загружает без разрешения.</p>
+              <div class="acts"><button class="btn">Указать координаты</button><button class="btn">Разрешить карту из сети</button></div>
+            </div>
+          </div>
+          <h3>Места в жизни Marie</h3>
+          <div class="places">
+            <div class="place"><div><b>Warsaw, Congress Poland</b><small>Рождение · смерть матери и отца · брак родителей</small></div><span class="c">4 события</span></div>
+            <div class="place"><div><b>Sceaux, France</b><small>Брак с Pierre Curie</small></div><span class="c">1 событие</span></div>
+            <div class="place"><div><b>Paris, France</b><small>Рождение дочерей · смерть мужа · брак Irène</small></div><span class="c">4 события</span></div>
+            <div class="place"><div><b>Passy, Haute-Savoie, France</b><small>Смерть</small></div><span class="c">1 событие</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="savebar" id="savebar" role="status">
+        <span class="msg" id="savemsg"><b>1 изменение</b> ещё не в файле</span>
+        <button class="btn" id="undo">Отменить</button>
+        <button class="btn primary" id="save">Записать в curie.ged</button>
+      </div>
+    </section>
+
+    <!-- evidence -->
+    <aside class="right">
+      <div class="panel-head">
+        <div class="panel-title"><b>Доказательства</b><span>@I1@</span></div>
+        <div class="ctx" id="ctx">Рождение<small>7 ноября 1867 · Warsaw</small></div>
+      </div>
+      <div class="evbody" id="ev"></div>
+    </aside>
+  </div>
+  </div>
+
+  <div class="below">
+    <div class="phones">
+    <figure class="ph">
+    <div class="phone"><div class="screen">
+      <div class="sbar"><span>9:41</span><span></span></div>
+      <div class="mhead"><button class="iconbtn" title="Левая панель"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 5v14"/></svg></button><b>Marie Skłodowska-Curie</b><button class="iconbtn" title="Ещё"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>
+      <div class="mbody">
+        <div class="mwho"><div class="portrait"><img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgNDAwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjQwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJNYXJpZSBTa8WCb2Rvd3NrYS1DdXJpZSI+CiAgPHJlY3Qgd2lkdGg9IjMyMCIgaGVpZ2h0PSI0MDAiIGZpbGw9IiNmM2YxZWMiLz4KICA8cmVjdCB4PSIxNiIgeT0iMTYiIHdpZHRoPSIyODgiIGhlaWdodD0iMzY4IiBmaWxsPSJub25lIiBzdHJva2U9IiM3YTVjOGYiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE2MCIgY3k9IjE2OCIgcj0iNzYiIGZpbGw9IiM3YTVjOGYiIG9wYWNpdHk9IjAuMTQiLz4KICA8dGV4dCB4PSIxNjAiIHk9IjE5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjY0IiBmaWxsPSIjN2E1YzhmIj5NQzwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjMwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjIwIiBmaWxsPSIjMmIyYTI3Ij5NYXJpZSBTa8WCb2Rvd3NrYS1DdXJpZTwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjMyNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNmI2ODYyIj4xODY34oCTMTkzNDwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjM2MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzhiODc3ZiI+cGxhY2Vob2xkZXIg4oCUIG5vIHBob3RvZ3JhcGggaW5jbHVkZWQ8L3RleHQ+Cjwvc3ZnPgo="></div><div><h2>Marie Skłodowska-Curie</h2><p>1867–1934 · Warsaw → Passy</p></div></div>
+        <div class="mtabs"><span class="on">Карточка</span><span>Дерево</span><span>Хронология</span><span>Места</span></div>
+        <div class="mfact open"><span class="k">Рождение</span><span class="v">7 ноября 1867 · Warsaw</span><span class="ev none">нет ист.</span>
+          <div class="inl"><b>Нет источника у этого факта</b><span>У родителей — Parish registers of Warsaw</span><div class="row2"><button class="btn">Привязать</button><button class="btn">Все источники</button></div></div></div>
+        <div class="mfact"><span class="k">Смерть</span><span class="v">4 июля 1934 · Passy</span><span class="ev none">нет ист.</span></div>
+        <div class="mfact" style="border:0"><span class="k">Супруг</span><span class="v" style="color:var(--accent-text)">Pierre Curie · 1859–1906</span><span></span></div>
+      </div>
+      <div class="onav" title="Нижняя панель Obsidian — не наша">
+        <svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>
+        <svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="cnt">3</span>
+        <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </div>
+    </div></div>
+    <figcaption><b>Человек — обычная вкладка.</b> Тап по факту раскрывает доказательства прямо под ним. Внизу — штатная панель Obsidian.</figcaption>
+    </figure>
+
+    <figure class="ph">
+    <div class="phone"><div class="screen drawer-host">
+      <div class="sbar"><span>9:41</span><span></span></div>
+      <div class="ghost"></div>
+      <div class="drawer left">
+        <div class="dtabs"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h6l2 2h8v10H4z"/></svg><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><span class="on"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M12 8.5v4M12 12.5l-5 3.5M12 12.5l5 3.5"/></svg></span></div>
+        <div class="panel-title" style="padding:10px 12px 0"><b>curie.ged</b><span>17 человек</span></div>
+        <div style="padding:0 12px"><label class="search"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input placeholder="Имя, год, место…" aria-label="Поиск"></label></div>
+        <div class="dl">
+          <div class="row"><span class="n">Pierre Curie</span><span class="y">1859–1906</span></div>
+          <div class="row"><span class="n">Bronisława Dłuska<i class="gap"></i></span><span class="y">1865–1939</span></div>
+          <div class="row"><span class="n">Frédéric Joliot</span><span class="y">1900–1958</span></div>
+          <div class="row"><span class="n">Irène Joliot-Curie</span><span class="y">1897–1956</span></div>
+          <div class="row on"><span class="n">Marie Skłodowska-Curie</span><span class="y">1867–1934</span></div>
+          <div class="row"><span class="n">Władysław Skłodowski</span><span class="y">1832–1902</span></div>
+        </div>
+      </div>
+    </div></div>
+    <figcaption><b>Индекс — левая боковая панель.</b> Свайп от левого края, рядом с файлами и поиском. Доказательства целиком — в правой панели, как обратные ссылки.</figcaption>
+    </figure>
+    </div>
+    <div class="notes">
+      <h4>Как читать макет</h4>
+      <ol>
+        <li><b>Файл открывается как генеалогия.</b> «Исходник» в шапке — тот же файл в нынешнем редакторе GEDCOM.</li>
+        <li><b>Справа — то, на чём держится выбранный факт.</b> Кликните «Рождение», «Смерть» или «Запись целиком»: источники, заметки vault и медиа переключаются вслед.</li>
+        <li><b>Пробелы видны сразу:</b> «нет источника» у факта, оранжевая точка в индексе и в дереве, фильтр «Без источника».</li>
+        <li><b>Правка.</b> «Править» превращает факты в поля; изменённое поле подсвечено, пока не записано в <code>curie.ged</code>, а после — показывает, что записано. Метка PRO — место, где мог бы проходить платный рубеж.</li>
+        <li><b>Телефон</b> живёт в устройстве Obsidian: индекс — левая выдвижная панель, человек — вкладка, доказательства — правая панель и раскрытие под фактом. Нижняя панель — штатная, своей не добавляем.</li>
+      </ol>
+      <small>Все данные — из demo-vault; Nobel-премии в файле есть только как цитаты записи, а не события, поэтому в хронологии их нет.</small>
+    </div>
+  </div>
+</div>
+
+<script>
+const people=[
+ ["Boguska","Bronisława Boguska","1835–1878","Warsaw",0],
+ ["Curie","Eugène Curie","1827–1910","Mulhouse",1],
+ ["Curie","Ève Curie","1904–2007","Paris",1],
+ ["Curie","Jacques Curie","1855–1941","Paris",1],
+ ["Curie","Pierre Curie","1859–1906","Paris",0],
+ ["Depouilly","Sophie-Claire Depouilly","1832–1897","",1],
+ ["Dłuska","Bronisława Dłuska","1865–1939","Warsaw",1],
+ ["Joliot","Frédéric Joliot","1900–1958","Paris",0],
+ ["Joliot","Pierre Joliot","род. 1932","",1],
+ ["Joliot-Curie","Irène Joliot-Curie","1897–1956","Paris",0],
+ ["Labouisse","Henry Richardson Labouisse","1904–1987","New Orleans",1],
+ ["Langevin-Joliot","Hélène Langevin-Joliot","род. 1927","",1],
+ ["Skłodowska","Zofia Skłodowska","1862–1876","Warsaw",1],
+ ["Skłodowska-Curie","Marie Skłodowska-Curie","1867–1934","Warsaw → Passy",0],
+ ["Skłodowski","Józef Skłodowski","1863–1937","Warsaw",1],
+ ["Skłodowski","Władysław Skłodowski","1832–1902","Warsaw",0],
+ ["Szalay","Helena Szalay","1866–1961","Warsaw",1]
+];
+let filter="all";
+const list=document.getElementById("list"),q=document.getElementById("q");
+function drawList(){
+  const s=q.value.trim().toLowerCase();let html="",last="";
+  const rows=people.filter(p=>(filter==="all"||p[4])&&(!s||(p[1]+" "+p[2]+" "+p[3]).toLowerCase().includes(s)));
+  rows.forEach(p=>{const L=p[0][0].toUpperCase();if(L!==last){html+=`<div class="letter">${L}</div>`;last=L}
+    html+=`<div class="row${p[1].startsWith("Marie")?" on":""}"><span class="n">${p[1]}${p[4]?'<i class="gap" title="Нет источника"></i>':""}</span><span class="y">${p[2]}</span>${p[3]?`<span class="p">${p[3]}</span>`:""}</div>`});
+  list.innerHTML=html||`<div class="empty-note">Никого по запросу «${q.value}». Поиск идёт по именам, годам и местам.</div>`;
+}
+q.addEventListener("input",drawList);
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");filter=c.dataset.f;drawList()});
+drawList();
+
+const MEDIA=`<h3>Медиа</h3><div class="media">
+ <div class="thumb"><img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgNDAwIiB3aWR0aD0iMzIwIiBoZWlnaHQ9IjQwMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJNYXJpZSBTa8WCb2Rvd3NrYS1DdXJpZSI+CiAgPHJlY3Qgd2lkdGg9IjMyMCIgaGVpZ2h0PSI0MDAiIGZpbGw9IiNmM2YxZWMiLz4KICA8cmVjdCB4PSIxNiIgeT0iMTYiIHdpZHRoPSIyODgiIGhlaWdodD0iMzY4IiBmaWxsPSJub25lIiBzdHJva2U9IiM3YTVjOGYiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxjaXJjbGUgY3g9IjE2MCIgY3k9IjE2OCIgcj0iNzYiIGZpbGw9IiM3YTVjOGYiIG9wYWNpdHk9IjAuMTQiLz4KICA8dGV4dCB4PSIxNjAiIHk9IjE5NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjY0IiBmaWxsPSIjN2E1YzhmIj5NQzwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjMwMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjIwIiBmaWxsPSIjMmIyYTI3Ij5NYXJpZSBTa8WCb2Rvd3NrYS1DdXJpZTwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjMyNiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSIjNmI2ODYyIj4xODY34oCTMTkzNDwvdGV4dD4KICA8dGV4dCB4PSIxNjAiIHk9IjM2MiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzhiODc3ZiI+cGxhY2Vob2xkZXIg4oCUIG5vIHBob3RvZ3JhcGggaW5jbHVkZWQ8L3RleHQ+Cjwvc3ZnPgo="><span class="cap">Портрет</span></div>
+ <div class="thumb"><img alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0ODAgMzIwIiB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJUaGUgQ3VyaWUgZmFtaWx5LCBhYm91dCAxOTA4Ij4KICA8cmVjdCB3aWR0aD0iNDgwIiBoZWlnaHQ9IjMyMCIgZmlsbD0iI2VmZWNlNiIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjQ2MCIgaGVpZ2h0PSIzMDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzdhNWM4ZiIgc3Ryb2tlLXdpZHRoPSIyIi8+CgogIDwhLS0gTWFyaWUsIGxlZnQ6IHRoZSByZWN0YW5nbGUgMzAsNDAgMTMweDI0MCBuYW1lcyB0aGlzIGZpZ3VyZSAtLT4KICA8Zz4KICAgIDxjaXJjbGUgY3g9Ijk1IiBjeT0iMTA1IiByPSIzOCIgZmlsbD0iI2M4YjZkNiIvPgogICAgPHBhdGggZD0iTTQ1IDI4MCBxNTAtMTA1IDEwMCAweiIgZmlsbD0iIzdhNWM4ZiIvPgogICAgPHRleHQgeD0iOTUiIHk9IjMwMCIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsIHNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNGEzYTU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5NYXJpZTwvdGV4dD4KICA8L2c+CgogIDwhLS0gUGllcnJlLCBjZW50cmU6IDE3NSw0MCAxMzB4MjQwIC0tPgogIDxnPgogICAgPGNpcmNsZSBjeD0iMjQwIiBjeT0iMTA1IiByPSIzOCIgZmlsbD0iI2I2YzhkNiIvPgogICAgPHBhdGggZD0iTTE5MCAyODAgcTUwLTEwNSAxMDAgMHoiIGZpbGw9IiMzZjVjN2EiLz4KICAgIDx0ZXh0IHg9IjI0MCIgeT0iMzAwIiBmb250LWZhbWlseT0iR2VvcmdpYSwgc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiMyZjQxNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlBpZXJyZTwvdGV4dD4KICA8L2c+CgogIDwhLS0gSXLDqG5lLCByaWdodDogMzIwLDQwIDEzMHgyNDAgLS0+CiAgPGc+CiAgICA8Y2lyY2xlIGN4PSIzODUiIGN5PSIxMDUiIHI9IjM4IiBmaWxsPSIjZDZjOGI2Ii8+CiAgICA8cGF0aCBkPSJNMzM1IDI4MCBxNTAtMTA1IDEwMCAweiIgZmlsbD0iIzdhNWYzZiIvPgogICAgPHRleHQgeD0iMzg1IiB5PSIzMDAiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzU1NDUyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+SXLDqG5lPC90ZXh0PgogIDwvZz4KPC9zdmc+Cg==" style="object-fit:cover;object-position:12% 40%"><span class="cap">Слева, 1908</span></div>
+ <div class="thumb remote">Из веба<br>не загружено</div></div>`;
+const NOTES=`<h3>Заметки vault · 6</h3>
+ <div class="note-l"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/></svg><div><b>Marie Skłodowska-Curie</b><span>Physicist and chemist, <mark>born in Warsaw in 1867</mark>, died at Sancellemoz in 1934.</span></div></div>
+ <div class="note-l"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/></svg><div><b>Nobel Prizes in the family</b><span>Five prizes reach this family, across three generations.</span></div></div>
+ <div class="note-l"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/></svg><div><b>Radium</b><span>и ещё 3: Pierre Curie, Start here, Nobel Prize in Physics 1903</span></div></div>`;
+const SRC=`<div class="cite"><b>The Nobel Prize in Physics 1903</b><span>Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel</span><em>Nobel Prize Outreach · nobelprize.org</em></div>
+ <div class="cite"><b>The Nobel Prize in Chemistry 1911 and 1935</b><span>Nobel Prize in Chemistry 1911</span><em>Nobel Prize Outreach · nobelprize.org</em></div>`;
+const EV={
+ birth:{t:"Рождение",s:"7 ноября 1867 · Warsaw",h:`<h3>Источники факта</h3><div class="warnbox"><b>У этого факта нет источника</b>Дата и место рождения ни на что не ссылаются.
+   <div class="suggest"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px;flex:none;margin-top:2px"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3z"/></svg><span>Рождения родителей в Warsaw подтверждает <b style="color:var(--text)">Parish registers of Warsaw</b>.</span></div>
+   <div class="acts"><button class="btn">Привязать этот источник</button><button class="btn">Другой…</button></div></div>
+   <h3>Источники записи · 2</h3>${SRC}${NOTES}${MEDIA}<button class="btn newnote">Новая заметка о Marie</button>`},
+ death:{t:"Смерть",s:"4 июля 1934 · Passy, Haute-Savoie",h:`<h3>Источники факта</h3><div class="warnbox"><b>У этого факта нет источника</b>В заметке <i>Marie Skłodowska-Curie</i> место названо иначе — Sancellemoz.<div class="acts"><button class="btn">Привязать источник</button></div></div>
+   <h3>Расхождение с заметкой</h3><div class="note-l"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/></svg><div><b>Marie Skłodowska-Curie</b><span>…born in Warsaw in 1867, <mark>died at Sancellemoz in 1934</mark>.</span></div></div>
+   <h3>Источники записи · 2</h3>${SRC}`},
+ occu:{t:"Занятие",s:"Physicist and chemist",h:`<h3>Источники факта</h3><div class="warnbox"><b>У этого факта нет источника</b><div class="acts"><button class="btn">Привязать источник</button></div></div><h3>Источники записи · 2</h3>${SRC}${NOTES}`},
+ record:{t:"Запись целиком",s:"Marie Skłodowska-Curie · @I1@",h:`<h3>Источники записи · 2</h3>${SRC}
+   <h3>Общая заметка</h3><div class="cite" style="cursor:default"><span style="margin:0;color:var(--text)">The only person to have won a Nobel Prize in two different sciences: physics in 1903 and chemistry in 1911.</span></div>${NOTES}${MEDIA}<button class="btn newnote">Новая заметка о Marie</button>`}
+};
+const ev=document.getElementById("ev"),ctx=document.getElementById("ctx");
+function showEv(k){const e=EV[k];ctx.innerHTML=`${e.t}<small>${e.s}</small>`;ev.innerHTML=e.h;ev.scrollTop=0}
+document.querySelectorAll(".fact").forEach(f=>f.addEventListener("click",e=>{
+  document.querySelectorAll(".fact").forEach(x=>x.classList.remove("sel"));f.classList.add("sel");showEv(f.dataset.ev);
+  if(f.classList.contains("saved"))f.classList.remove("saved");
+}));
+showEv("birth");
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".pane").forEach(p=>p.hidden=p.dataset.pane!==b.dataset.tab);
+  if(b.dataset.tab==="tree")requestAnimationFrame(drawLines);
+});
+
+const facts=document.getElementById("facts"),body=document.getElementById("body"),bar=document.getElementById("savebar"),editBtn=document.getElementById("editBtn");
+editBtn.onclick=()=>{const on=!body.classList.contains("editing");body.classList.toggle("editing",on);editBtn.classList.toggle("on",on);editBtn.setAttribute("aria-pressed",on)};
+function dirtyCount(){return facts.querySelectorAll(".fact.dirty").length}
+function syncBar(){const n=dirtyCount();bar.classList.toggle("show",n>0);document.getElementById("savemsg").innerHTML=`<b>${n} ${n===1?"изменение":n<5?"изменения":"изменений"}</b> ещё не в файле`}
+facts.querySelectorAll("input").forEach(i=>{i.dataset.orig=i.value;i.addEventListener("input",()=>{const f=i.closest(".fact");f.classList.remove("saved");
+  f.classList.toggle("dirty",[...f.querySelectorAll("input")].some(x=>x.value!==x.dataset.orig));syncBar()})});
+document.getElementById("save").onclick=()=>{facts.querySelectorAll(".fact.dirty").forEach(f=>{f.classList.remove("dirty");f.classList.add("saved");
+  f.querySelectorAll("input").forEach(x=>x.dataset.orig=x.value);const [d,p]=f.querySelectorAll("input");const ro=f.querySelector(".ro");
+  if(p){ro.querySelector(".pl").textContent=p.value;ro.querySelector(".d").textContent=d.value}else ro.textContent=d.value});syncBar()};
+document.getElementById("undo").onclick=()=>{facts.querySelectorAll("input").forEach(x=>x.value=x.dataset.orig);facts.querySelectorAll(".fact.dirty").forEach(f=>f.classList.remove("dirty"));syncBar()};
+
+function drawLines(){
+  const t=document.getElementById("tree"),svg=document.getElementById("lines"),R=t.getBoundingClientRect();
+  const c=(id)=>{const r=document.getElementById(id).getBoundingClientRect();return{x:r.left-R.left+r.width/2,top:r.top-R.top,bot:r.bottom-R.top,l:r.left-R.left,r:r.right-R.left}};
+  const mid=(a,b)=>{const A=c(a),B=c(b);return{x:(A.r+B.l)/2,y:(A.top+A.bot)/2,bot:A.bot}};
+  const link=(p,kids)=>kids.map(k=>{const K=c(k),m=(p.y+K.top)/2+6;return`M${p.x} ${p.y}V${m}H${K.x}V${K.top}`}).join("");
+  let d=link(mid("t-wl","t-bb"),["t-sib","t-mc"])+link(mid("t-ec","t-sd"),["t-pc","t-jc"])+link(mid("t-mc","t-pc"),["t-ij","t-ev"])+link(mid("t-ij","t-fj"),["t-hj","t-pj"]);
+  svg.innerHTML=`<path d="${d}"/>`;
+}
+addEventListener("resize",()=>{if(!document.querySelector('[data-pane="tree"]').hidden)drawLines()});
+
+document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-theme]").forEach(x=>x.classList.toggle("on",x===b));
+  const s=document.getElementById("stage");s.classList.toggle("theme-dark",b.dataset.theme==="dark");s.classList.toggle("theme-light",b.dataset.theme==="light")});
+</script>
+</body>
+</html>
