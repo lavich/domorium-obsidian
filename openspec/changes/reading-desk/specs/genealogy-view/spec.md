@@ -326,3 +326,59 @@ names, with its own caption, and SHALL open that record's page.
 - **WHEN** the reader chooses the media page of the family photograph from
   Marie's gallery
 - **THEN** the tab shows the media page of `@O5@`
+
+### Requirement: The views of a person page
+
+A person page SHALL offer three views, switched by tabs below its heading:
+**Card**, which is the page as described above; **Timeline**; and **Places**.
+The tabs SHALL scroll sideways where they do not fit. The view chosen SHALL be
+kept when the tab moves to another person and when the workspace is restored.
+
+#### Scenario: Switching to the timeline and moving on
+- **WHEN** the reader chooses Timeline on Marie's page and then opens Pierre
+  Curie from it
+- **THEN** Pierre Curie's page opens on its timeline
+
+### Requirement: The timeline
+
+The timeline SHALL list, ordered by the year read from each date, the person's
+own events and the events of the families they married into, and the following
+events of close relatives: their parents' marriage; their parents' deaths; their
+siblings' births and deaths; their spouses' deaths; their children's births,
+marriages and deaths; and their grandchildren's births. A relative's event SHALL
+be listed only from the person's parents' marriage, or their own birth where
+that is earlier or the marriage is not dated, to the person's death, where that
+is dated.
+
+Each entry SHALL show its year, its date as written, what happened — the
+event's name, and for a relative's event the relationship and the relative's
+name — and its place. The person's own entries SHALL be told apart from their
+relatives'. An event of the person's with no year read from it SHALL be listed
+apart, as undated. No age SHALL be shown.
+
+Activating a relative in an entry SHALL open their page; activating one of the
+person's own entries SHALL select that fact.
+
+#### Scenario: Marie's timeline
+- **WHEN** Marie's timeline is shown
+- **THEN** it begins with her parents' marriage in 1860, lists the births of
+  her four siblings before her own birth in 1867, her mother's death in 1878,
+  her marriage to Pierre Curie in 1895, her daughters' births, her husband's
+  death in 1906, her grandchildren's births, and ends with her death in 1934
+
+#### Scenario: A relative's event after the person's death
+- **WHEN** a person died in 1934 and their daughter died in 1956
+- **THEN** the daughter's death is not on the person's timeline
+
+### Requirement: The places
+
+The places view SHALL list every place named by an entry of the timeline, in
+the order a place first appears there, each with the events that happened there
+and how many. A place SHALL be shown as the file writes it. No map SHALL be
+drawn and nothing SHALL be fetched.
+
+#### Scenario: Marie's places
+- **WHEN** Marie's places are shown
+- **THEN** `Warsaw, Congress Poland` lists her birth among its events, and
+  `Sceaux, France` lists her marriage
+

@@ -237,5 +237,32 @@
   "mediaKind.unknown": "File",
   "evidence.notes": "Notes in the vault",
   "evidence.notesNone": "No note links to this record.",
-  "evidence.media": "Media"
+  "evidence.media": "Media",
+  "timeline.with": "{event} with {name}",
+  "timeline.ofParents": "{event} of parents",
+  "desk.tab.card": "Card",
+  "desk.tab.timeline": "Timeline",
+  "desk.tab.places": "Places",
+  "timeline.undated": "Undated",
+  "timeline.empty": "No event has a year to place it by.",
+  "places.empty": "No event names a place.",
+  "places.count": {
+    "one": "{count} event",
+    "other": "{count} events"
+  },
+  "timeline.of.parent.male": "{event} of father {name}",
+  "timeline.of.parent.female": "{event} of mother {name}",
+  "timeline.of.parent.any": "{event} of parent {name}",
+  "timeline.of.sibling.male": "{event} of brother {name}",
+  "timeline.of.sibling.female": "{event} of sister {name}",
+  "timeline.of.sibling.any": "{event} of sibling {name}",
+  "timeline.of.spouse.male": "{event} of husband {name}",
+  "timeline.of.spouse.female": "{event} of wife {name}",
+  "timeline.of.spouse.any": "{event} of spouse {name}",
+  "timeline.of.child.male": "{event} of son {name}",
+  "timeline.of.child.female": "{event} of daughter {name}",
+  "timeline.of.child.any": "{event} of child {name}",
+  "timeline.of.grandchild.male": "{event} of grandson {name}",
+  "timeline.of.grandchild.female": "{event} of granddaughter {name}",
+  "timeline.of.grandchild.any": "{event} of grandchild {name}"
 }

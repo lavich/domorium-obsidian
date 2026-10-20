@@ -166,6 +166,40 @@ test.describe("media", () => {
   });
 });
 
+test.describe("the views of a person page", () => {
+  test("shows Marie's timeline, and keeps it when moving to her husband", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-tab", { hasText: "Timeline" }).click();
+
+    await expect(page.locator(".gedcom-desk-moment-year").first()).toHaveText("1860");
+    await expect(page.locator(".gedcom-desk-moment.is-own .gedcom-desk-moment-what").first()).toHaveText("Birth");
+    await page.locator(".gedcom-desk-moment-what", { hasText: "Death of husband" }).click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
+    await expect(page.locator(".gedcom-desk-tab.is-active")).toHaveText("Timeline");
+  });
+
+  test("lists her places", async ({ page }) => {
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-tab", { hasText: "Places" }).click();
+
+    await expect(page.locator(".gedcom-desk-place-name")).toHaveText([
+      "Warsaw, Congress Poland", "Sceaux, France", "Paris, France", "Passy, Haute-Savoie, France",
+    ]);
+  });
+
+  test("keeps the tabs on one line on a phone, scrolling sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+    await mountDesk(page, { phone: true });
+    const tops = await page.locator(".gedcom-desk-tab").evaluateAll((tabs) =>
+      tabs.map((tab) => Math.round(tab.getBoundingClientRect().top)),
+    );
+
+    expect(new Set(tops).size).toBe(1);
+    expect(await overflowsSideways(page)).toBe(false);
+  });
+});
+
 test.describe("the evidence panel", () => {
   test("follows the selected fact, and goes back to the whole record", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });

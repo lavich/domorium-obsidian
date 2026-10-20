@@ -69,3 +69,12 @@
 - [x] 8.7 List those notes in the evidence panel and open one at its line; extend `src/desk/evidence.test.ts`
 - [x] 8.8 Wire media resolution, the media page and vault notes into `GedcomView` and the plugin; mount them in the harness and cover them in `tests/desk.spec.ts`; check in Obsidian on the demo vault
 - [x] 8.9 Run `npm run check` and `npm run test:browser`; both pass
+
+## 9. Timeline and places
+
+- [x] 9.1 Build a person's timeline and places from the model in `src/desk/timeline.ts`; covered by a new `src/desk/timeline.test.ts` against the demo vault
+- [x] 9.2 Render the Card, Timeline and Places tabs on the person page, the timeline and the places, in `src/desk/personPage.ts` and `src/desk/timelineView.ts`; covered by a new `src/desk/timelineView.test.ts`
+- [x] 9.3 Keep the chosen view in the tab's state and across moving to another person; covered by `src/desk/deskState.test.ts`
+- [x] 9.4 Style the tabs, the timeline and the places; cover the tabs on a phone, the timeline and the places in `tests/desk.spec.ts`; check in Obsidian
+- [x] 9.5 Run `npm run check` and `npm run test:browser`; both pass
+

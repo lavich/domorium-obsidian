@@ -69,7 +69,12 @@ import {
 import { renderFamilyPage } from "./desk/familyPage";
 import type { MediaItem } from "./desk/media";
 import { renderMediaPage } from "./desk/mediaPage";
-import { renderPersonPage, type FactKey, type PageHost } from "./desk/personPage";
+import {
+  renderPersonPage,
+  type FactKey,
+  type PageHost,
+  type PersonView,
+} from "./desk/personPage";
 import {
   renderEmptyPage,
   renderGonePage,
@@ -115,6 +120,7 @@ export class GedcomView extends TextFileView {
   private mode: DeskMode;
   private record: string | null = null;
   private selected: FactKey | null = null;
+  private personView: PersonView = "card";
   private revision = 0;
   private readonly genealogyCache = new IndexCache();
   private readonly editorEl: HTMLElement;
@@ -221,6 +227,7 @@ export class GedcomView extends TextFileView {
     return {
       ...super.getState(),
       mode: this.mode,
+      view: this.personView,
       ...(this.record === null ? {} : { record: this.record }),
     };
   }
@@ -243,6 +250,9 @@ export class GedcomView extends TextFileView {
     }
     if (desk.mode) {
       this.mode = desk.mode;
+    }
+    if (desk.view) {
+      this.personView = desk.view;
     }
     await super.setState(state, result);
     this.showMode();
@@ -619,7 +629,12 @@ export class GedcomView extends TextFileView {
         this.deskEl,
         person,
         index,
-        { selected: this.selected, phone: Platform.isPhone, media: this.mediaItems(person.media) },
+        {
+          selected: this.selected,
+          phone: Platform.isPhone,
+          media: this.mediaItems(person.media),
+          view: this.personView,
+        },
         this.pageHost(),
       );
       return;
@@ -660,6 +675,11 @@ export class GedcomView extends TextFileView {
       showInSource: (range) => this.showInSource(range),
       openEvidence: () => this.host.openEvidence(),
       openFile: (path) => this.openVaultFile(path),
+      chooseView: (view) => {
+        this.personView = view;
+        this.drawDesk();
+        this.app.workspace.requestSaveLayout();
+      },
     };
   }
 

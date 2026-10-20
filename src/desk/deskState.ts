@@ -1,5 +1,6 @@
 import type { GenealogyIndex } from "../genealogy";
 import type { OpenAsMode } from "../settingsData";
+import { PERSON_VIEWS, type PersonView } from "./personPage";
 
 export type DeskMode = OpenAsMode;
 
@@ -9,16 +10,18 @@ export type PageKind = "person" | "family" | "source" | "media";
 export interface DeskState {
   mode?: DeskMode;
   record?: string;
+  view?: PersonView;
 }
 
 export function readDeskState(state: unknown): DeskState {
   if (typeof state !== "object" || state === null) {
     return {};
   }
-  const { mode, record } = state as Record<string, unknown>;
+  const { mode, record, view } = state as Record<string, unknown>;
   return {
     ...(mode === "genealogy" || mode === "source" ? { mode } : {}),
     ...(typeof record === "string" && record ? { record } : {}),
+    ...(PERSON_VIEWS.includes(view as PersonView) ? { view: view as PersonView } : {}),
   };
 }
 

@@ -11,6 +11,8 @@ import { plural, t } from "../i18n";
 import { eventName, personName, shortPlace, sourceTitle, yearsOf } from "./labels";
 import { linkButton } from "./dom";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
+import { placesOf, timelineOf } from "./timeline";
+import { renderPlaces, renderTimeline } from "./timelineView";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
@@ -25,12 +27,17 @@ export interface Fact {
   spouse?: PersonRow;
 }
 
+export type PersonView = "card" | "timeline" | "places";
+
+export const PERSON_VIEWS: PersonView[] = ["card", "timeline", "places"];
+
 export interface PageHost {
   openRecord(xref: string): void;
   select(key: FactKey | null): void;
   showInSource(range: Range): void;
   openEvidence(): void;
   openFile(path: string): void;
+  chooseView?(view: PersonView): void;
 }
 
 export interface PersonPageOptions {
@@ -38,6 +45,7 @@ export interface PersonPageOptions {
   phone: boolean;
   /** The files the record links, resolved by the host; none where omitted. */
   media?: MediaItem[];
+  view?: PersonView;
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -66,6 +74,16 @@ export function renderPersonPage(
   container.empty();
   const page = container.createDiv({ cls: "gedcom-desk-page" });
   renderHeading(page, person, options, host);
+  const view = options.view ?? "card";
+  renderTabs(page, view, host);
+  if (view === "timeline") {
+    renderTimeline(page, timelineOf(person, index), host);
+    return;
+  }
+  if (view === "places") {
+    renderPlaces(page, placesOf(timelineOf(person, index)));
+    return;
+  }
   renderFacts(page, person, index, options, host);
   if (person.otherNames.length > 0) {
     page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.otherNames") });
@@ -76,6 +94,22 @@ export function renderPersonPage(
   }
   renderFamily(page, person, host);
   renderGallery(page, options.media ?? [], host);
+}
+
+function renderTabs(page: HTMLElement, current: PersonView, host: PageHost): void {
+  const tabs = page.createDiv({ cls: "gedcom-desk-tabs" });
+  tabs.setAttribute("role", "tablist");
+  for (const view of PERSON_VIEWS) {
+    const tab = tabs.createEl("button", {
+      cls: "gedcom-desk-tab",
+      text: t(`desk.tab.${view}`),
+    });
+    tab.setAttribute("type", "button");
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-selected", String(view === current));
+    tab.toggleClass("is-active", view === current);
+    tab.addEventListener("click", () => host.chooseView?.(view));
+  }
 }
 
 function renderHeading(

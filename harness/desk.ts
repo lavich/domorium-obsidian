@@ -8,7 +8,7 @@ import { renderFamilyPage } from "../src/desk/familyPage";
 import type { MediaItem } from "../src/desk/media";
 import { renderMediaPage } from "../src/desk/mediaPage";
 import type { NoteHit } from "../src/desk/noteLinks";
-import { renderPersonPage, type FactKey } from "../src/desk/personPage";
+import { renderPersonPage, type FactKey, type PersonView } from "../src/desk/personPage";
 import { renderSourcePage } from "../src/desk/sourcePage";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
@@ -67,6 +67,7 @@ let index: GenealogyIndex;
 let record = "@I1@";
 let selected: FactKey | null = null;
 let phone = false;
+let view: PersonView = "card";
 let list: IndexList | null = null;
 
 function element(id: string): HTMLElement {
@@ -96,6 +97,10 @@ const host = {
   openFile: (path: string): void => {
     calls.filesOpened.push(path);
   },
+  chooseView: (chosen: PersonView): void => {
+    view = chosen;
+    draw();
+  },
 };
 
 function mediaItem(at: Position): MediaItem | null {
@@ -124,7 +129,7 @@ function draw(): void {
   const source = index.source(record);
   const media = index.media(record);
   if (person) {
-    renderPersonPage(page, person, index, { selected, phone, media: mediaItems(person.media) }, host);
+    renderPersonPage(page, person, index, { selected, phone, media: mediaItems(person.media), view }, host);
   } else if (family) {
     renderFamilyPage(page, family, index, { selected, phone, media: mediaItems(family.media) }, host);
   } else if (source) {
@@ -165,6 +170,7 @@ function mount(options: DeskOptions): void {
   index = buildIndex(service.getDocumentSymbols());
   record = options.record ?? index.people.find((row) => row.xref)?.xref ?? "";
   selected = null;
+  view = "card";
   list = new IndexList(element("index-pane"), { open: host.openRecord });
   draw();
 }

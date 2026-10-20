@@ -22,6 +22,9 @@ that would block a first, honest version.
   family's own facts, the children) or a **source page** (repository, who cites
   it and where). Moving between records has back and forward, Obsidian's
   own.
+- A person page has three views: the **card**, a **timeline** of the person's
+  own events and those of close relatives within their life, and the **places**
+  of that life, listed without a map.
 - **Evidence from the vault**: a portrait in a person's heading, a gallery of
   the files a person, family or source uses, a **media page** for each
   multimedia record with everyone who links it, and the vault notes that link to
@@ -62,8 +65,10 @@ reimplementing it here:
 ## Non-goals
 
 - Writing anything to the file. Every correction goes through Source mode.
-- Tree, Timeline and Places views. They are later slices; the person page has
-  room for them but this change adds no tabs for them.
+- A tree. It is the next slice, prototyped against a large file first.
+- Ages in the timeline: a year read from a date gives an age that is off by one
+  half the time, and reading months and days is upstream's
+  ([lavich/domorium#378](https://github.com/lavich/domorium/issues/378)).
 - A map, coordinates, or anything that needs the network.
 - Showing, for a vault file, which records use it. The pages show which files a
   record uses; the other direction starts from the file and is its own change.
