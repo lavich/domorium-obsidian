@@ -5,7 +5,8 @@ truth lives in [`PRODUCT.md`](../../PRODUCT.md); the interactive mockup is
 [`research-desk.html`](research-desk.html), built on `demo-vault/curie.ged`.
 Open it in a browser.
 
-Status: direction chosen, not yet specified. What comes next is tracked in
+Status: direction chosen, not yet specified. Reading ships first and editing is
+the next large step; what comes next is tracked in
 [`next-steps.md`](next-steps.md).
 
 ## Job and audience
@@ -14,9 +15,9 @@ A genealogist who keeps research in a vault and does not know GEDCOM. The
 primary scenario is exploring the tree: following relatives, spotting gaps, and
 checking what each fact rests on. An operating tool, not a showcase.
 
-Success: answering "who was Marie's father, and how do we know?" and fixing a
-wrong date without seeing `@F1@` or a level number. Every edit lands in the same
-`.ged` file.
+Success for reading: answering "who was Marie's father, and how do we know?"
+without seeing `@F1@` or a level number. Success for editing: fixing a wrong
+date the same way, with the edit landing in the same `.ged` file.
 
 ## Structure
 
@@ -37,7 +38,7 @@ The phone uses Obsidian's own mobile chrome. The plugin adds no bottom bar.
 - Gaps are visible everywhere: "no source" on a fact, a dot in the index and the
   tree, a "Without source" filter.
 - An edited field stays marked until it is written to the file, then says it
-  was written.
+  was written (editing stage).
 - Disagreement between the record and a note is shown, not hidden (in the demo
   the death place differs from the note's "Sancellemoz").
 
