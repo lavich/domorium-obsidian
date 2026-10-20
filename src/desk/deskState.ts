@@ -3,7 +3,7 @@ import type { OpenAsMode } from "../settingsData";
 
 export type DeskMode = OpenAsMode;
 
-export type PageKind = "person" | "family" | "source";
+export type PageKind = "person" | "family" | "source" | "media";
 
 /** What a tab keeps of the desk across a restart, beside the file it shows. */
 export interface DeskState {
@@ -29,7 +29,10 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   if (index.family(xref)) {
     return "family";
   }
-  return index.source(xref) ? "source" : null;
+  if (index.source(xref)) {
+    return "source";
+  }
+  return index.media(xref) ? "media" : null;
 }
 
 /**

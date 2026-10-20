@@ -1,4 +1,4 @@
-import type { DocumentSymbol, MediaCrop, Range } from "@domorium/language-service";
+import type { DocumentSymbol, MediaCrop, Position, Range } from "@domorium/language-service";
 
 import { readDate, type DateReading } from "./dates";
 import { readName } from "./names";
@@ -43,6 +43,28 @@ export interface PersonMedia {
   form?: string;
   title?: string;
   crop?: MediaCrop;
+  /** On the link naming it, where the language service answers what it is. */
+  at: Position;
+  /** The multimedia record the link names, where it names one. */
+  record?: string;
+}
+
+/** A multimedia record, and a record's link to one. */
+export interface MediaLink {
+  record: string;
+  title?: string;
+  crop?: MediaCrop;
+  at: Position;
+}
+
+export interface MediaRecord {
+  xref: string;
+  file?: string;
+  title?: string;
+  /** On the record's own `FILE` payload. */
+  at?: Position;
+  links: MediaLink[];
+  range: Range;
 }
 
 /**
@@ -145,6 +167,7 @@ export interface Family extends FamilyRow {
   spouses: FamilyMember[];
   children: FamilyMember[];
   events: PersonEvent[];
+  media: PersonMedia[];
   unresolved: string[];
   missingSpouses: Missing[];
   missingChildren: Missing[];
@@ -201,6 +224,7 @@ export interface GenealogyIndex {
   person(xref: string): Person | undefined;
   family(xref: string): Family | undefined;
   source(xref: string): Source | undefined;
+  media(xref: string): MediaRecord | undefined;
   /** What this record cites, in the order it writes the citations. */
   citesBy(xref: string): Citation[];
   /** What cites this source, in the order the file declares the citers. */
@@ -243,6 +267,14 @@ function roleLinks(family: DocumentSymbol, roles: ReadonlySet<string>): Missing[
   return found;
 }
 
+/** Where a line's payload starts: one space after its tag. */
+function payloadPosition(line: DocumentSymbol): Position {
+  return {
+    line: line.selectionRange.end.line,
+    character: line.selectionRange.end.character + 1,
+  };
+}
+
 /** The pictures a record points at, whichever kind of record it is. */
 function mediaOf(
   record: DocumentSymbol,
@@ -265,15 +297,20 @@ function mediaOf(
     if (!file) {
       continue;
     }
-    const form = payload(childOf(childOf(holder, "FILE") ?? holder, "FORM"));
+    const fileLine = childOf(holder, "FILE") ?? holder;
+    const form = payload(childOf(fileLine, "FORM"));
     const title =
-      payload(childOf(link, "TITL")) ?? payload(childOf(holder, "TITL"));
+      payload(childOf(link, "TITL")) ??
+      payload(childOf(holder, "TITL")) ??
+      payload(childOf(fileLine, "TITL"));
     const crop = cropOf(link);
     media.push({
       file,
       ...(form === undefined ? {} : { form }),
       ...(title === undefined ? {} : { title }),
       ...(crop === undefined ? {} : { crop }),
+      at: payloadPosition(pointer ? link : fileLine),
+      ...(pointer ? { record: pointer } : {}),
     });
   }
   return media;
@@ -502,6 +539,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   const repositories = new Map<string, DocumentSymbol>();
   const byCiter = new Map<string, Citation[]>();
   const byCited = new Map<string, Citation[]>();
+  const mediaLinks = new Map<string, MediaLink[]>();
 
   for (const symbol of symbols) {
     if (symbol.name === "INDI") {
@@ -529,6 +567,24 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
 
     // Citations, collected by the walk this loop already makes rather than by
     // walking the document again per source.
+    if (symbol.detail && symbol.name !== "OBJE") {
+      for (const link of childrenOf(symbol, "OBJE")) {
+        const pointer = payload(link);
+        if (!pointer?.startsWith("@")) {
+          continue;
+        }
+        const title = payload(childOf(link, "TITL"));
+        const crop = cropOf(link);
+        const held = mediaLinks.get(pointer) ?? [];
+        held.push({
+          record: symbol.detail,
+          ...(title === undefined ? {} : { title }),
+          ...(crop === undefined ? {} : { crop }),
+          at: payloadPosition(link),
+        });
+        mediaLinks.set(pointer, held);
+      }
+    }
     if (symbol.detail && symbol.name !== "SOUR") {
       const eventTags =
         symbol.name === "FAM" ? FAMILY_EVENT_TAGS
@@ -608,6 +664,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       spouses: members(SPOUSE_ROLE_TAGS),
       children: members(CHILD_ROLE_TAGS),
       events: eventsOf(record, FAMILY_EVENT_TAGS, byCiter.get(xref) ?? []),
+      media: mediaOf(record, objects, unresolved),
       unresolved,
       missingSpouses: roleLinks(record, SPOUSE_ROLE_TAGS).filter((one) => !rows.has(one.xref)),
       missingChildren: roleLinks(record, CHILD_ROLE_TAGS).filter((one) => !rows.has(one.xref)),
@@ -845,6 +902,23 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     person,
     family,
     source,
+    media: (xref) => {
+      const record = objects.get(xref);
+      if (!record) {
+        return undefined;
+      }
+      const fileLine = childOf(record, "FILE");
+      const file = payload(fileLine);
+      const title = payload(childOf(record, "TITL")) ?? payload(fileLine && childOf(fileLine, "TITL"));
+      return {
+        xref,
+        ...(file === undefined ? {} : { file }),
+        ...(title === undefined ? {} : { title }),
+        ...(fileLine && file !== undefined ? { at: payloadPosition(fileLine) } : {}),
+        links: mediaLinks.get(xref) ?? [],
+        range: record.range,
+      };
+    },
     citesBy: (xref) => byCiter.get(xref) ?? [],
     citedBy: (xref) => byCited.get(xref) ?? [],
   };

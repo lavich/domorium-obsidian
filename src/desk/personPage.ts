@@ -9,6 +9,8 @@ import type {
 } from "../genealogy";
 import { plural, t } from "../i18n";
 import { eventName, personName, shortPlace, sourceTitle, yearsOf } from "./labels";
+import { linkButton } from "./dom";
+import { renderGallery, renderPortrait, type MediaItem } from "./media";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
@@ -28,11 +30,14 @@ export interface PageHost {
   select(key: FactKey | null): void;
   showInSource(range: Range): void;
   openEvidence(): void;
+  openFile(path: string): void;
 }
 
 export interface PersonPageOptions {
   selected: FactKey | null;
   phone: boolean;
+  /** The files the record links, resolved by the host; none where omitted. */
+  media?: MediaItem[];
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -70,6 +75,7 @@ export function renderPersonPage(
     }
   }
   renderFamily(page, person, host);
+  renderGallery(page, options.media ?? [], host);
 }
 
 function renderHeading(
@@ -78,7 +84,9 @@ function renderHeading(
   options: PersonPageOptions,
   host: PageHost,
 ): void {
-  const heading = page.createDiv({ cls: "gedcom-desk-heading" });
+  const who = page.createDiv({ cls: "gedcom-desk-who" });
+  renderPortrait(who, options.media ?? []);
+  const heading = who.createDiv({ cls: "gedcom-desk-heading" });
   heading.createEl("h1", { cls: "gedcom-desk-title", text: personName(person) });
   const birth = shortPlace(person.events.find((event) => event.tag === "BIRT")?.place);
   const death = shortPlace(person.events.find((event) => event.tag === "DEAT")?.place);
@@ -261,15 +269,4 @@ export function missingRelative(group: HTMLElement, missing: Missing, host: Page
   const line = group.createDiv({ cls: "gedcom-desk-missing" });
   line.createSpan({ text: t("desk.missingRecord") });
   linkButton(line, t("desk.showInSource"), () => host.showInSource(missing.range));
-}
-
-export function linkButton(
-  parent: HTMLElement,
-  text: string,
-  onClick: () => void,
-): HTMLButtonElement {
-  const button = parent.createEl("button", { cls: "gedcom-desk-link", text });
-  button.setAttribute("type", "button");
-  button.addEventListener("click", onClick);
-  return button;
 }

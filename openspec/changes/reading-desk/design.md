@@ -130,6 +130,25 @@ Every colour, border and spacing in `styles.css` comes from Obsidian's CSS
 variables (`--background-modifier-border`, `--text-muted`, `--text-warning`,
 `--interactive-accent`, …), so themes apply. Classes are prefixed `gedcom-desk-`.
 
+### Media is asked of the language service, not read again
+
+The model already reports a record's pictures. What a file *is* — image, audio,
+document — and the rectangle a link draws are what `getMediaAt(position)`
+answers in upstream, with the dialect's rules; the hover preview already uses
+it and `mediaPreviewContent` turns its answer into image, file, remote or
+missing. The model therefore carries, for each picture, the position of the link
+naming it, and the view asks the language service there. Nothing here decides a
+media kind a second way.
+
+### Vault notes come from Obsidian's link cache, and their context from the note
+
+`metadataCache.resolvedLinks` says which notes link to the GEDCOM file at all,
+and only those notes' cached links and embeds are read for a subpath naming the
+record. The line around a link is cut from the note's text, read with
+`cachedRead`. A pure function takes the links and the text and returns what to
+show, so it is unit-tested without Obsidian; the panel draws the sources at
+once and the notes when they arrive.
+
 ## Risks / Trade-offs
 
 - [Existing readers find their file opens differently] → the setting brings

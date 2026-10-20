@@ -4,18 +4,23 @@ import type { Citation, GenealogyIndex } from "../genealogy";
 import { t, type MessageKey } from "../i18n";
 import { familyFactByKey } from "./familyPage";
 import { eventName, familyTitle, personName, sourceTitle, yearsOf } from "./labels";
-import { factByKey, linkButton, type FactKey } from "./personPage";
+import { linkButton } from "./dom";
+import type { NoteHit } from "./noteLinks";
+import { factByKey, type FactKey } from "./personPage";
 
 export interface EvidenceHost {
   openRecord(xref: string): void;
   showInSource(range: Range): void;
   wholeRecord(): void;
+  openNote(path: string, line: number): void;
 }
 
 export interface EvidenceSelection {
   index: GenealogyIndex;
   record: string;
   fact: FactKey | null;
+  /** Null while the vault is still being asked. */
+  notes?: NoteHit[] | null;
 }
 
 export function renderEvidence(
@@ -42,6 +47,15 @@ export function renderEvidence(
     context.createDiv({ text: sourceTitle(source.title) });
     context.createDiv({ cls: "gedcom-desk-evidence-sub", text: t("evidence.source") });
     linkButton(actions, t("desk.showInSource"), () => host.showInSource(source.range));
+    renderNotes(root.createDiv({ cls: "gedcom-desk-evidence-body" }), selection.notes, host);
+    return;
+  }
+  const media = person || family ? undefined : index.media(record);
+  if (media) {
+    context.createDiv({ text: media.title ?? media.file ?? t("evidence.media") });
+    context.createDiv({ cls: "gedcom-desk-evidence-sub", text: t("evidence.media") });
+    linkButton(actions, t("desk.showInSource"), () => host.showInSource(media.range));
+    renderNotes(root.createDiv({ cls: "gedcom-desk-evidence-body" }), selection.notes, host);
     return;
   }
   const subject = person
@@ -112,6 +126,36 @@ export function renderEvidence(
   }
   for (const citation of ofRecord) {
     renderCitation(body, citation, index, host);
+  }
+  renderNotes(body, selection.notes, host);
+}
+
+function renderNotes(
+  parent: HTMLElement,
+  notes: NoteHit[] | null | undefined,
+  host: EvidenceHost,
+): void {
+  if (notes === undefined) {
+    return;
+  }
+  parent.createEl("h3", {
+    cls: "gedcom-desk-section",
+    text: notes === null ? t("evidence.notes") : `${t("evidence.notes")} · ${notes.length}`,
+  });
+  if (notes?.length === 0) {
+    parent.createDiv({ cls: "gedcom-desk-none", text: t("evidence.notesNone") });
+  }
+  for (const note of notes ?? []) {
+    const entry = parent.createDiv({ cls: "gedcom-desk-note" });
+    entry.createDiv({ cls: "gedcom-desk-note-name", text: note.name });
+    for (const line of note.lines) {
+      const button = entry.createEl("button", { cls: "gedcom-desk-note-line" });
+      button.setAttribute("type", "button");
+      button.appendText(line.before);
+      button.createEl("mark", { text: line.link });
+      button.appendText(line.after);
+      button.addEventListener("click", () => host.openNote(note.path, line.line));
+    }
   }
 }
 

@@ -17,6 +17,7 @@ function pageHost() {
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openEvidence: vi.fn<PageHost["openEvidence"]>(),
+    openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
 

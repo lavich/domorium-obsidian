@@ -22,6 +22,10 @@ that would block a first, honest version.
   family's own facts, the children) or a **source page** (repository, who cites
   it and where). Moving between records has back and forward, Obsidian's
   own.
+- **Evidence from the vault**: a portrait in a person's heading, a gallery of
+  the files a person, family or source uses, a **media page** for each
+  multimedia record with everyone who links it, and the vault notes that link to
+  a record listed in the evidence panel with the line around the link.
 - An **index** of people, families and sources in the left sidebar: search, a
   filter for people with no source at all, and a mark on each such person.
 - An **evidence panel** in the right sidebar: for the selected fact, the
@@ -61,8 +65,9 @@ reimplementing it here:
 - Tree, Timeline and Places views. They are later slices; the person page has
   room for them but this change adds no tabs for them.
 - A map, coordinates, or anything that needs the network.
-- Vault notes that link to a record, media and portraits in the evidence panel
-  or on the page. They are the next slice, *Evidence from the vault*.
+- Showing, for a vault file, which records use it. The pages show which files a
+  record uses; the other direction starts from the file and is its own change.
+- Attaching a file to a record, which writes to the file.
 - Name parts, surname grouping, formatted dates, ages: upstream first.
 - Several GEDCOM files in one index at once. The index follows the GEDCOM tab
   most recently active.

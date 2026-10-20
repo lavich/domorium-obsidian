@@ -16,6 +16,9 @@ const CURIE = [
   "0 @F1@ FAM",
   "1 WIFE @I1@",
   "0 @N1@ SNOTE A shared note",
+  "0 @O1@ OBJE",
+  "1 FILE Media/marie.jpg",
+  "2 FORM image/jpeg",
   "0 @S1@ SOUR",
   "1 TITL Parish registers",
   "0 TRLR",
@@ -54,6 +57,10 @@ describe("which record Genealogy mode shows", () => {
 
   it("has nothing to show for a file of neither", () => {
     expect(recordToShow(index("0 HEAD\n0 TRLR\n"), [])).toBeNull();
+  });
+
+  it("gives a multimedia record a page", () => {
+    expect(pageKind(index(), "@O1@")).toBe("media");
   });
 
   it("gives a person, a family and a source a page, and a note none", () => {

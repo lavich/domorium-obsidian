@@ -767,3 +767,182 @@ button.gedcom-desk-cite:hover {
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
 }
+
+/* Media and notes */
+
+.gedcom-desk-who {
+  display: flex;
+  gap: var(--size-4-4);
+  align-items: flex-start;
+}
+
+.gedcom-desk-who .gedcom-desk-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.gedcom-desk-portrait {
+  flex: none;
+  width: 76px;
+  height: 95px;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  display: grid;
+  place-items: center;
+}
+
+.gedcom-desk-picture {
+  overflow: hidden;
+  position: relative;
+}
+
+.gedcom-desk-picture img {
+  display: block;
+}
+
+.gedcom-desk-picture.is-cropped img {
+  max-width: none;
+  transform-origin: 0 0;
+}
+
+.gedcom-desk-picture:not(.is-cropped) img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gedcom-desk-portrait .gedcom-desk-picture:not(.is-cropped) {
+  width: 100%;
+  height: 100%;
+}
+
+.gedcom-desk-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--size-4-3);
+}
+
+.gedcom-desk-tile {
+  min-width: 0;
+}
+
+button.gedcom-desk-tile-face {
+  width: 100%;
+  height: 132px;
+  padding: var(--size-2-3);
+  display: grid;
+  place-items: center;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: none;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+button.gedcom-desk-tile-face:disabled {
+  cursor: default;
+}
+
+.gedcom-desk-tile-face .gedcom-desk-picture:not(.is-cropped) {
+  width: 120px;
+  height: 120px;
+}
+
+.gedcom-desk-tile-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-align: center;
+  white-space: normal;
+}
+
+.gedcom-desk-tile.is-missing .gedcom-desk-tile-note {
+  color: var(--text-warning);
+}
+
+.gedcom-desk-tile-caption {
+  margin-top: var(--size-2-3);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-tile .gedcom-desk-actions {
+  margin-top: var(--size-2-1);
+}
+
+.gedcom-desk-media-stage {
+  display: flex;
+  justify-content: center;
+  padding: var(--size-4-3);
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+}
+
+.gedcom-desk-media-stage .gedcom-desk-picture:not(.is-cropped) img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+}
+
+.gedcom-desk-user {
+  display: flex;
+  gap: var(--size-4-3);
+  align-items: center;
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-user .gedcom-desk-picture {
+  flex: none;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-user-caption {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-note {
+  padding: var(--size-2-3) 0;
+}
+
+.gedcom-desk-note-name {
+  font-weight: var(--font-medium);
+}
+
+button.gedcom-desk-note-line {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: var(--size-2-2) var(--size-2-3);
+  margin: 0 calc(-1 * var(--size-2-3));
+  background: none;
+  border: 0;
+  border-radius: var(--radius-s);
+  box-shadow: none;
+  text-align: start;
+  white-space: normal;
+  font-weight: normal;
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+button.gedcom-desk-note-line:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-note-line mark {
+  background: var(--background-modifier-active-hover);
+  color: var(--text-accent);
+  border-radius: 3px;
+  padding: 0 2px;
+}

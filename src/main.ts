@@ -23,6 +23,7 @@ import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
+import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -193,6 +194,16 @@ export default class GedcomPlugin
       }),
     );
     this.registerEvent(
+      this.app.metadataCache.on("changed", () => {
+        for (const leaf of this.app.workspace.getLeavesOfType(EVIDENCE_VIEW_TYPE)) {
+          if (leaf.view instanceof EvidenceView) {
+            leaf.view.forgetNotes();
+            leaf.view.redraw();
+          }
+        }
+      }),
+    );
+    this.registerEvent(
       this.app.workspace.on("layout-change", () => {
         if (this.followedView && !this.isOpen(this.followedView)) {
           this.followedView = null;
@@ -252,6 +263,38 @@ export default class GedcomPlugin
     if (view.shownRecord() !== null) {
       void this.placeEvidence();
     }
+  }
+
+  async notesFor(path: string, xref: string): Promise<NoteHit[]> {
+    const { metadataCache, vault } = this.app;
+    const notes: NoteLinks[] = [];
+    for (const [source, targets] of Object.entries(metadataCache.resolvedLinks)) {
+      if (!(path in targets)) {
+        continue;
+      }
+      const file = vault.getAbstractFileByPath(source);
+      if (!(file instanceof TFile)) {
+        continue;
+      }
+      const cache = metadataCache.getFileCache(file);
+      const links = [...(cache?.links ?? []), ...(cache?.embeds ?? [])].map((one) => ({
+        link: one.link,
+        start: one.position.start.offset,
+        end: one.position.end.offset,
+      }));
+      if (links.length > 0) {
+        notes.push({ path: source, name: file.basename, text: await vault.cachedRead(file), links });
+      }
+    }
+    return notesLinking(
+      notes,
+      { path, xref },
+      (linkPath, from) => metadataCache.getFirstLinkpathDest(linkPath, from)?.path ?? null,
+    );
+  }
+
+  openNote(path: string, line: number): void {
+    void this.app.workspace.openLinkText(path, "", "tab", { eState: { line } });
   }
 
   private async placeEvidence(): Promise<void> {

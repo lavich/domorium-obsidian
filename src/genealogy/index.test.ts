@@ -1,6 +1,7 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 import { describe, expect, it, vi } from "vitest";
 
+import { CURIE } from "../testing/curie";
 import { FIXTURE } from "./fixture";
 import { buildIndex, type GenealogyIndex } from "./index";
 import { UNNAMED } from "./names";
@@ -350,5 +351,40 @@ describe("where each thing is stated in the file", () => {
 
     expect(record.start.line).toBe(line("0 @I1@ INDI"));
     expect(record.end.line).toBe(line("0 @I2@ INDI") - 1);
+  });
+});
+
+describe("multimedia records and the records that link them", () => {
+  const service = new GedcomLanguageService(CURIE);
+  const curie = buildIndex(service.getDocumentSymbols());
+
+  it("reports who links a photograph, in file order, each with their own part of it", () => {
+    const photo = curie.media("@O5@");
+
+    expect(photo?.file).toBe("Media/curie-family-1908.svg");
+    expect(photo?.links.map((link) => [link.record, link.title, link.crop?.left])).toEqual([
+      ["@I1@", "Marie, on the left", 30],
+      ["@I2@", "Pierre, in the middle", 175],
+    ]);
+  });
+
+  it("reports a multimedia record nobody links", () => {
+    expect(curie.media("@O7@")?.links).toEqual([]);
+  });
+
+  it("places each picture where the language service answers for its link", () => {
+    const [portrait, family] = curie.person("@I1@")?.media ?? [];
+
+    expect(portrait && service.getMediaAt(portrait.at)?.targetText)
+      .toBe("Media/marie-sklodowska-curie.svg");
+    expect(family && service.getMediaAt(family.at)?.crop)
+      .toEqual({ top: 40, left: 30, height: 240, width: 130 });
+  });
+
+  it("places a multimedia record on its own file line", () => {
+    const at = curie.media("@O5@")?.at;
+
+    expect(at && service.getMediaAt(at)?.crop).toBeUndefined();
+    expect(at && service.getMediaAt(at)?.targetText).toBe("Media/curie-family-1908.svg");
   });
 });

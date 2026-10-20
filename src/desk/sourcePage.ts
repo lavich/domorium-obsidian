@@ -2,13 +2,16 @@ import type { Citation, GenealogyIndex, Source } from "../genealogy";
 import { PERSON_EVENT_TAGS, FAMILY_EVENT_TAGS } from "../genealogy/tags";
 import { t } from "../i18n";
 import { eventName, familyTitle, personName, sourceTitle, yearsOf } from "./labels";
-import { linkButton, type PageHost } from "./personPage";
+import { renderGallery, type MediaItem } from "./media";
+import { linkButton } from "./dom";
+import type { PageHost } from "./personPage";
 
 export function renderSourcePage(
   container: HTMLElement,
   source: Source,
   index: GenealogyIndex,
   host: PageHost,
+  media: MediaItem[] = [],
 ): void {
   container.empty();
   const page = container.createDiv({ cls: "gedcom-desk-page" });
@@ -36,6 +39,7 @@ export function renderSourcePage(
   }
 
   renderCitedBy(page, source, index, host);
+  renderGallery(page, media, host);
 }
 
 function renderCitedBy(

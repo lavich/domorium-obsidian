@@ -236,5 +236,20 @@
   "index.families": "Семьи",
   "index.searchFamilies": "Имена, год, место…",
   "index.noFamilies": "В файле нет семей.",
-  "index.nothingFamilies": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам."
+  "index.nothingFamilies": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
+  "desk.media": "Медиа",
+  "desk.mediaPage": "Страница медиа",
+  "desk.notInVault": "Нет в хранилище",
+  "desk.fromWeb": "Из сети, не загружено",
+  "desk.notAnImage": "Из сети, не изображение",
+  "desk.usedBy": "Используется",
+  "desk.usedByNone": "Ни одна запись на него не ссылается.",
+  "mediaKind.image": "Изображение",
+  "mediaKind.audio": "Аудио",
+  "mediaKind.video": "Видео",
+  "mediaKind.document": "Документ",
+  "mediaKind.unknown": "Файл",
+  "evidence.notes": "Заметки в хранилище",
+  "evidence.notesNone": "Ни одна заметка не ссылается на эту запись.",
+  "evidence.media": "Медиа"
 }

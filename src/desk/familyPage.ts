@@ -1,9 +1,10 @@
 import type { Family, GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
 import { familyTitle, shortPlace } from "./labels";
+import { renderGallery } from "./media";
+import { linkButton } from "./dom";
 import {
   kinGroup,
-  linkButton,
   missingRelative,
   relative,
   renderFactList,
@@ -66,4 +67,5 @@ export function renderFamilyPage(
   if (family.children.length === 0 && family.missingChildren.length === 0) {
     children.createDiv({ cls: "gedcom-desk-none", text: t("desk.notRecorded") });
   }
+  renderGallery(page, options.media ?? [], host);
 }

@@ -15,6 +15,7 @@ function evidenceHost() {
     openRecord: vi.fn<EvidenceHost["openRecord"]>(),
     showInSource: vi.fn<EvidenceHost["showInSource"]>(),
     wholeRecord: vi.fn<EvidenceHost["wholeRecord"]>(),
+    openNote: vi.fn<EvidenceHost["openNote"]>(),
   } satisfies EvidenceHost;
 }
 
@@ -176,3 +177,50 @@ describe("the panel beside a source page, and beside nothing", () => {
     ]);
   });
 });
+
+describe("notes in the vault", () => {
+  const RADIUM = {
+    path: "Notes/Radium.md",
+    name: "Radium",
+    lines: [{ line: 1, before: "announced in December 1898 by ", link: "Marie Skłodowska-Curie", after: " and" }],
+  };
+
+  it("lists the notes linking the record below its sources, the link marked", () => {
+    renderEvidence(container, { index: curieIndex(), record: "@I1@", fact: null, notes: [RADIUM] }, host);
+
+    expect(texts(".gedcom-desk-section")).toEqual([
+      "Sources of the record · 2", "Notes in the vault · 1",
+    ]);
+    expect(texts(".gedcom-desk-note-name")).toEqual(["Radium"]);
+    expect(texts(".gedcom-desk-note-line mark")).toEqual(["Marie Skłodowska-Curie"]);
+    expect(texts(".gedcom-desk-note-line")).toEqual([
+      "announced in December 1898 by Marie Skłodowska-Curie and",
+    ]);
+  });
+
+  it("opens a note at the line", () => {
+    renderEvidence(container, { index: curieIndex(), record: "@I1@", fact: null, notes: [RADIUM] }, host);
+    container.querySelector<HTMLElement>(".gedcom-desk-note-line")?.click();
+
+    expect(host.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
+  });
+
+  it("says when no note links the record, and waits while the vault is asked", () => {
+    renderEvidence(container, { index: curieIndex(), record: "@I10@", fact: null, notes: [] }, host);
+    expect(texts(".gedcom-desk-none")).toContain("No note links to this record.");
+
+    renderEvidence(container, { index: curieIndex(), record: "@I10@", fact: null, notes: null }, host);
+    expect(texts(".gedcom-desk-section")).toContain("Notes in the vault");
+    expect(texts(".gedcom-desk-none")).not.toContain("No note links to this record.");
+  });
+
+  it("lists them beside a source and a multimedia record too", () => {
+    renderEvidence(container, { index: curieIndex(), record: "@S1@", fact: null, notes: [] }, host);
+    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
+
+    renderEvidence(container, { index: curieIndex(), record: "@O5@", fact: null, notes: [] }, host);
+    expect(texts(".gedcom-desk-evidence-context div")).toEqual(["The Curie family, about 1908", "Media"]);
+    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
+  });
+});
+

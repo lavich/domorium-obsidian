@@ -59,6 +59,9 @@ export function installObsidianDom(): void {
   proto.addClass = function (...classes: string[]) {
     (this as unknown as HTMLElement).classList.add(...classes);
   };
+  proto.removeClass = function (...classes: string[]) {
+    (this as unknown as HTMLElement).classList.remove(...classes);
+  };
   proto.toggleClass = function (classes: string | string[], value: boolean) {
     for (const name of Array.isArray(classes) ? classes : [classes]) {
       (this as unknown as HTMLElement).classList.toggle(name, value);

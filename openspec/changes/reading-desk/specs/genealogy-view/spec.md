@@ -277,3 +277,52 @@ panel.
 - **WHEN** the reader taps Marie's birth on a phone
 - **THEN** beneath it the page says it cites no source of its own, and offers
   the evidence panel
+
+### Requirement: Portrait and media on a page
+
+A person page SHALL show in its heading the person's portrait — the first file
+the record links that is an image — drawn from the part of the picture the link
+names where it names one. A person, family or source page SHALL show a
+**Media** section listing every file the record links, in the order it links
+them, each with its caption:
+
+- an image in the vault SHALL be shown as a thumbnail, cut to the link's
+  rectangle where it names one;
+- a file in the vault that is not an image SHALL be named, with what kind of
+  file it is;
+- a file at a web address SHALL NOT be fetched unless the reader has allowed
+  images from the web, and until then SHALL say it is from the web and not
+  loaded;
+- a file the vault does not hold SHALL say so, with Show in source for the line
+  that names it.
+
+Activating a file in the vault SHALL open it in Obsidian, in the tab already
+showing it if there is one, and SHALL leave the GEDCOM tab showing its page.
+
+#### Scenario: Marie's portrait and gallery
+- **WHEN** Marie's page is shown from the demo vault
+- **THEN** her heading shows her portrait, and her media lists her portrait, the
+  family photograph cut to her part of it with the caption "Marie, on the
+  left", and a portrait at a web address that is not loaded
+
+#### Scenario: A file not in the vault
+- **WHEN** a record links a file at `Media/lost.jpg` the vault does not hold
+- **THEN** its tile says the file is not in the vault and offers Show in source
+
+### Requirement: The media page
+
+A link to a multimedia record SHALL, in Genealogy mode, open its **media page**,
+which SHALL show the file as large as the page allows — or say what it is, or
+that it is missing or not loaded, as a tile does — with its caption and every
+record that links it. Each of those SHALL show the part of the picture its link
+names, with its own caption, and SHALL open that record's page.
+
+#### Scenario: The family photograph
+- **WHEN** the reader follows `[[curie.ged#@O5@]]` in Genealogy mode
+- **THEN** the page shows the family photograph and lists Marie and Pierre, each
+  with their own part of it and their own caption
+
+#### Scenario: From a tile to its media page
+- **WHEN** the reader chooses the media page of the family photograph from
+  Marie's gallery
+- **THEN** the tab shows the media page of `@O5@`

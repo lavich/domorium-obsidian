@@ -222,5 +222,20 @@
   "index.families": "Families",
   "index.searchFamilies": "Names, year, place…",
   "index.noFamilies": "The file holds no families.",
-  "index.nothingFamilies": "Nothing matches “{query}”. Search covers names, years and places."
+  "index.nothingFamilies": "Nothing matches “{query}”. Search covers names, years and places.",
+  "desk.media": "Media",
+  "desk.mediaPage": "Media page",
+  "desk.notInVault": "Not in the vault",
+  "desk.fromWeb": "From the web, not loaded",
+  "desk.notAnImage": "From the web, not an image",
+  "desk.usedBy": "Used by",
+  "desk.usedByNone": "No record links it.",
+  "mediaKind.image": "Image",
+  "mediaKind.audio": "Audio",
+  "mediaKind.video": "Video",
+  "mediaKind.document": "Document",
+  "mediaKind.unknown": "File",
+  "evidence.notes": "Notes in the vault",
+  "evidence.notesNone": "No note links to this record.",
+  "evidence.media": "Media"
 }

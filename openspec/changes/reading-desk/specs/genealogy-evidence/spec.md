@@ -117,3 +117,29 @@ offer Show in source.
 #### Scenario: A source page shown
 - **WHEN** the tab shows `Parish registers of Warsaw`
 - **THEN** the panel's heading names that source and offers Show in source
+
+### Requirement: Notes in the vault that link to the record
+
+Below the record's own sources the panel SHALL list every Markdown note in the
+vault that links to the record shown — a link or an embed whose target resolves
+to this GEDCOM file and whose subpath names the record — for a person, a family,
+a source or a multimedia record alike. Each note SHALL be shown by its name with
+the line around the link, the link itself marked; a note linking more than once
+SHALL be listed once, with each of its lines. Activating a line SHALL open the
+note in a new tab at that line.
+
+A record no note links to SHALL say so. Nothing a note says SHALL be compared
+with the record.
+
+#### Scenario: Notes linking to Marie
+- **WHEN** Marie's whole record is shown in the demo vault
+- **THEN** the panel lists six notes, among them *Radium* with the line
+  "…announced in December 1898 by Marie Skłodowska-Curie and…", her name marked
+
+#### Scenario: A note linking twice
+- **WHEN** *Nobel Prizes in the family* links Marie on two lines
+- **THEN** it is listed once, with both lines
+
+#### Scenario: A record no note links to
+- **WHEN** the panel shows Sophie-Claire Depouilly
+- **THEN** it says no note links to this record

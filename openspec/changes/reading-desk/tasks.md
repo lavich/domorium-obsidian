@@ -57,3 +57,15 @@
 - [x] 7.8 Run `npm run check` and `npm run test:browser`; both pass
 - [x] 7.9 Place the Evidence view in the right sidebar the first time a file is shown as genealogy, and bring it into view when a fact is selected on a desktop; checked in Obsidian
 - [x] 7.10 Open a record from the index in the mode the tab is in: its page in Genealogy, its first line in Source; covered in `src/desk/deskState.test.ts`
+
+## 8. Evidence from the vault
+
+- [x] 8.1 Carry the link position on every picture, read multimedia records, and report who links each; extend `src/genealogy/index.test.ts`
+- [x] 8.2 Give multimedia records a page kind and route links to them; extend `src/desk/deskState.test.ts`
+- [x] 8.3 Render a gallery of resolved media and a portrait, from `mediaPreviewContent` answers handed in, in `src/desk/media.ts`; covered by a new `src/desk/media.test.ts`
+- [x] 8.4 Render the media page in `src/desk/mediaPage.ts`; covered by a new `src/desk/mediaPage.test.ts`
+- [x] 8.5 Add the portrait and the Media section to the person, family and source pages; extend their tests
+- [x] 8.6 Find vault notes linking a record and cut the line around each link, in `src/desk/noteLinks.ts`; covered by a new `src/desk/noteLinks.test.ts`
+- [x] 8.7 List those notes in the evidence panel and open one at its line; extend `src/desk/evidence.test.ts`
+- [x] 8.8 Wire media resolution, the media page and vault notes into `GedcomView` and the plugin; mount them in the harness and cover them in `tests/desk.spec.ts`; check in Obsidian on the demo vault
+- [x] 8.9 Run `npm run check` and `npm run test:browser`; both pass

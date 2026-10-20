@@ -67,6 +67,8 @@ import {
   type DeskMode,
 } from "./desk/deskState";
 import { renderFamilyPage } from "./desk/familyPage";
+import type { MediaItem } from "./desk/media";
+import { renderMediaPage } from "./desk/mediaPage";
 import { renderPersonPage, type FactKey, type PageHost } from "./desk/personPage";
 import {
   renderEmptyPage,
@@ -74,6 +76,8 @@ import {
   renderSourcePage,
 } from "./desk/sourcePage";
 import { documentRef, type GenealogyIndex } from "./genealogy";
+import type { Position } from "@domorium/language-service";
+import { resolveVaultRelativePath } from "./editor/service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
@@ -615,7 +619,7 @@ export class GedcomView extends TextFileView {
         this.deskEl,
         person,
         index,
-        { selected: this.selected, phone: Platform.isPhone },
+        { selected: this.selected, phone: Platform.isPhone, media: this.mediaItems(person.media) },
         this.pageHost(),
       );
       return;
@@ -626,14 +630,26 @@ export class GedcomView extends TextFileView {
         this.deskEl,
         family,
         index,
-        { selected: this.selected, phone: Platform.isPhone },
+        { selected: this.selected, phone: Platform.isPhone, media: this.mediaItems(family.media) },
         this.pageHost(),
       );
       return;
     }
     const source = index.source(this.record);
     if (source) {
-      renderSourcePage(this.deskEl, source, index, this.pageHost());
+      renderSourcePage(this.deskEl, source, index, this.pageHost(), this.mediaItems(source.media));
+      return;
+    }
+    const media = index.media(this.record);
+    if (media) {
+      const whole = media.at ? this.mediaItem(media.at) : null;
+      renderMediaPage(
+        this.deskEl,
+        media,
+        { whole, links: media.links.map((link) => this.mediaItem(link.at) ?? missingAt(link.at)) },
+        index,
+        this.pageHost(),
+      );
     }
   }
 
@@ -643,7 +659,55 @@ export class GedcomView extends TextFileView {
       select: (fact) => this.selectFact(fact),
       showInSource: (range) => this.showInSource(range),
       openEvidence: () => this.host.openEvidence(),
+      openFile: (path) => this.openVaultFile(path),
     };
+  }
+
+  private mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
+    return media.flatMap((one) => {
+      const item = this.mediaItem(one.at);
+      return item ? [{ ...item, ...(one.record ? { record: one.record } : {}) }] : [];
+    });
+  }
+
+  /** What the link at this position names, as the language service and the vault answer. */
+  private mediaItem(at: Position): MediaItem | null {
+    const reference = this.language.update(this.editor.state.doc).getMediaAt(at);
+    if (!reference) {
+      return null;
+    }
+    const documentPath = this.file?.path ?? "";
+    const content = mediaPreviewContent(
+      reference,
+      {
+        documentPath,
+        resolve: (path) => {
+          const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+          return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
+        },
+      },
+      this.host.remoteImages(),
+    );
+    const path =
+      reference.kind === "file-relative"
+        ? resolveVaultRelativePath(documentPath, reference.targetText)
+        : null;
+    return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
+  }
+
+  private openVaultFile(relativePath: string): void {
+    const path = normalizePath(relativePath);
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      new Notice(t("notice.vaultFileNotFound", { path }));
+      return;
+    }
+    const open = this.leafShowing(path);
+    if (open) {
+      void this.app.workspace.revealLeaf(open);
+      return;
+    }
+    void this.app.workspace.getLeaf("tab").openFile(file);
   }
 
   private isDark(): boolean {
@@ -832,4 +896,8 @@ export class GedcomView extends TextFileView {
       new Notice(t("notice.unsafeFileLink"));
     }
   }
+}
+
+function missingAt(at: Position): MediaItem {
+  return { content: { kind: "missing", target: "" }, at };
 }

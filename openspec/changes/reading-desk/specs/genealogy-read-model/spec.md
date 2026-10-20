@@ -689,3 +689,24 @@ marriage with the children of that marriage rather than all children together.
 - **THEN** that family is reported with no other spouse and with its events and
   children
 
+
+### Requirement: Multimedia records and the records that link them
+
+The model SHALL report every multimedia record the document declares, with the
+file it names, the caption it gives and the lines it occupies. Reading one SHALL
+report every record that links it, in the order the file declares those
+records, each with the caption and the rectangle that link states.
+
+Every picture the model reports for a record SHALL carry the position in the
+file of the link that names it, so that a caller can ask the language service
+what that link refers to.
+
+#### Scenario: A photograph linked by two people
+- **WHEN** `@O5@` names `Media/curie-family-1908.svg`, and Marie's and Pierre's
+  records each link it with a rectangle and a caption
+- **THEN** reading `@O5@` reports both, Marie first, each with their own
+  rectangle and caption
+
+#### Scenario: A multimedia record nobody links
+- **WHEN** `@O7@` is declared and no record links it
+- **THEN** reading it reports no record, which is not an error

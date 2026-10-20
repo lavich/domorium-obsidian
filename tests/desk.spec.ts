@@ -118,6 +118,54 @@ test.describe("the family page", () => {
   });
 });
 
+test.describe("media", () => {
+  test("shows Marie's portrait and gallery, her part of the family photograph cut out", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+
+    await expect(page.locator(".gedcom-desk-portrait img")).toHaveAttribute(
+      "src", "../demo-vault/Media/marie-sklodowska-curie.svg",
+    );
+    await expect(page.locator(".gedcom-desk-tile-caption")).toHaveText([
+      "Marie Skłodowska-Curie", "Marie, on the left", "A portrait the plugin fetches only when asked",
+    ]);
+    const cropped = page.locator(".gedcom-desk-tile .gedcom-desk-picture.is-cropped");
+    await expect(cropped).toHaveCount(1);
+    const box = await cropped.boundingBox();
+    expect(Math.round(box?.height ?? 0)).toBe(120);
+    expect(Math.round(box?.width ?? 0)).toBe(65);
+    await expect(page.locator(".gedcom-desk-tile-note")).toHaveText(["From the web, not loaded"]);
+  });
+
+  test("opens a file, and the media page with everyone who links it", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-tile-face").first().click();
+    expect(await page.evaluate(() => window.desk.calls.filesOpened)).toEqual([
+      "Media/marie-sklodowska-curie.svg",
+    ]);
+
+    await page.locator(".gedcom-desk-tile", { hasText: "Marie, on the left" })
+      .locator(".gedcom-desk-link", { hasText: "Media page" }).click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("The Curie family, about 1908");
+    await expect(page.locator(".gedcom-desk-user .gedcom-desk-person-name")).toHaveText([
+      "Marie Skłodowska-Curie", "Pierre Curie",
+    ]);
+    await expect(page.locator(".gedcom-desk-user .is-cropped")).toHaveCount(2);
+  });
+
+  test("lists the notes that link Marie, and opens one at its line", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-note-line").click();
+
+    await expect(page.locator(".gedcom-desk-note-line mark")).toHaveText("Marie Skłodowska-Curie");
+    expect(await page.evaluate(() => window.desk.calls.notesOpened)).toEqual([
+      { path: "Notes/Radium.md", line: 6 },
+    ]);
+  });
+});
+
 test.describe("the evidence panel", () => {
   test("follows the selected fact, and goes back to the whole record", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
