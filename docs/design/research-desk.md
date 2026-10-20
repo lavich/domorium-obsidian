@@ -30,7 +30,7 @@ way Markdown has reading and source modes.
 | Area | Desktop | Phone |
 | --- | --- | --- |
 | Index of people, search, gap filter | Left sidebar view | Left sidebar drawer, beside Files and Search |
-| Person, with Card · Tree · Timeline · Places | Main view | A normal tab; back and forward are Obsidian's own |
+| Person, with Card · Tree · Timeline · Places | Main view | A normal tab, its format tabs scrolling sideways; back and forward are Obsidian's own |
 | Evidence for the selected fact: sources, vault notes, media | Right sidebar view | Inline under the tapped fact (the gist), right drawer for the rest |
 
 The phone uses Obsidian's own mobile chrome. The plugin adds no bottom bar.
@@ -53,11 +53,9 @@ dates, a file with validation errors, the file changing outside while edited.
 
 ## Open decisions
 
-- **Map.** Tiles need the network, which `PRODUCT.md` forbids by default, and
-  GEDCOM places rarely carry `MAP` coordinates. Options: no basemap, only
-  coordinates from `MAP`, or tiles behind explicit permission like remote images.
-- **Format tabs on a phone.** Four tabs do not fit; scroll them or move some
-  into the view's "more" menu.
+- **Map.** Not in the reading stage: Places is a list. A later slice decides
+  between coordinates from `MAP` only and tiles behind explicit permission;
+  tiles need the network, which `PRODUCT.md` forbids by default.
 - **Undo and confirmation of edits**, and whether they share history with the
   source editor.
 - **Several trees in one vault.** Deferred.

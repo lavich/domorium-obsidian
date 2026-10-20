@@ -12,12 +12,17 @@ reading has shipped.
 
 ### Decide
 
-- [ ] **Map.** No basemap, coordinates from `MAP` only, or tiles behind explicit
-      permission like remote images.
-- [ ] **Format tabs on a phone.** Scroll them, or move some into the view's
-      "more" menu.
-- [ ] **What happens to `feat/person-browser`**: reuse its read model
-      (`src/genealogy/`) or replace it, and close the branch either way.
+- [x] **Map.** No basemap in this stage: Places is a list of the places in a
+      life, as in the mockup. A map, from `MAP` coordinates or tiles behind
+      explicit permission, is a later slice of its own.
+- [x] **Format tabs on a phone.** They scroll sideways, as Obsidian's own panels
+      do. Check against the real app when the phone part is compared.
+- [x] **`feat/person-browser`.** Its read model (`src/genealogy/`, with its tests
+      and fixture) moves into the Reading slice; its views and styles do not.
+      The branch closes once the move lands.
+- [x] **Where the read model lives.** In the plugin for now, as a module that
+      knows nothing of Obsidian, so it can move upstream when `packages/query`
+      and `packages/graph` exist there. Reading does not wait on upstream.
 
 ### Refine the mockup
 
@@ -33,23 +38,34 @@ tried on real files.
 - [ ] States: empty file, file with validation errors, broken pointer, the file
       changing in the source editor while the desk is open.
 - [ ] The tree at scale: a few thousand people, navigation and loading.
-- [ ] Places with coordinates, once the map decision is made.
+- [ ] Places with coordinates, for the later map slice.
 
 ### Ask upstream
 
-Reading needs nothing from upstream to start, but the plugin otherwise
-reimplements these. File them as issues in `lavich/domorium`, not as blockers.
+Reading starts without these and shows less until they land: dates as years,
+names as one string, no notes from the file. They are parsing, so they belong
+upstream rather than in a workaround here. File them as issues in
+`lavich/domorium`, not as blockers.
 
-- [ ] Schema access, value and pointer apart, dates, places — from the
-      Important list in [`upstream-requests.md`](upstream-requests.md).
+- [x] Dates: the parse the library already performs —
+      [lavich/domorium#378](https://github.com/lavich/domorium/issues/378).
+- [x] Which tags are events, and the read model moving upstream —
+      [lavich/domorium#379](https://github.com/lavich/domorium/issues/379).
+- [ ] Names in parts, with their type.
+- [ ] A line's value apart from its pointer, with `CONT`/`CONC` joined.
+- [ ] Places in parts, with `MAP`.
 
 ### Specify and build, in slices
 
 Each slice is an OpenSpec change: `/openspec-propose`, review, then
 `/openspec-apply-change`.
 
-- [ ] **Reading.** File opens as genealogy, index, person tab with Card, Tree,
-      Timeline and Places, evidence panel.
+- [ ] **Reading.** File opens as genealogy; people and sources index; person
+      card; evidence panel; source pages; "show in source". Brings over the read
+      model from `feat/person-browser`.
+- [ ] **Timeline and Places.** Places as a list, no map.
+- [ ] **Tree.** Hourglass around the focus, siblings collapsed; prototyped in
+      `harness/` against a large file first.
 - [ ] **Evidence from the vault.** Notes that link to a record, and media the
       record references, shown in the evidence panel.
 
