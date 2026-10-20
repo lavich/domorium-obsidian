@@ -3,6 +3,7 @@ import { ItemView, Platform, type WorkspaceLeaf } from "obsidian";
 import type { GedcomView } from "../GedcomView";
 import { GEDCOM_ICON_ID } from "../icon";
 import { t } from "../i18n";
+import { openFromIndex } from "./deskState";
 import { renderEvidence } from "./evidence";
 import { IndexList } from "./indexList";
 
@@ -39,7 +40,10 @@ export class IndexView extends ItemView {
   onOpen(): Promise<void> {
     this.list = new IndexList(this.contentEl, {
       open: (xref) => {
-        this.host.followed()?.openRecord(xref);
+        const view = this.host.followed();
+        if (view) {
+          openFromIndex(view, xref);
+        }
         if (Platform.isPhone) {
           this.app.workspace.leftSplit.collapse();
         }

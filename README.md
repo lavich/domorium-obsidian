@@ -59,8 +59,10 @@ page, a fact or a missing relative switches to Source with exactly those lines
 selected, which is where a correction is made.
 
 The ribbon icon, or **Open the people index**, puts an index of the file's
-people and sources in the left sidebar: search by name, year or place, and a
-filter for the people whose records cite no source at all. **Open the evidence
+people, families and sources in the left sidebar: search by name, year or
+place, and a filter for the people whose records cite no source at all. A row
+opens its page in Genealogy mode, and in Source mode puts the cursor on the
+record's first line instead. **Open the evidence
 panel** puts the selected fact's sources in the right sidebar, kept apart from
 the sources of the whole record so that one is never mistaken for the other.
 On a phone the two are the left and right drawers, and tapping a fact shows

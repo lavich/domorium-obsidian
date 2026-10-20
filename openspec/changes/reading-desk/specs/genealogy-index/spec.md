@@ -88,16 +88,27 @@ matching nothing SHALL say so and say what it searches.
 
 ### Requirement: Opening a record from the index
 
-Activating a row SHALL show that record's page in the GEDCOM tab the index
-follows, switching that tab to Genealogy mode if it is in Source mode, and on a
-phone SHALL close the drawer. The row of the record that tab shows SHALL be
-marked as the current one.
+Activating a row SHALL take the GEDCOM tab the index follows to that record in
+the mode the tab is in: in Genealogy mode it SHALL show the record's page, and
+in Source mode it SHALL leave the tab in Source mode with the cursor at the
+record's first line, scrolled into view. On a phone it SHALL close the drawer.
+The row of the record a tab in Genealogy mode shows SHALL be marked as the
+current one.
 
-#### Scenario: Opening Pierre
+#### Scenario: Opening Pierre as genealogy
+- **WHEN** the GEDCOM tab is in Genealogy mode and the reader activates Pierre
+  Curie's row
+- **THEN** the tab shows Pierre Curie's page, and his row is the current one
+
+#### Scenario: Opening Pierre in the source
 - **WHEN** the GEDCOM tab is in Source mode and the reader activates Pierre
   Curie's row
-- **THEN** the tab is in Genealogy mode showing Pierre Curie, and his row is the
-  current one
+- **THEN** the tab stays in Source mode with the cursor on `0 @I2@ INDI`
+
+#### Scenario: Opening a family in the source
+- **WHEN** the GEDCOM tab is in Source mode and the reader activates the Curies'
+  row among the families
+- **THEN** the tab stays in Source mode with the cursor on `0 @F3@ FAM`
 
 ### Requirement: The index follows the file and holds up at size
 

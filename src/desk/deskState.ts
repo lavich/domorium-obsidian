@@ -52,6 +52,22 @@ export function recordToShow(
   );
 }
 
+/** What the index needs of the tab it follows. */
+export interface IndexTarget {
+  inSource(): boolean;
+  goToXref(xref: string): boolean;
+  openRecord(xref: string): void;
+}
+
+/** The index keeps the tab in the mode it is in: a page there, a line here. */
+export function openFromIndex(tab: IndexTarget, xref: string): void {
+  if (tab.inSource()) {
+    tab.goToXref(xref);
+  } else {
+    tab.openRecord(xref);
+  }
+}
+
 export type LinkRoute =
   | { to: "page"; xref: string }
   | { to: "source"; xref: string }

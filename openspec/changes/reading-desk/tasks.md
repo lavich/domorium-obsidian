@@ -56,3 +56,4 @@
 - [x] 7.7 Wire the family page into `GedcomView`, add it to the harness, and cover it in `tests/desk.spec.ts`
 - [x] 7.8 Run `npm run check` and `npm run test:browser`; both pass
 - [x] 7.9 Place the Evidence view in the right sidebar the first time a file is shown as genealogy, and bring it into view when a fact is selected on a desktop; checked in Obsidian
+- [x] 7.10 Open a record from the index in the mode the tab is in: its page in Genealogy, its first line in Source; covered in `src/desk/deskState.test.ts`

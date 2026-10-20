@@ -1,8 +1,8 @@
 import { GedcomLanguageService } from "@domorium/language-service";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildIndex } from "../genealogy";
-import { pageKind, readDeskState, recordToShow, routeLink } from "./deskState";
+import { openFromIndex, pageKind, readDeskState, recordToShow, routeLink } from "./deskState";
 
 const CURIE = [
   "0 HEAD",
@@ -81,5 +81,29 @@ describe("where a link into a record lands", () => {
 
   it("goes nowhere for a record the file does not hold", () => {
     expect(routeLink(index(), "@I9@", declared)).toEqual({ to: "nowhere" });
+  });
+});
+
+describe("a row of the index, activated", () => {
+  const tab = (inSource: boolean) => ({
+    inSource: () => inSource,
+    goToXref: vi.fn(() => true),
+    openRecord: vi.fn(),
+  });
+
+  it("opens the record's page from a tab in Genealogy mode", () => {
+    const genealogy = tab(false);
+    openFromIndex(genealogy, "@I2@");
+
+    expect(genealogy.openRecord).toHaveBeenCalledWith("@I2@");
+    expect(genealogy.goToXref).not.toHaveBeenCalled();
+  });
+
+  it("goes to the record's line in a tab in Source mode", () => {
+    const source = tab(true);
+    openFromIndex(source, "@F3@");
+
+    expect(source.goToXref).toHaveBeenCalledWith("@F3@");
+    expect(source.openRecord).not.toHaveBeenCalled();
   });
 });
