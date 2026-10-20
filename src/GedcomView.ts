@@ -242,6 +242,7 @@ export class GedcomView extends TextFileView {
     }
     await super.setState(state, result);
     this.showMode();
+    this.host.genealogyChanged(this);
   }
 
   getEphemeralState(): Record<string, unknown> {
@@ -356,6 +357,10 @@ export class GedcomView extends TextFileView {
     this.selected = fact;
     this.drawDesk();
     this.host.genealogyChanged(this);
+    // A phone unfolds the fact's sources beneath it instead.
+    if (fact !== null && !Platform.isPhone) {
+      this.host.openEvidence();
+    }
   }
 
   showInSource(range: Range): void {

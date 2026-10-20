@@ -55,4 +55,4 @@
 - [x] 7.6 Add Families to the index between People and Sources, with search; extend `src/desk/indexList.test.ts`
 - [x] 7.7 Wire the family page into `GedcomView`, add it to the harness, and cover it in `tests/desk.spec.ts`
 - [x] 7.8 Run `npm run check` and `npm run test:browser`; both pass
-
+- [x] 7.9 Place the Evidence view in the right sidebar the first time a file is shown as genealogy, and bring it into view when a fact is selected on a desktop; checked in Obsidian

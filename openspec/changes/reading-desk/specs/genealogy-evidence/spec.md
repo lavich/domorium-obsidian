@@ -8,9 +8,13 @@ never mistaken for a source of a fact.
 
 ### Requirement: The panel lives in the right sidebar and follows the selection
 
-The plugin SHALL offer an evidence view, named **Evidence**, that opens in the
-right sidebar from a command and from the person and family pages. On a phone it SHALL be
-reached as Obsidian's other sidebar views are, from the right drawer.
+The plugin SHALL offer an evidence view, named **Evidence**, in the right
+sidebar. It SHALL be placed there, without taking the focus, the first time in a
+session a GEDCOM file is shown as genealogy and no such view is open; a reader
+who then closes it SHALL not have it put back until the plugin loads again. It
+SHALL open from a command, and selecting a fact on a desktop SHALL bring it into
+view. On a phone it SHALL be reached as Obsidian's other sidebar views are, from
+the right drawer, and from the action beneath a tapped fact.
 
 The panel SHALL show the selection of the GEDCOM tab most recently active in
 Genealogy mode: a fact of the person or family shown, or the whole record when
@@ -19,6 +23,16 @@ date and place, or *Whole record* with the person's or family's name — and
 SHALL offer *Whole record* when a fact is selected and Show in source always.
 
 With no GEDCOM tab in Genealogy mode it SHALL say so.
+
+#### Scenario: The first file shown as genealogy
+- **WHEN** the reader opens `curie.ged` as genealogy with no evidence view open
+- **THEN** the right sidebar gains the Evidence view as one of its tabs, and the
+  page keeps the focus
+
+#### Scenario: Selecting a fact brings the panel into view
+- **WHEN** the right sidebar shows another tab, or is collapsed, and the reader
+  selects Marie's birth on a desktop
+- **THEN** the right sidebar shows the Evidence view, naming the birth
 
 #### Scenario: Selecting a birth
 - **WHEN** the reader selects Marie's birth

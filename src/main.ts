@@ -87,6 +87,8 @@ export default class GedcomPlugin
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
   private followedView: GedcomView | null = null;
+  /** Placed once a session, so a panel the reader closes stays closed. */
+  private evidencePlaced = false;
 
   async onload(): Promise<void> {
     setLanguage(getLanguage());
@@ -247,6 +249,21 @@ export default class GedcomPlugin
       this.followedView = view;
       this.redrawDesk();
     }
+    if (view.shownRecord() !== null) {
+      void this.placeEvidence();
+    }
+  }
+
+  private async placeEvidence(): Promise<void> {
+    if (this.evidencePlaced) {
+      return;
+    }
+    this.evidencePlaced = true;
+    const { workspace } = this.app;
+    if (workspace.getLeavesOfType(EVIDENCE_VIEW_TYPE).length > 0) {
+      return;
+    }
+    await workspace.getRightLeaf(false)?.setViewState({ type: EVIDENCE_VIEW_TYPE, active: false });
   }
 
   openEvidence(): void {
