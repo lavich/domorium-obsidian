@@ -313,7 +313,7 @@
   margin: var(--size-4-6) 0 var(--size-2-3);
 }
 
-.gedcom-desk-link {
+button.gedcom-desk-link {
   background: none;
   border: 0;
   box-shadow: none;
@@ -324,7 +324,7 @@
   cursor: pointer;
 }
 
-.gedcom-desk-link:hover {
+button.gedcom-desk-link:hover {
   background: none;
   text-decoration: underline;
 }
@@ -342,7 +342,7 @@
   overflow: hidden;
 }
 
-.gedcom-desk-fact {
+button.gedcom-desk-fact {
   display: grid;
   grid-template-columns: 130px 1fr auto;
   gap: var(--size-4-3);
@@ -362,15 +362,15 @@
   cursor: pointer;
 }
 
-.gedcom-desk-fact:first-child {
+button.gedcom-desk-fact:first-child {
   border-top: 0;
 }
 
-.gedcom-desk-fact:hover {
+button.gedcom-desk-fact:hover {
   background: var(--background-modifier-hover);
 }
 
-.gedcom-desk-fact.is-selected {
+button.gedcom-desk-fact.is-selected {
   background: var(--background-modifier-active-hover);
 }
 
@@ -438,7 +438,7 @@
   min-width: 0;
 }
 
-.gedcom-desk-person {
+button.gedcom-desk-person {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -455,7 +455,7 @@
   cursor: pointer;
 }
 
-.gedcom-desk-person:hover {
+button.gedcom-desk-person:hover {
   background: var(--background-modifier-hover);
 }
 
@@ -518,7 +518,7 @@
 }
 
 @media (max-width: 480px) {
-  .gedcom-desk-fact {
+  button.gedcom-desk-fact {
     grid-template-columns: 1fr auto;
   }
 
@@ -576,7 +576,7 @@
   background: var(--background-modifier-hover);
 }
 
-.gedcom-desk-seg-button {
+button.gedcom-desk-seg-button {
   flex: 1;
   height: auto;
   padding: var(--size-2-1) var(--size-4-2);
@@ -587,7 +587,7 @@
   color: var(--text-muted);
 }
 
-.gedcom-desk-seg-button.is-active {
+button.gedcom-desk-seg-button.is-active {
   background: var(--background-primary);
   color: var(--text-normal);
   box-shadow: var(--shadow-s);
@@ -603,7 +603,7 @@
   gap: var(--size-2-2);
 }
 
-.gedcom-desk-chip-filter {
+button.gedcom-desk-chip-filter {
   height: auto;
   padding: 2px var(--size-4-2);
   border-radius: var(--radius-l);
@@ -614,7 +614,7 @@
   color: var(--text-muted);
 }
 
-.gedcom-desk-chip-filter.is-active {
+button.gedcom-desk-chip-filter.is-active {
   background: var(--background-modifier-active-hover);
   border-color: transparent;
   color: var(--text-accent);
@@ -635,7 +635,7 @@
   inset-inline: 0;
 }
 
-.gedcom-desk-row {
+button.gedcom-desk-row {
   display: grid;
   grid-template-columns: 1fr auto;
   align-content: center;
@@ -652,11 +652,11 @@
   color: var(--text-normal);
 }
 
-.gedcom-desk-row:hover {
+button.gedcom-desk-row:hover {
   background: var(--background-modifier-hover);
 }
 
-.gedcom-desk-row.is-current {
+button.gedcom-desk-row.is-current {
   background: var(--background-modifier-active-hover);
 }
 
@@ -732,7 +732,8 @@
   font-weight: var(--font-semibold);
 }
 
-.gedcom-desk-cite {
+.gedcom-desk-cite,
+button.gedcom-desk-cite {
   display: block;
   width: 100%;
   height: auto;

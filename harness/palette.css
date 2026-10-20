@@ -231,6 +231,12 @@ body {
   --icon-color-focused: var(--text-normal);
 }
 
+button:not(.clickable-icon) {
+  color: var(--text-color);
+  background-color: var(--interactive-normal);
+  box-shadow: var(--input-shadow);
+}
+
 input[type="text"] {
   background: var(--background-modifier-form-field);
   border: var(--input-border-width) solid var(--background-modifier-border);

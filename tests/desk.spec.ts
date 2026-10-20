@@ -64,6 +64,30 @@ test.describe("the person page", () => {
   });
 });
 
+test.describe("Obsidian's own button styling", () => {
+  test("does not dress the page's rows and links as buttons", async ({ page }) => {
+    await mountDesk(page);
+    const look = (selector: string) =>
+      page.locator(selector).first().evaluate((node) => {
+        const style = getComputedStyle(node);
+        return { background: style.backgroundColor, shadow: style.boxShadow };
+      });
+
+    for (const selector of [
+      ".gedcom-desk-person",
+      ".gedcom-desk-link",
+      ".gedcom-desk-fact:not(.is-selected)",
+      ".gedcom-desk-row:not(.is-current)",
+      ".gedcom-desk-cite",
+    ]) {
+      expect(await look(selector), selector).toEqual({
+        background: "rgba(0, 0, 0, 0)",
+        shadow: "none",
+      });
+    }
+  });
+});
+
 test.describe("the evidence panel", () => {
   test("follows the selected fact, and goes back to the whole record", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
