@@ -146,7 +146,7 @@ describe("the two sides of the catalogue", () => {
    */
   it("spell the English side in sentence case", () => {
     const options = {
-      acronyms: ["GEDCOM", "URL"],
+      acronyms: ["GEDCOM", "LDS", "URL"],
       brands: ["Obsidian"],
       // A GEDCOM tag, and two modifier keys.
       ignoreWords: ["FILE", "Ctrl", "Cmd"],

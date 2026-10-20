@@ -38,6 +38,13 @@ import {
   retargetMedia,
 } from "./vault/renamedMedia";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
+import {
+  EVIDENCE_VIEW_TYPE,
+  EvidenceView,
+  INDEX_VIEW_TYPE,
+  IndexView,
+  type DeskViewsHost,
+} from "./desk/DeskViews";
 import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
@@ -53,7 +60,10 @@ interface SuggestRegistry {
   removeSuggest(suggest: unknown): void;
 }
 
-export default class GedcomPlugin extends Plugin implements GedcomViewHost {
+export default class GedcomPlugin
+  extends Plugin
+  implements GedcomViewHost, DeskViewsHost
+{
   settings: GedcomSettings = DEFAULT_SETTINGS;
   /**
    * The offer's shorter answer. A reader who says yes to one face in a group
@@ -76,6 +86,7 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
   /** Reachable as app.plugins.plugins["domorium"].api — see README. */
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
+  private followedView: GedcomView | null = null;
 
   async onload(): Promise<void> {
     setLanguage(getLanguage());
@@ -86,6 +97,25 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
       (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
+    this.registerView(INDEX_VIEW_TYPE, (leaf) => new IndexView(leaf, this));
+    this.registerView(EVIDENCE_VIEW_TYPE, (leaf) => new EvidenceView(leaf, this));
+    this.addRibbonIcon(GEDCOM_ICON_ID, t("command.openIndex"), () => {
+      void this.openIndex();
+    });
+    this.addCommand({
+      id: "open-gedcom-index",
+      name: t("command.openIndex"),
+      callback: () => {
+        void this.openIndex();
+      },
+    });
+    this.addCommand({
+      id: "open-gedcom-evidence",
+      name: t("command.openEvidence"),
+      callback: () => {
+        this.openEvidence();
+      },
+    });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
       const section = ctx.getSectionInfo(element);
       const { runs, problems } = renderGedcomBlock(
@@ -153,6 +183,19 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", () => {
         this.refreshStatusBar();
+        const active = this.app.workspace.getActiveViewOfType(GedcomView);
+        if (active && active !== this.followedView) {
+          this.followedView = active;
+          this.redrawDesk();
+        }
+      }),
+    );
+    this.registerEvent(
+      this.app.workspace.on("layout-change", () => {
+        if (this.followedView && !this.isOpen(this.followedView)) {
+          this.followedView = null;
+          this.redrawDesk();
+        }
       }),
     );
     this.registerEvent(
@@ -193,6 +236,58 @@ export default class GedcomPlugin extends Plugin implements GedcomViewHost {
         }
       });
     }
+  }
+
+  followed(): GedcomView | null {
+    return this.followedView;
+  }
+
+  genealogyChanged(view: GedcomView): void {
+    if (this.followedView === null || this.followedView === view) {
+      this.followedView = view;
+      this.redrawDesk();
+    }
+  }
+
+  openEvidence(): void {
+    void this.revealSidebarView(EVIDENCE_VIEW_TYPE, "right");
+  }
+
+  private async openIndex(): Promise<void> {
+    await this.revealSidebarView(INDEX_VIEW_TYPE, "left");
+  }
+
+  private async revealSidebarView(type: string, side: "left" | "right"): Promise<void> {
+    const { workspace } = this.app;
+    const leaf =
+      workspace.getLeavesOfType(type)[0] ??
+      (side === "left" ? workspace.getLeftLeaf(false) : workspace.getRightLeaf(false));
+    if (!leaf) {
+      return;
+    }
+    if (leaf.view.getViewType() !== type) {
+      await leaf.setViewState({ type, active: true });
+    }
+    await workspace.revealLeaf(leaf);
+  }
+
+  private redrawDesk(): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(INDEX_VIEW_TYPE)) {
+      if (leaf.view instanceof IndexView) {
+        leaf.view.redraw();
+      }
+    }
+    for (const leaf of this.app.workspace.getLeavesOfType(EVIDENCE_VIEW_TYPE)) {
+      if (leaf.view instanceof EvidenceView) {
+        leaf.view.redraw();
+      }
+    }
+  }
+
+  private isOpen(view: GedcomView): boolean {
+    return this.app.workspace
+      .getLeavesOfType(GEDCOM_VIEW_TYPE)
+      .some((leaf) => leaf.view === view);
   }
 
   statusChanged(view: GedcomView): void {

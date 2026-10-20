@@ -1,6 +1,17 @@
 import { expect, test } from "@playwright/test";
 
+import { pathToFileURL } from "node:url";
+import { resolve } from "node:path";
+
 import { LINKS, mount, PROBLEMS, SAMPLE } from "./harness";
+
+/** harness/palette.css, dark: what the desk takes from each variable. */
+const DARK_DESK = {
+  normal: "rgb(255, 255, 255)",
+  warning: "rgb(255, 200, 100)",
+  border: "rgb(60, 60, 60)",
+  link: "rgb(150, 150, 255)",
+};
 
 /**
  * The colours in harness/palette.css are distinct on purpose: each assertion
@@ -306,3 +317,25 @@ test.describe("the Obsidian theme", () => {
     expect(SAMPLE.startsWith("0 HEAD")).toBe(true);
   });
 });
+
+test.describe("the research desk in the Obsidian theme", () => {
+  test("draws its text, borders and the no-source mark from Obsidian's variables", async ({
+    page,
+  }) => {
+    await page.goto(pathToFileURL(resolve("harness/desk.html")).href);
+    await page.evaluate(() => {
+      window.desk.mount({ dark: true });
+    });
+    const style = (selector: string, property: string) =>
+      page.locator(selector).first().evaluate(
+        (node, name) => getComputedStyle(node).getPropertyValue(name),
+        property,
+      );
+
+    expect(await style(".gedcom-desk-title", "color")).toBe(DARK_DESK.normal);
+    expect(await style(".gedcom-desk-chip.no-source", "color")).toBe(DARK_DESK.warning);
+    expect(await style(".gedcom-desk-facts", "border-top-color")).toBe(DARK_DESK.border);
+    expect(await style(".gedcom-desk-person", "color")).toBe(DARK_DESK.link);
+  });
+});
+

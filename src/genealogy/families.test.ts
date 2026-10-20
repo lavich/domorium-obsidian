@@ -228,3 +228,58 @@ describe("a person's siblings and the families they made", () => {
     ]);
   });
 });
+
+describe("relatives the file points at and does not declare", () => {
+  const read = index([
+    "0 HEAD",
+    "1 GEDC",
+    "2 VERS 7.0",
+    "0 @I1@ INDI",
+    "1 NAME Anna /Nowak/",
+    "1 FAMC @F1@",
+    "1 FAMC @F8@",
+    "1 FAMS @F2@",
+    "1 FAMS @F9@",
+    "0 @I2@ INDI",
+    "1 NAME Jan /Nowak/",
+    "0 @F1@ FAM",
+    "1 HUSB @I2@",
+    "1 WIFE @I98@",
+    "1 CHIL @I1@",
+    "0 @F2@ FAM",
+    "1 WIFE @I1@",
+    "1 CHIL @I99@",
+    "0 TRLR",
+    "",
+  ].join("\n"));
+  const anna = read.person("@I1@");
+
+  it("reports a missing parent and a missing child-family with the parents", () => {
+    expect(anna?.parents.map((one) => one.name)).toEqual(["Jan Nowak"]);
+    expect(anna?.missingParents.map((one) => one.xref)).toEqual(["@I98@", "@F8@"]);
+  });
+
+  it("reports a missing child with its family, and a missing spouse-family apart", () => {
+    expect(anna?.unions[0]?.missingChildren.map((one) => one.xref)).toEqual(["@I99@"]);
+    expect(anna?.unions[0]?.missingSpouses).toEqual([]);
+    expect(anna?.missingUnions.map((one) => one.xref)).toEqual(["@F9@"]);
+  });
+
+  it("carries the line that makes each pointer", () => {
+    expect(anna?.missingUnions[0]?.range.start.line).toBe(8);
+    expect(anna?.missingParents[0]?.range.start.line).toBe(13);
+  });
+});
+
+describe("an event that names its own kind", () => {
+  it("carries the type an EVEN states, as written", () => {
+    const event = index([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @I1@ INDI", "1 EVEN", "2 TYPE Nobel Prize", "2 DATE 1903",
+      "0 TRLR", "",
+    ].join("\n")).person("@I1@")?.events[0];
+
+    expect(event?.tag).toBe("EVEN");
+    expect(event?.type).toBe("Nobel Prize");
+  });
+});

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "./i18n";
 import {
+  openAsOptions,
   recordPreviewOptions,
   settingDefinitions,
 } from "./settingDefinitions";
@@ -17,6 +18,7 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
+      openAs: "genealogy",
     });
   });
 
@@ -28,6 +30,7 @@ describe("GEDCOM settings", () => {
         recordPreview: "modifier",
         mediaPreview: "off",
         remoteImages: true,
+        openAs: "source",
       }),
       "a trigger the reader chose outlives a change of default",
     ).toEqual({
@@ -36,6 +39,7 @@ describe("GEDCOM settings", () => {
       recordPreview: "modifier",
       mediaPreview: "off",
       remoteImages: true,
+      openAs: "source",
     });
   });
 
@@ -53,7 +57,14 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
+      openAs: "genealogy",
     });
+  });
+
+  it("opens files as genealogy for a settings file written before the choice existed", () => {
+    expect(
+      parseSettings({ diagnostics: true, openAs: "reading" }).openAs,
+    ).toBe("genealogy");
   });
 
   it("leaves the web off for a settings file written before it existed", () => {
@@ -70,6 +81,16 @@ describe("GEDCOM settings", () => {
 
   it("exposes every option to Obsidian settings search", () => {
     expect(settingDefinitions()).toEqual([
+      {
+        name: "Open GEDCOM files as",
+        desc: "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in.",
+        control: {
+          type: "dropdown",
+          key: "openAs",
+          options: openAsOptions(),
+          defaultValue: "genealogy",
+        },
+      },
       {
         name: "Diagnostics",
         desc: "Underline GEDCOM errors and warnings in the editor.",
@@ -114,9 +135,11 @@ describe("GEDCOM settings", () => {
 
   it("speaks the reader's language when Obsidian asks for the definitions", () => {
     setLanguage("ru");
-    const [first] = settingDefinitions();
+    const [first, second] = settingDefinitions();
 
-    expect(first?.name).toBe("Диагностика");
+    expect(first?.name).toBe("Открывать файлы GEDCOM как");
+    expect(openAsOptions().source).toBe("Исходник");
+    expect(second?.name).toBe("Диагностика");
     expect(first?.desc).toMatch(/GEDCOM/);
     expect(recordPreviewOptions().off).toBe("Никогда");
   });

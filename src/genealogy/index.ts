@@ -25,6 +25,8 @@ export interface PersonEvent {
   place?: string;
   /** What the line itself carried, as an occupation does. */
   value?: string;
+  /** What an `EVEN` or a `FACT` says it is, as written. */
+  type?: string;
   range: Range;
   /** What this event itself cites, never what the record around it does. */
   citations: Citation[];
@@ -147,6 +149,12 @@ export interface Family extends FamilyRow {
   range: Range;
 }
 
+/** A pointer to a record the document does not declare, and the line making it. */
+export interface Missing {
+  xref: string;
+  range: Range;
+}
+
 /** A family a person is a spouse of, read from that person's side. */
 export interface Union {
   family: FamilyRow;
@@ -154,6 +162,9 @@ export interface Union {
   spouse?: PersonRow;
   events: PersonEvent[];
   children: PersonRow[];
+  /** Spouses and children this family names and the document does not declare. */
+  missingSpouses: Missing[];
+  missingChildren: Missing[];
 }
 
 /** Read in full when a person is opened, rather than for all of them. */
@@ -171,6 +182,10 @@ export interface Person extends PersonRow {
   siblings: PersonRow[];
   /** In the order the record points at its spouse-families. */
   unions: Union[];
+  /** A child-family, or a parent in one, the document does not declare. */
+  missingParents: Missing[];
+  /** A spouse-family the document does not declare. */
+  missingUnions: Missing[];
   /** Identifiers this person's record pointed at and the document does not hold. */
   unresolved: string[];
   range: Range;
@@ -210,6 +225,17 @@ function rolePointers(
       if (xref) {
         found.push(xref);
       }
+    }
+  }
+  return found;
+}
+
+function roleLinks(family: DocumentSymbol, roles: ReadonlySet<string>): Missing[] {
+  const found: Missing[] = [];
+  for (const child of family.children) {
+    const xref = payload(child);
+    if (roles.has(child.name) && xref) {
+      found.push({ xref, range: child.range });
     }
   }
   return found;
@@ -381,6 +407,7 @@ function eventsOf(
       continue;
     }
     const date = payload(childOf(child, "DATE"));
+    const type = payload(childOf(child, "TYPE"));
     const position = events.length;
     events.push({
       tag: child.name,
@@ -389,6 +416,7 @@ function eventsOf(
         ? {}
         : { place: payload(childOf(child, "PLAC")) }),
       ...(payload(child) === undefined ? {} : { value: payload(child) }),
+      ...(type === undefined ? {} : { type }),
       range: child.range,
       citations: citations.filter((citation) => citation.event === position),
     });
@@ -696,13 +724,23 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       return family;
     };
 
+    const missingParents: Missing[] = [];
+    const missingUnions: Missing[] = [];
+    const resolved = (pointer: string): boolean => rows.has(pointer);
+
     for (const link of childrenOf(record, CHILD_FAMILY_TAG)) {
       const family = payload(link) && familyOf(payload(link) as string);
       if (!family) {
+        if (payload(link)) {
+          missingParents.push({ xref: payload(link) as string, range: link.range });
+        }
         continue;
       }
-      for (const spouse of rolePointers(family, SPOUSE_ROLE_TAGS)) {
-        resolveInto(parents, spouse);
+      for (const spouse of roleLinks(family, SPOUSE_ROLE_TAGS)) {
+        resolveInto(parents, spouse.xref);
+        if (!resolved(spouse.xref)) {
+          missingParents.push(spouse);
+        }
       }
       for (const child of rolePointers(family, CHILD_ROLE_TAGS)) {
         if (child !== xref) {
@@ -714,19 +752,31 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     for (const link of childrenOf(record, SPOUSE_FAMILY_TAG)) {
       const family = payload(link) && familyOf(payload(link) as string);
       if (!family) {
+        if (payload(link)) {
+          missingUnions.push({ xref: payload(link) as string, range: link.range });
+        }
         continue;
       }
       const spouses = new Map<string, PersonRow>();
       const ownChildren = new Map<string, PersonRow>();
-      for (const spouse of rolePointers(family, SPOUSE_ROLE_TAGS)) {
-        if (spouse !== xref) {
-          resolveInto(partners, spouse);
-          resolveInto(spouses, spouse);
+      const missingSpouses: Missing[] = [];
+      const missingChildren: Missing[] = [];
+      for (const spouse of roleLinks(family, SPOUSE_ROLE_TAGS)) {
+        if (spouse.xref === xref) {
+          continue;
+        }
+        resolveInto(partners, spouse.xref);
+        resolveInto(spouses, spouse.xref);
+        if (!resolved(spouse.xref)) {
+          missingSpouses.push(spouse);
         }
       }
-      for (const child of rolePointers(family, CHILD_ROLE_TAGS)) {
-        resolveInto(children, child);
-        resolveInto(ownChildren, child);
+      for (const child of roleLinks(family, CHILD_ROLE_TAGS)) {
+        resolveInto(children, child.xref);
+        resolveInto(ownChildren, child.xref);
+        if (!resolved(child.xref)) {
+          missingChildren.push(child);
+        }
       }
       const spouse = [...spouses.values()][0];
       unions.push({
@@ -738,6 +788,8 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
           family.detail ? (byCiter.get(family.detail) ?? []) : [],
         ),
         children: [...ownChildren.values()],
+        missingSpouses,
+        missingChildren,
       });
     }
 
@@ -768,6 +820,8 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       spouseFamilies: familiesOf(SPOUSE_FAMILY_TAG),
       siblings: [...siblings.values()],
       unions,
+      missingParents,
+      missingUnions,
       unresolved,
       range: record.range,
     };

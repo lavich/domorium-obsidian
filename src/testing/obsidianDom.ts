@@ -59,4 +59,20 @@ export function installObsidianDom(): void {
   proto.addClass = function (...classes: string[]) {
     (this as unknown as HTMLElement).classList.add(...classes);
   };
+  proto.toggleClass = function (classes: string | string[], value: boolean) {
+    for (const name of Array.isArray(classes) ? classes : [classes]) {
+      (this as unknown as HTMLElement).classList.toggle(name, value);
+    }
+  };
+  proto.setCssProps = function (props: Record<string, string>) {
+    for (const [name, value] of Object.entries(props)) {
+      (this as unknown as HTMLElement).style.setProperty(name, value);
+    }
+  };
+  proto.toggle = function (show: boolean) {
+    (this as unknown as HTMLElement).style.display = show ? "" : "none";
+  };
+  proto.setText = function (text: string) {
+    (this as unknown as HTMLElement).textContent = text;
+  };
 }

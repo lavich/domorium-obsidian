@@ -21,6 +21,9 @@ export interface CommandView {
   goToPreviousProblem(): boolean;
   toggleProblemsPanel(): void;
   showSearch(replace: boolean): void;
+  /** Editor commands answer only here; Genealogy mode has no editor to act on. */
+  inSource(): boolean;
+  toggleMode(): void;
 }
 
 /** Everything outside the view, which is where `obsidian` stays. */
@@ -80,6 +83,15 @@ function copyRecordLink(
 
 export const COMMANDS: GedcomCommand[] = [
   {
+    id: "toggle-gedcom-mode",
+    name: "command.toggleMode",
+    icon: "users",
+    isAvailable: () => true,
+    run: (_host, view) => {
+      view.toggleMode();
+    },
+  },
+  {
     id: "go-to-gedcom-record",
     name: "command.goToRecord",
     icon: "list-tree",
@@ -116,7 +128,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "go-to-gedcom-definition",
     name: "command.goToDefinition",
     icon: "arrow-right",
-    isAvailable: () => true,
+    isAvailable: (view) => view.inSource(),
     run: (_host, view) => {
       view.goToDefinition();
     },
@@ -125,7 +137,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "find-gedcom-references",
     name: "command.findReferences",
     icon: "search",
-    isAvailable: () => true,
+    isAvailable: (view) => view.inSource(),
     run: (host, view) => {
       const referenceCount = view.goToNextReference();
       host.notify(
@@ -139,7 +151,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "rename-gedcom-reference",
     name: "command.renameReference",
     icon: "pencil",
-    isAvailable: (view) => view.canRenameReference(),
+    isAvailable: (view) => view.inSource() && view.canRenameReference(),
     run: (host, view) => {
       host.askForName((newName) => {
         if (!view.renameReference(newName)) {
@@ -152,7 +164,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "go-to-next-gedcom-problem",
     name: "command.nextProblem",
     icon: "chevron-down",
-    isAvailable: (view) => view.problemCount() > 0,
+    isAvailable: (view) => view.inSource() && view.problemCount() > 0,
     run: (_host, view) => {
       view.goToNextProblem();
     },
@@ -161,7 +173,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "go-to-previous-gedcom-problem",
     name: "command.previousProblem",
     icon: "chevron-up",
-    isAvailable: (view) => view.problemCount() > 0,
+    isAvailable: (view) => view.inSource() && view.problemCount() > 0,
     run: (_host, view) => {
       view.goToPreviousProblem();
     },
@@ -170,7 +182,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "toggle-gedcom-problems-panel",
     name: "command.toggleProblems",
     icon: "list-checks",
-    isAvailable: (view) => view.canShowProblems(),
+    isAvailable: (view) => view.inSource() && view.canShowProblems(),
     run: (_host, view) => {
       view.toggleProblemsPanel();
     },
@@ -180,7 +192,7 @@ export const COMMANDS: GedcomCommand[] = [
     name: "command.find",
     icon: "file-search",
     section: "find",
-    isAvailable: () => true,
+    isAvailable: (view) => view.inSource(),
     run: (_host, view) => {
       view.showSearch(false);
     },
@@ -198,7 +210,7 @@ export const COMMANDS: GedcomCommand[] = [
         ? { modifiers: ["Mod", "Alt"], key: "F" }
         : { modifiers: ["Mod"], key: "H" },
     ],
-    isAvailable: () => true,
+    isAvailable: (view) => view.inSource(),
     run: (_host, view) => {
       view.showSearch(true);
     },

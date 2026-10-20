@@ -24,6 +24,7 @@ import {
 } from "@domorium/codemirror";
 import type { MediaReference } from "@domorium/language-service";
 import {
+  debounce,
   HoverPopover,
   Keymap,
   type Menu,
@@ -34,6 +35,7 @@ import {
   setIcon,
   TextFileView,
   TFile,
+  type ViewStateResult,
   type WorkspaceLeaf,
 } from "obsidian";
 
@@ -57,6 +59,21 @@ import {
 import { openSearch } from "./editor/searchPanel";
 import type { SearchKeyBinding } from "./editor/searchKeys";
 import { routeDocumentLink } from "./editor/service";
+import {
+  pageKind,
+  readDeskState,
+  recordToShow,
+  routeLink,
+  type DeskMode,
+} from "./desk/deskState";
+import { renderPersonPage, type FactKey, type PageHost } from "./desk/personPage";
+import {
+  renderEmptyPage,
+  renderGonePage,
+  renderSourcePage,
+} from "./desk/sourcePage";
+import { documentRef, type GenealogyIndex } from "./genealogy";
+import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { planRetarget } from "./vault/renamedMedia";
@@ -72,6 +89,16 @@ export interface GedcomViewHost {
   remoteImages(): boolean;
   /** What the offer in the popover was answered with. */
   allowRemoteImages(scope: AllowScope): void;
+  /** The text, the mode, the record or the selected fact changed. */
+  genealogyChanged(view: GedcomView): void;
+  openEvidence(): void;
+}
+
+/** What the evidence panel reads from a tab in Genealogy mode. */
+export interface DeskSelection {
+  index: GenealogyIndex;
+  record: string;
+  fact: FactKey | null;
 }
 
 export class GedcomView extends TextFileView {
@@ -80,6 +107,21 @@ export class GedcomView extends TextFileView {
   private applyingData = false;
   private preview: HoverPopover | null = null;
   private mediaPreview: HoverPopover | null = null;
+  private mode: DeskMode;
+  private record: string | null = null;
+  private selected: FactKey | null = null;
+  private revision = 0;
+  private readonly genealogyCache = new IndexCache();
+  private readonly editorEl: HTMLElement;
+  private readonly deskEl: HTMLElement;
+  private readonly modeAction: HTMLElement;
+  // Edits come a keystroke at a time; the index and the panel need the text
+  // once it has settled.
+  private readonly announceEdit = debounce(
+    () => this.host.genealogyChanged(this),
+    300,
+    true,
+  );
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -88,11 +130,17 @@ export class GedcomView extends TextFileView {
   ) {
     super(leaf);
     this.contentEl.addClass("gedcom-gedcom-view");
-    const editorEl = this.contentEl.createDiv({ cls: "gedcom-gedcom-editor" });
+    this.mode = settings.openAs;
+    this.editorEl = this.contentEl.createDiv({ cls: "gedcom-gedcom-editor" });
+    this.deskEl = this.contentEl.createDiv({ cls: "gedcom-desk" });
     this.editor = new EditorView({
-      parent: editorEl,
+      parent: this.editorEl,
       state: this.createState(""),
     });
+    this.modeAction = this.addAction("code", t("mode.toSource"), () => {
+      this.toggleMode();
+    });
+    this.showMode();
   }
 
   getViewType(): string {
@@ -112,6 +160,7 @@ export class GedcomView extends TextFileView {
   }
 
   setViewData(data: string, clear: boolean): void {
+    this.revision += 1;
     this.applyingData = true;
     try {
       if (clear) {
@@ -135,9 +184,14 @@ export class GedcomView extends TextFileView {
       this.applyingData = false;
     }
     this.host.statusChanged(this);
+    this.drawDesk();
+    this.host.genealogyChanged(this);
   }
 
   clear(): void {
+    this.revision += 1;
+    this.record = null;
+    this.selected = null;
     this.hidePreviews();
     this.language.clear();
     this.editor.setState(this.createState(""));
@@ -156,6 +210,37 @@ export class GedcomView extends TextFileView {
   onPaneMenu(menu: Menu, source: string): void {
     super.onPaneMenu(menu, source);
     this.host.fillMenu(menu, this);
+  }
+
+  getState(): Record<string, unknown> {
+    return {
+      ...super.getState(),
+      mode: this.mode,
+      ...(this.record === null ? {} : { record: this.record }),
+    };
+  }
+
+  async setState(state: unknown, result: ViewStateResult): Promise<void> {
+    const desk = readDeskState(state);
+    const file = (state as { file?: unknown } | null)?.file;
+    const sameFile = file === undefined || file === this.file?.path;
+    if (!sameFile) {
+      this.mode = desk.mode ?? this.settings.openAs;
+      this.record = null;
+      this.selected = null;
+    }
+    if (desk.record !== undefined && desk.record !== this.record) {
+      // Leaving it unset, or false, writes nothing to the leaf's history, and
+      // Back would then have no person to go back to.
+      result.history = true;
+      this.record = desk.record;
+      this.selected = null;
+    }
+    if (desk.mode) {
+      this.mode = desk.mode;
+    }
+    await super.setState(state, result);
+    this.showMode();
   }
 
   getEphemeralState(): Record<string, unknown> {
@@ -215,11 +300,93 @@ export class GedcomView extends TextFileView {
   }
 
   recordAtCursor(): GedcomRecord | undefined {
-    const { doc, selection } = this.editor.state;
-    return recordAtLine(this.records(), doc.lineAt(selection.main.head).number - 1);
+    if (this.mode === "genealogy") {
+      return this.records().find((entry) => entry.identifier === this.record);
+    }
+    return this.sourceRecordAtCursor();
+  }
+
+  inSource(): boolean {
+    return this.mode === "source";
+  }
+
+  toggleMode(): void {
+    if (this.mode === "source") {
+      const atCursor = this.sourceRecordAtCursor()?.identifier;
+      if (atCursor && pageKind(this.genealogy(), atCursor)) {
+        this.record = atCursor;
+        this.selected = null;
+      }
+      this.setMode("genealogy");
+    } else {
+      this.setMode("source");
+    }
+  }
+
+  /** One reading of the text this tab holds now, typed but unsaved included. */
+  genealogy(): GenealogyIndex {
+    return this.genealogyCache.at(
+      documentRef(this.file?.path ?? ""),
+      String(this.revision),
+      () => this.language.update(this.editor.state.doc).getDocumentSymbols(),
+    );
+  }
+
+  deskSelection(): DeskSelection | null {
+    if (this.mode !== "genealogy" || this.record === null) {
+      return null;
+    }
+    return { index: this.genealogy(), record: this.record, fact: this.selected };
+  }
+
+  shownRecord(): string | null {
+    return this.mode === "genealogy" ? this.record : null;
+  }
+
+  /** A step Back returns from: the index, a page and the panel all come here. */
+  openRecord(xref: string): void {
+    void this.leaf.setViewState({
+      type: GEDCOM_VIEW_TYPE,
+      state: { ...this.getState(), mode: "genealogy", record: xref },
+    });
+  }
+
+  selectFact(fact: FactKey | null): void {
+    this.selected = fact;
+    this.drawDesk();
+    this.host.genealogyChanged(this);
+  }
+
+  showInSource(range: Range): void {
+    this.setMode("source");
+    const { doc } = this.editor.state;
+    const from = positionToOffset(doc, range.start);
+    const to = positionToOffset(doc, range.end);
+    this.editor.dispatch({
+      selection: { anchor: from, head: to },
+      effects: EditorView.scrollIntoView(from, { y: "center" }),
+    });
+    this.editor.focus();
   }
 
   goToXref(xref: string): boolean {
+    if (this.mode === "genealogy") {
+      const route = routeLink(this.genealogy(), xref, (wanted) =>
+        this.records().some((entry) => entry.identifier === wanted),
+      );
+      if (route.to === "nowhere") {
+        return false;
+      }
+      if (route.to === "page") {
+        this.record = route.xref;
+        this.selected = null;
+        this.drawDesk();
+        this.host.genealogyChanged(this);
+        this.app.workspace.requestSaveLayout();
+        return true;
+      }
+      this.setMode("source");
+    }
     const record = this.records().find((entry) => entry.identifier === xref);
     if (!record) {
       return false;
@@ -229,6 +396,10 @@ export class GedcomView extends TextFileView {
   }
 
   goToRecord(record: GedcomRecord): void {
+    if (this.mode === "genealogy" && record.identifier) {
+      this.goToXref(record.identifier);
+      return;
+    }
     const anchor = positionToOffset(this.editor.state.doc, record.start);
     this.editor.dispatch({
       selection: { anchor },
@@ -329,6 +500,7 @@ export class GedcomView extends TextFileView {
   }
 
   onClose(): Promise<void> {
+    this.announceEdit.cancel();
     this.editor.destroy();
     return Promise.resolve();
   }
@@ -382,6 +554,81 @@ export class GedcomView extends TextFileView {
     };
   }
 
+  private sourceRecordAtCursor(): GedcomRecord | undefined {
+    const { doc, selection } = this.editor.state;
+    return recordAtLine(this.records(), doc.lineAt(selection.main.head).number - 1);
+  }
+
+  private setMode(mode: DeskMode): void {
+    if (mode === this.mode) {
+      return;
+    }
+    this.mode = mode;
+    this.showMode();
+    this.app.workspace.requestSaveLayout();
+    this.host.genealogyChanged(this);
+  }
+
+  private showMode(): void {
+    const genealogy = this.mode === "genealogy";
+    this.editorEl.toggle(!genealogy);
+    this.deskEl.toggle(genealogy);
+    setIcon(this.modeAction, genealogy ? "code" : "users");
+    this.modeAction.setAttribute(
+      "aria-label",
+      genealogy ? t("mode.toSource") : t("mode.toGenealogy"),
+    );
+    if (genealogy) {
+      this.hidePreviews();
+      this.drawDesk();
+    }
+  }
+
+  private drawDesk(): void {
+    if (this.mode !== "genealogy") {
+      return;
+    }
+    const index = this.genealogy();
+    const openSource = (): void => this.setMode("source");
+    if (this.record !== null && !pageKind(index, this.record)) {
+      const first = recordToShow(index, []);
+      renderGonePage(this.deskEl, {
+        showFirst: first === null ? null : () => this.openRecord(first),
+        openSource,
+      });
+      return;
+    }
+    this.record ??= recordToShow(index, []);
+    if (this.record === null) {
+      renderEmptyPage(this.deskEl, openSource);
+      return;
+    }
+    const person = index.person(this.record);
+    if (person) {
+      renderPersonPage(
+        this.deskEl,
+        person,
+        index,
+        { selected: this.selected, phone: Platform.isPhone },
+        this.pageHost(),
+      );
+      return;
+    }
+    const source = index.source(this.record);
+    if (source) {
+      renderSourcePage(this.deskEl, source, index, this.pageHost());
+    }
+  }
+
+  private pageHost(): PageHost {
+    return {
+      openRecord: (xref) => this.openRecord(xref),
+      select: (fact) => this.selectFact(fact),
+      showInSource: (range) => this.showInSource(range),
+      openEvidence: () => this.host.openEvidence(),
+    };
+  }
+
   private isDark(): boolean {
     return this.containerEl.ownerDocument.body.classList.contains("theme-dark");
   }
@@ -425,7 +672,9 @@ export class GedcomView extends TextFileView {
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
+            this.revision += 1;
             this.requestSave();
+            this.announceEdit();
           }
           this.host.statusChanged(this);
         }),
