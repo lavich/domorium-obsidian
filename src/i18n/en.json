@@ -214,5 +214,13 @@
   "event.MARR": "Marriage",
   "event.MARS": "Marriage settlement",
   "desk.unnamed": "Unnamed",
-  "desk.untitled": "Untitled source"
+  "desk.untitled": "Untitled source",
+  "desk.couple": "{one} and {other}",
+  "desk.familyNoSpouses": "A family with no spouses recorded",
+  "desk.familyPage": "Family page",
+  "desk.noFacts": "The record states no facts.",
+  "index.families": "Families",
+  "index.searchFamilies": "Names, year, place…",
+  "index.noFamilies": "The file holds no families.",
+  "index.nothingFamilies": "Nothing matches “{query}”. Search covers names, years and places."
 }

@@ -1,8 +1,20 @@
-import type { GenealogyIndex, PersonRow, SourceRow } from "../genealogy";
+import type { FamilyRow, GenealogyIndex, PersonRow, SourceRow } from "../genealogy";
 import { plural, t } from "../i18n";
-import { personName, sourceTitle, yearsOf } from "./labels";
+import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
 
-export type IndexKind = "people" | "sources";
+export type IndexKind = "people" | "families" | "sources";
+
+const KIND_LABEL = {
+  people: "index.people",
+  families: "index.families",
+  sources: "index.sources",
+} as const;
+
+const SEARCH_HINT = {
+  people: "index.searchPeople",
+  families: "index.searchFamilies",
+  sources: "index.searchSources",
+} as const;
 
 /** Two lines of text; every row is this tall so the window can be computed. */
 export const ROW_HEIGHT = 44;
@@ -43,6 +55,13 @@ export function peopleShown(
   );
 }
 
+export function familiesShown(index: GenealogyIndex, query: string): FamilyRow[] {
+  const wanted = query.trim().toLowerCase();
+  return index.families.filter(
+    (row) => row.xref !== undefined && (!wanted || row.search.includes(wanted)),
+  );
+}
+
 export function sourcesShown(index: GenealogyIndex, query: string): SourceRow[] {
   const wanted = query.trim().toLowerCase();
   return index.sources.filter(
@@ -59,7 +78,7 @@ export class IndexList {
   private query = "";
   private gapsOnly = false;
   private file: IndexFile | null = null;
-  private rows: (PersonRow | SourceRow)[] = [];
+  private rows: (PersonRow | FamilyRow | SourceRow)[] = [];
   private readonly titleEl: HTMLElement;
   private readonly metaEl: HTMLElement;
   private readonly kindEl: HTMLElement;
@@ -80,10 +99,10 @@ export class IndexList {
     this.titleEl = title.createSpan({ cls: "gedcom-desk-index-file" });
     this.metaEl = title.createSpan({ cls: "gedcom-desk-index-meta" });
     this.kindEl = head.createDiv({ cls: "gedcom-desk-seg" });
-    for (const kind of ["people", "sources"] as const) {
+    for (const kind of ["people", "families", "sources"] as const) {
       const button = this.kindEl.createEl("button", {
         cls: "gedcom-desk-seg-button",
-        text: t(kind === "people" ? "index.people" : "index.sources"),
+        text: t(KIND_LABEL[kind]),
       });
       button.setAttribute("type", "button");
       button.dataset.kind = kind;
@@ -133,15 +152,15 @@ export class IndexList {
     for (const button of Array.from(this.kindEl.children) as HTMLElement[]) {
       button.toggleClass("is-active", button.dataset.kind === this.kind);
     }
-    this.searchEl.placeholder = t(
-      this.kind === "people" ? "index.searchPeople" : "index.searchSources",
-    );
+    this.searchEl.placeholder = t(SEARCH_HINT[this.kind]);
     this.filtersEl.empty();
     if (this.kind === "people") {
       const gaps = people.filter((row) => restsOnNothing(index, row)).length;
       this.chip(plural("index.all", people.length), !this.gapsOnly, false);
       this.chip(plural("index.gaps", gaps), this.gapsOnly, true);
       this.rows = peopleShown(index, this.query, this.gapsOnly);
+    } else if (this.kind === "families") {
+      this.rows = familiesShown(index, this.query);
     } else {
       this.rows = sourcesShown(index, this.query);
     }
@@ -175,21 +194,32 @@ export class IndexList {
     const count = height > 0 ? Math.ceil(height / ROW_HEIGHT) + 2 * MARGIN : FIRST_WINDOW;
     this.windowEl.setCssProps({ top: `${first * ROW_HEIGHT}px` });
     for (const row of this.rows.slice(first, first + count)) {
-      if ("name" in row) {
-        this.personRow(row, file);
-      } else {
+      if ("spouseNames" in row) {
+        this.familyRow(row, file);
+      } else if ("title" in row) {
         this.sourceRow(row, file);
+      } else {
+        this.personRow(row, file);
       }
     }
   }
 
   private nothing(): string {
-    if (this.query.trim()) {
-      return t(this.kind === "people" ? "index.nothingPeople" : "index.nothingSources", {
-        query: this.query.trim(),
-      });
+    const query = this.query.trim();
+    if (query) {
+      const key = {
+        people: "index.nothingPeople",
+        families: "index.nothingFamilies",
+        sources: "index.nothingSources",
+      } as const;
+      return t(key[this.kind], { query });
     }
-    return t(this.kind === "people" ? "index.noPeople" : "index.noSources");
+    const key = {
+      people: "index.noPeople",
+      families: "index.noFamilies",
+      sources: "index.noSources",
+    } as const;
+    return t(key[this.kind]);
   }
 
   private rowButton(xref: string, file: IndexFile): HTMLElement {
@@ -212,6 +242,17 @@ export class IndexList {
       mark.setAttribute("aria-label", t("index.gapMark"));
     }
     button.createSpan({ cls: "gedcom-desk-row-years", text: yearsOf(row) });
+    button.createSpan({ cls: "gedcom-desk-row-place", text: row.place ?? "" });
+  }
+
+  private familyRow(row: FamilyRow, file: IndexFile): void {
+    const xref = row.xref;
+    if (!xref) {
+      return;
+    }
+    const button = this.rowButton(xref, file);
+    button.createSpan({ cls: "gedcom-desk-row-name", text: familyTitle(row.spouseNames) });
+    button.createSpan({ cls: "gedcom-desk-row-years", text: year(row.marriage) ?? "" });
     button.createSpan({ cls: "gedcom-desk-row-place", text: row.place ?? "" });
   }
 

@@ -44,3 +44,15 @@
 - [x] 6.2 Tick the Reading slice in `docs/design/next-steps.md`
 - [x] 6.3 Run `npm run check` and `npm run test:browser`; both pass
 - [ ] 6.4 Open `demo-vault` in Obsidian with this build: modes and their header switch, state across a restart, Back and Forward between people, a link into a person and into a family, Show in source, the index and the panel following the tab, and the phone drawers
+
+## 7. The family page
+
+- [x] 7.1 Report a family's missing spouses and children with the lines naming them; extend `src/genealogy/families.test.ts`
+- [x] 7.2 Give families a page: `pageKind` and `routeLink` treat a family as a page; extend `src/desk/deskState.test.ts`
+- [x] 7.3 Render the family page in `src/desk/familyPage.ts` — heading by the spouses with the marriage, facts with source state, spouses by role, children, missing pointers — covered by a new `src/desk/familyPage.test.ts`
+- [x] 7.4 Link each marriage on the person page to its family page, and make a citing family on the source page open it; extend `src/desk/personPage.test.ts` and `src/desk/sourcePage.test.ts`
+- [x] 7.5 Show a family's selected fact and whole record in the evidence panel; extend `src/desk/evidence.test.ts`
+- [x] 7.6 Add Families to the index between People and Sources, with search; extend `src/desk/indexList.test.ts`
+- [x] 7.7 Wire the family page into `GedcomView`, add it to the harness, and cover it in `tests/desk.spec.ts`
+- [x] 7.8 Run `npm run check` and `npm run test:browser`; both pass
+

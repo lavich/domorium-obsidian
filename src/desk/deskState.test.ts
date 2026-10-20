@@ -15,6 +15,7 @@ const CURIE = [
   "1 NAME Pierre /Curie/",
   "0 @F1@ FAM",
   "1 WIFE @I1@",
+  "0 @N1@ SNOTE A shared note",
   "0 @S1@ SOUR",
   "1 TITL Parish registers",
   "0 TRLR",
@@ -38,7 +39,7 @@ describe("what a tab keeps of the desk", () => {
 
 describe("which record Genealogy mode shows", () => {
   it("takes the first preferred record that has a page", () => {
-    expect(recordToShow(index(), ["@F1@", "@I2@", "@I1@"])).toBe("@I2@");
+    expect(recordToShow(index(), ["@N1@", "@F1@", "@I1@"])).toBe("@F1@");
   });
 
   it("falls back to the first person the file declares", () => {
@@ -55,22 +56,27 @@ describe("which record Genealogy mode shows", () => {
     expect(recordToShow(index("0 HEAD\n0 TRLR\n"), [])).toBeNull();
   });
 
-  it("names a person and a source as having pages, and a family not", () => {
+  it("gives a person, a family and a source a page, and a note none", () => {
     expect(pageKind(index(), "@I1@")).toBe("person");
+    expect(pageKind(index(), "@F1@")).toBe("family");
     expect(pageKind(index(), "@S1@")).toBe("source");
-    expect(pageKind(index(), "@F1@")).toBeNull();
+    expect(pageKind(index(), "@N1@")).toBeNull();
   });
 });
 
 describe("where a link into a record lands", () => {
-  const declared = (xref: string) => ["@I1@", "@I2@", "@F1@", "@S1@"].includes(xref);
+  const declared = (xref: string) => ["@I1@", "@I2@", "@F1@", "@N1@", "@S1@"].includes(xref);
 
   it("opens a person's page", () => {
     expect(routeLink(index(), "@I1@", declared)).toEqual({ to: "page", xref: "@I1@" });
   });
 
-  it("sends a family to the source", () => {
-    expect(routeLink(index(), "@F1@", declared)).toEqual({ to: "source", xref: "@F1@" });
+  it("opens a family's page", () => {
+    expect(routeLink(index(), "@F1@", declared)).toEqual({ to: "page", xref: "@F1@" });
+  });
+
+  it("sends a shared note to the source", () => {
+    expect(routeLink(index(), "@N1@", declared)).toEqual({ to: "source", xref: "@N1@" });
   });
 
   it("goes nowhere for a record the file does not hold", () => {

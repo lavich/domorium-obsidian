@@ -20,7 +20,15 @@ export function eventName(event: Pick<PersonEvent, "tag" | "type">): string {
   return t(`event.${event.tag}` as MessageKey);
 }
 
-function year(date: DateReading | undefined): string | undefined {
+export function familyTitle(spouseNames: string[]): string {
+  const [one, other] = spouseNames.map((name) => personName({ name }));
+  if (one && other) {
+    return t("desk.couple", { one, other });
+  }
+  return one ?? t("desk.familyNoSpouses");
+}
+
+export function year(date: DateReading | undefined): string | undefined {
   if (date?.year === undefined) {
     return undefined;
   }

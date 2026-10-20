@@ -2,7 +2,8 @@ import type { Range } from "@domorium/language-service";
 
 import type { Citation, GenealogyIndex } from "../genealogy";
 import { t, type MessageKey } from "../i18n";
-import { eventName, personName, sourceTitle, yearsOf } from "./labels";
+import { familyFactByKey } from "./familyPage";
+import { eventName, familyTitle, personName, sourceTitle, yearsOf } from "./labels";
 import { factByKey, linkButton, type FactKey } from "./personPage";
 
 export interface EvidenceHost {
@@ -33,20 +34,34 @@ export function renderEvidence(
   const { index, record, fact: key } = selection;
   const source = index.source(record);
   const person = index.person(record);
+  const family = person ? undefined : index.family(record);
   const context = head.createDiv({ cls: "gedcom-desk-evidence-context" });
   const actions = head.createDiv({ cls: "gedcom-desk-actions" });
 
-  if (source && !person) {
+  if (source && !person && !family) {
     context.createDiv({ text: sourceTitle(source.title) });
     context.createDiv({ cls: "gedcom-desk-evidence-sub", text: t("evidence.source") });
     linkButton(actions, t("desk.showInSource"), () => host.showInSource(source.range));
     return;
   }
-  if (!person) {
+  const subject = person
+    ? {
+        fact: factByKey(person, key),
+        name: [personName(person), yearsOf(person)].filter(Boolean).join(" · "),
+        range: person.range,
+      }
+    : family
+      ? {
+          fact: familyFactByKey(family, key),
+          name: familyTitle(family.spouseNames),
+          range: family.range,
+        }
+      : null;
+  if (!subject) {
     return;
   }
 
-  const fact = factByKey(person, key);
+  const fact = subject.fact;
   const body = root.createDiv({ cls: "gedcom-desk-evidence-body" });
   const ofRecord = index.citesBy(record).filter((citation) => citation.event === undefined);
 
@@ -84,11 +99,8 @@ export function renderEvidence(
     });
   } else {
     context.createDiv({ text: t("desk.wholeRecord") });
-    context.createDiv({
-      cls: "gedcom-desk-evidence-sub",
-      text: [personName(person), yearsOf(person)].filter(Boolean).join(" · "),
-    });
-    linkButton(actions, t("desk.showInSource"), () => host.showInSource(person.range));
+    context.createDiv({ cls: "gedcom-desk-evidence-sub", text: subject.name });
+    linkButton(actions, t("desk.showInSource"), () => host.showInSource(subject.range));
   }
 
   body.createEl("h3", {

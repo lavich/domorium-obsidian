@@ -9,14 +9,14 @@ never mistaken for a source of a fact.
 ### Requirement: The panel lives in the right sidebar and follows the selection
 
 The plugin SHALL offer an evidence view, named **Evidence**, that opens in the
-right sidebar from a command and from the person page. On a phone it SHALL be
+right sidebar from a command and from the person and family pages. On a phone it SHALL be
 reached as Obsidian's other sidebar views are, from the right drawer.
 
 The panel SHALL show the selection of the GEDCOM tab most recently active in
-Genealogy mode: a fact of the person shown, or the whole record when no fact is
-selected. Its heading SHALL name what it shows — the fact with its date and
-place, or *Whole record* with the person's name — and SHALL offer *Whole record*
-when a fact is selected and Show in source always.
+Genealogy mode: a fact of the person or family shown, or the whole record when
+no fact is selected. Its heading SHALL name what it shows — the fact with its
+date and place, or *Whole record* with the person's or family's name — and
+SHALL offer *Whole record* when a fact is selected and Show in source always.
 
 With no GEDCOM tab in Genealogy mode it SHALL say so.
 
@@ -34,8 +34,8 @@ With no GEDCOM tab in Genealogy mode it SHALL say so.
 
 With a fact selected, the panel SHALL first list the citations that fact
 itself makes. Below them, under a separate heading, it SHALL list the citations
-the person's record makes on itself. With no fact selected it SHALL list only
-the latter.
+the person's or family's record makes on itself. With no fact selected it
+SHALL list only the latter.
 
 Where the selected fact cites nothing, the panel SHALL say the fact has no
 source of its own, and SHALL say either that the sources below belong to the
@@ -82,6 +82,18 @@ say that it is described in the record rather than as a source record.
 #### Scenario: Opening a source
 - **WHEN** the reader activates `The Nobel Prize in Physics 1903` in the panel
 - **THEN** the GEDCOM tab shows that source's page
+
+### Requirement: The panel on a family page
+
+On a family page the panel SHALL treat the family as it treats a person: the
+selected family fact's own citations first, then those the family record makes
+on itself.
+
+#### Scenario: The Curies' marriage selected
+- **WHEN** the family page of Pierre and Marie Curie is shown and the marriage
+  is selected
+- **THEN** the panel says the marriage has no source of its own and that the
+  family record cites nothing either
 
 ### Requirement: The panel on a source page
 

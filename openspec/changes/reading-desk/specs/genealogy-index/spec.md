@@ -1,6 +1,6 @@
 ## Purpose
 
-The index of a GEDCOM file's people and sources in the left sidebar: finding a
+The index of a GEDCOM file's people, families and sources in the left sidebar: finding a
 record, seeing at a glance who rests on no source, and opening a record in the
 GEDCOM tab.
 
@@ -29,12 +29,14 @@ no GEDCOM tab open it SHALL say so.
 - **WHEN** the index is open and no GEDCOM tab is
 - **THEN** the index says no GEDCOM file is open
 
-### Requirement: People and sources
+### Requirement: People, families and sources
 
-The index SHALL list either the file's people or its sources, switched at its
-top. People SHALL be listed in the order the file declares them, each with their
+The index SHALL list the file's people, its families or its sources, switched
+at its top. People SHALL be listed in the order the file declares them, each with their
 name, their years as the person page shows them, and the place of birth, or of
-death where no birth place is stated. Sources SHALL be listed in the order the
+death where no birth place is stated. Families SHALL be listed in the order the
+file declares them, each named by its spouses as the family page names it, with
+the year and place of the marriage where the record states them. Sources SHALL be listed in the order the
 file declares them, each with its title, its author where stated, and how many
 records cite it.
 
@@ -45,6 +47,11 @@ cannot be opened.
 - **WHEN** the index lists the people of `curie.ged`
 - **THEN** Marie's row reads her name, `1867–1934` and
   `Warsaw, Congress Poland`
+
+#### Scenario: A family row
+- **WHEN** the index lists the families of `curie.ged`
+- **THEN** the Curies' row reads Pierre Curie and Marie Skłodowska-Curie,
+  `1895` and `Sceaux, France`
 
 #### Scenario: A source row
 - **WHEN** the index lists the sources of `curie.ged`
@@ -66,7 +73,8 @@ and SHALL say how many there are.
 
 A search field SHALL narrow the list as the reader types. For people it SHALL
 match the name, any other name the record states, the years shown and the place
-shown; for sources the title and the author. Case SHALL NOT matter. A search
+shown; for families the spouses' names, the year and the place; for sources the
+title and the author. Case SHALL NOT matter. A search
 matching nothing SHALL say so and say what it searches.
 
 #### Scenario: Searching by year

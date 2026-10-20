@@ -3,6 +3,7 @@ import { GedcomLanguageService, type Range } from "@domorium/language-service";
 import curie from "../demo-vault/curie.ged";
 import { renderEvidence } from "../src/desk/evidence";
 import { IndexList } from "../src/desk/indexList";
+import { renderFamilyPage } from "../src/desk/familyPage";
 import { renderPersonPage, type FactKey } from "../src/desk/personPage";
 import { renderSourcePage } from "../src/desk/sourcePage";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
@@ -72,9 +73,12 @@ const host = {
 function draw(): void {
   const page = element("page");
   const person = index.person(record);
+  const family = index.family(record);
   const source = index.source(record);
   if (person) {
     renderPersonPage(page, person, index, { selected, phone }, host);
+  } else if (family) {
+    renderFamilyPage(page, family, index, { selected, phone }, host);
   } else if (source) {
     renderSourcePage(page, source, index, host);
   }

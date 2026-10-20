@@ -1,7 +1,7 @@
 import type { Citation, GenealogyIndex, Source } from "../genealogy";
 import { PERSON_EVENT_TAGS, FAMILY_EVENT_TAGS } from "../genealogy/tags";
 import { t } from "../i18n";
-import { eventName, personName, sourceTitle, yearsOf } from "./labels";
+import { eventName, familyTitle, personName, sourceTitle, yearsOf } from "./labels";
 import { linkButton, type PageHost } from "./personPage";
 
 export function renderSourcePage(
@@ -73,10 +73,13 @@ function renderCitedBy(
       button.addEventListener("click", () => host.openRecord(record));
     } else {
       const family = index.family(record);
-      entry.createDiv({
-        cls: "gedcom-desk-citer-name",
-        text: family?.name ?? t("desk.family"),
+      const button = entry.createEl("button", { cls: "gedcom-desk-person" });
+      button.setAttribute("type", "button");
+      button.createSpan({
+        cls: "gedcom-desk-person-name",
+        text: family ? familyTitle(family.spouseNames) : t("desk.family"),
       });
+      button.addEventListener("click", () => host.openRecord(record));
     }
     for (const citation of citations) {
       entry.createDiv({

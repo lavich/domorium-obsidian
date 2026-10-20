@@ -430,8 +430,8 @@ carrying the identifier it named, as it is for a person.
 
 #### Scenario: A child the document does not hold
 - **WHEN** a family names a child the document does not declare
-- **THEN** the remaining children are reported and the identifier is reported
-  as unresolved
+- **THEN** the remaining children are reported, and the identifier is reported
+  as a missing child together with the line of the family record that names it
 
 ### Requirement: The events a family record carries
 

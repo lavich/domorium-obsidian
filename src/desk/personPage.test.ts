@@ -106,6 +106,15 @@ describe("the person page", () => {
     expect(texts(".gedcom-desk-person-note")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
+  it("leads from a marriage to the family's page", () => {
+    draw("@I1@");
+    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-link")]
+      .find((node) => node.textContent === "Family page")
+      ?.click();
+
+    expect(host.openRecord).toHaveBeenCalledWith("@F3@");
+  });
+
   it("opens a relative's page", () => {
     draw("@I1@");
     const pierre = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]

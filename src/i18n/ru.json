@@ -228,5 +228,13 @@
   "event.MARR": "Брак",
   "event.MARS": "Брачное соглашение",
   "desk.unnamed": "Без имени",
-  "desk.untitled": "Источник без названия"
+  "desk.untitled": "Источник без названия",
+  "desk.couple": "{one} и {other}",
+  "desk.familyNoSpouses": "Семья без указанных супругов",
+  "desk.familyPage": "Страница семьи",
+  "desk.noFacts": "В записи нет ни одного факта.",
+  "index.families": "Семьи",
+  "index.searchFamilies": "Имена, год, место…",
+  "index.noFamilies": "В файле нет семей.",
+  "index.nothingFamilies": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам."
 }

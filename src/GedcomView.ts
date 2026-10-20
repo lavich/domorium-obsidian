@@ -66,6 +66,7 @@ import {
   routeLink,
   type DeskMode,
 } from "./desk/deskState";
+import { renderFamilyPage } from "./desk/familyPage";
 import { renderPersonPage, type FactKey, type PageHost } from "./desk/personPage";
 import {
   renderEmptyPage,
@@ -608,6 +609,17 @@ export class GedcomView extends TextFileView {
       renderPersonPage(
         this.deskEl,
         person,
+        index,
+        { selected: this.selected, phone: Platform.isPhone },
+        this.pageHost(),
+      );
+      return;
+    }
+    const family = index.family(this.record);
+    if (family) {
+      renderFamilyPage(
+        this.deskEl,
+        family,
         index,
         { selected: this.selected, phone: Platform.isPhone },
         this.pageHost(),

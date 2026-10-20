@@ -18,11 +18,12 @@ that would block a first, honest version.
   of the same tab, switched from the view header. A new setting, *Open GEDCOM
   files as*, brings back Source as the default. Each tab remembers its mode.
 - Genealogy mode shows one record at a time: a **person page** (facts with the
-  source state of each, names, family) or a **source page** (repository, who
-  cites it and where). Moving between records has back and forward, Obsidian's
+  source state of each, names, family), a **family page** (the couple, the
+  family's own facts, the children) or a **source page** (repository, who cites
+  it and where). Moving between records has back and forward, Obsidian's
   own.
-- A **people and sources index** in the left sidebar: search, a filter for
-  people with no source at all, and a mark on each such person.
+- An **index** of people, families and sources in the left sidebar: search, a
+  filter for people with no source at all, and a mark on each such person.
 - An **evidence panel** in the right sidebar: for the selected fact, the
   sources cited for that fact; below them, apart, the sources cited for the
   whole record.
@@ -62,7 +63,6 @@ reimplementing it here:
 - A map, coordinates, or anything that needs the network.
 - Vault notes that link to a record, media and portraits in the evidence panel
   or on the page. They are the next slice, *Evidence from the vault*.
-- A family page. A link to a family record opens it in Source mode.
 - Name parts, surname grouping, formatted dates, ages: upstream first.
 - Several GEDCOM files in one index at once. The index follows the GEDCOM tab
   most recently active.

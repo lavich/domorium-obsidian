@@ -92,6 +92,31 @@ describe("the index of a file", () => {
     ]);
   });
 
+  it("lists families by their spouses with the year and place of the marriage", () => {
+    list.show(curie("@F3@"));
+    click(".gedcom-desk-seg-button", "Families");
+
+    expect(texts(".gedcom-desk-row-name")).toEqual([
+      "Władysław Skłodowski and Bronisława Boguska",
+      "Eugène Curie and Sophie-Claire Depouilly",
+      "Pierre Curie and Marie Skłodowska-Curie",
+      "Frédéric Joliot and Irène Joliot-Curie",
+      "Henry Richardson Labouisse and Ève Curie",
+    ]);
+    expect(texts(".gedcom-desk-row.is-current .gedcom-desk-row-years")).toEqual(["1895"]);
+    expect(texts(".gedcom-desk-row.is-current .gedcom-desk-row-place")).toEqual(["Sceaux, France"]);
+  });
+
+  it("finds a family by a spouse's name and opens it", () => {
+    list.show(curie());
+    click(".gedcom-desk-seg-button", "Families");
+    type("labouisse");
+    click(".gedcom-desk-row", "Henry");
+
+    expect(texts(".gedcom-desk-row-name")).toEqual(["Henry Richardson Labouisse and Ève Curie"]);
+    expect(open).toHaveBeenCalledWith("@F5@");
+  });
+
   it("lists sources with how many records cite them", () => {
     list.show(curie());
     click(".gedcom-desk-seg-button", "Sources");

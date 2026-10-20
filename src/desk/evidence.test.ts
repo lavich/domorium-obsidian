@@ -138,6 +138,26 @@ describe("the evidence of a fact", () => {
   });
 });
 
+describe("the evidence of a family", () => {
+  it("names the family as the whole record", () => {
+    draw("@F3@", null);
+
+    expect(texts(".gedcom-desk-evidence-context div")).toEqual([
+      "Whole record", "Pierre Curie and Marie Skłodowska-Curie",
+    ]);
+    expect(texts(".gedcom-desk-section")).toEqual(["Sources of the record · 0"]);
+  });
+
+  it("says the Curies' marriage rests on nothing, nor does the family record", () => {
+    draw("@F3@", "f:0");
+
+    expect(texts(".gedcom-desk-evidence-context div")[0]).toBe("Marriage");
+    expect(texts(".gedcom-desk-notice div")).toEqual([
+      "No source of its own", "The record cites nothing either.",
+    ]);
+  });
+});
+
 describe("the panel beside a source page, and beside nothing", () => {
   it("names the source and offers its lines", () => {
     draw("@S2@", null);

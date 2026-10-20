@@ -44,9 +44,10 @@ SHALL default to Genealogy.
 ### Requirement: Which record Genealogy mode shows
 
 When a tab enters Genealogy mode it SHALL show, in order of preference: the
-record a followed link names, where that record is a person or a source; the
-person or source whose record holds the editor's cursor, when switching from
-Source mode; the record the tab last showed; the first person the file declares.
+record a followed link names, where that record is a person, a family or a
+source; the person, family or source whose record holds the editor's cursor,
+when switching from Source mode; the record the tab last showed; the first
+person the file declares.
 
 A file that declares no person and no source SHALL show a page saying so, with
 an action that switches the tab to Source mode.
@@ -56,9 +57,9 @@ an action that switches the tab to Source mode.
   switches to Genealogy
 - **THEN** Pierre Curie's page is shown
 
-#### Scenario: Switching from the source at a family record
-- **WHEN** the cursor is inside a family record and the tab last showed Marie
-  Skłodowska-Curie
+#### Scenario: Switching from the source at a note record
+- **WHEN** the cursor is inside a shared note record and the tab last showed
+  Marie Skłodowska-Curie
 - **THEN** Marie Skłodowska-Curie's page is shown
 
 #### Scenario: A file with no people
@@ -83,7 +84,7 @@ or tag:
 - their **other names**, where the record states more than one;
 - their **family**: parents; siblings; and for each family the person is a
   spouse of, the other spouse with that family's marriage date and place where
-  stated, and the children of that family.
+  stated, the children of that family, and a way to that family's page.
 
 Every relative shown SHALL open that person's page. A relative the file points
 at but does not declare SHALL be shown as a pointer to a record that is not in
@@ -117,6 +118,35 @@ return the selection to the whole record.
 - **WHEN** the reader activates Pierre Curie in Marie's family section
 - **THEN** the tab shows Pierre Curie's page
 
+### Requirement: The family page
+
+A family page SHALL show, without any cross-reference identifier, level number
+or tag:
+
+- a heading naming the family by its spouses, in the order the record names
+  them, with the marriage date and place where the record states them; a family
+  naming no spouse SHALL be headed by a stated placeholder;
+- the family's **facts** — marriage, divorce, engagement and the other family
+  events the record states — in the order the record writes them, each with its
+  date as written, its place, and how many sources it cites itself, selectable
+  as a person's facts are;
+- its **spouses**, each under the role the record names them in, and its
+  **children**, each opening their page; a spouse or child the file points at
+  but does not declare SHALL be shown as a pointer to a record that is not in
+  the file, with an action that shows it in the source.
+
+#### Scenario: The Curies' family
+- **WHEN** the page shows the family of Pierre Curie and Marie
+  Skłodowska-Curie
+- **THEN** it is headed by both names with `26 JUL 1895` and Sceaux, lists the
+  marriage as a fact citing no source, Pierre Curie as husband and Marie as
+  wife, and Irène Joliot-Curie and Ève Curie as children
+
+#### Scenario: From a person to their family
+- **WHEN** the reader is on Marie's page and chooses the family page beside
+  Pierre Curie in her family section
+- **THEN** the tab shows the family of Pierre Curie and Marie Skłodowska-Curie
+
 ### Requirement: The source page
 
 A source page SHALL show the source's title, its author and publication where
@@ -125,8 +155,8 @@ address and web address, and every record that cites it: for each, the person
 or family, where in that record the citation sits — the whole record or the
 named event — and the page the citation states.
 
-A person among those SHALL open their page. A source naming a repository the
-file does not declare SHALL say so.
+A person or a family among those SHALL open their page. A source naming a
+repository the file does not declare SHALL say so.
 
 #### Scenario: A source cited by three people
 - **WHEN** the page shows `The Nobel Prize in Chemistry 1911 and 1935`
@@ -168,8 +198,8 @@ select, and scroll into view, exactly the lines of the file that state it.
 
 Following a link that names a record of a GEDCOM file — a wikilink with a
 `#@I1@` subpath, or an `obsidian://` link to the file and record — SHALL, in a
-tab in Genealogy mode, show that person's or source's page. A link naming a
-record of another kind — a family, a note, a multimedia record, a repository —
+tab in Genealogy mode, show that person's, family's or source's page. A link
+naming a record of another kind — a note, a multimedia record, a repository —
 SHALL switch that tab to Source mode at the record, as following such a link
 does today. A link naming a record the file does not declare SHALL leave the
 page as it was and give the notice it gives today.
@@ -184,8 +214,12 @@ In Source mode a link SHALL behave as it does today.
 #### Scenario: A link to a family
 - **WHEN** the reader follows `[[curie.ged#@F3@]]` and the file opens in
   Genealogy mode
-- **THEN** the tab switches to Source mode with the cursor at that family's
-  record
+- **THEN** the family page of Pierre Curie and Marie Skłodowska-Curie is shown
+
+#### Scenario: A link to a shared note
+- **WHEN** the reader follows `[[curie.ged#@N1@]]` and the file opens in
+  Genealogy mode
+- **THEN** the tab switches to Source mode with the cursor at that note's record
 
 ### Requirement: A page follows the file
 

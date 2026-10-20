@@ -94,6 +94,21 @@ describe("a family read in full", () => {
     ]);
   });
 
+  it("reports a missing spouse and child with the lines that name them", () => {
+    const read = index([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @I1@ INDI", "1 NAME Anna /Nowak/",
+      "0 @F1@ FAM", "1 HUSB @I98@", "1 WIFE @I1@", "1 CHIL @I99@",
+      "0 TRLR", "",
+    ].join("\n"));
+    const found = family("@F1@", read);
+
+    expect(found.missingSpouses.map((one) => [one.xref, one.range.start.line]))
+      .toEqual([["@I98@", 6]]);
+    expect(found.missingChildren.map((one) => [one.xref, one.range.start.line]))
+      .toEqual([["@I99@", 8]]);
+  });
+
   it("reports a child the document does not hold, keeping its siblings", () => {
     const one = family("@F2@");
 

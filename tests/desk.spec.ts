@@ -88,6 +88,36 @@ test.describe("Obsidian's own button styling", () => {
   });
 });
 
+test.describe("the family page", () => {
+  test("leads from Marie to her family, and from the family to a child", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-link", { hasText: "Family page" }).click();
+
+    await expect(page.locator(".gedcom-desk-title")).toHaveText(
+      "Pierre Curie and Marie Skłodowska-Curie",
+    );
+    await expect(page.locator(".gedcom-desk-row.is-current")).toHaveCount(0);
+    await factNamed(page, "Marriage").click();
+    await expect(page.locator(".gedcom-desk-evidence-context div").first()).toHaveText("Marriage");
+
+    await page.locator(".gedcom-desk-person", { hasText: "Ève Curie" }).click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
+  });
+
+  test("lists families in the index and opens one", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-seg-button", { hasText: "Families" }).click();
+    await page.locator(".gedcom-desk-row", { hasText: "Frédéric Joliot and Irène" }).click();
+
+    await expect(page.locator(".gedcom-desk-title")).toHaveText(
+      "Frédéric Joliot and Irène Joliot-Curie",
+    );
+    await expect(page.locator(".gedcom-desk-row.is-current")).toHaveCount(1);
+  });
+});
+
 test.describe("the evidence panel", () => {
   test("follows the selected fact, and goes back to the whole record", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });

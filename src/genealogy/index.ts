@@ -146,6 +146,8 @@ export interface Family extends FamilyRow {
   children: FamilyMember[];
   events: PersonEvent[];
   unresolved: string[];
+  missingSpouses: Missing[];
+  missingChildren: Missing[];
   range: Range;
 }
 
@@ -607,6 +609,8 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       children: members(CHILD_ROLE_TAGS),
       events: eventsOf(record, FAMILY_EVENT_TAGS, byCiter.get(xref) ?? []),
       unresolved,
+      missingSpouses: roleLinks(record, SPOUSE_ROLE_TAGS).filter((one) => !rows.has(one.xref)),
+      missingChildren: roleLinks(record, CHILD_ROLE_TAGS).filter((one) => !rows.has(one.xref)),
       range: record.range,
     };
   }

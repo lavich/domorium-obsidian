@@ -10,7 +10,10 @@ import type {
 import { plural, t } from "../i18n";
 import { eventName, personName, shortPlace, sourceTitle, yearsOf } from "./labels";
 
-/** `p:<event>` for a person's own event, `u:<union>:<event>` for a family's. */
+/**
+ * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
+ * they married into, `f:<event>` for a family's on its own page.
+ */
 export type FactKey = string;
 
 export interface Fact {
@@ -97,9 +100,22 @@ function renderFacts(
   options: PersonPageOptions,
   host: PageHost,
 ): void {
+  renderFactList(page, factsOf(person), index, options, host);
+}
+
+export function renderFactList(
+  page: HTMLElement,
+  facts: Fact[],
+  index: GenealogyIndex,
+  options: PersonPageOptions,
+  host: PageHost,
+): void {
   page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.facts") });
   const list = page.createDiv({ cls: "gedcom-desk-facts" });
-  for (const fact of factsOf(person)) {
+  if (facts.length === 0) {
+    list.createDiv({ cls: "gedcom-desk-none", text: t("desk.noFacts") });
+  }
+  for (const fact of facts) {
     const selected = fact.key === options.selected;
     const row = list.createEl("button", { cls: "gedcom-desk-fact" });
     row.setAttribute("type", "button");
@@ -195,6 +211,10 @@ function renderFamily(page: HTMLElement, person: Person, host: PageHost): void {
     if (!spouse && union.missingSpouses.length === 0) {
       partner.createDiv({ cls: "gedcom-desk-none", text: t("desk.notRecorded") });
     }
+    const familyXref = union.family.xref;
+    if (familyXref) {
+      linkButton(partner, t("desk.familyPage"), () => host.openRecord(familyXref));
+    }
     if (union.children.length > 0 || union.missingChildren.length > 0) {
       const children = kinGroup(family, t("desk.children"));
       for (const child of union.children) {
@@ -210,12 +230,12 @@ function renderFamily(page: HTMLElement, person: Person, host: PageHost): void {
   }
 }
 
-function kinGroup(family: HTMLElement, label: string): HTMLElement {
+export function kinGroup(family: HTMLElement, label: string): HTMLElement {
   family.createDiv({ cls: "gedcom-desk-kin-label", text: label });
   return family.createDiv({ cls: "gedcom-desk-kin" });
 }
 
-function relative(
+export function relative(
   group: HTMLElement,
   row: PersonRow,
   host: PageHost,
@@ -237,7 +257,7 @@ function relative(
   }
 }
 
-function missingRelative(group: HTMLElement, missing: Missing, host: PageHost): void {
+export function missingRelative(group: HTMLElement, missing: Missing, host: PageHost): void {
   const line = group.createDiv({ cls: "gedcom-desk-missing" });
   line.createSpan({ text: t("desk.missingRecord") });
   linkButton(line, t("desk.showInSource"), () => host.showInSource(missing.range));
