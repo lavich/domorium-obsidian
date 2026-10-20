@@ -1,11 +1,11 @@
 ## 1. Bring the read model over
 
-- [ ] 1.1 Copy `src/genealogy/` (code, `fixture.ts` and every `*.test.ts`) from `feat/person-browser` as it stands; `npm run test` passes with the branch's tests unchanged
-- [ ] 1.2 Carry the symbol `range` on records, events and citations; extend `src/genealogy/index.test.ts` with the birth-lines and record-lines scenarios
-- [ ] 1.3 Attach each citation to the event it sits under, with an event index for two of a kind, and read `QUAY`; extend `src/genealogy/sources.test.ts` with the two-residences, record-and-birth, family-event and quality scenarios
-- [ ] 1.4 Report a 5.5.1 `SOUR` line with text as an inline citation rather than a structure; extend `src/genealogy/sources.test.ts` and add the case to `src/genealogy/fixture.ts`
-- [ ] 1.5 Report siblings and, per spouse-family, the other spouse, events and children; extend `src/genealogy/families.test.ts` with the siblings, two-marriages and no-other-spouse scenarios
-- [ ] 1.6 Confirm the model still imports nothing from `obsidian` and names nothing in a reader's language; the existing independence tests in `src/genealogy/index.test.ts` pass
+- [x] 1.1 Copy `src/genealogy/` (code, `fixture.ts` and every `*.test.ts`) from `feat/person-browser` as it stands; `npm run test` passes with the branch's tests unchanged
+- [x] 1.2 Carry the symbol `range` on records, events and citations; extend `src/genealogy/index.test.ts` with the birth-lines and record-lines scenarios
+- [x] 1.3 Attach each citation to the event it sits under, with an event index for two of a kind, and read `QUAY`; extend `src/genealogy/sources.test.ts` with the two-residences, record-and-birth, family-event and quality scenarios
+- [x] 1.4 Report a 5.5.1 `SOUR` line with text as an inline citation rather than a structure; extend `src/genealogy/sources.test.ts` with a 5.5.1 document of its own, since `fixture.ts` is 7.0
+- [x] 1.5 Report siblings and, per spouse-family, the other spouse, events and children; extend `src/genealogy/families.test.ts` with the siblings, two-marriages and no-other-spouse scenarios
+- [x] 1.6 Confirm the model still imports nothing from `obsidian` and names nothing in a reader's language; the existing independence tests in `src/genealogy/index.test.ts` pass
 
 ## 2. Two modes in one tab
 
