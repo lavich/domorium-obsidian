@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Domorium — research desk, reading</title>
+<style>
+.theme-dark{
+  --accent-h:258;--accent-s:88%;--accent-l:66%;
+  --interactive-accent:hsl(var(--accent-h),var(--accent-s),var(--accent-l));--interactive-accent-hsl:var(--accent-h),var(--accent-s),var(--accent-l);
+  --text-accent:hsl(var(--accent-h),90%,76%);--text-on-accent:#fff;
+  --background-primary:#1e1e1e;--background-secondary:#262626;--background-secondary-alt:#363636;
+  --background-modifier-border:#363636;--background-modifier-hover:rgba(255,255,255,.065);--background-modifier-active-hover:hsla(var(--interactive-accent-hsl),.15);
+  --background-modifier-form-field:#191919;
+  --text-normal:#dadada;--text-muted:#a3a3a3;--text-faint:#6f6f6f;
+  --color-orange-rgb:229,181,103;--text-warning:rgb(var(--color-orange-rgb));
+  --shadow-l:0 8px 28px rgba(0,0,0,.45);--code-background:#191919;
+}
+.theme-light{
+  --accent-h:254;--accent-s:80%;--accent-l:62%;
+  --interactive-accent:hsl(var(--accent-h),var(--accent-s),var(--accent-l));--interactive-accent-hsl:var(--accent-h),var(--accent-s),var(--accent-l);
+  --text-accent:hsl(var(--accent-h),70%,55%);--text-on-accent:#fff;
+  --background-primary:#ffffff;--background-secondary:#f6f6f6;--background-secondary-alt:#ececec;
+  --background-modifier-border:#e0e0e0;--background-modifier-hover:rgba(0,0,0,.045);--background-modifier-active-hover:hsla(var(--interactive-accent-hsl),.12);
+  --background-modifier-form-field:#ffffff;
+  --text-normal:#222222;--text-muted:#5c5c5c;--text-faint:#9a9a9a;
+  --color-orange-rgb:168,107,0;--text-warning:rgb(var(--color-orange-rgb));
+  --shadow-l:0 8px 28px rgba(0,0,0,.14);--code-background:#fafafa;
+}
+:root{--font-interface:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",sans-serif;--font-monospace:ui-monospace,SFMono-Regular,Menlo,monospace}
+*{box-sizing:border-box}
+html,body{margin:0;background:transparent;font-family:var(--font-interface);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{text-align:inherit}
+.stage{padding:20px 0 28px;color:var(--text-normal)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:13px;color:#666}
+.toolbar b{color:#222}
+.toolbar .right-tools{display:flex;gap:10px;align-items:center}
+.toolbar label.file{cursor:pointer;border:1px solid #ccc;border-radius:6px;padding:3px 10px;background:#fff;color:#222}
+.toolbar label.file input{display:none}
+.scroll{overflow-x:auto;border-radius:10px;box-shadow:var(--shadow-l)}
+.list::-webkit-scrollbar,.body::-webkit-scrollbar,.evbody::-webkit-scrollbar,.tree-wrap::-webkit-scrollbar{width:8px;height:8px}
+.list::-webkit-scrollbar-thumb,.body::-webkit-scrollbar-thumb,.evbody::-webkit-scrollbar-thumb,.tree-wrap::-webkit-scrollbar-thumb{background:var(--background-modifier-border);border-radius:4px}
+
+.app{min-width:1040px;height:720px;display:grid;grid-template-columns:42px 248px 1fr 300px;grid-template-rows:36px 1fr;background:var(--background-primary);color:var(--text-normal);font-size:13.5px;border:1px solid var(--background-modifier-border);border-radius:10px;overflow:hidden}
+.titlebar{grid-column:1/-1;display:grid;grid-template-columns:42px 248px 1fr 300px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border)}
+.lights{display:flex;gap:6px;align-items:center;padding-left:12px}
+.lights i{width:10px;height:10px;border-radius:50%;background:var(--background-secondary-alt);display:block}
+.side-tabs{display:flex;align-items:center;gap:2px;padding:0 8px}
+.tabstrip{display:flex;align-items:flex-end;padding:0 8px;gap:2px;border-left:1px solid var(--background-modifier-border);border-right:1px solid var(--background-modifier-border)}
+.tab{height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:8px 8px 0 0;font-size:12.5px;color:var(--text-muted);max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab.on{background:var(--background-primary);color:var(--text-normal)}
+.iconbtn{width:26px;height:26px;display:grid;place-items:center;border-radius:5px;color:var(--text-muted);background:none;border:0;cursor:pointer;flex:none}
+.iconbtn:hover:not(:disabled){background:var(--background-modifier-hover);color:var(--text-normal)}
+.iconbtn:disabled{opacity:.4;cursor:default}
+.iconbtn.on{color:var(--text-accent);background:hsla(var(--interactive-accent-hsl),.09)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.s{width:14px;height:14px}
+.ribbon{background:var(--background-secondary);border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:4px}
+
+.left{background:var(--background-secondary);border-right:1px solid var(--background-modifier-border);display:flex;flex-direction:column;min-height:0}
+.panel-head{padding:12px 12px 8px}
+.panel-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--text-muted)}
+.panel-title b{color:var(--text-normal);font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.panel-title span{white-space:nowrap}
+.search{margin-top:10px;display:flex;align-items:center;gap:6px;background:var(--background-modifier-form-field);border:1px solid var(--background-modifier-border);border-radius:6px;padding:0 8px;height:30px;color:var(--text-faint)}
+.search:focus-within{border-color:var(--interactive-accent);box-shadow:0 0 0 2px hsla(var(--interactive-accent-hsl),.16)}
+.search input{border:0;background:none;outline:none;flex:1;min-width:0;font-size:13px}
+.search input::placeholder{color:var(--text-faint)}
+.filters{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--background-modifier-border);background:none;border-radius:999px;padding:2px 9px;font-size:12px;color:var(--text-muted);cursor:pointer;font-variant-numeric:tabular-nums}
+.chip:hover{background:var(--background-modifier-hover)}
+.chip.on{background:hsla(var(--interactive-accent-hsl),.16);border-color:transparent;color:var(--text-accent)}
+.list{overflow:auto;padding:2px 6px 10px;flex:1}
+.letter{font-size:11px;color:var(--text-faint);padding:10px 8px 4px;font-weight:600;letter-spacing:.04em}
+.row{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:5px 8px;border-radius:5px;cursor:pointer;width:100%;border:0;background:none}
+.row:hover{background:var(--background-modifier-hover)}
+.row.on{background:var(--background-modifier-active-hover)}
+.row .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .y{color:var(--text-faint);font-size:12px;font-variant-numeric:tabular-nums}
+.row .p{grid-column:1/-1;color:var(--text-faint);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gapdot{width:6px;height:6px;border-radius:50%;background:var(--text-warning);display:inline-block;margin-left:6px;vertical-align:middle}
+.empty-note{padding:16px 10px;color:var(--text-faint);font-size:12.5px;line-height:1.5}
+
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
+.viewhead{height:40px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--background-modifier-border)}
+.crumbs{flex:1;white-space:nowrap;overflow:hidden;display:flex;align-items:center;gap:6px;color:var(--text-faint);font-size:13px;min-width:0;justify-content:center}
+.crumbs b{color:var(--text-normal);font-weight:500;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;background:var(--background-secondary);border-radius:6px;padding:2px;gap:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:4px;font-size:12px;color:var(--text-muted);cursor:pointer}
+.seg button.on{background:var(--background-primary);color:var(--text-normal);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--background-modifier-border);background:var(--background-primary);border-radius:6px;padding:4px 10px;font-size:12.5px;cursor:pointer;color:var(--text-normal)}
+.btn:hover{background:var(--background-modifier-hover)}
+.linkbtn{border:0;background:none;padding:0;color:var(--text-accent);cursor:pointer;font-size:12.5px}
+.linkbtn:hover{text-decoration:underline}
+.body{overflow:auto;flex:1;padding:22px 34px 60px}
+.who{display:flex;gap:18px;align-items:flex-start;max-width:720px;margin:0 auto}
+.portrait{width:76px;height:95px;border-radius:6px;overflow:hidden;flex:none;background:var(--background-secondary);border:1px solid var(--background-modifier-border);display:grid;place-items:center;color:var(--text-faint);font-size:22px;font-weight:600}
+.portrait img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait.src{font-size:inherit}
+.who h1{font-size:24px;line-height:1.2;margin:2px 0 6px;font-weight:650;letter-spacing:-.015em}
+.who .sub{color:var(--text-muted);line-height:1.55}
+.who .sub span{color:var(--text-faint)}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--background-modifier-border);max-width:720px;margin:20px auto 0}
+.tabs button{border:0;background:none;padding:8px 12px 9px;color:var(--text-muted);cursor:pointer;font-size:13px;position:relative}
+.tabs button:hover{color:var(--text-normal)}
+.tabs button.on{color:var(--text-normal)}
+.tabs button.on::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:2px;background:var(--interactive-accent);border-radius:2px}
+.pane{max-width:720px;margin:0 auto;padding-top:18px}
+h3{font-size:12px;font-weight:600;color:var(--text-faint);letter-spacing:.04em;margin:22px 0 6px;text-transform:uppercase}
+.pane>h3:first-child{margin-top:4px}
+.caption{color:var(--text-faint);font-size:12px;margin:0 0 10px;line-height:1.45}
+.facts{border:1px solid var(--background-modifier-border);border-radius:8px;overflow:hidden}
+.fact{display:grid;grid-template-columns:130px 1fr auto;gap:12px;align-items:center;padding:9px 12px;border:0;border-top:1px solid var(--background-modifier-border);cursor:pointer;width:100%;background:none}
+.fact:first-child{border-top:0}
+.fact:hover{background:var(--background-modifier-hover)}
+.fact.sel{background:hsla(var(--interactive-accent-hsl),.09);box-shadow:inset 0 0 0 1px hsla(var(--interactive-accent-hsl),.16)}
+.fact .k{color:var(--text-muted)}
+.fact .v{min-width:0}
+.fact .d{font-variant-numeric:tabular-nums}
+.fact .pl{color:var(--text-muted)}
+.fact .pl::before{content:" · ";color:var(--text-faint)}
+.fact .with{color:var(--text-muted)}
+.ev{font-size:11.5px;padding:2px 7px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ev.none{color:var(--text-warning);background:rgba(var(--color-orange-rgb),.12)}
+.ev.has{color:var(--text-muted);background:var(--background-secondary)}
+.kin{display:grid;grid-template-columns:130px 1fr;gap:4px 12px;padding:2px 0}
+.kin .k{color:var(--text-muted);padding:6px 0}
+.people{display:flex;flex-direction:column;align-items:flex-start}
+.person{display:flex;align-items:baseline;gap:8px;padding:6px 8px;margin:0 -8px;border-radius:5px;cursor:pointer;color:var(--text-accent);border:0;background:none}
+.person:hover{background:var(--background-modifier-hover)}
+.person .yy{color:var(--text-faint);font-size:12px;font-variant-numeric:tabular-nums}
+.person .note{color:var(--text-muted);font-size:12px}
+.none-kin{color:var(--text-faint);padding:6px 0;font-size:12.5px}
+.broken{display:flex;gap:8px;align-items:baseline;color:var(--text-warning);padding:6px 0;font-size:12.5px}
+.names .row-n{padding:4px 0}
+.names .row-n span{color:var(--text-faint);font-size:12px;margin-left:6px}
+.quote{border-left:2px solid var(--background-modifier-border);padding:2px 0 2px 12px;color:var(--text-muted);line-height:1.55;white-space:pre-line}
+
+.tree-wrap{overflow:auto;margin:0 -34px;padding:0 34px}
+.tree{position:relative;padding:8px 0 10px;min-width:max-content}
+.tree svg.lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.tree svg.lines path{fill:none;stroke:var(--background-modifier-border);stroke-width:1.5}
+.gen{display:flex;justify-content:center;gap:14px;margin-bottom:34px;position:relative}
+.gen:last-child{margin-bottom:0}
+.couple{display:flex;gap:6px;align-items:center}
+.couple .and{width:14px;height:1.5px;background:var(--background-modifier-border)}
+.node{background:var(--background-primary);border:1px solid var(--background-modifier-border);border-radius:7px;padding:5px 9px;max-width:140px;cursor:pointer;position:relative;z-index:1;text-align:left}
+.node:hover{border-color:var(--text-faint)}
+.node b{display:block;font-weight:500;font-size:12px;line-height:1.3}
+.node span{font-size:11.5px;color:var(--text-faint);font-variant-numeric:tabular-nums}
+.node.focus{border-color:var(--interactive-accent);box-shadow:0 0 0 3px hsla(var(--interactive-accent-hsl),.16)}
+.node.dim{opacity:.62}
+.node.gap{padding-right:18px}
+.node.gap::after{content:"";position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--text-warning)}
+.node .more{position:absolute;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text-faint);line-height:1}
+.node .more.up{top:-13px}.node .more.down{bottom:-13px}
+.node.broken-node{border-style:dashed;color:var(--text-warning);cursor:default}
+.legend{display:flex;gap:16px;justify-content:center;color:var(--text-faint);font-size:12px;margin-top:18px;flex-wrap:wrap}
+.legend i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--text-warning);margin-right:6px;vertical-align:middle}
+
+.ti{display:grid;grid-template-columns:52px 22px 1fr 60px;align-items:start;gap:0 8px;padding:5px 0}
+.ti .yr{font-variant-numeric:tabular-nums;color:var(--text-muted);text-align:right;padding-top:1px}
+.ti .dot{position:relative;height:100%}
+.ti .dot::before{content:"";position:absolute;left:10px;top:-6px;bottom:-6px;width:1.5px;background:var(--background-modifier-border)}
+.tl .ti:first-child .dot::before{top:8px}.tl .ti:last-child .dot::before{bottom:calc(100% - 8px)}
+.ti .dot::after{content:"";position:absolute;left:6px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--background-primary);border:1.5px solid var(--text-faint)}
+.ti.own .dot::after{background:var(--interactive-accent);border-color:var(--interactive-accent)}
+.ti .tx{line-height:1.45}
+.ti .tx small{display:block;color:var(--text-faint);font-size:12px}
+.ti.kin .tx{color:var(--text-muted)}
+.ti .age{color:var(--text-faint);font-size:12px;text-align:right;padding-top:2px;font-variant-numeric:tabular-nums}
+.ti.own .tx b{font-weight:600}
+
+.mapbox{border:1px dashed var(--background-modifier-border);border-radius:8px;padding:18px 20px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;color:var(--text-muted);background:var(--background-secondary);line-height:1.5}
+.mapbox .ic{width:38px;height:38px;border-radius:8px;display:grid;place-items:center;background:var(--background-primary);color:var(--text-faint);border:1px solid var(--background-modifier-border)}
+.mapbox p{margin:0}
+.place{display:grid;grid-template-columns:1fr auto;padding:8px 0;border-bottom:1px solid var(--background-modifier-border)}
+.place b{font-weight:500}
+.place small{display:block;color:var(--text-faint);font-size:12px;margin-top:2px}
+.place .c{color:var(--text-faint);font-size:12px;align-self:center}
+
+.cites-by .by{display:grid;grid-template-columns:1fr;padding:8px 0;border-bottom:1px solid var(--background-modifier-border)}
+.cites-by .by small{color:var(--text-muted);font-size:12.5px;margin-top:2px}
+.repo{line-height:1.55}
+.repo small{display:block;color:var(--text-faint)}
+
+.src{font-family:var(--font-monospace);font-size:12.5px;line-height:1.6;background:var(--code-background);margin:0;padding:10px 0;min-height:100%}
+.src .ln{display:grid;grid-template-columns:44px 1fr;white-space:pre}
+.src .ln i{font-style:normal;color:var(--text-faint);text-align:right;padding-right:14px;user-select:none}
+.src .ln.hit{background:hsla(var(--interactive-accent-hsl),.12)}
+.srcnote{font-size:12px;color:var(--text-faint);padding:8px 16px;border-bottom:1px solid var(--background-modifier-border);background:var(--background-primary);position:sticky;top:0}
+
+.right{background:var(--background-secondary);border-left:1px solid var(--background-modifier-border);display:flex;flex-direction:column;min-height:0}
+.right .panel-head{border-bottom:1px solid var(--background-modifier-border);padding-bottom:10px}
+.ctx{margin-top:6px;font-size:14px;font-weight:600;color:var(--text-normal)}
+.ctx small{display:block;font-weight:400;color:var(--text-muted);font-size:12.5px;margin-top:2px}
+.ctx-acts{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap}
+.evbody{overflow:auto;padding:4px 12px 16px;flex:1}
+.evbody h3{margin-top:18px}
+.evbody h3.scope{color:var(--text-muted);border-top:1px solid var(--background-modifier-border);padding-top:14px;margin-top:20px}
+.notice{background:rgba(var(--color-orange-rgb),.12);border-radius:7px;padding:10px 11px;line-height:1.45;font-size:12.5px;color:var(--text-muted)}
+.notice b{color:var(--text-warning);font-weight:600;display:block;margin-bottom:3px}
+.cite{display:block;width:100%;padding:8px 9px;border-radius:6px;margin:0 -4px;cursor:pointer;border:0;background:none}
+.cite:hover{background:var(--background-modifier-hover)}
+.cite b{font-weight:500;color:var(--text-accent);display:block}
+.cite span{display:block;color:var(--text-muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+.cite em{display:block;font-style:normal;color:var(--text-faint);font-size:12px;margin-top:2px}
+.note-l{display:grid;grid-template-columns:16px 1fr;gap:8px;padding:8px 9px;border-radius:6px;margin:0 -4px;cursor:pointer}
+.note-l:hover{background:var(--background-modifier-hover)}
+.note-l svg{margin-top:2px;color:var(--text-faint)}
+.note-l b{font-weight:500;display:block}
+.note-l span{display:block;color:var(--text-muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+.note-l mark{background:hsla(var(--interactive-accent-hsl),.16);color:var(--text-accent);border-radius:3px;padding:0 2px}
+.faint{color:var(--text-faint);font-size:12.5px;padding:4px 0}
+.media{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.thumb{aspect-ratio:4/5;border-radius:5px;overflow:hidden;border:1px solid var(--background-modifier-border);background:var(--background-primary);position:relative}
+.thumb img,.thumb svg{width:100%;height:100%;object-fit:cover;display:block}
+.thumb.ph{display:grid;place-items:center;text-align:center;color:var(--text-faint);font-size:11px;padding:6px;line-height:1.3}
+.thumb .cap{position:absolute;left:0;right:0;bottom:0;padding:10px 5px 4px;font-size:10.5px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+
+.below{display:grid;grid-template-columns:auto 1fr;gap:32px;margin-top:28px;align-items:start}
+.phones{display:flex;gap:22px;align-items:flex-start}
+.ph{margin:0;width:270px}
+.phone{width:270px;height:560px;border-radius:34px;padding:10px;background:#0c0c0c;box-shadow:var(--shadow-l)}
+.screen{width:100%;height:100%;border-radius:26px;overflow:hidden;background:var(--background-primary);color:var(--text-normal);display:flex;flex-direction:column;font-size:13px;position:relative}
+.sbar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11.5px;font-weight:600}
+.mhead{display:flex;align-items:center;gap:8px;padding:4px 10px 8px;border-bottom:1px solid var(--background-modifier-border)}
+.mhead b{flex:1;text-align:center;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.mbody{flex:1;overflow:hidden;padding:12px 14px}
+.mwho{display:flex;gap:12px;align-items:center}
+.mwho .portrait{width:52px;height:65px}
+.mwho h2{margin:0;font-size:17px;line-height:1.2;letter-spacing:-.01em}
+.mwho p{margin:3px 0 0;color:var(--text-muted);font-size:12px}
+.mtabs{display:flex;gap:2px;margin:12px -14px 10px;padding:0 10px;border-bottom:1px solid var(--background-modifier-border);overflow:hidden}
+.mtabs span{padding:6px 5px 8px;color:var(--text-muted);font-size:12.5px;position:relative;white-space:nowrap}
+.mtabs span.on{color:var(--text-normal)}
+.mtabs span.on::after{content:"";position:absolute;left:6px;right:6px;bottom:-1px;height:2px;background:var(--interactive-accent);border-radius:2px}
+.mfact{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:9px 0;border-bottom:1px solid var(--background-modifier-border)}
+.mfact .k{color:var(--text-faint);font-size:11.5px;grid-column:1/-1}
+.mfact .v{font-size:13px}
+.mfact.open{background:hsla(var(--interactive-accent-hsl),.09);margin:0 -14px;padding:9px 14px}
+.inl{grid-column:1/-1;margin-top:8px;padding:9px 10px;border-radius:7px;background:var(--background-secondary);font-size:12px;line-height:1.45;color:var(--text-muted)}
+.inl b{display:block;color:var(--text-warning);font-weight:600}
+.inl .t{color:var(--text-accent)}
+.inl .row2{display:flex;gap:10px;margin-top:7px}
+.onav{height:52px;border-top:1px solid var(--background-modifier-border);background:var(--background-secondary);display:flex;justify-content:space-around;align-items:center;color:var(--text-muted);padding-bottom:6px}
+.onav .cnt{width:18px;height:18px;border:1.6px solid currentColor;border-radius:4px;font-size:10.5px;display:grid;place-items:center;font-weight:600}
+.ghost{flex:1;background:var(--background-primary);filter:brightness(.55)}
+.drawer{position:absolute;top:30px;bottom:0;width:84%;background:var(--background-secondary);box-shadow:var(--shadow-l);display:flex;flex-direction:column}
+.drawer.left{left:0;border-right:1px solid var(--background-modifier-border)}
+.drawer.right{right:0;border-left:1px solid var(--background-modifier-border)}
+.dtabs{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--background-modifier-border);color:var(--text-muted)}
+.dtabs>span{padding:5px;border-radius:5px;display:grid}
+.dtabs .on{background:hsla(var(--interactive-accent-hsl),.09);color:var(--text-accent)}
+.dl{padding:8px 6px;overflow:hidden}
+.ph figcaption{font-size:12.5px;line-height:1.5;color:#666;margin-top:10px}
+.ph figcaption b{color:#222}
+.notes{color:#555;font-size:13.5px;line-height:1.6;max-width:66ch}
+.notes h4{margin:0 0 8px;font-size:14px;color:#222}
+.notes h4+ol,.notes h4+ul{margin-top:0}
+.notes ol,.notes ul{padding-left:20px;margin:0 0 18px}
+.notes li{margin-bottom:6px}
+.notes b{color:#222}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage theme-dark" id="stage">
+  <div class="toolbar">
+    <span>Reading variant. The mockup reads <b>demo-vault/curie.ged</b> itself (an embedded copy): every person, the tree and the timeline come from the file.</span>
+    <div class="right-tools">
+      <label class="file">Open another .ged<input type="file" id="file" accept=".ged,.gedcom"></label>
+      <div class="seg" role="group" aria-label="Theme"><button class="on" data-theme="dark">Dark</button><button data-theme="light">Light</button></div>
+    </div>
+  </div>
+
+  <div class="scroll">
+  <div class="app">
+    <div class="titlebar">
+      <div class="lights"><i></i><i></i></div>
+      <div class="side-tabs">
+        <button class="iconbtn on" title="Domorium"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M12 8.5v4M12 12.5l-5 3.5M12 12.5l5 3.5"/></svg></button>
+        <button class="iconbtn" title="Files"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h6l2 2h8v10H4z"/></svg></button>
+        <button class="iconbtn" title="Search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg></button>
+      </div>
+      <div class="tabstrip">
+        <div class="tab on" id="tabTitle"></div>
+        <div class="tab">Radium</div>
+        <div class="tab">Nobel Prizes in the family</div>
+      </div>
+      <div class="side-tabs">
+        <button class="iconbtn on" title="Evidence"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4M10 13h6M10 16.5h4"/></svg></button>
+        <button class="iconbtn" title="Backlinks"><svg class="i" viewBox="0 0 24 24"><path d="M9 15 15 9M10 6.5l1.5-1.5a4 4 0 0 1 5.7 5.7L15.7 12M14 17.5 12.5 19a4 4 0 0 1-5.7-5.7L8.3 12"/></svg></button>
+      </div>
+    </div>
+
+    <div class="ribbon">
+      <button class="iconbtn" title="Quick switcher"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="iconbtn" title="Graph"><svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="10" cy="18" r="2"/><path d="m7.6 7.2 1.8 9M8 6.3l8 1.4M16.6 9.4 11.4 16.6"/></svg></button>
+      <button class="iconbtn on" title="Domorium"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M12 8.5v4M12 12.5l-5 3.5M12 12.5l5 3.5"/></svg></button>
+    </div>
+
+    <aside class="left">
+      <div class="panel-head">
+        <div class="panel-title"><b id="fileName"></b><span id="fileMeta"></span></div>
+        <div class="seg" role="group" aria-label="Index contents" style="margin-top:10px;display:flex" id="indexKind">
+          <button class="on" data-kind="people" style="flex:1">People</button><button data-kind="sources" style="flex:1">Sources</button>
+        </div>
+        <label class="search"><svg class="i s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg><input id="q" aria-label="Search the index"></label>
+        <div class="filters" id="filters"></div>
+      </div>
+      <div class="list" id="list"></div>
+    </aside>
+
+    <section class="main">
+      <div class="viewhead">
+        <button class="iconbtn" id="back" title="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+        <button class="iconbtn" id="fwd" title="Forward"><svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+        <div class="crumbs" id="crumbs"></div>
+        <div class="seg" role="group" aria-label="File mode" id="mode"><button class="on" data-mode="gen">Genealogy</button><button data-mode="src">Source</button></div>
+      </div>
+      <div class="body" id="body"></div>
+    </section>
+
+    <aside class="right">
+      <div class="panel-head">
+        <div class="panel-title"><b>Evidence</b></div>
+        <div class="ctx" id="ctx"></div>
+        <div class="ctx-acts" id="ctxActs"></div>
+      </div>
+      <div class="evbody" id="ev"></div>
+    </aside>
+  </div>
+  </div>
+
+  <div class="below">
+    <div class="phones">
+      <figure class="ph">
+        <div class="phone"><div class="screen">
+          <div class="sbar"><span>9:41</span><span></span></div>
+          <div class="mhead"><button class="iconbtn" title="Left sidebar"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="M9 5v14"/></svg></button><b>Marie Skłodowska-Curie</b><button class="iconbtn" title="More"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div>
+          <div class="mbody">
+            <div class="mwho"><div class="portrait"><img alt="" src="../../demo-vault/Media/marie-sklodowska-curie.svg"></div><div><h2>Marie Skłodowska-Curie</h2><p>1867–1934 · Warsaw → Passy</p></div></div>
+            <div class="mtabs"><span class="on">Card</span><span>Tree</span><span>Timeline</span><span>Places</span></div>
+            <div class="mfact open"><span class="k">Birth</span><span class="v">7 November 1867 · Warsaw</span><span class="ev none">no source</span>
+              <div class="inl"><b>No source of its own</b>The record has two: <span class="t">The Nobel Prize in Physics 1903</span>, <span class="t">The Nobel Prize in Chemistry…</span><div class="row2"><button class="linkbtn">All evidence</button><button class="linkbtn">In source</button></div></div></div>
+            <div class="mfact"><span class="k">Death</span><span class="v">4 July 1934 · Passy</span><span class="ev none">no source</span></div>
+            <div class="mfact" style="border:0"><span class="k">Occupation</span><span class="v">Physicist and chemist</span><span class="ev none">no source</span></div>
+          </div>
+          <div class="onav" title="Obsidian's own bottom bar, not ours">
+            <svg class="i" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg><svg class="i" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span class="cnt">3</span><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </div>
+        </div></div>
+        <figcaption><b>A person is an ordinary tab.</b> Tapping a fact unfolds the gist of its evidence beneath it; “All evidence” opens the right sidebar.</figcaption>
+      </figure>
+
+      <figure class="ph">
+        <div class="phone"><div class="screen">
+          <div class="sbar"><span>9:41</span><span></span></div>
+          <div class="ghost"></div>
+          <div class="drawer right">
+            <div class="dtabs" style="justify-content:flex-end"><span class="on"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4M10 13h6M10 16.5h4"/></svg></span><span><svg class="i" viewBox="0 0 24 24"><path d="M9 15 15 9M10 6.5l1.5-1.5a4 4 0 0 1 5.7 5.7L15.7 12M14 17.5 12.5 19a4 4 0 0 1-5.7-5.7L8.3 12"/></svg></span></div>
+            <div style="padding:10px 12px;border-bottom:1px solid var(--background-modifier-border)"><div class="ctx" style="margin:0">Birth<small>7 November 1867 · Warsaw</small></div></div>
+            <div class="evbody" style="overflow:hidden">
+              <h3>Sources of this fact</h3>
+              <div class="notice"><b>No source of its own</b>The sources below belong to the whole record.</div>
+              <h3 class="scope">Whole record</h3>
+              <h3>Sources · 2</h3>
+              <div class="cite"><b>The Nobel Prize in Physics 1903</b><span>Nobel Prize in Physics 1903, shared with…</span></div>
+              <div class="cite"><b>The Nobel Prize in Chemistry 1911 and 1935</b><span>Nobel Prize in Chemistry 1911</span></div>
+            </div>
+          </div>
+        </div></div>
+        <figcaption><b>Full evidence lives in the right sidebar,</b> like backlinks. The people index lives in the left one, beside Files and Search.</figcaption>
+      </figure>
+    </div>
+    <div class="notes">
+      <h4>How to read the mockup</h4>
+      <ol>
+        <li><b>The file opens as genealogy.</b> “Source” in the header is the same file in today's editor, on the lines of the selected fact or record.</li>
+        <li><b>Nothing is written to the file.</b> Corrections happen in the source editor only: every fact and record has “Show in source”.</li>
+        <li><b>The right sidebar shows what the selection rests on.</b> With nothing selected, the whole record. A fact shows its own sources, and below them, apart, the sources, notes and media of the whole record.</li>
+        <li><b>Gaps:</b> “no source” means the fact cites nothing itself; a dot in the index and the tree means the person has no source at all, neither on the record nor on any fact.</li>
+        <li><b>Vault notes</b> are shown with the sentence around their link to the record. The mockup does not compare a note's text with the facts; the reader spots disagreements.</li>
+        <li><b>Tree:</b> two generations up and down, siblings collapsed, ▲ and ▼ mark relatives beyond the edge. A click moves the focus.</li>
+        <li><b>Timeline:</b> the person's own events and those of close relatives (parents, siblings, spouses, children, grandchildren) up to the end of the person's life.</li>
+      </ol>
+      <h4>Open</h4>
+      <ul>
+        <li>Map: no basemap, no coordinates in the file. The decision is tracked in <code>next-steps.md</code>.</li>
+        <li>Tabs on a phone: four do not fit.</li>
+        <li>States: empty file, validation errors, the file changing in the source editor. A broken pointer and an empty file can be tried by opening your own .ged.</li>
+        <li>The index and the tree over thousands of people.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script type="text/plain" id="ged">0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SOUR DOMORIUM
+2 NAME Domorium demo vault
+2 VERS 1.7.0
+1 DATE 14 AUG 2026
+1 SUBM @U1@
+1 NOTE Four generations of the Skłodowski, Curie and Joliot families, compiled
+2 CONT from public sources for demonstration. Two people in the last generation
+2 CONT are living, and carry a year of birth and nothing else.
+0 @U1@ SUBM
+1 NAME Domorium
+1 WWW https://domorium.com/
+0 @I1@ INDI
+1 NAME Marie /Skłodowska-Curie/
+2 GIVN Marie
+2 SURN Skłodowska-Curie
+1 NAME Maria Salomea /Skłodowska/
+2 TYPE BIRTH
+1 SEX F
+1 BIRT
+2 DATE 7 NOV 1867
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 4 JUL 1934
+2 PLAC Passy, Haute-Savoie, France
+1 OCCU Physicist and chemist
+1 FAMC @F1@
+1 FAMS @F3@
+1 OBJE @O1@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 30
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Marie, on the left
+1 OBJE @O6@
+1 SNOTE @N1@
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1911
+0 @I2@ INDI
+1 NAME Pierre /Curie/
+2 GIVN Pierre
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 15 MAY 1859
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 APR 1906
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMC @F2@
+1 FAMS @F3@
+1 OBJE @O2@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 175
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Pierre, in the middle
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903
+0 @I3@ INDI
+1 NAME Władysław /Skłodowski/
+2 GIVN Władysław
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1832
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 14 MAY 1902
+2 PLAC Warsaw, Congress Poland
+1 OCCU Teacher of mathematics and physics
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I4@ INDI
+1 NAME Bronisława /Boguska/
+2 GIVN Bronisława
+2 SURN Boguska
+1 SEX F
+1 BIRT
+2 DATE 1835
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 9 MAY 1878
+2 PLAC Warsaw, Congress Poland
+1 OCCU Headmistress
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I5@ INDI
+1 NAME Zofia /Skłodowska/
+2 GIVN Zofia
+2 SURN Skłodowska
+1 SEX F
+1 BIRT
+2 DATE 1862
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1876
+2 PLAC Warsaw, Congress Poland
+1 FAMC @F1@
+0 @I6@ INDI
+1 NAME Józef /Skłodowski/
+2 GIVN Józef
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1863
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1937
+1 OCCU Physician
+1 FAMC @F1@
+0 @I7@ INDI
+1 NAME Bronisława /Dłuska/
+2 GIVN Bronisława
+2 SURN Dłuska
+1 SEX F
+1 BIRT
+2 DATE 1865
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1939
+1 OCCU Physician
+1 FAMC @F1@
+0 @I8@ INDI
+1 NAME Helena /Szalay/
+2 GIVN Helena
+2 SURN Szalay
+1 SEX F
+1 BIRT
+2 DATE 1866
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1961
+1 OCCU Teacher
+1 FAMC @F1@
+0 @I9@ INDI
+1 NAME Eugène /Curie/
+2 GIVN Eugène
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 28 AUG 1827
+2 PLAC Mulhouse, France
+1 DEAT
+2 DATE 25 FEB 1910
+2 PLAC Sceaux, France
+1 OCCU Physician
+1 FAMS @F2@
+0 @I10@ INDI
+1 NAME Sophie-Claire /Depouilly/
+2 GIVN Sophie-Claire
+2 SURN Depouilly
+1 SEX F
+1 BIRT
+2 DATE 1832
+1 DEAT
+2 DATE 1897
+1 FAMS @F2@
+0 @I11@ INDI
+1 NAME Jacques /Curie/
+2 GIVN Jacques
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 29 OCT 1855
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 FEB 1941
+2 PLAC Montpellier, France
+1 OCCU Physicist
+1 FAMC @F2@
+0 @I12@ INDI
+1 NAME Irène /Joliot-Curie/
+2 GIVN Irène
+2 SURN Joliot-Curie
+1 SEX F
+1 BIRT
+2 DATE 12 SEP 1897
+2 PLAC Paris, France
+1 DEAT
+2 DATE 17 MAR 1956
+2 PLAC Paris, France
+1 OCCU Physicist and chemist
+1 FAMC @F3@
+1 FAMS @F4@
+1 OBJE @O3@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935, shared with Frédéric Joliot
+0 @I13@ INDI
+1 NAME Ève /Curie/
+2 GIVN Ève
+2 SURN Curie
+1 SEX F
+1 BIRT
+2 DATE 6 DEC 1904
+2 PLAC Paris, France
+1 DEAT
+2 DATE 22 OCT 2007
+2 PLAC New York, New York, United States
+1 OCCU Writer and pianist
+1 FAMC @F3@
+1 FAMS @F5@
+1 SNOTE @N2@
+0 @I14@ INDI
+1 NAME Frédéric /Joliot/
+2 GIVN Frédéric
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 19 MAR 1900
+2 PLAC Paris, France
+1 DEAT
+2 DATE 14 AUG 1958
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMS @F4@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935
+0 @I15@ INDI
+1 NAME Henry Richardson /Labouisse/
+2 GIVN Henry Richardson
+2 SURN Labouisse
+1 SEX M
+1 BIRT
+2 DATE 11 FEB 1904
+2 PLAC New Orleans, Louisiana, United States
+1 DEAT
+2 DATE 25 MAR 1987
+2 PLAC New York, New York, United States
+1 OCCU Diplomat
+1 FAMS @F5@
+0 @I16@ INDI
+1 NAME Hélène /Langevin-Joliot/
+2 GIVN Hélène
+2 SURN Langevin-Joliot
+1 SEX F
+1 BIRT
+2 DATE 1927
+1 OCCU Nuclear physicist
+1 FAMC @F4@
+0 @I17@ INDI
+1 NAME Pierre /Joliot/
+2 GIVN Pierre
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 1932
+1 OCCU Biologist
+1 FAMC @F4@
+0 @F1@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 CHIL @I5@
+1 CHIL @I6@
+1 CHIL @I7@
+1 CHIL @I8@
+1 CHIL @I1@
+1 MARR
+2 DATE 1860
+2 PLAC Warsaw, Congress Poland
+0 @F2@ FAM
+1 HUSB @I9@
+1 WIFE @I10@
+1 CHIL @I11@
+1 CHIL @I2@
+0 @F3@ FAM
+1 HUSB @I2@
+1 WIFE @I1@
+1 CHIL @I12@
+1 CHIL @I13@
+1 MARR
+2 DATE 26 JUL 1895
+2 PLAC Sceaux, France
+0 @F4@ FAM
+1 HUSB @I14@
+1 WIFE @I12@
+1 CHIL @I16@
+1 CHIL @I17@
+1 MARR
+2 DATE 9 OCT 1926
+2 PLAC Paris, France
+0 @F5@ FAM
+1 HUSB @I15@
+1 WIFE @I13@
+1 MARR
+2 DATE 19 NOV 1954
+2 PLAC New York, New York, United States
+0 @O1@ OBJE
+1 FILE Media/marie-sklodowska-curie.svg
+2 FORM image/svg+xml
+2 TITL Marie Skłodowska-Curie
+0 @O2@ OBJE
+1 FILE Media/pierre-curie.svg
+2 FORM image/svg+xml
+2 TITL Pierre Curie
+0 @O3@ OBJE
+1 FILE Media/irene-joliot-curie.svg
+2 FORM image/svg+xml
+2 TITL Irène Joliot-Curie
+0 @O5@ OBJE
+1 FILE Media/curie-family-1908.svg
+2 FORM image/svg+xml
+2 TITL The Curie family, about 1908
+0 @O6@ OBJE
+1 FILE https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/500px-Marie_Curie_c._1920s.jpg
+2 FORM image/jpeg
+2 TITL A portrait the plugin fetches only when asked
+0 @O7@ OBJE
+1 FILE Media/lost-daguerreotype.jpg
+2 FORM image/jpeg
+2 TITL A plate nobody can find
+0 @S1@ SOUR
+1 TITL The Nobel Prize in Physics 1903
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+1 OBJE @O4@
+0 @S2@ SOUR
+1 TITL Parish registers of Warsaw
+1 REPO @R2@
+0 @S3@ SOUR
+1 TITL The Nobel Prize in Chemistry 1911 and 1935
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+0 @O4@ OBJE
+1 FILE Sources/nobel-diploma-1903.svg
+2 FORM image/svg+xml
+2 TITL Diploma of the 1903 prize
+0 @R1@ REPO
+1 NAME Nobel Prize Outreach
+1 WWW https://www.nobelprize.org/
+0 @R2@ REPO
+1 NAME State Archive in Warsaw
+1 ADDR Krzywe Koło 7
+2 CITY Warsaw
+2 CTRY Poland
+0 @N1@ SNOTE The only person to have won a Nobel Prize in two different sciences:
+1 CONT physics in 1903 and chemistry in 1911.
+0 @N2@ SNOTE Wrote Madame Curie, the biography of her mother, in 1937. Her husband
+1 CONT accepted the Nobel Peace Prize for UNICEF in 1965.
+0 TRLR</script>
+<script>
+const VAULT="../../demo-vault/";
+const BACKLINKS={
+ "@I1@":[
+  ["Marie Skłodowska-Curie","Her record is ⟦Marie Skłodowska-Curie⟧, and the two prizes are recorded as a shared note."],
+  ["Nobel Prizes in the family","1903 · Physics · Pierre Curie and ⟦Marie Skłodowska-Curie⟧, with Henri Becquerel","and 1 more link: 1911 · Chemistry"],
+  ["Radium","…announced in December 1898 by ⟦Marie Skłodowska-Curie⟧ and Pierre Curie."],
+  ["Pierre Curie","…before the work on Radium with ⟦Marie Skłodowska-Curie⟧."],
+  ["Nobel Prize in Physics 1903","…cited from the records of ⟦Marie Skłodowska-Curie⟧ and Pierre Curie."],
+  ["Start here","⟦Marie Skłodowska-Curie⟧ opens the file on her record."]],
+ "@I2@":[
+  ["Pierre Curie","…killed by a horse-drawn cart on the rue Dauphine in 1906. His record is ⟦Pierre Curie⟧."],
+  ["Marie Skłodowska-Curie","She married ⟦Pierre Curie⟧ in Sceaux in 1895."],
+  ["Nobel Prizes in the family","1903 · Physics · ⟦Pierre Curie⟧ and Marie Skłodowska-Curie, with Henri Becquerel"],
+  ["Radium","…announced in December 1898 by Marie Skłodowska-Curie and ⟦Pierre Curie⟧."],
+  ["Nobel Prize in Physics 1903","…cited from the records of Marie Skłodowska-Curie and ⟦Pierre Curie⟧."]],
+ "@I3@":[
+  ["Marie Skłodowska-Curie","Her parents were teachers in Warsaw — ⟦Władysław Skłodowski⟧ taught mathematics and physics…"],
+  ["Warsaw parish registers","…carry the births of ⟦Władysław Skłodowski⟧ and Bronisława Boguska."]],
+ "@I4@":[
+  ["Marie Skłodowska-Curie","…⟦Bronisława Boguska⟧ ran a boarding school — and she was the youngest of five children."],
+  ["Warsaw parish registers","…carry the births of Władysław Skłodowski and ⟦Bronisława Boguska⟧."]],
+ "@I11@":[["Pierre Curie","He worked with his brother ⟦Jacques Curie⟧ on piezoelectricity…"]],
+ "@I12@":[
+  ["Irène Joliot-Curie","Embedded whole: ⟦![[curie.ged#@I12@]]⟧"],
+  ["Nobel Prizes in the family","1935 · Chemistry · ⟦Irène Joliot-Curie⟧ and Frédéric Joliot"]],
+ "@I13@":[["Nobel Prizes in the family","1965 · Peace · accepted for UNICEF by Henry Richardson Labouisse, husband of ⟦Ève Curie⟧"]],
+ "@I14@":[
+  ["Irène Joliot-Curie","She and ⟦Frédéric Joliot⟧ shared the 1935 prize in chemistry…"],
+  ["Nobel Prizes in the family","1935 · Chemistry · Irène Joliot-Curie and ⟦Frédéric Joliot⟧"]],
+ "@I15@":[["Nobel Prizes in the family","1965 · Peace · accepted for UNICEF by ⟦Henry Richardson Labouisse⟧…"]],
+ "@I16@":[["Irène Joliot-Curie","Their children, ⟦Hélène Langevin-Joliot⟧ and Pierre Joliot, are living…"]],
+ "@I17@":[["Irène Joliot-Curie","Their children, Hélène Langevin-Joliot and ⟦Pierre Joliot⟧, are living…"]],
+ "@S1@":[
+  ["Nobel Prize in Physics 1903","The source record is ⟦The Nobel Prize in Physics 1903⟧, held by Nobel Prize Outreach…"],
+  ["Radium","The work is cited in both of their records through ⟦The Nobel Prize in Physics 1903⟧…"],
+  ["Marie Skłodowska-Curie","Their work on Radium is the subject of the 1903 prize, ⟦the source⟧ for both of their records."]],
+ "@S2@":[["Warsaw parish registers","⟦Parish registers of Warsaw⟧, held by the State Archive in Warsaw…"]],
+ "@S3@":[["Radium","…and again in hers through ⟦the 1911 prize in chemistry⟧…"]]
+};
+
+const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const MONTH=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const LABEL={BIRT:"Birth",CHR:"Christening",BAPM:"Baptism",DEAT:"Death",BURI:"Burial",CREM:"Cremation",ADOP:"Adoption",RESI:"Residence",EDUC:"Education",GRAD:"Graduation",RETI:"Retirement",EMIG:"Emigration",IMMI:"Immigration",NATU:"Naturalization",CENS:"Census",PROB:"Probate",WILL:"Will",OCCU:"Occupation",RELI:"Religion",TITL:"Title",DSCR:"Description",NATI:"Nationality",EVEN:"Event",FACT:"Fact",MARR:"Marriage",DIV:"Divorce",ENGA:"Engagement",MARB:"Marriage banns",MARC:"Marriage contract"};
+const NAME_TYPE={BIRTH:"birth name",MARRIED:"married name",AKA:"also known as",IMMIGRANT:"immigrant name",MAIDEN:"maiden name",PROFESSIONAL:"professional name"};
+const QUAY=["unreliable","questionable","secondary","primary"];
+
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const plural=(n,one,other)=>n===1?one:other;
+const short=pl=>(pl||"").split(",")[0].trim();
+
+function parseGedcom(text){
+  const root={children:[],level:-1};const stack=[root];
+  text.split(/\r?\n/).forEach((ln,i)=>{
+    const m=ln.replace(/^﻿/,"").match(/^\s*(\d+)\s+(?:(@[^@\s]+@)\s+)?([A-Za-z0-9_]+)(?: (.*))?$/);if(!m)return;
+    const lvl=+m[1];const n={level:lvl,xref:m[2]||null,tag:m[3].toUpperCase(),value:m[4]??"",children:[],line:i+1,last:i+1};
+    for(let k=1;k<=Math.min(lvl,stack.length-1);k++)stack[k].last=i+1;
+    if(n.tag==="CONT"||n.tag==="CONC"){const p=stack[lvl];if(p)p.value+=(n.tag==="CONT"?"\n":"")+n.value;return}
+    const parent=stack[lvl];if(!parent)return;parent.children.push(n);stack.length=lvl+1;stack[lvl+1]=n});
+  return root;
+}
+const kid=(n,t)=>n?.children.find(c=>c.tag===t);
+const kids=(n,t)=>n?n.children.filter(c=>c.tag===t):[];
+const val=(n,t)=>kid(n,t)?.value||"";
+
+function one(s){
+  const m=s.match(/^(?:(\d{1,2}) )?(?:([A-Z]{3}) )?(\d{3,4})(?: BCE| B\.C\.)?$/);if(!m)return null;
+  const d=m[1]?+m[1]:null,mo=m[2]?MON.indexOf(m[2]):-1,y=+m[3];
+  const text=d&&mo>=0?`${d} ${MONTH[mo]} ${y}`:mo>=0?`${MONTH[mo]} ${y}`:`${y}`;
+  return{text,year:y,key:y*10000+(mo+1)*100+(d||0),exact:!!d&&mo>=0,month:mo,day:d};
+}
+function parseDate(raw){
+  if(!raw)return null;
+  const s=raw.trim().toUpperCase().replace(/^@#D[A-Z ]+@ /,"").replace(/^(GREGORIAN|JULIAN|FRENCH_R|HEBREW) /,"");
+  let m;
+  if((m=s.match(/^BET (.+) AND (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`between ${a.text} and ${b.text}`,exact:false,approx:true}}
+  if((m=s.match(/^FROM (.+) TO (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`${a.text} — ${b.text}`,exact:false,approx:true}}
+  if((m=s.match(/^(ABT|CAL|EST|BEF|AFT|FROM|TO) (.+)$/))){const a=one(m[2]);const p={ABT:"about",CAL:"about",EST:"about",BEF:"before",AFT:"after",FROM:"from",TO:"to"}[m[1]];if(a)return{...a,text:`${p} ${a.text}`,exact:false,approx:true}}
+  return one(s)||{text:raw,year:null,key:null,exact:false};
+}
+function age(b,d){
+  if(!b?.year||!d?.year)return"";
+  let n=d.year-b.year;const exact=b.exact&&d.exact;
+  if(exact&&(d.month*100+d.day)<(b.month*100+b.day))n--;
+  if(n<0)return"";
+  return`${exact?"":"≈"}${n} ${plural(n,"year","years")}`;
+}
+
+let M;
+function build(text,name){
+  const tree=parseGedcom(text);const recs=new Map();
+  tree.children.forEach(r=>r.xref&&recs.set(r.xref,r));
+  const head=tree.children.find(r=>r.tag==="HEAD");
+  const noteText=n=>n.value.startsWith("@")?(recs.get(n.value)?.value||""):n.value;
+  const cite=n=>n.value.startsWith("@")?{src:n.value,page:val(n,"PAGE"),quay:val(n,"QUAY"),text:val(kid(n,"DATA"),"TEXT"),line:n.line,last:n.last}:{inline:n.value,page:val(n,"PAGE"),line:n.line,last:n.last};
+  const event=n=>({tag:n.tag,label:n.tag==="EVEN"||n.tag==="FACT"?(val(n,"TYPE")||LABEL[n.tag]):LABEL[n.tag],value:n.value&&n.value!=="Y"?n.value:"",date:parseDate(val(n,"DATE")),place:val(n,"PLAC"),hasMap:!!kid(kid(n,"PLAC"),"MAP"),cites:kids(n,"SOUR").map(cite),line:n.line,last:n.last});
+  const media=r=>kids(r,"OBJE").map(n=>{const c=kid(n,"CROP");return{obj:n.value,title:val(n,"TITL"),crop:c&&{top:+val(c,"TOP")||0,left:+val(c,"LEFT")||0,h:+val(c,"HEIGHT")||0,w:+val(c,"WIDTH")||0}}});
+  const people=new Map(),fams=new Map(),sources=new Map(),objects=new Map(),repos=new Map();
+  for(const r of recs.values()){
+    if(r.tag==="INDI"){
+      const names=kids(r,"NAME").map(n=>{const m=n.value.match(/^(.*?)\/(.*?)\/(.*)$/);const given=(m?m[1]:n.value).trim(),sur=m?m[2].trim():"";
+        return{full:[given,sur,m?m[3].trim():""].filter(Boolean).join(" ")||"Unnamed",given,sur,type:val(n,"TYPE")}});
+      const main=names[0]||{full:"Unnamed",given:"",sur:""};
+      const events=r.children.filter(c=>LABEL[c.tag]).map(event);
+      people.set(r.xref,{id:r.xref,rec:r,name:main.full,given:main.given,sur:main.sur,alt:names.slice(1),sex:val(r,"SEX"),events,
+        birth:events.find(e=>e.tag==="BIRT")||events.find(e=>e.tag==="CHR"||e.tag==="BAPM"),death:events.find(e=>e.tag==="DEAT")||events.find(e=>e.tag==="BURI"),
+        famc:kids(r,"FAMC").map(n=>n.value),fams:kids(r,"FAMS").map(n=>n.value),cites:kids(r,"SOUR").map(cite),media:media(r),
+        notes:[...kids(r,"NOTE"),...kids(r,"SNOTE")].map(noteText).filter(Boolean)});
+    }else if(r.tag==="FAM"){
+      fams.set(r.xref,{id:r.xref,rec:r,husb:val(r,"HUSB"),wife:val(r,"WIFE"),chil:kids(r,"CHIL").map(n=>n.value),events:r.children.filter(c=>LABEL[c.tag]).map(event),cites:kids(r,"SOUR").map(cite)});
+    }else if(r.tag==="SOUR"){
+      sources.set(r.xref,{id:r.xref,rec:r,title:val(r,"TITL")||val(r,"ABBR")||"Untitled source",auth:val(r,"AUTH"),publ:val(r,"PUBL"),repo:val(r,"REPO"),media:media(r)});
+    }else if(r.tag==="OBJE"){
+      const f=kid(r,"FILE");objects.set(r.xref,{file:f?.value||"",title:val(f,"TITL")||val(r,"TITL")});
+    }else if(r.tag==="REPO"){
+      const a=kid(r,"ADDR");repos.set(r.xref,{name:val(r,"NAME"),addr:[a?.value,val(a,"CITY"),val(a,"CTRY")].filter(Boolean).join(", "),www:val(r,"WWW")});
+    }
+  }
+  const coll=new Intl.Collator(undefined,{sensitivity:"base"});
+  const order=[...people.values()].sort((a,b)=>coll.compare(a.sur||"￿",b.sur||"￿")||coll.compare(a.given,b.given));
+  return{name,text,lines:text.split(/\r?\n/),version:val(kid(head,"GEDC"),"VERS")||"?",people,fams,sources,objects,repos,order,demo:name==="curie.ged"};
+}
+
+const P=id=>M.people.get(id);
+const F=id=>M.fams.get(id);
+const hasAnySource=p=>p.cites.length>0||p.events.some(e=>e.cites.length);
+function years(p){
+  const b=p.birth?.date,d=p.death?.date,ap=x=>x?.year&&(x.approx?"≈":"")+x.year,by=ap(b),dy=ap(d);
+  if(by&&dy)return`${by}–${dy}`;
+  if(by&&!p.death)return new Date().getFullYear()-b.year<110?`b. ${by}`:`${by}–?`;
+  if(by)return`${by}–?`;
+  if(dy)return`?–${dy}`;
+  return"";
+}
+const parentsOf=p=>p.famc.map(F).filter(Boolean);
+const parentIds=p=>{const f=parentsOf(p)[0];return f?[f.husb,f.wife].filter(Boolean):[]};
+function siblings(p){const s=new Set();parentsOf(p).forEach(f=>f.chil.forEach(c=>c!==p.id&&s.add(c)));return[...s]}
+function unions(p){return p.fams.map(fid=>{const f=F(fid);if(!f)return{fid,broken:true};return{fam:f,spouse:f.husb===p.id?f.wife:f.husb}})}
+const rel=(p,m,f,n)=>p?.sex==="M"?m:p?.sex==="F"?f:n;
+
+const S={view:null,tab:"card",sel:null,mode:"gen",kind:"people",filter:"all",q:"",back:[],fwd:[],open:new Set()};
+
+function go(view,push=true){
+  if(push&&S.view)S.back.push({view:S.view,tab:S.tab});
+  if(push)S.fwd=[];
+  S.view=view;S.sel=null;
+  if(view.kind==="source"&&S.mode==="gen")S.tab="card";
+  render();
+}
+function select(key){S.sel=S.sel===key?null:key;renderMainOnly();renderEvidence()}
+
+function selected(){
+  if(!S.sel)return null;
+  const [t,a,b]=S.sel.split("|");
+  if(t==="I"){const e=P(S.view.id).events[+a];return e&&{...e,fam:null}}
+  if(t==="F"){const f=F(a);const e=f?.events[+b];return e&&{...e,fam:f}}
+  return null;
+}
+
+const ICON={note:'<svg class="i s" viewBox="0 0 24 24"><path d="M7 4h8l4 4v12H7z"/><path d="M15 4v4h4"/></svg>',src:'<svg class="i s" viewBox="0 0 24 24"><path d="M8 4h9l2 2v14H8z"/><path d="M5 7v13h11"/></svg>',code:'<svg class="i s" viewBox="0 0 24 24"><path d="m9 8-4 4 4 4M15 8l4 4-4 4"/></svg>',map:'<svg class="i" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>'};
+
+function render(){renderIndex();renderMainOnly();renderEvidence()}
+
+function renderIndex(){
+  document.getElementById("fileName").textContent=M.name;
+  const n=M.people.size;
+  document.getElementById("fileMeta").textContent=`GEDCOM ${M.version} · ${n} ${plural(n,"person","people")}`;
+  document.querySelectorAll("#indexKind button").forEach(b=>b.classList.toggle("on",b.dataset.kind===S.kind));
+  const q=document.getElementById("q");q.placeholder=S.kind==="people"?"Name, year, place…":"Title, author…";
+  const fl=document.getElementById("filters"),list=document.getElementById("list");
+  const s=S.q.trim().toLowerCase();let html="";
+  if(S.kind==="people"){
+    const gaps=M.order.filter(p=>!hasAnySource(p)).length;
+    fl.innerHTML=`<button class="chip${S.filter==="all"?" on":""}" data-f="all">All ${n}</button><button class="chip${S.filter==="gap"?" on":""}" data-f="gap">No sources ${gaps}</button>`;
+    let last="";
+    M.order.filter(p=>(S.filter==="all"||!hasAnySource(p))&&(!s||`${p.name} ${years(p)} ${p.birth?.place||""} ${p.death?.place||""}`.toLowerCase().includes(s))).forEach(p=>{
+      const L=(p.sur||p.given||"?")[0].toUpperCase();if(L!==last){html+=`<div class="letter">${esc(L)}</div>`;last=L}
+      const on=S.view?.kind==="person"&&S.view.id===p.id;
+      html+=`<button class="row${on?" on":""}" data-go="${p.id}"><span class="n">${esc(p.name)}${hasAnySource(p)?"":'<i class="gapdot" title="No sources at all"></i>'}</span><span class="y">${esc(years(p))}</span>${p.birth?.place?`<span class="p">${esc(p.birth.place)}</span>`:""}</button>`});
+    if(!html)html=n?`<div class="empty-note">Nobody matches “${esc(S.q)}”. Search covers names, years and places.</div>`:`<div class="empty-note">The file has no people.</div>`;
+  }else{
+    fl.innerHTML="";
+    const used=citeIndex();
+    [...M.sources.values()].filter(x=>!s||`${x.title} ${x.auth}`.toLowerCase().includes(s)).forEach(x=>{
+      const k=new Set((used.get(x.id)||[]).map(u=>u.owner)).size;const on=S.view?.kind==="source"&&S.view.id===x.id;
+      html+=`<button class="row${on?" on":""}" data-src="${x.id}"><span class="n">${esc(x.title)}</span><span class="y">${k}</span>${x.auth?`<span class="p">${esc(x.auth)}</span>`:""}</button>`});
+    if(!html)html=`<div class="empty-note">${M.sources.size?`Nothing matches “${esc(S.q)}”.`:"The file has no sources."}</div>`;
+  }
+  list.innerHTML=html;
+}
+
+function citeIndex(){
+  const m=new Map();const add=(c,owner,what)=>{if(!c.src)return;if(!m.has(c.src))m.set(c.src,[]);m.get(c.src).push({owner,what,page:c.page})};
+  for(const p of M.people.values()){p.cites.forEach(c=>add(c,p.id,"whole record"));p.events.forEach(e=>e.cites.forEach(c=>add(c,p.id,e.label)))}
+  for(const f of M.fams.values()){const who=[f.husb,f.wife].map(P).filter(Boolean).map(x=>x.name).join(" and ");f.cites.forEach(c=>add(c,f.husb||f.wife,`family: ${who}`));f.events.forEach(e=>e.cites.forEach(c=>add(c,f.husb||f.wife,`${e.label}: ${who}`)))}
+  return m;
+}
+
+function header(){
+  document.getElementById("back").disabled=!S.back.length;
+  document.getElementById("fwd").disabled=!S.fwd.length;
+  document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.mode===S.mode));
+  const title=S.view?.kind==="person"?P(S.view.id)?.name:S.view?.kind==="source"?M.sources.get(S.view.id)?.title:M.name;
+  document.getElementById("crumbs").innerHTML=`${esc(M.name)}${S.view?` <span>/</span> <b>${esc(title)}</b>`:""}`;
+  document.getElementById("tabTitle").textContent=title||M.name;
+}
+
+function renderMainOnly(){
+  header();
+  const body=document.getElementById("body");
+  if(S.mode==="src"){renderSource(body);return}
+  body.style.padding="";
+  if(!S.view){body.innerHTML=`<div class="pane"><div class="mapbox"><div class="ic">${ICON.note}</div><div><p><b style="color:var(--text-normal)">The file has no people.</b> Genealogy appears once it holds at least one individual record.</p><p style="margin-top:8px"><button class="linkbtn" data-mode-go="src">Open source</button></p></div></div></div>`;return}
+  if(S.view.kind==="source"){body.innerHTML=sourcePage(M.sources.get(S.view.id));return}
+  const p=P(S.view.id);
+  const portrait=p.media.map(m=>M.objects.get(m.obj)).find(o=>o&&!/^https?:/.test(o.file)&&!p.media.find(x=>x.obj===o&&x.crop));
+  const initials=(p.given[0]||"")+(p.sur[0]||"");
+  const alt=p.alt.map(a=>{const t=NAME_TYPE[a.type]||a.type.toLowerCase()||"also known as";return`${t[0].toUpperCase()+t.slice(1)}: ${a.full}`});
+  const occ=p.events.find(e=>e.tag==="OCCU")?.value;
+  const places=[short(p.birth?.place),short(p.death?.place)].filter(Boolean);
+  const line1=[years(p),places.length===2&&places[0]!==places[1]?places.join(" → "):places[0]].filter(Boolean).join(" · ");
+  const line2=[...alt,occ].filter(Boolean).join(" · ");
+  body.innerHTML=`<div class="who">
+    <div class="portrait">${portrait&&M.demo?`<img alt="" src="${VAULT+portrait.file}">`:esc(initials)}</div>
+    <div><h1>${esc(p.name)}</h1><div class="sub">${esc(line1)}${line2?`<br><span>${esc(line2)}</span>`:""}</div></div></div>
+    <nav class="tabs" role="tablist">${[["card","Card"],["tree","Tree"],["time","Timeline"],["map","Places"]].map(([k,t])=>`<button role="tab" data-tab="${k}" class="${S.tab===k?"on":""}">${t}</button>`).join("")}</nav>
+    <div class="pane">${S.tab==="card"?card(p):S.tab==="tree"?treeHtml(p):S.tab==="time"?timeline(p):placesHtml(p)}</div>`;
+  if(S.tab==="tree")requestAnimationFrame(drawLines);
+}
+
+function factRow(key,label,e,extra=""){
+  const v=[e.date?`<span class="d">${esc(e.date.text)}</span>`:"",e.value&&!e.date?esc(e.value):e.value?` <span class="with">${esc(e.value)}</span>`:"",e.place?`<span class="pl">${esc(e.place)}</span>`:""].join("")||'<span class="with">recorded, no details</span>';
+  const n=e.cites.length;
+  return`<button class="fact${S.sel===key?" sel":""}" data-sel="${key}"><span class="k">${esc(label)}</span><span class="v">${v}${extra}</span><span class="ev ${n?"has":"none"}">${n?`${n} ${plural(n,"source","sources")}`:"no source"}</span></button>`;
+}
+function personBtn(id,note=""){
+  const x=P(id);
+  if(!x)return`<div class="broken">Points to a record that is not in the file <button class="linkbtn" data-mode-go="src">In source</button></div>`;
+  return`<button class="person" data-go="${id}">${esc(x.name)} <span class="yy">${esc(years(x))}</span>${note?` <span class="note">${esc(note)}</span>`:""}</button>`;
+}
+function card(p){
+  const facts=[];
+  p.events.forEach((e,i)=>facts.push({key:`I|${i}`,label:e.label,e,k:e.date?.key??(e.tag==="DEAT"?9e9:8e9)}));
+  unions(p).forEach(u=>{if(u.broken)return;u.fam.events.forEach((e,i)=>{const sp=P(u.spouse);facts.push({key:`F|${u.fam.id}|${i}`,label:e.label,e,extra:sp?` <span class="with">· with ${esc(sp.name)}</span>`:"",k:e.date?.key??8e9})})});
+  facts.sort((a,b)=>a.k-b.k);
+  const par=parentIds(p),sib=siblings(p);
+  const lost=p.famc.some(id=>!F(id));
+  let kin=`<div class="k">Parents</div><div class="people">${par.length?par.map(id=>personBtn(id)).join(""):lost?"":'<span class="none-kin">not recorded</span>'}${lost?personBtn(null):""}</div>`;
+  if(sib.length)kin+=`<div class="k">Siblings</div><div class="people">${sib.map(id=>personBtn(id)).join("")}</div>`;
+  unions(p).forEach(u=>{
+    if(u.broken){kin+=`<div class="k">Family</div><div class="people">${personBtn(null)}</div>`;return}
+    const m=u.fam.events.find(e=>e.tag==="MARR");
+    kin+=`<div class="k">${rel(P(u.spouse),"Husband","Wife","Spouse")}</div><div class="people">${u.spouse?personBtn(u.spouse,m?`married ${[m.date?.text,short(m.place)].filter(Boolean).join(", ")}`:""):'<span class="none-kin">not recorded</span>'}</div>`;
+    if(u.fam.chil.length)kin+=`<div class="k">Children</div><div class="people">${u.fam.chil.map(id=>personBtn(id)).join("")}</div>`;
+  });
+  return`<h3>Facts</h3><div class="facts">${facts.map(f=>factRow(f.key,f.label,f.e,f.extra)).join("")||'<div class="faint" style="padding:10px 12px">The record holds no facts.</div>'}</div>
+    ${p.alt.length?`<h3>Names</h3><div class="names"><div class="row-n">${esc(p.name)}<span>primary</span></div>${p.alt.map(a=>`<div class="row-n">${esc(a.full)}<span>${esc(NAME_TYPE[a.type]||a.type.toLowerCase()||"other")}</span></div>`).join("")}</div>`:""}
+    <h3>Family</h3><div class="kin">${kin}</div>
+    ${p.notes.length?`<h3>Note in the file</h3>${p.notes.map(n=>`<div class="quote">${esc(n)}</div>`).join("")}`:""}`;
+}
+
+let LINKS=[];
+function treeHtml(p){
+  LINKS=[];let seq=0;
+  const node=(id,cls="",marks="")=>{const x=P(id);const nid="n"+seq++;
+    if(!x)return{nid,html:`<div class="node broken-node" id="${nid}"><b>Missing record</b><span>broken pointer</span></div>`};
+    return{nid,html:`<button class="node ${cls}${hasAnySource(x)?"":" gap"}" id="${nid}" data-go="${x.id}" data-keep-tab><b>${esc(x.name)}</b><span>${esc(years(x))||"&nbsp;"}</span>${marks}</button>`}};
+  const up=x=>x&&parentIds(x).length?'<i class="more up" title="More ancestors beyond the edge">▲</i>':"";
+  const down=x=>x&&x.fams.some(f=>F(f)?.chil.length)?'<i class="more down" title="More descendants beyond the edge">▼</i>':"";
+  const couple=parts=>parts.length?`<div class="couple">${parts.map(n=>n.html).join('<div class="and"></div>')}</div>`:"";
+  const sibBlock=(x)=>{
+    if(!x)return{html:"",ids:[]};const s=siblings(x);if(!s.length)return{html:"",ids:[]};
+    if(s.length===1||S.open.has(x.id)){const ns=s.map(id=>node(id,"dim"));return{html:ns.map(n=>n.html).join(""),ids:ns.map(n=>n.nid)}}
+    const ys=s.map(P).filter(Boolean).map(y=>y.birth?.date?.year).filter(Boolean);const nid="n"+seq++;
+    return{html:`<button class="node dim${s.every(id=>P(id)&&hasAnySource(P(id)))?"":" gap"}" id="${nid}" data-open="${x.id}"><b>${s.length} ${plural(s.length,"sibling","siblings")}</b><span>${ys.length?`${Math.min(...ys)}–${Math.max(...ys)}`:"expand"}</span></button>`,ids:[nid]}};
+  const us=unions(p).filter(u=>!u.broken);
+  const sp0=us[0]?.spouse?P(us[0].spouse):null;
+  const fNode=node(p.id,"focus");
+  const spNodes=us.map(u=>u.spouse?node(u.spouse):null).filter(Boolean);
+  const parRow=[],g0=[],g1=[],g2=[];
+  const parents=(x,childIds)=>{if(!x)return;const ids=parentIds(x);if(!ids.length)return;const ns=ids.map(id=>node(id,"",up(P(id))));parRow.push(couple(ns));LINKS.push({from:ns.map(n=>n.nid),to:childIds})};
+  const sibF=sibBlock(p),sibS=sibBlock(sp0);
+  parents(p,[fNode.nid,...sibF.ids]);
+  if(sp0)parents(sp0,[spNodes[0].nid,...sibS.ids]);
+  g0.push(sibF.html,couple([fNode,...spNodes]),sibS.html);
+  us.forEach((u,ui)=>{
+    const kidsN=[];
+    u.fam.chil.forEach(cid=>{const c=P(cid);const cn=node(cid);kidsN.push(cn.nid);
+      const cu=c?unions(c).filter(v=>!v.broken):[];const csp=cu.map(v=>v.spouse?node(v.spouse):null).filter(Boolean);
+      g1.push(couple([cn,...csp]));
+      cu.forEach((v,vi)=>{const gk=v.fam.chil.map(id=>node(id,"",down(P(id))));if(!gk.length)return;g2.push(gk.map(n=>n.html).join(""));LINKS.push({from:[cn.nid,csp[vi]?.nid].filter(Boolean),to:gk.map(n=>n.nid)})});
+    });
+    if(kidsN.length)LINKS.push({from:[fNode.nid,spNodes[ui]?.nid].filter(Boolean),to:kidsN});
+  });
+  const gens=[parRow,g0,g1,g2].filter(g=>g.join("").trim());
+  return`<div class="tree-wrap"><div class="tree" id="tree"><svg class="lines" id="lines"></svg>${gens.map(g=>`<div class="gen">${g.join("")}</div>`).join("")}</div></div>
+    <div class="legend"><span><i></i>no sources at all</span><span>▲ ▼ relatives beyond the edge</span><span>Click to move the focus</span></div>`;
+}
+function drawLines(){
+  const t=document.getElementById("tree"),svg=document.getElementById("lines");if(!t)return;const R=t.getBoundingClientRect();
+  const box=id=>{const r=document.getElementById(id).getBoundingClientRect();return{l:r.left-R.left,r:r.right-R.left,top:r.top-R.top,bot:r.bottom-R.top}};
+  let d="";
+  LINKS.forEach(L=>{
+    const a=box(L.from[0]),b=L.from[1]?box(L.from[1]):null;
+    const p=b?{x:(Math.min(a.r,b.r)+Math.max(a.l,b.l))/2,y:(a.top+a.bot)/2}:{x:(a.l+a.r)/2,y:a.bot};
+    L.to.forEach(id=>{const K=box(id),kx=(K.l+K.r)/2,m=(p.y+K.top)/2+6;d+=`M${p.x} ${p.y}V${m}H${kx}V${K.top}`});
+  });
+  svg.innerHTML=`<path d="${d}"/>`;
+}
+
+function timeline(p){
+  const items=[],by=p.birth?.date?.year,dy=p.death?.date?.year;
+  const push=(e,text,own,who)=>{if(!e?.date?.year)return;items.push({e,text,own,who})};
+  p.events.forEach(e=>e.date?push(e,`<b>${esc(e.label)}</b>${e.value?` · ${esc(e.value)}`:""}`,true):0);
+  const par=parentsOf(p)[0];
+  if(par)par.events.forEach(e=>push(e,`Parents' ${esc(e.label.toLowerCase())}`,false));
+  parentIds(p).map(P).filter(Boolean).forEach(x=>push(x.death,`Death of ${rel(x,"father","mother","parent")}`,false));
+  siblings(p).map(P).filter(Boolean).forEach(x=>{push(x.birth,`Birth of ${rel(x,"brother","sister","sibling")} ${esc(x.given)}`,false);push(x.death,`Death of ${rel(x,"brother","sister","sibling")} ${esc(x.given)}`,false)});
+  unions(p).filter(u=>!u.broken).forEach(u=>{
+    const sp=P(u.spouse);
+    u.fam.events.forEach(e=>push(e,`<b>${esc(e.label)}${sp?` to ${esc(sp.name)}`:""}</b>`,true));
+    if(sp)push(sp.death,`Death of ${rel(sp,"husband","wife","spouse")}`,false);
+    u.fam.chil.map(P).filter(Boolean).forEach(c=>{
+      const w=rel(c,"son","daughter","child");
+      push(c.birth,`Birth of ${w} ${esc(c.given)}`,false);push(c.death,`Death of ${w} ${esc(c.given)}`,false);
+      unions(c).filter(v=>!v.broken).forEach(v=>{const cs=P(v.spouse);v.fam.events.forEach(e=>push(e,`${esc(e.label)} of ${w} ${esc(c.given)}${cs?` and ${esc(cs.name)}`:""}`,false));
+        v.fam.chil.map(P).filter(Boolean).forEach(g=>push(g.birth,`Birth of ${rel(g,"grandson","granddaughter","grandchild")} ${esc(g.given)}`,false))});
+    });
+  });
+  const lo=Math.min(by??Infinity,...(par?par.events.map(e=>e.date?.year).filter(Boolean):[]));
+  const shown=items.filter(i=>i.own||((!dy||i.e.date.year<=dy)&&i.e.date.year>=(isFinite(lo)?lo:-Infinity))).sort((a,b)=>a.e.date.key-b.e.date.key);
+  const undated=p.events.filter(e=>!e.date&&["BIRT","DEAT","BURI","CHR","BAPM","RESI","EMIG","IMMI","EDUC","GRAD"].includes(e.tag));
+  const fmt=d=>d.text.replace(/\s?\d{3,4}$/,"");
+  return`<p class="caption">Own events, and those of parents, siblings, spouses, children and grandchildren, up to the end of the person's life.</p>
+   <div class="tl">${shown.map(i=>`<div class="ti ${i.own?"own":"kin"}"><div class="yr">${i.e.date.year}</div><div class="dot"></div><div class="tx">${i.text}${fmt(i.e.date)?` · ${esc(fmt(i.e.date))}`:""}${i.e.place?`<small>${esc(i.e.place)}</small>`:""}</div><div class="age">${i.e===p.birth?"":esc(age(p.birth?.date,i.e.date))}</div></div>`).join("")||'<div class="faint">No event has a date.</div>'}</div>
+   ${undated.length?`<h3>Undated</h3>${undated.map(e=>`<div class="faint">${esc(e.label)}${e.place?` · ${esc(e.place)}`:""}</div>`).join("")}`:""}`;
+}
+
+function placesHtml(p){
+  const g=new Map();
+  const add=(e,what)=>{if(!e?.place)return;if(!g.has(e.place))g.set(e.place,{what:[],map:false});const x=g.get(e.place);x.what.push(what);x.map||=e.hasMap};
+  p.events.forEach(e=>add(e,e.label));
+  unions(p).filter(u=>!u.broken).forEach(u=>{u.fam.events.forEach(e=>add(e,e.label));u.fam.chil.map(P).filter(Boolean).forEach(c=>add(c.birth,`birth of ${c.given}`))});
+  parentIds(p).map(P).filter(Boolean).forEach(x=>{add(x.death,`death of ${x.given}`)});
+  const anyMap=[...g.values()].some(x=>x.map);
+  return`<div class="mapbox"><div class="ic">${ICON.map}</div><div><p><b style="color:var(--text-normal)">${anyMap?"The map is not decided yet.":"These places have no coordinates."}</b> ${anyMap?"":"The file has no <code>MAP</code> with latitude and longitude. "}A basemap needs the network, and the plugin does not go online without permission.</p></div></div>
+    <h3>Places in ${esc(p.given||p.name)}'s life</h3>
+    ${[...g.entries()].map(([pl,x])=>`<div class="place"><div><b>${esc(pl)}</b><small>${esc(x.what.join(" · "))}</small></div><span class="c">${x.what.length} ${plural(x.what.length,"event","events")}</span></div>`).join("")||'<div class="faint">No event has a place.</div>'}`;
+}
+
+function thumb(m){
+  const o=M.objects.get(m.obj);const cap=m.title||o?.title||"";
+  if(!o)return`<div class="thumb ph">Missing media record</div>`;
+  if(/^https?:/.test(o.file))return`<div class="thumb ph">From the web<br>not loaded<br><br>${esc(cap)}</div>`;
+  if(!M.demo)return`<div class="thumb ph">${esc(o.file)}</div>`;
+  const url=VAULT+o.file;
+  const img=m.crop?`<svg viewBox="${m.crop.left} ${m.crop.top} ${m.crop.w} ${m.crop.h}" preserveAspectRatio="xMidYMid slice"><image href="${url}"/></svg>`:`<img alt="" src="${url}" onerror="this.parentNode.className='thumb ph';this.parentNode.textContent='Not in the vault'">`;
+  return`<div class="thumb">${img}${cap?`<div class="cap">${esc(cap)}</div>`:""}</div>`;
+}
+function citeHtml(c){
+  if(c.inline)return`<div class="cite"><span style="color:var(--text-normal);margin:0">${esc(c.inline)}</span>${c.page?`<em>${esc(c.page)}</em>`:""}<em>source described inline in the record</em></div>`;
+  const s=M.sources.get(c.src);
+  if(!s)return`<div class="broken">Points to a source that is not in the file</div>`;
+  const meta=[c.quay!==""&&QUAY[+c.quay]?`quality: ${QUAY[+c.quay]}`:"",[s.auth,s.publ].filter(Boolean).join(" · ")].filter(Boolean).join(" · ");
+  return`<button class="cite" data-src="${s.id}"><b>${esc(s.title)}</b>${c.page?`<span>${esc(c.page)}</span>`:""}${c.text?`<span>«${esc(c.text)}»</span>`:""}${meta?`<em>${esc(meta)}</em>`:""}</button>`;
+}
+function backlinks(id,label){
+  const bl=M.demo?BACKLINKS[id]||[]:[];
+  return`<h3>Vault notes · ${bl.length}</h3>${bl.length?bl.map(([n,c,more])=>`<div class="note-l">${ICON.note}<div><b>${esc(n)}</b><span>${esc(c).replace(/⟦(.*?)⟧/g,"<mark>$1</mark>")}</span>${more?`<span style="color:var(--text-faint)">${esc(more)}</span>`:""}</div></div>`).join(""):`<div class="faint">No note links to ${esc(label)}.</div>`}`;
+}
+
+function renderEvidence(){
+  const ctx=document.getElementById("ctx"),acts=document.getElementById("ctxActs"),ev=document.getElementById("ev");
+  if(!S.view){ctx.innerHTML="";acts.innerHTML="";ev.innerHTML="";return}
+  const srcBtn=`<button class="linkbtn" data-mode-go="src">${S.mode==="src"?"Back to genealogy":"Show in source"}</button>`;
+  if(S.view.kind==="source"){
+    const s=M.sources.get(S.view.id);
+    ctx.innerHTML=`${esc(s.title)}<small>Source</small>`;acts.innerHTML=srcBtn;
+    ev.innerHTML=`${backlinks(s.id,"this source")}${s.media.length?`<h3>Media · ${s.media.length}</h3><div class="media">${s.media.map(thumb).join("")}</div>`:""}`;
+    return;
+  }
+  const p=P(S.view.id),e=selected();
+  if(e){
+    ctx.innerHTML=`${esc(e.label)}${e.fam?` <span style="font-weight:400;color:var(--text-muted)">· family</span>`:""}<small>${esc([e.date?.text,e.value,e.place].filter(Boolean).join(" · ")||"no details")}</small>`;
+    acts.innerHTML=`<button class="linkbtn" data-sel-clear>← Whole record</button>${srcBtn}`;
+  }else{
+    ctx.innerHTML=`Whole record<small>${esc(p.name)}${years(p)?` · ${esc(years(p))}`:""}</small>`;acts.innerHTML=srcBtn;
+  }
+  const n=p.cites.length;
+  let h="";
+  if(e){
+    h+=`<h3>Sources of this fact</h3>${e.cites.length?e.cites.map(citeHtml).join(""):`<div class="notice"><b>No source of its own</b>${n?"The sources below belong to the whole record and may not support this fact.":"The record has no sources either."}</div>`}`;
+    h+=`<h3 class="scope">Whole record</h3>`;
+  }
+  h+=`<h3>${e?"Sources":"Sources of the record"} · ${n}</h3>${n?p.cites.map(citeHtml).join(""):`<div class="faint">The record has no sources${p.events.some(x=>x.cites.length)?", only some of its facts do":""}.</div>`}`;
+  if(p.notes.length)h+=`<h3>Note in the file</h3>${p.notes.map(t=>`<div class="quote">${esc(t)}</div>`).join("")}`;
+  h+=backlinks(p.id,"this person");
+  if(p.media.length)h+=`<h3>Media · ${p.media.length}</h3><div class="media">${p.media.map(thumb).join("")}</div>`;
+  ev.innerHTML=h;ev.scrollTop=0;
+}
+
+function sourcePage(s){
+  const r=M.repos.get(s.repo),used=citeIndex().get(s.id)||[];
+  const by=new Map();used.forEach(u=>{if(!by.has(u.owner))by.set(u.owner,[]);by.get(u.owner).push(u)});
+  return`<div class="who"><div class="portrait src">${ICON.src}</div><div><h1>${esc(s.title)}</h1><div class="sub">${esc([s.auth,s.publ].filter(Boolean).join(" · ")||"No author or publication recorded")}</div></div></div>
+   <div class="pane" style="padding-top:8px">
+   <h3>Repository</h3>${r?`<div class="repo">${esc(r.name)}${r.addr?`<small>${esc(r.addr)}</small>`:""}${r.www?`<small>${esc(r.www)}</small>`:""}</div>`:'<div class="faint">Not recorded.</div>'}
+   <h3>Cited by · ${by.size}</h3><div class="cites-by">${[...by.entries()].map(([id,us])=>`<div class="by">${personBtn(id)}${us.map(u=>`<small>${esc(u.what)}${u.page?` — ${esc(u.page)}`:""}</small>`).join("")}</div>`).join("")||'<div class="faint">No record cites it.</div>'}</div>
+   </div>`;
+}
+
+function renderSource(body){
+  body.style.padding="0";
+  let lo=0,hi=-1;
+  if(S.view){const e=selected();const r=e?e:S.view.kind==="person"?P(S.view.id).rec:M.sources.get(S.view.id).rec;lo=r.line;hi=r.last}
+  body.innerHTML=`<div class="srcnote">Today's source editor opens here, on the lines of the selection. This is the only place to make changes.</div><pre class="src">${M.lines.map((l,i)=>`<div class="ln${i+1>=lo&&i+1<=hi?" hit":""}"${i+1===lo?' id="hit"':""}><i>${i+1}</i>${esc(l)||" "}</div>`).join("")}</pre>`;
+  requestAnimationFrame(()=>{const h=document.getElementById("hit");if(h)body.scrollTop=h.offsetTop-80});
+}
+
+document.addEventListener("click",ev=>{
+  const t=ev.target.closest("[data-go],[data-src],[data-sel],[data-tab],[data-open],[data-mode-go],[data-sel-clear],[data-kind],[data-f],[data-mode]");if(!t)return;
+  if(t.dataset.open){S.open.has(t.dataset.open)?S.open.delete(t.dataset.open):S.open.add(t.dataset.open);renderMainOnly();return}
+  if(t.dataset.go){if(!t.hasAttribute("data-keep-tab")&&!t.closest(".list"))S.tab=S.tab==="tree"?"tree":"card";S.mode="gen";go({kind:"person",id:t.dataset.go});return}
+  if(t.dataset.src){S.mode="gen";go({kind:"source",id:t.dataset.src});return}
+  if(t.dataset.sel){select(t.dataset.sel);return}
+  if(t.hasAttribute("data-sel-clear")){S.sel=null;renderMainOnly();renderEvidence();return}
+  if(t.dataset.tab){S.tab=t.dataset.tab;renderMainOnly();return}
+  if(t.hasAttribute("data-mode-go")){S.mode=S.mode==="src"?"gen":"src";renderMainOnly();renderEvidence();return}
+  if(t.dataset.mode){S.mode=t.dataset.mode;renderMainOnly();renderEvidence();return}
+  if(t.dataset.kind){S.kind=t.dataset.kind;S.q="";document.getElementById("q").value="";renderIndex();return}
+  if(t.dataset.f){S.filter=t.dataset.f;renderIndex();return}
+});
+document.getElementById("q").addEventListener("input",e=>{S.q=e.target.value;renderIndex()});
+document.getElementById("back").onclick=()=>{const b=S.back.pop();if(!b)return;S.fwd.push({view:S.view,tab:S.tab});S.view=b.view;S.tab=b.tab;S.sel=null;render()};
+document.getElementById("fwd").onclick=()=>{const f=S.fwd.pop();if(!f)return;S.back.push({view:S.view,tab:S.tab});S.view=f.view;S.tab=f.tab;S.sel=null;render()};
+addEventListener("resize",()=>{if(S.tab==="tree"&&S.mode==="gen")drawLines()});
+document.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-theme]").forEach(x=>x.classList.toggle("on",x===b));
+  const s=document.getElementById("stage");s.classList.toggle("theme-dark",b.dataset.theme==="dark");s.classList.toggle("theme-light",b.dataset.theme==="light");if(S.tab==="tree")drawLines()});
+
+function load(text,name){
+  M=build(text,name);
+  Object.assign(S,{back:[],fwd:[],sel:null,tab:"card",mode:"gen",q:"",filter:"all",open:new Set()});
+  document.getElementById("q").value="";
+  const first=M.people.get("@I1@")||M.order[0];
+  S.view=first?{kind:"person",id:first.id}:null;
+  render();
+}
+document.getElementById("file").addEventListener("change",async e=>{const f=e.target.files[0];if(f)load(await f.text(),f.name)});
+load(document.getElementById("ged").textContent.trim(),"curie.ged");
+</script>
+</body>
+</html>

@@ -1,9 +1,12 @@
 # Research desk: the genealogy interface
 
 The design brief for reading and editing a GEDCOM file as genealogy. Product
-truth lives in [`PRODUCT.md`](../../PRODUCT.md); the interactive mockup is
-[`research-desk.html`](research-desk.html), built on `demo-vault/curie.ged`.
-Open it in a browser.
+truth lives in [`PRODUCT.md`](../../PRODUCT.md). Two interactive mockups sit
+beside this brief: [`research-desk-reading.html`](research-desk-reading.html),
+the first stage, which reads `demo-vault/curie.ged` itself, and
+[`research-desk.html`](research-desk.html), an earlier sketch that includes
+editing. Serve the repository root over HTTP and open them in a browser, so the
+vault's images load.
 
 Status: direction chosen, not yet specified. Reading ships first and editing is
 the next large step; what comes next is tracked in

@@ -21,9 +21,13 @@ reading has shipped.
 
 ### Refine the mockup
 
-Iterate in `research-desk.html` or beside it, one file per variant, before any
-code exists. Remove edit affordances from the reading variant.
+Iterate in [`research-desk-reading.html`](research-desk-reading.html), one file
+per variant, before any code exists. It reads its own embedded copy of
+`demo-vault/curie.ged` and can open any other `.ged`, so states and scale can be
+tried on real files.
 
+- [x] A reading variant with no edit affordances, a "show in source" bridge from
+      every fact and record, and source pages.
 - [ ] Compare the phone part with a real screenshot of Obsidian mobile (view
       header, bottom navbar, drawers) and correct it.
 - [ ] States: empty file, file with validation errors, broken pointer, the file
