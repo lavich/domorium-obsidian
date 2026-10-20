@@ -73,9 +73,10 @@ export function renderPersonPage(
 ): void {
   container.empty();
   const page = container.createDiv({ cls: "gedcom-desk-page" });
-  renderHeading(page, person, options, host);
+  const top = page.createDiv({ cls: "gedcom-desk-top" });
+  renderHeading(top, person, options, host);
   const view = options.view ?? "card";
-  renderTabs(page, view, host);
+  renderTabs(top, view, host);
   if (view === "timeline") {
     renderTimeline(page, timelineOf(person, index), host);
     return;

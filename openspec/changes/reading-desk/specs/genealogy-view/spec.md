@@ -334,6 +334,18 @@ A person page SHALL offer three views, switched by tabs below its heading:
 The tabs SHALL scroll sideways where they do not fit. The view chosen SHALL be
 kept when the tab moves to another person and when the workspace is restored.
 
+On a desktop the heading and the tabs SHALL stay at the top of the page while
+the rest of it scrolls. On a phone only the tabs SHALL stay; the heading SHALL
+scroll away with the page.
+
+#### Scenario: Scrolling a long page on a desktop
+- **WHEN** the reader scrolls to the end of Marie's card on a desktop
+- **THEN** her name and the tabs are still at the top of the page
+
+#### Scenario: Scrolling a long page on a phone
+- **WHEN** the reader scrolls to the end of Marie's card on a phone
+- **THEN** her name has scrolled away and the tabs are at the top of the screen
+
 #### Scenario: Switching to the timeline and moving on
 - **WHEN** the reader chooses Timeline on Marie's page and then opens Pierre
   Curie from it

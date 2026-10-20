@@ -162,6 +162,8 @@ function mount(options: DeskOptions): void {
   document.body.classList.toggle("theme-light", !(options.dark ?? false));
   phone = options.phone ?? false;
   element("desk-layout").classList.toggle("is-phone", phone);
+  document.body.classList.toggle("is-mobile", phone);
+  document.body.classList.toggle("is-phone", phone);
   calls.shownInSource = [];
   calls.evidenceOpened = 0;
   calls.filesOpened = [];

@@ -275,17 +275,41 @@
 .gedcom-desk {
   height: 100%;
   overflow-y: auto;
-  padding: var(--size-4-6) var(--size-4-8) var(--size-4-16);
+  padding: 0 var(--size-4-8) var(--size-4-16);
 }
 
 .is-mobile .gedcom-desk {
-  padding: var(--size-4-4) var(--size-4-4)
-    calc(var(--size-4-16) + var(--navbar-height, 0px));
+  padding: 0 var(--size-4-4) calc(var(--size-4-16) + var(--navbar-height, 0px));
 }
 
 .gedcom-desk-page {
   max-width: 720px;
   margin: 0 auto;
+  padding-top: var(--size-4-6);
+}
+
+.is-mobile .gedcom-desk-page {
+  padding-top: var(--size-4-4);
+}
+
+/* A person's heading and tabs stay in view while the page scrolls under them.
+   A phone keeps only the tabs: the heading would take a quarter of the screen. */
+.gedcom-desk-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--background-primary);
+}
+
+.is-phone .gedcom-desk-top {
+  display: contents;
+}
+
+.is-phone .gedcom-desk-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--background-primary);
 }
 
 .gedcom-desk-heading {

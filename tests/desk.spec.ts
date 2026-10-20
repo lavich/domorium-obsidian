@@ -188,6 +188,34 @@ test.describe("the views of a person page", () => {
     ]);
   });
 
+  test("keeps the heading and tabs in view on a desktop while the page scrolls", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 500 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk").evaluate((desk) => {
+      desk.scrollTop = desk.scrollHeight;
+    });
+    const desk = await page.locator(".gedcom-desk").boundingBox();
+    const title = await page.locator(".gedcom-desk-title").boundingBox();
+    const tabs = await page.locator(".gedcom-desk-tabs").boundingBox();
+
+    expect(Math.round(title?.y ?? -1)).toBeGreaterThanOrEqual(Math.round(desk?.y ?? 0));
+    expect((tabs?.y ?? 0) - (desk?.y ?? 0)).toBeLessThan(200);
+  });
+
+  test("lets the heading go on a phone, keeping the tabs at the top", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 700 });
+    await mountDesk(page, { phone: true });
+    await page.locator(".gedcom-desk").evaluate((desk) => {
+      desk.scrollTop = desk.scrollHeight;
+    });
+    const desk = await page.locator(".gedcom-desk").boundingBox();
+    const title = await page.locator(".gedcom-desk-title").boundingBox();
+    const tabs = await page.locator(".gedcom-desk-tabs").boundingBox();
+
+    expect((title?.y ?? 0) + (title?.height ?? 0)).toBeLessThan(desk?.y ?? 0);
+    expect(Math.round(tabs?.y ?? -1)).toBe(Math.round(desk?.y ?? 0));
+  });
+
   test("keeps the tabs on one line on a phone, scrolling sideways", async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await mountDesk(page, { phone: true });
