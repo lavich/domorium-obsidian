@@ -151,7 +151,7 @@ test.describe("the index of a large file", () => {
         input.value = query;
         input.dispatchEvent(new Event("input"));
       }
-      await new Promise((settled) => requestAnimationFrame(settled));
+      await new Promise((settled) => window.requestAnimationFrame(settled));
       return performance.now() - started;
     });
     expect(elapsed / 5, "milliseconds a keystroke").toBeLessThan(100);
