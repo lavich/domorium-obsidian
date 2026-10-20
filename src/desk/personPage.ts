@@ -72,8 +72,7 @@ export function renderPersonPage(
   host: PageHost,
 ): void {
   container.empty();
-  const page = container.createDiv({ cls: "gedcom-desk-page" });
-  const top = page.createDiv({ cls: "gedcom-desk-top" });
+  const { top, page } = frame(container, options.phone);
   renderHeading(top, person, options, host);
   const view = options.view ?? "card";
   renderTabs(top, view, host);
@@ -95,6 +94,22 @@ export function renderPersonPage(
   }
   renderFamily(page, person, host);
   renderGallery(page, options.media ?? [], host);
+}
+
+/**
+ * On a desktop the heading and tabs sit above a body of their own that scrolls
+ * beneath them. A phone scrolls the whole page and keeps only the tabs, since
+ * the heading would take a quarter of the screen.
+ */
+function frame(container: HTMLElement, phone: boolean): { top: HTMLElement; page: HTMLElement } {
+  if (phone) {
+    const page = container.createDiv({ cls: ["gedcom-desk-page", "is-phone"] });
+    return { top: page, page };
+  }
+  const split = container.createDiv({ cls: "gedcom-desk-frame" });
+  const top = split.createDiv({ cls: "gedcom-desk-top" }).createDiv({ cls: "gedcom-desk-page" });
+  const page = split.createDiv({ cls: "gedcom-desk-body" }).createDiv({ cls: "gedcom-desk-page" });
+  return { top, page };
 }
 
 function renderTabs(page: HTMLElement, current: PersonView, host: PageHost): void {

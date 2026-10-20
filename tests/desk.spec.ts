@@ -188,18 +188,25 @@ test.describe("the views of a person page", () => {
     ]);
   });
 
-  test("keeps the heading and tabs in view on a desktop while the page scrolls", async ({ page }) => {
+  test("scrolls only the body under the heading and tabs on a desktop", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 500 });
     await mountDesk(page);
-    await page.locator(".gedcom-desk").evaluate((desk) => {
-      desk.scrollTop = desk.scrollHeight;
-    });
-    const desk = await page.locator(".gedcom-desk").boundingBox();
-    const title = await page.locator(".gedcom-desk-title").boundingBox();
-    const tabs = await page.locator(".gedcom-desk-tabs").boundingBox();
+    const before = await page.locator(".gedcom-desk-tabs").boundingBox();
+    await page.locator(".gedcom-desk-body").hover();
+    await page.mouse.wheel(0, 2000);
+    await expect.poll(() =>
+      page.locator(".gedcom-desk-body").evaluate((body) => body.scrollTop),
+    ).toBeGreaterThan(0);
+    const after = await page.locator(".gedcom-desk-tabs").boundingBox();
+    const scrolls = await page.evaluate(() => ({
+      desk: document.querySelector(".gedcom-desk")?.scrollTop,
+      body: document.querySelector(".gedcom-desk-body")?.scrollTop,
+    }));
 
-    expect(Math.round(title?.y ?? -1)).toBeGreaterThanOrEqual(Math.round(desk?.y ?? 0));
-    expect((tabs?.y ?? 0) - (desk?.y ?? 0)).toBeLessThan(200);
+    expect(scrolls.desk).toBe(0);
+    expect(after?.y).toBe(before?.y);
+    const body = await page.locator(".gedcom-desk-body").boundingBox();
+    expect(body?.y ?? 0).toBeGreaterThanOrEqual((after?.y ?? 0) + (after?.height ?? 0) - 1);
   });
 
   test("lets the heading go on a phone, keeping the tabs at the top", async ({ page }) => {
