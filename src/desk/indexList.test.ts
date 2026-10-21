@@ -12,9 +12,7 @@ let open: ReturnType<typeof vi.fn<(xref: string) => void>>;
 let list: IndexList;
 
 const curie = (current: string | null = "@I1@"): IndexFile => ({
-  name: "curie.ged",
   index: curieIndex(),
-  version: "7.0",
   current,
 });
 
@@ -43,13 +41,6 @@ const type = (query: string): void => {
 };
 
 describe("the index of a file", () => {
-  it("names the file, its version and how many people it holds", () => {
-    list.show(curie());
-
-    expect(texts(".gedcom-desk-index-file")).toEqual(["curie.ged"]);
-    expect(texts(".gedcom-desk-index-meta")).toEqual(["GEDCOM 7.0 · 17 people"]);
-  });
-
   it("lists people in file order with their years and place", () => {
     list.show(curie());
 
@@ -174,7 +165,7 @@ describe("an index of twenty thousand people", () => {
   const big = buildIndex(new GedcomLanguageService(lines.join("\n")).getDocumentSymbols());
 
   it("draws a window of rows over a list as tall as all of them", () => {
-    list.show({ name: "big.ged", index: big, version: "7.0", current: null });
+    list.show({ index: big, current: null });
 
     expect(container.querySelectorAll(".gedcom-desk-row").length).toBeLessThan(100);
     expect(container.querySelector<HTMLElement>(".gedcom-desk-index-spacer")?.style.getPropertyValue("height"))

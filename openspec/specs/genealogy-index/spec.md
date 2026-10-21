@@ -14,14 +14,12 @@ The plugin SHALL offer an index view, named **Domorium**, that opens in the left
 sidebar from the plugin's ribbon icon and from a command. On a phone it SHALL be
 reached as Obsidian's other sidebar views are, from the left drawer.
 
-The index SHALL show the file of the GEDCOM tab most recently active, with the
-file's name, the GEDCOM version it declares and how many people it holds. With
-no GEDCOM tab open it SHALL say so.
+The index SHALL show the file of the GEDCOM tab most recently active. With no
+GEDCOM tab open it SHALL say so.
 
 #### Scenario: Opening the index
 - **WHEN** `curie.ged` is open and the reader clicks the ribbon icon
-- **THEN** the left sidebar shows the index of `curie.ged`, reading
-  `GEDCOM 7.0` and 17 people
+- **THEN** the left sidebar shows the people of `curie.ged`, all 17 of them
 
 #### Scenario: Moving to a Markdown note
 - **WHEN** the reader moves from the GEDCOM tab to a Markdown note

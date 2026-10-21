@@ -147,7 +147,7 @@ function draw(): void {
       links: media.links.flatMap((link) => mediaItem(link.at) ?? []),
     }, index, host);
   }
-  list?.show({ name: "curie.ged", index, version: "7.0", current: record });
+  list?.show({ index, current: record });
   renderEvidence(element("evidence-pane"), {
     index,
     record,

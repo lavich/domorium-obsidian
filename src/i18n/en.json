@@ -159,10 +159,6 @@
     "one": "{count} source",
     "other": "{count} sources"
   },
-  "index.meta": {
-    "one": "GEDCOM {version} · {count} person",
-    "other": "GEDCOM {version} · {count} people"
-  },
   "event.ADOP": "Adoption",
   "event.BAPM": "Baptism",
   "event.BARM": "Bar mitzvah",

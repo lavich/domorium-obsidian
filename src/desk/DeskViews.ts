@@ -79,12 +79,7 @@ export class IndexView extends ItemView {
     const view = this.host.followed();
     this.list?.show(
       view?.file
-        ? {
-            name: view.file.name,
-            index: view.genealogy(),
-            version: view.getStatus().version?.version ?? "?",
-            current: view.shownRecord(),
-          }
+        ? { index: view.genealogy(), current: view.shownRecord() }
         : null,
     );
   }

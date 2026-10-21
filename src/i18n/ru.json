@@ -171,12 +171,6 @@
     "many": "{count} источников",
     "other": "{count} источника"
   },
-  "index.meta": {
-    "one": "GEDCOM {version} · {count} человек",
-    "few": "GEDCOM {version} · {count} человека",
-    "many": "GEDCOM {version} · {count} человек",
-    "other": "GEDCOM {version} · {count} человека"
-  },
   "event.ADOP": "Усыновление",
   "event.BAPM": "Крещение",
   "event.BARM": "Бар-мицва",

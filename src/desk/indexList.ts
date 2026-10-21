@@ -31,9 +31,7 @@ export interface IndexHost {
 export const INDEX_KINDS: IndexKind[] = ["people", "families", "sources"];
 
 export interface IndexFile {
-  name: string;
   index: GenealogyIndex;
-  version: string;
   current: string | null;
 }
 
@@ -82,8 +80,6 @@ export class IndexList {
   private gapsOnly = false;
   private file: IndexFile | null = null;
   private rows: (PersonRow | FamilyRow | SourceRow)[] = [];
-  private readonly titleEl: HTMLElement;
-  private readonly metaEl: HTMLElement;
   private readonly kindEl: HTMLElement;
   private readonly searchEl: HTMLInputElement;
   private readonly filtersEl: HTMLElement;
@@ -98,9 +94,6 @@ export class IndexList {
     container.empty();
     const root = container.createDiv({ cls: "gedcom-desk-index" });
     const head = root.createDiv({ cls: "gedcom-desk-index-head" });
-    const title = head.createDiv({ cls: "gedcom-desk-index-title" });
-    this.titleEl = title.createSpan({ cls: "gedcom-desk-index-file" });
-    this.metaEl = title.createSpan({ cls: "gedcom-desk-index-meta" });
     this.kindEl = head.createDiv({ cls: "gedcom-desk-seg" });
     for (const kind of ["people", "families", "sources"] as const) {
       const button = this.kindEl.createEl("button", {
@@ -148,8 +141,6 @@ export class IndexList {
     this.kindEl.toggle(file !== null);
     this.searchEl.toggle(file !== null);
     if (!file) {
-      this.titleEl.setText("");
-      this.metaEl.setText("");
       this.filtersEl.empty();
       this.rows = [];
       this.spacerEl.setCssProps({ height: "" });
@@ -159,8 +150,6 @@ export class IndexList {
     }
     const { index } = file;
     const people = index.people.filter((row) => row.xref !== undefined);
-    this.titleEl.setText(file.name);
-    this.metaEl.setText(plural("index.meta", people.length, { version: file.version }));
     for (const button of Array.from(this.kindEl.children) as HTMLElement[]) {
       button.toggleClass("is-active", button.dataset.kind === this.kind);
     }
