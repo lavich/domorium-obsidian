@@ -32,8 +32,6 @@ describe("reading a personal name as GEDCOM writes it", () => {
   });
 
   it("is not a reader-facing string of its own", () => {
-    // The placeholder is a marker the caller names in the reader's language;
-    // the model carries no language.
     expect(UNNAMED.startsWith("@")).toBe(true);
   });
 });

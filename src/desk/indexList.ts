@@ -25,7 +25,6 @@ const FIRST_WINDOW = 40;
 
 export interface IndexHost {
   open(xref: string): void;
-  /** The list switched between people, families and sources. */
   kindChanged?(kind: IndexKind): void;
 }
 

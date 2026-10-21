@@ -11,7 +11,6 @@ export interface DocumentRef {
   path: string;
 }
 
-/** A record: the document it lives in, and its identifier within it. */
 export interface RecordRef {
   document: DocumentRef;
   xref: string;

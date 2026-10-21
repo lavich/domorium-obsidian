@@ -25,7 +25,6 @@ export interface PersonEvent {
   place?: string;
   /** What the line itself carried, as an occupation does. */
   value?: string;
-  /** What an `EVEN` or a `FACT` says it is, as written. */
   type?: string;
   range: Range;
   /** What this event itself cites, never what the record around it does. */
@@ -38,18 +37,15 @@ export interface PersonEvent {
  * GEDCOM says "this person is the second face from the left".
  */
 export interface PersonMedia {
-  /** A vault path, or a web address, as the document wrote it. */
   file: string;
   form?: string;
   title?: string;
   crop?: MediaCrop;
   /** On the link naming it, where the language service answers what it is. */
   at: Position;
-  /** The multimedia record the link names, where it names one. */
   record?: string;
 }
 
-/** A multimedia record, and a record's link to one. */
 export interface MediaLink {
   record: string;
   title?: string;
@@ -88,23 +84,18 @@ export interface PersonRow extends Row {
   place?: string;
 }
 
-/** A family record carries no name of its own. */
 export interface FamilyRow extends Row {
-  /** The names of the people it joins, in the order the record names them. */
   spouseNames: string[];
-  /** Those names joined, so a caller need not join them a second way. */
   name?: string;
   marriage?: DateReading;
   place?: string;
   childCount: number;
 }
 
-/** A person, with the role that named them where one did. */
 export interface FamilyMember extends PersonRow {
   role: string;
 }
 
-/** What the format says about a source, tag by tag, in record order. */
 export interface SourceField {
   tag: string;
   value: string;
@@ -119,11 +110,9 @@ export interface Repository {
 export interface SourceRow extends Row {
   title: string;
   author?: string;
-  /** The name of the repository it points at, where the document declares one. */
   repository?: string;
 }
 
-/** Read in full when a source is opened, rather than for all of them. */
 export interface Source extends SourceRow {
   fields: SourceField[];
   heldAt?: Repository;
@@ -139,11 +128,9 @@ export interface Source extends SourceRow {
  * on the spot.
  */
 export interface Citation {
-  /** The record that makes it. */
   record: string;
   /** The source it names, declared or not. Absent for a source described inline. */
   source?: string;
-  /** What an inline `SOUR` line says the source is. */
   inline?: string;
   /**
    * The tag of the structure the pointer sat beneath. Absent where it sat on
@@ -162,7 +149,6 @@ export interface Citation {
   range: Range;
 }
 
-/** Read in full when a family is opened, rather than for all of them. */
 export interface Family extends FamilyRow {
   spouses: FamilyMember[];
   children: FamilyMember[];
@@ -174,7 +160,6 @@ export interface Family extends FamilyRow {
   range: Range;
 }
 
-/** A pointer to a record the document does not declare, and the line making it. */
 export interface Missing {
   xref: string;
   range: Range;
@@ -187,37 +172,29 @@ export interface Union {
   spouse?: PersonRow;
   events: PersonEvent[];
   children: PersonRow[];
-  /** Spouses and children this family names and the document does not declare. */
   missingSpouses: Missing[];
   missingChildren: Missing[];
 }
 
-/** Read in full when a person is opened, rather than for all of them. */
 export interface Person extends PersonRow {
   media: PersonMedia[];
-  /** The first picture the document calls an image. */
   portrait?: PersonMedia;
   parents: PersonRow[];
   partners: PersonRow[];
   children: PersonRow[];
   events: PersonEvent[];
-  /** The families the record points at, each kind kept apart. */
   childFamilies: FamilyRow[];
   spouseFamilies: FamilyRow[];
   siblings: PersonRow[];
-  /** In the order the record points at its spouse-families. */
   unions: Union[];
   /** A child-family, or a parent in one, the document does not declare. */
   missingParents: Missing[];
-  /** A spouse-family the document does not declare. */
   missingUnions: Missing[];
-  /** Identifiers this person's record pointed at and the document does not hold. */
   unresolved: string[];
   range: Range;
 }
 
 export interface GenealogyIndex {
-  /** In the order the file declares them. */
   people: PersonRow[];
   families: FamilyRow[];
   sources: SourceRow[];
@@ -225,9 +202,7 @@ export interface GenealogyIndex {
   family(xref: string): Family | undefined;
   source(xref: string): Source | undefined;
   media(xref: string): MediaRecord | undefined;
-  /** What this record cites, in the order it writes the citations. */
   citesBy(xref: string): Citation[];
-  /** What cites this source, in the order the file declares the citers. */
   citedBy(xref: string): Citation[];
 }
 
@@ -275,7 +250,6 @@ function payloadPosition(line: DocumentSymbol): Position {
   };
 }
 
-/** The pictures a record points at, whichever kind of record it is. */
 function mediaOf(
   record: DocumentSymbol,
   objects: Map<string, DocumentSymbol>,
@@ -316,7 +290,6 @@ function mediaOf(
   return media;
 }
 
-/** What a source record states about itself, as the format writes it. */
 const SOURCE_FIELD_TAGS: ReadonlySet<string> = new Set([
   "TITL", "AUTH", "PUBL", "ABBR", "TEXT", "REFN", "RIN",
 ]);
@@ -465,7 +438,6 @@ function eventsOf(
 
 const NO_EVENTS: ReadonlySet<string> = new Set();
 
-/** The spouses' names joined, which is the only name a family record has. */
 function familyName(names: string[]): string | undefined {
   return names.length > 0 ? names.join(" / ") : undefined;
 }
@@ -594,7 +566,6 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     }
   }
 
-  /** A family's row. People are resolved because the name needs them. */
   function familyRowOf(record: DocumentSymbol): FamilyRow {
     const spouseNames: string[] = [];
     for (const pointer of rolePointers(record, SPOUSE_ROLE_TAGS)) {

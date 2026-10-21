@@ -12,7 +12,6 @@ function centreX(box: TreeBox): number {
   return box.x + BOX.width / 2;
 }
 
-/** Where the lines from a couple, or from one parent, start. */
 function origin(from: TreeBox[]): { x: number; y: number } {
   const [one, other] = from;
   if (one && other) {

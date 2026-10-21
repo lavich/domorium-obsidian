@@ -263,9 +263,6 @@
   background-color: var(--interactive-hover);
 }
 
-/* The research desk: a GEDCOM tab in Genealogy mode, its index and its
-   evidence panel. Everything here is drawn from Obsidian's own variables. */
-
 .gedcom-desk,
 .gedcom-desk-index,
 .gedcom-desk-evidence {
@@ -579,8 +576,6 @@ button.gedcom-desk-person:hover {
   }
 }
 
-/* Index */
-
 .gedcom-desk-index {
   display: flex;
   flex-direction: column;
@@ -730,8 +725,6 @@ button.gedcom-desk-row.is-current {
   background: var(--text-warning);
 }
 
-/* Evidence */
-
 .gedcom-desk-evidence-head {
   padding-bottom: var(--size-4-2);
   border-bottom: 1px solid var(--background-modifier-border);
@@ -809,8 +802,6 @@ button.gedcom-desk-cite:hover {
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
 }
-
-/* Media and notes */
 
 .gedcom-desk-who {
   display: flex;
@@ -989,8 +980,6 @@ button.gedcom-desk-note-line:hover {
   padding: 0 2px;
 }
 
-/* Views of a person page */
-
 .gedcom-desk-tabs {
   display: flex;
   gap: var(--size-2-1);
@@ -1135,8 +1124,6 @@ button.gedcom-desk-moment-what:disabled {
   align-self: center;
   white-space: nowrap;
 }
-
-/* Tree */
 
 .gedcom-desk-page.is-wide {
   max-width: none;

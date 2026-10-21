@@ -144,7 +144,6 @@ export class EvidenceView extends ItemView {
     );
   }
 
-  /** The notes are read again the next time the panel is drawn for this record. */
   forgetNotes(): void {
     this.notes = null;
   }

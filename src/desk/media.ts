@@ -4,12 +4,9 @@ import { drawnCrop, type MediaPreviewContent } from "../editor/media";
 import { t, type MessageKey } from "../i18n";
 import { linkButton } from "./dom";
 
-/** One file a record links, as the language service and the vault answer for it. */
 export interface MediaItem {
   content: MediaPreviewContent;
-  /** The vault path a file in the vault opens at. */
   path?: string;
-  /** The multimedia record the link names, for its page. */
   record?: string;
   at: Position;
 }
@@ -37,7 +34,6 @@ function fitCrop(box: HTMLElement, image: HTMLImageElement, crop: MediaCrop, wid
   });
 }
 
-/** An image in a box of the given size, cut to the rectangle where there is one. */
 export function drawPicture(
   parent: HTMLElement,
   content: Extract<MediaPreviewContent, { kind: "image" }>,
@@ -133,7 +129,6 @@ function tileNote(content: Exclude<MediaPreviewContent, { kind: "image" }>): str
   }
 }
 
-/** The person's portrait for a page heading, or nothing where none is an image. */
 export function renderPortrait(parent: HTMLElement, items: MediaItem[]): void {
   const portrait = items.find(
     (item): item is MediaItem & { content: Extract<MediaPreviewContent, { kind: "image" }> } =>

@@ -99,12 +99,10 @@ export interface GedcomViewHost {
   remoteImages(): boolean;
   /** What the offer in the popover was answered with. */
   allowRemoteImages(scope: AllowScope): void;
-  /** The text, the mode, the record or the selected fact changed. */
   genealogyChanged(view: GedcomView): void;
   openEvidence(): void;
 }
 
-/** What the evidence panel reads from a tab in Genealogy mode. */
 export interface DeskSelection {
   index: GenealogyIndex;
   record: string;
@@ -698,7 +696,6 @@ export class GedcomView extends TextFileView {
     });
   }
 
-  /** What the link at this position names, as the language service and the vault answer. */
   private mediaItem(at: Position): MediaItem | null {
     const reference = this.language.update(this.editor.state.doc).getMediaAt(at);
     if (!reference) {

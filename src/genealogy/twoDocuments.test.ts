@@ -45,7 +45,6 @@ describe("two documents declaring the same identifier", () => {
     cache.at(documentRef("curie.ged"), "r1", () => symbols(CURIE));
     cache.at(documentRef("joliot.ged"), "r1", () => symbols(JOLIOT));
 
-    // Asked again, each still answers with its own person.
     expect(
       cache.at(documentRef("curie.ged"), "r1", () => []).person("@I1@")?.name,
     ).toBe("Marie Skłodowska-Curie");

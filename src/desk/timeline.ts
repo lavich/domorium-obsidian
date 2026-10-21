@@ -8,9 +8,7 @@ export interface TimelineEntry {
   event: PersonEvent;
   label: string;
   own: boolean;
-  /** The relative the entry is about, to open. */
   relative?: { xref: string; name: string };
-  /** The person's own fact, to select. */
   fact?: FactKey;
 }
 

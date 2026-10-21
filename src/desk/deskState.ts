@@ -6,7 +6,6 @@ export type DeskMode = OpenAsMode;
 
 export type PageKind = "person" | "family" | "source" | "media";
 
-/** What a tab keeps of the desk across a restart, beside the file it shows. */
 export interface DeskState {
   mode?: DeskMode;
   record?: string;
@@ -38,10 +37,6 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   return index.media(xref) ? "media" : null;
 }
 
-/**
- * The first of the preferred records that has a page, else the file's first
- * person, else its first source. Null for a file with neither.
- */
 export function recordToShow(
   index: GenealogyIndex,
   preferred: (string | undefined)[],
@@ -58,14 +53,12 @@ export function recordToShow(
   );
 }
 
-/** What the index needs of the tab it follows. */
 export interface IndexTarget {
   inSource(): boolean;
   goToXref(xref: string): boolean;
   openRecord(xref: string): void;
 }
 
-/** The index keeps the tab in the mode it is in: a page there, a line here. */
 export function openFromIndex(tab: IndexTarget, xref: string): void {
   if (tab.inSource()) {
     tab.goToXref(xref);
@@ -79,10 +72,7 @@ export type LinkRoute =
   | { to: "source"; xref: string }
   | { to: "nowhere" };
 
-/**
- * Where a link into a record lands in Genealogy mode. `declared` answers
- * whether the file holds a record by that identifier of any kind.
- */
+/** `declared` answers whether the file holds a record of any kind by that identifier. */
 export function routeLink(
   index: GenealogyIndex,
   xref: string,

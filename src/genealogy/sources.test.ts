@@ -95,8 +95,6 @@ describe("citations, read both ways", () => {
   it("reports what cites a source, in document order", () => {
     const citing = index().citedBy("@S1@");
 
-    // @I1@ is declared first and cites it too: the collection is over the
-    // whole document, not over the records this test added.
     expect(citing.map((one) => one.record)).toEqual([
       "@I1@", "@I17@", "@I17@", "@I18@", "@I19@",
     ]);

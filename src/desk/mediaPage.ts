@@ -5,7 +5,6 @@ import { drawPicture, renderTile, type MediaHost, type MediaItem } from "./media
 import { linkButton } from "./dom";
 import type { PageHost } from "./personPage";
 
-/** The record's own file, and each link to it, as the vault answers for them. */
 export interface MediaPageItems {
   whole: MediaItem | null;
   links: MediaItem[];

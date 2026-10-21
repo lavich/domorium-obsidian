@@ -134,8 +134,6 @@ export function layoutTree(
     return [run];
   };
 
-  // The row of the person in focus, left to right: their siblings, a first
-  // spouse, the person, a second spouse and any after, the first spouse's siblings.
   const spouses = focus.unions.map((union) => union.spouse);
   const firstSpouse = read(spouses[0]);
   const ownSiblings = siblingsOf(focus);
@@ -157,8 +155,6 @@ export function layoutTree(
     }
   });
 
-  // Upwards: the parents of the person and of the first spouse, then each
-  // parent's own parents.
   const parentGroup = (person: Person | undefined, child: TreeBox, gen: number, under: TreeBox[]): Group | null => {
     if (!person || person.parents.length === 0) {
       return null;
@@ -185,8 +181,6 @@ export function layoutTree(
     .filter((group): group is Group => group !== null);
   place(up2);
 
-  // Downwards: each marriage's children with their spouses, then each child's
-  // children.
   const down1: Group[] = [];
   const childUnits: { child: TreeBox; spouse?: TreeBox; person?: Person }[] = [];
   focus.unions.forEach((union, at) => {

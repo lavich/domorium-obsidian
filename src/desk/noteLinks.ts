@@ -33,7 +33,6 @@ const REACH = 80;
 
 const WIKILINK = /!?\[\[((?:[^\]\\]|\\.)+?)\]\]/gu;
 
-/** What a link reads as in a note: its alias, or else its target. */
 function shown(inner: string): string {
   const alias = /^(.*?)\\?\|(.*)$/u.exec(inner);
   if (alias) {
@@ -42,7 +41,6 @@ function shown(inner: string): string {
   return inner.replace(/#\^?/u, " › ");
 }
 
-/** A line with its links read as text, and where one of them now lies. */
 function readable(line: string, from: number, to: number): { text: string; start: number; end: number } {
   let text = "";
   let start = -1;
@@ -82,10 +80,7 @@ function lineAround(text: string, link: CachedLink): NoteLine {
   };
 }
 
-/**
- * The notes whose links name the record, each once with every line that does.
- * `resolve` answers which vault file a link's path means from a note.
- */
+/** `resolve` answers which vault file a link's path means from a note. */
 export function notesLinking(
   notes: NoteLinks[],
   target: { path: string; xref: string },

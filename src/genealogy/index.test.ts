@@ -51,7 +51,6 @@ describe("the people a document declares", () => {
   });
 
   it("takes the place from death where birth states none", () => {
-    // @I9@ has a bare DEAT and a BURI whose date is in another calendar.
     const bare = index().people.find((row) => row.xref === "@I9@");
 
     expect(bare?.birth).toBeUndefined();
@@ -103,13 +102,11 @@ describe("relatives, resolved through families", () => {
   });
 
   it("does not check a spouse's sex against the role that names them", () => {
-    // @I10@ is recorded female and sits in the role GEDCOM names for a husband.
     expect(person("@I10@").sex).toBe("F");
     expect(names(person("@I11@").partners)).toEqual(["First Spouse"]);
   });
 
   it("reads no relative from a role that is neither spouse nor child", () => {
-    // @F2@ names @I7@ as an associate. That is not a child of the family.
     const marie = person("@I1@");
 
     expect(marie.children.map((one) => one.xref)).not.toContain("@I7@");
@@ -295,7 +292,6 @@ describe("the pictures a record points at", () => {
   });
 
   it("takes the first image, not the first picture of any kind", () => {
-    // @I15@ points at the sound recording first and the image second.
     const sounded = person("@I15@");
 
     expect(sounded.media[0]?.file).toBe("Media/interview.mp3");
@@ -303,8 +299,6 @@ describe("the pictures a record points at", () => {
   });
 
   it("refuses a rectangle the record states only part of", () => {
-    // A rectangle missing a side is not a rectangle, and the whole picture is
-    // a better answer than a guessed one.
     expect(person("@I16@").portrait?.crop).toBeUndefined();
     expect(person("@I16@").portrait?.file).toBe("Media/portrait.png");
   });
@@ -328,8 +322,6 @@ describe("the pictures a record points at", () => {
   });
 
   it("reads nothing about what is on disk", () => {
-    // The model names a file. Whether it exists, its size and its pixels are
-    // all the host's business.
     expect(person("@I12@").portrait).not.toHaveProperty("width");
     expect(person("@I12@").portrait).not.toHaveProperty("exists");
   });
