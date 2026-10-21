@@ -1,6 +1,9 @@
+import type { Position, Range } from "@domorium/language-service";
+
 import type { GenealogyIndex } from "../genealogy";
 import type { OpenAsMode } from "../settingsData";
-import { PERSON_VIEWS, type PersonView } from "./personPage";
+import { familyFactByKey } from "./familyPage";
+import { factByKey, PERSON_VIEWS, type FactKey, type PersonView } from "./personPage";
 
 export type DeskMode = OpenAsMode;
 
@@ -83,3 +86,26 @@ export function routeLink(
   }
   return declared(xref) ? { to: "source", xref } : { to: "nowhere" };
 }
+
+/** The lines of the fact shown, or else of the whole record shown. */
+export function shownRange(
+  index: GenealogyIndex,
+  record: string,
+  fact: FactKey | null,
+): Range | null {
+  const person = index.person(record);
+  if (person) {
+    return factByKey(person, fact)?.event.range ?? person.range;
+  }
+  const family = index.family(record);
+  if (family) {
+    return familyFactByKey(family, fact)?.event.range ?? family.range;
+  }
+  return index.source(record)?.range ?? index.media(record)?.range ?? null;
+}
+
+/** Leaves a cursor already inside the lines alone, so switching back and forth does not move it. */
+export function cursorInside(range: Range, cursor: Position): boolean {
+  return cursor.line >= range.start.line && cursor.line <= range.end.line;
+}
+

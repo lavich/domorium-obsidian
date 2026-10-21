@@ -60,8 +60,10 @@ import { openSearch } from "./editor/searchPanel";
 import type { SearchKeyBinding } from "./editor/searchKeys";
 import { routeDocumentLink } from "./editor/service";
 import {
+  cursorInside,
   pageKind,
   readDeskState,
+  shownRange,
   recordToShow,
   routeLink,
   type DeskMode,
@@ -335,7 +337,26 @@ export class GedcomView extends TextFileView {
       this.setMode("genealogy");
     } else {
       this.setMode("source");
+      this.moveCursorToShown();
     }
+  }
+
+  private moveCursorToShown(): void {
+    if (this.record === null) {
+      return;
+    }
+    const range = shownRange(this.genealogy(), this.record, this.selected);
+    const { doc, selection } = this.editor.state;
+    const line = doc.lineAt(selection.main.head).number - 1;
+    if (!range || cursorInside(range, { line, character: 0 })) {
+      return;
+    }
+    const anchor = positionToOffset(doc, range.start);
+    this.editor.dispatch({
+      selection: { anchor },
+      effects: EditorView.scrollIntoView(anchor, { y: "center" }),
+    });
+    this.editor.focus();
   }
 
   /** One reading of the text this tab holds now, typed but unsaved included. */

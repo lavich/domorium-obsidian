@@ -18,6 +18,10 @@ switch the active GEDCOM tab between them. Switching SHALL NOT change, save or
 mark as changed the file, and SHALL NOT discard text typed but not yet saved in
 Source mode.
 
+Switching to Source mode SHALL put the cursor at the start of what the page
+shows — the selected fact, or else the whole record — and scroll it into view,
+unless the cursor is already within those lines.
+
 Each tab SHALL remember its own mode, and its record, across closing and
 reopening the workspace. A file opened anew SHALL open in the mode the *Open
 GEDCOM files as* setting names, which SHALL offer Genealogy and Source and
@@ -35,6 +39,11 @@ SHALL default to Genealogy.
 - **WHEN** the reader types in Source mode, switches to Genealogy before the
   file is saved, and switches back
 - **THEN** the typed text is still there, and the page in between reflected it
+
+#### Scenario: Switching to the source from Marie's birth
+- **WHEN** Marie's birth is selected on her page and the reader switches to
+  Source mode
+- **THEN** the cursor is on her `1 BIRT` line, in view
 
 #### Scenario: A tab restored with the workspace
 - **WHEN** a tab in Source mode and a tab in Genealogy mode showing Pierre Curie

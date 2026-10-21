@@ -2,7 +2,16 @@ import { GedcomLanguageService } from "@domorium/language-service";
 import { describe, expect, it, vi } from "vitest";
 
 import { buildIndex } from "../genealogy";
-import { openFromIndex, pageKind, readDeskState, recordToShow, routeLink } from "./deskState";
+import { curieIndex } from "../testing/curie";
+import {
+  cursorInside,
+  openFromIndex,
+  pageKind,
+  readDeskState,
+  recordToShow,
+  routeLink,
+  shownRange,
+} from "./deskState";
 
 const CURIE = [
   "0 HEAD",
@@ -120,3 +129,30 @@ describe("a row of the index, activated", () => {
     expect(source.openRecord).not.toHaveBeenCalled();
   });
 });
+
+describe("where the source opens when the tab switches to it", () => {
+  const curie = curieIndex();
+  const marie = curie.person("@I1@");
+
+  it("opens on the selected fact", () => {
+    expect(shownRange(curie, "@I1@", "p:0")).toEqual(marie?.events[0]?.range);
+  });
+
+  it("opens on the whole record when no fact is selected", () => {
+    expect(shownRange(curie, "@I1@", null)).toEqual(marie?.range);
+  });
+
+  it("opens on a family's fact, a source and a multimedia record too", () => {
+    expect(shownRange(curie, "@F3@", "f:0")).toEqual(curie.family("@F3@")?.events[0]?.range);
+    expect(shownRange(curie, "@S1@", null)).toEqual(curie.source("@S1@")?.range);
+    expect(shownRange(curie, "@O5@", null)).toEqual(curie.media("@O5@")?.range);
+  });
+
+  it("leaves a cursor already inside the lines where it is", () => {
+    const range = { start: { line: 14, character: 0 }, end: { line: 44, character: 7 } };
+
+    expect(cursorInside(range, { line: 20, character: 3 })).toBe(true);
+    expect(cursorInside(range, { line: 2, character: 0 })).toBe(false);
+  });
+});
+
