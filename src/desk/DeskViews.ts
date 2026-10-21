@@ -1,11 +1,11 @@
-import { ItemView, Platform, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Platform, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 
 import type { GedcomView } from "../GedcomView";
 import { GEDCOM_ICON_ID } from "../icon";
 import { t } from "../i18n";
 import { openFromIndex } from "./deskState";
 import { renderEvidence } from "./evidence";
-import { IndexList } from "./indexList";
+import { INDEX_KINDS, IndexList, type IndexKind } from "./indexList";
 import type { NoteHit } from "./noteLinks";
 
 export const INDEX_VIEW_TYPE = "domorium-index";
@@ -20,6 +20,7 @@ export interface DeskViewsHost {
 
 export class IndexView extends ItemView {
   private list: IndexList | null = null;
+  private kind: IndexKind = "people";
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -40,6 +41,19 @@ export class IndexView extends ItemView {
     return GEDCOM_ICON_ID;
   }
 
+  getState(): Record<string, unknown> {
+    return { ...super.getState(), kind: this.kind };
+  }
+
+  async setState(state: unknown, result: ViewStateResult): Promise<void> {
+    const kind = (state as { kind?: unknown } | null)?.kind;
+    if (INDEX_KINDS.includes(kind as IndexKind)) {
+      this.kind = kind as IndexKind;
+      this.list?.showKind(this.kind);
+    }
+    await super.setState(state, result);
+  }
+
   onOpen(): Promise<void> {
     this.list = new IndexList(this.contentEl, {
       open: (xref) => {
@@ -51,7 +65,12 @@ export class IndexView extends ItemView {
           this.app.workspace.leftSplit.collapse();
         }
       },
+      kindChanged: (kind) => {
+        this.kind = kind;
+        this.app.workspace.requestSaveLayout();
+      },
     });
+    this.list.showKind(this.kind);
     this.redraw();
     return Promise.resolve();
   }

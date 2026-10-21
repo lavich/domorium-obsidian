@@ -32,7 +32,7 @@ no GEDCOM tab open it SHALL say so.
 ### Requirement: People, families and sources
 
 The index SHALL list the file's people, its families or its sources, switched
-at its top. People SHALL be listed in the order the file declares them, each with their
+at its top. The list chosen SHALL be kept when the workspace is restored. People SHALL be listed in the order the file declares them, each with their
 name, their years as the person page shows them, and the place of birth, or of
 death where no birth place is stated. Families SHALL be listed in the order the
 file declares them, each named by its spouses as the family page names it, with

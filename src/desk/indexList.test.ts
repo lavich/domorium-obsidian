@@ -117,6 +117,18 @@ describe("the index of a file", () => {
     expect(open).toHaveBeenCalledWith("@F5@");
   });
 
+  it("says when the reader switches what it lists, and can be set to a list", () => {
+    const kindChanged = vi.fn();
+    const told = new IndexList(container, { open, kindChanged });
+    told.show(curie());
+    click(".gedcom-desk-seg-button", "Families");
+    expect(kindChanged).toHaveBeenCalledWith("families");
+
+    told.showKind("sources");
+    expect(told.shownKind).toBe("sources");
+    expect(texts(".gedcom-desk-seg-button.is-active")).toEqual(["Sources"]);
+  });
+
   it("lists sources with how many records cite them", () => {
     list.show(curie());
     click(".gedcom-desk-seg-button", "Sources");

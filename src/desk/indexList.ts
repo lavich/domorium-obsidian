@@ -25,7 +25,11 @@ const FIRST_WINDOW = 40;
 
 export interface IndexHost {
   open(xref: string): void;
+  /** The list switched between people, families and sources. */
+  kindChanged?(kind: IndexKind): void;
 }
+
+export const INDEX_KINDS: IndexKind[] = ["people", "families", "sources"];
 
 export interface IndexFile {
   name: string;
@@ -107,10 +111,8 @@ export class IndexList {
       button.setAttribute("type", "button");
       button.dataset.kind = kind;
       button.addEventListener("click", () => {
-        this.kind = kind;
-        this.query = "";
-        this.searchEl.value = "";
-        this.refresh();
+        this.showKind(kind);
+        this.host.kindChanged?.(kind);
       });
     }
     this.searchEl = head.createEl("input", { cls: "gedcom-desk-search" });
@@ -124,6 +126,17 @@ export class IndexList {
     this.spacerEl = this.listEl.createDiv({ cls: "gedcom-desk-index-spacer" });
     this.windowEl = this.spacerEl.createDiv({ cls: "gedcom-desk-index-window" });
     this.listEl.addEventListener("scroll", () => this.drawWindow(), { passive: true });
+  }
+
+  get shownKind(): IndexKind {
+    return this.kind;
+  }
+
+  showKind(kind: IndexKind): void {
+    this.kind = kind;
+    this.query = "";
+    this.searchEl.value = "";
+    this.refresh();
   }
 
   show(file: IndexFile | null): void {
