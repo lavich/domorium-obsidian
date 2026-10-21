@@ -55,6 +55,9 @@ upstream rather than in a workaround here. File them as issues in
 - [ ] A line's value apart from its pointer, with `CONT`/`CONC` joined.
 - [ ] Places in parts, with `MAP`.
 
+Drafts of these three, checked against upstream, are in
+[`upstream-issue-drafts.md`](upstream-issue-drafts.md); they are filed by hand.
+
 ### Specify and build, in slices
 
 Each slice is an OpenSpec change: `/openspec-propose`, review, then
