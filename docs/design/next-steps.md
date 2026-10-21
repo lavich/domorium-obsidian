@@ -76,7 +76,8 @@ Each slice is an OpenSpec change: `/openspec-propose`, review, then
 - [x] **Tree.** Hourglass around the focus, siblings collapsed; laid out and
       tested apart from the page, including wide families, two marriages and a
       cousin marriage.
-- [ ] Close `feat/person-browser`, now that its read model has moved.
+- [x] Close `feat/person-browser`, now that its read model has moved. Deleted at
+      `fc2ba27`.
 
 ## Stage 2: editing
 
