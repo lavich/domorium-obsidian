@@ -58,16 +58,21 @@ upstream rather than in a workaround here. File them as issues in
 ### Specify and build, in slices
 
 Each slice is an OpenSpec change: `/openspec-propose`, review, then
-`/openspec-apply-change`.
+`/openspec-apply-change`. So far every slice has gone into one change,
+`openspec/changes/reading-desk`, on branch `lavich/research-desk-design`.
 
-- [ ] **Reading.** File opens as genealogy; people and sources index; person
-      card; evidence panel; source pages; "show in source". Brings over the read
-      model from `feat/person-browser`.
-- [ ] **Timeline and Places.** Places as a list, no map.
+- [x] **Reading.** File opens as genealogy; people, families and sources index;
+      person, family and source pages; evidence panel; "show in source". Brings
+      over the read model from `feat/person-browser`. Checked in Obsidian on the
+      demo vault; Back and Forward, and a phone, are still to be checked there.
+- [x] **Evidence from the vault.** Portraits and galleries, a page per
+      multimedia record, and the vault notes that link a record in the evidence
+      panel.
+- [x] **Timeline and Places.** Places as a list, no map; no ages until dates
+      are read in full upstream.
 - [ ] **Tree.** Hourglass around the focus, siblings collapsed; prototyped in
-      `harness/` against a large file first.
-- [ ] **Evidence from the vault.** Notes that link to a record, and media the
-      record references, shown in the evidence panel.
+      `harness/` first.
+- [ ] Close `feat/person-browser`, now that its read model has moved.
 
 ## Stage 2: editing
 
