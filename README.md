@@ -58,7 +58,7 @@ Back and forward move between the pages you visited. **Show in source** on a
 page, a fact or a missing relative switches to Source with exactly those lines
 selected, which is where a correction is made.
 
-The ribbon icon, or **Open the people index**, puts an index of the file's
+The ribbon icon, or **Open Domorium**, puts an index of the file's
 people, families and sources in the left sidebar: search by name, year or
 place, and a filter for the people whose records cite no source at all. A row
 opens its page in Genealogy mode, and in Source mode puts the cursor on the

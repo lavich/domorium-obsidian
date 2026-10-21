@@ -105,7 +105,7 @@
   "mode.toGenealogy": "Показать как генеалогию",
   "mode.toSource": "Показать исходник",
   "command.toggleMode": "Переключить генеалогию и исходник",
-  "command.openIndex": "Открыть указатель людей",
+  "command.openIndex": "Открыть Domorium",
   "command.openEvidence": "Открыть панель доказательств",
   "desk.facts": "Факты",
   "desk.otherNames": "Другие имена",

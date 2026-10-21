@@ -147,7 +147,7 @@ describe("the two sides of the catalogue", () => {
   it("spell the English side in sentence case", () => {
     const options = {
       acronyms: ["GEDCOM", "LDS", "URL"],
-      brands: ["Obsidian"],
+      brands: ["Domorium", "Obsidian"],
       // A GEDCOM tag, and two modifier keys.
       ignoreWords: ["FILE", "Ctrl", "Cmd"],
       // A status-bar fragment, and three phrases CodeMirror looks up as it

@@ -95,7 +95,7 @@
   "mode.toGenealogy": "Show as genealogy",
   "mode.toSource": "Show source",
   "command.toggleMode": "Switch between genealogy and source",
-  "command.openIndex": "Open the people index",
+  "command.openIndex": "Open Domorium",
   "command.openEvidence": "Open the evidence panel",
   "desk.facts": "Facts",
   "desk.otherNames": "Other names",
