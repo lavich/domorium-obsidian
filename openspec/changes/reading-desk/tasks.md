@@ -78,3 +78,10 @@
 - [x] 9.4 Style the tabs, the timeline and the places; cover the tabs on a phone, the timeline and the places in `tests/desk.spec.ts`; check in Obsidian
 - [x] 9.5 Run `npm run check` and `npm run test:browser`; both pass
 
+## 10. Tree
+
+- [x] 10.1 Lay out the tree around a person in `src/desk/treeLayout.ts`; covered by a new `src/desk/treeLayout.test.ts`, with two marriages, a wide family and a cousin marriage
+- [x] 10.2 Draw it, and add the Tree tab, in `src/desk/treeView.ts` and `src/desk/personPage.ts`; covered by a new `src/desk/treeView.test.ts`
+- [x] 10.3 Expand a run of siblings, kept for the session in `GedcomView`; cover the tree on a desktop and a phone in `tests/desk.spec.ts`; check in Obsidian
+- [x] 10.4 Run `npm run check` and `npm run test:browser`; both pass
+

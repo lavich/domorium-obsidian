@@ -1135,3 +1135,129 @@ button.gedcom-desk-moment-what:disabled {
   align-self: center;
   white-space: nowrap;
 }
+
+/* Tree */
+
+.gedcom-desk-page.is-wide {
+  max-width: none;
+}
+
+.gedcom-desk-tree {
+  overflow: auto;
+  padding: var(--size-4-4) 0 var(--size-4-2);
+}
+
+.gedcom-desk-tree-canvas {
+  position: relative;
+  margin: 0 auto;
+}
+
+.gedcom-desk-tree-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.gedcom-desk-tree-lines path {
+  fill: none;
+  stroke: var(--background-modifier-border);
+  stroke-width: 1.5;
+}
+
+button.gedcom-desk-node {
+  position: absolute;
+  width: 172px;
+  height: 48px;
+  padding: var(--size-2-2) var(--size-4-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: none;
+  text-align: start;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+button.gedcom-desk-node:hover {
+  background: var(--background-primary);
+  border-color: var(--text-faint);
+}
+
+button.gedcom-desk-node.is-focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 3px var(--background-modifier-active-hover);
+  cursor: default;
+}
+
+button.gedcom-desk-node.is-dim {
+  opacity: 0.65;
+}
+
+.gedcom-desk-node-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+
+.gedcom-desk-node-years {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+button.gedcom-desk-node.is-gap::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-warning);
+}
+
+.gedcom-desk-node-more {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-faint);
+}
+
+.gedcom-desk-node-more.is-up {
+  top: -12px;
+}
+
+.gedcom-desk-node-more.is-down {
+  bottom: -12px;
+}
+
+.gedcom-desk-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--size-4-4);
+  margin-top: var(--size-4-3);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+.gedcom-desk-legend-gap::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: var(--size-2-3);
+  border-radius: 50%;
+  background: var(--text-warning);
+  vertical-align: middle;
+}

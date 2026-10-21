@@ -68,6 +68,7 @@ let record = "@I1@";
 let selected: FactKey | null = null;
 let phone = false;
 let view: PersonView = "card";
+const expanded = new Set<string>();
 let list: IndexList | null = null;
 
 function element(id: string): HTMLElement {
@@ -96,6 +97,12 @@ const host = {
   },
   openFile: (path: string): void => {
     calls.filesOpened.push(path);
+  },
+  toggleSiblings: (xref: string): void => {
+    if (!expanded.delete(xref)) {
+      expanded.add(xref);
+    }
+    draw();
   },
   chooseView: (chosen: PersonView): void => {
     view = chosen;
@@ -129,7 +136,7 @@ function draw(): void {
   const source = index.source(record);
   const media = index.media(record);
   if (person) {
-    renderPersonPage(page, person, index, { selected, phone, media: mediaItems(person.media), view }, host);
+    renderPersonPage(page, person, index, { selected, phone, media: mediaItems(person.media), view, expanded }, host);
   } else if (family) {
     renderFamilyPage(page, family, index, { selected, phone, media: mediaItems(family.media) }, host);
   } else if (source) {

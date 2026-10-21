@@ -280,5 +280,16 @@
   "timeline.of.child.any": "{event} ребёнка {name}",
   "timeline.of.grandchild.male": "{event} внука {name}",
   "timeline.of.grandchild.female": "{event} внучки {name}",
-  "timeline.of.grandchild.any": "{event} внука или внучки {name}"
+  "timeline.of.grandchild.any": "{event} внука или внучки {name}",
+  "desk.tab.tree": "Дерево",
+  "tree.siblings": {
+    "one": "{count} брат или сестра",
+    "few": "{count} брата или сестры",
+    "many": "{count} братьев и сестёр",
+    "other": "{count} брата или сестры"
+  },
+  "tree.moreUp": "Родители за краем",
+  "tree.moreDown": "Дети за краем",
+  "tree.legendGap": "Ни одного источника",
+  "tree.legendMore": "▲ ▼ родные за краем"
 }

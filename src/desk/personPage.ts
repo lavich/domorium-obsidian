@@ -13,6 +13,8 @@ import { linkButton } from "./dom";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
+import { layoutTree } from "./treeLayout";
+import { renderTree } from "./treeView";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
@@ -27,9 +29,9 @@ export interface Fact {
   spouse?: PersonRow;
 }
 
-export type PersonView = "card" | "timeline" | "places";
+export type PersonView = "card" | "tree" | "timeline" | "places";
 
-export const PERSON_VIEWS: PersonView[] = ["card", "timeline", "places"];
+export const PERSON_VIEWS: PersonView[] = ["card", "tree", "timeline", "places"];
 
 export interface PageHost {
   openRecord(xref: string): void;
@@ -38,6 +40,7 @@ export interface PageHost {
   openEvidence(): void;
   openFile(path: string): void;
   chooseView?(view: PersonView): void;
+  toggleSiblings?(xref: string): void;
 }
 
 export interface PersonPageOptions {
@@ -46,6 +49,8 @@ export interface PersonPageOptions {
   /** The files the record links, resolved by the host; none where omitted. */
   media?: MediaItem[];
   view?: PersonView;
+  /** Whose siblings the tree shows one by one. */
+  expanded?: ReadonlySet<string>;
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -76,6 +81,14 @@ export function renderPersonPage(
   renderHeading(top, person, options, host);
   const view = options.view ?? "card";
   renderTabs(top, view, host);
+  if (view === "tree") {
+    page.addClass("is-wide");
+    const layout = person.xref ? layoutTree(index, person.xref, options.expanded) : null;
+    if (layout) {
+      renderTree(page, layout, host);
+    }
+    return;
+  }
   if (view === "timeline") {
     renderTimeline(page, timelineOf(person, index), host);
     return;

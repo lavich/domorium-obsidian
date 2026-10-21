@@ -37,7 +37,7 @@ describe("what a tab keeps of the desk", () => {
   it("reads the view of a person page it wrote", () => {
     expect(readDeskState({ mode: "genealogy", record: "@I1@", view: "timeline" }))
       .toEqual({ mode: "genealogy", record: "@I1@", view: "timeline" });
-    expect(readDeskState({ view: "tree" })).toEqual({});
+    expect(readDeskState({ view: "map" })).toEqual({});
   });
 
   it("ignores what it does not recognise, so the setting decides", () => {

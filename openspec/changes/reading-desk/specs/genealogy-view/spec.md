@@ -329,8 +329,9 @@ names, with its own caption, and SHALL open that record's page.
 
 ### Requirement: The views of a person page
 
-A person page SHALL offer three views, switched by tabs below its heading:
-**Card**, which is the page as described above; **Timeline**; and **Places**.
+A person page SHALL offer four views, switched by tabs below its heading:
+**Card**, which is the page as described above; **Tree**; **Timeline**; and
+**Places**.
 The tabs SHALL scroll sideways where they do not fit. The view chosen SHALL be
 kept when the tab moves to another person and when the workspace is restored.
 
@@ -393,4 +394,37 @@ drawn and nothing SHALL be fetched.
 - **WHEN** Marie's places are shown
 - **THEN** `Warsaw, Congress Poland` lists her birth among its events, and
   `Sceaux, France` lists her marriage
+
+### Requirement: The tree
+
+The tree SHALL show the person in focus with, above, their parents and their
+parents' parents, and the parents of their first spouse; beside them, their
+spouses and their siblings and the first spouse's siblings; below, their
+children with each child's spouse, and their grandchildren. More than one
+sibling SHALL be shown as one box saying how many, which shows them one by one
+when activated. A first spouse SHALL stand to the person's left when there is a
+second, so that each marriage's children sit beneath it.
+
+Each box SHALL show a name and years, mark the person in focus, mark a person
+whose record cites no source at all, and mark a person with parents above, or
+children below, that the tree does not reach. Lines SHALL join each couple and
+lead from each couple, or single parent, to each child. No two boxes SHALL
+overlap, however wide a family is; a tree wider than its view SHALL scroll, and
+SHALL open with the person in focus in view.
+
+Activating a person SHALL make them the focus.
+
+#### Scenario: Marie's tree
+- **WHEN** Marie's tree is shown
+- **THEN** her parents and Pierre's parents are above, four siblings are one
+  box beside her with Pierre and his brother Jacques, Irène and Ève are below
+  with their husbands, and Hélène and Pierre Joliot below Irène
+
+#### Scenario: A wide family
+- **WHEN** a person has twelve children with eight children each
+- **THEN** all ninety-six grandchildren are shown and no boxes overlap
+
+#### Scenario: Moving the focus
+- **WHEN** the reader activates Pierre Curie in Marie's tree
+- **THEN** the tree shows Pierre Curie in focus
 

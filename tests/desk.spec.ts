@@ -235,6 +235,32 @@ test.describe("the views of a person page", () => {
   });
 });
 
+test.describe("the tree", () => {
+  test("draws Marie's family around her and moves the focus on a click", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
+
+    await expect(page.locator(".gedcom-desk-node.is-focus .gedcom-desk-node-name")).toHaveText("Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-desk-node")).toHaveCount(14);
+    await page.locator(".gedcom-desk-node", { hasText: "4 siblings" }).click();
+    await expect(page.locator(".gedcom-desk-node")).toHaveCount(17);
+    await page.locator(".gedcom-desk-node", { hasText: "Pierre Curie" }).first().click();
+    await expect(page.locator(".gedcom-desk-node.is-focus .gedcom-desk-node-name")).toHaveText("Pierre Curie");
+  });
+
+  test("opens on a phone with the focus in view, the rest reached by scrolling sideways", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await mountDesk(page, { phone: true });
+    await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
+    const focus = await page.locator(".gedcom-desk-node.is-focus").boundingBox();
+
+    expect(focus?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((focus?.x ?? 0) + (focus?.width ?? 0)).toBeLessThanOrEqual(390);
+    expect(await overflowsSideways(page)).toBe(false);
+  });
+});
+
 test.describe("the evidence panel", () => {
   test("follows the selected fact, and goes back to the whole record", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });

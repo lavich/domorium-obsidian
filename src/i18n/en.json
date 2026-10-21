@@ -264,5 +264,14 @@
   "timeline.of.child.any": "{event} of child {name}",
   "timeline.of.grandchild.male": "{event} of grandson {name}",
   "timeline.of.grandchild.female": "{event} of granddaughter {name}",
-  "timeline.of.grandchild.any": "{event} of grandchild {name}"
+  "timeline.of.grandchild.any": "{event} of grandchild {name}",
+  "desk.tab.tree": "Tree",
+  "tree.siblings": {
+    "one": "{count} sibling",
+    "other": "{count} siblings"
+  },
+  "tree.moreUp": "Parents beyond the edge",
+  "tree.moreDown": "Children beyond the edge",
+  "tree.legendGap": "No sources at all",
+  "tree.legendMore": "▲ ▼ relatives beyond the edge"
 }

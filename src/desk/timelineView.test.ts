@@ -37,17 +37,17 @@ const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
 describe("the views of a person page", () => {
-  it("offers Card, Timeline and Places, marking the one shown", () => {
+  it("offers Card, Tree, Timeline and Places, marking the one shown", () => {
     draw("timeline");
 
-    expect(texts(".gedcom-desk-tab")).toEqual(["Card", "Timeline", "Places"]);
+    expect(texts(".gedcom-desk-tab")).toEqual(["Card", "Tree", "Timeline", "Places"]);
     expect(texts(".gedcom-desk-tab.is-active")).toEqual(["Timeline"]);
     expect(container.querySelector(".gedcom-desk-facts")).toBeNull();
   });
 
   it("asks for the view chosen", () => {
     draw("card");
-    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-tab")][2]?.click();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-tab")][3]?.click();
 
     expect(host.chooseView).toHaveBeenCalledWith("places");
   });

@@ -121,6 +121,7 @@ export class GedcomView extends TextFileView {
   private record: string | null = null;
   private selected: FactKey | null = null;
   private personView: PersonView = "card";
+  private readonly expandedSiblings = new Set<string>();
   private revision = 0;
   private readonly genealogyCache = new IndexCache();
   private readonly editorEl: HTMLElement;
@@ -634,6 +635,7 @@ export class GedcomView extends TextFileView {
           phone: Platform.isPhone,
           media: this.mediaItems(person.media),
           view: this.personView,
+          expanded: this.expandedSiblings,
         },
         this.pageHost(),
       );
@@ -675,6 +677,12 @@ export class GedcomView extends TextFileView {
       showInSource: (range) => this.showInSource(range),
       openEvidence: () => this.host.openEvidence(),
       openFile: (path) => this.openVaultFile(path),
+      toggleSiblings: (xref) => {
+        if (!this.expandedSiblings.delete(xref)) {
+          this.expandedSiblings.add(xref);
+        }
+        this.drawDesk();
+      },
       chooseView: (view) => {
         this.personView = view;
         this.drawDesk();
