@@ -261,6 +261,32 @@ test.describe("the tree", () => {
   });
 });
 
+test.describe("the index in a narrow sidebar", () => {
+  for (const width of [260, 200]) {
+    test(`keeps its heading whole and its three tabs inside the bar at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await mountDesk(page);
+      await page.evaluate((pane) => {
+        document.getElementById("desk-layout")?.style.setProperty("grid-template-columns", `${pane}px 1fr 300px`);
+      }, width);
+      await page.locator(".gedcom-desk-seg-button", { hasText: "Sources" }).click();
+      const fit = await page.evaluate(() => {
+        const bar = document.querySelector(".gedcom-desk-seg")?.getBoundingClientRect();
+        const file = document.querySelector<HTMLElement>(".gedcom-desk-index-file");
+        return {
+          inside: [...document.querySelectorAll(".gedcom-desk-seg-button")].every((tab) => {
+            const box = tab.getBoundingClientRect();
+            return bar !== undefined && box.left >= bar.left - 0.5 && box.right <= bar.right + 0.5;
+          }),
+          fileWhole: file ? file.scrollWidth <= file.clientWidth : false,
+        };
+      });
+
+      expect(fit).toEqual({ inside: true, fileWhole: true });
+    });
+  }
+});
+
 test.describe("the evidence panel", () => {
   test("follows the selected fact, and goes back to the whole record", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });

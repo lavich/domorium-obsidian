@@ -591,18 +591,20 @@ button.gedcom-desk-person:hover {
 
 .gedcom-desk-index-title {
   display: flex;
-  justify-content: space-between;
-  gap: var(--size-4-2);
-  font-size: var(--font-ui-small);
-  color: var(--text-muted);
+  flex-direction: column;
+  gap: var(--size-2-1);
 }
 
 .gedcom-desk-index-file {
   color: var(--text-normal);
   font-weight: var(--font-semibold);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-index-meta {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
 }
 
 .gedcom-desk-seg {
@@ -614,9 +616,13 @@ button.gedcom-desk-person:hover {
 }
 
 button.gedcom-desk-seg-button {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   height: auto;
-  padding: var(--size-2-1) var(--size-4-2);
+  padding: var(--size-2-1) var(--size-2-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   background: none;
   border: 0;
   box-shadow: none;
