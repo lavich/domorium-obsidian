@@ -261,6 +261,22 @@ test.describe("the tree", () => {
   });
 });
 
+test("rounds the index tabs inside their bar by the bar's radius less its inset", async ({ page }) => {
+  await mountDesk(page);
+  const radii = await page.evaluate(() => {
+    const bar = document.querySelector(".gedcom-desk-seg");
+    const tab = document.querySelector(".gedcom-desk-seg-button");
+    const px = (value: string | undefined) => Number.parseFloat(value ?? "");
+    return {
+      bar: px(bar ? getComputedStyle(bar).borderTopLeftRadius : undefined),
+      inset: px(bar ? getComputedStyle(bar).paddingTop : undefined),
+      tab: px(tab ? getComputedStyle(tab).borderTopLeftRadius : undefined),
+    };
+  });
+
+  expect(radii.tab).toBe(radii.bar - radii.inset);
+});
+
 test.describe("the index in a narrow sidebar", () => {
   for (const width of [260, 200]) {
     test(`keeps its three tabs inside the bar at ${width}px`, async ({ page }) => {

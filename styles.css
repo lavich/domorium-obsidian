@@ -590,10 +590,11 @@ button.gedcom-desk-person:hover {
 }
 
 .gedcom-desk-seg {
+  --gedcom-desk-seg-inset: 2px;
   display: flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: var(--radius-s);
+  gap: var(--gedcom-desk-seg-inset);
+  padding: var(--gedcom-desk-seg-inset);
+  border-radius: var(--radius-m);
   background: var(--background-modifier-hover);
 }
 
@@ -607,6 +608,7 @@ button.gedcom-desk-seg-button {
   white-space: nowrap;
   background: none;
   border: 0;
+  border-radius: calc(var(--radius-m) - var(--gedcom-desk-seg-inset));
   box-shadow: none;
   font-size: var(--font-ui-small);
   color: var(--text-muted);
