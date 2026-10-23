@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **A GEDCOM file opens as genealogy.** A tab now has a Genealogy mode beside the
+  source editor, and a file opens in it by default: a page per person with their
+  facts, other names and family, a page per source with who cites it, an index of
+  the file's people and sources in the left sidebar, and an evidence panel in the
+  right sidebar that keeps a fact's own sources apart from the record's. Nothing in
+  Genealogy mode writes to the file; **Show in source** takes you to the lines a
+  correction belongs in. To keep opening files in the editor, set **Open GEDCOM
+  files as** to Source in the plugin settings.
+
 ## 1.9.1
 
 - **Nothing in the plugin itself changed.** `main.js` and `styles.css` are

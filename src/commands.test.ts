@@ -29,6 +29,8 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     goToPreviousProblem: vi.fn(() => true),
     toggleProblemsPanel: vi.fn(),
     showSearch: vi.fn<(replace: boolean) => void>(),
+    inSource: () => true,
+    toggleMode: vi.fn(),
     ...overrides,
   };
 }
@@ -130,6 +132,42 @@ describe("what a command offers itself for", () => {
     ]) {
       expect(command(id).isAvailable(view({ records: () => [] }))).toBe(true);
     }
+  });
+});
+
+describe("what a command offers in Genealogy mode", () => {
+  const genealogy = view({ inSource: () => false, problemCount: () => 2 });
+
+  it("offers nothing that acts on the editor", () => {
+    for (const id of [
+      "go-to-gedcom-definition",
+      "find-gedcom-references",
+      "rename-gedcom-reference",
+      "go-to-next-gedcom-problem",
+      "go-to-previous-gedcom-problem",
+      "toggle-gedcom-problems-panel",
+      "search-in-gedcom-file",
+      "replace-in-gedcom-file",
+    ]) {
+      expect(command(id).isAvailable(genealogy), id).toBe(false);
+    }
+  });
+
+  it("offers copying a link to the record shown, and switching mode", () => {
+    for (const id of [
+      "copy-gedcom-record-wikilink",
+      "copy-gedcom-record-link",
+      "toggle-gedcom-mode",
+    ]) {
+      expect(command(id).isAvailable(genealogy), id).toBe(true);
+    }
+  });
+
+  it("switches the tab's mode", () => {
+    const toggleMode = vi.fn();
+    command("toggle-gedcom-mode").run(host().host, view({ toggleMode }));
+
+    expect(toggleMode).toHaveBeenCalled();
   });
 });
 

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Research desk harness</title>
+    <link rel="stylesheet" href="palette.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        background: var(--background-primary);
+        color: var(--text-normal);
+        font-family: var(--font-interface);
+        font-size: 14px;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      #desk-layout {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 260px 1fr 300px;
+      }
+      #desk-layout.is-phone {
+        grid-template-columns: 1fr;
+      }
+      #desk-layout.is-phone #index-pane,
+      #desk-layout.is-phone #evidence-pane {
+        display: none;
+      }
+      #index-pane,
+      #evidence-pane {
+        min-height: 0;
+        overflow: auto;
+        padding: 12px;
+        background: var(--background-secondary);
+      }
+    </style>
+  </head>
+  <body class="theme-light">
+    <div id="desk-layout">
+      <div id="index-pane"></div>
+      <div class="workspace-leaf-content" data-type="domorium-gedcom">
+        <div class="view-content gedcom-gedcom-view">
+          <div id="page" class="gedcom-desk"></div>
+        </div>
+      </div>
+      <div id="evidence-pane"></div>
+    </div>
+    <script src="dist/desk.js"></script>
+  </body>
+</html>

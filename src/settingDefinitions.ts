@@ -20,8 +20,25 @@ export function recordPreviewOptions(): Record<string, string> {
   };
 }
 
+export function openAsOptions(): Record<string, string> {
+  return {
+    genealogy: t("openAsOption.genealogy"),
+    source: t("openAsOption.source"),
+  };
+}
+
 export function settingDefinitions(): GedcomSettingDefinition[] {
   return [
+    {
+      name: t("setting.openAs.name"),
+      desc: t("setting.openAs.desc"),
+      control: {
+        type: "dropdown",
+        key: "openAs",
+        options: openAsOptions(),
+        defaultValue: DEFAULT_SETTINGS.openAs,
+      },
+    },
     {
       name: t("setting.diagnostics.name"),
       desc: t("setting.diagnostics.desc"),

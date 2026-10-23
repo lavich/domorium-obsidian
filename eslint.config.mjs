@@ -69,7 +69,7 @@ export default tseslint.config(
       "@stylistic/semi": ["warn", "always"],
       "obsidianmd/ui/sentence-case": [
         "warn",
-        { acronyms: ["GEDCOM"], enforceCamelCaseLower: true },
+        { acronyms: ["GEDCOM", "LDS"], brands: ["Domorium", "Obsidian"], enforceCamelCaseLower: true },
       ],
       "@typescript-eslint/no-unused-vars": [
         "error",

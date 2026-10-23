@@ -262,3 +262,979 @@
 .gedcom-media-allow:hover {
   background-color: var(--interactive-hover);
 }
+
+.gedcom-desk,
+.gedcom-desk-index,
+.gedcom-desk-evidence {
+  color: var(--text-normal);
+}
+
+.gedcom-desk {
+  height: 100%;
+  overflow-y: auto;
+  padding: 0 var(--size-4-8) var(--size-4-16);
+}
+
+.is-mobile .gedcom-desk {
+  padding: 0 var(--size-4-4) calc(var(--size-4-16) + var(--navbar-height, 0px));
+}
+
+.gedcom-desk-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-top: var(--size-4-6);
+}
+
+.is-mobile .gedcom-desk-page {
+  padding-top: var(--size-4-4);
+}
+
+.gedcom-desk:has(> .gedcom-desk-frame) {
+  overflow: hidden;
+  padding: 0;
+}
+
+.gedcom-desk-frame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gedcom-desk-top {
+  flex: none;
+  padding: 0 var(--size-4-8);
+}
+
+.gedcom-desk-top .gedcom-desk-tabs {
+  margin-bottom: 0;
+}
+
+.gedcom-desk-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--size-4-8) var(--size-4-16);
+}
+
+.gedcom-desk-body > .gedcom-desk-page {
+  padding-top: var(--size-4-2);
+}
+
+.gedcom-desk-page.is-phone > .gedcom-desk-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--background-primary);
+}
+
+.gedcom-desk-heading {
+  margin-bottom: var(--size-4-4);
+}
+
+.gedcom-desk-title {
+  font-size: 1.6em;
+  line-height: 1.2;
+  margin: 0 0 var(--size-2-3);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-subtitle {
+  color: var(--text-muted);
+  margin-bottom: var(--size-2-3);
+}
+
+.gedcom-desk-section {
+  font-size: var(--font-ui-smaller);
+  font-weight: var(--font-semibold);
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: var(--size-4-6) 0 var(--size-2-3);
+}
+
+button.gedcom-desk-link {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  height: auto;
+  color: var(--text-accent);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+}
+
+button.gedcom-desk-link:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+.gedcom-desk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-3);
+  margin-top: var(--size-2-3);
+}
+
+.gedcom-desk-facts {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+button.gedcom-desk-fact {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  gap: var(--size-4-3);
+  align-items: center;
+  width: 100%;
+  height: auto;
+  padding: var(--size-4-2) var(--size-4-3);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--background-modifier-border);
+  border-radius: 0;
+  box-shadow: none;
+  text-align: start;
+  white-space: normal;
+  font-weight: normal;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+button.gedcom-desk-fact:first-child {
+  border-top: 0;
+}
+
+button.gedcom-desk-fact:hover {
+  background: var(--background-modifier-hover);
+}
+
+button.gedcom-desk-fact.is-selected {
+  background: var(--background-modifier-active-hover);
+}
+
+.gedcom-desk-fact-name {
+  color: var(--text-muted);
+}
+
+.gedcom-desk-fact-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-fact-value.is-empty {
+  color: var(--text-faint);
+}
+
+.gedcom-desk-chip {
+  font-size: var(--font-ui-smaller);
+  padding: 2px var(--size-2-3);
+  border-radius: var(--radius-l);
+  white-space: nowrap;
+}
+
+.gedcom-desk-chip.no-source {
+  color: var(--text-warning);
+  background: rgba(var(--color-orange-rgb), 0.12);
+}
+
+.gedcom-desk-chip.has-source {
+  color: var(--text-muted);
+  background: var(--background-secondary);
+}
+
+.gedcom-desk-unfold {
+  padding: var(--size-4-2) var(--size-4-3);
+  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.gedcom-desk-unfold-none {
+  color: var(--text-warning);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-desk-name {
+  padding: var(--size-2-2) 0;
+}
+
+.gedcom-desk-family {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: var(--size-2-2) var(--size-4-3);
+}
+
+.gedcom-desk-kin-label {
+  color: var(--text-muted);
+  padding: var(--size-2-3) 0;
+}
+
+.gedcom-desk-kin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+button.gedcom-desk-person {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2-3);
+  height: auto;
+  padding: var(--size-2-3) var(--size-4-2);
+  margin: 0 calc(-1 * var(--size-4-2));
+  background: none;
+  border: 0;
+  box-shadow: none;
+  white-space: normal;
+  text-align: start;
+  color: var(--text-accent);
+  cursor: pointer;
+}
+
+button.gedcom-desk-person:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-person-years,
+.gedcom-desk-person-note {
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-none {
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+  padding: var(--size-2-3) 0;
+}
+
+.gedcom-desk-missing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-3);
+  align-items: baseline;
+  color: var(--text-warning);
+  font-size: var(--font-ui-small);
+  padding: var(--size-2-3) 0;
+}
+
+.gedcom-desk-repository {
+  line-height: 1.55;
+}
+
+.gedcom-desk-repository div + div {
+  color: var(--text-faint);
+}
+
+.gedcom-desk-citer {
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-citer-where {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-state {
+  padding-top: var(--size-4-8);
+  text-align: center;
+}
+
+.gedcom-desk-state-title {
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--size-2-3);
+}
+
+.gedcom-desk-state-desc {
+  color: var(--text-muted);
+}
+
+.gedcom-desk-state .gedcom-desk-actions {
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  button.gedcom-desk-fact {
+    grid-template-columns: 1fr auto;
+  }
+
+  .gedcom-desk-fact-name {
+    grid-column: 1 / -1;
+    font-size: var(--font-ui-smaller);
+  }
+
+  .gedcom-desk-family {
+    grid-template-columns: 1fr;
+  }
+
+  .gedcom-desk-kin-label {
+    padding-bottom: 0;
+    font-size: var(--font-ui-smaller);
+  }
+}
+
+.gedcom-desk-index {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.gedcom-desk-index-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  padding-bottom: var(--size-4-2);
+}
+
+.gedcom-desk-seg {
+  --gedcom-desk-seg-inset: 2px;
+  display: flex;
+  gap: var(--gedcom-desk-seg-inset);
+  padding: var(--gedcom-desk-seg-inset);
+  border-radius: var(--radius-m);
+  background: var(--background-modifier-hover);
+}
+
+button.gedcom-desk-seg-button {
+  flex: 1 1 0;
+  min-width: 0;
+  height: auto;
+  padding: var(--size-2-1) var(--size-2-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  border-radius: calc(var(--radius-m) - var(--gedcom-desk-seg-inset));
+  box-shadow: none;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+button.gedcom-desk-seg-button.is-active {
+  background: var(--background-primary);
+  color: var(--text-normal);
+  box-shadow: var(--shadow-s);
+}
+
+.gedcom-desk-search {
+  width: 100%;
+}
+
+.gedcom-desk-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-2);
+}
+
+button.gedcom-desk-chip-filter {
+  height: auto;
+  padding: 2px var(--size-4-2);
+  border-radius: var(--radius-l);
+  border: 1px solid var(--background-modifier-border);
+  background: none;
+  box-shadow: none;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+button.gedcom-desk-chip-filter.is-active {
+  background: var(--background-modifier-active-hover);
+  border-color: transparent;
+  color: var(--text-accent);
+}
+
+.gedcom-desk-index-list {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.gedcom-desk-index-spacer {
+  position: relative;
+}
+
+.gedcom-desk-index-window {
+  position: absolute;
+  inset-inline: 0;
+}
+
+button.gedcom-desk-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: center;
+  gap: 0 var(--size-4-2);
+  width: 100%;
+  height: 44px;
+  padding: 0 var(--size-4-2);
+  background: none;
+  border: 0;
+  border-radius: var(--radius-s);
+  box-shadow: none;
+  text-align: start;
+  font-weight: normal;
+  color: var(--text-normal);
+}
+
+button.gedcom-desk-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+button.gedcom-desk-row.is-current {
+  background: var(--background-modifier-active-hover);
+}
+
+.gedcom-desk-row-name,
+.gedcom-desk-row-place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gedcom-desk-row-years {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-desk-row-place {
+  grid-column: 1 / -1;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-desk-gap {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-start: var(--size-2-3);
+  vertical-align: middle;
+  border-radius: 50%;
+  background: var(--text-warning);
+}
+
+.gedcom-desk-evidence-head {
+  padding-bottom: var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-evidence-title {
+  font-weight: var(--font-semibold);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.gedcom-desk-evidence-context {
+  margin-top: var(--size-2-3);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-desk-evidence-sub {
+  font-weight: normal;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-scope {
+  color: var(--text-muted);
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: var(--size-4-3);
+}
+
+.gedcom-desk-notice {
+  padding: var(--size-4-2) var(--size-4-3);
+  border-radius: var(--radius-m);
+  background: rgba(var(--color-orange-rgb), 0.12);
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+}
+
+.gedcom-desk-notice-title {
+  color: var(--text-warning);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-desk-cite,
+button.gedcom-desk-cite {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: var(--size-4-2);
+  margin: 0 calc(-1 * var(--size-2-2));
+  background: none;
+  border: 0;
+  border-radius: var(--radius-s);
+  box-shadow: none;
+  text-align: start;
+  white-space: normal;
+  font-weight: normal;
+}
+
+button.gedcom-desk-cite:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-cite-title {
+  color: var(--text-accent);
+  font-weight: var(--font-medium);
+}
+
+.gedcom-desk-cite-page,
+.gedcom-desk-cite-inline {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-cite-meta {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-desk-who {
+  display: flex;
+  gap: var(--size-4-4);
+  align-items: flex-start;
+}
+
+.gedcom-desk-who .gedcom-desk-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.gedcom-desk-portrait {
+  flex: none;
+  width: 76px;
+  height: 95px;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  display: grid;
+  place-items: center;
+}
+
+.gedcom-desk-picture {
+  overflow: hidden;
+  position: relative;
+}
+
+.gedcom-desk-picture img {
+  display: block;
+}
+
+.gedcom-desk-picture.is-cropped img {
+  max-width: none;
+  transform-origin: 0 0;
+}
+
+.gedcom-desk-picture:not(.is-cropped) img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gedcom-desk-portrait .gedcom-desk-picture:not(.is-cropped) {
+  width: 100%;
+  height: 100%;
+}
+
+.gedcom-desk-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: var(--size-4-3);
+}
+
+.gedcom-desk-tile {
+  min-width: 0;
+}
+
+button.gedcom-desk-tile-face {
+  width: 100%;
+  height: 132px;
+  padding: var(--size-2-3);
+  display: grid;
+  place-items: center;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: none;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+button.gedcom-desk-tile-face:disabled {
+  cursor: default;
+}
+
+.gedcom-desk-tile-face .gedcom-desk-picture:not(.is-cropped) {
+  width: 120px;
+  height: 120px;
+}
+
+.gedcom-desk-tile-note {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-align: center;
+  white-space: normal;
+}
+
+.gedcom-desk-tile.is-missing .gedcom-desk-tile-note {
+  color: var(--text-warning);
+}
+
+.gedcom-desk-tile-caption {
+  margin-top: var(--size-2-3);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-tile .gedcom-desk-actions {
+  margin-top: var(--size-2-1);
+}
+
+.gedcom-desk-media-stage {
+  display: flex;
+  justify-content: center;
+  padding: var(--size-4-3);
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  cursor: pointer;
+}
+
+.gedcom-desk-media-stage .gedcom-desk-picture:not(.is-cropped) img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+}
+
+.gedcom-desk-user {
+  display: flex;
+  gap: var(--size-4-3);
+  align-items: center;
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-user .gedcom-desk-picture {
+  flex: none;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-user-caption {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-note {
+  padding: var(--size-2-3) 0;
+}
+
+.gedcom-desk-note-name {
+  font-weight: var(--font-medium);
+}
+
+button.gedcom-desk-note-line {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: var(--size-2-2) var(--size-2-3);
+  margin: 0 calc(-1 * var(--size-2-3));
+  background: none;
+  border: 0;
+  border-radius: var(--radius-s);
+  box-shadow: none;
+  text-align: start;
+  white-space: normal;
+  font-weight: normal;
+  font-size: var(--font-ui-small);
+  line-height: 1.45;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+button.gedcom-desk-note-line:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-note-line mark {
+  background: var(--background-modifier-active-hover);
+  color: var(--text-accent);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.gedcom-desk-tabs {
+  display: flex;
+  gap: var(--size-2-1);
+  margin: var(--size-4-4) 0 var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+button.gedcom-desk-tab {
+  flex: none;
+  height: auto;
+  padding: var(--size-4-2) var(--size-4-3);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-weight: normal;
+  position: relative;
+}
+
+button.gedcom-desk-tab:hover {
+  background: none;
+  color: var(--text-normal);
+}
+
+button.gedcom-desk-tab.is-active {
+  color: var(--text-normal);
+}
+
+button.gedcom-desk-tab.is-active::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--size-4-2);
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--interactive-accent);
+}
+
+.gedcom-desk-timeline {
+  margin-top: var(--size-4-3);
+}
+
+.gedcom-desk-moment {
+  display: grid;
+  grid-template-columns: 52px 22px 1fr;
+  align-items: start;
+  padding: var(--size-2-3) 0;
+}
+
+.gedcom-desk-moment-year {
+  text-align: end;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.gedcom-desk-moment-dot {
+  position: relative;
+  align-self: stretch;
+}
+
+.gedcom-desk-moment-dot::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 10px;
+  top: calc(-1 * var(--size-2-3));
+  bottom: calc(-1 * var(--size-2-3));
+  width: 1.5px;
+  background: var(--background-modifier-border);
+}
+
+.gedcom-desk-moment-dot::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 6px;
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--background-primary);
+  border: 1.5px solid var(--text-faint);
+}
+
+.gedcom-desk-moment.is-own .gedcom-desk-moment-dot::after {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+}
+
+button.gedcom-desk-moment-what {
+  height: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-align: start;
+  white-space: normal;
+  font-weight: normal;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+button.gedcom-desk-moment-what:hover:not(:disabled) {
+  background: none;
+  color: var(--text-accent);
+}
+
+button.gedcom-desk-moment-what:disabled {
+  cursor: default;
+}
+
+.gedcom-desk-moment.is-own button.gedcom-desk-moment-what {
+  color: var(--text-normal);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-desk-moment-detail {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-desk-place {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--size-4-3);
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-place-name {
+  font-weight: var(--font-medium);
+}
+
+.gedcom-desk-place-events,
+.gedcom-desk-place-count {
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-desk-place-count {
+  align-self: center;
+  white-space: nowrap;
+}
+
+.gedcom-desk-page.is-wide {
+  max-width: none;
+}
+
+.gedcom-desk-tree {
+  overflow: auto;
+  padding: var(--size-4-4) 0 var(--size-4-2);
+}
+
+.gedcom-desk-tree-canvas {
+  position: relative;
+  margin: 0 auto;
+}
+
+.gedcom-desk-tree-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.gedcom-desk-tree-lines path {
+  fill: none;
+  stroke: var(--background-modifier-border);
+  stroke-width: 1.5;
+}
+
+button.gedcom-desk-node {
+  position: absolute;
+  width: 172px;
+  height: 48px;
+  padding: var(--size-2-2) var(--size-4-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  box-shadow: none;
+  text-align: start;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+button.gedcom-desk-node:hover {
+  background: var(--background-primary);
+  border-color: var(--text-faint);
+}
+
+button.gedcom-desk-node.is-focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 3px var(--background-modifier-active-hover);
+  cursor: default;
+}
+
+button.gedcom-desk-node.is-dim {
+  opacity: 0.65;
+}
+
+.gedcom-desk-node-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+}
+
+.gedcom-desk-node-years {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+button.gedcom-desk-node.is-gap::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-warning);
+}
+
+.gedcom-desk-node-more {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-faint);
+}
+
+.gedcom-desk-node-more.is-up {
+  top: -12px;
+}
+
+.gedcom-desk-node-more.is-down {
+  bottom: -12px;
+}
+
+.gedcom-desk-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--size-4-4);
+  margin-top: var(--size-4-3);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+}
+
+.gedcom-desk-legend-gap::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: var(--size-2-3);
+  border-radius: 50%;
+  background: var(--text-warning);
+  vertical-align: middle;
+}

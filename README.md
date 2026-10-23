@@ -3,9 +3,10 @@
 [![release](https://img.shields.io/github/v/release/lavich/domorium-obsidian)](https://github.com/lavich/domorium-obsidian/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-GEDCOM language support by Domorium. Edit source `.ged` and `.gedcom` files
-directly in Obsidian with validation, autocomplete, navigation, folding, and
-semantic highlighting.
+GEDCOM language support by Domorium. Read a `.ged` or `.gedcom` file as
+genealogy — people, families, sources and what each fact rests on — and edit its
+source directly in Obsidian with validation, autocomplete, navigation, folding,
+and semantic highlighting.
 
 ![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
 
@@ -17,6 +18,9 @@ adapted per editor.
 
 ## Features
 
+- A Genealogy mode that shows the file as people and sources: a page per
+  person with their facts, names and family, a page per source, an index of
+  everyone in the file, and an evidence panel for what a fact rests on
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -40,8 +44,33 @@ to a remote service.
 ## Usage
 
 1. Enable **GEDCOM** in **Settings → Community plugins**.
-2. Open a `.ged` or `.gedcom` file in your vault.
-3. Edit the source directly. Obsidian saves changes back to the same file.
+2. Open a `.ged` or `.gedcom` file in your vault. It opens in **Genealogy**
+   mode, on the first person the file declares.
+3. Switch to **Source** from the view header, or with **Switch between
+   genealogy and source**, to edit the file. Obsidian saves changes back to the
+   same file.
+
+Genealogy mode reads the file and never writes to it. A person's page lists
+their facts in the order the record states them, each marked with how many
+sources it cites itself, or that it cites none; their other names; and their
+parents, siblings, spouses and children, each of whom opens their own page.
+Back and forward move between the pages you visited. **Show in source** on a
+page, a fact or a missing relative switches to Source with exactly those lines
+selected, which is where a correction is made.
+
+The ribbon icon, or **Open Domorium**, puts an index of the file's
+people, families and sources in the left sidebar: search by name, year or
+place, and a filter for the people whose records cite no source at all. A row
+opens its page in Genealogy mode, and in Source mode puts the cursor on the
+record's first line instead. **Open the evidence
+panel** puts the selected fact's sources in the right sidebar, kept apart from
+the sources of the whole record so that one is never mistaken for the other.
+On a phone the two are the left and right drawers, and tapping a fact shows
+the gist beneath it.
+
+A tab remembers whether it was in Genealogy or Source. **Open GEDCOM files as**
+in the plugin settings chooses which mode a newly opened file starts in; set it
+to Source to keep the editor as the default.
 
 Use **Go to GEDCOM definition** from the command palette to jump from an XREF
 usage to its record declaration. **Find GEDCOM references** moves between
