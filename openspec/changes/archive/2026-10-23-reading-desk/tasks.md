@@ -43,7 +43,7 @@
 - [x] 6.1 Describe Genealogy mode, the index, the evidence panel and the *Open GEDCOM files as* setting in `README.md`, and the default-mode change in the release notes draft
 - [x] 6.2 Tick the Reading slice in `docs/design/next-steps.md`
 - [x] 6.3 Run `npm run check` and `npm run test:browser`; both pass
-- [ ] 6.4 Open `demo-vault` in Obsidian with this build: modes and their header switch, state across a restart, Back and Forward between people, a link into a person and into a family, Show in source, the index and the panel following the tab, and the phone drawers
+- [x] 6.4 Open `demo-vault` in Obsidian with this build: modes and their header switch, state across a restart, Back and Forward between people, a link into a person and into a family, Show in source, the index and the panel following the tab, and the phone drawers
 
 ## 7. The family page
 

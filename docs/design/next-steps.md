@@ -62,7 +62,7 @@ Drafts of these three, checked against upstream, are in
 
 Each slice is an OpenSpec change: `/openspec-propose`, review, then
 `/openspec-apply-change`. So far every slice has gone into one change,
-`openspec/changes/reading-desk`, on branch `lavich/research-desk-design`.
+`openspec/changes/archive/2026-10-23-reading-desk`, on branch `lavich/research-desk-design`.
 
 - [x] **Reading.** File opens as genealogy; people, families and sources index;
       person, family and source pages; evidence panel; "show in source". Brings
