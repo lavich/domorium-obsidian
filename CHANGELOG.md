@@ -1,15 +1,23 @@
 # Changelog
 
-## Unreleased
+## 1.12.0
 
 - **A GEDCOM file opens as genealogy.** A tab now has a Genealogy mode beside the
-  source editor, and a file opens in it by default: a page per person with their
-  facts, other names and family, a page per source with who cites it, an index of
-  the file's people and sources in the left sidebar, and an evidence panel in the
-  right sidebar that keeps a fact's own sources apart from the record's. Nothing in
-  Genealogy mode writes to the file; **Show in source** takes you to the lines a
-  correction belongs in. To keep opening files in the editor, set **Open GEDCOM
-  files as** to Source in the plugin settings.
+  source editor, and a file opens in it by default. A person has a page with
+  four views — their facts, names and family; a tree of two generations each
+  way; a timeline of their life among their close relatives; and the places of
+  that life — and families, sources and multimedia records have pages of their
+  own. The ribbon's **Open Domorium** lists the file's people, families and
+  sources; the evidence panel beside a page keeps a fact's own sources apart
+  from the record's and lists the notes in the vault that link to it. Portraits
+  and galleries show the files a record links, each cut to the part its link
+  names. Nothing in Genealogy mode writes to the file: **Show in source**, and
+  switching the tab to Source, take you to the lines a correction belongs in.
+  To keep opening files in the editor, set **Open GEDCOM files as** to Source in
+  the plugin settings.
+- **A year is read only where it can be trusted.** A date before the common era
+  or in another calendar is shown as the file writes it, without a year that
+  would sort it among Gregorian ones.
 
 ## 1.9.1
 
