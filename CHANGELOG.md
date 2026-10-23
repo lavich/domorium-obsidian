@@ -1,15 +1,52 @@
 # Changelog
 
-## Unreleased
+## 1.12.0
 
 - **A GEDCOM file opens as genealogy.** A tab now has a Genealogy mode beside the
-  source editor, and a file opens in it by default: a page per person with their
-  facts, other names and family, a page per source with who cites it, an index of
-  the file's people and sources in the left sidebar, and an evidence panel in the
-  right sidebar that keeps a fact's own sources apart from the record's. Nothing in
-  Genealogy mode writes to the file; **Show in source** takes you to the lines a
-  correction belongs in. To keep opening files in the editor, set **Open GEDCOM
-  files as** to Source in the plugin settings.
+  source editor, and a file opens in it by default. A person has a page with
+  four views — their facts, names and family; a tree of two generations each
+  way; a timeline of their life among their close relatives; and the places of
+  that life — and families, sources and multimedia records have pages of their
+  own. The ribbon's **Open Domorium** lists the file's people, families and
+  sources; the evidence panel beside a page keeps a fact's own sources apart
+  from the record's and lists the notes in the vault that link to it. Portraits
+  and galleries show the files a record links, each cut to the part its link
+  names. Nothing in Genealogy mode writes to the file: **Show in source**, and
+  switching the tab to Source, take you to the lines a correction belongs in.
+  To keep opening files in the editor, set **Open GEDCOM files as** to Source in
+  the plugin settings.
+- **A year is read only where it can be trusted.** A date before the common era
+  or in another calendar is shown as the file writes it, without a year that
+  would sort it among Gregorian ones.
+
+## 1.11.0
+
+- **The plugin speaks the language Obsidian is set to, in English and
+  Russian.** Commands, notices, settings, the status bar, the search bar, the
+  media popover, the two modals, the problem line under a GEDCOM block in a
+  note, and the panels CodeMirror paints on the plugin's behalf all follow the
+  app, with counts spelt by that language's plural rules. What the language
+  service writes — diagnostics, hover text, quick-fix titles — stays English
+  until it carries a locale.
+- **Obsidian 1.8.7 or later is required**, the release in which an app first
+  tells a plugin its language. A reader on an older app keeps 1.10.1. With the
+  new floor, a link to a file already open reveals its tab wherever it is,
+  including in a collapsed sidebar.
+
+## 1.10.1
+
+- **The media preview keeps its size while the image you asked for loads,**
+  rather than collapsing to an empty frame under the pointer — which newer
+  Chromium answers by closing the popover, so **Show this image** would have
+  closed it on its own answer once Obsidian's Electron catches up.
+
+## 1.10.0
+
+- **A photograph at a web address is drawn once you have asked for it,** for
+  that one image from the preview or for every one through **Load images from
+  the web**. Until then the plugin makes no network request.
+- **Escape works in the editor again.** A second copy of `@codemirror/state`
+  beside the one Obsidian provides had left it with an undefined selection.
 
 ## 1.9.1
 
