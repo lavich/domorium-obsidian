@@ -11,7 +11,11 @@ export interface DateReading {
   precision?: DatePrecision;
 }
 
-const OTHER_CALENDAR = /@#D/u;
+// 5.5.1 names a calendar in an escape, 7.0 by a keyword; either way the year
+// is not one a reader would place on a Gregorian timeline.
+const OTHER_CALENDAR = /@#D|\b(JULIAN|HEBREW|FRENCH_R)\b/iu;
+// A year before the common era would read, and sort, as one after it.
+const BEFORE_COMMON_ERA = /\b(BCE|B\.C\.)(?=\s|$)/iu;
 const DUAL_YEAR = /\d{4}\/\d{1,4}/u;
 
 const APPROXIMATE = /^(ABT|CAL|EST)\b/iu;
@@ -22,7 +26,12 @@ const FOUR_DIGITS = /\b(\d{4})\b/u;
 export function readDate(payload: string | undefined): DateReading {
   const text = payload ?? "";
   const trimmed = text.trim();
-  if (!trimmed || OTHER_CALENDAR.test(trimmed) || DUAL_YEAR.test(trimmed)) {
+  if (
+    !trimmed ||
+    OTHER_CALENDAR.test(trimmed) ||
+    BEFORE_COMMON_ERA.test(trimmed) ||
+    DUAL_YEAR.test(trimmed)
+  ) {
     return { text };
   }
   const found = FOUR_DIGITS.exec(trimmed);

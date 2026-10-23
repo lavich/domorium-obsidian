@@ -110,8 +110,10 @@ caller that needs to know whether two people share a date — comparing records,
 looking for duplicates — SHALL be able to tell an exact year from an inexact one
 without parsing the payload again.
 
-A payload that states its year in another calendar, states two years for one
-date, or states none SHALL yield no year rather than a guessed one. The payload
+A payload that states its year in another calendar — by a 5.5.1 escape such as
+`@#DHEBREW@` or a 7.0 keyword such as `HEBREW` or `JULIAN` — states a year
+before the common era, states two years for one date, or states none SHALL
+yield no year rather than a guessed one. The payload
 SHALL always be reported as the file wrote it, so a view can show the full date
 whether or not a year could be read from it.
 
@@ -131,6 +133,14 @@ whether or not a year could be read from it.
 
 #### Scenario: A date in another calendar
 - **WHEN** the payload reads `@#DHEBREW@ 5628`
+- **THEN** no year is reported, and the payload is reported unchanged
+
+#### Scenario: A date before the common era
+- **WHEN** the payload reads `1401 BCE`
+- **THEN** no year is reported, and the payload is reported unchanged
+
+#### Scenario: A 7.0 date in another calendar
+- **WHEN** the payload reads `ABT HEBREW 5761`
 - **THEN** no year is reported, and the payload is reported unchanged
 
 #### Scenario: A dual year
