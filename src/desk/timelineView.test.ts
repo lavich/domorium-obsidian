@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { GedcomLanguageService } from "@domorium/language-service";
+
+import { buildIndex } from "../genealogy";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { renderPersonPage, type PageHost, type PersonView } from "./personPage";
@@ -54,6 +57,21 @@ describe("the views of a person page", () => {
 });
 
 describe("the timeline", () => {
+  it("shows a year before the common era as one", () => {
+    const across = buildIndex(new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @I1@ INDI", "1 NAME Anna /Nowak/",
+      "1 DEAT", "2 DATE 20", "1 BIRT", "2 DATE 10 BCE", "1 RESI", "2 DATE 5 BCE",
+      "0 TRLR", "",
+    ].join("\n")));
+    const anna = across.person("@I1@");
+    if (anna) {
+      renderPersonPage(container, anna, across, { selected: null, phone: false, view: "timeline" }, host);
+    }
+
+    expect(texts(".gedcom-desk-moment-year")).toEqual(["10 BCE", "5 BCE", "20"]);
+  });
+
   it("lists years and what happened, the person's own entries marked", () => {
     draw("timeline");
 

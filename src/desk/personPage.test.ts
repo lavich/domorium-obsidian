@@ -41,6 +41,13 @@ function draw(
   renderPersonPage(container, person, index, { selected, phone }, host);
 }
 
+const bornIn = (date: string): GenealogyIndex =>
+  buildIndex(new GedcomLanguageService([
+    "0 HEAD", "1 GEDC", "2 VERS 7.0",
+    "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", `2 DATE ${date}`,
+    "0 TRLR", "",
+  ].join("\n")));
+
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
@@ -55,6 +62,19 @@ describe("the person page", () => {
 
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-subtitle")).toEqual(["1867–1934 · Warsaw → Passy"]);
+  });
+
+  it("heads the page with a year before the common era marked as one", () => {
+    draw("@I1@", { index: bornIn("1401 BCE") });
+
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["1401 BCE–?"]);
+  });
+
+  it("marks an approximate year before the common era in Russian", () => {
+    setLanguage("ru");
+    draw("@I1@", { index: bornIn("ABT 1401 BCE") });
+
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["≈1401 до н. э.–?"]);
   });
 
   it("lists Marie's facts, her marriage among them, none citing a source", () => {

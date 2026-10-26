@@ -28,11 +28,16 @@ export function familyTitle(spouseNames: string[]): string {
   return one ?? t("desk.familyNoSpouses");
 }
 
+export function yearText(year: number): string {
+  return year > 0 ? String(year) : t("desk.yearBce", { year: 1 - year });
+}
+
 export function year(date: DateReading | undefined): string | undefined {
   if (date?.year === undefined) {
     return undefined;
   }
-  return date.precision === "exact" ? `${date.year}` : `≈${date.year}`;
+  const text = yearText(date.year);
+  return date.precision === "exact" ? text : `≈${text}`;
 }
 
 export function yearsOf(row: PersonRow, now = new Date().getFullYear()): string {
