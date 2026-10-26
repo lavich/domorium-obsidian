@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-
 import { GedcomLanguageService } from "@domorium/language-service";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIndex } from "../genealogy";
 import { curieIndex } from "../testing/curie";
@@ -65,9 +64,10 @@ describe("the timeline", () => {
       "0 TRLR", "",
     ].join("\n")));
     const anna = across.person("@I1@");
-    if (anna) {
-      renderPersonPage(container, anna, across, { selected: null, phone: false, view: "timeline" }, host);
+    if (!anna) {
+      throw new Error("no person @I1@");
     }
+    renderPersonPage(container, anna, across, { selected: null, phone: false, view: "timeline" }, host);
 
     expect(texts(".gedcom-desk-moment-year")).toEqual(["10 BCE", "5 BCE", "20"]);
   });

@@ -75,6 +75,24 @@ describe("the people a document declares", () => {
     expect(born.people[0]?.birth).toEqual({ text: "7 NOV 1867" });
   });
 
+  it("keeps the years it read when the service moves on to another text", () => {
+    const service = new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @I1@ INDI", "1 BIRT", "2 DATE 1401 BCE", "1 FAMS @F1@",
+      "0 @F1@ FAM", "1 WIFE @I1@", "1 MARR", "2 DATE 1380 BCE",
+      "0 TRLR", "",
+    ].join("\n"));
+    const built = buildIndex(service);
+
+    service.update("0 HEAD\n0 TRLR\n");
+    const anna = person("@I1@", built);
+
+    expect(anna.events.map((event) => event.date?.year)).toEqual([-1400]);
+    expect(anna.unions[0]?.events.map((event) => event.date?.year)).toEqual([-1379]);
+    expect(anna.spouseFamilies[0]?.marriage?.year).toBe(-1379);
+    expect(built.family("@F1@")?.events.map((event) => event.date?.year)).toEqual([-1379]);
+  });
+
   it("takes the place from death where birth states none", () => {
     const bare = index().people.find((row) => row.xref === "@I9@");
 

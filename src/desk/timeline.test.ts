@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
-
 import { GedcomLanguageService } from "@domorium/language-service";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { buildIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";

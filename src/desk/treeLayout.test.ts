@@ -94,6 +94,17 @@ describe("families the demo vault does not have", () => {
     return buildIndex(new GedcomLanguageService(["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n")));
   }
 
+  it("spans a run of siblings across the start of the era", () => {
+    const layout = tree("@I1@", index([
+      "0 @I1@ INDI", "1 NAME Anna /A/", "1 FAMC @F1@",
+      "0 @I2@ INDI", "1 NAME Bert /A/", "1 BIRT", "2 DATE 10 BCE", "1 FAMC @F1@",
+      "0 @I3@ INDI", "1 NAME Carl /A/", "1 BIRT", "2 DATE 5", "1 FAMC @F1@",
+      "0 @F1@ FAM", "1 CHIL @I1@", "1 CHIL @I2@", "1 CHIL @I3@",
+    ]));
+
+    expect(byLabel(layout, "2 siblings")?.years).toBe("10 BCE–5");
+  });
+
   it("puts a second spouse on the other side, each with their own children", () => {
     const layout = tree("@I1@", index([
       "0 @I1@ INDI", "1 NAME Anna /A/", "1 FAMS @F1@", "1 FAMS @F2@",
