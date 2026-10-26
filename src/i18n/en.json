@@ -112,6 +112,7 @@
   "desk.noSource": "No source",
   "desk.noDetails": "Recorded, no details",
   "desk.born": "b. {year}",
+  "desk.yearBce": "{year} BCE",
   "desk.missingRecord": "Points to a record that is not in the file",
   "desk.showInSource": "Show in source",
   "desk.empty.title": "The file holds no people",

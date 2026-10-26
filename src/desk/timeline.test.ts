@@ -1,5 +1,7 @@
+import { GedcomLanguageService } from "@domorium/language-service";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { buildIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { placesOf, timelineOf } from "./timeline";
@@ -35,6 +37,25 @@ describe("a person's timeline", () => {
       [1927, "Birth of granddaughter Hélène Langevin-Joliot"],
       [1932, "Birth of grandson Pierre Joliot"],
       [1934, "Death"],
+    ]);
+  });
+
+  it("orders a life across the start of the era", () => {
+    const across = buildIndex(new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @I1@ INDI", "1 NAME Anna /Nowak/",
+      "1 DEAT", "2 DATE 20", "1 BIRT", "2 DATE 10 BCE", "1 RESI", "2 DATE 5 BCE",
+      "0 TRLR", "",
+    ].join("\n")));
+    const anna = across.person("@I1@");
+    if (!anna) {
+      throw new Error("no person @I1@");
+    }
+
+    expect(timelineOf(anna, across).entries.map((entry) => [entry.year, entry.label])).toEqual([
+      [-9, "Birth"],
+      [-4, "Residence"],
+      [20, "Death"],
     ]);
   });
 

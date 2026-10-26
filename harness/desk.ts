@@ -176,7 +176,7 @@ function mount(options: DeskOptions): void {
   calls.filesOpened = [];
   calls.notesOpened = [];
   service = new GedcomLanguageService(options.doc ?? curie);
-  index = buildIndex(service.getDocumentSymbols());
+  index = buildIndex(service);
   record = options.record ?? index.people.find((row) => row.xref)?.xref ?? "";
   selected = null;
   view = "card";

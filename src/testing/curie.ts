@@ -6,5 +6,5 @@ import { buildIndex, type GenealogyIndex } from "../genealogy";
 export const CURIE = curie;
 
 export function curieIndex(): GenealogyIndex {
-  return buildIndex(new GedcomLanguageService(CURIE).getDocumentSymbols());
+  return buildIndex(new GedcomLanguageService(CURIE));
 }

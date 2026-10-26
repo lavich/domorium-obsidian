@@ -74,6 +74,26 @@ describe("the index of a file", () => {
     expect(texts(".gedcom-desk-row-name")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
+  it("finds a person and a family before the common era by the year's digits", () => {
+    list.show({
+      index: buildIndex(new GedcomLanguageService([
+        "0 HEAD", "1 GEDC", "2 VERS 7.0",
+        "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 DATE 1401 BCE",
+        "0 @I2@ INDI", "1 NAME Jan /Nowak/", "1 BIRT", "2 DATE 1500 BCE",
+        "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I1@", "1 MARR", "2 DATE 1401 BCE",
+        "0 @F2@ FAM", "1 HUSB @I2@", "1 MARR", "2 DATE 1500 BCE",
+        "0 TRLR", "",
+      ].join("\n"))),
+      current: null,
+    });
+    type("1401");
+    expect(texts(".gedcom-desk-row-name")).toEqual(["Anna Nowak"]);
+
+    click(".gedcom-desk-seg-button", "Families");
+    type("1401");
+    expect(texts(".gedcom-desk-row-name")).toEqual(["Jan Nowak and Anna Nowak"]);
+  });
+
   it("says what it searched when nothing matches", () => {
     list.show(curie());
     type("Darwin");
@@ -162,7 +182,7 @@ describe("an index of twenty thousand people", () => {
     lines.push(`0 @I${at}@ INDI`, `1 NAME Person${at} /Family${at % 97}/`, "1 BIRT", `2 DATE ${1700 + (at % 300)}`);
   }
   lines.push("0 TRLR", "");
-  const big = buildIndex(new GedcomLanguageService(lines.join("\n")).getDocumentSymbols());
+  const big = buildIndex(new GedcomLanguageService(lines.join("\n")));
 
   it("draws a window of rows over a list as tall as all of them", () => {
     list.show({ index: big, current: null });

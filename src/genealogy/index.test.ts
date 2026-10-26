@@ -7,7 +7,7 @@ import { buildIndex, type GenealogyIndex } from "./index";
 import { UNNAMED } from "./names";
 
 const index = (text = FIXTURE): GenealogyIndex =>
-  buildIndex(new GedcomLanguageService(text).getDocumentSymbols());
+  buildIndex(new GedcomLanguageService(text));
 
 const person = (xref: string, from = index()) => {
   const found = from.person(xref);
@@ -50,6 +50,49 @@ describe("the people a document declares", () => {
     expect(marie?.place).toBe("Warsaw, Congress Poland");
   });
 
+  it("reads a year before the common era in the document's own dialect", () => {
+    const born = index([
+      "0 HEAD", "1 CHAR UTF-8", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED",
+      "0 @I1@ INDI", "1 BIRT", "2 DATE 1401 B.C.", "1 EVEN", "2 DATE ABT 1400 B.C.",
+      "0 TRLR", "",
+    ].join("\n"));
+
+    expect(born.people[0]?.birth).toEqual({
+      text: "1401 B.C.",
+      year: -1400,
+      precision: "exact",
+    });
+    expect(person("@I1@", born).events.map((event) => event.date?.year)).toEqual([
+      -1400, -1399,
+    ]);
+  });
+
+  it("reads no year in a document whose version cannot be determined", () => {
+    const born = index([
+      "0 HEAD", "0 @I1@ INDI", "1 BIRT", "2 DATE 7 NOV 1867", "0 TRLR", "",
+    ].join("\n"));
+
+    expect(born.people[0]?.birth).toEqual({ text: "7 NOV 1867" });
+  });
+
+  it("keeps the years it read when the service moves on to another text", () => {
+    const service = new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @I1@ INDI", "1 BIRT", "2 DATE 1401 BCE", "1 FAMS @F1@",
+      "0 @F1@ FAM", "1 WIFE @I1@", "1 MARR", "2 DATE 1380 BCE",
+      "0 TRLR", "",
+    ].join("\n"));
+    const built = buildIndex(service);
+
+    service.update("0 HEAD\n0 TRLR\n");
+    const anna = person("@I1@", built);
+
+    expect(anna.events.map((event) => event.date?.year)).toEqual([-1400]);
+    expect(anna.unions[0]?.events.map((event) => event.date?.year)).toEqual([-1379]);
+    expect(anna.spouseFamilies[0]?.marriage?.year).toBe(-1379);
+    expect(built.family("@F1@")?.events.map((event) => event.date?.year)).toEqual([-1379]);
+  });
+
   it("takes the place from death where birth states none", () => {
     const bare = index().people.find((row) => row.xref === "@I9@");
 
@@ -61,7 +104,7 @@ describe("the people a document declares", () => {
     const rows = buildIndex(
       new GedcomLanguageService(
         "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n0 TRLR\n",
-      ).getDocumentSymbols(),
+      ),
     ).people;
 
     expect(rows[0]?.name).toBe(UNNAMED);
@@ -238,7 +281,7 @@ describe("the model's independence from its host", () => {
 describe("reading paid for once per revision", () => {
   it("builds once while the revision holds, and again when it changes", () => {
     const read = vi.fn((text: string) =>
-      new GedcomLanguageService(text).getDocumentSymbols(),
+      new GedcomLanguageService(text),
     );
     const cache = new (class {
       private held?: { revision: string; index: GenealogyIndex };
@@ -348,7 +391,7 @@ describe("where each thing is stated in the file", () => {
 
 describe("multimedia records and the records that link them", () => {
   const service = new GedcomLanguageService(CURIE);
-  const curie = buildIndex(service.getDocumentSymbols());
+  const curie = buildIndex(service);
 
   it("reports who links a photograph, in file order, each with their own part of it", () => {
     const photo = curie.media("@O5@");

@@ -41,6 +41,13 @@ function draw(
   renderPersonPage(container, person, index, { selected, phone }, host);
 }
 
+const bornIn = (date: string): GenealogyIndex =>
+  buildIndex(new GedcomLanguageService([
+    "0 HEAD", "1 GEDC", "2 VERS 7.0",
+    "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", `2 DATE ${date}`,
+    "0 TRLR", "",
+  ].join("\n")));
+
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
@@ -55,6 +62,19 @@ describe("the person page", () => {
 
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-subtitle")).toEqual(["1867–1934 · Warsaw → Passy"]);
+  });
+
+  it("heads the page with a year before the common era marked as one", () => {
+    draw("@I1@", { index: bornIn("1401 BCE") });
+
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["1401 BCE–?"]);
+  });
+
+  it("marks an approximate year before the common era in Russian", () => {
+    setLanguage("ru");
+    draw("@I1@", { index: bornIn("ABT 1401 BCE") });
+
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["≈1401 до н. э.–?"]);
   });
 
   it("lists Marie's facts, her marriage among them, none citing a source", () => {
@@ -74,7 +94,7 @@ describe("the person page", () => {
       "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@",
       "0 @S2@ SOUR", "1 TITL Register",
       "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols());
+    ].join("\n")));
     draw("@I1@", { index });
 
     expect(facts()[0]?.[2]).toBe("1 source");
@@ -166,7 +186,7 @@ describe("the person page", () => {
       "0 @I2@ INDI", "1 NAME Jan /Nowak/",
       "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I98@", "1 CHIL @I1@",
       "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols());
+    ].join("\n")));
     draw("@I1@", { index });
 
     expect(texts(".gedcom-desk-person-name")).toEqual(["Jan Nowak"]);

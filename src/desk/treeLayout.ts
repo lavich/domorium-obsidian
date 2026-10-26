@@ -1,6 +1,6 @@
 import type { GenealogyIndex, Person, PersonRow } from "../genealogy";
 import { plural } from "../i18n";
-import { personName, yearsOf } from "./labels";
+import { personName, yearsOf, yearText } from "./labels";
 
 export const BOX = { width: 172, height: 48, gap: 18, couple: 12, rowGap: 56 } as const;
 
@@ -126,7 +126,7 @@ export function layoutTree(
       .filter((year): year is number => year !== undefined);
     const run = box({ name: "", otherNames: [], unaddressable: true, search: "" }, 0, {
       label: plural("tree.siblings", person.siblings.length),
-      years: years.length > 0 ? `${Math.min(...years)}–${Math.max(...years)}` : "",
+      years: years.length > 0 ? `${yearText(Math.min(...years))}–${yearText(Math.max(...years))}` : "",
       dim: true,
       gap: person.siblings.some((row) => !row.xref || index.citesBy(row.xref).length === 0),
       expands: person.xref,

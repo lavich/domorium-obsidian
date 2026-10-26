@@ -1,10 +1,11 @@
 import { plural, t } from "../i18n";
+import { yearText } from "./labels";
 import type { PageHost } from "./personPage";
 import type { PlaceEntry, Timeline, TimelineEntry } from "./timeline";
 
 function renderEntry(list: HTMLElement, entry: TimelineEntry, host: PageHost): void {
   const row = list.createDiv({ cls: ["gedcom-desk-moment", entry.own ? "is-own" : "is-kin"] });
-  row.createDiv({ cls: "gedcom-desk-moment-year", text: entry.year === undefined ? "" : String(entry.year) });
+  row.createDiv({ cls: "gedcom-desk-moment-year", text: entry.year === undefined ? "" : yearText(entry.year) });
   row.createDiv({ cls: "gedcom-desk-moment-dot" });
   const text = row.createDiv({ cls: "gedcom-desk-moment-text" });
   const what = text.createEl("button", { cls: "gedcom-desk-moment-what", text: entry.label });

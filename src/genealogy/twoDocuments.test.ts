@@ -19,8 +19,7 @@ const JOLIOT = [
   "0 TRLR", "",
 ].join("\n");
 
-const symbols = (text: string) =>
-  new GedcomLanguageService(text).getDocumentSymbols();
+const language = (text: string) => new GedcomLanguageService(text);
 
 describe("two documents declaring the same identifier", () => {
   it("are different people, and an address tells them apart", () => {
@@ -33,8 +32,8 @@ describe("two documents declaring the same identifier", () => {
   it("are read apart, whichever is asked for", () => {
     const cache = new IndexCache();
 
-    const curie = cache.at(documentRef("curie.ged"), "r1", () => symbols(CURIE));
-    const joliot = cache.at(documentRef("joliot.ged"), "r1", () => symbols(JOLIOT));
+    const curie = cache.at(documentRef("curie.ged"), "r1", () => language(CURIE));
+    const joliot = cache.at(documentRef("joliot.ged"), "r1", () => language(JOLIOT));
 
     expect(curie.person("@I1@")?.name).toBe("Marie Skłodowska-Curie");
     expect(joliot.person("@I1@")?.name).toBe("Frédéric Joliot");
@@ -42,11 +41,11 @@ describe("two documents declaring the same identifier", () => {
 
   it("do not overwrite each other in the cache", () => {
     const cache = new IndexCache();
-    cache.at(documentRef("curie.ged"), "r1", () => symbols(CURIE));
-    cache.at(documentRef("joliot.ged"), "r1", () => symbols(JOLIOT));
+    cache.at(documentRef("curie.ged"), "r1", () => language(CURIE));
+    cache.at(documentRef("joliot.ged"), "r1", () => language(JOLIOT));
 
     expect(
-      cache.at(documentRef("curie.ged"), "r1", () => []).person("@I1@")?.name,
+      cache.at(documentRef("curie.ged"), "r1", () => language("")).person("@I1@")?.name,
     ).toBe("Marie Skłodowska-Curie");
     expect(cache.size).toBe(2);
   });
@@ -56,8 +55,8 @@ describe("two documents declaring the same identifier", () => {
       JSON.stringify(recordRef(documentRef("joliot.ged"), "@I1@")),
     ) as ReturnType<typeof recordRef>;
     const cache = new IndexCache();
-    cache.at(documentRef("curie.ged"), "r1", () => symbols(CURIE));
-    const index = cache.at(stored.document, "r1", () => symbols(JOLIOT));
+    cache.at(documentRef("curie.ged"), "r1", () => language(CURIE));
+    const index = cache.at(stored.document, "r1", () => language(JOLIOT));
 
     expect(index.person(stored.xref)?.name).toBe("Frédéric Joliot");
   });

@@ -122,6 +122,7 @@
   "desk.noSource": "Без источника",
   "desk.noDetails": "Отмечено, без подробностей",
   "desk.born": "род. {year}",
+  "desk.yearBce": "{year} до н. э.",
   "desk.missingRecord": "Ссылка на запись, которой нет в файле",
   "desk.showInSource": "Показать в исходнике",
   "desk.empty.title": "В файле нет людей",

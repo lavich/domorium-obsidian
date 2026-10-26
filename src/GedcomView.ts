@@ -364,7 +364,7 @@ export class GedcomView extends TextFileView {
     return this.genealogyCache.at(
       documentRef(this.file?.path ?? ""),
       String(this.revision),
-      () => this.language.update(this.editor.state.doc).getDocumentSymbols(),
+      () => this.language.update(this.editor.state.doc),
     );
   }
 
