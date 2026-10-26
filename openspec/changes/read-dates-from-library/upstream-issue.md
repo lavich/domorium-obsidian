@@ -4,9 +4,10 @@
 
 `GedcomLanguageService.readDate(payload)` (2.2.0, #378) answers `null` for
 every payload when the document's version resolves as `undetermined` or
-`unsupported`, even though the resolution already carries the scheme the
-document is otherwise checked by. Should `readDate` read by that scheme
-instead?
+`unsupported`. An `undetermined` resolution (no `GEDC.VERS`, a PAF header)
+already carries the scheme the document is otherwise checked by; an
+`unsupported` one (`VERS 8.0`, `4.0`, `5.3`) carries none. Should `readDate`
+read an `undetermined` document by its scheme instead?
 
 domorium-obsidian now reads every year it shows through `readDate`, so a file
 with no `GEDC.VERS`, an unknown version, or a PAF header shows no year at all.
@@ -39,11 +40,14 @@ as `{ dates: [{ calendar: "GREGORIAN", year: 1867, month: "NOV", day: 7 }] }`.
    `{ calendar: "GREGORIAN", year: 1750, epoch: "BCE" }` with no `dualYear`,
    while `12 FEB 1750/51` reads with `dualYear: 1751`. Either the dual year
    should be kept, or the payload should be rejected if 5.5.1 does not allow a
-   dual year before the era.
+   dual year before the era. If it is kept, which year does `dualYear` name
+   before the era? Counting back, 1751 BCE is the earlier of the two, and a
+   consumer reading "the later year" needs to know which one it gets.
 
 ## Expected
 
-- A documented answer on whether `readDate` reads in an `undetermined` or
-  `unsupported` document, and by which scheme.
+- A documented answer on whether `readDate` reads in an `undetermined`
+  document by the scheme its resolution carries.
 - Year 0 either rejected or documented as accepted.
-- `1750/51 B.C.` either read with its `dualYear` or rejected.
+- `1750/51 B.C.` either read with its `dualYear`, documented as naming the
+  earlier or the later year, or rejected.

@@ -46,8 +46,8 @@ needs the service, not the symbols it produced. Every caller already has one:
 `() => this.language.update(this.editor.state.doc)`.
 
 The index calls `getDocumentSymbols()` once and, in the same pass, `readDate`
-once per distinct `DATE` payload under a person's or a family's events, into a
-map keyed by the payload. A person's events and a family's row are resolved
+once per distinct `DATE` payload directly under any line of a person's or a
+family's record, into a map keyed by the payload. A person's events and a family's row are resolved
 later, when a page opens, and read their dates from that map. The index does
 not keep the service: `GedcomView` holds one service and updates it in place,
 so a kept service would read an older index's dates against newer text. The
