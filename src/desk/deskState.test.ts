@@ -35,7 +35,7 @@ const CURIE = [
 ].join("\n");
 
 const index = (text = CURIE) =>
-  buildIndex(new GedcomLanguageService(text).getDocumentSymbols());
+  buildIndex(new GedcomLanguageService(text));
 
 describe("what a tab keeps of the desk", () => {
   it("reads a mode and a record it wrote", () => {

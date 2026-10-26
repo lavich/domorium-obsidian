@@ -74,7 +74,7 @@ describe("the source page", () => {
       "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S1@", "3 PAGE entry 88",
       "0 @S1@ SOUR", "1 TITL Register",
       "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols()));
+    ].join("\n"))));
 
     expect(texts(".gedcom-desk-citer-where")).toEqual(["Birth — entry 88"]);
   });
@@ -87,7 +87,7 @@ describe("the source page", () => {
       "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I1@", "1 MARR", "2 SOUR @S1@",
       "0 @S1@ SOUR", "1 TITL Register",
       "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols()));
+    ].join("\n"))));
     container.querySelector<HTMLElement>(".gedcom-desk-person")?.click();
 
     expect(texts(".gedcom-desk-person-name")).toEqual(["Jan Nowak and Anna Nowak"]);
@@ -105,7 +105,7 @@ describe("the source page", () => {
   it("says when nothing cites it", () => {
     draw("@S1@", buildIndex(new GedcomLanguageService([
       "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @S1@ SOUR", "1 TITL Alone", "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols()));
+    ].join("\n"))));
 
     expect(texts(".gedcom-desk-cited-by .gedcom-desk-none")).toEqual(["No record cites it."]);
   });

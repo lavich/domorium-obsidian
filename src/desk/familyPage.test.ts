@@ -102,7 +102,7 @@ describe("the family page", () => {
         "0 @I1@ INDI", "1 NAME Anna /Nowak/",
         "0 @F1@ FAM", "1 WIFE @I1@", "1 CHIL @I99@",
         "0 TRLR", "",
-      ].join("\n")).getDocumentSymbols()),
+      ].join("\n"))),
     });
 
     expect(texts(".gedcom-desk-title")).toEqual(["Anna Nowak"]);

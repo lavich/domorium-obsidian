@@ -1,9 +1,14 @@
+import type { DateModifier, GedcomDateValue } from "@domorium/language-service";
+
 export type DatePrecision = "exact" | "approximate" | "range";
 
 /**
  * The year is for display and is deliberately not named as the year an event
  * happened: `BET 1867 AND 1870` yields 1867, one end of a range and nobody's
  * birth year. A caller comparing two people must read `precision` first.
+ *
+ * A year before the common era is astronomical, `1 − written`, so that it
+ * orders and subtracts like any other.
  */
 export interface DateReading {
   text: string;
@@ -11,43 +16,44 @@ export interface DateReading {
   precision?: DatePrecision;
 }
 
-// 5.5.1 names a calendar in an escape, 7.0 by a keyword; either way the year
-// is not one a reader would place on a Gregorian timeline.
-const OTHER_CALENDAR = /@#D|\b(JULIAN|HEBREW|FRENCH_R)\b/iu;
-// A year before the common era would read, and sort, as one after it.
-const BEFORE_COMMON_ERA = /\b(BCE|B\.C\.)(?=\s|$)/iu;
-const DUAL_YEAR = /\d{4}\/\d{1,4}/u;
+// A Julian year is used as written: the calendars differ by days, not years.
+const PLACED_CALENDARS = new Set(["GREGORIAN", "JULIAN"]);
 
-const APPROXIMATE = /^(ABT|CAL|EST)\b/iu;
-const RANGE = /^(BET|BEF|AFT|FROM|TO)\b/iu;
-
-const FOUR_DIGITS = /\b(\d{4})\b/u;
-
-export function readDate(payload: string | undefined): DateReading {
-  const text = payload ?? "";
-  const trimmed = text.trim();
+export function readingOf(
+  payload: string,
+  value: GedcomDateValue | null,
+): DateReading {
+  const first = value?.dates[0];
   if (
-    !trimmed ||
-    OTHER_CALENDAR.test(trimmed) ||
-    BEFORE_COMMON_ERA.test(trimmed) ||
-    DUAL_YEAR.test(trimmed)
+    !value ||
+    !first ||
+    !PLACED_CALENDARS.has(first.calendar) ||
+    (first.epoch !== undefined && first.epoch !== "BCE") ||
+    first.year === 0
   ) {
-    return { text };
+    return { text: payload };
   }
-  const found = FOUR_DIGITS.exec(trimmed);
-  if (!found) {
-    return { text };
-  }
+  const written = first.dualYear ?? first.year;
   return {
-    text,
-    year: Number(found[1]),
-    precision: precisionOf(trimmed),
+    text: payload,
+    year: first.epoch === "BCE" ? 1 - written : written,
+    precision: precisionOf(value.modifier),
   };
 }
 
-function precisionOf(trimmed: string): DatePrecision {
-  if (APPROXIMATE.test(trimmed)) {
-    return "approximate";
+function precisionOf(modifier: DateModifier | undefined): DatePrecision {
+  switch (modifier) {
+    case "ABT":
+    case "CAL":
+    case "EST":
+      return "approximate";
+    case "BET":
+    case "BEF":
+    case "AFT":
+    case "FROM":
+    case "TO":
+      return "range";
+    default:
+      return "exact";
   }
-  return RANGE.test(trimmed) ? "range" : "exact";
 }

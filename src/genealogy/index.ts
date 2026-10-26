@@ -1,6 +1,12 @@
-import type { DocumentSymbol, MediaCrop, Position, Range } from "@domorium/language-service";
+import type {
+  DocumentSymbol,
+  GedcomLanguageService,
+  MediaCrop,
+  Position,
+  Range,
+} from "@domorium/language-service";
 
-import { readDate, type DateReading } from "./dates";
+import { readingOf, type DateReading } from "./dates";
 import { readName } from "./names";
 import {
   CHILD_FAMILY_TAG,
@@ -17,6 +23,10 @@ export { UNNAMED } from "./names";
 /** As UNNAMED is for a person: a marker the caller names, not a title. */
 export const UNTITLED = "@untitled@";
 export * from "./recordRef";
+
+export type IndexSource = Pick<GedcomLanguageService, "getDocumentSymbols" | "readDate">;
+
+type DateOf = (payload: string) => DateReading;
 
 export interface PersonEvent {
   /** The tag as written. Naming it for a reader is the caller's. */
@@ -412,6 +422,7 @@ function eventsOf(
   record: DocumentSymbol,
   reading: ReadonlySet<string>,
   citations: Citation[],
+  dateOf: DateOf,
 ): PersonEvent[] {
   const events: PersonEvent[] = [];
   for (const child of record.children) {
@@ -423,7 +434,7 @@ function eventsOf(
     const position = events.length;
     events.push({
       tag: child.name,
-      ...(date === undefined ? {} : { date: readDate(date) }),
+      ...(date === undefined ? {} : { date: dateOf(date) }),
       ...(payload(childOf(child, "PLAC")) === undefined
         ? {}
         : { place: payload(childOf(child, "PLAC")) }),
@@ -442,7 +453,7 @@ function familyName(names: string[]): string | undefined {
   return names.length > 0 ? names.join(" / ") : undefined;
 }
 
-function rowOf(record: DocumentSymbol): PersonRow {
+function rowOf(record: DocumentSymbol, dateOf: DateOf): PersonRow {
   const nameLines = childrenOf(record, "NAME");
   const name = readName(payload(nameLines[0]));
   const otherNames = nameLines
@@ -467,8 +478,8 @@ function rowOf(record: DocumentSymbol): PersonRow {
     name,
     otherNames,
     ...(sex === undefined ? {} : { sex }),
-    ...(birthEvent && birth !== undefined ? { birth: readDate(birth) } : {}),
-    ...(deathEvent && death !== undefined ? { death: readDate(death) } : {}),
+    ...(birthEvent && birth !== undefined ? { birth: dateOf(birth) } : {}),
+    ...(deathEvent && death !== undefined ? { death: dateOf(death) } : {}),
     ...(place === undefined ? {} : { place }),
     search: "",
   };
@@ -481,13 +492,33 @@ function searchTextOf(row: PersonRow): string {
     row.name,
     ...row.otherNames,
     row.xref ?? "",
-    row.birth?.year?.toString() ?? "",
-    row.death?.year?.toString() ?? "",
+    writtenYear(row.birth),
+    writtenYear(row.death),
     row.place ?? "",
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+}
+
+function writtenYear(date: DateReading | undefined): string {
+  if (date?.year === undefined) {
+    return "";
+  }
+  return String(date.year > 0 ? date.year : 1 - date.year);
+}
+
+function readDatesOf(
+  record: DocumentSymbol,
+  language: IndexSource,
+  into: Map<string, DateReading>,
+): void {
+  for (const child of record.children) {
+    const date = payload(childOf(child, "DATE"));
+    if (date !== undefined && !into.has(date)) {
+      into.set(date, readingOf(date, language.readDate(date)));
+    }
+  }
 }
 
 /**
@@ -497,7 +528,12 @@ function searchTextOf(row: PersonRow): string {
  * which is ever read. A person's relatives and events are resolved when that
  * person is opened.
  */
-export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
+export function buildIndex(language: IndexSource): GenealogyIndex {
+  const symbols = language.getDocumentSymbols();
+  // Every date is read during this pass, so the index never holds a service
+  // that may since have moved on to another revision of the document.
+  const readings = new Map<string, DateReading>();
+  const dateOf: DateOf = (date) => readings.get(date) ?? { text: date };
   const people: PersonRow[] = [];
   const familyRows: FamilyRow[] = [];
   const sourceRows: SourceRow[] = [];
@@ -514,8 +550,11 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
   const mediaLinks = new Map<string, MediaLink[]>();
 
   for (const symbol of symbols) {
+    if (symbol.name === "INDI" || symbol.name === "FAM") {
+      readDatesOf(symbol, language, readings);
+    }
     if (symbol.name === "INDI") {
-      const row = rowOf(symbol);
+      const row = rowOf(symbol, dateOf);
       people.push(row);
       if (row.xref) {
         rows.set(row.xref, row);
@@ -587,7 +626,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       unaddressable: xref === undefined,
       spouseNames,
       ...(name === undefined ? {} : { name }),
-      ...(date === undefined ? {} : { marriage: readDate(date) }),
+      ...(date === undefined ? {} : { marriage: dateOf(date) }),
       ...(place === undefined ? {} : { place }),
       childCount: rolePointers(record, CHILD_ROLE_TAGS).length,
       search: "",
@@ -595,7 +634,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
     row.search = [
       ...spouseNames,
       xref ?? "",
-      row.marriage?.year?.toString() ?? "",
+      writtenYear(row.marriage),
       place ?? "",
     ]
       .filter(Boolean)
@@ -634,7 +673,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       ...familyRowOf(record),
       spouses: members(SPOUSE_ROLE_TAGS),
       children: members(CHILD_ROLE_TAGS),
-      events: eventsOf(record, FAMILY_EVENT_TAGS, byCiter.get(xref) ?? []),
+      events: eventsOf(record, FAMILY_EVENT_TAGS, byCiter.get(xref) ?? [], dateOf),
       media: mediaOf(record, objects, unresolved),
       unresolved,
       missingSpouses: roleLinks(record, SPOUSE_ROLE_TAGS).filter((one) => !rows.has(one.xref)),
@@ -818,6 +857,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
           family,
           FAMILY_EVENT_TAGS,
           family.detail ? (byCiter.get(family.detail) ?? []) : [],
+          dateOf,
         ),
         children: [...ownChildren.values()],
         missingSpouses,
@@ -847,7 +887,7 @@ export function buildIndex(symbols: DocumentSymbol[]): GenealogyIndex {
       parents: [...parents.values()],
       partners: [...partners.values()],
       children: [...children.values()],
-      events: eventsOf(record, PERSON_EVENT_TAGS, byCiter.get(xref) ?? []),
+      events: eventsOf(record, PERSON_EVENT_TAGS, byCiter.get(xref) ?? [], dateOf),
       childFamilies: familiesOf(CHILD_FAMILY_TAG),
       spouseFamilies: familiesOf(SPOUSE_FAMILY_TAG),
       siblings: [...siblings.values()],

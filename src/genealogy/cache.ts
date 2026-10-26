@@ -1,6 +1,4 @@
-import type { DocumentSymbol } from "@domorium/language-service";
-
-import { buildIndex, type GenealogyIndex } from "./index";
+import { buildIndex, type GenealogyIndex, type IndexSource } from "./index";
 import type { DocumentRef } from "./recordRef";
 
 /*
@@ -29,7 +27,7 @@ export class IndexCache {
   at(
     document: DocumentRef,
     revision: string,
-    read: () => DocumentSymbol[],
+    read: () => IndexSource,
   ): GenealogyIndex {
     const key = document.path;
     const found = this.held_.get(key);

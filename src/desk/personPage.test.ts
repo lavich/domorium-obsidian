@@ -74,7 +74,7 @@ describe("the person page", () => {
       "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@",
       "0 @S2@ SOUR", "1 TITL Register",
       "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols());
+    ].join("\n")));
     draw("@I1@", { index });
 
     expect(facts()[0]?.[2]).toBe("1 source");
@@ -166,7 +166,7 @@ describe("the person page", () => {
       "0 @I2@ INDI", "1 NAME Jan /Nowak/",
       "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I98@", "1 CHIL @I1@",
       "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols());
+    ].join("\n")));
     draw("@I1@", { index });
 
     expect(texts(".gedcom-desk-person-name")).toEqual(["Jan Nowak"]);

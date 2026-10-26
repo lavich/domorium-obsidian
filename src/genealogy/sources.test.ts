@@ -5,7 +5,7 @@ import { FIXTURE } from "./fixture";
 import { buildIndex, type GenealogyIndex } from "./index";
 
 const index = (text = FIXTURE): GenealogyIndex =>
-  buildIndex(new GedcomLanguageService(text).getDocumentSymbols());
+  buildIndex(new GedcomLanguageService(text));
 
 const source = (xref: string, from = index()) => {
   const found = from.source(xref);
@@ -116,7 +116,7 @@ describe("citations, read both ways", () => {
 describe("reading both ways costs one pass", () => {
   it("reads the document once, however many sources are asked about", () => {
     const read = vi.fn(() =>
-      new GedcomLanguageService(FIXTURE).getDocumentSymbols(),
+      new GedcomLanguageService(FIXTURE),
     );
     const built = buildIndex(read());
 

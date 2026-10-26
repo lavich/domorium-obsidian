@@ -91,7 +91,7 @@ describe("relatives beyond the edge", () => {
 
 describe("families the demo vault does not have", () => {
   function index(lines: string[]): GenealogyIndex {
-    return buildIndex(new GedcomLanguageService(["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n")).getDocumentSymbols());
+    return buildIndex(new GedcomLanguageService(["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n")));
   }
 
   it("puts a second spouse on the other side, each with their own children", () => {

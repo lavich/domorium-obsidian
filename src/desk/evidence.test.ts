@@ -41,7 +41,7 @@ const OWN_SOURCE = buildIndex(new GedcomLanguageService([
   "0 @S1@ SOUR", "1 TITL Census of 1891",
   "0 @S2@ SOUR", "1 TITL Parish register", "1 AUTH Holy Cross", "1 PUBL Warsaw",
   "0 TRLR", "",
-].join("\n")).getDocumentSymbols());
+].join("\n")));
 
 describe("the evidence of a whole record", () => {
   it("names the record and lists the sources it cites itself", () => {
@@ -129,7 +129,7 @@ describe("the evidence of a fact", () => {
     const index = buildIndex(new GedcomLanguageService([
       "0 HEAD", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8",
       "0 @I1@ INDI", "1 BIRT", "2 SOUR Family Bible", "0 TRLR", "",
-    ].join("\n")).getDocumentSymbols());
+    ].join("\n")));
     draw("@I1@", "p:0", index);
 
     expect(texts(".gedcom-desk-cite-inline")).toEqual(["Family Bible"]);
