@@ -122,8 +122,9 @@ era is not searched.
 
 A document with no `GEDC.VERS`, an unknown version, or a PAF header loses every
 year. That is the library's verdict that it does not know the rules to read the
-document by, and the plugin does not overrule it. An issue goes to
-lavich/domorium asking whether `readDate` should read in an `undetermined`
+document by, and the plugin does not overrule it.
+[lavich/domorium#453](https://github.com/lavich/domorium/issues/453) asks
+whether `readDate` should read in an `undetermined`
 document by the schema its resolution already carries. The same issue notes two
 smaller things the probes turned up: a year 0 is accepted as a date value, and
 5.5.1 `1750/51 B.C.` reads without its `dualYear`.

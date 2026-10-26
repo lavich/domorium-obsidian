@@ -1,7 +1,7 @@
 ## 1. Dependency and the upstream gap
 
 - [x] 1.1 Raise `@domorium/language-service` to `^2.2.0` in `package.json`, run `npm install`, and verify `npm ls @domorium/language-service` resolves a single 2.2.x (the copy `@domorium/codemirror` 2.1.0 pulls in included) and `npm run typecheck` passes (no test file: the check is the install and the typecheck)
-- [ ] 1.2 Draft the lavich/domorium issue asking whether `readDate` should read in a document whose version resolves as `undetermined` or `unsupported`, with the reproduction from design.md, noting also that a year 0 is accepted and that 5.5.1 `1750/51 B.C.` loses its `dualYear`, and file it once the user approves the text (no test file); verify by recording the issue number in design.md under "The gap upstream"
+- [x] 1.2 Draft the lavich/domorium issue asking whether `readDate` should read in a document whose version resolves as `undetermined` or `unsupported`, with the reproduction from design.md, noting also that a year 0 is accepted and that 5.5.1 `1750/51 B.C.` loses its `dualYear`, and file it once the user approves the text (no test file); verify by recording the issue number in design.md under "The gap upstream"
 
 ## 2. Reading a date from the library's value
 
