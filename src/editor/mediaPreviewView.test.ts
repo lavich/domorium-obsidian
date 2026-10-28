@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
+import { installObsidianDom } from "../testing/obsidianDom";
 import type { MediaPreviewContent } from "./media";
 import {
   renderMediaPreview,
@@ -37,6 +38,8 @@ const labels = (): string[] =>
   [...container.querySelectorAll(".gedcom-media-allow")].map(
     (button) => button.textContent ?? "",
   );
+
+beforeAll(installObsidianDom);
 
 beforeEach(() => {
   container = document.createElement("div");

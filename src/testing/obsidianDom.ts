@@ -15,8 +15,8 @@ interface DomOptions {
 
 const IMPLEMENTED = new Set(["cls", "text"]);
 
-function build(
-  parent: HTMLElement,
+function create(
+  doc: Document,
   tag: string,
   options: DomOptions = {},
 ): HTMLElement {
@@ -25,7 +25,7 @@ function build(
       throw new Error(`obsidianDom: ${key} is used but not implemented`);
     }
   }
-  const node = parent.ownerDocument.createElement(tag);
+  const node = doc.createElement(tag);
   if (options.cls !== undefined) {
     node.classList.add(
       ...(Array.isArray(options.cls) ? options.cls : options.cls.split(" ")),
@@ -34,12 +34,31 @@ function build(
   if (options.text !== undefined) {
     node.textContent = options.text;
   }
+  return node;
+}
+
+function build(
+  parent: HTMLElement,
+  tag: string,
+  options?: DomOptions,
+): HTMLElement {
+  const node = create(parent.ownerDocument, tag, options);
   parent.append(node);
   return node;
 }
 
 /** Call once, from a test that imports a module using Obsidian's helpers. */
 export function installObsidianDom(): void {
+  Object.defineProperty(Document.prototype, "win", {
+    configurable: true,
+    get(this: Document) {
+      return this.defaultView;
+    },
+  });
+  (window as unknown as Record<string, unknown>).createEl = (
+    tag: string,
+    options?: DomOptions,
+  ) => create(window.document, tag, options);
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
   proto.createEl = function (tag: string, options?: DomOptions) {
     return build(this as unknown as HTMLElement, tag, options);

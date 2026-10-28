@@ -152,9 +152,10 @@ function element(
   cls: string,
   before?: ChildNode,
 ): HTMLElement {
-  const node = parent.ownerDocument.createElement(tag);
-  node.className = cls;
-  parent.insertBefore(node, before ?? null);
+  const node = parent.createEl(tag, { cls });
+  if (before) {
+    parent.insertBefore(node, before);
+  }
   return node;
 }
 

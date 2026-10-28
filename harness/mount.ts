@@ -22,7 +22,10 @@ import {
   DEFAULT_SETTINGS,
   type RecordPreviewTrigger,
 } from "../src/settingsData";
+import { installObsidianDom } from "../src/testing/obsidianDom";
 import { stubSetIcon } from "./icons";
+
+installObsidianDom();
 
 export interface HarnessOptions {
   doc: string;

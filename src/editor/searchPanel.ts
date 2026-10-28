@@ -86,9 +86,10 @@ export function obsidianSearchPanel(host: PanelHost) {
       tag: K,
       cls: string,
     ): HTMLElementTagNameMap[K] => {
-      const node = owner.createElement(tag);
-      node.className = cls;
-      return node;
+      return (owner.win as typeof window).createEl(
+        tag,
+        cls ? { cls } : undefined,
+      );
     };
     const field = (placeholder: string): HTMLInputElement => {
       const input = element("input", "");
