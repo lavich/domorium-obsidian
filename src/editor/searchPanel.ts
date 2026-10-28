@@ -79,16 +79,14 @@ export function obsidianSearchPanel(host: PanelHost) {
   return (view: EditorView): Panel => {
     // The view's own document and window, not this file's: a popout has both.
     const owner = view.dom.ownerDocument;
-    const timers = owner.defaultView ?? window;
+    const timers = owner.win;
     let settle: number | undefined;
 
     const element = <K extends keyof HTMLElementTagNameMap>(
       tag: K,
       cls: string,
     ): HTMLElementTagNameMap[K] => {
-      const node = owner.createElement(tag);
-      node.className = cls;
-      return node;
+      return (owner.win as typeof window).createEl(tag, { cls });
     };
     const field = (placeholder: string): HTMLInputElement => {
       const input = element("input", "");
