@@ -11,8 +11,8 @@ import {
 import type { IconSetter } from "./searchPanel";
 
 /**
- * Drawing the popover. Standard DOM and an injected `setIcon`, so the browser
- * harness mounts the same code without Obsidian.
+ * Drawing the popover. Obsidian's DOM helpers and an injected `setIcon`; outside
+ * the app, `src/testing/obsidianDom.ts` supplies the helpers.
  */
 
 const ICONS: Record<string, string> = {
