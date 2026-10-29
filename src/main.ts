@@ -35,8 +35,7 @@ import {
   describeStranded,
   describeUnreadable,
   isGedcomPath,
-  mayNameAFile,
-  retargetMedia,
+  planClosedRewrite,
 } from "./vault/renamedMedia";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import {
@@ -476,22 +475,19 @@ export default class GedcomPlugin
     to: string,
   ): Promise<{ count: number; stranded: number }> {
     const text = await this.app.vault.read(file);
-    if (!mayNameAFile(text)) {
-      return { count: 0, stranded: 0 };
-    }
-    const planned = retargetMedia(text, file.path, from, to);
-    if (planned.count === 0) {
-      return { count: 0, stranded: planned.stranded };
-    }
+    const { write, count, stranded } = planClosedRewrite(text, file.path, from, to);
     // process writes whatever it is handed, so a file with nothing to change
     // is never given to it: every GEDCOM in the vault would be rewritten, and
     // its modification time is what Sync and the file list go by.
+    if (write === null) {
+      return { count: 0, stranded };
+    }
     await this.app.vault.process(file, (current) =>
       current === text
-        ? planned.text
-        : retargetMedia(current, file.path, from, to).text,
+        ? write
+        : (planClosedRewrite(current, file.path, from, to).write ?? current),
     );
-    return { count: planned.count, stranded: planned.stranded };
+    return { count, stranded };
   }
 
   private commandHost(): CommandHost {

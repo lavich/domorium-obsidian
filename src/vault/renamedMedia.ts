@@ -1,5 +1,6 @@
 import {
   GedcomLanguageService,
+  mentionsFile,
   relativeFilePath,
   type Position,
   type WorkspaceEdit,
@@ -12,11 +13,6 @@ const GEDCOM_EXTENSIONS = ["ged", "gedcom"];
 export function isGedcomPath(path: string): boolean {
   const dot = path.lastIndexOf(".");
   return dot > 0 && GEDCOM_EXTENSIONS.includes(path.slice(dot + 1).toLowerCase());
-}
-
-/** Exact, not a guess: every payload sits on a line whose tag is FILE. */
-export function mayNameAFile(text: string): boolean {
-  return text.includes("FILE");
 }
 
 export function applyEdits(text: string, edit: WorkspaceEdit): string {
@@ -87,6 +83,29 @@ export function retargetMedia(
     text: edit.edits.length === 0 ? text : applyEdits(text, edit),
     count: edit.edits.length,
     stranded,
+  };
+}
+
+export interface ClosedRewrite {
+  write: string | null;
+  count: number;
+  stranded: number;
+}
+
+export function planClosedRewrite(
+  text: string,
+  documentPath: string,
+  from: string,
+  to: string,
+): ClosedRewrite {
+  if (!mentionsFile(text, from)) {
+    return { write: null, count: 0, stranded: 0 };
+  }
+  const planned = retargetMedia(text, documentPath, from, to);
+  return {
+    write: planned.count === 0 ? null : planned.text,
+    count: planned.count,
+    stranded: planned.stranded,
   };
 }
 
