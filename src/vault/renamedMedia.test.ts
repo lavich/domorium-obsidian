@@ -66,6 +66,20 @@ describe("a media file that has been renamed", () => {
     expect(result.stranded).toBe(1);
   });
 
+  it("strands that same move in a document with no version, read as GEDCOM 7", () => {
+    const text = "0 HEAD\n0 @O1@ OBJE\n1 FILE media/marie.jpg\n0 TRLR\n";
+
+    const result = retargetMedia(
+      text,
+      "family/tree.ged",
+      "family/media/marie.jpg",
+      "photos/marie.jpg",
+    );
+
+    expect(result.text).toBe(text);
+    expect(result.stranded).toBe(1);
+  });
+
   it("writes that same move in 5.5.1, where a payload is any string at all", () => {
     const text = file("5.5.1", "media/marie.jpg");
 

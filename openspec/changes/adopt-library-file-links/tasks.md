@@ -12,7 +12,7 @@
 
 ## 3. Following a renamed file
 
-- [ ] 3.1 Read the GEDCOM 7 test in `planRetarget` from `service.getDocument().getDialect()`, leaving its two `retargetFileLinks` calls unsuppressed; verify `npm run lint` exits 0 with exactly those two deprecation warnings and `src/vault/renamedMedia.test.ts` passes its three rename scenarios
+- [x] 3.1 Read the GEDCOM 7 test in `planRetarget` from `service.getDocument().getDialect()`, leaving its two `retargetFileLinks` calls unsuppressed; verify `npm run lint` exits 0 with exactly those two deprecation warnings and `src/vault/renamedMedia.test.ts` passes its three rename scenarios
 - [ ] 3.2 Move the closed-file decision out of `src/main.ts` into `planClosedRewrite` beside `retargetMedia`, gated on `mentionsFile(text, from)` in place of `mayNameAFile`; rewrite the "which files are worth parsing" tests in `src/vault/renamedMedia.test.ts` for the two closed-file scenarios of the `document-links` delta, and verify it passes
 
 ## 4. Docs and verification

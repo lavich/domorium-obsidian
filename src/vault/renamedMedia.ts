@@ -57,11 +57,7 @@ export function planRetarget(
 ): { edit: WorkspaceEdit; stranded: number } {
   const oldPath = relativeFilePath(documentPath, from);
   const newPath = relativeFilePath(documentPath, to);
-  const resolution = service.getVersionResolution();
-  const gedcom7 =
-    resolution !== undefined &&
-    "dialect" in resolution &&
-    resolution.dialect === "7.0";
+  const gedcom7 = service.getDocument().getDialect() === "7.0";
 
   // A GEDCOM 7 payload is a URI reference that may not leave the folder its
   // file is in, so a photo moved above that folder has no payload to move to.
