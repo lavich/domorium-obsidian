@@ -53,7 +53,8 @@ unreadable. It also matches only canonical spellings — `photos//a.jpg`,
 `photos/./a.jpg` and `x/../photos/a.jpg` in 5.5.1 open the file through
 `resolveFileTarget` but are not moved — and in 5.5.1 it writes
 `photos/a\b.jpg` for a file renamed to that name, which reads back as
-`photos/a/b.jpg`. All three go to lavich/domorium as one issue.
+`photos/a/b.jpg`. All three are
+[lavich/domorium#480](https://github.com/lavich/domorium/issues/480).
 
 `readDate` in a document with no version, a PAF header or an unsupported version
 now reads by 5.5.1 and then 7.0: `ABT 1867` gives 1867. A year 0 answers `null`.
