@@ -95,7 +95,7 @@ import type { Position } from "@domorium/language-service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
-import { planRetarget } from "./vault/renamedMedia";
+import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
 
@@ -455,19 +455,12 @@ export class GedcomView extends TextFileView {
     this.editor.focus();
   }
 
-  followRenamedFile(
-    from: string,
-    to: string,
-  ): { count: number; stranded: number } {
-    const documentPath = this.file?.path;
-    if (!documentPath) {
-      return { count: 0, stranded: 0 };
-    }
-    const { edit, stranded } = planRetarget(
+  followMove(move: Move, documentPath: string): Outcome {
+    const { edit, stranded } = planMove(
       this.language.update(this.editor.state.doc),
       documentPath,
-      from,
-      to,
+      move,
+      this.language.getVersion(),
     );
     if (edit.edits.length === 0) {
       return { count: 0, stranded };

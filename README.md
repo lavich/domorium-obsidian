@@ -97,8 +97,9 @@ references it. Media that is not an image is named rather than drawn, and a
 `FILE` naming a web address says so instead of being fetched. A `FILE` payload
 is read by its file's GEDCOM version, so in GEDCOM 7 `photos/my%20photo.jpg`
 names `photos/my photo.jpg`, and a vault file that is renamed or moved is
-followed into the payloads naming it, or a notice says how many it could not
-follow. **Media preview**
+followed into the payloads naming it — as is a renamed folder, and a GEDCOM file
+moved to another folder, whose payloads are spelled again from where it now
+stands — or a notice says how many it could not follow. **Media preview**
 in the plugin settings chooses the gesture, or turns it off, independently of
 **Record preview**. Both open on a resting hover by default; either can be set
 to ask for Ctrl/Cmd instead, and a gesture already chosen is kept.
