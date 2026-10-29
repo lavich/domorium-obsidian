@@ -914,32 +914,37 @@ export class GedcomView extends TextFileView {
   }
 
   private openDocumentLink(link: DocumentLink): void {
-    const routed = routeDocumentLink(link, this.file?.path ?? "", {
-      openExternal: (url) => {
-        this.contentEl.ownerDocument.defaultView?.open(
-          url,
-          "_blank",
-          "noopener,noreferrer",
-        );
+    const routed = routeDocumentLink(
+      link,
+      this.file?.path ?? "",
+      this.language.update(this.editor.state.doc).getDocument().getDialect(),
+      {
+        openExternal: (url) => {
+          this.contentEl.ownerDocument.defaultView?.open(
+            url,
+            "_blank",
+            "noopener,noreferrer",
+          );
+        },
+        openVaultFile: (relativePath) => {
+          const path = normalizePath(relativePath);
+          const file = this.app.vault.getAbstractFileByPath(path);
+          if (!(file instanceof TFile)) {
+            new Notice(t("notice.vaultFileNotFound", { path }));
+            return;
+          }
+          // Where it already is, or else a tab of its own: replacing this one
+          // loses the reader's place in the file the link was followed from.
+          const open = this.leafShowing(path);
+          if (open) {
+            void this.app.workspace.revealLeaf(open);
+            return;
+          }
+          // Not `'window'`, which the mobile app has no popout for.
+          void this.app.workspace.getLeaf("tab").openFile(file);
+        },
       },
-      openVaultFile: (relativePath) => {
-        const path = normalizePath(relativePath);
-        const file = this.app.vault.getAbstractFileByPath(path);
-        if (!(file instanceof TFile)) {
-          new Notice(t("notice.vaultFileNotFound", { path }));
-          return;
-        }
-        // Where it already is, or else a tab of its own: replacing this one
-        // loses the reader's place in the file the link was followed from.
-        const open = this.leafShowing(path);
-        if (open) {
-          void this.app.workspace.revealLeaf(open);
-          return;
-        }
-        // Not `'window'`, which the mobile app has no popout for.
-        void this.app.workspace.getLeaf("tab").openFile(file);
-      },
-    });
+    );
     if (!routed) {
       new Notice(t("notice.unsafeFileLink"));
     }

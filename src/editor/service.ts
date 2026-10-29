@@ -1,4 +1,8 @@
 import type { DocumentLink } from "@domorium/codemirror";
+import {
+  resolveFileTarget,
+  type GedcomDialect,
+} from "@domorium/language-service";
 
 export function resolveVaultRelativePath(
   documentPath: string,
@@ -50,6 +54,7 @@ export interface DocumentLinkRouter {
 export function routeDocumentLink(
   link: DocumentLink,
   documentPath: string,
+  dialect: GedcomDialect | undefined,
   router: DocumentLinkRouter,
 ): boolean {
   if (link.kind === "http") {
@@ -59,7 +64,7 @@ export function routeDocumentLink(
   if (link.kind !== "file-relative") {
     return false;
   }
-  const path = resolveVaultRelativePath(documentPath, link.targetText);
+  const path = resolveFileTarget(documentPath, link.targetText, dialect);
   if (!path) {
     return false;
   }
