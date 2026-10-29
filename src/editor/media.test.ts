@@ -1,10 +1,15 @@
-import type { MediaKind, MediaReference } from "@domorium/language-service";
+import type {
+  GedcomDialect,
+  MediaKind,
+  MediaReference,
+} from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
 import {
   cropScale,
   drawnCrop,
   mediaPreviewContent,
+  mediaVaultPath,
   previewBounds,
   MEDIA_PREVIEW_MAX_HEIGHT,
   MEDIA_PREVIEW_MAX_WIDTH,
@@ -27,8 +32,10 @@ function reference(overrides: Partial<MediaReference> = {}): MediaReference {
 const vault = (
   files: Record<string, string> = { "media/marie.jpg": "app://marie" },
   documentPath = "tree.ged",
+  dialect: GedcomDialect | undefined = "7.0",
 ): MediaVault => ({
   documentPath,
+  dialect,
   resolve: (path) => files[path] ?? null,
 });
 
@@ -44,7 +51,7 @@ describe("what the popover should draw", () => {
   it("reads a relative target from the document that wrote it", () => {
     const content = mediaPreviewContent(
       reference({ targetText: "../shared/marie.jpg" }),
-      vault({ "shared/marie.jpg": "app://shared" }, "family/tree.ged"),
+      vault({ "shared/marie.jpg": "app://shared" }, "family/tree.ged", "5.5.1"),
     );
     expect(content).toEqual({
       kind: "image",
@@ -158,7 +165,7 @@ describe("what the popover should draw", () => {
     expect(
       mediaPreviewContent(
         reference({ targetText: "../outside/marie.jpg" }),
-        vault({}, "tree.ged"),
+        vault({}, "tree.ged", "5.5.1"),
       ),
     ).toEqual({ kind: "missing", target: "../outside/marie.jpg" });
   });
@@ -188,9 +195,64 @@ describe("what the popover should draw", () => {
     expect(
       mediaPreviewContent(
         reference({ mediaKind: "document", targetText: "media\\deed.pdf" }),
-        vault({ "media/deed.pdf": "app://deed" }),
+        vault({ "media/deed.pdf": "app://deed" }, "tree.ged", "5.5.1"),
       ),
     ).toEqual({ kind: "file", mediaKind: "document", name: "deed.pdf" });
+  });
+
+  it("reads a GEDCOM 7 percent-escape as the character it stands for, in path and name", () => {
+    expect(
+      mediaPreviewContent(
+        reference({ targetText: "photos/my%20photo.jpg" }),
+        vault({ "family/photos/my photo.jpg": "app://mine" }, "family/tree.ged"),
+      ),
+    ).toEqual({ kind: "image", url: "app://mine", name: "my photo.jpg" });
+  });
+
+  it("answers missing for an escaped separator in GEDCOM 7", () => {
+    expect(
+      mediaPreviewContent(
+        reference({ targetText: "photos%2Fmarie.jpg" }),
+        vault({ "photos/marie.jpg": "app://marie" }),
+      ),
+    ).toEqual({ kind: "missing", target: "photos%2Fmarie.jpg" });
+  });
+
+  it("reads a backslash and a parent folder in GEDCOM 5.5.1", () => {
+    expect(
+      mediaPreviewContent(
+        reference({ targetText: "..\\photos\\marie.jpg" }),
+        vault({ "photos/marie.jpg": "app://marie" }, "family/tree.ged", "5.5.1"),
+      ),
+    ).toEqual({ kind: "image", url: "app://marie", name: "marie.jpg" });
+  });
+
+  it("answers missing where the document's dialect is undetermined", () => {
+    expect(
+      mediaPreviewContent(reference(), { ...vault(), dialect: undefined }),
+    ).toEqual({ kind: "missing", target: "media/marie.jpg" });
+  });
+});
+
+describe("the vault path a picture stands for", () => {
+  it("is the file the payload resolves to in the document's dialect", () => {
+    const escaped = reference({ targetText: "photos/my%20photo.jpg" });
+
+    expect(mediaVaultPath(escaped, vault({}, "family/tree.ged"))).toBe(
+      "family/photos/my photo.jpg",
+    );
+    expect(mediaVaultPath(escaped, vault({}, "family/tree.ged", "5.5.1"))).toBe(
+      "family/photos/my%20photo.jpg",
+    );
+  });
+
+  it("is none for a target the vault cannot address", () => {
+    expect(
+      mediaVaultPath(
+        reference({ kind: "http", targetText: "https://e.org/marie.jpg" }),
+        vault(),
+      ),
+    ).toBeNull();
   });
 });
 

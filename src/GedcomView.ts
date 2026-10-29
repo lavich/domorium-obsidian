@@ -40,7 +40,11 @@ import {
 } from "obsidian";
 
 import { createGedcomComposition } from "./editor/composition";
-import { mediaPreviewContent, previewBounds } from "./editor/media";
+import {
+  mediaPreviewContent,
+  mediaVaultPath,
+  previewBounds,
+} from "./editor/media";
 import { clearMediaPreview } from "./editor/mediaPreviewHover";
 import {
   renderMediaPreview,
@@ -84,7 +88,6 @@ import {
 } from "./desk/sourcePage";
 import { documentRef, type GenealogyIndex } from "./genealogy";
 import type { Position } from "@domorium/language-service";
-import { resolveVaultRelativePath } from "./editor/service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
@@ -718,26 +721,21 @@ export class GedcomView extends TextFileView {
   }
 
   private mediaItem(at: Position): MediaItem | null {
-    const reference = this.language.update(this.editor.state.doc).getMediaAt(at);
+    const service = this.language.update(this.editor.state.doc);
+    const reference = service.getMediaAt(at);
     if (!reference) {
       return null;
     }
-    const documentPath = this.file?.path ?? "";
-    const content = mediaPreviewContent(
-      reference,
-      {
-        documentPath,
-        resolve: (path) => {
-          const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-          return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
-        },
+    const vault = {
+      documentPath: this.file?.path ?? "",
+      dialect: service.getDocument().getDialect(),
+      resolve: (path: string) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
       },
-      this.host.remoteImages(),
-    );
-    const path =
-      reference.kind === "file-relative"
-        ? resolveVaultRelativePath(documentPath, reference.targetText)
-        : null;
+    };
+    const content = mediaPreviewContent(reference, vault, this.host.remoteImages());
+    const path = mediaVaultPath(reference, vault);
     return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
   }
 
@@ -875,6 +873,10 @@ export class GedcomView extends TextFileView {
       media,
       {
         documentPath: this.file?.path ?? "",
+        dialect: this.language
+          .update(this.editor.state.doc)
+          .getDocument()
+          .getDialect(),
         resolve: (path) => {
           const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
           return file instanceof TFile
