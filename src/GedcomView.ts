@@ -95,7 +95,7 @@ import type { Position } from "@domorium/language-service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
-import { type Move, planMove } from "./vault/movedFiles";
+import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
 
@@ -455,11 +455,7 @@ export class GedcomView extends TextFileView {
     this.editor.focus();
   }
 
-  followMove(move: Move): { count: number; stranded: number } {
-    const documentPath = this.file?.path;
-    if (!documentPath) {
-      return { count: 0, stranded: 0 };
-    }
+  followMove(move: Move, documentPath: string): Outcome {
     const { edit, stranded } = planMove(
       this.language.update(this.editor.state.doc),
       documentPath,

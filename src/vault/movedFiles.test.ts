@@ -9,6 +9,8 @@ import {
   isGedcomPath,
   Move,
   moveClosedFile,
+  MoveFollower,
+  type OpenDocument,
   planClosedMove,
   planMove,
   RenameBatch,
@@ -71,6 +73,46 @@ function batch(): { batch: RenameBatch; timers: FakeTimers; moves: Move[] } {
     timers,
     moves,
   };
+}
+
+interface FakeFile {
+  path: string;
+  text: string;
+}
+
+function follower(
+  files: FakeFile[],
+  open: (file: FakeFile) => OpenDocument | null = () => null,
+): { follower: MoveFollower<FakeFile>; timers: FakeTimers; notices: string[] } {
+  const timers = new FakeTimers();
+  const notices: string[] = [];
+  return {
+    follower: new MoveFollower<FakeFile>(
+      {
+        files: () => files,
+        openView: open,
+        read: (moved) => Promise.resolve(moved.text),
+        process: (moved, change) => {
+          moved.text = change(moved.text);
+          return Promise.resolve(moved.text);
+        },
+        notify: (message) => notices.push(message),
+      },
+      timers,
+    ),
+    timers,
+    notices,
+  };
+}
+
+function moveFile(
+  moves: MoveFollower<FakeFile>,
+  moved: FakeFile,
+  to: string,
+): void {
+  const from = moved.path;
+  moved.path = to;
+  moves.add(file(from, to));
 }
 
 describe("a move", () => {
@@ -503,6 +545,55 @@ describe("a GEDCOM file's payloads after a move", () => {
   });
 });
 
+describe("moves followed one after another", () => {
+  it("plans move A from where the GEDCOM file stood after it, though B has moved it since", async () => {
+    const tree = { path: "tree.ged", text: gedcom("5.5.1", "media/a.jpg") };
+    const { follower: moves, timers } = follower([tree]);
+
+    moves.add(file("media/a.jpg", "media/b.jpg"));
+    moveFile(moves, tree, "family/tree.ged");
+    timers.run();
+    await moves.idle();
+
+    expect(tree.text).toBe(gedcom("5.5.1", "../media/b.jpg"));
+  });
+
+  it("keeps a payload that a folder and its GEDCOM file both moved under, one action after the other", async () => {
+    for (const dialect of ["5.5.1", "7.0"] as const) {
+      const tree = { path: "tree.ged", text: gedcom(dialect, "photos/a.jpg") };
+      const { follower: moves, timers, notices } = follower([tree]);
+
+      moves.add(folder("photos", "family/photos"), ["photos/a.jpg"]);
+      moves.add(file("photos/a.jpg", "family/photos/a.jpg"));
+      moveFile(moves, tree, "family/tree.ged");
+      await moves.idle();
+      timers.run();
+      await moves.idle();
+
+      expect(tree.text).toBe(gedcom(dialect, "photos/a.jpg"));
+      expect(notices.filter((notice) => notice.includes("left"))).toEqual([]);
+    }
+  });
+
+  it("hands an open GEDCOM file the path it stood at after the move", async () => {
+    const tree = { path: "tree.ged", text: gedcom("7.0", "media/a.jpg") };
+    const planned: string[] = [];
+    const { follower: moves, timers } = follower([tree], () => ({
+      followMove: (_move, documentPath) => {
+        planned.push(documentPath);
+        return { count: 0, stranded: 0 };
+      },
+    }));
+
+    moves.add(file("media/a.jpg", "media/b.jpg"));
+    moveFile(moves, tree, "family/tree.ged");
+    timers.run();
+    await moves.idle();
+
+    expect(planned).toEqual(["tree.ged", "family/tree.ged"]);
+  });
+});
+
 describe("a closed GEDCOM file rewritten after a move", () => {
   it("re-plans the move when its text changed between read and write", async () => {
     const read = gedcom("7.0", "media/a.jpg");
@@ -517,7 +608,7 @@ describe("a closed GEDCOM file rewritten after a move", () => {
           return Promise.resolve(written);
         },
       },
-      "tree.ged",
+      () => "tree.ged",
       new Move([folder("media", "pics")]),
     );
 
@@ -530,7 +621,7 @@ describe("a closed GEDCOM file rewritten after a move", () => {
 
     await moveClosedFile(
       { read: () => Promise.resolve(gedcom("7.0", "scans/c.jpg")), process },
-      "tree.ged",
+      () => "tree.ged",
       new Move([file("photos/a.jpg", "photos/b.jpg")]),
     );
 

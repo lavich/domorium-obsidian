@@ -136,6 +136,10 @@ export class RenameBatch {
     );
   }
 
+  pending(): Move {
+    return new Move(this.renames);
+  }
+
   cancel(): void {
     this.cancelTimer();
     this.renames = [];
@@ -301,6 +305,11 @@ export function planClosedMove(
   };
 }
 
+export interface Outcome {
+  count: number;
+  stranded: number;
+}
+
 export interface ClosedFile {
   read(): Promise<string>;
   process(change: (current: string) => string): Promise<unknown>;
@@ -308,23 +317,129 @@ export interface ClosedFile {
 
 export async function moveClosedFile(
   file: ClosedFile,
-  documentPath: string,
+  documentPath: () => string,
   move: Move,
-): Promise<{ count: number; stranded: number }> {
+): Promise<Outcome> {
   const text = await file.read();
-  const { write, count, stranded } = planClosedMove(text, documentPath, move);
+  const plannedAt = documentPath();
+  const { write, count, stranded } = planClosedMove(text, plannedAt, move);
   // process writes whatever it is handed, so a file with nothing to change
   // is never given to it: every GEDCOM in the vault would be rewritten, and
   // its modification time is what Sync and the file list go by.
   if (write === null) {
     return { count: 0, stranded };
   }
-  await file.process((current) =>
-    current === text
+  await file.process((current) => {
+    const at = documentPath();
+    return current === text && at === plannedAt
       ? write
-      : (planClosedMove(current, documentPath, move).write ?? current),
-  );
+      : (planClosedMove(current, at, move).write ?? current);
+  });
   return { count, stranded };
+}
+
+export interface MovedFile {
+  readonly path: string;
+}
+
+export interface OpenDocument {
+  followMove(move: Move, documentPath: string): Outcome;
+}
+
+export interface MoveHost<F extends MovedFile> {
+  files(): readonly F[];
+  openView(file: F): OpenDocument | null;
+  read(file: F): Promise<string>;
+  process(file: F, change: (current: string) => string): Promise<unknown>;
+  notify(message: string): void;
+}
+
+export class MoveFollower<F extends MovedFile> {
+  private readonly batch: RenameBatch;
+  private readonly unfollowed: Move[] = [];
+  private chain: Promise<void> = Promise.resolve();
+
+  constructor(
+    private readonly host: MoveHost<F>,
+    timers: Timers,
+  ) {
+    this.batch = new RenameBatch((move) => {
+      this.unfollowed.push(move);
+      this.chain = this.chain
+        .then(() => this.follow(move))
+        .catch((error: unknown) => {
+          console.error("Domorium: a move could not be followed", error);
+        })
+        .then(() => {
+          this.unfollowed.splice(this.unfollowed.indexOf(move), 1);
+        });
+    }, timers);
+  }
+
+  add(rename: Rename, descendants: readonly string[] = []): void {
+    this.batch.add(rename, descendants);
+  }
+
+  stop(): void {
+    this.batch.cancel();
+  }
+
+  idle(): Promise<void> {
+    return this.chain;
+  }
+
+  /**
+   * Obsidian has already moved the file for every rename it reported since,
+   * including those of a batch still open, so they are undone, newest first.
+   */
+  private standing(move: Move, file: F): string {
+    const later = [
+      ...this.unfollowed.slice(this.unfollowed.indexOf(move) + 1),
+      this.batch.pending(),
+    ];
+    return later.reduceRight((path, since) => since.before(path), file.path);
+  }
+
+  private async follow(move: Move): Promise<void> {
+    let payloads = 0;
+    let files = 0;
+    let stranded = 0;
+    let unreadable = 0;
+    for (const file of this.host.files()) {
+      if (!isGedcomPath(file.path)) {
+        continue;
+      }
+      try {
+        const view = this.host.openView(file);
+        const result = view
+          ? view.followMove(move, this.standing(move, file))
+          : await moveClosedFile(
+              {
+                read: () => this.host.read(file),
+                process: (change) => this.host.process(file, change),
+              },
+              () => this.standing(move, file),
+              move,
+            );
+        payloads += result.count;
+        files += result.count > 0 ? 1 : 0;
+        stranded += result.stranded;
+      } catch (error) {
+        console.error(`Domorium: ${file.path} could not be checked`, error);
+        unreadable += 1;
+      }
+    }
+
+    if (payloads > 0) {
+      this.host.notify(describeRetarget(payloads, files));
+    }
+    if (stranded > 0) {
+      this.host.notify(describeStranded(stranded));
+    }
+    if (unreadable > 0) {
+      this.host.notify(describeUnreadable(unreadable));
+    }
+  }
 }
 
 export function describeRetarget(payloads: number, files: number): string {

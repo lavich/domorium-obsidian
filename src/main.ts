@@ -31,15 +31,7 @@ import {
   stripEmbed,
   type GedcomLinkTarget,
 } from "./vault/protocolLink";
-import {
-  describeRetarget,
-  describeStranded,
-  describeUnreadable,
-  isGedcomPath,
-  moveClosedFile,
-  type Move,
-  RenameBatch,
-} from "./vault/movedFiles";
+import { MoveFollower } from "./vault/movedFiles";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import {
   EVIDENCE_VIEW_TYPE,
@@ -92,14 +84,25 @@ export default class GedcomPlugin
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a panel the reader closes stays closed. */
   private evidencePlaced = false;
-  private moves: Promise<void> = Promise.resolve();
-  private readonly renames = new RenameBatch((move) => {
-    this.moves = this.moves
-      .then(() => this.followMove(move))
-      .catch((error: unknown) => {
-        console.error("Domorium: a move could not be followed", error);
-      });
-  }, window);
+  private readonly moves = new MoveFollower<TFile>(
+    {
+      files: () => this.app.vault.getFiles(),
+      openView: (file) =>
+        this.app.workspace
+          .getLeavesOfType(GEDCOM_VIEW_TYPE)
+          .map((leaf) => leaf.view)
+          .find(
+            (view): view is GedcomView =>
+              view instanceof GedcomView && view.file === file,
+          ) ?? null,
+      read: (file) => this.app.vault.read(file),
+      process: (file, change) => this.app.vault.process(file, change),
+      notify: (message) => {
+        new Notice(message);
+      },
+    },
+    window,
+  );
 
   async onload(): Promise<void> {
     setLanguage(getLanguage());
@@ -223,7 +226,7 @@ export default class GedcomPlugin
     );
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
-        this.renames.add(
+        this.moves.add(
           { from: oldPath, to: file.path, folder: file instanceof TFolder },
           file instanceof TFolder ? descendantPaths(file) : [],
         );
@@ -240,7 +243,7 @@ export default class GedcomPlugin
   }
 
   onunload(): void {
-    this.renames.cancel();
+    this.moves.stop();
     removeIcon(GEDCOM_ICON_ID);
   }
 
@@ -438,54 +441,6 @@ export default class GedcomPlugin
       new Notice(
         t("notice.xrefNotInFile", { xref: target.xref, file: file.name }),
       );
-    }
-  }
-
-  private async followMove(move: Move): Promise<void> {
-    const open = new Map<string, GedcomView>();
-    this.forEachView((view) => {
-      if (view.file) {
-        open.set(view.file.path, view);
-      }
-    });
-
-    let payloads = 0;
-    let files = 0;
-    let stranded = 0;
-    let unreadable = 0;
-    for (const file of this.app.vault.getFiles()) {
-      if (!isGedcomPath(file.path)) {
-        continue;
-      }
-      const view = open.get(file.path);
-      try {
-        const result = view
-          ? view.followMove(move)
-          : await moveClosedFile(
-              {
-                read: () => this.app.vault.read(file),
-                process: (change) => this.app.vault.process(file, change),
-              },
-              file.path,
-              move,
-            );
-        payloads += result.count;
-        files += result.count > 0 ? 1 : 0;
-        stranded += result.stranded;
-      } catch (error) {
-        console.error(`Domorium: ${file.path} could not be checked`, error);
-        unreadable += 1;
-      }
-    }
-
-    if (payloads > 0) {
-      new Notice(describeRetarget(payloads, files));
-    }
-    if (stranded > 0) {
-      new Notice(describeStranded(stranded));
-    }
-    if (unreadable > 0) {
-      new Notice(describeUnreadable(unreadable));
     }
   }
 
