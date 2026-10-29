@@ -12,7 +12,8 @@ Read them first; this skill only orders the work.
 
 Every edit, commit and push in this flow happens in an Orca worktree — the plan,
 the implementation, fixes after review. The main checkout stays on `main` and only
-pulls. A worktree is created with `--setup run`, which installs the dependencies.
+pulls. A worktree is created with `--setup run`, which runs the repository's setup
+hook in Orca; where that installs nothing, `npm ci` before anything else.
 To continue a branch that already exists on the remote:
 `orca worktree create --name <name> --no-parent --setup run --base-branch origin/<branch> --json`,
 then push with `git push origin HEAD:<branch>` — Orca names the local branch
@@ -21,6 +22,11 @@ differently.
 Invoking this flow is permission to push its feature branches and open their PRs,
 nothing beyond that: merging, filing upstream issues and tagging each need their
 own permission.
+
+One change keeps one worktree from plan to merge: the plan, the implementation and
+the fixes after review are commits on one branch. A second worktree from `main` is
+for work that starts from what `main` holds — the archive, or an implementation
+whose plan has already landed there.
 
 Report to the user briefly, in their language. Decisions that change what a reader
 sees in Obsidian — a page, a panel, a setting, a command, how a value reads — are
@@ -80,8 +86,16 @@ the user's.
 
 ## 4. Implementation
 
-- A fresh worktree from `main`; if `main` has moved on, `git rebase origin/main`
-  before starting.
+- In the plan's worktree; if `main` has moved on, `git rebase origin/main` before
+  starting.
+- Implementing yourself or handing it to an agent in that worktree
+  (`orca agent launch --agent <id> --worktree path:<path> --prompt "…" --json`) are
+  both fine. A brief names the change directory, says what the agent may do beyond
+  committing — push, open the PR, file an upstream issue — and what it reports:
+  tasks done, the checks and their output, commits, what is left. The user may
+  widen that in the agent's own chat, where you cannot see it, so before reporting
+  on a handed-off change read its real state — the branch, the PR, upstream issues —
+  rather than the brief. Removing the worktree closes that agent's chat.
 - Run the tests before touching anything. Work through `tasks.md` in order, a test
   with each task; record deviations from the design under an "Implementation"
   heading in `design.md`; tick `- [x]`.
@@ -102,7 +116,7 @@ the user's.
   model and the plugin's edges (the document, the API other plugins reach, notes,
   the vault, dependencies) and what the reader sees (pages, panels, the editor,
   translations, styles, the harness and its specs) — read-only, over the
-  uncommitted diff.
+  branch's diff against `main`: `git diff origin/main...HEAD`.
 - Prove each blocking finding with a test that fails without the fix and passes
   with it. Fix, then the full gate again.
 
@@ -114,12 +128,16 @@ the user's.
   `--workspace-status in-review` on the worktree.
 - Merge only on the user's explicit permission for this PR. Permission for an
   earlier task or PR does not carry over. Watch `gh pr checks <n> --watch` in the
-  background, report the result and wait. With permission and every check passing:
+  background, report the result and wait. The browser job can sit for many minutes
+  installing Playwright; that is CI, not the change — wait, and rerun the job only
+  if it fails there. A PR that has fallen behind `main` gets
+  `gh pr update-branch <n>` and its checks again before the merge. With permission and every check passing:
   `gh pr merge <n> --squash`, unless the user asks to keep the commits.
 - After the merge: `git pull --ff-only` in the main checkout,
   `--workspace-status completed` on the worktree; remove merged worktrees with
   `orca worktree rm` once they hold no uncommitted changes.
-- Archive the change in its own PR: `openspec archive <name> --yes`, committed as
-  `chore(openspec): archive <name>`.
+- Archive the change in its own PR, from a fresh worktree off the updated `main`:
+  `openspec archive <name> --yes`, then `npm run openspec:validate`, committed as
+  `chore(openspec): archive <name>`. It merges on its own permission too.
 - If the change should ship, say so. A release is its own PR, as AGENTS.md
   describes. Never create or push the release tag without explicit approval.

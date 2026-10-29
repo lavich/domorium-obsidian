@@ -43,8 +43,10 @@ context: |
 
   Conventions:
     - Conventional Commits. Release commits read `chore(release): X.Y.Z`.
-    - A release bumps `package.json`, `manifest.json`, and adds the version to
-      `versions.json` mapped to its `minAppVersion`; the tag is the bare version.
+    - A release is its own PR: it bumps `package.json`, `package-lock.json` and
+      `manifest.json`, maps the version to its `minAppVersion` in
+      `versions.json`, and adds the `CHANGELOG.md` entry; the tag is the bare
+      version, on that commit on `main`.
     - `minAppVersion` is 1.8.7. An API above it is declined and the workaround
       recorded in the table in CLAUDE.md, so that raising the floor collects
       every entry at once. Do not raise it as a side effect of a change.
