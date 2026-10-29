@@ -121,3 +121,23 @@ cannot hold a payload the move changes, and is neither parsed nor written.
   which for a 5.5.1 file is plainly wrong about the reason. Known and accepted.
 - [A move touching many GEDCOM files rewrites them all at once] → as a rename of
   one photograph already can; each closed file is written once.
+
+## Implementation
+
+None of these changes what a reader sees.
+
+- `planMove` takes the version as a fourth argument, defaulting to `0`:
+  `GedcomLanguageService` does not expose the version it was updated with, so
+  the file view passes `EditorLanguageService.getVersion()`.
+- `RenameBatch` takes the timers alone. The fallback is a timer, so no clock is
+  needed.
+- The read, plan, `process` and re-plan of a closed file live in
+  `moveClosedFile` beside the plan, taking `read` and `process` from the plugin,
+  so the re-plan has a unit test.
+- A continued payload is found in the parse rather than the text: the `FILE`
+  node with a `CONC` or `CONT` child. It is the same line one level deeper, and
+  the service does not expose its text. It is counted only where the move would
+  rewrite the payload, as for any other refusal.
+- "Either order" is the order of a folder's entries after the folder's own
+  event, which Obsidian always reports first; an event before its folder's is
+  not recognized as part of it.
