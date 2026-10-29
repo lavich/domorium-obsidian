@@ -1,6 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { GedcomLanguageService } from "@domorium/language-service";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Move, RenameBatch, type Rename, type Timers } from "./movedFiles";
+import {
+  Move,
+  planClosedMove,
+  planMove,
+  RenameBatch,
+  type Rename,
+  type Timers,
+} from "./movedFiles";
+
+function gedcom(dialect: "7.0" | "5.5.1", ...payloads: string[]): string {
+  return [
+    "0 HEAD",
+    "1 GEDC",
+    `2 VERS ${dialect}`,
+    "0 @O1@ OBJE",
+    ...payloads.map((payload) => `1 FILE ${payload}`),
+    "0 TRLR",
+    "",
+  ].join("\n");
+}
 
 function file(from: string, to: string): Rename {
   return { from, to, folder: false };
@@ -223,5 +243,256 @@ describe("the renames of one action", () => {
 
     expect(moves).toEqual([]);
     expect(timers.delays()).toEqual([]);
+  });
+});
+
+describe("a GEDCOM file's payloads after a move", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("escapes a photograph renamed with a space, in GEDCOM 7", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "photos/a.jpg"),
+      "tree.ged",
+      new Move([file("photos/a.jpg", "photos/new photo.jpg")]),
+    );
+
+    expect(planned.count).toBe(1);
+    expect(planned.write).toContain("1 FILE photos/new%20photo.jpg\n");
+  });
+
+  it("strands a photograph moved above a GEDCOM 7 file", () => {
+    const text = gedcom("7.0", "photos/a.jpg");
+
+    const planned = planClosedMove(
+      text,
+      "family/tree.ged",
+      new Move([file("family/photos/a.jpg", "a.jpg")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
+
+  it("climbs to a photograph moved above a GEDCOM 5.5.1 file", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "photos/a.jpg"),
+      "family/tree.ged",
+      new Move([file("family/photos/a.jpg", "a.jpg")]),
+    );
+
+    expect(planned.write).toContain("1 FILE ../a.jpg\n");
+  });
+
+  it("neither parses nor writes a closed file that names no such photograph", () => {
+    const parse = vi.spyOn(GedcomLanguageService.prototype, "update");
+
+    const planned = planClosedMove(
+      gedcom("7.0", "photos/b.jpg", "scans/c.jpg"),
+      "tree.ged",
+      new Move([file("photos/a.jpg", "photos/renamed.jpg")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 0 });
+    expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("does not write a closed file whose payload names another file of that name", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "scans/a.jpg"),
+      "tree.ged",
+      new Move([file("photos/a.jpg", "photos/renamed.jpg")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 0 });
+  });
+
+  it("rewrites a closed file naming the photograph percent-escaped", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "photos/my%20photo.jpg"),
+      "tree.ged",
+      new Move([file("photos/my photo.jpg", "photos/b.jpg")]),
+    );
+
+    expect(planned.write).toContain("1 FILE photos/b.jpg\n");
+  });
+
+  it("climbs out of the folder a GEDCOM 5.5.1 file moved into", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "media/a.jpg", "media\\c.jpg"),
+      "family/tree.ged",
+      new Move([file("tree.ged", "family/tree.ged")]),
+    );
+
+    expect(planned.count).toBe(2);
+    expect(planned.write).toContain("1 FILE ../media/a.jpg\n");
+    expect(planned.write).toContain("1 FILE ../media/c.jpg\n");
+  });
+
+  it("names the folder a GEDCOM 7 file moved out of", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "photos/a.jpg"),
+      "tree.ged",
+      new Move([file("family/tree.ged", "tree.ged")]),
+    );
+
+    expect(planned.write).toContain("1 FILE family/photos/a.jpg\n");
+  });
+
+  it("strands the payloads of a GEDCOM 7 file moved into a folder", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "media/a.jpg"),
+      "family/tree.ged",
+      new Move([file("tree.ged", "family/tree.ged")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
+
+  it("leaves a folder holding a GEDCOM file and its media alone, whatever order its entries come in", () => {
+    const text = gedcom("7.0", "photos/a.jpg");
+    const entries = [
+      file("family/tree.ged", "kin/tree.ged"),
+      folder("family/photos", "kin/photos"),
+      file("family/photos/a.jpg", "kin/photos/a.jpg"),
+    ];
+
+    for (const order of [entries, [...entries].reverse(), []]) {
+      const move = new Move([folder("family", "kin"), ...order]);
+
+      expect(planClosedMove(text, "kin/tree.ged", move)).toEqual({
+        write: null,
+        count: 0,
+        stranded: 0,
+      });
+    }
+  });
+
+  it("follows a renamed folder of media", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "media/a.jpg", "media/x%20y.jpg"),
+      "tree.ged",
+      new Move([folder("media", "pics")]),
+    );
+
+    expect(planned.count).toBe(2);
+    expect(planned.write).toContain("1 FILE pics/a.jpg\n");
+    expect(planned.write).toContain("1 FILE pics/x%20y.jpg\n");
+  });
+
+  it("keeps a missing file named from a moved GEDCOM file", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "gone/z.jpg"),
+      "tree.ged",
+      new Move([file("a/tree.ged", "tree.ged")]),
+    );
+
+    expect(planned.write).toContain("1 FILE a/gone/z.jpg\n");
+  });
+
+  it("follows a missing file in a renamed folder named percent-escaped", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "my%20photos/gone.jpg"),
+      "tree.ged",
+      new Move([folder("my photos", "pics")]),
+    );
+
+    expect(planned.write).toContain("1 FILE pics/gone.jpg\n");
+  });
+
+  it("strands a new place that would read as a pointer", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "photos/a.jpg"),
+      "tree.ged",
+      new Move([folder("photos", "@fam@")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
+
+  it("strands a new name GEDCOM 5.5.1 would read back as a folder", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "photos/a.jpg"),
+      "tree.ged",
+      new Move([file("photos/a.jpg", "photos/a\\b.jpg")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
+
+  it("strands a payload continued on the next line", () => {
+    const text = [
+      "0 HEAD",
+      "1 GEDC",
+      "2 VERS 5.5.1",
+      "0 @O1@ OBJE",
+      "1 FILE photos/my",
+      "2 CONC  photo.jpg",
+      "0 TRLR",
+      "",
+    ].join("\n");
+
+    const planned = planClosedMove(
+      text,
+      "tree.ged",
+      new Move([file("family/tree.ged", "tree.ged")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
+
+  it("follows two renames one after the other", () => {
+    const first = planClosedMove(
+      gedcom("7.0", "media/a.jpg"),
+      "tree.ged",
+      new Move([folder("media", "pics")]),
+    );
+    const second = planClosedMove(
+      first.write ?? "",
+      "tree.ged",
+      new Move([folder("pics", "img")]),
+    );
+
+    expect(second.write).toContain("1 FILE img/a.jpg\n");
+  });
+
+  it("leaves a spelling that still names its file", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "./photos/a.jpg"),
+      "kin/tree.ged",
+      new Move([
+        folder("family", "kin"),
+        file("family/tree.ged", "kin/tree.ged"),
+        file("family/photos/a.jpg", "kin/photos/a.jpg"),
+      ]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 0 });
+  });
+
+  it("keeps the line endings a file was written with", () => {
+    const text = gedcom("7.0", "media/a.jpg").replaceAll("\n", "\r\n");
+
+    const planned = planClosedMove(
+      text,
+      "tree.ged",
+      new Move([file("media/a.jpg", "media/b.jpg")]),
+    );
+
+    expect(planned.write).toBe(text.replace("media/a.jpg", "media/b.jpg"));
+  });
+
+  it("carries the version of the service that read the links", () => {
+    const service = new GedcomLanguageService(gedcom("7.0", "media/a.jpg"), 7);
+
+    const { edit } = planMove(
+      service,
+      "tree.ged",
+      new Move([file("media/a.jpg", "media/b.jpg")]),
+      7,
+    );
+
+    expect(edit.version).toBe(7);
+    expect(edit.edits.map(({ newText }) => newText)).toEqual(["media/b.jpg"]);
   });
 });

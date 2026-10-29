@@ -1,3 +1,15 @@
+import {
+  encodeFileTarget,
+  GedcomLanguageService,
+  mentionsFile,
+  relativeFilePath,
+  resolveFileTarget,
+  type TextEdit,
+  type WorkspaceEdit,
+} from "@domorium/language-service";
+
+import { applyEdits } from "./renamedMedia";
+
 export interface Rename {
   from: string;
   to: string;
@@ -121,4 +133,137 @@ export class RenameBatch {
       this.timer = null;
     }
   }
+}
+
+type Dialect = ReturnType<
+  ReturnType<GedcomLanguageService["getDocument"]>["getDialect"]
+>;
+type Node = ReturnType<
+  ReturnType<GedcomLanguageService["getDocument"]>["getNodes"]
+>[number];
+
+function continuedLines(service: GedcomLanguageService): Set<number> {
+  const lines = new Set<number>();
+  const visit = (node: Node): void => {
+    for (const child of node.children) {
+      const tag = child.tokens.TAG?.value;
+      if (tag === "CONC" || tag === "CONT") {
+        lines.add(node.range.start.line);
+      }
+      visit(child);
+    }
+  };
+  service.getDocument().getNodes().forEach(visit);
+  return lines;
+}
+
+function readsAs(
+  payload: string,
+  dialect: Dialect,
+  documentPath: string,
+  path: string,
+): boolean {
+  // The fragment option's dialect is not honored in 2.3.0, so a header names it.
+  const links = new GedcomLanguageService(
+    `0 HEAD\n1 GEDC\n2 VERS ${dialect ?? "7.0"}\n0 @O1@ OBJE\n1 FILE ${payload}\n`,
+  ).getDocumentLinks();
+  const [link] = links;
+  return (
+    links.length === 1 &&
+    link?.kind === "file-relative" &&
+    resolveFileTarget(documentPath, link.targetText, dialect) === path
+  );
+}
+
+export interface MovePlan {
+  edit: WorkspaceEdit;
+  /** Payloads the move concerns that this document has no way to rewrite. */
+  stranded: number;
+}
+
+export function planMove(
+  service: GedcomLanguageService,
+  documentPath: string,
+  move: Move,
+  version = 0,
+): MovePlan {
+  const dialect = service.getDocument().getDialect();
+  const stoodAt = move.before(documentPath);
+  const relative = service
+    .getDocumentLinks()
+    .filter((link) => link.kind === "file-relative");
+  const continued = relative.length > 0 ? continuedLines(service) : new Set();
+  const edits: TextEdit[] = [];
+  let stranded = 0;
+
+  for (const link of relative) {
+    const named = resolveFileTarget(stoodAt, link.targetText, dialect);
+    if (named === null) {
+      continue;
+    }
+    const target = move.after(named);
+    if (resolveFileTarget(documentPath, link.targetText, dialect) === target) {
+      continue;
+    }
+    const payload = encodeFileTarget(
+      relativeFilePath(documentPath, target),
+      dialect,
+    );
+    if (
+      continued.has(link.range.start.line) ||
+      !readsAs(payload, dialect, documentPath, target)
+    ) {
+      stranded += 1;
+      continue;
+    }
+    edits.push({ range: link.range, newText: payload });
+  }
+  return { edit: { version, edits }, stranded };
+}
+
+function lastSegment(path: string): string {
+  return path.slice(path.lastIndexOf("/") + 1);
+}
+
+function mayConcern(text: string, documentPath: string, move: Move): boolean {
+  if (
+    move.before(documentPath) !== documentPath ||
+    /%[0-9A-Fa-f]{2}/.test(text)
+  ) {
+    return true;
+  }
+  return move.renames.some(({ from, folder }) => {
+    if (!folder) {
+      return mentionsFile(text, from);
+    }
+    const name = lastSegment(from);
+    return text.includes(`${name}/`) || text.includes(`${name}\\`);
+  });
+}
+
+export interface ClosedMove {
+  write: string | null;
+  count: number;
+  stranded: number;
+}
+
+export function planClosedMove(
+  text: string,
+  documentPath: string,
+  move: Move,
+): ClosedMove {
+  if (!mayConcern(text, documentPath, move)) {
+    return { write: null, count: 0, stranded: 0 };
+  }
+  const { edit, stranded } = planMove(
+    new GedcomLanguageService(text),
+    documentPath,
+    move,
+  );
+  const count = edit.edits.length;
+  return {
+    write: count === 0 ? null : applyEdits(text, edit),
+    count,
+    stranded,
+  };
 }
