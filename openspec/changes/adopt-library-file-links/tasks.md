@@ -17,6 +17,6 @@
 
 ## 4. Docs and verification
 
-- [ ] 4.1 Add a sentence to `README.md` beside media preview: a `FILE` payload is read by its file's GEDCOM version, so GEDCOM 7 percent-escapes name the file they spell, and a renamed file is followed into the payloads naming it; verify by reading it against the `document-links` delta (no test file)
-- [ ] 4.2 Confirm nothing under `src/` or `harness/` still splits a `FILE` payload on `\` itself: `grep -rn 'replaceAll("\\\\"' src harness/*.ts` returns nothing (no test file: a review check)
+- [x] 4.1 Add a sentence to `README.md` beside media preview: a `FILE` payload is read by its file's GEDCOM version, so GEDCOM 7 percent-escapes name the file they spell, and a renamed file is followed into the payloads naming it; verify by reading it against the `document-links` delta (no test file)
+- [x] 4.2 Confirm nothing under `src/` or `harness/` still splits a `FILE` payload on `\` itself: `grep -rn 'replaceAll("\\\\"' src harness/*.ts` returns nothing (no test file: a review check)
 - [ ] 4.3 Run `npm run openspec:validate`, `npm run check` and `npm run test:browser` (the media preview and desk pictures render), and verify all three pass

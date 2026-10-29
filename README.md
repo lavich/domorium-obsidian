@@ -94,7 +94,11 @@ Hovering a `FILE` payload shows the photograph it names, and hovering the
 pointer of `1 OBJE @O1@` shows the part of that photograph the link's `CROP`
 asks for — so one group portrait shows a different face under each person who
 references it. Media that is not an image is named rather than drawn, and a
-`FILE` naming a web address says so instead of being fetched. **Media preview**
+`FILE` naming a web address says so instead of being fetched. A `FILE` payload
+is read by its file's GEDCOM version, so in GEDCOM 7 `photos/my%20photo.jpg`
+names `photos/my photo.jpg`, and a vault file that is renamed or moved is
+followed into the payloads naming it, or a notice says how many it could not
+follow. **Media preview**
 in the plugin settings chooses the gesture, or turns it off, independently of
 **Record preview**. Both open on a resting hover by default; either can be set
 to ask for Ctrl/Cmd instead, and a gesture already chosen is kept.
