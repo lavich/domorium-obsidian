@@ -11,4 +11,4 @@
 ## 3. Docs and verification
 
 - [x] 3.1 Extend the `README.md` sentence on renames to say a renamed folder and a moved GEDCOM file are followed too; verify by reading it against the delta (no test file)
-- [ ] 3.2 Run `npm run openspec:validate`, `npm run check` and `npm run test:browser`, and verify all three pass
+- [x] 3.2 Run `npm run openspec:validate`, `npm run check` and `npm run test:browser`, and verify all three pass
