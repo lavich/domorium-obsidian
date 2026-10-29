@@ -1,10 +1,10 @@
-import type {
-  MediaCrop,
-  MediaKind,
-  MediaReference,
+import {
+  resolveFileTarget,
+  type GedcomDialect,
+  type MediaCrop,
+  type MediaKind,
+  type MediaReference,
 } from "@domorium/language-service";
-
-import { resolveVaultRelativePath } from "./service";
 
 /**
  * Why a remote target is a row rather than a picture: the reader has not been
@@ -34,6 +34,7 @@ export type MediaResolver = (vaultPath: string) => string | null;
 export interface MediaVault {
   /** The GEDCOM file a relative target is read from. */
   documentPath: string;
+  dialect: GedcomDialect | undefined;
   resolve: MediaResolver;
 }
 
@@ -42,10 +43,16 @@ const withTitle = <T extends object>(
   title: string | undefined,
 ): T => (title === undefined ? content : { ...content, title });
 
-const fileName = (target: string): string => {
-  const parts = target.replaceAll("\\", "/").split("/");
-  return parts[parts.length - 1] || target;
-};
+const fileName = (path: string): string => path.split("/").pop() || path;
+
+export function mediaVaultPath(
+  reference: MediaReference,
+  { documentPath, dialect }: Pick<MediaVault, "documentPath" | "dialect">,
+): string | null {
+  return reference.kind === "file-relative"
+    ? resolveFileTarget(documentPath, reference.targetText, dialect)
+    : null;
+}
 
 const remoteRow = (
   url: string,
@@ -62,7 +69,7 @@ const remoteRow = (
  */
 export function mediaPreviewContent(
   reference: MediaReference,
-  { documentPath, resolve }: MediaVault,
+  vault: MediaVault,
   remoteImages = false,
 ): MediaPreviewContent {
   const { targetText, title } = reference;
@@ -87,12 +94,9 @@ export function mediaPreviewContent(
       title,
     );
   }
-  const vaultPath =
-    reference.kind === "file-relative"
-      ? resolveVaultRelativePath(documentPath, targetText)
-      : null;
-  const url = vaultPath === null ? null : resolve(vaultPath);
-  if (url === null) {
+  const vaultPath = mediaVaultPath(reference, vault);
+  const url = vaultPath === null ? null : vault.resolve(vaultPath);
+  if (vaultPath === null || url === null) {
     return { kind: "missing", target: targetText };
   }
   if (reference.mediaKind === "image") {
@@ -100,7 +104,7 @@ export function mediaPreviewContent(
       {
         kind: "image" as const,
         url,
-        name: fileName(targetText),
+        name: fileName(vaultPath),
         ...(reference.crop === undefined ? {} : { crop: reference.crop }),
       },
       title,
@@ -110,32 +114,10 @@ export function mediaPreviewContent(
     {
       kind: "file" as const,
       mediaKind: reference.mediaKind,
-      name: fileName(targetText),
+      name: fileName(vaultPath),
     },
     title,
   );
-}
-
-/**
- * The rectangle to draw, clamped to the loaded image, or null for "show the
- * whole image" — which is what a rectangle the image does not reach comes to.
- */
-export function drawnCrop(
-  crop: MediaCrop,
-  naturalWidth: number,
-  naturalHeight: number,
-): MediaCrop | null {
-  if (naturalWidth <= 0 || naturalHeight <= 0) {
-    return null;
-  }
-  const left = Math.max(0, crop.left);
-  const top = Math.max(0, crop.top);
-  const width = Math.min(crop.left + crop.width, naturalWidth) - left;
-  const height = Math.min(crop.top + crop.height, naturalHeight) - top;
-  if (width <= 0 || height <= 0) {
-    return null;
-  }
-  return { top, left, width, height };
 }
 
 /**

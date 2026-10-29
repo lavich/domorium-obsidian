@@ -1,46 +1,8 @@
 import type { DocumentLink } from "@domorium/codemirror";
-
-export function resolveVaultRelativePath(
-  documentPath: string,
-  target: string,
-): string | null {
-  const parts = documentPath.split("/").slice(0, -1);
-  for (const part of target.replaceAll("\\", "/").split("/")) {
-    if (!part || part === ".") {
-      continue;
-    }
-    if (part === "..") {
-      if (parts.length === 0) {
-        return null;
-      }
-      parts.pop();
-    } else {
-      parts.push(part);
-    }
-  }
-  return parts.join("/");
-}
-
-/** The inverse: how a document at `documentPath` spells a file in the vault. */
-export function relativeToDocument(
-  documentPath: string,
-  vaultPath: string,
-): string {
-  const from = documentPath.split("/").slice(0, -1);
-  const to = vaultPath.split("/");
-  let shared = 0;
-  while (
-    shared < from.length &&
-    shared < to.length - 1 &&
-    from[shared] === to[shared]
-  ) {
-    shared += 1;
-  }
-  return [
-    ...Array.from({ length: from.length - shared }, () => ".."),
-    ...to.slice(shared),
-  ].join("/");
-}
+import {
+  resolveFileTarget,
+  type GedcomDialect,
+} from "@domorium/language-service";
 
 export interface DocumentLinkRouter {
   openExternal(url: string): void;
@@ -50,6 +12,7 @@ export interface DocumentLinkRouter {
 export function routeDocumentLink(
   link: DocumentLink,
   documentPath: string,
+  dialect: GedcomDialect | undefined,
   router: DocumentLinkRouter,
 ): boolean {
   if (link.kind === "http") {
@@ -59,7 +22,7 @@ export function routeDocumentLink(
   if (link.kind !== "file-relative") {
     return false;
   }
-  const path = resolveVaultRelativePath(documentPath, link.targetText);
+  const path = resolveFileTarget(documentPath, link.targetText, dialect);
   if (!path) {
     return false;
   }

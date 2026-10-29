@@ -11,6 +11,7 @@ const v551 = documentOf(
   "1 CHAR UTF-8\n1 GEDC\n2 VERS 5.5.1\n2 FORM LINEAGE-LINKED\n",
 );
 const undeclared = documentOf("");
+const unsupported = documentOf("1 GEDC\n2 VERS 4.0\n");
 
 const in7 = (payload: string) => readingOf(payload, v7.readDate(payload));
 const in551 = (payload: string) => readingOf(payload, v551.readDate(payload));
@@ -127,10 +128,24 @@ describe("reading a year out of a GEDCOM date", () => {
     expect(in551("(unknown)")).toEqual({ text: "(unknown)" });
   });
 
-  it("reads no year in a document whose version cannot be determined", () => {
+  it("reads a year in a document whose version cannot be determined", () => {
     expect(readingOf("7 NOV 1867", undeclared.readDate("7 NOV 1867"))).toEqual({
       text: "7 NOV 1867",
+      year: 1867,
+      precision: "exact",
     });
+  });
+
+  it("reads a year in a document of a version no schema describes", () => {
+    expect(readingOf("7 NOV 1867", unsupported.readDate("7 NOV 1867"))).toEqual({
+      text: "7 NOV 1867",
+      year: 1867,
+      precision: "exact",
+    });
+  });
+
+  it("reads no year zero in a document whose version cannot be determined", () => {
+    expect(readingOf("0", undeclared.readDate("0"))).toEqual({ text: "0" });
   });
 
   it("carries the payload through exactly as written, always", () => {

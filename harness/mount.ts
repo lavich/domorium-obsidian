@@ -248,7 +248,7 @@ function mount(options: HarnessOptions): void {
         hidePreview: () => {
           calls.hides += 1;
         },
-        showMedia: (media, _view, event) => {
+        showMedia: (media, editor, event) => {
           calls.media.push(media.targetText);
           closeMedia();
           const host = document.createElement("div");
@@ -274,6 +274,10 @@ function mount(options: HarnessOptions): void {
               media,
               {
                 documentPath: "tree.ged",
+                dialect: language
+                  .update(editor.state.doc)
+                  .getDocument()
+                  .getDialect(),
                 resolve: (path) => {
                   const bytes = (options.media ?? {})[path];
                   return bytes === undefined ? null : imageSource(bytes);

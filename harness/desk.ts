@@ -3,7 +3,7 @@ import { GedcomLanguageService, type Position, type Range } from "@domorium/lang
 import curie from "../demo-vault/curie.ged";
 import { renderEvidence } from "../src/desk/evidence";
 import { IndexList } from "../src/desk/indexList";
-import { mediaPreviewContent } from "../src/editor/media";
+import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import { renderFamilyPage } from "../src/desk/familyPage";
 import type { MediaItem } from "../src/desk/media";
 import { renderMediaPage } from "../src/desk/mediaPage";
@@ -115,11 +115,14 @@ function mediaItem(at: Position): MediaItem | null {
   if (!reference) {
     return null;
   }
-  const content = mediaPreviewContent(reference, {
+  const vault = {
     documentPath: "curie.ged",
-    resolve: (path) => (VAULT_FILES.has(path) ? `../demo-vault/${path}` : null),
-  });
-  return { content, at, ...(content.kind === "image" || content.kind === "file" ? { path: reference.targetText } : {}) };
+    dialect: service.getDocument().getDialect(),
+    resolve: (path: string) => (VAULT_FILES.has(path) ? `../demo-vault/${path}` : null),
+  };
+  const content = mediaPreviewContent(reference, vault);
+  const path = mediaVaultPath(reference, vault);
+  return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
 }
 
 function mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {

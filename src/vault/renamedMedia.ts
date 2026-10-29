@@ -1,10 +1,11 @@
 import {
   GedcomLanguageService,
+  mentionsFile,
+  relativeFilePath,
   type Position,
   type WorkspaceEdit,
 } from "@domorium/language-service";
 
-import { relativeToDocument } from "../editor/service";
 import { plural, t } from "../i18n";
 
 const GEDCOM_EXTENSIONS = ["ged", "gedcom"];
@@ -12,11 +13,6 @@ const GEDCOM_EXTENSIONS = ["ged", "gedcom"];
 export function isGedcomPath(path: string): boolean {
   const dot = path.lastIndexOf(".");
   return dot > 0 && GEDCOM_EXTENSIONS.includes(path.slice(dot + 1).toLowerCase());
-}
-
-/** Exact, not a guess: every payload sits on a line whose tag is FILE. */
-export function mayNameAFile(text: string): boolean {
-  return text.includes("FILE");
 }
 
 export function applyEdits(text: string, edit: WorkspaceEdit): string {
@@ -55,13 +51,9 @@ export function planRetarget(
   from: string,
   to: string,
 ): { edit: WorkspaceEdit; stranded: number } {
-  const oldPath = relativeToDocument(documentPath, from);
-  const newPath = relativeToDocument(documentPath, to);
-  const resolution = service.getVersionResolution();
-  const gedcom7 =
-    resolution !== undefined &&
-    "dialect" in resolution &&
-    resolution.dialect === "7.0";
+  const oldPath = relativeFilePath(documentPath, from);
+  const newPath = relativeFilePath(documentPath, to);
+  const gedcom7 = service.getDocument().getDialect() === "7.0";
 
   // A GEDCOM 7 payload is a URI reference that may not leave the folder its
   // file is in, so a photo moved above that folder has no payload to move to.
@@ -91,6 +83,29 @@ export function retargetMedia(
     text: edit.edits.length === 0 ? text : applyEdits(text, edit),
     count: edit.edits.length,
     stranded,
+  };
+}
+
+export interface ClosedRewrite {
+  write: string | null;
+  count: number;
+  stranded: number;
+}
+
+export function planClosedRewrite(
+  text: string,
+  documentPath: string,
+  from: string,
+  to: string,
+): ClosedRewrite {
+  if (!mentionsFile(text, from)) {
+    return { write: null, count: 0, stranded: 0 };
+  }
+  const planned = retargetMedia(text, documentPath, from, to);
+  return {
+    write: planned.count === 0 ? null : planned.text,
+    count: planned.count,
+    stranded: planned.stranded,
   };
 }
 

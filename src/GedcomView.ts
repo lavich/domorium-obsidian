@@ -22,7 +22,10 @@ import {
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
-import type { MediaReference } from "@domorium/language-service";
+import type {
+  GedcomLanguageService,
+  MediaReference,
+} from "@domorium/language-service";
 import {
   debounce,
   HoverPopover,
@@ -40,7 +43,12 @@ import {
 } from "obsidian";
 
 import { createGedcomComposition } from "./editor/composition";
-import { mediaPreviewContent, previewBounds } from "./editor/media";
+import {
+  mediaPreviewContent,
+  mediaVaultPath,
+  previewBounds,
+  type MediaVault,
+} from "./editor/media";
 import { clearMediaPreview } from "./editor/mediaPreviewHover";
 import {
   renderMediaPreview,
@@ -84,7 +92,6 @@ import {
 } from "./desk/sourcePage";
 import { documentRef, type GenealogyIndex } from "./genealogy";
 import type { Position } from "@domorium/language-service";
-import { resolveVaultRelativePath } from "./editor/service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
@@ -718,27 +725,26 @@ export class GedcomView extends TextFileView {
   }
 
   private mediaItem(at: Position): MediaItem | null {
-    const reference = this.language.update(this.editor.state.doc).getMediaAt(at);
+    const service = this.language.update(this.editor.state.doc);
+    const reference = service.getMediaAt(at);
     if (!reference) {
       return null;
     }
-    const documentPath = this.file?.path ?? "";
-    const content = mediaPreviewContent(
-      reference,
-      {
-        documentPath,
-        resolve: (path) => {
-          const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-          return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
-        },
-      },
-      this.host.remoteImages(),
-    );
-    const path =
-      reference.kind === "file-relative"
-        ? resolveVaultRelativePath(documentPath, reference.targetText)
-        : null;
+    const vault = this.mediaVault(service);
+    const content = mediaPreviewContent(reference, vault, this.host.remoteImages());
+    const path = mediaVaultPath(reference, vault);
     return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
+  }
+
+  private mediaVault(service: GedcomLanguageService): MediaVault {
+    return {
+      documentPath: this.file?.path ?? "",
+      dialect: service.getDocument().getDialect(),
+      resolve: (path) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
+      },
+    };
   }
 
   private openVaultFile(relativePath: string): void {
@@ -873,15 +879,7 @@ export class GedcomView extends TextFileView {
   private drawMediaPreview(popover: HoverPopover, media: MediaReference): void {
     const content = mediaPreviewContent(
       media,
-      {
-        documentPath: this.file?.path ?? "",
-        resolve: (path) => {
-          const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-          return file instanceof TFile
-            ? this.app.vault.getResourcePath(file)
-            : null;
-        },
-      },
+      this.mediaVault(this.language.update(this.editor.state.doc)),
       this.host.remoteImages(),
     );
     renderMediaPreview(content, {
@@ -912,32 +910,37 @@ export class GedcomView extends TextFileView {
   }
 
   private openDocumentLink(link: DocumentLink): void {
-    const routed = routeDocumentLink(link, this.file?.path ?? "", {
-      openExternal: (url) => {
-        this.contentEl.ownerDocument.defaultView?.open(
-          url,
-          "_blank",
-          "noopener,noreferrer",
-        );
+    const routed = routeDocumentLink(
+      link,
+      this.file?.path ?? "",
+      this.language.update(this.editor.state.doc).getDocument().getDialect(),
+      {
+        openExternal: (url) => {
+          this.contentEl.ownerDocument.defaultView?.open(
+            url,
+            "_blank",
+            "noopener,noreferrer",
+          );
+        },
+        openVaultFile: (relativePath) => {
+          const path = normalizePath(relativePath);
+          const file = this.app.vault.getAbstractFileByPath(path);
+          if (!(file instanceof TFile)) {
+            new Notice(t("notice.vaultFileNotFound", { path }));
+            return;
+          }
+          // Where it already is, or else a tab of its own: replacing this one
+          // loses the reader's place in the file the link was followed from.
+          const open = this.leafShowing(path);
+          if (open) {
+            void this.app.workspace.revealLeaf(open);
+            return;
+          }
+          // Not `'window'`, which the mobile app has no popout for.
+          void this.app.workspace.getLeaf("tab").openFile(file);
+        },
       },
-      openVaultFile: (relativePath) => {
-        const path = normalizePath(relativePath);
-        const file = this.app.vault.getAbstractFileByPath(path);
-        if (!(file instanceof TFile)) {
-          new Notice(t("notice.vaultFileNotFound", { path }));
-          return;
-        }
-        // Where it already is, or else a tab of its own: replacing this one
-        // loses the reader's place in the file the link was followed from.
-        const open = this.leafShowing(path);
-        if (open) {
-          void this.app.workspace.revealLeaf(open);
-          return;
-        }
-        // Not `'window'`, which the mobile app has no popout for.
-        void this.app.workspace.getLeaf("tab").openFile(file);
-      },
-    });
+    );
     if (!routed) {
       new Notice(t("notice.unsafeFileLink"));
     }

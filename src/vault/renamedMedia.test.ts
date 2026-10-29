@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { GedcomLanguageService } from "@domorium/language-service";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
 import {
@@ -6,7 +7,7 @@ import {
   describeStranded,
   describeUnreadable,
   isGedcomPath,
-  mayNameAFile,
+  planClosedRewrite,
   retargetMedia,
 } from "./renamedMedia";
 
@@ -63,6 +64,20 @@ describe("a media file that has been renamed", () => {
 
     expect(result.text).toBe(text);
     expect(result.count).toBe(0);
+    expect(result.stranded).toBe(1);
+  });
+
+  it("strands that same move in a document with no version, read as GEDCOM 7", () => {
+    const text = "0 HEAD\n0 @O1@ OBJE\n1 FILE media/marie.jpg\n0 TRLR\n";
+
+    const result = retargetMedia(
+      text,
+      "family/tree.ged",
+      "family/media/marie.jpg",
+      "photos/marie.jpg",
+    );
+
+    expect(result.text).toBe(text);
     expect(result.stranded).toBe(1);
   });
 
@@ -159,15 +174,57 @@ describe("a media file that has been renamed", () => {
   });
 });
 
-describe("which files are worth parsing at all", () => {
-  it("takes a file that carries the tag a payload sits on", () => {
-    expect(mayNameAFile(file("7.0", "media/marie.jpg"))).toBe(true);
+describe("a closed GEDCOM file when a media file is renamed", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it("declines an export with no media in it, whatever its size", () => {
-    expect(
-      mayNameAFile("0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n0 TRLR\n"),
-    ).toBe(false);
+  it("is neither parsed nor written where no payload can name the file", () => {
+    const parse = vi.spyOn(GedcomLanguageService.prototype, "update");
+
+    const planned = planClosedRewrite(
+      file("7.0", "photos/b.jpg", "scans/c.jpg"),
+      "tree.ged",
+      "photos/a.jpg",
+      "photos/renamed.jpg",
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 0 });
+    expect(parse).not.toHaveBeenCalled();
+  });
+
+  it("is not written where the payload naming the file's name names another", () => {
+    const planned = planClosedRewrite(
+      file("7.0", "scans/a.jpg"),
+      "tree.ged",
+      "photos/a.jpg",
+      "photos/renamed.jpg",
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 0 });
+  });
+
+  it("is rewritten where a payload names the file percent-escaped", () => {
+    const planned = planClosedRewrite(
+      file("7.0", "photos/my%20photo.jpg"),
+      "tree.ged",
+      "photos/my photo.jpg",
+      "photos/b.jpg",
+    );
+
+    expect(planned.count).toBe(1);
+    expect(planned.write).toContain("1 FILE photos/b.jpg");
+  });
+
+  it("is not written, and counts what it strands, where GEDCOM 7 cannot name the new place", () => {
+    const planned = planClosedRewrite(
+      file("7.0", "photos/a.jpg"),
+      "family/tree.ged",
+      "family/photos/a.jpg",
+      "a.jpg",
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
   });
 });
 
