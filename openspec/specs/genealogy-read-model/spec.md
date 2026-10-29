@@ -104,7 +104,9 @@ payload as the language service reads that payload, in the dialect of the
 document holding it, and SHALL report alongside it how exactly the payload
 stated that year: exactly, as an approximation, or as one end of a range. A
 payload the language service does not read as a date value SHALL yield no year,
-so the model never reads a year the editor's diagnostics reject.
+so the model never reads a year the editor's diagnostics reject. A document
+whose GEDCOM version cannot be determined or is not supported is read as the
+language service reads it, which is by more than one dialect's grammar.
 
 A year so read is a reading for display. It SHALL NOT be presented as the year
 an event happened, because for a range or an approximation it is not one. A
@@ -121,11 +123,10 @@ it.
 
 A date in any other calendar — Hebrew, French republican, or one an extension
 defines — a date in an era an extension defines, a year 0, which neither era
-numbers, a payload stating no date, as a phrase alone does, and every payload
-of a document whose GEDCOM version the language service cannot determine or
-does not support SHALL yield no year rather than a guessed one. The payload
-SHALL always be reported as the file wrote it, so a view can show the full date
-whether or not a year could be read from it.
+numbers, and a payload stating no date, as a phrase alone does, SHALL yield no
+year rather than a guessed one. The payload SHALL always be reported as the file
+wrote it, so a view can show the full date whether or not a year could be read
+from it.
 
 #### Scenario: A plain date
 - **WHEN** the payload reads `7 NOV 1867`
@@ -177,7 +178,8 @@ whether or not a year could be read from it.
 - **THEN** no year is reported, and the payload is reported unchanged
 
 #### Scenario: A year zero
-- **WHEN** the payload reads `0` or `0 BCE` in a 7.0 document
+- **WHEN** the payload reads `0` or `0 BCE` in a 7.0 document, or `0` in a
+  document whose version cannot be determined
 - **THEN** no year is reported, and the payload is reported unchanged
 
 #### Scenario: A phrase standing for a date
@@ -187,8 +189,13 @@ whether or not a year could be read from it.
 #### Scenario: A document whose version cannot be determined
 - **WHEN** a document carries no `GEDC.VERS`, and a person's birth reads
   `7 NOV 1867`
-- **THEN** no year is reported for the birth, and the payload is reported
-  unchanged
+- **THEN** the year 1867 is reported for the birth, as exact, and the payload is
+  reported unchanged
+
+#### Scenario: A document of a version no schema describes
+- **WHEN** a document declares `2 VERS 4.0`, and a person's birth reads
+  `7 NOV 1867`
+- **THEN** the year 1867 is reported for the birth, as exact
 
 ### Requirement: Relatives are resolved through families, by the roles GEDCOM defines
 
