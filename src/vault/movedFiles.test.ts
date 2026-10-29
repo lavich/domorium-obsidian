@@ -512,6 +512,30 @@ describe("a GEDCOM file's payloads after a move", () => {
     expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
   });
 
+  it("neither rewrites nor counts a continued payload whose first line names nothing moved", () => {
+    const service = new GedcomLanguageService(
+      [
+        "0 HEAD",
+        "1 GEDC",
+        "2 VERS 5.5.1",
+        "0 @O1@ OBJE",
+        "1 FILE photos/my",
+        "2 CONC  photo.jpg",
+        "0 TRLR",
+        "",
+      ].join("\n"),
+    );
+
+    const { edit, stranded } = planMove(
+      service,
+      "tree.ged",
+      new Move([file("photos/my photo.jpg", "photos/b.jpg")]),
+    );
+
+    expect(edit.edits).toEqual([]);
+    expect(stranded).toBe(0);
+  });
+
   it("follows two renames one after the other", () => {
     const first = planClosedMove(
       gedcom("7.0", "media/a.jpg"),
