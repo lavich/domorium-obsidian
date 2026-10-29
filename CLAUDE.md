@@ -62,9 +62,12 @@ geometry still belong in the Playwright specs, which have a real browser.
   and `harness/`.
 - `dist/` and `main.js` are build output. Never edit them.
 - Conventional Commits. Release commits read `chore(release): X.Y.Z`.
-- A release bumps `package.json` and `manifest.json` and adds the version to
-  `versions.json` mapped to its `minAppVersion`. The git tag is the bare
-  version, and pushing it triggers the release workflow.
+- A release is its own PR. It bumps `package.json`, `package-lock.json` and
+  `manifest.json`, adds the version to `versions.json` mapped to its
+  `minAppVersion`, and adds the `CHANGELOG.md` entry. The git tag is the bare
+  version, set on that PR's commit on `main`; pushing it triggers the release
+  workflow, which refuses a tag off `main` or one that differs from
+  `manifest.json`.
 
 ## The minimum app version, and what it costs
 
