@@ -4,11 +4,44 @@ import {
   mentionsFile,
   relativeFilePath,
   resolveFileTarget,
+  type Position,
   type TextEdit,
   type WorkspaceEdit,
 } from "@domorium/language-service";
 
-import { applyEdits } from "./renamedMedia";
+import { plural, t } from "../i18n";
+
+const GEDCOM_EXTENSIONS = ["ged", "gedcom"];
+
+export function isGedcomPath(path: string): boolean {
+  const dot = path.lastIndexOf(".");
+  return (
+    dot > 0 && GEDCOM_EXTENSIONS.includes(path.slice(dot + 1).toLowerCase())
+  );
+}
+
+export function applyEdits(text: string, edit: WorkspaceEdit): string {
+  const lineStarts = [0];
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === "\n") {
+      lineStarts.push(index + 1);
+    }
+  }
+  const offsetOf = (position: Position): number =>
+    (lineStarts[position.line] ?? text.length) + position.character;
+
+  return [...edit.edits]
+    .sort(
+      (left, right) => offsetOf(right.range.start) - offsetOf(left.range.start),
+    )
+    .reduce(
+      (result, { range, newText }) =>
+        result.slice(0, offsetOf(range.start)) +
+        newText +
+        result.slice(offsetOf(range.end)),
+      text,
+    );
+}
 
 export interface Rename {
   from: string;
@@ -292,4 +325,21 @@ export async function moveClosedFile(
       : (planClosedMove(current, documentPath, move).write ?? current),
   );
   return { count, stranded };
+}
+
+export function describeRetarget(payloads: number, files: number): string {
+  return t("notice.retargeted", {
+    links: plural("count.mediaLinks", payloads),
+    files: plural("count.filesIn", files),
+  });
+}
+
+export function describeUnreadable(files: number): string {
+  return t("notice.unreadable", { files: plural("count.files", files) });
+}
+
+export function describeStranded(payloads: number): string {
+  return t("notice.stranded", {
+    links: plural("count.mediaLinks", payloads),
+  });
 }

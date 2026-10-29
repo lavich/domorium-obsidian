@@ -31,13 +31,15 @@ import {
   stripEmbed,
   type GedcomLinkTarget,
 } from "./vault/protocolLink";
-import { moveClosedFile, type Move, RenameBatch } from "./vault/movedFiles";
 import {
   describeRetarget,
   describeStranded,
   describeUnreadable,
   isGedcomPath,
-} from "./vault/renamedMedia";
+  moveClosedFile,
+  type Move,
+  RenameBatch,
+} from "./vault/movedFiles";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import {
   EVIDENCE_VIEW_TYPE,

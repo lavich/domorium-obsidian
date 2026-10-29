@@ -6,7 +6,7 @@
 ## 2. Wiring
 
 - [x] 2.1 Feed every `rename` — `TFile` and `TFolder` — into one `RenameBatch` in `src/main.ts`, and on flush run the move over every GEDCOM file: open ones through a `GedcomView.followMove(move)` that applies the edit at the editor's version, closed ones through `planClosedMove` and `vault.process` as `rewriteClosedFile` does now; keep the three notices; run flushes one after another and cancel a pending one on unload. Verify `npm run typecheck`, and extend `src/vault/movedFiles.test.ts` with a closed file re-planned when its text changed between read and write
-- [ ] 2.2 Delete `planRetarget`, `retargetMedia`, `planClosedRewrite` and `GedcomView.followRenamedFile`, moving what `src/vault/renamedMedia.ts` still holds (`isGedcomPath`, `applyEdits`, the notice texts) beside the new code and repointing its importers, `src/notes/recordSuggest.ts` among them, and fold `src/vault/renamedMedia.test.ts` into `src/vault/movedFiles.test.ts`; verify `npm run lint` reports no warnings and `npm run test` passes
+- [x] 2.2 Delete `planRetarget`, `retargetMedia`, `planClosedRewrite` and `GedcomView.followRenamedFile`, moving what `src/vault/renamedMedia.ts` still holds (`isGedcomPath`, `applyEdits`, the notice texts) beside the new code and repointing its importers, `src/notes/recordSuggest.ts` among them, and fold `src/vault/renamedMedia.test.ts` into `src/vault/movedFiles.test.ts`; verify `npm run lint` reports no warnings and `npm run test` passes
 
 ## 3. Docs and verification
 

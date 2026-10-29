@@ -10,7 +10,7 @@ import {
 } from "obsidian";
 
 import { recordText, type GedcomRecord } from "../editor/records";
-import { isGedcomPath } from "../vault/renamedMedia";
+import { isGedcomPath } from "../vault/movedFiles";
 import { linkContext, type RecordIndex } from "./recordIndex";
 import { renderRecordSuggestion } from "./recordSuggestView";
 

@@ -1,7 +1,12 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { resetLanguage, setLanguage } from "../i18n";
 import {
+  describeRetarget,
+  describeStranded,
+  describeUnreadable,
+  isGedcomPath,
   Move,
   moveClosedFile,
   planClosedMove,
@@ -530,5 +535,123 @@ describe("a closed GEDCOM file rewritten after a move", () => {
     );
 
     expect(process).not.toHaveBeenCalled();
+  });
+});
+
+describe("a media file that has been renamed", () => {
+  it("repoints every payload that named it, and leaves the rest alone", () => {
+    const planned = planClosedMove(
+      gedcom("7.0", "media/marie.jpg", "media/pierre.jpg", "media/marie.jpg"),
+      "tree.ged",
+      new Move([file("media/marie.jpg", "media/marie-curie.jpg")]),
+    );
+
+    expect(planned.count).toBe(2);
+    expect(planned.write).toBe(
+      gedcom(
+        "7.0",
+        "media/marie-curie.jpg",
+        "media/pierre.jpg",
+        "media/marie-curie.jpg",
+      ),
+    );
+  });
+
+  it("spells the new path from the folder the GEDCOM file sits in", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "../media/marie.jpg"),
+      "family/tree.ged",
+      new Move([file("media/marie.jpg", "photos/marie.jpg")]),
+    );
+
+    expect(planned.write).toContain("1 FILE ../photos/marie.jpg\n");
+  });
+
+  it("strands a move above its folder in a document with no version, read as GEDCOM 7", () => {
+    const planned = planClosedMove(
+      "0 HEAD\n0 @O1@ OBJE\n1 FILE media/marie.jpg\n0 TRLR\n",
+      "family/tree.ged",
+      new Move([file("family/media/marie.jpg", "photos/marie.jpg")]),
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
+
+  it("leaves the name as written in 5.5.1, where a payload is a plain string", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "media/marie.jpg"),
+      "tree.ged",
+      new Move([file("media/marie.jpg", "media/marie curie.jpg")]),
+    );
+
+    expect(planned.write).toContain("1 FILE media/marie curie.jpg\n");
+  });
+});
+
+describe("which vault files are ours to rewrite", () => {
+  it("takes both extensions the plugin registers, whatever their case", () => {
+    expect(isGedcomPath("family/tree.ged")).toBe(true);
+    expect(isGedcomPath("family/tree.GEDCOM")).toBe(true);
+  });
+
+  it("leaves everything else to Obsidian", () => {
+    expect(isGedcomPath("note.md")).toBe(false);
+    expect(isGedcomPath("media/marie.jpg")).toBe(false);
+    expect(isGedcomPath("ged")).toBe(false);
+  });
+});
+
+describe("what the notice says", () => {
+  it("counts one of a thing without an s on it", () => {
+    expect(describeRetarget(1, 1)).toBe(
+      "GEDCOM: repointed 1 media link in 1 file",
+    );
+  });
+
+  it("counts more than one with one", () => {
+    expect(describeRetarget(3, 2)).toBe(
+      "GEDCOM: repointed 3 media links in 2 files",
+    );
+  });
+
+  it("owns up to a file it could not read rather than passing over it", () => {
+    expect(describeUnreadable(1)).toBe(
+      "GEDCOM: could not check 1 file for links to the renamed file",
+    );
+  });
+
+  it("says what was left behind, and why nothing could be written", () => {
+    expect(describeStranded(2)).toContain("left 2 media links");
+    expect(describeStranded(2)).toContain("outside the folder");
+  });
+});
+
+describe("what the notice says in Russian", () => {
+  afterEach(resetLanguage);
+
+  it("declines each noun by its own count", () => {
+    setLanguage("ru");
+    expect(describeRetarget(1, 1)).toBe(
+      "GEDCOM: новый путь записан в 1 медиассылке в 1 файле",
+    );
+    expect(describeRetarget(3, 2)).toBe(
+      "GEDCOM: новый путь записан в 3 медиассылках в 2 файлах",
+    );
+    expect(describeRetarget(5, 5)).toBe(
+      "GEDCOM: новый путь записан в 5 медиассылках в 5 файлах",
+    );
+  });
+
+  it("declines a file it could not check in the accusative", () => {
+    setLanguage("ru");
+    expect(describeUnreadable(1)).toContain("проверить 1 файл на");
+    expect(describeUnreadable(3)).toContain("проверить 3 файла на");
+    expect(describeUnreadable(5)).toContain("проверить 5 файлов на");
+  });
+
+  it("keeps GEDCOM 7 in the reason", () => {
+    setLanguage("ru");
+    expect(describeStranded(1)).toContain("в 1 медиассылке");
+    expect(describeStranded(1)).toContain("GEDCOM 7");
   });
 });
