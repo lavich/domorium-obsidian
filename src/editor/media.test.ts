@@ -1,7 +1,8 @@
-import type {
-  GedcomDialect,
-  MediaKind,
-  MediaReference,
+import {
+  GedcomLanguageService,
+  type GedcomDialect,
+  type MediaKind,
+  type MediaReference,
 } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
@@ -226,10 +227,22 @@ describe("what the popover should draw", () => {
     ).toEqual({ kind: "image", url: "app://marie", name: "marie.jpg" });
   });
 
-  it("answers missing where the document's dialect is undetermined", () => {
+  it("reads a document with no version as GEDCOM 7", () => {
+    const service = new GedcomLanguageService(
+      ["0 HEAD", "0 @O1@ OBJE", "1 FILE photos/my%20photo.jpg", "0 TRLR", ""].join("\n"),
+    );
+    const media = service.getMediaAt({ line: 2, character: 8 });
+    if (!media) {
+      throw new Error("the FILE payload is not a media position");
+    }
+
     expect(
-      mediaPreviewContent(reference(), { ...vault(), dialect: undefined }),
-    ).toEqual({ kind: "missing", target: "media/marie.jpg" });
+      mediaPreviewContent(media, {
+        documentPath: "tree.ged",
+        dialect: service.getDocument().getDialect(),
+        resolve: (path) => (path === "photos/my photo.jpg" ? "app://photo" : null),
+      }),
+    ).toEqual({ kind: "image", url: "app://photo", name: "my photo.jpg" });
   });
 });
 

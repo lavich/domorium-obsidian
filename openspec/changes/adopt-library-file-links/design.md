@@ -41,9 +41,9 @@ make a payload no link at all: `getMediaAt` answers nothing and the diagnostics
 report it, on 2.2.0 as on 2.3.0. The visible change is the percent-escape.
 
 `GedcomDocument.getDialect()` is the dialect the service itself reads links and
-moves by: `7.0` for a header with no version, `5.5.1` for 5.5 and 5.5.5,
-`undefined` for PAF or an unsupported version, where `getMediaAt` already
-answers nothing.
+moves by: `7.0` for a header with no version — a PAF header without `GEDC`
+included — `5.5.1` for 5.5 and 5.5.5, and `undefined` for a version no schema
+describes, such as 4.0, where `getMediaAt` already answers nothing.
 
 `moveFileLinks` is not adopted here. Its target check calls
 `String.prototype.isWellFormed` (ES2024; Safari 16.4, Chromium 111), which
@@ -143,3 +143,21 @@ caller resolves a payload itself.
   fail if the dialect stops reaching the library.
 - [Renames keep the deprecated method] → two lint warnings until the upstream
   issue is fixed; the issue is recorded here.
+
+## Implementation
+
+Found in the code review, and accepted rather than changed:
+
+- A 5.5.1 payload naming a folder — `photos/` or `..` — resolves to nothing now,
+  so following it says the link is unsafe where it said the file was not found.
+  Neither names a file.
+- A remote image's name no longer treats `\` as a separator: the name of
+  `https://e.org/a\b.jpg` is `a\b.jpg`. A URL does not use one.
+- A desk media page's heading still shows the payload as the file writes it,
+  `my%20photo.jpg`, while its picture is named `my photo.jpg`: the heading names
+  what the record says, the picture the file it found.
+
+The two `MediaVault`s the file view built are one private `mediaVault(service)`,
+and a Playwright spec holds the percent-escaped name and the escaped separator
+in the harness, so a caller that stops passing the dialect fails in a browser
+too.

@@ -215,6 +215,17 @@ describe("a closed GEDCOM file when a media file is renamed", () => {
     expect(planned.count).toBe(1);
     expect(planned.write).toContain("1 FILE photos/b.jpg");
   });
+
+  it("is not written, and counts what it strands, where GEDCOM 7 cannot name the new place", () => {
+    const planned = planClosedRewrite(
+      file("7.0", "photos/a.jpg"),
+      "family/tree.ged",
+      "family/photos/a.jpg",
+      "a.jpg",
+    );
+
+    expect(planned).toEqual({ write: null, count: 0, stranded: 1 });
+  });
 });
 
 describe("which vault files are ours to rewrite", () => {

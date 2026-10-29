@@ -22,7 +22,10 @@ import {
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
-import type { MediaReference } from "@domorium/language-service";
+import type {
+  GedcomLanguageService,
+  MediaReference,
+} from "@domorium/language-service";
 import {
   debounce,
   HoverPopover,
@@ -44,6 +47,7 @@ import {
   mediaPreviewContent,
   mediaVaultPath,
   previewBounds,
+  type MediaVault,
 } from "./editor/media";
 import { clearMediaPreview } from "./editor/mediaPreviewHover";
 import {
@@ -726,17 +730,21 @@ export class GedcomView extends TextFileView {
     if (!reference) {
       return null;
     }
-    const vault = {
+    const vault = this.mediaVault(service);
+    const content = mediaPreviewContent(reference, vault, this.host.remoteImages());
+    const path = mediaVaultPath(reference, vault);
+    return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
+  }
+
+  private mediaVault(service: GedcomLanguageService): MediaVault {
+    return {
       documentPath: this.file?.path ?? "",
       dialect: service.getDocument().getDialect(),
-      resolve: (path: string) => {
+      resolve: (path) => {
         const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
         return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
       },
     };
-    const content = mediaPreviewContent(reference, vault, this.host.remoteImages());
-    const path = mediaVaultPath(reference, vault);
-    return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
   }
 
   private openVaultFile(relativePath: string): void {
@@ -871,19 +879,7 @@ export class GedcomView extends TextFileView {
   private drawMediaPreview(popover: HoverPopover, media: MediaReference): void {
     const content = mediaPreviewContent(
       media,
-      {
-        documentPath: this.file?.path ?? "",
-        dialect: this.language
-          .update(this.editor.state.doc)
-          .getDocument()
-          .getDialect(),
-        resolve: (path) => {
-          const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-          return file instanceof TFile
-            ? this.app.vault.getResourcePath(file)
-            : null;
-        },
-      },
+      this.mediaVault(this.language.update(this.editor.state.doc)),
       this.host.remoteImages(),
     );
     renderMediaPreview(content, {

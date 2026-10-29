@@ -210,6 +210,45 @@ async function serveRemote(
 const take = (page: Page, label: string): Promise<void> =>
   page.locator(`${POPOVER} .gedcom-media-allow`, { hasText: label }).click();
 
+test.describe("a payload read by GEDCOM 7", () => {
+  const ESCAPED = [
+    "0 HEAD",
+    "1 GEDC",
+    "2 VERS 7.0",
+    "0 @O1@ OBJE",
+    "1 FILE photos/my%20photo.jpg",
+    "2 FORM image/jpeg",
+    "0 @O2@ OBJE",
+    "1 FILE photos%2Fmarie.jpg",
+    "2 FORM image/jpeg",
+    "0 TRLR",
+    "",
+  ].join("\n");
+  const MEDIA_FILES = { "photos/my photo.jpg": "photo", "photos/marie.jpg": "photo" };
+
+  test("draws the file a percent-escape names, under its own name", async ({
+    page,
+  }) => {
+    await mount(page, { doc: ESCAPED, media: MEDIA_FILES });
+    await modHover(page, offsetOf(ESCAPED, "photos/my%20photo.jpg"));
+    await page.waitForSelector(`${POPOVER} img`);
+
+    expect(await page.locator(`${POPOVER} img`).getAttribute("alt")).toBe(
+      "my photo.jpg",
+    );
+  });
+
+  test("says an escaped separator names no file", async ({ page }) => {
+    await mount(page, { doc: ESCAPED, media: MEDIA_FILES });
+    await modHover(page, offsetOf(ESCAPED, "photos%2Fmarie.jpg"));
+    await page.waitForSelector(`${POPOVER} .gedcom-media-note`);
+
+    expect(await textOf(page, `${POPOVER} .gedcom-media-note`)).toBe(
+      "File not found",
+    );
+  });
+});
+
 test.describe("an image the reader asks for", () => {
   test("draws it, and asks the host only then", async ({ page }) => {
     const asked = await serveRemote(page);
