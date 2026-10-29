@@ -67,12 +67,25 @@ describe("the people a document declares", () => {
     ]);
   });
 
-  it("reads no year in a document whose version cannot be determined", () => {
+  it("reads a year in a document whose version cannot be determined", () => {
     const born = index([
       "0 HEAD", "0 @I1@ INDI", "1 BIRT", "2 DATE 7 NOV 1867", "0 TRLR", "",
     ].join("\n"));
 
-    expect(born.people[0]?.birth).toEqual({ text: "7 NOV 1867" });
+    expect(born.people[0]?.birth).toEqual({
+      text: "7 NOV 1867",
+      year: 1867,
+      precision: "exact",
+    });
+  });
+
+  it("reads a year in a document of a version no schema describes", () => {
+    const born = index([
+      "0 HEAD", "1 GEDC", "2 VERS 4.0",
+      "0 @I1@ INDI", "1 BIRT", "2 DATE 7 NOV 1867", "0 TRLR", "",
+    ].join("\n"));
+
+    expect(born.people[0]?.birth?.year).toBe(1867);
   });
 
   it("keeps the years it read when the service moves on to another text", () => {

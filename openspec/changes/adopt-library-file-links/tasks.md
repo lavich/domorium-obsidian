@@ -1,7 +1,7 @@
 ## 1. Dependencies and the upstream issue
 
-- [ ] 1.1 Raise `@domorium/language-service` to `^2.3.0` and `@domorium/codemirror` to `^2.2.0`, `npm install`, and verify `npm ls @domorium/language-service @domorium/validator` shows one copy of each (no test file: the check is the install and `npm run typecheck`)
-- [ ] 1.2 Update the two tests that pin "no year without a version" — `src/genealogy/dates.test.ts` and `src/genealogy/index.test.ts` — to the `genealogy-read-model` delta (1867 read with no version and with `VERS 4.0`, year 0 still none), and verify both pass
+- [x] 1.1 Raise `@domorium/language-service` to `^2.3.0` and `@domorium/codemirror` to `^2.2.0`, `npm install`, and verify `npm ls @domorium/language-service @domorium/validator` shows one copy of each (no test file: the check is the install and `npm run typecheck`)
+- [x] 1.2 Update the two tests that pin "no year without a version" — `src/genealogy/dates.test.ts` and `src/genealogy/index.test.ts` — to the `genealogy-read-model` delta (1867 read with no version and with `VERS 4.0`, year 0 still none), and verify both pass
 - [x] 1.3 File the lavich/domorium issue on `moveFileLinks` — `String.isWellFormed` below the oldest supported iOS, non-canonical payloads not moved, a 5.5.1 name with `\` written as a different file — with probes, and record its number in design.md (no test file)
 
 ## 2. Reading a FILE payload
