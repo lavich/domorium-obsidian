@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   Move,
+  moveClosedFile,
   planClosedMove,
   planMove,
   RenameBatch,
@@ -494,5 +495,40 @@ describe("a GEDCOM file's payloads after a move", () => {
 
     expect(edit.version).toBe(7);
     expect(edit.edits.map(({ newText }) => newText)).toEqual(["media/b.jpg"]);
+  });
+});
+
+describe("a closed GEDCOM file rewritten after a move", () => {
+  it("re-plans the move when its text changed between read and write", async () => {
+    const read = gedcom("7.0", "media/a.jpg");
+    const changed = gedcom("7.0", "media/a.jpg", "media/b.jpg");
+    let written: string | null = null;
+
+    const result = await moveClosedFile(
+      {
+        read: () => Promise.resolve(read),
+        process: (change) => {
+          written = change(changed);
+          return Promise.resolve(written);
+        },
+      },
+      "tree.ged",
+      new Move([folder("media", "pics")]),
+    );
+
+    expect(result).toEqual({ count: 1, stranded: 0 });
+    expect(written).toBe(gedcom("7.0", "pics/a.jpg", "pics/b.jpg"));
+  });
+
+  it("is never handed to process when nothing in it changes", async () => {
+    const process = vi.fn();
+
+    await moveClosedFile(
+      { read: () => Promise.resolve(gedcom("7.0", "scans/c.jpg")), process },
+      "tree.ged",
+      new Move([file("photos/a.jpg", "photos/b.jpg")]),
+    );
+
+    expect(process).not.toHaveBeenCalled();
   });
 });

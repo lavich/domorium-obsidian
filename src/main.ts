@@ -12,6 +12,7 @@ import {
   removeIcon,
   Setting,
   TFile,
+  TFolder,
 } from "obsidian";
 
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
@@ -30,12 +31,12 @@ import {
   stripEmbed,
   type GedcomLinkTarget,
 } from "./vault/protocolLink";
+import { moveClosedFile, type Move, RenameBatch } from "./vault/movedFiles";
 import {
   describeRetarget,
   describeStranded,
   describeUnreadable,
   isGedcomPath,
-  planClosedRewrite,
 } from "./vault/renamedMedia";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import {
@@ -89,6 +90,14 @@ export default class GedcomPlugin
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a panel the reader closes stays closed. */
   private evidencePlaced = false;
+  private moves: Promise<void> = Promise.resolve();
+  private readonly renames = new RenameBatch((move) => {
+    this.moves = this.moves
+      .then(() => this.followMove(move))
+      .catch((error: unknown) => {
+        console.error("Domorium: a move could not be followed", error);
+      });
+  }, window);
 
   async onload(): Promise<void> {
     setLanguage(getLanguage());
@@ -212,9 +221,10 @@ export default class GedcomPlugin
     );
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
-        if (file instanceof TFile) {
-          void this.followRenamedFile(oldPath, file.path);
-        }
+        this.renames.add(
+          { from: oldPath, to: file.path, folder: file instanceof TFolder },
+          file instanceof TFolder ? descendantPaths(file) : [],
+        );
       }),
     );
     this.registerEvent(
@@ -228,6 +238,7 @@ export default class GedcomPlugin
   }
 
   onunload(): void {
+    this.renames.cancel();
     removeIcon(GEDCOM_ICON_ID);
   }
 
@@ -428,7 +439,7 @@ export default class GedcomPlugin
     }
   }
 
-  private async followRenamedFile(from: string, to: string): Promise<void> {
+  private async followMove(move: Move): Promise<void> {
     const open = new Map<string, GedcomView>();
     this.forEachView((view) => {
       if (view.file) {
@@ -447,8 +458,15 @@ export default class GedcomPlugin
       const view = open.get(file.path);
       try {
         const result = view
-          ? view.followRenamedFile(from, to)
-          : await this.rewriteClosedFile(file, from, to);
+          ? view.followMove(move)
+          : await moveClosedFile(
+              {
+                read: () => this.app.vault.read(file),
+                process: (change) => this.app.vault.process(file, change),
+              },
+              file.path,
+              move,
+            );
         payloads += result.count;
         files += result.count > 0 ? 1 : 0;
         stranded += result.stranded;
@@ -467,27 +485,6 @@ export default class GedcomPlugin
     if (unreadable > 0) {
       new Notice(describeUnreadable(unreadable));
     }
-  }
-
-  private async rewriteClosedFile(
-    file: TFile,
-    from: string,
-    to: string,
-  ): Promise<{ count: number; stranded: number }> {
-    const text = await this.app.vault.read(file);
-    const { write, count, stranded } = planClosedRewrite(text, file.path, from, to);
-    // process writes whatever it is handed, so a file with nothing to change
-    // is never given to it: every GEDCOM in the vault would be rewritten, and
-    // its modification time is what Sync and the file list go by.
-    if (write === null) {
-      return { count: 0, stranded };
-    }
-    await this.app.vault.process(file, (current) =>
-      current === text
-        ? write
-        : (planClosedRewrite(current, file.path, from, to).write ?? current),
-    );
-    return { count, stranded };
   }
 
   private commandHost(): CommandHost {
@@ -531,6 +528,14 @@ export default class GedcomPlugin
       this.statusBar?.setText(formatStatus(view.getStatus()));
     }
   }
+}
+
+function descendantPaths(folder: TFolder): string[] {
+  return folder.children.flatMap((child) =>
+    child instanceof TFolder
+      ? [child.path, ...descendantPaths(child)]
+      : [child.path],
+  );
 }
 
 class RecordSwitcherModal extends FuzzySuggestModal<GedcomRecord> {

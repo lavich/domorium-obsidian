@@ -267,3 +267,29 @@ export function planClosedMove(
     stranded,
   };
 }
+
+export interface ClosedFile {
+  read(): Promise<string>;
+  process(change: (current: string) => string): Promise<unknown>;
+}
+
+export async function moveClosedFile(
+  file: ClosedFile,
+  documentPath: string,
+  move: Move,
+): Promise<{ count: number; stranded: number }> {
+  const text = await file.read();
+  const { write, count, stranded } = planClosedMove(text, documentPath, move);
+  // process writes whatever it is handed, so a file with nothing to change
+  // is never given to it: every GEDCOM in the vault would be rewritten, and
+  // its modification time is what Sync and the file list go by.
+  if (write === null) {
+    return { count: 0, stranded };
+  }
+  await file.process((current) =>
+    current === text
+      ? write
+      : (planClosedMove(current, documentPath, move).write ?? current),
+  );
+  return { count, stranded };
+}
