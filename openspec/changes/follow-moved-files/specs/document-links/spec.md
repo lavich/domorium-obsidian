@@ -16,8 +16,10 @@ as written.
 
 Where the document cannot spell the new place, as GEDCOM 7 cannot spell one above
 its folder, the payload SHALL be left as it is and the reader told how many were
-left. A payload continued by `CONC` or `CONT` SHALL be left and counted the same
-way, rather than rewritten from its first line. A closed GEDCOM file that the move cannot concern SHALL NOT be parsed, and
+left. A payload continued by `CONC` or `CONT` SHALL never be rewritten. It SHALL
+be counted as left where its first line, read alone, would have to change — it
+names a moved file or folder, or the GEDCOM file itself moved — and otherwise
+left without a word, since only its first line is read. A closed GEDCOM file that the move cannot concern SHALL NOT be parsed, and
 one with nothing to rewrite SHALL NOT be written, so its modification time does
 not change.
 
@@ -100,6 +102,12 @@ not change.
   continued by `2 CONC  photo.jpg`, and the reader moves it to `tree.ged`
 - **THEN** both lines are unchanged, and a notice says one media link was left
   pointing at the old path
+
+#### Scenario: A continued payload whose first line names nothing moved
+- **WHEN** `tree.ged` declares GEDCOM 5.5.1 and holds `1 FILE photos/my`
+  continued by `2 CONC  photo.jpg`, and the reader renames `photos/my photo.jpg`
+  to `photos/b.jpg`
+- **THEN** both lines are unchanged, and no notice is shown
 
 #### Scenario: Two renames one after the other
 - **WHEN** a GEDCOM file at the vault root holds `1 FILE media/a.jpg`, and the

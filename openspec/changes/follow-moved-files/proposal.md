@@ -44,7 +44,8 @@ On 2026-10-29 the user chose, of the options offered:
 - The rewrite is built from the library's `getDocumentLinks`, `resolveFileTarget`,
   `relativeFilePath` and `encodeFileTarget`; each new spelling is parsed back as
   a `FILE` line of its dialect before it is written, and a payload continued by
-  `CONC` or `CONT` is left and counted. It replaces the deprecated `retargetFileLinks`, so renames no longer
+  `CONC` or `CONT` is never rewritten, and counted where its first line shows the
+  move concerns it. It replaces the deprecated `retargetFileLinks`, so renames no longer
   wait on lavich/domorium#480 and lint loses its two deprecation warnings.
 - The notices stay as they are: how many links were repointed in how many files,
   how many were left, how many files could not be read.

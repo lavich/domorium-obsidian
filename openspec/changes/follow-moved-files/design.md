@@ -57,8 +57,16 @@ recorded folder belongs to another action: it flushes the current batch first
 and opens a new one, so `media → pics` then `pics → img` are never folded into
 one move. The batch flushes on a zero-delay timer once
 nothing is expected, and after a fallback of two seconds if something still is.
-Flushes run one after another on a promise chain, each reading `file.path` as it
-plans, and `onunload` cancels a pending timer. Timer and clock are constructor
+Flushes run one after another on a promise chain. Obsidian moves a file before
+reporting it, and a batch is flushed inside the report of the action after it,
+so by the time a move is followed its GEDCOM files may already stand where later
+moves put them. The moves flushed but not yet followed are kept in order, with
+the open batch's renames as a last, partial move; a GEDCOM file's path right
+after move k is its `file.path` taken through `before` of every later one,
+newest first, at the moment the path is read — for the plan, and again for the
+re-plan inside `process`. An open view is found by its file, not its path.
+`onunload` cancels a pending timer and stops the follower: it checks before each
+file and before any notice, so a move still on the chain does nothing. Timer and clock are constructor
 arguments so a test drives them.
 
 `Move` answers `after(path)` — a file's own entry first, then the longest
@@ -83,10 +91,13 @@ For a GEDCOM file at `D1` now, `D0 = move.before(D1)`. For each
    else is stranded: GEDCOM 7's `..`, a 5.5.1 `\` in a name, a segment like
    `@fam@` that parses as a pointer.
 
-A payload continued by `CONC` or `CONT` — `targetText` holds its first line
-only — is left and counted stranded rather than rewritten from half of it. It is
-recognized by the line after the link's: a `CONC` or `CONT` one level deeper
-than the `FILE` line.
+A payload continued by `CONC` or `CONT` is never rewritten: `targetText` holds
+its first line only, and the payload is not reconstructed from the lines after
+it. It is counted stranded where that first line, read alone, would be rewritten
+— it names a moved file or folder, or the GEDCOM file moved — and is otherwise
+left without a count: a move of the file the whole payload names, which its
+first line does not show, goes unnoticed. It is recognized by the line after
+the link's: a `CONC` or `CONT` one level deeper than the `FILE` line.
 
 The edit carries the version of the service that produced the links — the file
 view's `EditorLanguageService.getVersion()` when open, `0` for a fresh service
@@ -116,6 +127,12 @@ cannot hold a payload the move changes, and is neither parsed nor written.
 - [Obsidian fails to report some of a folder's entries] → the fallback flushes
   after two seconds with the folder's prefix, so payloads are still mapped; a
   GEDCOM file whose own event never came is read at the path the vault gives it.
+- [A child's event arrives after the two-second fallback] → it is answered as
+  a move of its own, as every rename was answered on its own before this
+  change. A GEDCOM file whose own event comes that late is planned at its old
+  path for the folder's move, so a 5.5.1 payload beside it passes through `../`
+  and comes back, and a GEDCOM 7 one may be reported left though it ends
+  unchanged.
 - [The stranded notice names GEDCOM 7's folder rule] → it is the case readers
   meet; the rarer refusals — `CONC`, a pointer-like segment — share its text,
   which for a 5.5.1 file is plainly wrong about the reason. Known and accepted.
@@ -137,7 +154,15 @@ None of these changes what a reader sees.
 - A continued payload is found in the parse rather than the text: the `FILE`
   node with a `CONC` or `CONT` child. It is the same line one level deeper, and
   the service does not expose its text. It is counted only where the move would
-  rewrite the payload, as for any other refusal.
+  rewrite its first line, as for any other refusal.
+- The batch, the chain and the loop over the vault's files live in a
+  `MoveFollower` beside the plan, taking the files, an open view, `read`,
+  `process` and the notices from the plugin, so the ordering and the stop on
+  unload have unit tests. `GedcomView.followMove` takes the path to plan from
+  rather than reading its own.
+- `moveClosedFile` takes the document's path as a function, read once for the
+  plan and again inside `process`, and returns the count and stranded payloads
+  of the plan that `process` wrote.
 - "Either order" is the order of a folder's entries after the folder's own
   event, which Obsidian always reports first; an event before its folder's is
   not recognized as part of it.
