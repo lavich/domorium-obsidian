@@ -1,6 +1,11 @@
-import type { MediaCrop, Position, Range } from "@domorium/language-service";
+import {
+  drawnCrop,
+  type MediaCrop,
+  type Position,
+  type Range,
+} from "@domorium/language-service";
 
-import { drawnCrop, type MediaPreviewContent } from "../editor/media";
+import type { MediaPreviewContent } from "../editor/media";
 import { t, type MessageKey } from "../i18n";
 import { linkButton } from "./dom";
 

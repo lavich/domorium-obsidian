@@ -1,10 +1,10 @@
 import {
   GedcomLanguageService,
+  relativeFilePath,
   type Position,
   type WorkspaceEdit,
 } from "@domorium/language-service";
 
-import { relativeToDocument } from "../editor/service";
 import { plural, t } from "../i18n";
 
 const GEDCOM_EXTENSIONS = ["ged", "gedcom"];
@@ -55,8 +55,8 @@ export function planRetarget(
   from: string,
   to: string,
 ): { edit: WorkspaceEdit; stranded: number } {
-  const oldPath = relativeToDocument(documentPath, from);
-  const newPath = relativeToDocument(documentPath, to);
+  const oldPath = relativeFilePath(documentPath, from);
+  const newPath = relativeFilePath(documentPath, to);
   const resolution = service.getVersionResolution();
   const gedcom7 =
     resolution !== undefined &&

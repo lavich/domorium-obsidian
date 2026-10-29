@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   cropScale,
-  drawnCrop,
   mediaPreviewContent,
   mediaVaultPath,
   previewBounds,
@@ -290,33 +289,6 @@ describe("the rectangle a link asks for", () => {
       name: "marie.jpg",
       crop,
     });
-  });
-
-  it("is drawn unchanged where the image covers it", () => {
-    expect(
-      drawnCrop({ top: 100, left: 250, height: 400, width: 300 }, 1000, 800),
-    ).toEqual({ top: 100, left: 250, height: 400, width: 300 });
-  });
-
-  it("is clamped to the part of it the image reaches", () => {
-    expect(
-      drawnCrop({ top: 100, left: 900, height: 400, width: 300 }, 1000, 300),
-    ).toEqual({ top: 100, left: 900, height: 200, width: 100 });
-  });
-
-  it("gives up where the image does not reach it at all", () => {
-    expect(
-      drawnCrop({ top: 0, left: 2000, height: 100, width: 100 }, 1000, 800),
-    ).toBeNull();
-  });
-
-  it("gives up on a rectangle with no extent", () => {
-    expect(drawnCrop({ top: 0, left: 0, height: 0, width: 300 }, 1000, 800)).toBeNull();
-    expect(drawnCrop({ top: 0, left: 0, height: 300, width: 0 }, 1000, 800)).toBeNull();
-  });
-
-  it("gives up before the image has a size to measure against", () => {
-    expect(drawnCrop({ top: 0, left: 0, height: 10, width: 10 }, 0, 0)).toBeNull();
   });
 });
 

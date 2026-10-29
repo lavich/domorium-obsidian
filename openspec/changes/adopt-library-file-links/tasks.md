@@ -8,7 +8,7 @@
 
 - [x] 2.1 Give `MediaVault` a `dialect`; resolve through `resolveFileTarget` in `mediaPreviewContent`, and export one function that answers the vault path of a `MediaReference`, used by `GedcomView.mediaItem` and `harness/desk.ts`; take the shown name from the resolved path; pass `service.getDocument().getDialect()` from both callers in `src/GedcomView.ts` and from `harness/mount.ts` and `harness/desk.ts`. Extend `src/editor/media.test.ts` with the GEDCOM 7 percent-escape (path and name), the `%2F` and the 5.5.1 scenarios, and verify it passes
 - [x] 2.2 Pass the dialect to `routeDocumentLink` and resolve there through `resolveFileTarget`; extend `src/editor/service.test.ts` with following `my%20photo.jpg` in 7.0 and in a document with no version, and `..\photos\marie.jpg` in 5.5.1, and verify it passes
-- [ ] 2.3 Delete `resolveVaultRelativePath`, `relativeToDocument` and the plugin's `drawnCrop`, using `relativeFilePath` in `planRetarget` and importing `drawnCrop` from `@domorium/language-service` in `src/editor/mediaPreviewView.ts` and `src/desk/media.ts`; remove their tests from `src/editor/service.test.ts` and `src/editor/media.test.ts`, and verify `npm run typecheck` and `npm run test` pass
+- [x] 2.3 Delete `resolveVaultRelativePath`, `relativeToDocument` and the plugin's `drawnCrop`, using `relativeFilePath` in `planRetarget` and importing `drawnCrop` from `@domorium/language-service` in `src/editor/mediaPreviewView.ts` and `src/desk/media.ts`; remove their tests from `src/editor/service.test.ts` and `src/editor/media.test.ts`, and verify `npm run typecheck` and `npm run test` pass
 
 ## 3. Following a renamed file
 
