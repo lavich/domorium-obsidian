@@ -358,6 +358,7 @@ export class MoveFollower<F extends MovedFile> {
   private readonly batch: RenameBatch;
   private readonly unfollowed: Move[] = [];
   private chain: Promise<void> = Promise.resolve();
+  private stopped = false;
 
   constructor(
     private readonly host: MoveHost<F>,
@@ -381,6 +382,7 @@ export class MoveFollower<F extends MovedFile> {
   }
 
   stop(): void {
+    this.stopped = true;
     this.batch.cancel();
   }
 
@@ -406,6 +408,9 @@ export class MoveFollower<F extends MovedFile> {
     let stranded = 0;
     let unreadable = 0;
     for (const file of this.host.files()) {
+      if (this.stopped) {
+        return;
+      }
       if (!isGedcomPath(file.path)) {
         continue;
       }
@@ -430,6 +435,9 @@ export class MoveFollower<F extends MovedFile> {
       }
     }
 
+    if (this.stopped) {
+      return;
+    }
     if (payloads > 0) {
       this.host.notify(describeRetarget(payloads, files));
     }

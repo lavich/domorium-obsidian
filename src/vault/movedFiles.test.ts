@@ -10,7 +10,7 @@ import {
   Move,
   moveClosedFile,
   MoveFollower,
-  type OpenDocument,
+  type MoveHost,
   planClosedMove,
   planMove,
   RenameBatch,
@@ -82,7 +82,7 @@ interface FakeFile {
 
 function follower(
   files: FakeFile[],
-  open: (file: FakeFile) => OpenDocument | null = () => null,
+  host: Partial<MoveHost<FakeFile>> = {},
 ): { follower: MoveFollower<FakeFile>; timers: FakeTimers; notices: string[] } {
   const timers = new FakeTimers();
   const notices: string[] = [];
@@ -90,13 +90,14 @@ function follower(
     follower: new MoveFollower<FakeFile>(
       {
         files: () => files,
-        openView: open,
+        openView: () => null,
         read: (moved) => Promise.resolve(moved.text),
         process: (moved, change) => {
           moved.text = change(moved.text);
           return Promise.resolve(moved.text);
         },
         notify: (message) => notices.push(message),
+        ...host,
       },
       timers,
     ),
@@ -578,12 +579,14 @@ describe("moves followed one after another", () => {
   it("hands an open GEDCOM file the path it stood at after the move", async () => {
     const tree = { path: "tree.ged", text: gedcom("7.0", "media/a.jpg") };
     const planned: string[] = [];
-    const { follower: moves, timers } = follower([tree], () => ({
-      followMove: (_move, documentPath) => {
-        planned.push(documentPath);
-        return { count: 0, stranded: 0 };
-      },
-    }));
+    const { follower: moves, timers } = follower([tree], {
+      openView: () => ({
+        followMove: (_move, documentPath) => {
+          planned.push(documentPath);
+          return { count: 0, stranded: 0 };
+        },
+      }),
+    });
 
     moves.add(file("media/a.jpg", "media/b.jpg"));
     moveFile(moves, tree, "family/tree.ged");
@@ -591,6 +594,42 @@ describe("moves followed one after another", () => {
     await moves.idle();
 
     expect(planned).toEqual(["tree.ged", "family/tree.ged"]);
+  });
+});
+
+describe("a follower that has been stopped", () => {
+  it("follows nothing it had already been handed", async () => {
+    const tree = { path: "tree.ged", text: gedcom("7.0", "media/a.jpg") };
+    const { follower: moves, timers, notices } = follower([tree]);
+
+    moves.add(file("media/a.jpg", "media/b.jpg"));
+    timers.run();
+    moves.stop();
+    await moves.idle();
+
+    expect(tree.text).toBe(gedcom("7.0", "media/a.jpg"));
+    expect(notices).toEqual([]);
+  });
+
+  it("goes no further than the file it was on, and says nothing", async () => {
+    const first = { path: "a.ged", text: gedcom("7.0", "media/a.jpg") };
+    const second = { path: "b.ged", text: gedcom("7.0", "media/a.jpg") };
+    const read = vi.fn();
+    const { follower: moves, timers, notices } = follower([first, second], {
+      read: (moved) => {
+        read(moved.path);
+        moves.stop();
+        return Promise.resolve(moved.text);
+      },
+    });
+
+    moves.add(file("media/a.jpg", "media/b.jpg"));
+    timers.run();
+    await moves.idle();
+
+    expect(read).toHaveBeenCalledExactlyOnceWith("a.ged");
+    expect(second.text).toBe(gedcom("7.0", "media/a.jpg"));
+    expect(notices).toEqual([]);
   });
 });
 
