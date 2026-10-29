@@ -651,8 +651,22 @@ describe("a closed GEDCOM file rewritten after a move", () => {
       new Move([folder("media", "pics")]),
     );
 
-    expect(result).toEqual({ count: 1, stranded: 0 });
+    expect(result).toEqual({ count: 2, stranded: 0 });
     expect(written).toBe(gedcom("7.0", "pics/a.jpg", "pics/b.jpg"));
+  });
+
+  it("counts what the re-plan left behind, not what the first plan did", async () => {
+    const { stranded } = await moveClosedFile(
+      {
+        read: () => Promise.resolve(gedcom("5.5.1", "media/a.jpg")),
+        process: (change) =>
+          Promise.resolve(change(gedcom("5.5.1", "media/a.jpg", "media/b.jpg"))),
+      },
+      () => "tree.ged",
+      new Move([folder("media", "@fam@"), file("media/a.jpg", "pics/a.jpg")]),
+    );
+
+    expect(stranded).toBe(1);
   });
 
   it("is never handed to process when nothing in it changes", async () => {

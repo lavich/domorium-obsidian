@@ -322,20 +322,25 @@ export async function moveClosedFile(
 ): Promise<Outcome> {
   const text = await file.read();
   const plannedAt = documentPath();
-  const { write, count, stranded } = planClosedMove(text, plannedAt, move);
+  const planned = planClosedMove(text, plannedAt, move);
   // process writes whatever it is handed, so a file with nothing to change
   // is never given to it: every GEDCOM in the vault would be rewritten, and
   // its modification time is what Sync and the file list go by.
-  if (write === null) {
-    return { count: 0, stranded };
+  if (planned.write === null) {
+    return { count: 0, stranded: planned.stranded };
   }
+  const outcome: Outcome = { count: 0, stranded: planned.stranded };
   await file.process((current) => {
     const at = documentPath();
-    return current === text && at === plannedAt
-      ? write
-      : (planClosedMove(current, at, move).write ?? current);
+    const written =
+      current === text && at === plannedAt
+        ? planned
+        : planClosedMove(current, at, move);
+    outcome.count = written.count;
+    outcome.stranded = written.stranded;
+    return written.write ?? current;
   });
-  return { count, stranded };
+  return outcome;
 }
 
 export interface MovedFile {
