@@ -235,6 +235,18 @@ describe("the renames of one action", () => {
     expect(moves[0]?.renames).toHaveLength(2);
   });
 
+  it("keeps in its move an entry under the folder it did not expect", () => {
+    const { batch: renames, timers, moves } = batch();
+
+    renames.add(folder("family", "kin"), ["family/tree.ged"]);
+    renames.add(file("family/new.jpg", "kin/new.jpg"));
+    renames.add(file("family/tree.ged", "kin/tree.ged"));
+    timers.run();
+
+    expect(moves).toHaveLength(1);
+    expect(moves[0]?.renames).toHaveLength(3);
+  });
+
   it("flushes after the fallback when an entry is never reported", () => {
     const { batch: renames, timers, moves } = batch();
 
@@ -437,6 +449,16 @@ describe("a GEDCOM file's payloads after a move", () => {
     );
 
     expect(planned.write).toContain("1 FILE a/gone/z.jpg\n");
+  });
+
+  it("follows a renamed folder into a closed GEDCOM 5.5.1 file that spells it with a backslash", () => {
+    const planned = planClosedMove(
+      gedcom("5.5.1", "media\\a.jpg"),
+      "tree.ged",
+      new Move([folder("media", "pics")]),
+    );
+
+    expect(planned.write).toContain("1 FILE pics/a.jpg\n");
   });
 
   it("follows a missing file in a renamed folder named percent-escaped", () => {
