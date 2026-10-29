@@ -16,7 +16,8 @@ as written.
 
 Where the document cannot spell the new place, as GEDCOM 7 cannot spell one above
 its folder, the payload SHALL be left as it is and the reader told how many were
-left. A closed GEDCOM file that the move cannot concern SHALL NOT be parsed, and
+left. A payload continued by `CONC` or `CONT` SHALL be left and counted the same
+way, rather than rewritten from its first line. A closed GEDCOM file that the move cannot concern SHALL NOT be parsed, and
 one with nothing to rewrite SHALL NOT be written, so its modification time does
 not change.
 
@@ -68,7 +69,8 @@ not change.
 - **WHEN** `family/tree.ged` holds `1 FILE photos/a.jpg`, the vault holds
   `family/photos/a.jpg`, and the reader renames `family` to `kin`
 - **THEN** the payload still reads `photos/a.jpg`, whatever order Obsidian
-  reports the renames in, and no notice is shown
+  reports the renames in and whether its children's renames come in the same
+  task as the folder's or a later one, and no notice is shown
 
 #### Scenario: A folder of media
 - **WHEN** a GEDCOM 7.0 file at the vault root holds `1 FILE media/a.jpg` and
@@ -80,6 +82,29 @@ not change.
 - **WHEN** `a/tree.ged` declares GEDCOM 7.0 and holds `1 FILE gone/z.jpg`, which
   the vault does not hold, and the reader moves it to `tree.ged`
 - **THEN** the payload reads `a/gone/z.jpg`
+
+#### Scenario: A missing file in a renamed folder, named percent-escaped
+- **WHEN** a closed GEDCOM 7.0 file at the vault root holds
+  `1 FILE my%20photos/gone.jpg`, which the vault does not hold, and the reader
+  renames the folder `my photos` to `pics`
+- **THEN** the payload reads `pics/gone.jpg`
+
+#### Scenario: A new place that would not read as a link
+- **WHEN** a GEDCOM 5.5.1 file holds `1 FILE photos/a.jpg`, and the reader renames
+  the folder `photos` to `@fam@`
+- **THEN** the payload is unchanged, and a notice says one media link was left
+  pointing at the old path
+
+#### Scenario: A payload continued on the next line
+- **WHEN** `family/tree.ged` declares GEDCOM 5.5.1 and holds `1 FILE photos/my`
+  continued by `2 CONC  photo.jpg`, and the reader moves it to `tree.ged`
+- **THEN** both lines are unchanged, and a notice says one media link was left
+  pointing at the old path
+
+#### Scenario: Two renames one after the other
+- **WHEN** a GEDCOM file at the vault root holds `1 FILE media/a.jpg`, and the
+  reader renames `media` to `pics` and then `pics` to `img`
+- **THEN** the payload reads `img/a.jpg`
 
 #### Scenario: A spelling that still names its file
 - **WHEN** `family/tree.ged` declares GEDCOM 5.5.1 and holds

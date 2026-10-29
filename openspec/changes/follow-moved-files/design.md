@@ -8,11 +8,15 @@ closed — retargets payloads naming `from` with the deprecated
 `retargetFileLinks`, from the document's path at that moment.
 
 Obsidian 1.14.5 (`obsidian-1.14.5.asar`): both file-system adapters, after
-renaming a folder, trigger `renamed` for the folder and then, in a synchronous
-loop over their file table, for every path under it; the vault turns each into
-`rename(file, oldPath)` synchronously. So one folder rename arrives as one
-`TFolder` event followed by one `TFile` event per file beneath it, all in the
-same task, in table order.
+renaming a folder, trigger `renamed` for the folder and then, in a loop over
+their file table, for every file and folder under it; the vault turns each into
+`rename(entry, oldPath)` synchronously. The Capacitor adapter runs that loop at
+once. The desktop adapter, where the folder has a watcher of its own, first
+awaits `startWatchPath` — a `realpath` — and every folder has one on Linux
+(`tc = darwin || win32` is false there) and a symlinked folder has one anywhere.
+So a folder's children may arrive in a later task than the folder. When the
+folder's event fires, `TFolder.setPath` has renamed the folder alone: its
+descendants still carry their old paths until their own events.
 
 Probed with `@domorium/language-service` 2.3.0, composing the functions below
 over `getDocumentLinks()` and `getDocument().getDialect()`:
@@ -42,14 +46,20 @@ over `getDocumentLinks()` and `getDocument().getDialect()`:
 
 ## Decisions
 
-### A move is the renames of one task
+### A move is the renames of one action
 
-A `RenameBatch` in `src/vault/` collects `(newPath, oldPath, isFolder)` from the
-`rename` listener and flushes once, on a zero-delay timer, into a `Move`: exact
-file moves, and folder moves as prefixes. Every event of a folder rename arrives
-in the same task, so the flush sees them all; two renames the reader makes one
-after the other are two flushes. The scheduler is a constructor argument so a
-test flushes by hand.
+A `RenameBatch` in `src/vault/` collects the `rename` listener's events into a
+`Move`: exact file moves, and folder moves as prefixes bounded by `/`. On a
+folder's event it records the old paths of every entry beneath it — still old
+at that moment — as expected; an entry's own event under a recorded folder only
+clears it from the expected set. An event that is neither expected nor under a
+recorded folder belongs to another action: it flushes the current batch first
+and opens a new one, so `media → pics` then `pics → img` are never folded into
+one move. The batch flushes on a zero-delay timer once
+nothing is expected, and after a fallback of two seconds if something still is.
+Flushes run one after another on a promise chain, each reading `file.path` as it
+plans, and `onunload` cancels a pending timer. Timer and clock are constructor
+arguments so a test drives them.
 
 `Move` answers `after(path)` — a file's own entry first, then the longest
 renamed folder it sits under — and `before(path)`, its inverse over the same
@@ -65,9 +75,18 @@ For a GEDCOM file at `D1` now, `D0 = move.before(D1)`. For each
 2. `P1 = move.after(P0)`.
 3. If `resolveFileTarget(D1, targetText, dialect) === P1`, the payload already
    says it; leave it, whatever spelling the author used.
-4. Otherwise `text = encodeFileTarget(relativeFilePath(D1, P1), dialect)`; if
-   `resolveFileTarget(D1, text, dialect) === P1` it is an edit over the link's
-   range, else the payload is stranded.
+4. Otherwise `text = encodeFileTarget(relativeFilePath(D1, P1), dialect)`. It is
+   parsed back as `0 HEAD / 1 GEDC / 2 VERS <dialect> / 0 @O1@ OBJE /
+   1 FILE <text>` — a header, because the fragment option's `dialect` is not
+   honored in 2.3.0 — and kept only if that gives exactly one `file-relative`
+   link resolving to `P1` from `D1`: an edit over the link's range. Anything
+   else is stranded: GEDCOM 7's `..`, a 5.5.1 `\` in a name, a segment like
+   `@fam@` that parses as a pointer.
+
+A payload continued by `CONC` or `CONT` — `targetText` holds its first line
+only — is left and counted stranded rather than rewritten from half of it. It is
+recognized by the line after the link's: a `CONC` or `CONT` one level deeper
+than the `FILE` line.
 
 The edit carries the version of the service that produced the links — the file
 view's `EditorLanguageService.getVersion()` when open, `0` for a fresh service
@@ -84,18 +103,21 @@ move is what the batch is.
 ### A closed file is parsed only where the move may concern it
 
 A closed GEDCOM file is parsed when it moved itself, when `mentionsFile(text,
-old)` holds for an old path of a moved file, or when its text contains the old
-name of a renamed folder followed by `/` or `\`. Anything else cannot hold a
-payload the move changes, and is neither parsed nor written.
+old)` holds for an old path of a moved file, when its text contains the last
+segment of a renamed folder's old path followed by `/` or `\`, or when it
+contains a `%` followed by two hex digits, which may spell either. Anything else
+cannot hold a payload the move changes, and is neither parsed nor written.
 
 ## Risks / Trade-offs
 
 - [A 5.5.1 payload's separators are normalized when it is rewritten —
   `media\c.jpg` becomes `../media/c.jpg`] → only where it had to change; a
   payload still naming its file keeps its spelling.
-- [Obsidian could one day report a folder's files in later tasks] → each would
-  then be its own flush, the per-file behavior of today; the order bug would
-  return only for that case. The spec of the batch is pinned by a unit test of
-  the collector, not of Obsidian.
+- [Obsidian fails to report some of a folder's entries] → the fallback flushes
+  after two seconds with the folder's prefix, so payloads are still mapped; a
+  GEDCOM file whose own event never came is read at the path the vault gives it.
+- [The stranded notice names GEDCOM 7's folder rule] → it is the case readers
+  meet; the rarer refusals — `CONC`, a pointer-like segment — share its text,
+  which for a 5.5.1 file is plainly wrong about the reason. Known and accepted.
 - [A move touching many GEDCOM files rewrites them all at once] → as a rename of
   one photograph already can; each closed file is written once.

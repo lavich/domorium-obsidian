@@ -8,10 +8,12 @@ corrupts them.
   every relative payload it holds at once. The plugin answers that rename as a
   media rename — "who names this file" — and finds nothing to do.
 - **A renamed folder holding a GEDCOM file and its media.** Obsidian 1.14.5 fires
-  `rename` for the folder and then once for every file under it, on desktop and
-  mobile alike (the adapters loop over the folder's files and trigger `renamed`
-  for each). The plugin answers each file on its own, against whatever path the
-  GEDCOM file has at that moment. When a photograph's event comes before its
+  `rename` for the folder and then once for every file and folder under it, on
+  desktop and mobile alike (the adapters loop over the folder's entries and
+  trigger `renamed` for each). On Linux, and for a symlinked folder anywhere, the
+  desktop adapter restarts its watcher between the folder's event and its
+  children's, so they can arrive in a later task. The plugin answers each file on
+  its own, against whatever path the GEDCOM file has at that moment. When a photograph's event comes before its
   GEDCOM file's, `photos/a.jpg` is rewritten to `../kin/photos/a.jpg` — or left
   stranded in GEDCOM 7 — and the GEDCOM file then moves beside it, so a link that
   never needed to change is broken.
@@ -40,23 +42,27 @@ On 2026-10-29 the user chose, of the options offered:
   left as written. One that its dialect cannot spell from the new place — GEDCOM 7
   above the file's folder — is left and counted as stranded, as today.
 - The rewrite is built from the library's `getDocumentLinks`, `resolveFileTarget`,
-  `relativeFilePath` and `encodeFileTarget`, each new spelling read back before it
-  is written. It replaces the deprecated `retargetFileLinks`, so renames no longer
+  `relativeFilePath` and `encodeFileTarget`; each new spelling is parsed back as
+  a `FILE` line of its dialect before it is written, and a payload continued by
+  `CONC` or `CONT` is left and counted. It replaces the deprecated `retargetFileLinks`, so renames no longer
   wait on lavich/domorium#480 and lint loses its two deprecation warnings.
 - The notices stay as they are: how many links were repointed in how many files,
   how many were left, how many files could not be read.
 
 This change belongs in **this repository**: it composes functions the language
 service exports for exactly this — `relativeFilePath` is documented as the
-inverse of `resolveFileTarget` — around Obsidian's rename events. A single
-library call for "this document moved" would serve other hosts too, and is worth
-raising upstream, but nothing here waits on it.
+inverse of `resolveFileTarget` — around Obsidian's rename events. None of them
+reaches the `String.isWellFormed` of lavich/domorium#480. A single library call
+for "this document moved", and the writability check `moveFileLinks` keeps
+private, would serve other hosts too and are worth raising upstream, but nothing
+here waits on them.
 
 ## Non-goals
 
 - A diagnostic for a `FILE` that names a file the vault does not hold.
 - Following a rename done outside Obsidian, which fires `delete` and `create`.
-- Rewriting absolute paths, `file:` URIs or web addresses.
+- Rewriting absolute paths, `file:` URIs or web addresses, or a 5.5.1 payload
+  that already climbs out of the vault.
 - Changing the notices' wording.
 
 ## Capabilities
