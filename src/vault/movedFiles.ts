@@ -383,6 +383,9 @@ export class MoveFollower<F extends MovedFile> {
   }
 
   add(rename: Rename, descendants: readonly string[] = []): void {
+    if (this.stopped) {
+      return;
+    }
     this.batch.add(rename, descendants);
   }
 
@@ -426,7 +429,8 @@ export class MoveFollower<F extends MovedFile> {
           : await moveClosedFile(
               {
                 read: () => this.host.read(file),
-                process: (change) => this.host.process(file, change),
+                process: (change) =>
+                  this.stopped ? Promise.resolve() : this.host.process(file, change),
               },
               () => this.standing(move, file),
               move,

@@ -657,7 +657,16 @@ describe("a follower that has been stopped", () => {
     expect(notices).toEqual([]);
   });
 
-  it("goes no further than the file it was on, and says nothing", async () => {
+  it("takes no rename once stopped", () => {
+    const { follower: moves, timers } = follower([]);
+
+    moves.stop();
+    moves.add(file("media/a.jpg", "media/b.jpg"));
+
+    expect(timers.delays()).toEqual([]);
+  });
+
+  it("writes nothing once stopped, not even the file it was reading", async () => {
     const first = { path: "a.ged", text: gedcom("7.0", "media/a.jpg") };
     const second = { path: "b.ged", text: gedcom("7.0", "media/a.jpg") };
     const read = vi.fn();
@@ -674,6 +683,7 @@ describe("a follower that has been stopped", () => {
     await moves.idle();
 
     expect(read).toHaveBeenCalledExactlyOnceWith("a.ged");
+    expect(first.text).toBe(gedcom("7.0", "media/a.jpg"));
     expect(second.text).toBe(gedcom("7.0", "media/a.jpg"));
     expect(notices).toEqual([]);
   });

@@ -96,8 +96,8 @@ its first line only, and the payload is not reconstructed from the lines after
 it. It is counted stranded where that first line, read alone, would be rewritten
 — it names a moved file or folder, or the GEDCOM file moved — and is otherwise
 left without a count: a move of the file the whole payload names, which its
-first line does not show, goes unnoticed. It is recognized by the line after
-the link's: a `CONC` or `CONT` one level deeper than the `FILE` line.
+first line does not show, goes unnoticed. It is recognized in the parse: a
+`FILE` node with a `CONC` or `CONT` child.
 
 The edit carries the version of the service that produced the links — the file
 view's `EditorLanguageService.getVersion()` when open, `0` for a fresh service
