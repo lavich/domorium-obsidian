@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.13.0
+
+- **The genealogy interface is off until you turn it on.** Genealogy mode, the
+  **Open Domorium** index, the evidence panel and the ribbon icon with their
+  commands now appear only after you turn on **Genealogy interface** in the
+  plugin settings; until then a GEDCOM file opens in the source editor, as it did
+  before 1.12.0. If you used Genealogy mode, turn the setting on to get it back:
+  the mode each tab was in is kept. Turning it off closes the panels and shows the
+  source again. **Open GEDCOM files as** applies only while the interface is on.
+
 ## 1.12.0
 
 - **A GEDCOM file opens as genealogy.** A tab now has a Genealogy mode beside the
