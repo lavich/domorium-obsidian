@@ -95,6 +95,27 @@ const SIGNS: Record<string, string> = {
   ADOP: "+",
 };
 
+/** `Math.min` without spreading, which overflows the stack past some 100 000 values. */
+export function least(values: Iterable<number>): number {
+  let found = Infinity;
+  for (const value of values) {
+    if (value < found) {
+      found = value;
+    }
+  }
+  return found;
+}
+
+export function most(values: Iterable<number>): number {
+  let found = -Infinity;
+  for (const value of values) {
+    if (value > found) {
+      found = value;
+    }
+  }
+  return found;
+}
+
 function kindOf(tag: string): MarkKind {
   if (BIRTH_TAGS.has(tag)) {
     return "birth";
@@ -177,7 +198,7 @@ function generationsOf(
     }
     seen.add(xref);
     const above = parents.get(xref) ?? [];
-    const found = above.length > 0 ? Math.max(...above.map((parent) => depth(parent, seen))) + 1 : 0;
+    const found = above.length > 0 ? most(above.map((parent) => depth(parent, seen))) + 1 : 0;
     generation.set(xref, found);
     return found;
   };
@@ -204,7 +225,7 @@ function generationsOf(
     for (const xref of [...order].sort((one, other) => at(one) - at(other))) {
       const above = parents.get(xref) ?? [];
       if (above.length > 0) {
-        generation.set(xref, Math.max(at(xref), Math.max(...above.map(at)) + 1));
+        generation.set(xref, Math.max(at(xref), most(above.map(at)) + 1));
       }
     }
   }
@@ -265,20 +286,18 @@ function rowsOf(o: Ordering): string[] {
           .map((spouse) => placed.get(spouse))
           .filter((at): at is number => at !== undefined);
         if (placedSpouse.length > 0) {
-          return Math.min(...placedSpouse);
+          return least(placedSpouse);
         }
         if (g !== 0) {
           return o.yearOf(one);
         }
         const years = [...childYears(one), ...spouses.flatMap(childYears)];
-        return (years.length > 0 ? Math.min(...years) : o.yearOf(one)) - 10000;
+        return (years.length > 0 ? least(years) : o.yearOf(one)) - 10000;
       }
       const placedParents = (o.familyParents.get(key.slice("family:".length)) ?? [])
         .map((parent) => placed.get(parent))
         .filter((at): at is number => at !== undefined);
-      return placedParents.length > 0
-        ? Math.min(...placedParents)
-        : Math.min(...members.map(o.yearOf));
+      return placedParents.length > 0 ? least(placedParents) : least(members.map(o.yearOf));
     };
     const ordered = [...units]
       .map(([key, members]) => ({ members, rank: rank(key, members) }))

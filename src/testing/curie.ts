@@ -13,7 +13,7 @@ export function curieIndex(): GenealogyIndex {
   return indexOf(CURIE);
 }
 
-/** Real events of the family that the demo vault does not record. */
+// Real events of the family, kept out of the demo vault, which dates only births, marriages and deaths.
 const EVENTS: Record<string, string[]> = {
   "@I1@": [
     "1 EMIG",
@@ -64,10 +64,6 @@ const UNDATED_PERSON = [
   "1 OCCU Mathematician",
 ];
 
-/**
- * `curie.ged` with a few events of other kinds, Władysław's birth as `ABT 1832`,
- * and an eighteenth person with no dated event.
- */
 export function curieWithEvents(): string {
   const out: string[] = [];
   let record: string | null = null;

@@ -1446,7 +1446,30 @@ button.gedcom-ft-whole {
   overflow: hidden;
   white-space: nowrap;
   font-size: var(--font-ui-small);
+}
+
+button.gedcom-ft-name-open {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-3);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
   cursor: pointer;
+}
+
+button.gedcom-ft-name-open:focus-visible,
+button.gedcom-ft-branch:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
 }
 
 .gedcom-ft-name:hover,
@@ -1492,12 +1515,14 @@ button.gedcom-ft-branch:hover {
 }
 
 .gedcom-ft-name:hover .gedcom-ft-branch,
-.gedcom-ft-name.is-hl .gedcom-ft-branch {
+.gedcom-ft-name.is-hl .gedcom-ft-branch,
+.gedcom-ft-name:focus-within .gedcom-ft-branch {
   display: inline-block;
 }
 
 .gedcom-ft-name:hover .gedcom-ft-name-years,
-.gedcom-ft-name.is-hl .gedcom-ft-name-years {
+.gedcom-ft-name.is-hl .gedcom-ft-name-years,
+.gedcom-ft-name:focus-within .gedcom-ft-name-years {
   display: none;
 }
 
@@ -1509,6 +1534,15 @@ button.gedcom-ft-branch:hover {
   gap: 0;
   padding-inline: var(--size-4-2);
   line-height: 1.2;
+}
+
+.is-phone button.gedcom-ft-name-open {
+  flex: none;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
 }
 
 .is-phone .gedcom-ft-name-text {
@@ -1579,6 +1613,10 @@ button.gedcom-ft-branch:hover {
 
 .gedcom-ft-life.is-u {
   fill: var(--text-faint);
+}
+
+.gedcom-ft-life.is-open {
+  fill-opacity: 0.5;
 }
 
 .gedcom-ft-life.is-hl {
@@ -1684,7 +1722,8 @@ button.gedcom-ft-branch:hover {
 .gedcom-ft-name.is-dim,
 .gedcom-ft-board.has-hl .gedcom-ft-items > :not(.is-on),
 .gedcom-ft-board.has-hl .gedcom-ft-name:not(.is-on),
-.gedcom-ft-board.has-hl .gedcom-ft-age:not(.is-on) {
+.gedcom-ft-board.has-hl .gedcom-ft-age:not(.is-on),
+.gedcom-ft-age.is-dim {
   opacity: 0.18;
 }
 
@@ -1813,6 +1852,14 @@ button.gedcom-ft-legend-toggle {
 
 .gedcom-ft-swatch.is-uncertain {
   border: 1.5px dashed var(--text-muted);
+}
+
+.gedcom-ft-swatch.is-caption {
+  width: 18px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--color-pink);
+  opacity: 0.35;
 }
 
 .gedcom-ft-tip,

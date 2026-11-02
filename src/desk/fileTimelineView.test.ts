@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import type { Range } from "@domorium/language-service";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
@@ -26,6 +27,7 @@ let host: {
 };
 
 beforeAll(installObsidianDom);
+afterEach(resetLanguage);
 beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
@@ -52,6 +54,12 @@ const all = (selector: string) => [...container.querySelectorAll(selector)];
 const of = (selector: string, xref: string) => all(`${selector}[data-p="${xref}"]`);
 const nameRow = (xref: string) => container.querySelector<HTMLElement>(`.gedcom-ft-name[data-p="${xref}"]`);
 const scopeText = () => container.querySelector(".gedcom-ft-scope")?.textContent ?? "";
+const openButton = (xref: string) => nameRow(xref)?.querySelector<HTMLElement>(".gedcom-ft-name-open");
+
+function tap(target: Element | null | undefined): void {
+  target?.dispatchEvent(Object.assign(new MouseEvent("pointerdown", { bubbles: true }), { pointerType: "touch" }));
+  target?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+}
 
 describe("drawing the timeline of a file", () => {
   it("draws a row for each person, a lifeline coloured by sex, and the years", () => {
@@ -316,10 +324,7 @@ describe("activating", () => {
   it("on a touch, lights the person first and opens them on the second", () => {
     board();
     const life = of(".gedcom-ft-life", "@I1@")[0];
-    const touch = () => {
-      life?.dispatchEvent(Object.assign(new MouseEvent("pointerdown", { bubbles: true }), { pointerType: "touch" }));
-      life?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    };
+    const touch = () => tap(life);
     touch();
     expect(host.openPerson).not.toHaveBeenCalled();
     expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(true);
@@ -328,11 +333,36 @@ describe("activating", () => {
     expect(host.openPerson).toHaveBeenCalledWith("@I1@");
   });
 
+  it("on a touch after a mark's, lights the person rather than opening them", () => {
+    board();
+    tap(container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]'));
+    tap(of(".gedcom-ft-life", "@I1@")[0]);
+
+    expect(host.openPerson).not.toHaveBeenCalled();
+    tap(of(".gedcom-ft-life", "@I1@")[0]);
+    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("on a touch of empty space, puts the light out", () => {
+    board();
+    tap(of(".gedcom-ft-life", "@I1@")[0]);
+    tap(container.querySelector(".gedcom-ft-chart"));
+
+    expect(all(".is-hl")).toHaveLength(0);
+    expect(container.querySelector(".gedcom-ft-board")?.classList.contains("has-hl")).toBe(false);
+  });
+
+  it("opens a person from the keyboard even after a touch", () => {
+    board();
+    tap(of(".gedcom-ft-life", "@I2@")[0]);
+    openButton("@I1@")?.click();
+
+    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+  });
+
   it("on a touch, shows a mark's event with the way to its lines", () => {
     board();
-    const mark = container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]');
-    mark?.dispatchEvent(Object.assign(new MouseEvent("pointerdown", { bubbles: true }), { pointerType: "touch" }));
-    mark?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    tap(container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]'));
 
     const pop = container.querySelector(".gedcom-ft-pop");
     expect(pop?.classList.contains("is-shown")).toBe(true);
@@ -371,5 +401,123 @@ describe("a file that is gone", () => {
 
     expect(container.querySelector(".gedcom-ft-gone")?.textContent).toContain("curie.ged");
     expect(container.querySelector(".gedcom-ft")?.classList.contains("is-gone")).toBe(true);
+  });
+});
+
+describe("a file with very many dated events", () => {
+  it("still summarises and draws it", () => {
+    const base = fileTimelineOf(curieIndex());
+    const marie = base.people.get("@I1@");
+    if (!marie) {
+      throw new Error("no Marie");
+    }
+    const many = Array.from({ length: 200_000 }, (_, at) => ({
+      ...marie.marks[0],
+      kind: "other" as const,
+      event: marie.marks[0].event,
+      year: 1867 + (at % 60),
+      uncertain: false,
+      period: false,
+    }));
+    const model: FileTimeline = {
+      ...base,
+      people: new Map([...base.people].map(([xref, person]) =>
+        [xref, xref === "@I1@" ? { ...person, marks: [...person.marks, ...many] } : person])),
+    };
+    board(model, { others: false });
+
+    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("1827–2007");
+    expect(names()).toHaveLength(17);
+  });
+});
+
+describe("drawing only what is near the window, sideways", () => {
+  it("leaves out the marks and lifelines beyond a narrow window", () => {
+    const drawn = board();
+    drawn.draw({ top: 0, left: 0, width: 60, height: 20 * ROW });
+
+    expect(all(".gedcom-ft-mark.is-birth").map((mark) => mark.getAttribute("data-p")).sort()).toEqual(
+      ["@I10@", "@I3@", "@I4@", "@I9@"].sort(),
+    );
+    expect(all(".gedcom-ft-mark.is-death")).toHaveLength(0);
+    expect(of(".gedcom-ft-life", "@I1@")).toHaveLength(0);
+    expect(of(".gedcom-ft-life", "@I9@")).toHaveLength(1);
+  });
+});
+
+describe("the keyboard", () => {
+  it("opens a person from a real button, with the branch beside it rather than inside", () => {
+    board();
+    const open = openButton("@I1@");
+
+    expect(open?.tagName).toBe("BUTTON");
+    expect(open?.querySelector("button")).toBeNull();
+    expect(nameRow("@I1@")?.hasAttribute("role")).toBe(false);
+    open?.click();
+    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("lights the person whose row takes the focus", () => {
+    board();
+    openButton("@I2@")?.focus();
+
+    expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+  });
+
+  it("keeps the focus on a row through a redraw", () => {
+    const drawn = board();
+    nameRow("@I1@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.focus();
+    drawn.draw({ ...WHOLE, top: 1 });
+
+    expect(document.activeElement?.closest(".gedcom-ft-name")?.getAttribute("data-p")).toBe("@I1@");
+    expect(document.activeElement?.hasAttribute("data-branch")).toBe(true);
+  });
+
+  it("keeps the focus on a stepper as it steps, and on its other button at the end", () => {
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    const step = (which: string) => container.querySelector<HTMLElement>(`[data-step="${which}"]`);
+    step("up:-1")?.focus();
+    step("up:-1")?.click();
+
+    expect(document.activeElement?.getAttribute("data-step")).toBe("up:-1");
+    step("up:-1")?.click();
+    expect(document.activeElement?.getAttribute("data-step")).toBe("up:1");
+  });
+
+  it("names each stepper's buttons for what they widen or narrow", () => {
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    const labels = all("[data-step]").map((button) => button.getAttribute("aria-label"));
+
+    expect(new Set(labels).size).toBe(4);
+  });
+});
+
+describe("the timeline in Russian", () => {
+  it("counts the branch's people in the form the number takes", () => {
+    setLanguage("ru");
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+
+    expect(scopeText()).toContain("10 из 17 человек");
+    expect(scopeText()).not.toContain("человека");
+  });
+});
+
+describe("the ages under the cursor and a search", () => {
+  it("fades the ages of the people who do not match", () => {
+    const drawn = board();
+    drawn.setYear(1906);
+    drawn.setQuery("joliot");
+
+    expect(container.querySelector('.gedcom-ft-age[data-p="@I1@"]')?.classList.contains("is-dim")).toBe(true);
+    expect(container.querySelector('.gedcom-ft-age[data-p="@I12@"]')?.classList.contains("is-dim")).toBe(false);
+  });
+});
+
+describe("what has no mark on the line", () => {
+  it("counts the facts without a year, by kind", () => {
+    board();
+
+    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("facts without a year");
+    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("occupation");
   });
 });

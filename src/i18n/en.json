@@ -308,8 +308,6 @@
   "fileTimeline.branchHint": "Show only this person's ancestors and descendants",
   "fileTimeline.ancestors": "Ancestors",
   "fileTimeline.descendants": "Descendants",
-  "fileTimeline.fewer": "One generation fewer",
-  "fileTimeline.more": "One generation more",
   "fileTimeline.undated": {
     "one": "{count} person has no dated event",
     "other": "{count} people have no dated event"
@@ -321,10 +319,19 @@
   "fileTimeline.legend.birth": "Birth or christening",
   "fileTimeline.legend.marriage": "Marriage",
   "fileTimeline.legend.death": "Death or burial",
-  "fileTimeline.legend.other": "Other event: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ★ event",
+  "fileTimeline.legend.other": "Other event: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ≡ census, § probate or will, + adoption, ★ event, • any other",
   "fileTimeline.legend.period": "A period, from … to",
   "fileTimeline.legend.uncertain": "About, before, after, between",
   "fileTimeline.legend.arrows": "Arrows run from parent to child, for the person under the pointer",
   "fileTimeline.name": "Timeline of the file",
-  "fileTimeline.legend": "Legend"
+  "fileTimeline.legend": "Legend",
+  "fileTimeline.fewerAncestors": "One generation of ancestors fewer",
+  "fileTimeline.moreAncestors": "One generation of ancestors more",
+  "fileTimeline.fewerDescendants": "One generation of descendants fewer",
+  "fileTimeline.moreDescendants": "One generation of descendants more",
+  "fileTimeline.undatedFacts": {
+    "one": "{count} fact without a year has no mark on the line: {kinds}.",
+    "other": "{count} facts without a year have no mark on the line: {kinds}."
+  },
+  "fileTimeline.legend.captions": "Text in a lifeline: facts without a date, when zoomed in or under the pointer"
 }

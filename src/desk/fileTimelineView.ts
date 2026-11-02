@@ -1,7 +1,14 @@
 import type { Range } from "@domorium/language-service";
 
 import { plural, t } from "../i18n";
-import { BRANCH_STEPS, type FileTimeline, type TimelineMark, type TimelinePerson } from "./fileTimeline";
+import {
+  BRANCH_STEPS,
+  least,
+  most,
+  type FileTimeline,
+  type TimelineMark,
+  type TimelinePerson,
+} from "./fileTimeline";
 import { eventName, personName, yearText } from "./labels";
 
 export const ROW = 34;
@@ -183,6 +190,8 @@ export class FileTimelineBoard {
   private highlighted: string | null = null;
   private year: number | null = null;
   private pointer = "mouse";
+  /** The person a first touch lit, whom a second touch opens. */
+  private armed: string | null = null;
   private pending = false;
 
   constructor(
@@ -282,14 +291,14 @@ export class FileTimelineBoard {
     this.elements.clear();
     this.marks.clear();
     this.byPerson = new Map();
-    const shapes: SVGElement[] = [];
+    this.items.replaceChildren();
     for (const item of layout.items) {
       if (item.bottom <= span.top || item.top >= span.bottom || item.right < span.left || item.left > span.right) {
         continue;
       }
       const shape = item.make();
       shape.classList.toggle("is-dim", this.misses(item.ids));
-      shapes.push(shape);
+      this.items.append(shape);
       this.elements.set(shape, item.ids);
       if (item.placed) {
         this.marks.set(shape, item.placed);
@@ -300,14 +309,19 @@ export class FileTimelineBoard {
         this.byPerson.set(xref, held);
       }
     }
-    this.items.replaceChildren(...shapes);
-    this.drawNames(layout);
+    const focused = this.drawNames(layout);
     this.lit = [];
     this.highlight(this.highlighted, true);
     this.drawCursor();
+    if (focused?.xref) {
+      this.highlight(focused.xref);
+      this.byName
+        .get(focused.xref)
+        ?.querySelector<HTMLElement>(focused.branch ? "[data-branch]" : ".gedcom-ft-name-open")
+        ?.focus({ preventScroll: true });
+    }
   }
 
-  /** Whether the window has left what the last drawing covered. */
   needsDraw(view: TimelineWindow): boolean {
     return (
       view.top < this.drawn.top ||
@@ -317,7 +331,6 @@ export class FileTimelineBoard {
     );
   }
 
-  /** The window the board itself is scrolled to, for the view to draw. */
   measure(): TimelineWindow {
     const names = this.names.offsetWidth;
     return {
@@ -405,6 +418,9 @@ export class FileTimelineBoard {
     for (const [xref, name] of this.byName) {
       name.toggleClass("is-dim", this.misses([xref]));
     }
+    if (this.year !== null) {
+      this.drawCursor();
+    }
   }
 
   private setScope(change: Partial<TimelineScope>): void {
@@ -415,10 +431,11 @@ export class FileTimelineBoard {
     if (sameScope(next, this.scope)) {
       return;
     }
-    const focusChanged = next.focus !== this.scope.focus;
+    const branchChanged = next.focus !== this.scope.focus || next.up !== this.scope.up || next.down !== this.scope.down;
+    const person = next.focus ?? this.scope.focus;
     const centre = this.centreYear();
     this.scope = next;
-    this.relayout(focusChanged ? "focus" : centre);
+    this.relayout(branchChanged && person !== undefined ? { person } : centre);
     this.host.scopeChanged(scopeOf(next));
   }
 
@@ -431,7 +448,7 @@ export class FileTimelineBoard {
     return layout.lo + (view.left + view.width / 2 - PAD) / this.scope.zoom;
   }
 
-  private relayout(keep: "focus" | number | null = null): void {
+  private relayout(keep: { person: string } | number | null = null): void {
     const model = this.model;
     if (!model) {
       return;
@@ -447,8 +464,8 @@ export class FileTimelineBoard {
     this.cursor.setAttribute("width", String(layout.width));
     this.cursor.setAttribute("height", String(Math.max(layout.height, 1)));
     this.drawGrid(layout);
-    if (keep === "focus" && this.scope.focus) {
-      this.board.scrollTop = Math.max(0, (layout.y.get(this.scope.focus) ?? 0) - this.board.clientHeight / 2);
+    if (typeof keep === "object" && keep !== null) {
+      this.board.scrollTop = Math.max(0, (layout.y.get(keep.person) ?? 0) - this.board.clientHeight / 2);
     } else if (typeof keep === "number") {
       this.board.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
     }
@@ -593,8 +610,8 @@ export class FileTimelineBoard {
         continue;
       }
       const ys = ends.map((spouse) => y.get(spouse) ?? 0);
-      const top = Math.min(...ys);
-      const bottom = Math.max(...ys);
+      const top = least(ys);
+      const bottom = most(ys);
       const at = x(marriage.year);
       couples.push({
         top,
@@ -693,6 +710,7 @@ export class FileTimelineBoard {
       }
       const text = `${one.approximate ? "≈" : ""}${one.age}`;
       const pill = svg(this.doc, "g", `gedcom-ft-age${lit?.has(one.xref) ? " is-on" : ""}`, { "data-p": one.xref });
+      pill.classList.toggle("is-dim", this.misses([one.xref]));
       pill.append(
         svg(this.doc, "rect", null, { x: at + 5, y: cy - 8, width: text.length * 6.4 + 8, height: 16, rx: 8 }),
       );
@@ -739,10 +757,14 @@ export class FileTimelineBoard {
     this.axis.replaceChildren(...labels);
   }
 
-  private drawNames(layout: Layout): void {
+  private drawNames(layout: Layout): { xref: string | null; branch: boolean } | null {
     const model = this.model;
     const first = Math.max(0, Math.floor(this.drawn.top / ROW));
     const last = Math.min(layout.shown.length, Math.ceil(this.drawn.bottom / ROW));
+    const active = this.doc.activeElement;
+    const focused = active && this.names.contains(active)
+      ? { xref: this.personAt(active), branch: active.hasAttribute("data-branch") }
+      : null;
     this.names.empty();
     this.byName = new Map();
     this.names.createDiv({ cls: "gedcom-ft-axis-pad" });
@@ -753,14 +775,15 @@ export class FileTimelineBoard {
         continue;
       }
       const name = personName(person.row);
-      const row = this.names.createDiv({
-        cls: "gedcom-ft-name",
-        attr: { "data-p": xref, tabindex: 0, role: "button", title: name },
-      });
+      const row = this.names.createDiv({ cls: "gedcom-ft-name", attr: { "data-p": xref } });
       row.toggleClass("is-focus", xref === this.scope.focus);
       row.toggleClass("is-dim", this.misses([xref]));
-      row.createSpan({ cls: "gedcom-ft-name-text", text: name });
-      row.createSpan({ cls: "gedcom-ft-name-years", text: yearsLabel(person) });
+      const open = row.createEl("button", {
+        cls: "gedcom-ft-name-open",
+        attr: { type: "button", title: name },
+      });
+      open.createSpan({ cls: "gedcom-ft-name-text", text: name });
+      open.createSpan({ cls: "gedcom-ft-name-years", text: yearsLabel(person) });
       row.createEl("button", {
         cls: "gedcom-ft-branch",
         text: t("fileTimeline.branch"),
@@ -771,11 +794,26 @@ export class FileTimelineBoard {
     this.names
       .createDiv({ cls: "gedcom-ft-spacer" })
       .setCssProps({ height: `${(layout.shown.length - last) * ROW}px` });
+    return focused;
   }
 
   private drawScope(model: FileTimeline, layout: Layout): void {
     const scope = this.scope;
+    const active = this.doc.activeElement;
+    const step = active && this.scopeEl.contains(active) ? active.getAttribute("data-step") : null;
     this.scopeEl.empty();
+    this.drawScopeParts(model, layout, scope);
+    if (step) {
+      const [key] = step.split(":");
+      const again = [
+        this.scopeEl.querySelector<HTMLElement>(`[data-step="${step}"]:not([disabled])`),
+        this.scopeEl.querySelector<HTMLElement>(`[data-step^="${key}:"]:not([disabled])`),
+      ].find((one) => one !== null);
+      again?.focus({ preventScroll: true });
+    }
+  }
+
+  private drawScopeParts(model: FileTimeline, layout: Layout, scope: TimelineScope): void {
     const focus = scope.focus ? model.people.get(scope.focus) : undefined;
     if (!focus || !layout.branch) {
       this.scopeEl.createSpan({
@@ -784,10 +822,9 @@ export class FileTimelineBoard {
       return;
     }
     this.scopeEl.createSpan({
-      text: t("fileTimeline.branchOf", {
+      text: plural("fileTimeline.branchOf", model.rows.length, {
         name: personName(focus.row),
         shown: layout.shown.length,
-        count: model.rows.length,
       }),
     });
     const stepper = (label: string, key: "up" | "down") => {
@@ -804,9 +841,9 @@ export class FileTimelineBoard {
           node.setAttribute("disabled", "");
         }
       };
-      button("minus", t("fileTimeline.fewer"), -1);
+      button("minus", t(key === "up" ? "fileTimeline.fewerAncestors" : "fileTimeline.fewerDescendants"), -1);
       step.createSpan({ cls: "gedcom-ft-step-value", text: String(scope[key]) });
-      button("plus", t("fileTimeline.more"), 1);
+      button("plus", t(key === "up" ? "fileTimeline.moreAncestors" : "fileTimeline.moreDescendants"), 1);
     };
     stepper(t("fileTimeline.ancestors"), "up");
     stepper(t("fileTimeline.descendants"), "down");
@@ -822,19 +859,28 @@ export class FileTimelineBoard {
     for (const person of model.people.values()) {
       person.marks.forEach((mark) => dated.add(mark));
     }
-    const years = [...dated].flatMap((mark) => [mark.year, mark.until ?? mark.year]);
-    const others = [...dated].filter((mark) => mark.kind === "other").length;
+    let others = 0;
+    for (const mark of dated) {
+      others += mark.kind === "other" ? 1 : 0;
+    }
     this.othersCount.setText(String(others));
     const parts = [
       plural("fileTimeline.people", model.rows.length),
       plural("fileTimeline.families", model.families.size),
       plural("fileTimeline.events", dated.size),
     ];
-    if (years.length > 0) {
-      parts.push(`${yearText(Math.min(...years))}–${yearText(Math.max(...years))}`);
+    if (dated.size > 0) {
+      const from = least([...dated].map((mark) => mark.year));
+      const to = most([...dated].map((mark) => mark.until ?? mark.year));
+      parts.push(`${yearText(from)}–${yearText(to)}`);
     }
     this.summary.setText(parts.join(" · "));
     this.undatedEl.empty();
+    const facts = [...model.people.values()].flatMap((person) => person.undated);
+    if (facts.length > 0) {
+      const kinds = [...new Set(facts.map((event) => eventName(event).toLowerCase()))].join(", ");
+      this.undatedEl.createDiv({ text: plural("fileTimeline.undatedFacts", facts.length, { kinds }) });
+    }
     if (model.undated.length > 0) {
       const listed = model.undated
         .slice(0, UNDATED_NAMES)
@@ -843,7 +889,7 @@ export class FileTimelineBoard {
         .map((person) => personName(person.row))
         .join(", ");
       const more = model.undated.length > UNDATED_NAMES ? "…" : "";
-      this.undatedEl.setText(`${plural("fileTimeline.undated", model.undated.length)}: ${listed}${more}.`);
+      this.undatedEl.createDiv({ text: `${plural("fileTimeline.undated", model.undated.length)}: ${listed}${more}.` });
     }
   }
 
@@ -898,6 +944,7 @@ export class FileTimelineBoard {
     entry("is-other", t("fileTimeline.legend.other"));
     entry("is-period", t("fileTimeline.legend.period"));
     entry("is-uncertain", t("fileTimeline.legend.uncertain"));
+    entry("is-caption", t("fileTimeline.legend.captions"));
     parent.createSpan({ cls: "gedcom-ft-legend-item", text: t("fileTimeline.legend.arrows") });
   }
 
@@ -982,10 +1029,10 @@ export class FileTimelineBoard {
       });
     });
     this.board.addEventListener("click", (event) => this.activate(event));
-    this.board.addEventListener("keydown", (event) => {
+    this.names.addEventListener("focusin", (event) => {
       const xref = this.personAt(event.target);
-      if (event.key === "Enter" && xref !== null && !(event.target as Element).closest("[data-branch]")) {
-        this.host.openPerson(xref);
+      if (xref !== null) {
+        this.highlight(xref);
       }
     });
     this.root.addEventListener("click", (event) => {
@@ -1005,10 +1052,13 @@ export class FileTimelineBoard {
       this.setScope({ focus: branch });
       return;
     }
-    const touch = this.pointer === "touch" || (event as PointerEvent).pointerType === "touch";
+    // A click from the keyboard has no pointer, and is no touch whatever pointer came before it.
+    const kind = (event as PointerEvent).pointerType || (event.detail === 0 ? "keyboard" : this.pointer);
+    const touch = kind === "touch";
     const placed = this.markAt(target);
     if (placed) {
       if (touch) {
+        this.armed = null;
         this.highlight(placed.xref);
         this.openPop(placed, event);
       } else {
@@ -1019,14 +1069,21 @@ export class FileTimelineBoard {
     this.closePop();
     const xref = this.personAt(target);
     if (xref === null) {
+      if (touch) {
+        this.armed = null;
+        this.highlight(null);
+        this.setYear(null);
+      }
       return;
     }
-    if (touch && this.highlighted !== xref) {
+    if (touch && this.armed !== xref) {
+      this.armed = xref;
       this.highlight(xref);
       const onPlot = target !== null && this.plot.contains(target);
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
       return;
     }
+    this.armed = null;
     this.host.openPerson(xref);
   }
 
@@ -1040,10 +1097,14 @@ export class FileTimelineBoard {
     }
   }
 
+  /** Below and right of the point where it fits, else above it, so its button is never off the edge. */
   private place(element: HTMLElement, event: MouseEvent, width: number): void {
     const box = this.root.getBoundingClientRect();
     const left = Math.max(0, Math.min(event.clientX - box.left + 14, this.root.clientWidth - width));
-    element.setCssProps({ left: `${left}px`, top: `${event.clientY - box.top + 14}px` });
+    const y = event.clientY - box.top;
+    const height = element.offsetHeight;
+    const top = y + 14 + height > this.root.clientHeight ? Math.max(0, y - 14 - height) : y + 14;
+    element.setCssProps({ left: `${left}px`, top: `${top}px` });
   }
 
   private showTip(placed: Placed | null, event: MouseEvent): void {
@@ -1053,8 +1114,8 @@ export class FileTimelineBoard {
     }
     this.tip.empty();
     this.describe(this.tip, placed);
-    this.place(this.tip, event, 300);
     this.tip.addClass("is-shown");
+    this.place(this.tip, event, 300);
   }
 
   private openPop(placed: Placed, event: MouseEvent): void {
@@ -1068,8 +1129,8 @@ export class FileTimelineBoard {
       this.closePop();
       this.host.showInSource(placed.mark.event.range);
     });
-    this.place(this.pop, event, 260);
     this.pop.addClass("is-shown");
+    this.place(this.pop, event, 260);
   }
 
   private closePop(): void {

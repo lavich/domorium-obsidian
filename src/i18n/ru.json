@@ -336,8 +336,6 @@
   "fileTimeline.branchHint": "Показать только предков и потомков этого человека",
   "fileTimeline.ancestors": "Предки",
   "fileTimeline.descendants": "Потомки",
-  "fileTimeline.fewer": "На поколение меньше",
-  "fileTimeline.more": "На поколение больше",
   "fileTimeline.undated": {
     "one": "У {count} человека нет ни одной даты",
     "few": "У {count} человек нет ни одной даты",
@@ -351,10 +349,21 @@
   "fileTimeline.legend.birth": "Рождение или крещение",
   "fileTimeline.legend.marriage": "Брак",
   "fileTimeline.legend.death": "Смерть или погребение",
-  "fileTimeline.legend.other": "Другое событие: ✎ учёба, ⌂ место жительства, ⇄ переезд, ⚒ занятие, ★ событие",
+  "fileTimeline.legend.other": "Другое событие: ✎ учёба, ⌂ место жительства, ⇄ переезд, ⚒ занятие, ≡ перепись, § завещание, + усыновление, ★ событие, • прочее",
   "fileTimeline.legend.period": "Период, с … по",
   "fileTimeline.legend.uncertain": "Около, до, после, между",
   "fileTimeline.legend.arrows": "Стрелки ведут от родителя к ребёнку — для человека под указателем",
   "fileTimeline.name": "Хронология файла",
-  "fileTimeline.legend": "Условные обозначения"
+  "fileTimeline.legend": "Условные обозначения",
+  "fileTimeline.fewerAncestors": "На поколение предков меньше",
+  "fileTimeline.moreAncestors": "На поколение предков больше",
+  "fileTimeline.fewerDescendants": "На поколение потомков меньше",
+  "fileTimeline.moreDescendants": "На поколение потомков больше",
+  "fileTimeline.undatedFacts": {
+    "one": "{count} факт без года не отмечен на линии: {kinds}.",
+    "few": "{count} факта без года не отмечены на линии: {kinds}.",
+    "many": "{count} фактов без года не отмечены на линии: {kinds}.",
+    "other": "{count} факта без года не отмечены на линии: {kinds}."
+  },
+  "fileTimeline.legend.captions": "Текст на линии жизни: факты без даты — при крупном масштабе или под указателем"
 }
