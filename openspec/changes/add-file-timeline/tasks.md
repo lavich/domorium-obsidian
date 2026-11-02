@@ -20,7 +20,7 @@
 - [x] 4.3 Hover by classes and the arrows layer; test in `src/desk/fileTimelineView.test.ts` that pointing at Marie marks her relatives `on` without replacing any drawn element, draws arrows from both her parents and to her daughters, and none from Pierre's row.
 - [x] 4.4 The year cursor with ages and the count alive, and undated facts in the bar when zoomed in or under the pointer; test in `src/desk/fileTimelineView.test.ts`.
 - [x] 4.5 The toolbar: other-events switch, zoom, search, branch with − and +, Whole file; test in `src/desk/fileTimelineView.test.ts`.
-- [ ] 4.6 Styles in `styles.css` from the theme's variables; the phone layout and the touch behaviour (first touch highlights and places the cursor, second activates, a mark shows its event with Show in source); tested by `tests/fileTimeline.spec.ts` in 6.2.
+- [x] 4.6 Styles in `styles.css` from the theme's variables; the phone layout and the touch behaviour (first touch highlights and places the cursor, second activates, a mark shows its event with Show in source); tested by `tests/fileTimeline.spec.ts` in 6.2.
 
 ## 5. The view in Obsidian
 
@@ -33,10 +33,10 @@
 
 ## 6. Browser
 
-- [ ] 6.1 A harness entry `harness/fileTimeline.ts` and page, added to the list in `harness/build.mjs`, mounting the drawing on `curieWithEvents()` or a given text; add the colour variables it uses (`--color-pink`, `--color-blue`, `--color-green`, `--color-orange`, `--interactive-accent`) to `harness/palette.css`.
-- [ ] 6.2 A new Playwright spec `tests/fileTimeline.spec.ts`: Marie's row and its colour from the theme, the marriage line, the period span, hover and arrows, the cursor at 1906, Irène's branch (10 of 18 on `curieWithEvents()`), a phone width without sideways overflow of the page and the touch sequence, and a generated 10 000-person file holding at most a few hundred drawn rows while scrolling.
+- [x] 6.1 A harness entry `harness/fileTimeline.ts` and page, added to the list in `harness/build.mjs`, mounting the drawing on `curieWithEvents()` or a given text; add the colour variables it uses (`--color-pink`, `--color-blue`, `--color-green`, `--color-orange`, `--interactive-accent`) to `harness/palette.css`.
+- [x] 6.2 A new Playwright spec `tests/fileTimeline.spec.ts`: Marie's row and its colour from the theme, the marriage line, the period span, hover and arrows, the cursor at 1906, Irène's branch (10 of 18 on `curieWithEvents()`), a phone width without sideways overflow of the page and the touch sequence, and a generated 10 000-person file holding at most a few hundred drawn rows while scrolling.
 
 ## 7. Verify
 
 - [ ] 7.1 In Obsidian on the demo vault, and on a phone: the header action and command open the timeline and reveal it the second time, also after a restart; it follows an unsaved edit, a rename and a moved folder, and says so when the file is deleted; a background timeline brought forward shows the latest text; a person brings the file's tab forward on their page, a mark on the source; it is restored with the workspace; it closes when the interface is turned off; the icon draws.
-- [ ] 7.2 `npm run check` and `npm run test:browser`; screenshot the timeline at desktop and phone width from a temporary Playwright script, then delete it.
+- [x] 7.2 `npm run check` and `npm run test:browser`; screenshot the timeline at desktop and phone width from a temporary Playwright script, then delete it.

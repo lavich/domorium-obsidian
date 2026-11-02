@@ -203,3 +203,22 @@ activates it; a touch on a mark opens a small popover with its details and
 None: a new view and new optional fields on `DateReading`. Rolling back removes
 the view; a saved workspace naming it gets a leaf Obsidian cannot restore, which
 it drops on its own.
+
+## Implementation
+
+- **Branch spouses.** `branch()` adds the spouses of everyone in the branch, ancestors included, as the spec says; the mockup added only the descendants' spouses. Curie's figures (10 of 17) are unchanged.
+- **Generations.** After the mockup's spouse passes, a child is pushed below a parent the passes moved down, so "one generation below whichever parent stands lower" holds at the end; the mockup's single reading could leave such a child level with the parent.
+- **Earliest event.** A lifeline with no birth or christening begins at the earliest dated event of the person *or of a family they are a spouse in*, so a person whose only date is a marriage gets a lifeline rather than a mark on an empty row.
+- **Arrows.** One arrow per parent in the file, as the spec says (the mockup drew one per family, from its first parent), offset 4 px from each other so two parents' arrows to one birth do not overlap.
+- **Periods.** A period with both ends is drawn as a span whatever its kind, as the spec says; the mockup drew spans for other events only.
+- **Exactness.** A date of a year alone is exact, for marks, name years and ages, per the spec; the mockup marked `≈` unless day and month were known.
+- **`initialFocus(index, around)`** in `fileTimeline.ts` holds the 500-person rule, so it has a unit test; `main.ts` and the harness call it.
+- **Revisions.** The per-path counter is kept only for paths a timeline shows, and dropped with the last one. The vault's `create` of a path also marks its timelines stale, so a file deleted and restored is shown again.
+- **Rename of a deferred timeline** goes through `leaf.setViewState`, the only way to rewrite a saved state, which loads that leaf.
+- **Opening a timeline of a file not in the vault** says so with the existing *file not found* notice.
+- **Search** matches a person's names, not the Index's identifiers, years and places: the spec's search is by name.
+- **The mark tooltip and the phone popover** are placed inside the view rather than `position: fixed`.
+- **Ages under the cursor** fade with everyone else while a person is picked out.
+- **Phone layout**, found in the screenshots: a name stands over its years in the 120 px column; the legend folds behind a *Legend* button and the title (the tab names the file) is hidden, which leaves the height to the rows; the count alive has a line of its own, because appearing on the first touch it wrapped and moved the rows from under the second.
+- **Name rows** take the keyboard focus and open the person on Enter.
+- **Harness.** `harness/fileTimeline.html` carries a viewport meta tag, as Obsidian's mobile app does; without it a phone-width page lays out at 980 px. Its `whole` option shows a large file whole, as *Whole file* does.
