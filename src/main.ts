@@ -81,6 +81,7 @@ export default class GedcomPlugin
   /** Reachable as app.plugins.plugins["domorium"].api — see README. */
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
+  private ribbonIcon: HTMLElement | undefined;
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a panel the reader closes stays closed. */
   private evidencePlaced = false;
@@ -115,21 +116,30 @@ export default class GedcomPlugin
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
     this.registerView(INDEX_VIEW_TYPE, (leaf) => new IndexView(leaf, this));
     this.registerView(EVIDENCE_VIEW_TYPE, (leaf) => new EvidenceView(leaf, this));
-    this.addRibbonIcon(GEDCOM_ICON_ID, t("command.openIndex"), () => {
-      void this.openIndex();
-    });
     this.addCommand({
       id: "open-gedcom-index",
       name: t("command.openIndex"),
-      callback: () => {
-        void this.openIndex();
+      checkCallback: (checking) => {
+        if (!this.settings.genealogyInterface) {
+          return false;
+        }
+        if (!checking) {
+          void this.openIndex();
+        }
+        return true;
       },
     });
     this.addCommand({
       id: "open-gedcom-evidence",
       name: t("command.openEvidence"),
-      callback: () => {
-        this.openEvidence();
+      checkCallback: (checking) => {
+        if (!this.settings.genealogyInterface) {
+          return false;
+        }
+        if (!checking) {
+          this.openEvidence();
+        }
+        return true;
       },
     });
     this.registerMarkdownCodeBlockProcessor("gedcom", (source, element, ctx) => {
@@ -240,6 +250,11 @@ export default class GedcomPlugin
       }),
     );
     this.refreshStatusBar();
+    this.syncInterface();
+    // A saved layout restores the panels after onload.
+    this.app.workspace.onLayoutReady(() => {
+      this.syncInterface();
+    });
   }
 
   onunload(): void {
@@ -312,8 +327,26 @@ export default class GedcomPlugin
     void this.app.workspace.openLinkText(path, "", "tab", { eState: { line } });
   }
 
+  private syncInterface(): void {
+    const { workspace } = this.app;
+    if (this.settings.genealogyInterface) {
+      this.ribbonIcon ??= this.addRibbonIcon(
+        GEDCOM_ICON_ID,
+        t("command.openIndex"),
+        () => {
+          void this.openIndex();
+        },
+      );
+      return;
+    }
+    this.ribbonIcon?.remove();
+    this.ribbonIcon = undefined;
+    workspace.detachLeavesOfType(INDEX_VIEW_TYPE);
+    workspace.detachLeavesOfType(EVIDENCE_VIEW_TYPE);
+  }
+
   private async placeEvidence(): Promise<void> {
-    if (this.evidencePlaced) {
+    if (!this.settings.genealogyInterface || this.evidencePlaced) {
       return;
     }
     this.evidencePlaced = true;
@@ -389,6 +422,7 @@ export default class GedcomPlugin
     this.forEachView((view) => {
       view.applySettings(this.settings);
     });
+    this.syncInterface();
     this.refreshStatusBar();
   }
 
@@ -403,6 +437,7 @@ export default class GedcomPlugin
     this.forEachView((view) => {
       view.applySettings(this.settings);
     });
+    this.syncInterface();
   }
 
   /**

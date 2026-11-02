@@ -5,6 +5,8 @@ import { buildIndex } from "../genealogy";
 import { curieIndex } from "../testing/curie";
 import {
   cursorInside,
+  effectiveMode,
+  initialMode,
   openFromIndex,
   pageKind,
   readDeskState,
@@ -156,3 +158,29 @@ describe("where the source opens when the tab switches to it", () => {
   });
 });
 
+
+describe("the mode a tab shows while the genealogy interface is off", () => {
+  it("is source whatever the tab last stored", () => {
+    expect(effectiveMode("genealogy", false)).toBe("source");
+  });
+
+  it("is the stored mode while the interface is on", () => {
+    expect(effectiveMode("genealogy", true)).toBe("genealogy");
+    expect(effectiveMode("source", true)).toBe("source");
+  });
+
+  it("starts a new tab in the mode the setting names while the interface is on", () => {
+    expect(initialMode(undefined, "genealogy", true)).toBe("genealogy");
+    expect(initialMode(undefined, "source", true)).toBe("source");
+  });
+
+  it("stores source for a tab opened while the interface is off, so turning it on leaves the tab alone", () => {
+    const stored = initialMode(undefined, "genealogy", false);
+
+    expect(effectiveMode(stored, true)).toBe("source");
+  });
+
+  it("keeps the mode a restored tab was in, off or on", () => {
+    expect(initialMode("genealogy", "source", false)).toBe("genealogy");
+  });
+});

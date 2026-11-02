@@ -19,6 +19,7 @@ describe("GEDCOM settings", () => {
       mediaPreview: "hover",
       remoteImages: false,
       openAs: "genealogy",
+      genealogyInterface: false,
     });
   });
 
@@ -31,6 +32,7 @@ describe("GEDCOM settings", () => {
         mediaPreview: "off",
         remoteImages: true,
         openAs: "source",
+        genealogyInterface: true,
       }),
       "a trigger the reader chose outlives a change of default",
     ).toEqual({
@@ -40,6 +42,7 @@ describe("GEDCOM settings", () => {
       mediaPreview: "off",
       remoteImages: true,
       openAs: "source",
+      genealogyInterface: true,
     });
   });
 
@@ -58,6 +61,7 @@ describe("GEDCOM settings", () => {
       mediaPreview: "hover",
       remoteImages: false,
       openAs: "genealogy",
+      genealogyInterface: false,
     });
   });
 
@@ -65,6 +69,19 @@ describe("GEDCOM settings", () => {
     expect(
       parseSettings({ diagnostics: true, openAs: "reading" }).openAs,
     ).toBe("genealogy");
+  });
+
+  it("leaves the genealogy interface off for a settings file written before it existed", () => {
+    expect(
+      parseSettings({ diagnostics: true, openAs: "genealogy" })
+        .genealogyInterface,
+    ).toBe(false);
+  });
+
+  it("ignores a genealogy interface value that is not a boolean", () => {
+    expect(parseSettings({ genealogyInterface: "yes" }).genealogyInterface).toBe(
+      false,
+    );
   });
 
   it("leaves the web off for a settings file written before it existed", () => {
@@ -82,8 +99,17 @@ describe("GEDCOM settings", () => {
   it("exposes every option to Obsidian settings search", () => {
     expect(settingDefinitions()).toEqual([
       {
+        name: "Genealogy interface",
+        desc: "Show genealogy mode, the Domorium index and the evidence panel, with the ribbon icon and their commands. Off, GEDCOM files open as source.",
+        control: {
+          type: "toggle",
+          key: "genealogyInterface",
+          defaultValue: false,
+        },
+      },
+      {
         name: "Open GEDCOM files as",
-        desc: "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in.",
+        desc: "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
         control: {
           type: "dropdown",
           key: "openAs",
@@ -135,7 +161,7 @@ describe("GEDCOM settings", () => {
 
   it("speaks the reader's language when Obsidian asks for the definitions", () => {
     setLanguage("ru");
-    const [first, second] = settingDefinitions();
+    const [, first, second] = settingDefinitions();
 
     expect(first?.name).toBe("Открывать файлы GEDCOM как");
     expect(openAsOptions().source).toBe("Исходник");

@@ -30,6 +30,15 @@ export function openAsOptions(): Record<string, string> {
 export function settingDefinitions(): GedcomSettingDefinition[] {
   return [
     {
+      name: t("setting.genealogyInterface.name"),
+      desc: t("setting.genealogyInterface.desc"),
+      control: {
+        type: "toggle",
+        key: "genealogyInterface",
+        defaultValue: DEFAULT_SETTINGS.genealogyInterface,
+      },
+    },
+    {
       name: t("setting.openAs.name"),
       desc: t("setting.openAs.desc"),
       control: {

@@ -24,6 +24,7 @@ export interface CommandView {
   /** Editor commands answer only here; Genealogy mode has no editor to act on. */
   inSource(): boolean;
   toggleMode(): void;
+  genealogyInterface(): boolean;
 }
 
 /** Everything outside the view, which is where `obsidian` stays. */
@@ -86,7 +87,7 @@ export const COMMANDS: GedcomCommand[] = [
     id: "toggle-gedcom-mode",
     name: "command.toggleMode",
     icon: "users",
-    isAvailable: () => true,
+    isAvailable: (view) => view.genealogyInterface(),
     run: (_host, view) => {
       view.toggleMode();
     },

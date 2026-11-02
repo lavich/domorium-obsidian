@@ -27,6 +27,19 @@ export function readDeskState(state: unknown): DeskState {
   };
 }
 
+export function effectiveMode(stored: DeskMode, interfaceOn: boolean): DeskMode {
+  return interfaceOn ? stored : "source";
+}
+
+/** A tab opened while the interface is off must not store the default, or turning it on would flip the tab. */
+export function initialMode(
+  persisted: DeskMode | undefined,
+  openAs: OpenAsMode,
+  interfaceOn: boolean,
+): DeskMode {
+  return persisted ?? (interfaceOn ? openAs : "source");
+}
+
 export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   if (index.person(xref)) {
     return "person";

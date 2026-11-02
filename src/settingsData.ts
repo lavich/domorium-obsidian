@@ -13,6 +13,7 @@ export interface GedcomSettings {
   mediaPreview: RecordPreviewTrigger;
   remoteImages: boolean;
   openAs: OpenAsMode;
+  genealogyInterface: boolean;
 }
 
 export const DEFAULT_SETTINGS: GedcomSettings = {
@@ -26,6 +27,9 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // plugin, so it waits to be asked.
   remoteImages: false,
   openAs: "genealogy",
+  // The pages and panels are the plugin's largest surface; a reader who came
+  // for the editor has not asked for them.
+  genealogyInterface: false,
 };
 
 function isOpenAsMode(value: unknown): value is OpenAsMode {
@@ -74,5 +78,9 @@ export function parseSettings(data: unknown): GedcomSettings {
         ? settings.remoteImages
         : DEFAULT_SETTINGS.remoteImages,
     openAs: isOpenAsMode(settings.openAs) ? settings.openAs : DEFAULT_SETTINGS.openAs,
+    genealogyInterface:
+      typeof settings.genealogyInterface === "boolean"
+        ? settings.genealogyInterface
+        : DEFAULT_SETTINGS.genealogyInterface,
   };
 }

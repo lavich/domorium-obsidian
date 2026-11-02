@@ -18,9 +18,10 @@ adapted per editor.
 
 ## Features
 
-- A Genealogy mode that shows the file as people and sources: a page per
-  person with their facts, names and family, a page per source, an index of
-  everyone in the file, and an evidence panel for what a fact rests on
+- An optional genealogy interface, off until you turn it on: a Genealogy mode
+  that shows the file as people and sources — a page per person with their
+  facts, names and family, a page per source — an index of everyone in the
+  file, and an evidence panel for what a fact rests on
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -44,11 +45,16 @@ to a remote service.
 ## Usage
 
 1. Enable **GEDCOM** in **Settings → Community plugins**.
-2. Open a `.ged` or `.gedcom` file in your vault. It opens in **Genealogy**
-   mode, on the first person the file declares.
-3. Switch to **Source** from the view header, or with **Switch between
-   genealogy and source**, to edit the file. Obsidian saves changes back to the
-   same file.
+2. Open a `.ged` or `.gedcom` file in your vault. It opens in the editor, and
+   Obsidian saves changes back to the same file.
+3. To read the file as people and sources, turn on **Genealogy interface** in the
+   plugin settings. Files then open in **Genealogy** mode, on the first person
+   the file declares, and the view header and **Switch between genealogy and
+   source** go between the two modes.
+
+Everything below, down to the settings, is part of the genealogy interface and
+appears only while it is on; turning it off hides it again and closes its panels
+without losing the mode a tab was in.
 
 Genealogy mode reads the file and never writes to it. A person's page lists
 their facts in the order the record states them, each marked with how many
@@ -69,8 +75,8 @@ On a phone the two are the left and right drawers, and tapping a fact shows
 the gist beneath it.
 
 A tab remembers whether it was in Genealogy or Source. **Open GEDCOM files as**
-in the plugin settings chooses which mode a newly opened file starts in; set it
-to Source to keep the editor as the default.
+in the plugin settings chooses which mode a newly opened file starts in, while the
+genealogy interface is on; set it to Source to keep the editor as the default.
 
 Use **Go to GEDCOM definition** from the command palette to jump from an XREF
 usage to its record declaration. **Find GEDCOM references** moves between

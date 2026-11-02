@@ -12,7 +12,9 @@ Four generations of the Skłodowski, Curie and Joliot families live in
 repositories — and the notes around it are ordinary notes that happen to point
 into it.
 
-Enable **GEDCOM** in Settings → Community plugins, then try these in order.
+Enable **GEDCOM** in Settings → Community plugins, then try these in order. To
+see the people, index and evidence panels, also turn on **Genealogy interface** in
+the plugin's settings.
 
 ## Open the tree
 

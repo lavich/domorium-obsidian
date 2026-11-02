@@ -98,3 +98,11 @@ the CLAUDE.md table when implemented. `settingDefinitions()` keeps no arguments.
   `onExternalSettingsChange`, which calls the same sync.
 - `GedcomView` and `main.ts` wiring is covered by review and the manual checks,
   not by unit tests.
+
+## Implementation
+
+- `onExternalSettingsChange` does not redraw an open settings tab; the tab's
+  toggle is the only way the setting changes while it is open, and a synced edit
+  shows on the next open.
+- The detach on load runs from `onLayoutReady` as well as once in `onload`;
+  `syncInterface` is idempotent.

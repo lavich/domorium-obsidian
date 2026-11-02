@@ -39,8 +39,10 @@
     "one": "{count} file",
     "other": "{count} files"
   },
+  "setting.genealogyInterface.name": "Genealogy interface",
+  "setting.genealogyInterface.desc": "Show genealogy mode, the Domorium index and the evidence panel, with the ribbon icon and their commands. Off, GEDCOM files open as source.",
   "setting.openAs.name": "Open GEDCOM files as",
-  "setting.openAs.desc": "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in.",
+  "setting.openAs.desc": "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
   "openAsOption.genealogy": "Genealogy",
   "openAsOption.source": "Source",
   "setting.diagnostics.name": "Diagnostics",
