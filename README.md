@@ -84,11 +84,14 @@ a woman, blue for a man, grey where the record states no sex — with the person
 dated events on it; an approximate date is drawn dashed and a period as a span.
 Pointing at a person picks out their parents, spouses and children with arrows
 from parent to child, and a year cursor gives the age everyone alive reached
-that year. **Branch** on a row narrows it to one person's ancestors and
+that year. A search by name fades everyone else, the zoom widens the years,
+and **Other events** shows or hides every event that is not a birth, a marriage
+or a death. **Branch** on a row narrows it to one person's ancestors and
 descendants, and a file of more than 500 people opens on the branch of the
 person its tab shows. A person opens their page in the file's tab, and an event
-its lines in the source. The timeline follows unsaved edits, a renamed or moved
-file, and is restored with the workspace.
+its lines in the source; on a phone the first touch picks a person out and
+places the year cursor, and a second touch opens them. The timeline follows
+unsaved edits, a renamed or moved file, and is restored with the workspace.
 
 A tab remembers whether it was in Genealogy or Source. **Open GEDCOM files as**
 in the plugin settings chooses which mode a newly opened file starts in, while the

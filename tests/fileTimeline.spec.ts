@@ -19,7 +19,6 @@ async function mountTimeline(page: Page, options: TimelineOptions = {}): Promise
 const name = (page: Page, xref: string) => page.locator(`.gedcom-ft-name[data-p="${xref}"]`);
 const life = (page: Page, xref: string) => page.locator(`.gedcom-ft-life[data-p="${xref}"]`);
 
-/** Where a year of curie.ged falls in the page, at the opening zoom. */
 async function yearX(page: Page, year: number): Promise<number> {
   const chart = await page.locator(".gedcom-ft-chart").boundingBox();
   return (chart?.x ?? 0) + PAD + (year - FIRST_DECADE) * ZOOM;
@@ -60,7 +59,11 @@ function generated(count: number): string {
   const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
   for (const one of people) {
     lines.push(`0 ${one.id} INDI`, `1 NAME Person ${one.id.slice(2, -1)} /Generated/`, `1 SEX ${one.sex}`);
-    lines.push("1 BIRT", `2 DATE ${one.born}`, "1 DEAT", `2 DATE ${one.born + 70}`);
+    lines.push("1 BIRT", `2 DATE ${one.born}`, "1 CHR", `2 DATE ${one.born}`);
+    lines.push("1 RESI", `2 DATE FROM ${one.born + 20} TO ${one.born + 40}`);
+    lines.push("1 CENS", `2 DATE ${one.born + 10}`, "1 CENS", `2 DATE ${one.born + 30}`);
+    lines.push("1 OCCU Miller", `2 DATE ${one.born + 25}`);
+    lines.push("1 DEAT", `2 DATE ${one.born + 70}`, "1 BURI", `2 DATE ${one.born + 70}`);
     if (one.famc) {
       lines.push(`1 FAMC ${one.famc}`);
     }
@@ -141,6 +144,40 @@ test.describe("the timeline of a file", () => {
     await expect(page.locator(".gedcom-ft-alive")).toHaveText("In 1906: 11 people alive");
   });
 
+  test("colours each kind of mark from the theme", async ({ page }) => {
+    await mountTimeline(page);
+    const fill = (selector: string) =>
+      page.locator(`${selector} circle`).first().evaluate((node) => getComputedStyle(node).fill);
+
+    expect(await fill('.gedcom-ft-mark.is-birth[data-p="@I1@"]')).toBe("rgb(0, 160, 0)");
+    expect(await fill('.gedcom-ft-mark.is-marriage[data-p="@I1@"]')).toBe("rgb(128, 64, 0)");
+    expect(await fill('.gedcom-ft-mark.is-death[data-p="@I1@"]')).toBe("rgb(0, 0, 0)");
+    expect(await fill('.gedcom-ft-mark.is-other[data-p="@I1@"]')).toBe("rgb(255, 128, 0)");
+  });
+
+  test("takes its colours from a dark theme too", async ({ page }) => {
+    await mountTimeline(page, { dark: true });
+
+    expect(await life(page, "@I1@").evaluate((node) => getComputedStyle(node).fill)).toBe("rgb(255, 100, 180)");
+    expect(
+      await page.locator('.gedcom-ft-mark.is-death[data-p="@I1@"] circle').evaluate((node) => getComputedStyle(node).fill),
+    ).toBe("rgb(255, 255, 255)");
+  });
+
+  test("opens a person and their branch from the keyboard", async ({ page }) => {
+    await mountTimeline(page);
+    await name(page, "@I12@").locator(".gedcom-ft-name-open").focus();
+    await page.keyboard.press("Space");
+    expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I12@"]);
+
+    await page.keyboard.press("Tab");
+    await expect(name(page, "@I12@").locator(".gedcom-ft-branch")).toBeFocused();
+    await expect(name(page, "@I12@").locator(".gedcom-ft-branch")).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".gedcom-ft-name")).toHaveCount(10);
+    await expect(name(page, "@I12@").locator(".gedcom-ft-branch")).toBeFocused();
+  });
+
   test("shows Irène's branch, ten of the file's eighteen, and returns to the whole file", async ({ page }) => {
     await mountTimeline(page);
     await name(page, "@I12@").hover();
@@ -194,7 +231,8 @@ test.describe("the timeline of a file on a phone", () => {
 
     await expect(name(page, "@I1@")).toHaveClass(/is-hl/);
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
-    await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveCount(1);
+    const touched = Math.round(FIRST_DECADE + (at.x - (await yearX(page, FIRST_DECADE))) / ZOOM);
+    await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText(String(touched));
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual([]);
 
     await page.touchscreen.tap(at.x, at.y);
@@ -212,6 +250,21 @@ test.describe("the timeline of a file on a phone", () => {
     await expect(page.locator(".gedcom-ft-pop.is-shown")).toContainText("7 NOV 1867");
     await page.locator(".gedcom-ft-pop-source").tap();
     expect(await page.evaluate(() => window.timeline.calls.shownInSource.length)).toBe(1);
+  });
+
+  test("keeps a touched mark's event on the screen at the bottom of the rows", async ({ page }) => {
+    await mountTimeline(page, { phone: true });
+    await page.locator(".gedcom-ft-board").evaluate((board) => {
+      board.scrollTop = board.scrollHeight;
+      board.scrollLeft = 520;
+    });
+    await page.waitForTimeout(50);
+    const mark = await page.locator('.gedcom-ft-mark.is-birth[data-p="@I17@"]').boundingBox();
+    await page.touchscreen.tap((mark?.x ?? 0) + (mark?.width ?? 0) / 2, (mark?.y ?? 0) + (mark?.height ?? 0) / 2);
+
+    const source = await page.locator(".gedcom-ft-pop.is-shown .gedcom-ft-pop-source").boundingBox();
+    expect((source?.y ?? Infinity) + (source?.height ?? 0)).toBeLessThanOrEqual(844);
+    expect(source?.y ?? -1).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -261,5 +314,22 @@ test.describe("the timeline of a file of 10 000 people", () => {
     });
     await expect(row).toHaveClass(/is-hl/);
     expect(took).toBeLessThan(50);
+
+    const slowest = await page.locator(".gedcom-ft-chart").evaluate((chart) => {
+      const box = chart.getBoundingClientRect();
+      const board = document.querySelector(".gedcom-ft-board")?.getBoundingClientRect();
+      const y = (board?.top ?? 0) + 200;
+      let worst = 0;
+      for (let step = 0; step < 60; step += 1) {
+        const started = performance.now();
+        chart.dispatchEvent(
+          new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse", clientX: box.left + 30 + step * 9, clientY: y }),
+        );
+        worst = Math.max(worst, performance.now() - started);
+      }
+      return worst;
+    });
+    await expect(page.locator(".gedcom-ft-alive")).toContainText("people alive");
+    expect(slowest).toBeLessThan(50);
   });
 });
