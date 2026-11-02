@@ -148,6 +148,76 @@ describe("reading a year out of a GEDCOM date", () => {
     expect(readingOf("0", undeclared.readDate("0"))).toEqual({ text: "0" });
   });
 
+  it("reads both years of a period, and calls it one", () => {
+    expect(in7("FROM 1891 TO 1894")).toEqual({
+      text: "FROM 1891 TO 1894",
+      year: 1891,
+      precision: "range",
+      end: 1894,
+      period: true,
+    });
+  });
+
+  it("calls a period with one end a period, with no second year", () => {
+    expect(in7("FROM 1891")).toEqual({
+      text: "FROM 1891",
+      year: 1891,
+      precision: "range",
+      period: true,
+    });
+    expect(in7("TO 1894")).toEqual({
+      text: "TO 1894",
+      year: 1894,
+      precision: "range",
+      period: true,
+    });
+  });
+
+  it("reads the second year of a range without calling it a period", () => {
+    expect(in7("BET 1867 AND 1870")).toEqual({
+      text: "BET 1867 AND 1870",
+      year: 1867,
+      precision: "range",
+      end: 1870,
+    });
+    expect(in7("BEF 1870")).not.toHaveProperty("period");
+    expect(in7("AFT 1867")).not.toHaveProperty("period");
+  });
+
+  it("reads no second year from a second date in another calendar", () => {
+    expect(in7("BET 1867 AND HEBREW 5628")).toEqual({
+      text: "BET 1867 AND HEBREW 5628",
+      year: 1867,
+      precision: "range",
+    });
+  });
+
+  it("keeps the order the file writes the two years in", () => {
+    const reading = in7("FROM 1894 TO 1891");
+
+    expect(reading.year).toBe(1894);
+    expect(reading.end).toBe(1891);
+  });
+
+  it("reads a second year before the common era, in either dialect", () => {
+    expect(in7("FROM 5 BCE TO 1 BCE").end).toBe(0);
+    expect(in551("FROM 5 B.C. TO 1 B.C.").end).toBe(0);
+    expect(in7("FROM 5 BCE TO 1 BCE").year).toBe(-4);
+  });
+
+  it("reads the later of a dual year in the second date", () => {
+    const reading = in551("FROM 1700 TO 1750/51");
+
+    expect(reading.year).toBe(1700);
+    expect(reading.end).toBe(1751);
+  });
+
+  it("reads no second year where the first yields none", () => {
+    expect(in7("BET HEBREW 5500 AND 1750")).toEqual({
+      text: "BET HEBREW 5500 AND 1750",
+    });
+  });
+
   it("carries the payload through exactly as written, always", () => {
     for (const written of ["7 NOV 1867", "@#DHEBREW@ 5628", "  ABT 1867  ", ""]) {
       expect(in551(written).text).toBe(written);
