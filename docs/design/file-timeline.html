@@ -109,6 +109,8 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
 .kin{stroke:var(--text-faint);fill:none;stroke-dasharray:3 3}
 .kin.hl{stroke:var(--text-accent);stroke-dasharray:none;stroke-width:1.5}
 .dim{opacity:.18}
+.hashl #items>*:not(.on),.hashl .nm:not(.on){opacity:.18}
+.bar.hl{opacity:.7}
 .tip{position:fixed;pointer-events:none;z-index:10;background:var(--background-primary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow-l);opacity:0;transition:opacity .1s;max-width:300px}
 .tip b{display:block}.tip .m{color:var(--text-muted)}
 .legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 18px;border-top:1px solid var(--background-modifier-border);font-size:12px;color:var(--text-muted)}
@@ -140,7 +142,7 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
       <span class="sep"></span>
       <label>Zoom <input type="range" id="zoom" min="2" max="16" value="6"></label>
       <input type="search" id="q" placeholder="Find a person…">
-      <span class="alive" id="alive"></span>
+      <span class="alive" id="alive"></span><span id="drawn" style="font-size:12px;color:var(--text-faint)"></span>
     </div>
     <div class="scope" id="scope"></div>
     <div class="board" id="board">
@@ -656,70 +658,99 @@ function related(id){
   return s;
 }
 
+// Everything is laid out once per file, branch, zoom and search; only the rows and years in or near the window
+// are put in the DOM, and hovering changes classes on what is there. Arrows and the hovered person's facts are
+// drawn into a small layer of their own.
+let G=null,RW=null,HL=[],BY={p:new Map(),n:new Map()};
 function render(){
   const L=layout(),k=S.zoom,x=y=>(y-L.lo)*k+12,W=(L.hi-L.lo)*k+24;
-  const q=S.q.toLowerCase(),match=p=>!q||p.name.toLowerCase().includes(q);
-  const rel=S.hl?related(S.hl):null;
-  const dim=id=>(rel&&!rel.has(id))||(q&&!match(M.people.get(id)))?" dim":"";
+  const q=S.q.toLowerCase(),miss=id=>q&&!M.people.get(id).name.toLowerCase().includes(q);
   document.documentElement.style.setProperty("--row",ROW+"px");document.documentElement.style.setProperty("--gen",GEN+"px");
-  // names
-  let nh=`<div class="axis-pad"></div>`;
-  for(const r of L.rows){
-    if(r.gen!==undefined){nh+=`<div class="gen">Generation ${r.gen+1}</div>`;continue}
-    const p=r.p,s=span(p);
-    nh+=`<div class="nm${S.hl===p.id?" hl":""}${S.focus===p.id?" focus":""}${dim(p.id)}" data-p="${p.id}" title="${esc(p.name)}"><span class="nmtx">${esc(p.name)}</span><span class="yrs">${s?`${s.b}–${s.d??""}`:""}</span><button class="br" data-br="${p.id}" title="Show only this person's branch">Branch</button></div>`;
-  }
-  $("names").innerHTML=nh;
-  // axis
+  const items=[];const add=(y,x0,x1,html,ids)=>items.push({y,x0,x1,html,ids});
+  for(const p of L.shown){const sp=span(p);if(!sp)continue;const cy=L.pos.get(p.id),d=miss(p.id)?" dim":"";
+    const sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
+    add(cy,x(sp.b),x(sp.end),`<rect class="bar ${sx}${d}" data-p="${p.id}" x="${x(sp.b)}" y="${cy-9}" width="${Math.max(2,x(sp.end)-x(sp.b))}" height="18" rx="5" ${sp.open?'fill-opacity=".5" mask="url(#fadeR)"':""}/>`,[p.id]);
+    if(S.on.OTHER)for(const e of p.events)if(cat(e.tag)==="OTHER"&&e.date?.year&&e.end)
+      add(cy,x(e.date.year),x(e.end),`<rect class="range${d}" data-p="${p.id}" x="${x(e.date.year)}" y="${cy-3}" width="${Math.max(2,x(e.end)-x(e.date.year))}" height="6" rx="2"/>`,[p.id]);
+    const c=caption(p,sp,x);if(c&&S.zoom>=9)add(cy,x(sp.b),x(sp.end),`<text class="cap${d}" data-p="${p.id}" x="${x(sp.b)+11}" y="${cy+3.5}">${esc(c)}</text>`,[p.id])}
+  for(const f of M.fams.values())for(const e of f.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
+    const ids=[f.husb,f.wife].filter(id=>L.pos.has(id));if(!ids.length)continue;const ys=ids.map(id=>L.pos.get(id)),X=x(e.date.year);
+    const who=ids.map(id=>M.people.get(id).name).join(" & "),d=ids.every(miss)?" dim":"";
+    if(c==="MARR"&&ys.length==2)items.push({y0:Math.min(...ys),y1:Math.max(...ys),x0:X,x1:X,ids,html:`<line class="marr fam${d}" x1="${X}" x2="${X}" y1="${Math.min(...ys)}" y2="${Math.max(...ys)}"/>`});
+    ids.forEach(id=>add(L.pos.get(id),X-7,X+7,mark(e,c,X,L.pos.get(id),who,id,d),[id]))}
+  for(const p of L.shown){const cy=L.pos.get(p.id),d=miss(p.id)?" dim":"";for(const e of p.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
+    add(cy,x(e.date.year)-7,x(e.date.year)+7,mark(e,c,x(e.date.year),cy,p.name,p.id,d),[p.id])}}
+  for(const it of items)if(it.y!==undefined){it.y0=it.y-ROW/2;it.y1=it.y+ROW/2}
   const step=k<4?50:k<8?20:10;
+  let grid="";for(let y=L.lo;y<=L.hi;y+=10)grid+=`<line class="gl${y%step?" minor":""}" x1="${x(y)}" x2="${x(y)}" y1="0" y2="${L.H}"/>`;
+  const nowX=x(NOW);if(NOW<=L.hi)grid+=`<line x1="${nowX}" x2="${nowX}" y1="0" y2="${L.H}" stroke="var(--text-accent)" stroke-dasharray="2 4" opacity=".6"/>`;
   let ax="";for(let y=Math.ceil(L.lo/step)*step;y<=L.hi;y+=step)ax+=`<text x="${x(y)}" y="17" text-anchor="middle">${y}</text>`;
   $("axis").setAttribute("width",W);$("axis").setAttribute("height",26);$("axis").innerHTML=ax;
-  // plot
-  let s="";
-  for(const b of L.bands)s+=`<rect class="genbg" x="0" y="${b.y}" width="${W}" height="${GEN}"/>`;
-  for(let y=L.lo;y<=L.hi;y+=10)s+=`<line class="gl${y%step?" minor":""}" x1="${x(y)}" x2="${x(y)}" y1="0" y2="${L.H}"/>`;
-  if(S.hl)s+=`<rect class="rowhl" x="0" y="${L.pos.get(S.hl)-ROW/2}" width="${W}" height="${ROW}"/>`;
-  const nowX=x(NOW);if(NOW<=L.hi)s+=`<line x1="${nowX}" x2="${nowX}" y1="0" y2="${L.H}" stroke="var(--text-accent)" stroke-dasharray="2 4" opacity=".6"/>`;
-  for(const p of L.shown){const sp=span(p);if(!sp)continue;const cy=L.pos.get(p.id);
-    const sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
-    s+=`<rect class="bar ${sx}${S.hl===p.id?" hl":""}${dim(p.id)}" x="${x(sp.b)}" y="${cy-9}" width="${Math.max(2,x(sp.end)-x(sp.b))}" height="18" rx="5" ${sp.open?'fill-opacity=".5" mask="url(#fadeR)"':""}/>`}
-  for(const p of L.shown){const sp=span(p);if(!sp)continue;const cy=L.pos.get(p.id),d=dim(p.id);
-    if(S.on.OTHER)for(const e of p.events)if(cat(e.tag)==="OTHER"&&e.date?.year&&e.end)s+=`<rect class="range${d}" x="${x(e.date.year)}" y="${cy-3}" width="${Math.max(2,x(e.end)-x(e.date.year))}" height="6" rx="2"/>`;
-    const cap=[...new Set(p.events.filter(e=>!e.date?.year&&(e.value||cat(e.tag)==="OTHER")).map(e=>e.value||e.label))].join(" · ");
-    const room=x(sp.end)-x(sp.b)-22;
-    if(cap&&room>40&&(S.zoom>=9||S.hl===p.id)){const fit=Math.floor(room/5.6);s+=`<text class="cap${d}" x="${x(sp.b)+11}" y="${cy+3.5}">${esc(cap.length>fit?cap.slice(0,fit-1)+"…":cap)}</text>`}}
-  if(S.hl)for(const f of M.fams.values()){const par=[f.wife,f.husb].filter(id=>L.pos.has(id));if(!par.length)continue;
-    for(const c of f.chil){const ch=M.people.get(c),sp=ch&&span(ch);if(!sp||!L.pos.has(c))continue;
-      const from=L.pos.get(par[0]),to=L.pos.get(c),hl=S.hl===c||par.includes(S.hl);if(!hl)continue;
-      s+=`<path class="kin${hl?" hl":""}${S.hl&&!hl?" dim":""}" marker-end="url(#ah)" d="M${x(sp.b)} ${from+(to>from?10:-10)} V${to+(to>from?-11:11)}"/>`}}
-  for(const f of M.fams.values())for(const e of f.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
-    const ids=[f.husb,f.wife].filter(id=>L.pos.has(id));const ys=ids.map(id=>L.pos.get(id));
-    const who=ids.map(id=>M.people.get(id).name).join(" & ");const d=ids.every(id=>dim(id))?" dim":"";
-    if(c==="MARR"&&ys.length==2)s+=`<line class="marr${d}" x1="${x(e.date.year)}" x2="${x(e.date.year)}" y1="${Math.min(...ys)}" y2="${Math.max(...ys)}"/>`;
-    ids.forEach(id=>s+=mark(e,c,x(e.date.year),L.pos.get(id),who,id,d))}
-  for(const p of M.people.values()){if(!L.pos.has(p.id))continue;for(const e of p.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
-    s+=mark(e,c,x(e.date.year),L.pos.get(p.id),p.name,p.id,dim(p.id))}}
   const svg=$("svg");svg.setAttribute("width",W);svg.setAttribute("height",L.H);
-  svg.innerHTML=`<defs><marker id="ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--text-faint)"/></marker>
-  <linearGradient id="fadeG"><stop offset=".6" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  <mask id="fadeR" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#fadeG)"/></mask></defs>`+s;
+  const names=L.rows.filter(r=>r.p).map(r=>{const p=r.p,sp=span(p);return`<div class="nm${S.focus===p.id?" focus":""}${miss(p.id)?" dim":""}" data-p="${p.id}" title="${esc(p.name)}"><span class="nmtx">${esc(p.name)}</span><span class="yrs">${sp?`${sp.b}–${sp.d??""}`:""}</span><button class="br" data-br="${p.id}" title="Show only this person's branch">Branch</button></div>`});
+  G={L,k,x,W,items,grid,names};RW=null;
   // header
   const evs=[...M.people.values()].flatMap(p=>p.events).concat([...M.fams.values()].flatMap(f=>f.events));
   const dated=evs.filter(e=>e.date?.year),und=evs.filter(e=>!e.date?.year);
-  for(const c of ["OTHER"])$("n"+c).textContent=dated.filter(e=>cat(e.tag)===c).length;
-  const spans=[...M.people.values()].map(span).filter(Boolean);
+  $("nOTHER").textContent=dated.filter(e=>cat(e.tag)==="OTHER").length;
   $("title").textContent="Timeline of "+M.name;$("tabname").textContent=M.name;
-  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${dated.length} dated events, ${L.lo+5>0?Math.min(...dated.map(e=>e.date.year)):""}–${Math.max(...dated.map(e=>e.date.year))}`;
+  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${dated.length} dated events, ${dated.length?Math.min(...dated.map(e=>e.date.year))+"–"+Math.max(...dated.map(e=>e.date.year)):""} · read ${Math.round(READ_MS)} ms`;
   const noYear=[...M.people.values()].filter(p=>!span(p));
   const fp=S.focus&&M.people.get(S.focus);
   $("scope").innerHTML=fp?`Branch of <b>${esc(fp.name)}</b> · ${L.shown.length} of ${M.people.size} people · ancestors
     <span class="step"><button data-step="up:-1">−</button><span>${S.up}</span><button data-step="up:1">+</button></span> descendants
     <span class="step"><button data-step="down:-1">−</button><span>${S.down}</span><button data-step="down:1">+</button></span>
     <button class="link" data-whole>Whole file</button>`:`Whole file · ${M.people.size} people. Hover a name and choose <b>Branch</b> to see only that person's ancestors and descendants.`;
-  G={L,k,x,W};drawCursor();
-  $("undated").innerHTML=(und.length?`${und.length} facts without a year have no point on the line; they are written inside the person's bar: ${[...new Set(und.map(e=>e.label))].join(", ").toLowerCase()}.`:"")+(noYear.length?` ${noYear.length} people have no year at all: ${noYear.map(p=>esc(p.name)).join(", ")}.`:"");
+  $("undated").innerHTML=(und.length?`${und.length} facts without a year have no point on the line; they are written inside the person's bar: ${[...new Set(und.map(e=>e.label))].join(", ").toLowerCase()}.`:"")+(noYear.length?` ${noYear.length} people have no year at all: ${noYear.slice(0,20).map(p=>esc(p.name)).join(", ")}${noYear.length>20?"…":""}.`:"");
+  drawVisible();
 }
-let G=null;
+function caption(p,sp,x){
+  const cap=[...new Set(p.events.filter(e=>!e.date?.year&&(e.value||cat(e.tag)==="OTHER")).map(e=>e.value||e.label))].join(" · ");
+  const room=x(sp.end)-x(sp.b)-22;if(!cap||room<=40)return"";
+  const fit=Math.floor(room/5.6);return cap.length>fit?cap.slice(0,fit-1)+"…":cap;
+}
+function view(){const b=$("board"),top=b.scrollTop,left=b.scrollLeft;
+  return{y0:top,y1:top+b.clientHeight-26,x0:left,x1:left+b.clientWidth-210}}
+function drawVisible(){
+  const v=view(),h=v.y1-v.y0,w=v.x1-v.x0;
+  RW={y0:Math.max(0,v.y0-h),y1:v.y1+h,x0:Math.max(0,v.x0-w),x1:v.x1+w};
+  const {L,items,grid,names}=G;let s="";const kept=[];
+  for(const it of items)if(it.y1>=RW.y0&&it.y0<=RW.y1&&it.x1>=RW.x0&&it.x0<=RW.x1){s+=it.html;kept.push(it)}
+  $("svg").innerHTML=`<defs><marker id="ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--text-faint)"/></marker>
+  <linearGradient id="fadeG"><stop offset=".6" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <mask id="fadeR" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#fadeG)"/></mask></defs><g id="grid">${grid}</g><g id="items">${s}</g><g id="hov"></g>`;
+  const els=$("items").children;BY={p:new Map(),n:new Map()};
+  kept.forEach((it,i)=>it.ids.forEach(id=>(BY.p.get(id)??BY.p.set(id,[]).get(id)).push(els[i])));
+  const i0=Math.floor(RW.y0/ROW),i1=Math.min(names.length,Math.ceil(RW.y1/ROW));
+  $("names").innerHTML=`<div class="axis-pad"></div><div style="height:${i0*ROW}px"></div>${names.slice(i0,i1).join("")}<div style="height:${(names.length-i1)*ROW}px"></div>`;
+  for(const el of $("names").querySelectorAll(".nm"))BY.n.set(el.dataset.p,el);
+  $("drawn").textContent=`${kept.length+(i1-i0)} of ${items.length+names.length} shapes in the DOM`;
+  HL=[];setHl(S.hl,true);drawCursor();
+}
+function setHl(id,force){
+  if(id===S.hl&&!force)return;S.hl=id;
+  for(const el of HL)el.classList.remove("on","hl");HL=[];
+  $("board").classList.toggle("hashl",!!id);
+  const hov=$("hov");if(hov)hov.innerHTML="";$("svg").querySelector(".rowhl")?.remove();
+  if(!id||!M.people.has(id)||!G)return;
+  const {L,x,W}=G;if(!L.pos.has(id))return;
+  const mark=(el,hl)=>{el.classList.add("on");if(hl)el.classList.add("hl");HL.push(el)};
+  for(const r of related(id)){for(const el of BY.p.get(r)??[])mark(el,r===id);const n=BY.n.get(r);if(n)mark(n,r===id)}
+  // the hovered person's row, arrows to their parents and children, and their facts without a date
+  const cy=L.pos.get(id);let s=`<rect class="rowhl" x="0" y="${cy-ROW/2}" width="${W}" height="${ROW}"/>`;
+  for(const f of M.fams.values()){const par=[f.wife,f.husb].filter(q=>L.pos.has(q));if(!par.length)continue;
+    for(const c of f.chil){if(!(c===id||par.includes(id))||!L.pos.has(c))continue;const sp=span(M.people.get(c));if(!sp)continue;
+      const from=L.pos.get(par[0]),to=L.pos.get(c);
+      s+=`<path class="kin hl" marker-end="url(#ah)" d="M${x(sp.b)} ${from+(to>from?10:-10)} V${to+(to>from?-11:11)}"/>`}}
+  const p=M.people.get(id),sp=span(p),c=sp&&S.zoom<9&&caption(p,sp,x);
+  if(c)s+=`<text class="cap" x="${x(sp.b)+11}" y="${cy+3.5}">${esc(c)}</text>`;
+  hov.innerHTML=s;
+  // the row highlight goes under the bars
+  const items=$("items");items.parentNode.insertBefore(hov.firstChild,items);
+}
+let pending=false;
+$("board").addEventListener("scroll",()=>{if(pending||!G)return;pending=true;requestAnimationFrame(()=>{pending=false;const v=view();
+  if(!RW||v.y0<RW.y0||v.y1>RW.y1||v.x0<RW.x0||v.x1>RW.x1)drawVisible()})});
 function drawCursor(){
   const cur=$("cur"),ax=$("axis");ax.querySelector(".axcur")?.remove();
   if(!G||S.year==null){cur.innerHTML="";$("alive").textContent="";return}
@@ -727,7 +758,8 @@ function drawCursor(){
   cur.setAttribute("width",W);cur.setAttribute("height",L.H);
   let s=`<line x1="${X}" x2="${X}" y1="0" y2="${L.H}"/>`;let n=0;
   for(const p of L.shown){const sp=span(p);if(!sp||Y<sp.b||Y>sp.end||(sp.open&&Y>NOW))continue;n++;
-    const age=Y-sp.b,t=(p.birth?.date?.exact?"":"≈")+age,cy=L.pos.get(p.id),w=t.length*6.4+8;
+    const cy=L.pos.get(p.id);if(!RW||cy<RW.y0||cy>RW.y1)continue;
+    const age=Y-sp.b,t=(p.birth?.date?.exact?"":"≈")+age,w=t.length*6.4+8;
     s+=`<g class="age"><rect x="${X+5}" y="${cy-8}" width="${w}" height="16" rx="8"/><text x="${X+9}" y="${cy+3.5}">${t}</text></g>`}
   cur.innerHTML=s;
   ax.insertAdjacentHTML("beforeend",`<g class="axcur"><rect x="${X-20}" y="4" width="40" height="18" rx="9"/><text x="${X}" y="17" text-anchor="middle">${Y}</text></g>`);
@@ -745,9 +777,9 @@ document.addEventListener("mousemove",e=>{
   if(m){tip.innerHTML=`<b>${m.dataset.w}</b>${m.dataset.d}${m.dataset.pl?` <span class="m">· ${m.dataset.pl}</span>`:""}`;
     tip.style.left=Math.min(e.clientX+14,innerWidth-310)+"px";tip.style.top=(e.clientY+14)+"px";tip.style.opacity=1}else tip.style.opacity=0;
   const p=e.target.closest("[data-p]"),id=p?p.dataset.p:null;
-  if(id!==S.hl&&(id||!e.target.closest(".board"))){S.hl=id;render()}
+  if(id!==S.hl&&(id||!e.target.closest(".board")))setHl(id)
 });
-$("board").addEventListener("mouseleave",()=>{S.hl=null;S.year=null;render()});
+$("board").addEventListener("mouseleave",()=>{setHl(null);S.year=null;drawCursor()});
 $("plot").addEventListener("mousemove",e=>{if(!G)return;const r=$("svg").getBoundingClientRect();
   const Y=Math.round(G.L.lo+(e.clientX-r.left-12)/G.k);const y=Math.max(G.L.lo,Math.min(G.L.hi,Y));if(y!==S.year){S.year=y;drawCursor()}});
 $("names").addEventListener("mouseenter",()=>{S.year=null;drawCursor()});
