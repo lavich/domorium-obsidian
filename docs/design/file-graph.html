@@ -67,7 +67,7 @@ svg text{font-family:var(--font-interface)}
 .card .nm{fill:var(--text-normal);font-size:12.5px;font-weight:600}
 .card .yr{fill:var(--text-muted);font-size:11px;font-variant-numeric:tabular-nums}
 .card{cursor:pointer}
-.card:hover rect.bg,.card.hl rect.bg{stroke:var(--interactive-accent);stroke-width:2}
+.card:hover rect.bg{stroke:var(--interactive-accent);stroke-width:2}
 .card.focus rect.bg{stroke:var(--interactive-accent);stroke-width:2.5}
 .card .brb{opacity:0}
 .card:hover .brb{opacity:1}
@@ -77,7 +77,9 @@ svg text{font-family:var(--font-interface)}
 .edge.hl{stroke:var(--text-accent);stroke-width:2.5}
 .union{fill:hsl(var(--accent-h),var(--accent-s),var(--accent-l));cursor:pointer}
 .union.nodate{fill:var(--background-primary);stroke:hsl(var(--accent-h),var(--accent-s),var(--accent-l));stroke-width:1.5}
-.dim{opacity:.18}
+.hashl .card:not(.on),.hashl .edge:not(.on),.hashl .ug:not(.on){opacity:.18}
+.edge.hl,.ug.hl .edge.sp{stroke:var(--text-accent);stroke-width:2.5}
+.card.hl rect.bg{stroke:var(--interactive-accent);stroke-width:2}
 .genlbl{fill:var(--text-faint);font-size:11px;letter-spacing:.05em}
 .tip{position:fixed;pointer-events:none;z-index:10;background:var(--background-primary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow-l);opacity:0;transition:opacity .1s;max-width:300px}
 .tip b{display:block}.tip .m{color:var(--text-muted)}
@@ -103,7 +105,7 @@ svg text{font-family:var(--font-interface)}
   <div class="app theme-light" id="app">
     <div class="tabbar"><span class="tab" id="tabname">curie.ged</span><span class="crumbs">Genealogy · Graph</span></div>
     <div class="head"><h1 id="title"></h1><p id="sub"></p></div>
-    <div class="scope"><span id="scope"></span><span class="tools"><button class="tbtn" id="fit">Fit</button><button class="tbtn" id="zin">+</button><button class="tbtn" id="zout">−</button></span></div>
+    <div class="scope"><span id="scope"></span><span class="tools"><span id="drawn" style="color:var(--text-faint);margin-right:8px"></span><button class="tbtn" id="fit">Fit</button><button class="tbtn" id="zin">+</button><button class="tbtn" id="zout">−</button></span></div>
     <div class="canvas" id="canvas"><svg id="svg"><g id="view"></g></svg></div>
     <div class="legend">
       <span><i style="background:hsl(335,75%,68%)"></i>woman</span>
@@ -665,43 +667,83 @@ function layout(){
 
 function years(p){const sp=span(p);return sp?`${sp.b}–${sp.d??""}`:""}
 function curve(pts){let d=`M${pts[0][0]} ${pts[0][1]}`;for(let i=1;i<pts.length;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],m=(y1-y0)/2;d+=` C${x0} ${y0+m} ${x1} ${y1-m} ${x1} ${y1}`}return d}
-function render(){
-  const L=layout(),rel=S.hl?related(S.hl):null,dim=id=>rel&&!rel.has(id)?" dim":"";
-  let s="";const node=new Map();
+// The scene is laid out once per file and branch; only what falls in or near the window is put in the DOM,
+// and hovering changes classes on what is there rather than drawing it again.
+let SCENE=null,RW=null,HL=[];
+function scene(){
+  const L=layout();const items=[],node=new Map();
   for(const f of M.fams.values()){
     const par=[f.husb,f.wife].filter(id=>L.pos.has(id));if(!par.length)continue;
     const ps=par.map(id=>L.pos.get(id));
     if(ps.length===2&&ps[0].row===ps[1].row){const [a,b]=[...ps].sort((a,b)=>a.x-b.x);node.set(f.id,{x:(a.x+CW+b.x)/2,y:a.y+CH/2,pair:[a,b]})}
     else node.set(f.id,{x:ps[0].x+CW/2,y:ps[0].y+CH})}
   for(const e of L.edges){const n=node.get(e.f.id),c=L.pos.get(e.c);
-    const pts=[[n.x,n.y],...e.chain.map(d=>[d.cx,d.layer*GY+CH/2]),[c.x+CW/2,c.y]];
-    const hl=S.hl&&(S.hl===e.c||e.par.includes(S.hl));
-    s+=`<path class="edge${hl?" hl":""}${S.hl&&!hl?" dim":""}" d="${curve(pts)}"/>`}
+    const pts=[[n.x,n.y],...e.chain.map(d=>[d.cx,d.layer*GY+CH/2]),[c.x+CW/2,c.y]],xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]);
+    items.push({z:0,x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys),edge:[e.c,...e.par],
+      html:`<path class="edge" d="${curve(pts)}"/>`})}
   for(const f of M.fams.values()){const n=node.get(f.id);if(!n?.pair)continue;
-    const par=[f.husb,f.wife],hl=S.hl&&(par.includes(S.hl)||f.chil.includes(S.hl));
-    const [a,b]=n.pair;s+=`<path class="edge sp${hl?" hl":""}${S.hl&&!hl?" dim":""}" d="M${a.x+CW} ${n.y} H${b.x}"/>`;
-    const yr=f.events.find(e=>e.tag==="MARR")?.date?.year;
-    s+=`<g class="${S.hl&&!hl?"dim":""}"><circle class="union${yr?"":" nodate"}" data-f="${f.id}" cx="${n.x}" cy="${n.y}" r="${yr?11:6}"/>${yr?`<text x="${n.x}" y="${n.y+3.5}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#fff" pointer-events="none">’${String(yr).slice(-2)}</text>`:""}</g>`}
+    const [a,b]=n.pair,yr=f.events.find(e=>e.tag==="MARR")?.date?.year;
+    items.push({z:1,x0:a.x+CW,x1:b.x,y0:n.y-11,y1:n.y+11,fam:[f.husb,f.wife,...f.chil],
+      html:`<g class="ug"><path class="edge sp" d="M${a.x+CW} ${n.y} H${b.x}"/><circle class="union${yr?"":" nodate"}" data-f="${f.id}" cx="${n.x}" cy="${n.y}" r="${yr?11:6}"/>${yr?`<text x="${n.x}" y="${n.y+3.5}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#fff" pointer-events="none">’${String(yr).slice(-2)}</text>`:""}</g>`})}
   for(const p of L.vis){const q=L.pos.get(p.id),sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
     const nm=p.name.length>22?p.name.slice(0,21)+"…":p.name;
-    s+=`<g class="card ${sx}${S.hl===p.id?" hl":""}${S.focus===p.id?" focus":""}${dim(p.id)}" data-p="${p.id}" transform="translate(${q.x},${q.y})">
-      <title>${esc(p.name)}</title><rect class="bg" width="${CW}" height="${CH}" rx="7"/><rect class="side" width="4" height="${CH-12}" x="5" y="6" rx="2"/>
+    const box=`<rect class="bg" width="${CW}" height="${CH}" rx="7"/><rect class="side" width="4" height="${CH-12}" x="5" y="6" rx="2"/>`;
+    items.push({z:2,x0:q.x,x1:q.x+CW,y0:q.y,y1:q.y+CH,card:p.id,
+      far:`<g class="card ${sx}${S.focus===p.id?" focus":""}" data-p="${p.id}" transform="translate(${q.x},${q.y})">${box}</g>`,
+      html:`<g class="card ${sx}${S.focus===p.id?" focus":""}" data-p="${p.id}" transform="translate(${q.x},${q.y})"><title>${esc(p.name)}</title>${box}
       <text class="nm" x="16" y="19">${esc(nm)}</text><text class="yr" x="16" y="35">${years(p)}</text>
-      <g class="brb" data-br="${p.id}"><rect x="${CW-52}" y="${CH-20}" width="46" height="15" rx="7.5"/><text x="${CW-29}" y="${CH-9}" text-anchor="middle">Branch</text></g></g>`}
-  $("view").innerHTML=s;
-  VIEW.w=L.width;VIEW.h=L.height;apply();
+      <g class="brb" data-br="${p.id}"><rect x="${CW-52}" y="${CH-20}" width="46" height="15" rx="7.5"/><text x="${CW-29}" y="${CH-9}" text-anchor="middle">Branch</text></g></g>`})}
+  items.sort((a,b)=>a.z-b.z);
+  return{L,items};
+}
+function render(){
+  SCENE=scene();RW=null;const L=SCENE.L;
+  VIEW.w=L.width;VIEW.h=L.height;
   const fp=S.focus&&M.people.get(S.focus);
   $("scope").innerHTML=fp?`Branch of <b>${esc(fp.name)}</b> · ${L.vis.length} of ${M.people.size} people · ancestors
     <span class="step"><button data-step="up:-1">−</button><span>${S.up}</span><button data-step="up:1">+</button></span> descendants
     <span class="step"><button data-step="down:-1">−</button><span>${S.down}</span><button data-step="down:1">+</button></span>
     <button class="link" data-whole>Whole file</button>`:`Whole file · ${M.people.size} people in ${L.rows} generations. Hover a person and choose <b>Branch</b> to see only their ancestors and descendants.`;
   $("title").textContent="Graph of "+M.name;$("tabname").textContent=M.name;
-  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${L.crossings} crossing${L.crossings===1?"":"s"} left`;
+  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${L.crossings} crossing${L.crossings===1?"":"s"} left · read ${Math.round(READ_MS)} ms`;
+  apply();
 }
+function viewport(){const r=$("canvas").getBoundingClientRect();
+  return{x0:-VIEW.x/VIEW.k,y0:-VIEW.y/VIEW.k,x1:(r.width-VIEW.x)/VIEW.k,y1:(r.height-VIEW.y)/VIEW.k}}
+const FAR=.35;
+function drawVisible(){
+  const v=viewport(),w=v.x1-v.x0,h=v.y1-v.y0,far=VIEW.k<FAR;
+  RW={x0:v.x0-w,y0:v.y0-h,x1:v.x1+w,y1:v.y1+h,far};
+  const view=$("view");let s="";const kept=[];
+  for(const it of SCENE.items)if(it.x1>=RW.x0&&it.x0<=RW.x1&&it.y1>=RW.y0&&it.y0<=RW.y1){s+=far&&it.far?it.far:it.html;kept.push(it)}
+  view.innerHTML=s;
+  // the elements come back in the order of the items that made them
+  const els=view.children;BY={card:new Map(),edge:new Map(),fam:new Map()};
+  kept.forEach((it,i)=>{const el=els[i];
+    if(it.card)BY.card.set(it.card,el);
+    if(it.edge)it.edge.forEach(id=>(BY.edge.get(id)??BY.edge.set(id,[]).get(id)).push(el));
+    if(it.fam)it.fam.forEach(id=>(BY.fam.get(id)??BY.fam.set(id,[]).get(id)).push(el))});
+  $("drawn").textContent=`${kept.length} of ${SCENE.items.length} shapes in the DOM`;
+  HL=[];setHl(S.hl,true);
+}
+let BY={card:new Map(),edge:new Map(),fam:new Map()};
+function setHl(id,force){
+  if(id===S.hl&&!force)return;S.hl=id;
+  for(const el of HL)el.classList.remove("on","hl");HL=[];
+  $("svg").classList.toggle("hashl",!!id);
+  if(!id||!M.people.has(id))return;
+  const mark=(el,hl)=>{el.classList.add("on");if(hl)el.classList.add("hl");HL.push(el)};
+  for(const r of related(id)){const el=BY.card.get(r);if(el)mark(el,r===id)}
+  for(const el of BY.edge.get(id)??[])mark(el,true);
+  for(const el of BY.fam.get(id)??[])mark(el,true);
+}
+let pending=false;
+function check(){if(pending||!SCENE)return;pending=true;requestAnimationFrame(()=>{pending=false;const v=viewport();
+  if(!RW||v.x0<RW.x0||v.y0<RW.y0||v.x1>RW.x1||v.y1>RW.y1||(VIEW.k<FAR)!==RW.far)drawVisible()})}
 
 // pan and zoom
 const VIEW={x:20,y:20,k:1,w:0,h:0};
-function apply(){$("view").setAttribute("transform",`translate(${VIEW.x},${VIEW.y}) scale(${VIEW.k})`)}
+function apply(){$("view").setAttribute("transform",`translate(${VIEW.x},${VIEW.y}) scale(${VIEW.k})`);check()}
 function fit(){const r=$("canvas").getBoundingClientRect();VIEW.k=Math.min(1.4,(r.width-40)/VIEW.w,(r.height-40)/VIEW.h);
   VIEW.x=(r.width-VIEW.w*VIEW.k)/2;VIEW.y=(r.height-VIEW.h*VIEW.k)/2;apply()}
 function zoomAt(f,cx,cy){const k=Math.max(.2,Math.min(3,VIEW.k*f));VIEW.x=cx-(cx-VIEW.x)*k/VIEW.k;VIEW.y=cy-(cy-VIEW.y)*k/VIEW.k;VIEW.k=k;apply()}
@@ -722,7 +764,7 @@ document.addEventListener("mousemove",e=>{
     tip.style.left=Math.min(e.clientX+14,innerWidth-310)+"px";tip.style.top=(e.clientY+14)+"px";tip.style.opacity=1}else tip.style.opacity=0;
   if(drag)return;
   const p=e.target.closest(".card"),id=p?p.dataset.p:null;
-  if(id!==S.hl){S.hl=id;render()}
+  setHl(id)
 });
 document.addEventListener("click",e=>{
   const br=e.target.closest("[data-br]");if(br){S.focus=br.dataset.br;S.hl=null;render();fit();return}
