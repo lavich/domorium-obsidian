@@ -9,9 +9,10 @@ off, the plugin SHALL NOT offer Genealogy mode, the Index, the Evidence panel,
 the ribbon icon or the commands that open them.
 
 Turning the setting on or off SHALL take effect in every open tab and sidebar
-without restarting Obsidian. A tab's last mode, and the *Open GEDCOM files as*
-value, SHALL be kept while the setting is off and honoured again when it is
-turned on.
+without restarting Obsidian. A mode a tab was last in, and the *Open GEDCOM files
+as* value, SHALL be kept while the setting is off and honoured again when it is
+turned on; the *Open GEDCOM files as* setting SHALL stay in the settings and
+say that it applies only while the interface is on.
 
 #### Scenario: A reader who never touched the setting
 - **WHEN** the plugin is installed or updated and the setting is not changed
@@ -39,6 +40,11 @@ turned on.
 - **WHEN** a tab was in Genealogy mode, the setting was turned off and then on
 - **THEN** the tab is in Genealogy mode again, showing the record it showed
 
+#### Scenario: A tab opened while it is off
+- **WHEN** the interface is off, `curie.ged` is opened and the reader then
+  turns the interface on
+- **THEN** the tab is still in Source mode
+
 ## MODIFIED Requirements
 
 ### Requirement: A GEDCOM tab has a Genealogy mode and a Source mode
@@ -59,9 +65,11 @@ shows — the selected fact, or else the whole record — and scroll it into vie
 unless the cursor is already within those lines.
 
 Each tab SHALL remember its own mode, and its record, across closing and
-reopening the workspace. While the setting is on, a file opened anew SHALL open
-in the mode the *Open GEDCOM files as* setting names, which SHALL be shown only
-then, SHALL offer Genealogy and Source and SHALL default to Genealogy.
+reopening the workspace. A file opened anew while the interface is on SHALL open
+in the mode the *Open GEDCOM files as* setting names, which SHALL offer
+Genealogy and Source and SHALL default to Genealogy. A file opened anew while
+the interface is off SHALL be remembered as in Source mode, so that turning the
+interface on does not change the tab.
 
 #### Scenario: A file opened with the default setting
 - **WHEN** the reader has turned the Genealogy interface on, leaves *Open GEDCOM

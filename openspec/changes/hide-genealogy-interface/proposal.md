@@ -23,7 +23,9 @@ Proposed scope:
   on its own; open Index and Evidence panels are closed.
 - Turning it on shows all of that without restarting Obsidian; turning it off
   removes it the same way.
-- **Open GEDCOM files as** stays, and is shown only while the interface is on.
+- **Open GEDCOM files as** stays in the settings and applies only while the
+  interface is on; its description says so. A conditional row would need the
+  settings API of Obsidian 1.13.0, above `minAppVersion`.
 - A mode a tab was last in, and a stored `openAs`, are kept but ignored while
   the interface is off, so turning it on again finds them.
 - **BREAKING** for readers who use Genealogy mode today: after the update they
@@ -60,11 +62,13 @@ None.
 ## Impact
 
 - `src/settingsData.ts`, `src/settingDefinitions.ts`, `src/settings.ts`: the
-  setting, its parsing, its row and the conditional *Open GEDCOM files as* row.
+  setting, its parsing and its row.
 - `src/main.ts`: ribbon icon, command gating, closing panels, evidence
   placement, reacting to a settings change.
-- `src/GedcomView.ts`, `src/commands.ts`: effective mode and the header action.
+- `src/GedcomView.ts`, `src/desk/deskState.ts`, `src/commands.ts`: effective
+  mode, the header action and the mode command.
 - `src/i18n/en.json` and `src/i18n/ru.json`: the new strings in both.
-- `README.md`: the paragraph on Genealogy mode.
-- Unit tests beside those files; the harness and Playwright specs that mount
-  Genealogy mode set the setting on.
+- `README.md`: every passage that says Genealogy mode, the ribbon icon, the
+  panels or their commands are there from the start.
+- Unit tests beside those files. The browser harness renders pages directly and
+  never mounts `GedcomView`, so it and the Playwright specs are unaffected.
