@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Domorium — timeline of the whole file</title>
+<style>
+.theme-dark{
+  --accent-h:258;--accent-s:88%;--accent-l:66%;
+  --interactive-accent:hsl(var(--accent-h),var(--accent-s),var(--accent-l));--interactive-accent-hsl:var(--accent-h),var(--accent-s),var(--accent-l);
+  --text-accent:hsl(var(--accent-h),90%,76%);--text-on-accent:#fff;
+  --background-primary:#1e1e1e;--background-secondary:#262626;--background-secondary-alt:#363636;
+  --background-modifier-border:#363636;--background-modifier-hover:rgba(255,255,255,.065);--background-modifier-active-hover:hsla(var(--interactive-accent-hsl),.15);
+  --background-modifier-form-field:#191919;
+  --text-normal:#dadada;--text-muted:#a3a3a3;--text-faint:#6f6f6f;
+  --color-orange-rgb:229,181,103;--text-warning:rgb(var(--color-orange-rgb));
+  --shadow-l:0 8px 28px rgba(0,0,0,.45);--code-background:#191919;
+}
+.theme-light{
+  --accent-h:254;--accent-s:80%;--accent-l:62%;
+  --interactive-accent:hsl(var(--accent-h),var(--accent-s),var(--accent-l));--interactive-accent-hsl:var(--accent-h),var(--accent-s),var(--accent-l);
+  --text-accent:hsl(var(--accent-h),70%,55%);--text-on-accent:#fff;
+  --background-primary:#ffffff;--background-secondary:#f6f6f6;--background-secondary-alt:#ececec;
+  --background-modifier-border:#e0e0e0;--background-modifier-hover:rgba(0,0,0,.045);--background-modifier-active-hover:hsla(var(--interactive-accent-hsl),.12);
+  --background-modifier-form-field:#ffffff;
+  --text-normal:#222222;--text-muted:#5c5c5c;--text-faint:#9a9a9a;
+  --color-orange-rgb:168,107,0;--text-warning:rgb(var(--color-orange-rgb));
+  --shadow-l:0 8px 28px rgba(0,0,0,.14);--code-background:#fafafa;
+}
+:root{--font-interface:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;font-family:var(--font-interface);-webkit-font-smoothing:antialiased;background:#e9e9e9}
+button,input{font:inherit;color:inherit}
+.stage{padding:20px 24px 28px;color:var(--text-normal);max-width:1400px;margin:0 auto}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:13px;color:#555}
+.toolbar b{color:#222}
+.right-tools{display:flex;gap:10px;align-items:center}
+.file{cursor:pointer;border:1px solid #ccc;border-radius:6px;padding:3px 10px;background:#fff;color:#222}
+.file input{display:none}
+.seg{display:inline-flex;background:var(--background-secondary);border-radius:6px;padding:2px;gap:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:4px;font-size:12px;color:var(--text-muted);cursor:pointer}
+.seg button.on{background:var(--background-primary);color:var(--text-normal);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+
+.app{color:var(--text-normal);background:var(--background-primary);border-radius:10px;box-shadow:var(--shadow-l);overflow:hidden;border:1px solid var(--background-modifier-border)}
+.tabbar{display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border);font-size:13px}
+.tabbar .tab{padding:5px 12px;border-radius:6px 6px 0 0;background:var(--background-primary);color:var(--text-normal);align-self:flex-end;border:1px solid var(--background-modifier-border);border-bottom:0}
+.tabbar .crumbs{color:var(--text-muted);font-size:12px;margin-left:6px}
+.head{padding:16px 18px 6px}
+.head h1{margin:0;font-size:20px;font-weight:600}
+.head p{margin:2px 0 0;color:var(--text-muted);font-size:13px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px 18px 12px}
+.chip{font-size:12px;border:1px solid var(--background-modifier-border);border-radius:99px;padding:2px 10px;background:transparent;color:var(--text-normal);cursor:pointer}
+.chip:hover{background:var(--background-modifier-hover)}
+.chip[aria-pressed=true]{background:var(--interactive-accent);color:var(--text-on-accent);border-color:transparent}
+.chip .n{opacity:.65;margin-left:4px}
+.sep{width:1px;height:18px;background:var(--background-modifier-border);margin:0 4px}
+.tools label{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px}
+.tools input[type=search]{font-size:13px;border:1px solid var(--background-modifier-border);border-radius:6px;padding:3px 9px;background:var(--background-modifier-form-field);min-width:200px}
+
+.board{display:grid;grid-template-columns:210px 1fr;border-top:1px solid var(--background-modifier-border);max-height:760px;overflow:auto;position:relative}
+.names{position:sticky;left:0;z-index:2;background:var(--background-primary);border-right:1px solid var(--background-modifier-border)}
+.axis-pad{position:sticky;top:0;z-index:3;height:26px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border)}
+.nm,.gen{display:flex;align-items:center;padding:0 10px;white-space:nowrap;overflow:hidden}
+.nm{height:var(--row);cursor:pointer;font-size:13px;gap:6px}
+.nm:hover,.nm.hl{background:var(--background-modifier-hover)}
+.nm .yrs{color:var(--text-faint);font-size:11px;margin-left:auto;font-variant-numeric:tabular-nums}
+.nm .nmtx{overflow:hidden;text-overflow:ellipsis}
+.gen{height:var(--gen);font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;background:var(--background-secondary)}
+.plot{position:relative}
+.axis{position:sticky;top:0;z-index:1;height:26px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border)}
+svg{display:block}
+svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)}
+.gl{stroke:var(--background-modifier-border)}
+.gl.minor{opacity:.5}
+.genbg{fill:var(--background-secondary)}
+.rowhl{fill:var(--background-modifier-hover)}
+.bar{opacity:.35}
+.bar.M{fill:hsl(210,70%,55%)}.bar.F{fill:hsl(150,45%,45%)}.bar.U{fill:var(--text-faint)}
+.bar.hl{opacity:.7}
+.mk{cursor:pointer}
+.mk circle,.mk rect{stroke:var(--background-primary);stroke-width:1.5}
+.mk.BIRT circle{fill:hsl(150,45%,45%)}
+.mk.DEAT circle{fill:var(--text-normal)}
+.mk.MARR circle{fill:hsl(var(--accent-h),var(--accent-s),var(--accent-l))}
+.mk.OTHER rect{fill:hsl(35,80%,55%)}
+.mk.approx circle,.mk.approx rect{fill:var(--background-primary)!important;stroke:var(--text-muted);stroke-dasharray:2 1.5}
+.mk:hover circle{r:6.5}
+.marr{stroke:hsl(var(--accent-h),var(--accent-s),var(--accent-l));stroke-width:2;opacity:.75}
+.kin{stroke:var(--text-faint);fill:none;stroke-dasharray:3 3}
+.kin.hl{stroke:var(--text-accent);stroke-dasharray:none;stroke-width:1.5}
+.dim{opacity:.18}
+.tip{position:fixed;pointer-events:none;z-index:10;background:var(--background-primary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow-l);opacity:0;transition:opacity .1s;max-width:300px}
+.tip b{display:block}.tip .m{color:var(--text-muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 18px;border-top:1px solid var(--background-modifier-border);font-size:12px;color:var(--text-muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.undated{padding:4px 18px 14px;font-size:12px;color:var(--text-muted)}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--text-normal);color:var(--background-primary);font-size:12px;padding:6px 12px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:11}
+.toast.on{opacity:.92}
+.notes{color:#555;font-size:13.5px;line-height:1.6;max-width:72ch;margin-top:22px}
+.notes h4{margin:0 0 8px;font-size:14px;color:#222}
+.notes ul{padding-left:20px;margin:0 0 16px}
+.notes li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="toolbar">
+    <span>Timeline of the whole file. The mockup reads <b>demo-vault/curie.ged</b> itself (an embedded copy); open any other file to see it on real data.</span>
+    <div class="right-tools">
+      <label class="file">Open another .ged<input type="file" id="file" accept=".ged,.gedcom"></label>
+      <div class="seg" role="group" aria-label="Theme"><button data-theme="dark">Dark</button><button class="on" data-theme="light">Light</button></div>
+    </div>
+  </div>
+  <div class="app theme-light" id="app">
+    <div class="tabbar"><span class="tab" id="tabname">curie.ged</span><span class="crumbs">Genealogy · Timeline</span></div>
+    <div class="head"><h1 id="title"></h1><p id="sub"></p></div>
+    <div class="tools">
+      <button class="chip" aria-pressed="true" data-t="BIRT">Births<span class="n" id="nBIRT"></span></button>
+      <button class="chip" aria-pressed="true" data-t="MARR">Marriages<span class="n" id="nMARR"></span></button>
+      <button class="chip" aria-pressed="true" data-t="DEAT">Deaths<span class="n" id="nDEAT"></span></button>
+      <button class="chip" aria-pressed="false" data-t="OTHER">Other events<span class="n" id="nOTHER"></span></button>
+      <span class="sep"></span>
+      <button class="chip" aria-pressed="true" id="kin">Parent → child</button>
+      <span class="sep"></span>
+      <label>Zoom <input type="range" id="zoom" min="2" max="16" value="6"></label>
+      <input type="search" id="q" placeholder="Find a person…">
+    </div>
+    <div class="board" id="board">
+      <div class="names" id="names"></div>
+      <div class="plot"><svg class="axis" id="axis"></svg><svg id="svg"></svg></div>
+    </div>
+    <div class="undated" id="undated"></div>
+    <div class="legend">
+      <span><i style="background:hsl(210,70%,55%);opacity:.6"></i>life, men</span>
+      <span><i style="background:hsl(150,45%,45%);opacity:.6"></i>life, women</span>
+      <span><i style="background:hsl(150,45%,45%)"></i>birth</span>
+      <span><i style="background:hsl(var(--accent-h),var(--accent-s),var(--accent-l))"></i>marriage</span>
+      <span><i style="background:var(--text-normal)"></i>death</span>
+      <span><i style="background:hsl(35,80%,55%);border-radius:2px"></i>other event</span>
+      <span><i style="border:1.5px dashed var(--text-muted)"></i>year only, or about</span>
+      <span>– – parent → child</span>
+    </div>
+  </div>
+  <div class="notes">
+    <h4>What to try</h4>
+    <ul>
+      <li>Hover a person: their row, their parents and children light up, everyone else fades.</li>
+      <li>Hover a point for its date as the file writes it, and its place. Click it: in the plugin that is Show in source.</li>
+      <li>Click a name: in the plugin that opens the person's page.</li>
+      <li>Zoom, scroll sideways; names and the year axis stay in place.</li>
+    </ul>
+    <h4>Open questions</h4>
+    <ul>
+      <li>Where it lives: a page of Genealogy mode, a tab of the index, or its own view.</li>
+      <li>How rows are ordered for a file of thousands: by generation as here, by family, or only one person's branch.</li>
+    </ul>
+  </div>
+</div>
+<div class="tip" id="tip"></div><div class="toast" id="toast"></div>
+<script type="text/plain" id="ged">0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SOUR DOMORIUM
+2 NAME Domorium demo vault
+2 VERS 1.7.0
+1 DATE 14 AUG 2026
+1 SUBM @U1@
+1 NOTE Four generations of the Skłodowski, Curie and Joliot families, compiled
+2 CONT from public sources for demonstration. Two people in the last generation
+2 CONT are living, and carry a year of birth and nothing else.
+0 @U1@ SUBM
+1 NAME Domorium
+1 WWW https://domorium.com/
+0 @I1@ INDI
+1 NAME Marie /Skłodowska-Curie/
+2 GIVN Marie
+2 SURN Skłodowska-Curie
+1 NAME Maria Salomea /Skłodowska/
+2 TYPE BIRTH
+1 SEX F
+1 BIRT
+2 DATE 7 NOV 1867
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 4 JUL 1934
+2 PLAC Passy, Haute-Savoie, France
+1 OCCU Physicist and chemist
+1 FAMC @F1@
+1 FAMS @F3@
+1 OBJE @O1@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 30
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Marie, on the left
+1 OBJE @O6@
+1 SNOTE @N1@
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1911
+0 @I2@ INDI
+1 NAME Pierre /Curie/
+2 GIVN Pierre
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 15 MAY 1859
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 APR 1906
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMC @F2@
+1 FAMS @F3@
+1 OBJE @O2@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 175
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Pierre, in the middle
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903
+0 @I3@ INDI
+1 NAME Władysław /Skłodowski/
+2 GIVN Władysław
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1832
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 14 MAY 1902
+2 PLAC Warsaw, Congress Poland
+1 OCCU Teacher of mathematics and physics
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I4@ INDI
+1 NAME Bronisława /Boguska/
+2 GIVN Bronisława
+2 SURN Boguska
+1 SEX F
+1 BIRT
+2 DATE 1835
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 9 MAY 1878
+2 PLAC Warsaw, Congress Poland
+1 OCCU Headmistress
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I5@ INDI
+1 NAME Zofia /Skłodowska/
+2 GIVN Zofia
+2 SURN Skłodowska
+1 SEX F
+1 BIRT
+2 DATE 1862
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1876
+2 PLAC Warsaw, Congress Poland
+1 FAMC @F1@
+0 @I6@ INDI
+1 NAME Józef /Skłodowski/
+2 GIVN Józef
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1863
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1937
+1 OCCU Physician
+1 FAMC @F1@
+0 @I7@ INDI
+1 NAME Bronisława /Dłuska/
+2 GIVN Bronisława
+2 SURN Dłuska
+1 SEX F
+1 BIRT
+2 DATE 1865
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1939
+1 OCCU Physician
+1 FAMC @F1@
+0 @I8@ INDI
+1 NAME Helena /Szalay/
+2 GIVN Helena
+2 SURN Szalay
+1 SEX F
+1 BIRT
+2 DATE 1866
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1961
+1 OCCU Teacher
+1 FAMC @F1@
+0 @I9@ INDI
+1 NAME Eugène /Curie/
+2 GIVN Eugène
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 28 AUG 1827
+2 PLAC Mulhouse, France
+1 DEAT
+2 DATE 25 FEB 1910
+2 PLAC Sceaux, France
+1 OCCU Physician
+1 FAMS @F2@
+0 @I10@ INDI
+1 NAME Sophie-Claire /Depouilly/
+2 GIVN Sophie-Claire
+2 SURN Depouilly
+1 SEX F
+1 BIRT
+2 DATE 1832
+1 DEAT
+2 DATE 1897
+1 FAMS @F2@
+0 @I11@ INDI
+1 NAME Jacques /Curie/
+2 GIVN Jacques
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 29 OCT 1855
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 FEB 1941
+2 PLAC Montpellier, France
+1 OCCU Physicist
+1 FAMC @F2@
+0 @I12@ INDI
+1 NAME Irène /Joliot-Curie/
+2 GIVN Irène
+2 SURN Joliot-Curie
+1 SEX F
+1 BIRT
+2 DATE 12 SEP 1897
+2 PLAC Paris, France
+1 DEAT
+2 DATE 17 MAR 1956
+2 PLAC Paris, France
+1 OCCU Physicist and chemist
+1 FAMC @F3@
+1 FAMS @F4@
+1 OBJE @O3@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935, shared with Frédéric Joliot
+0 @I13@ INDI
+1 NAME Ève /Curie/
+2 GIVN Ève
+2 SURN Curie
+1 SEX F
+1 BIRT
+2 DATE 6 DEC 1904
+2 PLAC Paris, France
+1 DEAT
+2 DATE 22 OCT 2007
+2 PLAC New York, New York, United States
+1 OCCU Writer and pianist
+1 FAMC @F3@
+1 FAMS @F5@
+1 SNOTE @N2@
+0 @I14@ INDI
+1 NAME Frédéric /Joliot/
+2 GIVN Frédéric
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 19 MAR 1900
+2 PLAC Paris, France
+1 DEAT
+2 DATE 14 AUG 1958
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMS @F4@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935
+0 @I15@ INDI
+1 NAME Henry Richardson /Labouisse/
+2 GIVN Henry Richardson
+2 SURN Labouisse
+1 SEX M
+1 BIRT
+2 DATE 11 FEB 1904
+2 PLAC New Orleans, Louisiana, United States
+1 DEAT
+2 DATE 25 MAR 1987
+2 PLAC New York, New York, United States
+1 OCCU Diplomat
+1 FAMS @F5@
+0 @I16@ INDI
+1 NAME Hélène /Langevin-Joliot/
+2 GIVN Hélène
+2 SURN Langevin-Joliot
+1 SEX F
+1 BIRT
+2 DATE 1927
+1 OCCU Nuclear physicist
+1 FAMC @F4@
+0 @I17@ INDI
+1 NAME Pierre /Joliot/
+2 GIVN Pierre
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 1932
+1 OCCU Biologist
+1 FAMC @F4@
+0 @F1@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 CHIL @I5@
+1 CHIL @I6@
+1 CHIL @I7@
+1 CHIL @I8@
+1 CHIL @I1@
+1 MARR
+2 DATE 1860
+2 PLAC Warsaw, Congress Poland
+0 @F2@ FAM
+1 HUSB @I9@
+1 WIFE @I10@
+1 CHIL @I11@
+1 CHIL @I2@
+0 @F3@ FAM
+1 HUSB @I2@
+1 WIFE @I1@
+1 CHIL @I12@
+1 CHIL @I13@
+1 MARR
+2 DATE 26 JUL 1895
+2 PLAC Sceaux, France
+0 @F4@ FAM
+1 HUSB @I14@
+1 WIFE @I12@
+1 CHIL @I16@
+1 CHIL @I17@
+1 MARR
+2 DATE 9 OCT 1926
+2 PLAC Paris, France
+0 @F5@ FAM
+1 HUSB @I15@
+1 WIFE @I13@
+1 MARR
+2 DATE 19 NOV 1954
+2 PLAC New York, New York, United States
+0 @O1@ OBJE
+1 FILE Media/marie-sklodowska-curie.svg
+2 FORM image/svg+xml
+2 TITL Marie Skłodowska-Curie
+0 @O2@ OBJE
+1 FILE Media/pierre-curie.svg
+2 FORM image/svg+xml
+2 TITL Pierre Curie
+0 @O3@ OBJE
+1 FILE Media/irene-joliot-curie.svg
+2 FORM image/svg+xml
+2 TITL Irène Joliot-Curie
+0 @O5@ OBJE
+1 FILE Media/curie-family-1908.svg
+2 FORM image/svg+xml
+2 TITL The Curie family, about 1908
+0 @O6@ OBJE
+1 FILE https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/500px-Marie_Curie_c._1920s.jpg
+2 FORM image/jpeg
+2 TITL A portrait the plugin fetches only when asked
+0 @O7@ OBJE
+1 FILE Media/lost-daguerreotype.jpg
+2 FORM image/jpeg
+2 TITL A plate nobody can find
+0 @S1@ SOUR
+1 TITL The Nobel Prize in Physics 1903
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+1 OBJE @O4@
+0 @S2@ SOUR
+1 TITL Parish registers of Warsaw
+1 REPO @R2@
+0 @S3@ SOUR
+1 TITL The Nobel Prize in Chemistry 1911 and 1935
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+0 @O4@ OBJE
+1 FILE Sources/nobel-diploma-1903.svg
+2 FORM image/svg+xml
+2 TITL Diploma of the 1903 prize
+0 @R1@ REPO
+1 NAME Nobel Prize Outreach
+1 WWW https://www.nobelprize.org/
+0 @R2@ REPO
+1 NAME State Archive in Warsaw
+1 ADDR Krzywe Koło 7
+2 CITY Warsaw
+2 CTRY Poland
+0 @N1@ SNOTE The only person to have won a Nobel Prize in two different sciences:
+1 CONT physics in 1903 and chemistry in 1911.
+0 @N2@ SNOTE Wrote Madame Curie, the biography of her mother, in 1937. Her husband
+1 CONT accepted the Nobel Peace Prize for UNICEF in 1965.
+0 TRLR</script>
+<script>
+const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const MONTH=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const LABEL={BIRT:"Birth",CHR:"Christening",BAPM:"Baptism",DEAT:"Death",BURI:"Burial",CREM:"Cremation",ADOP:"Adoption",RESI:"Residence",EDUC:"Education",GRAD:"Graduation",RETI:"Retirement",EMIG:"Emigration",IMMI:"Immigration",NATU:"Naturalization",CENS:"Census",PROB:"Probate",WILL:"Will",OCCU:"Occupation",RELI:"Religion",TITL:"Title",DSCR:"Description",NATI:"Nationality",EVEN:"Event",FACT:"Fact",MARR:"Marriage",DIV:"Divorce",ENGA:"Engagement",MARB:"Marriage banns",MARC:"Marriage contract"};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const plural=(n,one,other)=>n===1?one:other;
+const short=pl=>(pl||"").split(",")[0].trim();
+
+function parseGedcom(text){
+  const root={children:[],level:-1};const stack=[root];
+  text.split(/\r?\n/).forEach((ln,i)=>{
+    const m=ln.replace(/^﻿/,"").match(/^\s*(\d+)\s+(?:(@[^@\s]+@)\s+)?([A-Za-z0-9_]+)(?: (.*))?$/);if(!m)return;
+    const lvl=+m[1];const n={level:lvl,xref:m[2]||null,tag:m[3].toUpperCase(),value:m[4]??"",children:[],line:i+1,last:i+1};
+    for(let k=1;k<=Math.min(lvl,stack.length-1);k++)stack[k].last=i+1;
+    if(n.tag==="CONT"||n.tag==="CONC"){const p=stack[lvl];if(p)p.value+=(n.tag==="CONT"?"\n":"")+n.value;return}
+    const parent=stack[lvl];if(!parent)return;parent.children.push(n);stack.length=lvl+1;stack[lvl+1]=n});
+  return root;
+}
+const kid=(n,t)=>n?.children.find(c=>c.tag===t);
+const kids=(n,t)=>n?n.children.filter(c=>c.tag===t):[];
+const val=(n,t)=>kid(n,t)?.value||"";
+
+function one(s){
+  const m=s.match(/^(?:(\d{1,2}) )?(?:([A-Z]{3}) )?(\d{3,4})(?: BCE| B\.C\.)?$/);if(!m)return null;
+  const d=m[1]?+m[1]:null,mo=m[2]?MON.indexOf(m[2]):-1,y=+m[3];
+  const text=d&&mo>=0?`${d} ${MONTH[mo]} ${y}`:mo>=0?`${MONTH[mo]} ${y}`:`${y}`;
+  return{text,year:y,key:y*10000+(mo+1)*100+(d||0),exact:!!d&&mo>=0,month:mo,day:d};
+}
+function parseDate(raw){
+  if(!raw)return null;
+  const s=raw.trim().toUpperCase().replace(/^@#D[A-Z ]+@ /,"").replace(/^(GREGORIAN|JULIAN|FRENCH_R|HEBREW) /,"");
+  let m;
+  if((m=s.match(/^BET (.+) AND (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`between ${a.text} and ${b.text}`,exact:false,approx:true}}
+  if((m=s.match(/^FROM (.+) TO (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`${a.text} — ${b.text}`,exact:false,approx:true}}
+  if((m=s.match(/^(ABT|CAL|EST|BEF|AFT|FROM|TO) (.+)$/))){const a=one(m[2]);const p={ABT:"about",CAL:"about",EST:"about",BEF:"before",AFT:"after",FROM:"from",TO:"to"}[m[1]];if(a)return{...a,text:`${p} ${a.text}`,exact:false,approx:true}}
+  return one(s)||{text:raw,year:null,key:null,exact:false};
+}
+function age(b,d){
+  if(!b?.year||!d?.year)return"";
+  let n=d.year-b.year;const exact=b.exact&&d.exact;
+  if(exact&&(d.month*100+d.day)<(b.month*100+b.day))n--;
+  if(n<0)return"";
+  return`${exact?"":"≈"}${n} ${plural(n,"year","years")}`;
+}
+
+
+const NOW=new Date().getFullYear();
+const S={on:{BIRT:true,MARR:true,DEAT:true,OTHER:false},kin:true,zoom:6,q:"",hl:null};
+const ROW=30,GEN=24;
+const $=id=>document.getElementById(id);
+const toast=s=>{const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("on"),1500)};
+let M;
+
+function build(text,name){
+  const tree=parseGedcom(text);const recs=new Map();
+  tree.children.forEach(r=>r.xref&&recs.set(r.xref,r));
+  const ev=n=>({tag:n.tag,label:n.tag==="EVEN"||n.tag==="FACT"?(val(n,"TYPE")||LABEL[n.tag]):LABEL[n.tag],value:n.value&&n.value!=="Y"?n.value:"",date:parseDate(val(n,"DATE")),place:val(n,"PLAC"),line:n.line});
+  const people=new Map(),fams=new Map();
+  for(const r of recs.values()){
+    if(r.tag==="INDI"){
+      const n=kid(r,"NAME"),m=n?.value.match(/^(.*?)\/(.*?)\/(.*)$/);
+      const nm=n?(m?[m[1].trim(),m[2].trim(),m[3].trim()].filter(Boolean).join(" "):n.value.trim()):"Unnamed";
+      const events=r.children.filter(c=>LABEL[c.tag]).map(ev);
+      people.set(r.xref,{id:r.xref,name:nm||"Unnamed",sex:val(r,"SEX")||"U",events,
+        birth:events.find(e=>e.tag==="BIRT")||events.find(e=>e.tag==="CHR"||e.tag==="BAPM"),
+        death:events.find(e=>e.tag==="DEAT")||events.find(e=>e.tag==="BURI"),
+        famc:kids(r,"FAMC").map(x=>x.value),fams:kids(r,"FAMS").map(x=>x.value)});
+    }else if(r.tag==="FAM"){
+      fams.set(r.xref,{id:r.xref,husb:val(r,"HUSB"),wife:val(r,"WIFE"),chil:kids(r,"CHIL").map(x=>x.value),events:r.children.filter(c=>LABEL[c.tag]).map(ev)});
+    }
+  }
+  // generations: a child is one below its lowest-placed parent; a spouse who married in shares the generation
+  const gen=new Map();
+  const parentsOf=p=>p.famc.map(f=>fams.get(f)).filter(Boolean).flatMap(f=>[f.husb,f.wife]).filter(id=>people.has(id));
+  const depth=(id,seen=new Set())=>{if(gen.has(id))return gen.get(id);if(seen.has(id))return 0;seen.add(id);
+    const ps=parentsOf(people.get(id));const g=ps.length?Math.max(...ps.map(x=>depth(x,seen)))+1:0;gen.set(id,g);return g};
+  for(const id of people.keys())depth(id);
+  for(let pass=0;pass<3;pass++)for(const f of fams.values()){const a=f.husb,b=f.wife;if(people.has(a)&&people.has(b)){
+    const pa=parentsOf(people.get(a)).length,pb=parentsOf(people.get(b)).length;
+    if(!pa&&pb)gen.set(a,gen.get(b));else if(!pb&&pa)gen.set(b,gen.get(a));else{const g=Math.max(gen.get(a),gen.get(b));gen.set(a,g);gen.set(b,g)}}}
+  // rows: a generation follows the order of its parents' rows; siblings stay together, a spouse who married in sits
+  // beside the one they married, and a sibling married into the neighbouring family is put on the edge facing it
+  const by=p=>p.birth?.date?.year??p.death?.date?.year??9999;
+  const groups=[];
+  for(const [id,g] of gen)(groups[g]??=[]).push(people.get(id));
+  const rows=[],index=new Map();
+  const spouses=p=>p.fams.map(f=>fams.get(f)).filter(Boolean).map(f=>f.husb===p.id?f.wife:f.husb).filter(id=>people.has(id));
+  const marriedIn=id=>!parentsOf(people.get(id)).length&&spouses(people.get(id)).some(s=>parentsOf(people.get(s)).length);
+  const childYears=p=>p.fams.map(f=>fams.get(f)).filter(Boolean).flatMap(f=>f.chil).map(c=>people.get(c)).filter(Boolean).map(by);
+  groups.forEach((list,g)=>{
+    if(!list)return;
+    const units=new Map();
+    for(const p of list){if(marriedIn(p.id)&&spouses(p).some(s=>gen.get(s)===g))continue;
+      const key=p.famc[0]&&fams.has(p.famc[0])?p.famc[0]:"self:"+p.id;(units.get(key)??units.set(key,[]).get(key)).push(p)}
+    const rank=([key,ps])=>{
+      if(key.startsWith("self:")){const p=ps[0],sp=spouses(p),cy=[...childYears(p),...sp.flatMap(s=>childYears(people.get(s)))];
+        const placedSpouse=sp.map(s=>index.get(s)).filter(i=>i!==undefined);
+        return placedSpouse.length?Math.min(...placedSpouse):g===0?(cy.length?Math.min(...cy):by(p))-10000:by(p)}
+      const f=fams.get(key),pi=[f.husb,f.wife].map(id=>index.get(id)).filter(i=>i!==undefined);
+      return pi.length?Math.min(...pi):Math.min(...ps.map(by))};
+    const ordered=[...units].sort((a,b)=>rank(a)-rank(b));
+    rows.push({gen:g});
+    ordered.forEach(([key,ps],ui)=>{
+      const inUnit=new Set(ps.map(p=>p.id));
+      const before=new Set(ordered.slice(0,ui).flatMap(([,q])=>q.map(p=>p.id)));
+      const after=new Set(ordered.slice(ui+1).flatMap(([,q])=>q.map(p=>p.id)));
+      const side=p=>spouses(p).some(s=>before.has(s))?-1:spouses(p).some(s=>after.has(s))?1:0;
+      ps.sort((a,b)=>side(a)-side(b)||by(a)-by(b));
+      for(const p of ps){index.set(p.id,rows.length);rows.push({p});
+        for(const s of spouses(p))if(!inUnit.has(s)&&!index.has(s)&&gen.get(s)===g&&marriedIn(s)){index.set(s,rows.length);rows.push({p:people.get(s)})}}
+    });
+    for(const p of list)if(!index.has(p.id)){index.set(p.id,rows.length);rows.push({p})}
+  });
+  return{name,people,fams,rows,gen};
+}
+
+const cat=t=>t==="BIRT"||t==="CHR"||t==="BAPM"?"BIRT":t==="DEAT"||t==="BURI"||t==="CREM"?"DEAT":t==="MARR"?"MARR":"OTHER";
+const span=p=>{
+  const ys=p.events.map(e=>e.date?.year).filter(Boolean);
+  const b=p.birth?.date?.year??(ys.length?Math.min(...ys):null);
+  if(b==null)return null;
+  const d=p.death?.date?.year??null;
+  return{b,d,open:d==null,end:d??Math.min(NOW,b+100)};
+};
+
+function layout(){
+  let y=0;const pos=new Map(),bands=[];
+  for(const r of M.rows){if(r.gen!==undefined){bands.push({g:r.gen,y});y+=GEN}else{pos.set(r.p.id,y+ROW/2);y+=ROW}}
+  const spans=[...M.people.values()].map(span).filter(Boolean);
+  const famYears=[...M.fams.values()].flatMap(f=>f.events.map(e=>e.date?.year)).filter(Boolean);
+  const lo=Math.floor((Math.min(...spans.map(s=>s.b),...famYears)-5)/10)*10;
+  const hi=Math.ceil((Math.max(...spans.map(s=>s.end),...famYears)+5)/10)*10;
+  return{pos,bands,H:y,lo,hi};
+}
+
+function related(id){
+  const p=M.people.get(id),s=new Set([id]);
+  p.famc.map(f=>M.fams.get(f)).filter(Boolean).forEach(f=>{s.add(f.husb);s.add(f.wife)});
+  p.fams.map(f=>M.fams.get(f)).filter(Boolean).forEach(f=>{s.add(f.husb);s.add(f.wife);f.chil.forEach(c=>s.add(c))});
+  return s;
+}
+
+function render(){
+  const L=layout(),k=S.zoom,x=y=>(y-L.lo)*k+12,W=(L.hi-L.lo)*k+24;
+  const q=S.q.toLowerCase(),match=p=>!q||p.name.toLowerCase().includes(q);
+  const rel=S.hl?related(S.hl):null;
+  const dim=id=>(rel&&!rel.has(id))||(q&&!match(M.people.get(id)))?" dim":"";
+  document.documentElement.style.setProperty("--row",ROW+"px");document.documentElement.style.setProperty("--gen",GEN+"px");
+  // names
+  let nh=`<div class="axis-pad"></div>`;
+  for(const r of M.rows){
+    if(r.gen!==undefined){nh+=`<div class="gen">Generation ${r.gen+1}</div>`;continue}
+    const p=r.p,s=span(p);
+    nh+=`<div class="nm${S.hl===p.id?" hl":""}${dim(p.id)}" data-p="${p.id}" title="${esc(p.name)}"><span class="nmtx">${esc(p.name)}</span><span class="yrs">${s?`${s.b}–${s.d??""}`:""}</span></div>`;
+  }
+  $("names").innerHTML=nh;
+  // axis
+  const step=k<4?50:k<8?20:10;
+  let ax="";for(let y=Math.ceil(L.lo/step)*step;y<=L.hi;y+=step)ax+=`<text x="${x(y)}" y="17" text-anchor="middle">${y}</text>`;
+  $("axis").setAttribute("width",W);$("axis").setAttribute("height",26);$("axis").innerHTML=ax;
+  // plot
+  let s="";
+  for(const b of L.bands)s+=`<rect class="genbg" x="0" y="${b.y}" width="${W}" height="${GEN}"/>`;
+  for(let y=L.lo;y<=L.hi;y+=10)s+=`<line class="gl${y%step?" minor":""}" x1="${x(y)}" x2="${x(y)}" y1="0" y2="${L.H}"/>`;
+  if(S.hl)s+=`<rect class="rowhl" x="0" y="${L.pos.get(S.hl)-ROW/2}" width="${W}" height="${ROW}"/>`;
+  const nowX=x(NOW);if(NOW<=L.hi)s+=`<line x1="${nowX}" x2="${nowX}" y1="0" y2="${L.H}" stroke="var(--text-accent)" stroke-dasharray="2 4" opacity=".6"/>`;
+  for(const p of M.people.values()){const sp=span(p);if(!sp)continue;const cy=L.pos.get(p.id);
+    const sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
+    s+=`<rect class="bar ${sx}${S.hl===p.id?" hl":""}${dim(p.id)}" x="${x(sp.b)}" y="${cy-6}" width="${Math.max(2,x(sp.end)-x(sp.b))}" height="12" rx="4" ${sp.open?'fill-opacity=".5" mask="url(#fadeR)"':""}/>`}
+  if(S.kin)for(const f of M.fams.values()){const par=[f.wife,f.husb].filter(id=>L.pos.has(id));if(!par.length)continue;
+    for(const c of f.chil){const ch=M.people.get(c),sp=ch&&span(ch);if(!sp||!L.pos.has(c))continue;
+      const from=L.pos.get(par[0]),to=L.pos.get(c),hl=S.hl&&(S.hl===c||par.includes(S.hl));
+      s+=`<path class="kin${hl?" hl":""}${S.hl&&!hl?" dim":""}" marker-end="url(#ah)" d="M${x(sp.b)} ${from+(to>from?7:-7)} V${to+(to>from?-8:8)}"/>`}}
+  for(const f of M.fams.values())for(const e of f.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
+    const ids=[f.husb,f.wife].filter(id=>L.pos.has(id));const ys=ids.map(id=>L.pos.get(id));
+    const who=ids.map(id=>M.people.get(id).name).join(" & ");const d=ids.every(id=>dim(id))?" dim":"";
+    if(c==="MARR"&&ys.length==2)s+=`<line class="marr${d}" x1="${x(e.date.year)}" x2="${x(e.date.year)}" y1="${Math.min(...ys)}" y2="${Math.max(...ys)}"/>`;
+    ids.forEach(id=>s+=mark(e,c,x(e.date.year),L.pos.get(id),who,id,d))}
+  for(const p of M.people.values()){if(!L.pos.has(p.id))continue;for(const e of p.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
+    s+=mark(e,c,x(e.date.year),L.pos.get(p.id),p.name,p.id,dim(p.id))}}
+  const svg=$("svg");svg.setAttribute("width",W);svg.setAttribute("height",L.H);
+  svg.innerHTML=`<defs><marker id="ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z" fill="var(--text-faint)"/></marker>
+  <linearGradient id="fadeG"><stop offset=".6" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <mask id="fadeR" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#fadeG)"/></mask></defs>`+s;
+  // header
+  const evs=[...M.people.values()].flatMap(p=>p.events).concat([...M.fams.values()].flatMap(f=>f.events));
+  const dated=evs.filter(e=>e.date?.year),und=evs.filter(e=>!e.date?.year);
+  for(const c of ["BIRT","MARR","DEAT","OTHER"])$("n"+c).textContent=dated.filter(e=>cat(e.tag)===c).length;
+  const spans=[...M.people.values()].map(span).filter(Boolean);
+  $("title").textContent="Timeline of "+M.name;$("tabname").textContent=M.name;
+  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${dated.length} dated events, ${L.lo+5>0?Math.min(...dated.map(e=>e.date.year)):""}–${Math.max(...dated.map(e=>e.date.year))}`;
+  const noYear=[...M.people.values()].filter(p=>!span(p));
+  $("undated").innerHTML=(und.length?`${und.length} events without a year are not on the line: ${[...new Set(und.map(e=>e.label))].join(", ").toLowerCase()}.`:"")+(noYear.length?` ${noYear.length} people have no year at all: ${noYear.map(p=>esc(p.name)).join(", ")}.`:"");
+}
+function mark(e,c,x,y,who,id,d){
+  const approx=!e.date.exact||e.date.approx;
+  const attrs=`class="mk ${c}${approx?" approx":""}${d}" data-p="${id}" data-w="${esc(e.label+(e.value?": "+e.value:"")+" · "+who)}" data-d="${esc(e.date.text)}" data-pl="${esc(e.place)}" data-l="${e.line}"`;
+  return c==="OTHER"?`<g ${attrs}><rect x="${x-4}" y="${y-4}" width="8" height="8" rx="1.5"/></g>`:`<g ${attrs}><circle cx="${x}" cy="${y}" r="4.5"/></g>`;
+}
+
+const tip=$("tip");
+document.addEventListener("mousemove",e=>{
+  const m=e.target.closest(".mk");
+  if(m){tip.innerHTML=`<b>${m.dataset.w}</b>${m.dataset.d}${m.dataset.pl?` <span class="m">· ${m.dataset.pl}</span>`:""}`;
+    tip.style.left=Math.min(e.clientX+14,innerWidth-310)+"px";tip.style.top=(e.clientY+14)+"px";tip.style.opacity=1}else tip.style.opacity=0;
+  const p=e.target.closest("[data-p]"),id=p?p.dataset.p:null;
+  if(id!==S.hl&&(id||!e.target.closest(".board"))){S.hl=id;render()}
+});
+$("board").addEventListener("mouseleave",()=>{S.hl=null;render()});
+document.addEventListener("click",e=>{
+  const c=e.target.closest(".chip");
+  if(c){if(c.id==="kin"){S.kin=!S.kin;c.setAttribute("aria-pressed",S.kin)}else{const t=c.dataset.t;S.on[t]=!S.on[t];c.setAttribute("aria-pressed",S.on[t])}render();return}
+  const m=e.target.closest(".mk");if(m){toast(`Show in source: line ${m.dataset.l}`);return}
+  const p=e.target.closest("[data-p]");if(p){toast("Opens the page of "+M.people.get(p.dataset.p).name)}
+  const b=e.target.closest(".seg button");
+  if(b){document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));const a=$("app");a.classList.toggle("theme-dark",b.dataset.theme==="dark");a.classList.toggle("theme-light",b.dataset.theme==="light")}
+});
+$("zoom").addEventListener("input",e=>{S.zoom=+e.target.value;render()});
+$("q").addEventListener("input",e=>{S.q=e.target.value;render()});
+function load(text,name){M=build(text,name);render()}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(f)load(await f.text(),f.name)});
+load($("ged").textContent,"curie.ged");
+</script>
+</body>
+</html>
