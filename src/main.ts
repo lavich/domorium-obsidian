@@ -228,6 +228,9 @@ export default class GedcomPlugin
     );
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
+        if (!this.settings.genealogyInterface) {
+          this.syncInterface();
+        }
         if (this.followedView && !this.isOpen(this.followedView)) {
           this.followedView = null;
           this.redrawDesk();
@@ -341,6 +344,8 @@ export default class GedcomPlugin
     }
     this.ribbonIcon?.remove();
     this.ribbonIcon = undefined;
+    this.evidencePlaced = false;
+    this.followedView = null;
     workspace.detachLeavesOfType(INDEX_VIEW_TYPE);
     workspace.detachLeavesOfType(EVIDENCE_VIEW_TYPE);
   }
@@ -366,6 +371,9 @@ export default class GedcomPlugin
   }
 
   private async revealSidebarView(type: string, side: "left" | "right"): Promise<void> {
+    if (!this.settings.genealogyInterface) {
+      return;
+    }
     const { workspace } = this.app;
     const leaf =
       workspace.getLeavesOfType(type)[0] ??

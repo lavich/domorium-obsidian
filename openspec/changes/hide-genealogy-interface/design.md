@@ -106,3 +106,11 @@ the CLAUDE.md table when implemented. `settingDefinitions()` keeps no arguments.
   shows on the next open.
 - The detach on load runs from `onLayoutReady` as well as once in `onload`;
   `syncInterface` is idempotent.
+- While the setting is off `syncInterface` also runs on `layout-change`, so a
+  panel restored by Undo close tab or a saved workspace is detached again; the
+  open commands and `revealSidebarView` refuse as well, so a ribbon entry Obsidian
+  keeps after the element is removed opens nothing. Turning off also resets
+  `evidencePlaced` and `followedView`, so turning on places the panel and the
+  Index follows the tab again.
+- `applySettings` redraws the page only when the interface flag changed, not on
+  every unrelated setting.

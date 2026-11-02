@@ -307,9 +307,13 @@ export class GedcomView extends TextFileView {
 
   applySettings(settings: GedcomSettings): void {
     const before = this.shownMode;
+    const interfaceChanged =
+      settings.genealogyInterface !== this.settings.genealogyInterface;
     this.settings = settings;
     this.refresh();
-    this.showMode();
+    if (interfaceChanged) {
+      this.showMode();
+    }
     if (this.shownMode !== before) {
       this.host.genealogyChanged(this);
     }
