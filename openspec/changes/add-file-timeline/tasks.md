@@ -1,17 +1,17 @@
 ## 1. The read model
 
-- [ ] 1.1 Add optional `end` and `period` to `DateReading` in `src/genealogy/dates.ts`, from `readDate`'s second date and modifier, set only where they apply; extend `src/genealogy/dates.test.ts` with `FROM 1891 TO 1894`, `FROM 1891`, `BET 1867 AND 1870`, `BET 1867 AND HEBREW 5628` (7.0), `FROM 1894 TO 1891`, a BCE second date (`BCE` in 7.0, `B.C.` in 5.5.1) and `FROM 1700 TO 1750/51` in 5.5.1, and check `src/genealogy/dates.test.ts` and `src/genealogy/index.test.ts` pass unchanged otherwise.
+- [x] 1.1 Add optional `end` and `period` to `DateReading` in `src/genealogy/dates.ts`, from `readDate`'s second date and modifier, set only where they apply; extend `src/genealogy/dates.test.ts` with `FROM 1891 TO 1894`, `FROM 1891`, `BET 1867 AND 1870`, `BET 1867 AND HEBREW 5628` (7.0), `FROM 1894 TO 1891`, a BCE second date (`BCE` in 7.0, `B.C.` in 5.5.1) and `FROM 1700 TO 1750/51` in 5.5.1, and check `src/genealogy/dates.test.ts` and `src/genealogy/index.test.ts` pass unchanged otherwise.
 
 ## 2. Fixtures
 
-- [ ] 2.1 Add to `src/testing/curie.ts` a `curieWithEvents()` text: `curie.ged` plus the mockup's sample events (Marie's 1891 emigration, `EDUC FROM 1891 TO 1894`, Pierre's `RESI FROM 1895 TO 1906`, the Nobel `EVEN`s, Ève's 1940 immigration), Władysław's birth as `ABT 1832`, and one more person with no dated event (18 people); leave `CURIE` unchanged. Checked by its use in 3.x.
+- [x] 2.1 Add to `src/testing/curie.ts` a `curieWithEvents()` text: `curie.ged` plus the mockup's sample events (Marie's 1891 emigration, `EDUC FROM 1891 TO 1894`, Pierre's `RESI FROM 1895 TO 1906`, the Nobel `EVEN`s, Ève's 1940 immigration), Władysław's birth as `ABT 1832`, and one more person with no dated event (18 people); leave `CURIE` unchanged. Checked by its use in 3.x.
 
 ## 3. The model of the timeline
 
-- [ ] 3.1 Create `src/desk/fileTimeline.ts`: per person sex, span (birth, else christening or baptism, else earliest event; death, else burial or cremation, else an open end capped at a hundred years and the present) and dated events with kind, sign, uncertainty and period; per family spouses, children and marriage; no row for a person without an identifier. Test in a new `src/desk/fileTimeline.test.ts` on `curieIndex()` and `curieWithEvents()` (Marie `1867–1934`, the 1895 marriage on both, Hélène's open end, Pierre's residence as a period, Władysław's `ABT 1832` birth as uncertain, the undated person counted).
-- [ ] 3.2 Port generations and the order of rows from the mockup; test in `src/desk/fileTimeline.test.ts` that the Curie children stand together with Pierre last, the Skłodowski with Marie first, and Frédéric beside Irène.
-- [ ] 3.3 Add `branch(focus, up, down)` with steps 0–9 and `alive(year)` with the age reached that year; test in `src/desk/fileTimeline.test.ts` Irène's branch (10 of 17), ages in 1906 (Marie 39, Irène 9), 68 in 1900 for Władysław's `1832` on `curieIndex()` and approximately 68 for his `ABT 1832` on `curieWithEvents()`, no age for a lifeline begun at another event, and an open lifeline not counted alive past its end.
-- [ ] 3.4 Hold the model in a `WeakMap` by `GenealogyIndex`; test in `src/desk/fileTimeline.test.ts` that the same index answers the same model and a new index a new one.
+- [x] 3.1 Create `src/desk/fileTimeline.ts`: per person sex, span (birth, else christening or baptism, else earliest event; death, else burial or cremation, else an open end capped at a hundred years and the present) and dated events with kind, sign, uncertainty and period; per family spouses, children and marriage; no row for a person without an identifier. Test in a new `src/desk/fileTimeline.test.ts` on `curieIndex()` and `curieWithEvents()` (Marie `1867–1934`, the 1895 marriage on both, Hélène's open end, Pierre's residence as a period, Władysław's `ABT 1832` birth as uncertain, the undated person counted).
+- [x] 3.2 Port generations and the order of rows from the mockup; test in `src/desk/fileTimeline.test.ts` that the Curie children stand together with Pierre last, the Skłodowski with Marie first, and Frédéric beside Irène.
+- [x] 3.3 Add `branch(focus, up, down)` with steps 0–9 and `alive(year)` with the age reached that year; test in `src/desk/fileTimeline.test.ts` Irène's branch (10 of 17), ages in 1906 (Marie 39, Irène 9), 68 in 1900 for Władysław's `1832` on `curieIndex()` and approximately 68 for his `ABT 1832` on `curieWithEvents()`, no age for a lifeline begun at another event, and an open lifeline not counted alive past its end.
+- [x] 3.4 Hold the model in a `WeakMap` by `GenealogyIndex`; test in `src/desk/fileTimeline.test.ts` that the same index answers the same model and a new index a new one.
 
 ## 4. Drawing
 
