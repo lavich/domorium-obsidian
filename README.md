@@ -52,9 +52,10 @@ to a remote service.
    the file declares, and the view header and **Switch between genealogy and
    source** go between the two modes.
 
-Everything below, down to the settings, is part of the genealogy interface and
-appears only while it is on; turning it off hides it again and closes its panels
-without losing the mode a tab was in.
+The next three paragraphs — Genealogy mode, the index and evidence panels, and
+**Open GEDCOM files as** — are part of the genealogy interface and appear only
+while it is on; turning it off hides it again and closes its panels without
+losing the mode a tab was in. The editor features after them need no setting.
 
 Genealogy mode reads the file and never writes to it. A person's page lists
 their facts in the order the record states them, each marked with how many

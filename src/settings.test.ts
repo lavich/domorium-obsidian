@@ -100,7 +100,7 @@ describe("GEDCOM settings", () => {
     expect(settingDefinitions()).toEqual([
       {
         name: "Genealogy interface",
-        desc: "Show genealogy mode, the Domorium index and the evidence panel, with the ribbon icon and their commands. Off, GEDCOM files open as source.",
+        desc: "Show genealogy mode, the Domorium index and the evidence panel, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
         control: {
           type: "toggle",
           key: "genealogyInterface",

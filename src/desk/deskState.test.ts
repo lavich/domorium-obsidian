@@ -182,5 +182,7 @@ describe("the mode a tab shows while the genealogy interface is off", () => {
 
   it("keeps the mode a restored tab was in, off or on", () => {
     expect(initialMode("genealogy", "source", false)).toBe("genealogy");
+    expect(initialMode("genealogy", "source", true)).toBe("genealogy");
+    expect(initialMode("source", "genealogy", false)).toBe("source");
   });
 });

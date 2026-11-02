@@ -13,7 +13,7 @@
 
 ## 3. The plugin
 
-- [x] 3.1 `syncInterface()` in `src/main.ts`: add or remove the ribbon icon, detach Index and Evidence leaves when off, from `onload` (after `loadData`, detach after `onLayoutReady`), `updateSettings` and `onExternalSettingsChange`, which also redraws an open settings tab. No unit test is possible (`obsidian` is types only); covered by 6.1.
+- [x] 3.1 `syncInterface()` in `src/main.ts`: add or remove the ribbon icon, detach Index and Evidence leaves when off, from `onload` (after `loadData`, detach after `onLayoutReady`), `updateSettings` and `onExternalSettingsChange`. No unit test is possible (`obsidian` is types only); covered by 6.1.
 - [x] 3.2 Turn the Index and Evidence commands into `checkCallback`s gated on the setting, and make `placeEvidence` return before it sets `evidencePlaced` while the setting is off. Covered by 6.1.
 
 ## 4. Docs
