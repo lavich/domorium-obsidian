@@ -99,7 +99,6 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
 .cur .age rect{fill:var(--background-primary);stroke:var(--text-accent);stroke-width:1}
 .cur .age text{fill:var(--text-normal);font-size:10.5px;font-variant-numeric:tabular-nums}
 .axcur rect{fill:var(--interactive-accent)}.axcur text{fill:var(--text-on-accent)!important;font-weight:600}
-.order{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted)}
 .alive{margin-left:auto;font-size:12px;color:var(--text-muted)}
 .range{fill:hsl(35,85%,52%);opacity:.55}
 .cap{fill:var(--text-normal);font-size:10.5px;opacity:.8;pointer-events:none}
@@ -139,8 +138,6 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
       <button class="chip" aria-pressed="true" data-t="OTHER">Other events<span class="n" id="nOTHER"></span></button>
       <button class="chip" aria-pressed="true" id="sample" title="Adds a few dated events to the embedded copy, to show what other events look like">Sample events</button>
       <span class="sep"></span>
-      <span class="order">Order <button class="chip" aria-pressed="true" data-order="family" title="Generations top to bottom, siblings together, spouses side by side">Families</button><button class="chip" aria-pressed="false" data-order="birth">Birth year</button><button class="chip" aria-pressed="false" data-order="surname">Surname</button></span>
-      <span class="sep"></span>
       <label>Zoom <input type="range" id="zoom" min="2" max="16" value="6"></label>
       <input type="search" id="q" placeholder="Find a person…">
       <span class="alive" id="alive"></span>
@@ -173,7 +170,6 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
       <li>Click a name: in the plugin that opens the person's page.</li>
       <li>Move along the chart: a year cursor follows, with everyone's age in that year and how many are alive.</li>
       <li>Hover a name and choose Branch: only their ancestors and descendants stay, with their spouses; − and + change how many generations.</li>
-      <li>Order: Families keeps generations and siblings together; Birth year is the order webtrees Lifespans uses; Surname groups each line of the family.</li>
       <li>Zoom, scroll sideways; names and the year axis stay in place.</li>
     </ul>
     <h4>Open questions</h4>
@@ -584,7 +580,7 @@ function age(b,d){
 
 
 const NOW=new Date().getFullYear();
-const S={on:{BIRT:true,MARR:true,DEAT:true,OTHER:true},sample:true,order:"family",focus:null,up:2,down:2,year:null,kin:true,zoom:6,q:"",hl:null};
+const S={on:{BIRT:true,MARR:true,DEAT:true,OTHER:true},sample:true,focus:null,up:2,down:2,year:null,kin:true,zoom:6,q:"",hl:null};
 const ROW=34,GEN=24;
 const GLYPH={EDUC:"✎",GRAD:"✎",RESI:"⌂",EMIG:"⇄",IMMI:"⇄",NATU:"⇄",OCCU:"⚒",RETI:"⚒",CENS:"≡",EVEN:"★",FACT:"★",PROB:"§",WILL:"§",ADOP:"+"};
 // Real events of the family, not in demo-vault/curie.ged, added only to show dated events of other kinds
@@ -605,7 +601,7 @@ function build(text,name){
       const n=kid(r,"NAME"),m=n?.value.match(/^(.*?)\/(.*?)\/(.*)$/);
       const nm=n?(m?[m[1].trim(),m[2].trim(),m[3].trim()].filter(Boolean).join(" "):n.value.trim()):"Unnamed";
       const events=r.children.filter(c=>LABEL[c.tag]).map(ev);
-      people.set(r.xref,{id:r.xref,name:nm||"Unnamed",sur:m?m[2].trim():"",given:m?m[1].trim():nm,sex:val(r,"SEX")||"U",events,
+      people.set(r.xref,{id:r.xref,name:nm||"Unnamed",sex:val(r,"SEX")||"U",events,
         birth:events.find(e=>e.tag==="BIRT")||events.find(e=>e.tag==="CHR"||e.tag==="BAPM"),
         death:events.find(e=>e.tag==="DEAT")||events.find(e=>e.tag==="BURI"),
         famc:kids(r,"FAMC").map(x=>x.value),fams:kids(r,"FAMS").map(x=>x.value)});
@@ -680,11 +676,7 @@ function branch(){
 }
 function layout(){
   let y=0;const pos=new Map(),bands=[],keep=branch();
-  const coll=new Intl.Collator(undefined,{sensitivity:"base"}),born=p=>span(p)?.b??Infinity;
-  const ordered=S.order==="family"?M.rows:[...M.people.values()].sort(S.order==="birth"
-      ?(a,b)=>born(a)-born(b)||coll.compare(a.name,b.name)
-      :(a,b)=>coll.compare(a.sur||"￿",b.sur||"￿")||born(a)-born(b)||coll.compare(a.given,b.given)).map(p=>({p}));
-  const rows=ordered.filter(r=>r.gen!==undefined||!keep||keep.has(r.p.id));
+  const rows=M.rows.filter(r=>r.gen!==undefined||!keep||keep.has(r.p.id));
   const shown=rows.filter(r=>r.p).map(r=>r.p);
   for(const r of rows){if(r.gen!==undefined){bands.push({g:r.gen,y});y+=GEN}else{pos.set(r.p.id,y+ROW/2);y+=ROW}}
   const spans=shown.map(span).filter(Boolean);
@@ -797,7 +789,6 @@ $("plot").addEventListener("mousemove",e=>{if(!G)return;const r=$("svg").getBoun
   const Y=Math.round(G.L.lo+(e.clientX-r.left-12)/G.k);const y=Math.max(G.L.lo,Math.min(G.L.hi,Y));if(y!==S.year){S.year=y;drawCursor()}});
 $("names").addEventListener("mouseenter",()=>{S.year=null;drawCursor()});
 document.addEventListener("click",e=>{
-  const o=e.target.closest("[data-order]");if(o){S.order=o.dataset.order;document.querySelectorAll("[data-order]").forEach(b=>b.setAttribute("aria-pressed",b===o));render();return}
   const br=e.target.closest("[data-br]");if(br){S.focus=br.dataset.br;S.hl=null;render();return}
   if(e.target.closest("[data-whole]")){S.focus=null;render();return}
   const st=e.target.closest("[data-step]");if(st){const [k,d]=st.dataset.step.split(":");S[k]=Math.max(0,Math.min(9,S[k]+ +d));render();return}
