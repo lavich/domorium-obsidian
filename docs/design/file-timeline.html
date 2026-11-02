@@ -74,7 +74,7 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
 .genbg{fill:var(--background-secondary)}
 .rowhl{fill:var(--background-modifier-hover)}
 .bar{opacity:.35}
-.bar.M{fill:hsl(210,70%,55%)}.bar.F{fill:hsl(150,45%,45%)}.bar.U{fill:var(--text-faint)}
+.bar.M{fill:hsl(205,80%,62%)}.bar.F{fill:hsl(335,75%,68%)}.bar.U{fill:hsl(0,0%,60%)}
 .bar.hl{opacity:.7}
 .mk{cursor:pointer}
 .mk circle,.mk rect{stroke:var(--background-primary);stroke-width:1.5}
@@ -130,8 +130,9 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
     </div>
     <div class="undated" id="undated"></div>
     <div class="legend">
-      <span><i style="background:hsl(210,70%,55%);opacity:.6"></i>life, men</span>
-      <span><i style="background:hsl(150,45%,45%);opacity:.6"></i>life, women</span>
+      <span><i style="background:hsl(335,75%,68%);opacity:.6"></i>woman</span>
+      <span><i style="background:hsl(205,80%,62%);opacity:.6"></i>man</span>
+      <span><i style="background:hsl(0,0%,60%);opacity:.6"></i>sex not stated</span>
       <span><i style="background:hsl(150,45%,45%)"></i>birth</span>
       <span><i style="background:hsl(var(--accent-h),var(--accent-s),var(--accent-l))"></i>marriage</span>
       <span><i style="background:var(--text-normal)"></i>death</span>
@@ -610,7 +611,6 @@ function build(text,name){
       const f=fams.get(key),pi=[f.husb,f.wife].map(id=>index.get(id)).filter(i=>i!==undefined);
       return pi.length?Math.min(...pi):Math.min(...ps.map(by))};
     const ordered=[...units].sort((a,b)=>rank(a)-rank(b));
-    rows.push({gen:g});
     ordered.forEach(([key,ps],ui)=>{
       const inUnit=new Set(ps.map(p=>p.id));
       const before=new Set(ordered.slice(0,ui).flatMap(([,q])=>q.map(p=>p.id)));
