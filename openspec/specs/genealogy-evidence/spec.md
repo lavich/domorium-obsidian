@@ -10,13 +10,16 @@ never mistaken for a source of a fact.
 
 ### Requirement: The panel lives in the right sidebar and follows the selection
 
-The plugin SHALL offer an evidence view, named **Evidence**, in the right
-sidebar. It SHALL be placed there, without taking the focus, the first time in a
-session a GEDCOM file is shown as genealogy and no such view is open; a reader
-who then closes it SHALL not have it put back until the plugin loads again. It
-SHALL open from a command, and selecting a fact on a desktop SHALL bring it into
-view. On a phone it SHALL be reached as Obsidian's other sidebar views are, from
-the right drawer, and from the action beneath a tapped fact.
+While the **Genealogy interface** setting is on, the plugin SHALL offer an
+evidence view, named **Evidence**, in the right sidebar. It SHALL be placed
+there, without taking the focus, the first time in a session a GEDCOM file is
+shown as genealogy and no such view is open; a reader who then closes it SHALL
+not have it put back until the plugin loads again. It SHALL open from a command,
+and selecting a fact on a desktop SHALL bring it into view. On a phone it SHALL
+be reached as Obsidian's other sidebar views are, from the right drawer, and
+from the action beneath a tapped fact. While the setting is off, the plugin
+SHALL NOT place the view, SHALL NOT offer the command, and SHALL close an
+evidence view that is open.
 
 The panel SHALL show the selection of the GEDCOM tab most recently active in
 Genealogy mode: a fact of the person or family shown, or the whole record when
@@ -45,6 +48,10 @@ With no GEDCOM tab in Genealogy mode it SHALL say so.
 - **WHEN** a fact is selected and the reader chooses Whole record
 - **THEN** the panel shows Marie's whole record and the fact is no longer
   selected on the page
+
+#### Scenario: The interface is off
+- **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
+- **THEN** no Evidence view is placed and the palette does not offer to open it
 
 ### Requirement: Sources of the fact, then of the whole record
 

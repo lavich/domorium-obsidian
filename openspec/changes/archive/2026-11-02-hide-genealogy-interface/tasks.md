@@ -26,4 +26,4 @@
 
 ## 6. Manual checks in Obsidian on the demo vault, and on a phone
 
-- [ ] 6.1 Toggle the setting off, on, off, on: the mode switch, ribbon icon, palette entries and panels follow; open Index and Evidence panels close; a saved workspace with them open loads with them closed; no duplicate or ghost ribbon entry (also in Appearance's ribbon list and on a phone); a Genealogy tab returns to its record; a tab opened while off stays Source when turned on.
+- [x] 6.1 Toggle the setting off, on, off, on: the mode switch, ribbon icon, palette entries and panels follow; open Index and Evidence panels close; a saved workspace with them open loads with them closed; no duplicate or ghost ribbon entry (also in Appearance's ribbon list and on a phone); a Genealogy tab returns to its record; a tab opened while off stays Source when turned on.
