@@ -1334,6 +1334,14 @@ input.gedcom-ft-search {
   font-variant-numeric: tabular-nums;
 }
 
+/* The count comes and goes with the pointer; a line of its own on a phone
+   keeps the rows below from jumping when it does. */
+.is-phone .gedcom-ft-alive {
+  flex-basis: 100%;
+  min-height: 1.5em;
+  margin-inline-start: 0;
+}
+
 .gedcom-ft-scope {
   display: flex;
   flex-wrap: wrap;
@@ -1491,6 +1499,29 @@ button.gedcom-ft-branch:hover {
 .gedcom-ft-name:hover .gedcom-ft-name-years,
 .gedcom-ft-name.is-hl .gedcom-ft-name-years {
   display: none;
+}
+
+/* Too narrow for a name and its years side by side, so the years go beneath. */
+.is-phone .gedcom-ft-name {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding-inline: var(--size-4-2);
+  line-height: 1.2;
+}
+
+.is-phone .gedcom-ft-name-text {
+  max-width: 100%;
+}
+
+.is-phone .gedcom-ft-name-years,
+.is-phone button.gedcom-ft-branch {
+  margin-inline-start: 0;
+}
+
+.is-phone button.gedcom-ft-branch {
+  line-height: 1.2;
 }
 
 .gedcom-ft-plot {
@@ -1652,7 +1683,8 @@ button.gedcom-ft-branch:hover {
 .gedcom-ft-items > .is-dim,
 .gedcom-ft-name.is-dim,
 .gedcom-ft-board.has-hl .gedcom-ft-items > :not(.is-on),
-.gedcom-ft-board.has-hl .gedcom-ft-name:not(.is-on) {
+.gedcom-ft-board.has-hl .gedcom-ft-name:not(.is-on),
+.gedcom-ft-board.has-hl .gedcom-ft-age:not(.is-on) {
   opacity: 0.18;
 }
 
@@ -1700,6 +1732,31 @@ button.gedcom-ft-branch:hover {
   padding: var(--size-4-2) var(--size-4-4);
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
+}
+
+button.gedcom-ft-legend-toggle {
+  display: none;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+/* A phone has the height for the rows or for the legend, not both. */
+.is-phone button.gedcom-ft-legend-toggle {
+  display: inline-block;
+}
+
+.is-phone .gedcom-ft-legend:not(.is-open) > .gedcom-ft-legend-item {
+  display: none;
+}
+
+.is-phone .gedcom-ft-title {
+  display: none;
 }
 
 .gedcom-ft-legend-item {

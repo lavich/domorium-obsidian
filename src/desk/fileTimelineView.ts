@@ -374,6 +374,9 @@ export class FileTimelineBoard {
       this.items,
     );
     this.drawArrows(layout, model, xref);
+    if (this.year !== null) {
+      this.drawCursor();
+    }
     const person = model.people.get(xref);
     if (person?.lifeline && this.scope.zoom < ZOOM.captions) {
       const line = person.lifeline;
@@ -682,13 +685,14 @@ export class FileTimelineBoard {
     const at = layout.x(year);
     this.cursor.append(svg(this.doc, "line", "gedcom-ft-cursor-line", { x1: at, x2: at, y1: 0, y2: layout.height }));
     const alive = model.alive(year, layout.shownSet);
+    const lit = this.highlighted === null ? null : model.related(this.highlighted);
     for (const one of alive) {
       const cy = layout.y.get(one.xref);
       if (cy === undefined || one.age === undefined || cy < this.drawn.top || cy > this.drawn.bottom) {
         continue;
       }
       const text = `${one.approximate ? "≈" : ""}${one.age}`;
-      const pill = svg(this.doc, "g", "gedcom-ft-age", { "data-p": one.xref });
+      const pill = svg(this.doc, "g", `gedcom-ft-age${lit?.has(one.xref) ? " is-on" : ""}`, { "data-p": one.xref });
       pill.append(
         svg(this.doc, "rect", null, { x: at + 5, y: cy - 8, width: text.length * 6.4 + 8, height: 16, rx: 8 }),
       );
@@ -870,6 +874,16 @@ export class FileTimelineBoard {
   }
 
   private legend(parent: HTMLElement): void {
+    const toggle = parent.createEl("button", {
+      cls: "gedcom-ft-legend-toggle",
+      text: t("fileTimeline.legend"),
+      attr: { type: "button", "aria-expanded": "false" },
+    });
+    toggle.addEventListener("click", () => {
+      const open = !parent.hasClass("is-open");
+      parent.toggleClass("is-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+    });
     const entry = (cls: string, text: string) => {
       const item = parent.createSpan({ cls: "gedcom-ft-legend-item" });
       item.createSpan({ cls: `gedcom-ft-swatch ${cls}` });

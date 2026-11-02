@@ -355,5 +355,6 @@
   "fileTimeline.legend.period": "Период, с … по",
   "fileTimeline.legend.uncertain": "Около, до, после, между",
   "fileTimeline.legend.arrows": "Стрелки ведут от родителя к ребёнку — для человека под указателем",
-  "fileTimeline.name": "Хронология файла"
+  "fileTimeline.name": "Хронология файла",
+  "fileTimeline.legend": "Условные обозначения"
 }
