@@ -94,7 +94,7 @@ svg text{font-family:var(--font-interface)}
 <body>
 <div class="stage">
   <div class="toolbar">
-    <span>Graph of the whole file. The mockup reads <b>demo-vault/curie.ged</b> itself (an embedded copy); open any other file to see it on real data.</span>
+    <span>Graph of the whole file. The mockup reads <b>demo-vault/curie.ged</b> (an embedded copy) with the plugin's own language service and read model; open any other file to see it on real data.</span>
     <div class="right-tools">
       <label class="file">Open another .ged<input type="file" id="file" accept=".ged,.gedcom"></label>
       <div class="seg" role="group" aria-label="Theme"><button data-theme="dark">Dark</button><button class="on" data-theme="light">Light</button></div>
@@ -485,7 +485,9 @@ svg text{font-family:var(--font-interface)}
 0 @N2@ SNOTE Wrote Madame Curie, the biography of her mother, in 1937. Her husband
 1 CONT accepted the Nobel Peace Prize for UNICEF in 1965.
 0 TRLR</script>
+<script src="vendor/design.js"></script>
 <script>
+if(!window.DomoriumDesign)document.body.insertAdjacentHTML("afterbegin",`<p style="padding:12px;background:#fee;font:14px system-ui">Run <code>node harness/build.mjs</code> first: this page reads the file with the plugin's language service, bundled into docs/design/vendor/design.js.</p>`);
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const MONTH=["January","February","March","April","May","June","July","August","September","October","November","December"];
 const LABEL={BIRT:"Birth",CHR:"Christening",BAPM:"Baptism",DEAT:"Death",BURI:"Burial",CREM:"Cremation",ADOP:"Adoption",RESI:"Residence",EDUC:"Education",GRAD:"Graduation",RETI:"Retirement",EMIG:"Emigration",IMMI:"Immigration",NATU:"Naturalization",CENS:"Census",PROB:"Probate",WILL:"Will",OCCU:"Occupation",RELI:"Religion",TITL:"Title",DSCR:"Description",NATI:"Nationality",EVEN:"Event",FACT:"Fact",MARR:"Marriage",DIV:"Divorce",ENGA:"Engagement",MARB:"Marriage banns",MARC:"Marriage contract"};
@@ -493,69 +495,29 @@ const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&g
 const plural=(n,one,other)=>n===1?one:other;
 const short=pl=>(pl||"").split(",")[0].trim();
 
-function parseGedcom(text){
-  const root={children:[],level:-1};const stack=[root];
-  text.split(/\r?\n/).forEach((ln,i)=>{
-    const m=ln.replace(/^﻿/,"").match(/^\s*(\d+)\s+(?:(@[^@\s]+@)\s+)?([A-Za-z0-9_]+)(?: (.*))?$/);if(!m)return;
-    const lvl=+m[1];const n={level:lvl,xref:m[2]||null,tag:m[3].toUpperCase(),value:m[4]??"",children:[],line:i+1,last:i+1};
-    for(let k=1;k<=Math.min(lvl,stack.length-1);k++)stack[k].last=i+1;
-    if(n.tag==="CONT"||n.tag==="CONC"){const p=stack[lvl];if(p)p.value+=(n.tag==="CONT"?"\n":"")+n.value;return}
-    const parent=stack[lvl];if(!parent)return;parent.children.push(n);stack.length=lvl+1;stack[lvl+1]=n});
-  return root;
-}
-const kid=(n,t)=>n?.children.find(c=>c.tag===t);
-const kids=(n,t)=>n?n.children.filter(c=>c.tag===t):[];
-const val=(n,t)=>kid(n,t)?.value||"";
-
-function one(s){
-  const m=s.match(/^(?:(\d{1,2}) )?(?:([A-Z]{3}) )?(\d{3,4})(?: BCE| B\.C\.)?$/);if(!m)return null;
-  const d=m[1]?+m[1]:null,mo=m[2]?MON.indexOf(m[2]):-1,y=+m[3];
-  const text=d&&mo>=0?`${d} ${MONTH[mo]} ${y}`:mo>=0?`${MONTH[mo]} ${y}`:`${y}`;
-  return{text,year:y,key:y*10000+(mo+1)*100+(d||0),exact:!!d&&mo>=0,month:mo,day:d};
-}
-function parseDate(raw){
-  if(!raw)return null;
-  const s=raw.trim().toUpperCase().replace(/^@#D[A-Z ]+@ /,"").replace(/^(GREGORIAN|JULIAN|FRENCH_R|HEBREW) /,"");
-  let m;
-  if((m=s.match(/^BET (.+) AND (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`between ${a.text} and ${b.text}`,exact:false,approx:true}}
-  if((m=s.match(/^FROM (.+) TO (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`${a.text} — ${b.text}`,exact:false,approx:true}}
-  if((m=s.match(/^(ABT|CAL|EST|BEF|AFT|FROM|TO) (.+)$/))){const a=one(m[2]);const p={ABT:"about",CAL:"about",EST:"about",BEF:"before",AFT:"after",FROM:"from",TO:"to"}[m[1]];if(a)return{...a,text:`${p} ${a.text}`,exact:false,approx:true}}
-  return one(s)||{text:raw,year:null,key:null,exact:false};
-}
-function age(b,d){
-  if(!b?.year||!d?.year)return"";
-  let n=d.year-b.year;const exact=b.exact&&d.exact;
-  if(exact&&(d.month*100+d.day)<(b.month*100+b.day))n--;
-  if(n<0)return"";
-  return`${exact?"":"≈"}${n} ${plural(n,"year","years")}`;
-}
-
-
-
 const NOW=new Date().getFullYear();
 const S={focus:null,up:2,down:2,hl:null};
 const CW=168,CH=46,GX=36,GY=130;
 const $=id=>document.getElementById(id);
 const toast=s=>{const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("on"),1500)};
 let M;
-function build(text,name){
-  const tree=parseGedcom(text);const recs=new Map();
-  tree.children.forEach(r=>r.xref&&recs.set(r.xref,r));
-  const ev=n=>({tag:n.tag,label:n.tag==="EVEN"||n.tag==="FACT"?(val(n,"TYPE")||LABEL[n.tag]):LABEL[n.tag],value:n.value&&n.value!=="Y"?n.value:"",date:parseDate(val(n,"DATE")),end:(()=>{const m=val(n,"DATE").toUpperCase().match(/ (?:AND|TO) (?:.* )?(\d{3,4})$/);return m?+m[1]:null})(),place:val(n,"PLAC"),line:n.line});
+function readFile(text){
+  const R=DomoriumDesign.read(text);
+  const ev=e=>({tag:e.tag,label:e.tag==="EVEN"||e.tag==="FACT"?(e.type||LABEL[e.tag]||e.tag):(LABEL[e.tag]||e.tag),
+    value:e.value&&e.value!=="Y"?e.value:"",date:e.date?{...e.date,exact:e.date.full&&e.date.precision==="exact"}:null,
+    end:e.date?.end??null,place:e.place||"",line:e.line});
   const people=new Map(),fams=new Map();
-  for(const r of recs.values()){
-    if(r.tag==="INDI"){
-      const n=kid(r,"NAME"),m=n?.value.match(/^(.*?)\/(.*?)\/(.*)$/);
-      const nm=n?(m?[m[1].trim(),m[2].trim(),m[3].trim()].filter(Boolean).join(" "):n.value.trim()):"Unnamed";
-      const events=r.children.filter(c=>LABEL[c.tag]).map(ev);
-      people.set(r.xref,{id:r.xref,name:nm||"Unnamed",sex:val(r,"SEX")||"U",events,
-        birth:events.find(e=>e.tag==="BIRT")||events.find(e=>e.tag==="CHR"||e.tag==="BAPM"),
-        death:events.find(e=>e.tag==="DEAT")||events.find(e=>e.tag==="BURI"),
-        famc:kids(r,"FAMC").map(x=>x.value),fams:kids(r,"FAMS").map(x=>x.value)});
-    }else if(r.tag==="FAM"){
-      fams.set(r.xref,{id:r.xref,husb:val(r,"HUSB"),wife:val(r,"WIFE"),chil:kids(r,"CHIL").map(x=>x.value),events:r.children.filter(c=>LABEL[c.tag]).map(ev)});
-    }
-  }
+  for(const p of R.people){const events=p.events.map(ev);
+    people.set(p.id,{id:p.id,name:p.name==="@unnamed@"?"Unnamed":p.name,sex:p.sex||"U",events,
+      birth:events.find(e=>e.tag==="BIRT")||events.find(e=>e.tag==="CHR"||e.tag==="BAPM"),
+      death:events.find(e=>e.tag==="DEAT")||events.find(e=>e.tag==="BURI"),famc:p.famc,fams:p.fams})}
+  for(const f of R.families)fams.set(f.id,{id:f.id,husb:f.husb||"",wife:f.wife||"",chil:f.chil,events:f.events.map(ev)});
+  READ_MS=R.millis;
+  return{people,fams};
+}
+let READ_MS=0;
+function build(text,name){
+  const {people,fams}=readFile(text);
   // generations: a child is one below its lowest-placed parent; a spouse who married in shares the generation
   const gen=new Map();
   const parentsOf=p=>p.famc.map(f=>fams.get(f)).filter(Boolean).flatMap(f=>[f.husb,f.wife]).filter(id=>people.has(id));

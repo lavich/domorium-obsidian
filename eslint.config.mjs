@@ -9,6 +9,7 @@ export default tseslint.config(
       "dist/**",
       "harness/dist/**",
       "harness/results/**",
+      "docs/design/vendor/**",
       "coverage/**",
       "demo-vault/**",
       "esbuild.config.mjs",

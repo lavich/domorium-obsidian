@@ -12,3 +12,14 @@ for (const entry of ["mount", "desk"]) {
     logLevel: "info",
   });
 }
+
+// The design mockups in docs/design read a file the way the plugin does.
+await esbuild.build({
+  entryPoints: ["harness/design.ts"],
+  bundle: true,
+  format: "iife",
+  target: "es2021",
+  outfile: "docs/design/vendor/design.js",
+  minify: true,
+  logLevel: "info",
+});
