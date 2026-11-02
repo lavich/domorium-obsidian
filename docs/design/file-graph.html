@@ -1,0 +1,741 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Domorium — graph of the whole file</title>
+<style>
+.theme-dark{
+  --accent-h:258;--accent-s:88%;--accent-l:66%;
+  --interactive-accent:hsl(var(--accent-h),var(--accent-s),var(--accent-l));--interactive-accent-hsl:var(--accent-h),var(--accent-s),var(--accent-l);
+  --text-accent:hsl(var(--accent-h),90%,76%);--text-on-accent:#fff;
+  --background-primary:#1e1e1e;--background-secondary:#262626;--background-secondary-alt:#363636;
+  --background-modifier-border:#363636;--background-modifier-hover:rgba(255,255,255,.065);--background-modifier-active-hover:hsla(var(--interactive-accent-hsl),.15);
+  --background-modifier-form-field:#191919;
+  --text-normal:#dadada;--text-muted:#a3a3a3;--text-faint:#6f6f6f;
+  --color-orange-rgb:229,181,103;--text-warning:rgb(var(--color-orange-rgb));
+  --shadow-l:0 8px 28px rgba(0,0,0,.45);--code-background:#191919;
+}
+.theme-light{
+  --accent-h:254;--accent-s:80%;--accent-l:62%;
+  --interactive-accent:hsl(var(--accent-h),var(--accent-s),var(--accent-l));--interactive-accent-hsl:var(--accent-h),var(--accent-s),var(--accent-l);
+  --text-accent:hsl(var(--accent-h),70%,55%);--text-on-accent:#fff;
+  --background-primary:#ffffff;--background-secondary:#f6f6f6;--background-secondary-alt:#ececec;
+  --background-modifier-border:#e0e0e0;--background-modifier-hover:rgba(0,0,0,.045);--background-modifier-active-hover:hsla(var(--interactive-accent-hsl),.12);
+  --background-modifier-form-field:#ffffff;
+  --text-normal:#222222;--text-muted:#5c5c5c;--text-faint:#9a9a9a;
+  --color-orange-rgb:168,107,0;--text-warning:rgb(var(--color-orange-rgb));
+  --shadow-l:0 8px 28px rgba(0,0,0,.14);--code-background:#fafafa;
+}
+:root{--font-interface:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;font-family:var(--font-interface);-webkit-font-smoothing:antialiased;background:#e9e9e9}
+button,input{font:inherit;color:inherit}
+.stage{padding:20px 24px 28px;max-width:1400px;margin:0 auto}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;font-size:13px;color:#555}
+.toolbar b{color:#222}
+.right-tools{display:flex;gap:10px;align-items:center}
+.file{cursor:pointer;border:1px solid #ccc;border-radius:6px;padding:3px 10px;background:#fff;color:#222}
+.file input{display:none}
+.seg{display:inline-flex;background:var(--background-secondary);border-radius:6px;padding:2px;gap:2px}
+.seg button{border:0;background:none;padding:3px 10px;border-radius:4px;font-size:12px;color:var(--text-muted);cursor:pointer}
+.seg button.on{background:var(--background-primary);color:var(--text-normal);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.app{color:var(--text-normal);background:var(--background-primary);border-radius:10px;box-shadow:var(--shadow-l);overflow:hidden;border:1px solid var(--background-modifier-border)}
+.tabbar{display:flex;align-items:center;gap:8px;height:38px;padding:0 10px;background:var(--background-secondary);border-bottom:1px solid var(--background-modifier-border);font-size:13px}
+.tabbar .tab{padding:5px 12px;border-radius:6px 6px 0 0;background:var(--background-primary);align-self:flex-end;border:1px solid var(--background-modifier-border);border-bottom:0}
+.tabbar .crumbs{color:var(--text-muted);font-size:12px;margin-left:6px}
+.head{padding:16px 18px 4px}
+.head h1{margin:0;font-size:20px;font-weight:600}
+.head p{margin:2px 0 0;color:var(--text-muted);font-size:13px}
+.scope{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);padding:8px 18px 10px;flex-wrap:wrap}
+.scope b{color:var(--text-normal)}
+.step{display:inline-flex;align-items:center;border:1px solid var(--background-modifier-border);border-radius:6px;overflow:hidden}
+.step button{border:0;background:none;padding:1px 7px;cursor:pointer}
+.step button:hover{background:var(--background-modifier-hover)}
+.step span{padding:0 6px;font-variant-numeric:tabular-nums}
+.link{border:0;background:none;color:var(--text-accent);cursor:pointer;padding:0;font-size:12px}
+.tools{margin-left:auto;display:flex;gap:6px}
+.tbtn{border:1px solid var(--background-modifier-border);background:var(--background-primary);border-radius:6px;padding:1px 9px;cursor:pointer;font-size:12px}
+.tbtn:hover{background:var(--background-modifier-hover)}
+.canvas{height:620px;border-top:1px solid var(--background-modifier-border);background:var(--background-primary);cursor:grab;overflow:hidden;position:relative;touch-action:none}
+.canvas.drag{cursor:grabbing}
+svg{display:block;width:100%;height:100%}
+svg text{font-family:var(--font-interface)}
+.card rect.bg{fill:var(--background-primary);stroke:var(--background-modifier-border);stroke-width:1}
+.card rect.side{}
+.card.M rect.side{fill:hsl(205,80%,62%)}.card.F rect.side{fill:hsl(335,75%,68%)}.card.U rect.side{fill:hsl(0,0%,60%)}
+.card.M rect.bg{fill:hsl(205,80%,62%,.12)}.card.F rect.bg{fill:hsl(335,75%,68%,.14)}.card.U rect.bg{fill:hsl(0,0%,60%,.12)}
+.card .nm{fill:var(--text-normal);font-size:12.5px;font-weight:600}
+.card .yr{fill:var(--text-muted);font-size:11px;font-variant-numeric:tabular-nums}
+.card{cursor:pointer}
+.card:hover rect.bg,.card.hl rect.bg{stroke:var(--interactive-accent);stroke-width:2}
+.card.focus rect.bg{stroke:var(--interactive-accent);stroke-width:2.5}
+.card .brb{opacity:0}
+.card:hover .brb{opacity:1}
+.brb rect{fill:var(--interactive-accent)}.brb text{fill:var(--text-on-accent);font-size:10px;font-weight:600}
+.edge{fill:none;stroke:var(--text-faint);stroke-width:1.5}
+.edge.sp{stroke:hsl(var(--accent-h),var(--accent-s),var(--accent-l));stroke-width:2}
+.edge.hl{stroke:var(--text-accent);stroke-width:2.5}
+.union{fill:hsl(var(--accent-h),var(--accent-s),var(--accent-l));cursor:pointer}
+.union.nodate{fill:var(--background-primary);stroke:hsl(var(--accent-h),var(--accent-s),var(--accent-l));stroke-width:1.5}
+.dim{opacity:.18}
+.genlbl{fill:var(--text-faint);font-size:11px;letter-spacing:.05em}
+.tip{position:fixed;pointer-events:none;z-index:10;background:var(--background-primary);color:var(--text-normal);border:1px solid var(--background-modifier-border);border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:var(--shadow-l);opacity:0;transition:opacity .1s;max-width:300px}
+.tip b{display:block}.tip .m{color:var(--text-muted)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:8px 18px;border-top:1px solid var(--background-modifier-border);font-size:12px;color:var(--text-muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--text-normal);color:var(--background-primary);font-size:12px;padding:6px 12px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:11}
+.toast.on{opacity:.92}
+.notes{color:#555;font-size:13.5px;line-height:1.6;max-width:72ch;margin-top:22px}
+.notes h4{margin:0 0 8px;font-size:14px;color:#222}
+.notes ul{padding-left:20px;margin:0 0 16px}
+.notes li{margin-bottom:5px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="toolbar">
+    <span>Graph of the whole file. The mockup reads <b>demo-vault/curie.ged</b> itself (an embedded copy); open any other file to see it on real data.</span>
+    <div class="right-tools">
+      <label class="file">Open another .ged<input type="file" id="file" accept=".ged,.gedcom"></label>
+      <div class="seg" role="group" aria-label="Theme"><button data-theme="dark">Dark</button><button class="on" data-theme="light">Light</button></div>
+    </div>
+  </div>
+  <div class="app theme-light" id="app">
+    <div class="tabbar"><span class="tab" id="tabname">curie.ged</span><span class="crumbs">Genealogy · Graph</span></div>
+    <div class="head"><h1 id="title"></h1><p id="sub"></p></div>
+    <div class="scope"><span id="scope"></span><span class="tools"><button class="tbtn" id="fit">Fit</button><button class="tbtn" id="zin">+</button><button class="tbtn" id="zout">−</button></span></div>
+    <div class="canvas" id="canvas"><svg id="svg"><g id="view"></g></svg></div>
+    <div class="legend">
+      <span><i style="background:hsl(335,75%,68%)"></i>woman</span>
+      <span><i style="background:hsl(205,80%,62%)"></i>man</span>
+      <span><i style="background:hsl(0,0%,60%)"></i>sex not stated</span>
+      <span><i style="background:hsl(var(--accent-h),var(--accent-s),var(--accent-l));border-radius:50%"></i>family, with its marriage year</span>
+      <span><i style="border:1.5px solid hsl(var(--accent-h),var(--accent-s),var(--accent-l));border-radius:50%"></i>family without a marriage date</span>
+    </div>
+  </div>
+  <div class="notes">
+    <h4>What to try</h4>
+    <ul>
+      <li>Drag to move, wheel to zoom, Fit to see everyone.</li>
+      <li>Hover a person: their parents, spouses and children and the lines to them light up.</li>
+      <li>Hover a person and choose Branch: only their ancestors and descendants stay, with their spouses.</li>
+      <li>Hover a family node for the marriage; click a person: in the plugin that opens their page.</li>
+    </ul>
+    <h4>How it is laid out</h4>
+    <ul>
+      <li>Generations top to bottom, in the same order as the timeline of the file: siblings together, a spouse beside the one they married.</li>
+      <li>Each family is a node between the spouses; its children hang from it, centred beneath it where there is room.</li>
+    </ul>
+  </div>
+</div>
+<div class="tip" id="tip"></div><div class="toast" id="toast"></div>
+<script type="text/plain" id="ged">0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SOUR DOMORIUM
+2 NAME Domorium demo vault
+2 VERS 1.7.0
+1 DATE 14 AUG 2026
+1 SUBM @U1@
+1 NOTE Four generations of the Skłodowski, Curie and Joliot families, compiled
+2 CONT from public sources for demonstration. Two people in the last generation
+2 CONT are living, and carry a year of birth and nothing else.
+0 @U1@ SUBM
+1 NAME Domorium
+1 WWW https://domorium.com/
+0 @I1@ INDI
+1 NAME Marie /Skłodowska-Curie/
+2 GIVN Marie
+2 SURN Skłodowska-Curie
+1 NAME Maria Salomea /Skłodowska/
+2 TYPE BIRTH
+1 SEX F
+1 BIRT
+2 DATE 7 NOV 1867
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 4 JUL 1934
+2 PLAC Passy, Haute-Savoie, France
+1 OCCU Physicist and chemist
+1 FAMC @F1@
+1 FAMS @F3@
+1 OBJE @O1@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 30
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Marie, on the left
+1 OBJE @O6@
+1 SNOTE @N1@
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1911
+0 @I2@ INDI
+1 NAME Pierre /Curie/
+2 GIVN Pierre
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 15 MAY 1859
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 APR 1906
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMC @F2@
+1 FAMS @F3@
+1 OBJE @O2@
+1 OBJE @O5@
+2 CROP
+3 TOP 40
+3 LEFT 175
+3 HEIGHT 240
+3 WIDTH 130
+2 TITL Pierre, in the middle
+1 SOUR @S1@
+2 PAGE Nobel Prize in Physics 1903
+0 @I3@ INDI
+1 NAME Władysław /Skłodowski/
+2 GIVN Władysław
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1832
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 14 MAY 1902
+2 PLAC Warsaw, Congress Poland
+1 OCCU Teacher of mathematics and physics
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I4@ INDI
+1 NAME Bronisława /Boguska/
+2 GIVN Bronisława
+2 SURN Boguska
+1 SEX F
+1 BIRT
+2 DATE 1835
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 9 MAY 1878
+2 PLAC Warsaw, Congress Poland
+1 OCCU Headmistress
+1 FAMS @F1@
+1 SOUR @S2@
+2 PAGE Warsaw parish registers
+0 @I5@ INDI
+1 NAME Zofia /Skłodowska/
+2 GIVN Zofia
+2 SURN Skłodowska
+1 SEX F
+1 BIRT
+2 DATE 1862
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1876
+2 PLAC Warsaw, Congress Poland
+1 FAMC @F1@
+0 @I6@ INDI
+1 NAME Józef /Skłodowski/
+2 GIVN Józef
+2 SURN Skłodowski
+1 SEX M
+1 BIRT
+2 DATE 1863
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1937
+1 OCCU Physician
+1 FAMC @F1@
+0 @I7@ INDI
+1 NAME Bronisława /Dłuska/
+2 GIVN Bronisława
+2 SURN Dłuska
+1 SEX F
+1 BIRT
+2 DATE 1865
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1939
+1 OCCU Physician
+1 FAMC @F1@
+0 @I8@ INDI
+1 NAME Helena /Szalay/
+2 GIVN Helena
+2 SURN Szalay
+1 SEX F
+1 BIRT
+2 DATE 1866
+2 PLAC Warsaw, Congress Poland
+1 DEAT
+2 DATE 1961
+1 OCCU Teacher
+1 FAMC @F1@
+0 @I9@ INDI
+1 NAME Eugène /Curie/
+2 GIVN Eugène
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 28 AUG 1827
+2 PLAC Mulhouse, France
+1 DEAT
+2 DATE 25 FEB 1910
+2 PLAC Sceaux, France
+1 OCCU Physician
+1 FAMS @F2@
+0 @I10@ INDI
+1 NAME Sophie-Claire /Depouilly/
+2 GIVN Sophie-Claire
+2 SURN Depouilly
+1 SEX F
+1 BIRT
+2 DATE 1832
+1 DEAT
+2 DATE 1897
+1 FAMS @F2@
+0 @I11@ INDI
+1 NAME Jacques /Curie/
+2 GIVN Jacques
+2 SURN Curie
+1 SEX M
+1 BIRT
+2 DATE 29 OCT 1855
+2 PLAC Paris, France
+1 DEAT
+2 DATE 19 FEB 1941
+2 PLAC Montpellier, France
+1 OCCU Physicist
+1 FAMC @F2@
+0 @I12@ INDI
+1 NAME Irène /Joliot-Curie/
+2 GIVN Irène
+2 SURN Joliot-Curie
+1 SEX F
+1 BIRT
+2 DATE 12 SEP 1897
+2 PLAC Paris, France
+1 DEAT
+2 DATE 17 MAR 1956
+2 PLAC Paris, France
+1 OCCU Physicist and chemist
+1 FAMC @F3@
+1 FAMS @F4@
+1 OBJE @O3@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935, shared with Frédéric Joliot
+0 @I13@ INDI
+1 NAME Ève /Curie/
+2 GIVN Ève
+2 SURN Curie
+1 SEX F
+1 BIRT
+2 DATE 6 DEC 1904
+2 PLAC Paris, France
+1 DEAT
+2 DATE 22 OCT 2007
+2 PLAC New York, New York, United States
+1 OCCU Writer and pianist
+1 FAMC @F3@
+1 FAMS @F5@
+1 SNOTE @N2@
+0 @I14@ INDI
+1 NAME Frédéric /Joliot/
+2 GIVN Frédéric
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 19 MAR 1900
+2 PLAC Paris, France
+1 DEAT
+2 DATE 14 AUG 1958
+2 PLAC Paris, France
+1 OCCU Physicist
+1 FAMS @F4@
+1 SOUR @S3@
+2 PAGE Nobel Prize in Chemistry 1935
+0 @I15@ INDI
+1 NAME Henry Richardson /Labouisse/
+2 GIVN Henry Richardson
+2 SURN Labouisse
+1 SEX M
+1 BIRT
+2 DATE 11 FEB 1904
+2 PLAC New Orleans, Louisiana, United States
+1 DEAT
+2 DATE 25 MAR 1987
+2 PLAC New York, New York, United States
+1 OCCU Diplomat
+1 FAMS @F5@
+0 @I16@ INDI
+1 NAME Hélène /Langevin-Joliot/
+2 GIVN Hélène
+2 SURN Langevin-Joliot
+1 SEX F
+1 BIRT
+2 DATE 1927
+1 OCCU Nuclear physicist
+1 FAMC @F4@
+0 @I17@ INDI
+1 NAME Pierre /Joliot/
+2 GIVN Pierre
+2 SURN Joliot
+1 SEX M
+1 BIRT
+2 DATE 1932
+1 OCCU Biologist
+1 FAMC @F4@
+0 @F1@ FAM
+1 HUSB @I3@
+1 WIFE @I4@
+1 CHIL @I5@
+1 CHIL @I6@
+1 CHIL @I7@
+1 CHIL @I8@
+1 CHIL @I1@
+1 MARR
+2 DATE 1860
+2 PLAC Warsaw, Congress Poland
+0 @F2@ FAM
+1 HUSB @I9@
+1 WIFE @I10@
+1 CHIL @I11@
+1 CHIL @I2@
+0 @F3@ FAM
+1 HUSB @I2@
+1 WIFE @I1@
+1 CHIL @I12@
+1 CHIL @I13@
+1 MARR
+2 DATE 26 JUL 1895
+2 PLAC Sceaux, France
+0 @F4@ FAM
+1 HUSB @I14@
+1 WIFE @I12@
+1 CHIL @I16@
+1 CHIL @I17@
+1 MARR
+2 DATE 9 OCT 1926
+2 PLAC Paris, France
+0 @F5@ FAM
+1 HUSB @I15@
+1 WIFE @I13@
+1 MARR
+2 DATE 19 NOV 1954
+2 PLAC New York, New York, United States
+0 @O1@ OBJE
+1 FILE Media/marie-sklodowska-curie.svg
+2 FORM image/svg+xml
+2 TITL Marie Skłodowska-Curie
+0 @O2@ OBJE
+1 FILE Media/pierre-curie.svg
+2 FORM image/svg+xml
+2 TITL Pierre Curie
+0 @O3@ OBJE
+1 FILE Media/irene-joliot-curie.svg
+2 FORM image/svg+xml
+2 TITL Irène Joliot-Curie
+0 @O5@ OBJE
+1 FILE Media/curie-family-1908.svg
+2 FORM image/svg+xml
+2 TITL The Curie family, about 1908
+0 @O6@ OBJE
+1 FILE https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Marie_Curie_c._1920s.jpg/500px-Marie_Curie_c._1920s.jpg
+2 FORM image/jpeg
+2 TITL A portrait the plugin fetches only when asked
+0 @O7@ OBJE
+1 FILE Media/lost-daguerreotype.jpg
+2 FORM image/jpeg
+2 TITL A plate nobody can find
+0 @S1@ SOUR
+1 TITL The Nobel Prize in Physics 1903
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+1 OBJE @O4@
+0 @S2@ SOUR
+1 TITL Parish registers of Warsaw
+1 REPO @R2@
+0 @S3@ SOUR
+1 TITL The Nobel Prize in Chemistry 1911 and 1935
+1 AUTH Nobel Prize Outreach
+1 PUBL nobelprize.org
+1 REPO @R1@
+0 @O4@ OBJE
+1 FILE Sources/nobel-diploma-1903.svg
+2 FORM image/svg+xml
+2 TITL Diploma of the 1903 prize
+0 @R1@ REPO
+1 NAME Nobel Prize Outreach
+1 WWW https://www.nobelprize.org/
+0 @R2@ REPO
+1 NAME State Archive in Warsaw
+1 ADDR Krzywe Koło 7
+2 CITY Warsaw
+2 CTRY Poland
+0 @N1@ SNOTE The only person to have won a Nobel Prize in two different sciences:
+1 CONT physics in 1903 and chemistry in 1911.
+0 @N2@ SNOTE Wrote Madame Curie, the biography of her mother, in 1937. Her husband
+1 CONT accepted the Nobel Peace Prize for UNICEF in 1965.
+0 TRLR</script>
+<script>
+const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const MONTH=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const LABEL={BIRT:"Birth",CHR:"Christening",BAPM:"Baptism",DEAT:"Death",BURI:"Burial",CREM:"Cremation",ADOP:"Adoption",RESI:"Residence",EDUC:"Education",GRAD:"Graduation",RETI:"Retirement",EMIG:"Emigration",IMMI:"Immigration",NATU:"Naturalization",CENS:"Census",PROB:"Probate",WILL:"Will",OCCU:"Occupation",RELI:"Religion",TITL:"Title",DSCR:"Description",NATI:"Nationality",EVEN:"Event",FACT:"Fact",MARR:"Marriage",DIV:"Divorce",ENGA:"Engagement",MARB:"Marriage banns",MARC:"Marriage contract"};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const plural=(n,one,other)=>n===1?one:other;
+const short=pl=>(pl||"").split(",")[0].trim();
+
+function parseGedcom(text){
+  const root={children:[],level:-1};const stack=[root];
+  text.split(/\r?\n/).forEach((ln,i)=>{
+    const m=ln.replace(/^﻿/,"").match(/^\s*(\d+)\s+(?:(@[^@\s]+@)\s+)?([A-Za-z0-9_]+)(?: (.*))?$/);if(!m)return;
+    const lvl=+m[1];const n={level:lvl,xref:m[2]||null,tag:m[3].toUpperCase(),value:m[4]??"",children:[],line:i+1,last:i+1};
+    for(let k=1;k<=Math.min(lvl,stack.length-1);k++)stack[k].last=i+1;
+    if(n.tag==="CONT"||n.tag==="CONC"){const p=stack[lvl];if(p)p.value+=(n.tag==="CONT"?"\n":"")+n.value;return}
+    const parent=stack[lvl];if(!parent)return;parent.children.push(n);stack.length=lvl+1;stack[lvl+1]=n});
+  return root;
+}
+const kid=(n,t)=>n?.children.find(c=>c.tag===t);
+const kids=(n,t)=>n?n.children.filter(c=>c.tag===t):[];
+const val=(n,t)=>kid(n,t)?.value||"";
+
+function one(s){
+  const m=s.match(/^(?:(\d{1,2}) )?(?:([A-Z]{3}) )?(\d{3,4})(?: BCE| B\.C\.)?$/);if(!m)return null;
+  const d=m[1]?+m[1]:null,mo=m[2]?MON.indexOf(m[2]):-1,y=+m[3];
+  const text=d&&mo>=0?`${d} ${MONTH[mo]} ${y}`:mo>=0?`${MONTH[mo]} ${y}`:`${y}`;
+  return{text,year:y,key:y*10000+(mo+1)*100+(d||0),exact:!!d&&mo>=0,month:mo,day:d};
+}
+function parseDate(raw){
+  if(!raw)return null;
+  const s=raw.trim().toUpperCase().replace(/^@#D[A-Z ]+@ /,"").replace(/^(GREGORIAN|JULIAN|FRENCH_R|HEBREW) /,"");
+  let m;
+  if((m=s.match(/^BET (.+) AND (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`between ${a.text} and ${b.text}`,exact:false,approx:true}}
+  if((m=s.match(/^FROM (.+) TO (.+)$/))){const a=one(m[1]),b=one(m[2]);if(a&&b)return{...a,text:`${a.text} — ${b.text}`,exact:false,approx:true}}
+  if((m=s.match(/^(ABT|CAL|EST|BEF|AFT|FROM|TO) (.+)$/))){const a=one(m[2]);const p={ABT:"about",CAL:"about",EST:"about",BEF:"before",AFT:"after",FROM:"from",TO:"to"}[m[1]];if(a)return{...a,text:`${p} ${a.text}`,exact:false,approx:true}}
+  return one(s)||{text:raw,year:null,key:null,exact:false};
+}
+function age(b,d){
+  if(!b?.year||!d?.year)return"";
+  let n=d.year-b.year;const exact=b.exact&&d.exact;
+  if(exact&&(d.month*100+d.day)<(b.month*100+b.day))n--;
+  if(n<0)return"";
+  return`${exact?"":"≈"}${n} ${plural(n,"year","years")}`;
+}
+
+
+
+const NOW=new Date().getFullYear();
+const S={focus:null,up:2,down:2,hl:null};
+const CW=168,CH=46,GX=36,GY=110;
+const $=id=>document.getElementById(id);
+const toast=s=>{const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("on"),1500)};
+let M;
+function build(text,name){
+  const tree=parseGedcom(text);const recs=new Map();
+  tree.children.forEach(r=>r.xref&&recs.set(r.xref,r));
+  const ev=n=>({tag:n.tag,label:n.tag==="EVEN"||n.tag==="FACT"?(val(n,"TYPE")||LABEL[n.tag]):LABEL[n.tag],value:n.value&&n.value!=="Y"?n.value:"",date:parseDate(val(n,"DATE")),end:(()=>{const m=val(n,"DATE").toUpperCase().match(/ (?:AND|TO) (?:.* )?(\d{3,4})$/);return m?+m[1]:null})(),place:val(n,"PLAC"),line:n.line});
+  const people=new Map(),fams=new Map();
+  for(const r of recs.values()){
+    if(r.tag==="INDI"){
+      const n=kid(r,"NAME"),m=n?.value.match(/^(.*?)\/(.*?)\/(.*)$/);
+      const nm=n?(m?[m[1].trim(),m[2].trim(),m[3].trim()].filter(Boolean).join(" "):n.value.trim()):"Unnamed";
+      const events=r.children.filter(c=>LABEL[c.tag]).map(ev);
+      people.set(r.xref,{id:r.xref,name:nm||"Unnamed",sex:val(r,"SEX")||"U",events,
+        birth:events.find(e=>e.tag==="BIRT")||events.find(e=>e.tag==="CHR"||e.tag==="BAPM"),
+        death:events.find(e=>e.tag==="DEAT")||events.find(e=>e.tag==="BURI"),
+        famc:kids(r,"FAMC").map(x=>x.value),fams:kids(r,"FAMS").map(x=>x.value)});
+    }else if(r.tag==="FAM"){
+      fams.set(r.xref,{id:r.xref,husb:val(r,"HUSB"),wife:val(r,"WIFE"),chil:kids(r,"CHIL").map(x=>x.value),events:r.children.filter(c=>LABEL[c.tag]).map(ev)});
+    }
+  }
+  // generations: a child is one below its lowest-placed parent; a spouse who married in shares the generation
+  const gen=new Map();
+  const parentsOf=p=>p.famc.map(f=>fams.get(f)).filter(Boolean).flatMap(f=>[f.husb,f.wife]).filter(id=>people.has(id));
+  const depth=(id,seen=new Set())=>{if(gen.has(id))return gen.get(id);if(seen.has(id))return 0;seen.add(id);
+    const ps=parentsOf(people.get(id));const g=ps.length?Math.max(...ps.map(x=>depth(x,seen)))+1:0;gen.set(id,g);return g};
+  for(const id of people.keys())depth(id);
+  for(let pass=0;pass<3;pass++)for(const f of fams.values()){const a=f.husb,b=f.wife;if(people.has(a)&&people.has(b)){
+    const pa=parentsOf(people.get(a)).length,pb=parentsOf(people.get(b)).length;
+    if(!pa&&pb)gen.set(a,gen.get(b));else if(!pb&&pa)gen.set(b,gen.get(a));else{const g=Math.max(gen.get(a),gen.get(b));gen.set(a,g);gen.set(b,g)}}}
+  // rows: a generation follows the order of its parents' rows; siblings stay together, a spouse who married in sits
+  // beside the one they married, and a sibling married into the neighbouring family is put on the edge facing it
+  const by=p=>p.birth?.date?.year??p.death?.date?.year??9999;
+  const groups=[];
+  for(const [id,g] of gen)(groups[g]??=[]).push(people.get(id));
+  const rows=[],index=new Map();
+  const spouses=p=>p.fams.map(f=>fams.get(f)).filter(Boolean).map(f=>f.husb===p.id?f.wife:f.husb).filter(id=>people.has(id));
+  const marriedIn=id=>!parentsOf(people.get(id)).length&&spouses(people.get(id)).some(s=>parentsOf(people.get(s)).length);
+  const childYears=p=>p.fams.map(f=>fams.get(f)).filter(Boolean).flatMap(f=>f.chil).map(c=>people.get(c)).filter(Boolean).map(by);
+  groups.forEach((list,g)=>{
+    if(!list)return;
+    const units=new Map();
+    for(const p of list){if(marriedIn(p.id)&&spouses(p).some(s=>gen.get(s)===g))continue;
+      const key=p.famc[0]&&fams.has(p.famc[0])?p.famc[0]:"self:"+p.id;(units.get(key)??units.set(key,[]).get(key)).push(p)}
+    const rank=([key,ps])=>{
+      if(key.startsWith("self:")){const p=ps[0],sp=spouses(p),cy=[...childYears(p),...sp.flatMap(s=>childYears(people.get(s)))];
+        const placedSpouse=sp.map(s=>index.get(s)).filter(i=>i!==undefined);
+        return placedSpouse.length?Math.min(...placedSpouse):g===0?(cy.length?Math.min(...cy):by(p))-10000:by(p)}
+      const f=fams.get(key),pi=[f.husb,f.wife].map(id=>index.get(id)).filter(i=>i!==undefined);
+      return pi.length?Math.min(...pi):Math.min(...ps.map(by))};
+    const ordered=[...units].sort((a,b)=>rank(a)-rank(b));
+    ordered.forEach(([key,ps],ui)=>{
+      const inUnit=new Set(ps.map(p=>p.id));
+      const before=new Set(ordered.slice(0,ui).flatMap(([,q])=>q.map(p=>p.id)));
+      const after=new Set(ordered.slice(ui+1).flatMap(([,q])=>q.map(p=>p.id)));
+      const side=p=>spouses(p).some(s=>before.has(s))?-1:spouses(p).some(s=>after.has(s))?1:0;
+      ps.sort((a,b)=>side(a)-side(b)||by(a)-by(b));
+      for(const p of ps){index.set(p.id,rows.length);rows.push({p});
+        for(const s of spouses(p))if(!inUnit.has(s)&&!index.has(s)&&gen.get(s)===g&&marriedIn(s)){index.set(s,rows.length);rows.push({p:people.get(s)})}}
+    });
+    for(const p of list)if(!index.has(p.id)){index.set(p.id,rows.length);rows.push({p})}
+  });
+  return{name,people,fams,rows,gen};
+}
+
+const span=p=>{
+  const ys=p.events.map(e=>e.date?.year).filter(Boolean);
+  const b=p.birth?.date?.year??(ys.length?Math.min(...ys):null);
+  if(b==null)return null;
+  const d=p.death?.date?.year??null;
+  return{b,d,open:d==null,end:d??Math.min(NOW,b+100)};
+};
+
+function branch(){
+  if(!S.focus||!M.people.has(S.focus))return null;
+  const keep=new Set([S.focus]);
+  const parents=id=>M.people.get(id).famc.map(f=>M.fams.get(f)).filter(Boolean).flatMap(f=>[f.husb,f.wife]).filter(x=>M.people.has(x));
+  const unions=id=>M.people.get(id).fams.map(f=>M.fams.get(f)).filter(Boolean);
+  let gen=[S.focus];for(let i=0;i<S.up;i++){gen=gen.flatMap(parents);gen.forEach(x=>keep.add(x))}
+  gen=[S.focus];for(let i=0;i<=S.down;i++){const next=[];
+    for(const id of gen)for(const f of unions(id)){const sp=f.husb===id?f.wife:f.husb;if(M.people.has(sp))keep.add(sp);
+      if(i<S.down)f.chil.filter(c=>M.people.has(c)).forEach(c=>{keep.add(c);next.push(c)})}
+    gen=next}
+  return keep;
+}
+
+function related(id){
+  const p=M.people.get(id),s=new Set([id]);
+  p.famc.map(f=>M.fams.get(f)).filter(Boolean).forEach(f=>{s.add(f.husb);s.add(f.wife)});
+  p.fams.map(f=>M.fams.get(f)).filter(Boolean).forEach(f=>{s.add(f.husb);s.add(f.wife);f.chil.forEach(c=>s.add(c))});
+  return s;
+}
+
+function layout(){
+  const keep=branch();
+  const vis=M.rows.filter(r=>r.p&&(!keep||keep.has(r.p.id))).map(r=>r.p);
+  const byGen=[];for(const p of vis)(byGen[M.gen.get(p.id)]??=[]).push(p);
+  const gens=byGen.map((l,g)=>({g,list:l||[]})).filter(x=>x.list.length);
+  const pos=new Map(),W=CW+GX;
+  const unionX=f=>{const xs=[f.husb,f.wife].filter(id=>pos.has(id)).map(id=>pos.get(id).x+CW/2);return xs.length?xs.reduce((a,b)=>a+b)/xs.length:null};
+  gens.forEach(({list},row)=>{
+    // blocks: siblings together, with the spouses that follow them in the row order
+    const blocks=[];let cur=null;
+    for(const p of list){const key=p.famc[0]&&M.fams.has(p.famc[0])&&[M.fams.get(p.famc[0]).husb,M.fams.get(p.famc[0]).wife].some(id=>pos.has(id))?p.famc[0]:null;
+      if(!cur||key&&key!==cur.key||(!key&&cur.key&&!isSpouseOfBlock(p,cur))||(!key&&!cur.key&&!isSpouseOfBlock(p,cur))){cur={key,ps:[]};blocks.push(cur)}
+      cur.ps.push(p)}
+    let cursor=0;
+    for(const b of blocks){const w=b.ps.length*W-GX;let want=cursor;
+      if(b.key){const ux=unionX(M.fams.get(b.key));if(ux!=null)want=ux-w/2}
+      const start=Math.max(cursor,want);b.ps.forEach((p,i)=>pos.set(p.id,{x:start+i*W,y:row*GY,row}));cursor=start+w+GX*2}
+  });
+  // roots: move a couple with no parents over the middle of their children when there is room
+  for(let pass=0;pass<2;pass++)gens.forEach(({list},row)=>{
+    const shift=new Map();
+    for(const p of list){if(p.famc.some(f=>M.fams.has(f)&&[M.fams.get(f).husb,M.fams.get(f).wife].some(id=>pos.has(id))))continue;
+      const kids=p.fams.map(f=>M.fams.get(f)).filter(Boolean).flatMap(f=>f.chil).filter(c=>pos.has(c));if(!kids.length)continue;
+      const sp=p.fams.map(f=>M.fams.get(f)).filter(Boolean).map(f=>f.husb===p.id?f.wife:f.husb).filter(id=>pos.has(id));
+      const xs=kids.map(c=>pos.get(c).x+CW/2),mid=(Math.min(...xs)+Math.max(...xs))/2;
+      const coupleMid=([p.id,...sp].map(id=>pos.get(id).x+CW/2).reduce((a,b)=>a+b))/(1+sp.length);
+      shift.set(p.id,mid-coupleMid)}
+    const order=[...list].sort((a,b)=>pos.get(a.id).x-pos.get(b.id).x);
+    let last=-Infinity;
+    for(const p of order){const q=pos.get(p.id);q.x=Math.max(last+W,q.x+(shift.get(p.id)??0));last=q.x}
+  });
+  const xs=[...pos.values()].map(p=>p.x),minX=Math.min(...xs);
+  for(const q of pos.values())q.x-=minX;
+  return{pos,vis,rows:gens.length,width:Math.max(...[...pos.values()].map(p=>p.x))+CW,height:gens.length*GY-GY+CH};
+}
+function isSpouseOfBlock(p,b){return b.ps.some(q=>q.fams.some(f=>p.fams.includes(f)))}
+
+function years(p){const sp=span(p);return sp?`${sp.b}–${sp.d??""}`:""}
+function render(){
+  const L=layout(),rel=S.hl?related(S.hl):null,dim=id=>rel&&!rel.has(id)?" dim":"";
+  let s="";
+  // family edges
+  for(const f of M.fams.values()){
+    const par=[f.husb,f.wife].filter(id=>L.pos.has(id));const kids=f.chil.filter(c=>L.pos.has(c));
+    if(!par.length)continue;
+    const ps=par.map(id=>L.pos.get(id)),y=ps[0].y+CH/2;
+    const hlF=S.hl&&(par.includes(S.hl)||kids.includes(S.hl));
+    let ux,uy=y;
+    if(ps.length===2){const [a,b]=ps.sort((a,b)=>a.x-b.x);ux=(a.x+CW+b.x)/2;
+      s+=`<path class="edge sp${hlF&&par.includes(S.hl)?" hl":""}${S.hl&&!hlF?" dim":""}" d="M${a.x+CW} ${y} H${b.x}"/>`}
+    else{ux=ps[0].x+CW/2;uy=ps[0].y+CH}
+    if(kids.length){const ky=L.pos.get(kids[0]).y,midY=uy+(ky-uy)/2+(ps.length===2?CH/4:0);
+      const kx=kids.map(c=>L.pos.get(c).x+CW/2);
+      s+=`<path class="edge${hlF?" hl":""}${S.hl&&!hlF?" dim":""}" d="M${ux} ${uy} V${midY} M${Math.min(ux,...kx)} ${midY} H${Math.max(ux,...kx)} ${kx.map(x=>`M${x} ${midY} V${ky}`).join(" ")}"/>`}
+    if(ps.length===2){const m=f.events.find(e=>e.tag==="MARR"),yr=m?.date?.year;
+      s+=`<g class="${S.hl&&!hlF?"dim":""}"><circle class="union${yr?"":" nodate"}" data-f="${f.id}" cx="${ux}" cy="${y}" r="${yr?11:6}"/>${yr?`<text x="${ux}" y="${y+3.5}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#fff" pointer-events="none">${String(yr).slice(-2).padStart(2,"0")==String(yr).slice(-2)?"’"+String(yr).slice(-2):yr}</text>`:""}</g>`}
+  }
+  // cards
+  for(const p of L.vis){const q=L.pos.get(p.id),sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
+    const nm=p.name.length>22?p.name.slice(0,21)+"…":p.name;
+    s+=`<g class="card ${sx}${S.hl===p.id?" hl":""}${S.focus===p.id?" focus":""}${dim(p.id)}" data-p="${p.id}" transform="translate(${q.x},${q.y})">
+      <rect class="bg" width="${CW}" height="${CH}" rx="7"/><rect class="side" width="4" height="${CH-12}" x="5" y="6" rx="2"/>
+      <text class="nm" x="16" y="19">${esc(nm)}</text><text class="yr" x="16" y="35">${years(p)}</text>
+      <g class="brb" data-br="${p.id}"><rect x="${CW-52}" y="${CH-20}" width="46" height="15" rx="7.5"/><text x="${CW-29}" y="${CH-9}" text-anchor="middle">Branch</text></g></g>`}
+  $("view").innerHTML=s;
+  VIEW.w=L.width;VIEW.h=L.height;apply();
+  const fp=S.focus&&M.people.get(S.focus);
+  $("scope").innerHTML=fp?`Branch of <b>${esc(fp.name)}</b> · ${L.vis.length} of ${M.people.size} people · ancestors
+    <span class="step"><button data-step="up:-1">−</button><span>${S.up}</span><button data-step="up:1">+</button></span> descendants
+    <span class="step"><button data-step="down:-1">−</button><span>${S.down}</span><button data-step="down:1">+</button></span>
+    <button class="link" data-whole>Whole file</button>`:`Whole file · ${M.people.size} people in ${L.rows} generations. Hover a person and choose <b>Branch</b> to see only their ancestors and descendants.`;
+  $("title").textContent="Graph of "+M.name;$("tabname").textContent=M.name;
+  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families`;
+}
+
+// pan and zoom
+const VIEW={x:20,y:20,k:1,w:0,h:0};
+function apply(){$("view").setAttribute("transform",`translate(${VIEW.x},${VIEW.y}) scale(${VIEW.k})`)}
+function fit(){const r=$("canvas").getBoundingClientRect();VIEW.k=Math.min(1.4,(r.width-40)/VIEW.w,(r.height-40)/VIEW.h);
+  VIEW.x=(r.width-VIEW.w*VIEW.k)/2;VIEW.y=(r.height-VIEW.h*VIEW.k)/2;apply()}
+function zoomAt(f,cx,cy){const k=Math.max(.2,Math.min(3,VIEW.k*f));VIEW.x=cx-(cx-VIEW.x)*k/VIEW.k;VIEW.y=cy-(cy-VIEW.y)*k/VIEW.k;VIEW.k=k;apply()}
+const cv=$("canvas");let drag=null;
+cv.addEventListener("wheel",e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoomAt(e.deltaY<0?1.12:1/1.12,e.clientX-r.left,e.clientY-r.top)},{passive:false});
+cv.addEventListener("pointerdown",e=>{if(e.target.closest(".card,.union"))return;drag={x:e.clientX,y:e.clientY,vx:VIEW.x,vy:VIEW.y};cv.classList.add("drag");cv.setPointerCapture(e.pointerId)});
+cv.addEventListener("pointermove",e=>{if(!drag)return;VIEW.x=drag.vx+e.clientX-drag.x;VIEW.y=drag.vy+e.clientY-drag.y;apply()});
+cv.addEventListener("pointerup",()=>{drag=null;cv.classList.remove("drag")});
+$("fit").onclick=fit;
+$("zin").onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1.2,r.width/2,r.height/2)};
+$("zout").onclick=()=>{const r=cv.getBoundingClientRect();zoomAt(1/1.2,r.width/2,r.height/2)};
+
+const tip=$("tip");
+document.addEventListener("mousemove",e=>{
+  const u=e.target.closest(".union");
+  if(u){const f=M.fams.get(u.dataset.f),m=f.events.find(x=>x.tag==="MARR"),who=[f.husb,f.wife].map(id=>M.people.get(id)?.name).filter(Boolean).join(" & ");
+    tip.innerHTML=`<b>${esc(who)}</b>${m?.date?`Married ${esc(m.date.text)}${m.place?` <span class="m">· ${esc(m.place)}</span>`:""}`:"No marriage date"}<br><span class="m">${f.chil.length} ${f.chil.length===1?"child":"children"}</span>`;
+    tip.style.left=Math.min(e.clientX+14,innerWidth-310)+"px";tip.style.top=(e.clientY+14)+"px";tip.style.opacity=1}else tip.style.opacity=0;
+  if(drag)return;
+  const p=e.target.closest(".card"),id=p?p.dataset.p:null;
+  if(id!==S.hl){S.hl=id;render()}
+});
+document.addEventListener("click",e=>{
+  const br=e.target.closest("[data-br]");if(br){S.focus=br.dataset.br;S.hl=null;render();fit();return}
+  if(e.target.closest("[data-whole]")){S.focus=null;render();fit();return}
+  const st=e.target.closest("[data-step]");if(st){const [k,d]=st.dataset.step.split(":");S[k]=Math.max(0,Math.min(9,S[k]+ +d));render();fit();return}
+  const p=e.target.closest(".card");if(p){toast("Opens the page of "+M.people.get(p.dataset.p).name);return}
+  const b=e.target.closest(".seg button");
+  if(b){document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));const a=$("app");a.classList.toggle("theme-dark",b.dataset.theme==="dark");a.classList.toggle("theme-light",b.dataset.theme==="light")}
+});
+function load(text,name){S.focus=null;M=build(text,name);render();fit()}
+$("file").addEventListener("change",async e=>{const f=e.target.files[0];if(f)load(await f.text(),f.name)});
+load($("ged").textContent,"curie.ged");
+</script>
+</body>
+</html>
