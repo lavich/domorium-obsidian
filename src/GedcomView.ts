@@ -112,6 +112,7 @@ export interface GedcomViewHost {
   allowRemoteImages(scope: AllowScope): void;
   genealogyChanged(view: GedcomView): void;
   openEvidence(): void;
+  openFileTimeline(view: GedcomView): void;
 }
 
 export interface DeskSelection {
@@ -136,6 +137,7 @@ export class GedcomView extends TextFileView {
   private readonly editorEl: HTMLElement;
   private readonly deskEl: HTMLElement;
   private readonly modeAction: HTMLElement;
+  private readonly timelineAction: HTMLElement;
   // Edits come a keystroke at a time; the index and the panel need the text
   // once it has settled.
   private readonly announceEdit = debounce(
@@ -160,6 +162,9 @@ export class GedcomView extends TextFileView {
     });
     this.modeAction = this.addAction("code", t("mode.toSource"), () => {
       this.toggleMode();
+    });
+    this.timelineAction = this.addAction("calendar-range", t("command.openFileTimeline"), () => {
+      this.host.openFileTimeline(this);
     });
     this.showMode();
   }
@@ -641,6 +646,7 @@ export class GedcomView extends TextFileView {
   private showMode(): void {
     const genealogy = this.shownMode === "genealogy";
     this.modeAction.toggle(this.settings.genealogyInterface);
+    this.timelineAction.toggle(this.settings.genealogyInterface);
     this.editorEl.toggle(!genealogy);
     this.deskEl.toggle(genealogy);
     setIcon(this.modeAction, genealogy ? "code" : "users");

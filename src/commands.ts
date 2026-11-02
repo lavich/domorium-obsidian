@@ -39,6 +39,8 @@ export interface CommandHost {
     chosen: (record: GedcomRecord) => void,
   ): void;
   askForName(entered: (newName: string) => void): void;
+  /** `around` is the record the tab shows or the cursor is on, which may not be a person. */
+  openFileTimeline(path: string, around: string | undefined): void;
 }
 
 /** Obsidian's own `Hotkey`, spelt here so `obsidian` stays out of this file. */
@@ -90,6 +92,17 @@ export const COMMANDS: GedcomCommand[] = [
     isAvailable: (view) => view.genealogyInterface(),
     run: (_host, view) => {
       view.toggleMode();
+    },
+  },
+  {
+    id: "open-gedcom-file-timeline",
+    name: "command.openFileTimeline",
+    icon: "calendar-range",
+    isAvailable: (view) => view.file !== null && view.genealogyInterface(),
+    run: (host, view) => {
+      if (view.file) {
+        host.openFileTimeline(view.file.path, view.recordAtCursor()?.identifier);
+      }
     },
   },
   {

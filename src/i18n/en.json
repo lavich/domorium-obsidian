@@ -324,5 +324,6 @@
   "fileTimeline.legend.other": "Other event: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ★ event",
   "fileTimeline.legend.period": "A period, from … to",
   "fileTimeline.legend.uncertain": "About, before, after, between",
-  "fileTimeline.legend.arrows": "Arrows run from parent to child, for the person under the pointer"
+  "fileTimeline.legend.arrows": "Arrows run from parent to child, for the person under the pointer",
+  "fileTimeline.name": "Timeline of the file"
 }

@@ -72,6 +72,9 @@ export const OPEN_SPAN = 100;
 
 export const BRANCH_STEPS = { min: 0, max: 9, initial: 2 } as const;
 
+/** Past this many people the whole file stops being readable, and it opens on a branch. */
+export const LARGE_FILE = 500;
+
 const BIRTH_TAGS = new Set(["BIRT", "CHR", "BAPM"]);
 const DEATH_TAGS = new Set(["DEAT", "BURI", "CREM"]);
 
@@ -465,6 +468,18 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       ]);
     },
   };
+}
+
+/**
+ * The person a new timeline opens on: none for a file that can be read whole,
+ * else `around` where it names a person, else the first person declared.
+ */
+export function initialFocus(index: GenealogyIndex, around: string | undefined): string | undefined {
+  const people = index.people.filter((row) => row.xref !== undefined);
+  if (people.length <= LARGE_FILE) {
+    return undefined;
+  }
+  return around !== undefined && index.person(around) ? around : people[0]?.xref;
 }
 
 const held = new WeakMap<GenealogyIndex, FileTimeline>();

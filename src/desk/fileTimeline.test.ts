@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
-import { buildFileTimeline, fileTimelineOf, OPEN_SPAN, type FileTimeline } from "./fileTimeline";
+import {
+  buildFileTimeline,
+  fileTimelineOf,
+  initialFocus,
+  LARGE_FILE,
+  OPEN_SPAN,
+  type FileTimeline,
+} from "./fileTimeline";
 
 const NOW = 2026;
 
@@ -224,5 +231,31 @@ describe("the model held for a reading of the file", () => {
 
     expect(fileTimelineOf(index)).toBe(fileTimelineOf(index));
     expect(fileTimelineOf(curieIndex())).not.toBe(fileTimelineOf(index));
+  });
+});
+
+describe("what a new timeline opens on", () => {
+  const people = (count: number): string =>
+    [
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @F1@ FAM",
+      ...Array.from({ length: count }, (_, at) => [`0 @P${at + 1}@ INDI`, `1 NAME Person /${at + 1}/`]).flat(),
+      "0 TRLR", "",
+    ].join("\n");
+
+  it("opens a file it can show whole on all of it", () => {
+    expect(initialFocus(curieIndex(), "@I1@")).toBeUndefined();
+    expect(initialFocus(indexOf(people(LARGE_FILE)), "@P7@")).toBeUndefined();
+  });
+
+  it("opens a large file on the branch of the person the tab shows", () => {
+    expect(initialFocus(indexOf(people(LARGE_FILE + 1)), "@P7@")).toBe("@P7@");
+  });
+
+  it("opens a large file on its first person where the tab names none, or names a family", () => {
+    const index = indexOf(people(LARGE_FILE + 1));
+
+    expect(initialFocus(index, undefined)).toBe("@P1@");
+    expect(initialFocus(index, "@F1@")).toBe("@P1@");
   });
 });

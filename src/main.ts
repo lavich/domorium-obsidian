@@ -1,3 +1,4 @@
+import { GedcomLanguageService, type Range } from "@domorium/language-service";
 import {
   addIcon,
   type App,
@@ -11,6 +12,7 @@ import {
   Plugin,
   removeIcon,
   Setting,
+  type TAbstractFile,
   TFile,
   TFolder,
 } from "obsidian";
@@ -25,6 +27,11 @@ import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
+import { openFromIndex } from "./desk/deskState";
+import { initialFocus } from "./desk/fileTimeline";
+import { documentRef, type GenealogyIndex } from "./genealogy";
+import { IndexCache } from "./genealogy/cache";
+import { leafShowingFile } from "./vault/openTabs";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -36,9 +43,12 @@ import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView"
 import {
   EVIDENCE_VIEW_TYPE,
   EvidenceView,
+  FILE_TIMELINE_VIEW_TYPE,
+  FileTimelineView,
   INDEX_VIEW_TYPE,
   IndexView,
   type DeskViewsHost,
+  type FileTimelineViewHost,
 } from "./desk/DeskViews";
 import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
@@ -57,7 +67,7 @@ interface SuggestRegistry {
 
 export default class GedcomPlugin
   extends Plugin
-  implements GedcomViewHost, DeskViewsHost
+  implements GedcomViewHost, DeskViewsHost, FileTimelineViewHost
 {
   settings: GedcomSettings = DEFAULT_SETTINGS;
   /**
@@ -85,6 +95,14 @@ export default class GedcomPlugin
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a panel the reader closes stays closed. */
   private evidencePlaced = false;
+  /**
+   * Readings for a timeline whose file no tab has open. The revision is a count
+   * of the vault's changes to the path, not the file's time or size, which an
+   * edit within the same second and of the same length would leave unchanged.
+   */
+  private readonly closedReads = new IndexCache();
+  private readonly closedRevisions = new Map<string, number>();
+  private readonly closedReadAt = new Map<string, number>();
   private readonly moves = new MoveFollower<TFile>(
     {
       files: () => this.app.vault.getFiles(),
@@ -116,6 +134,7 @@ export default class GedcomPlugin
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
     this.registerView(INDEX_VIEW_TYPE, (leaf) => new IndexView(leaf, this));
     this.registerView(EVIDENCE_VIEW_TYPE, (leaf) => new EvidenceView(leaf, this));
+    this.registerView(FILE_TIMELINE_VIEW_TYPE, (leaf) => new FileTimelineView(leaf, this));
     this.addCommand({
       id: "open-gedcom-index",
       name: t("command.openIndex"),
@@ -214,6 +233,7 @@ export default class GedcomPlugin
           this.followedView = active;
           this.redrawDesk();
         }
+        this.forEachTimeline((timeline) => timeline.refreshIfStale());
       }),
     );
     this.registerEvent(
@@ -235,16 +255,38 @@ export default class GedcomPlugin
           this.followedView = null;
           this.redrawDesk();
         }
+        this.forEachTimeline((timeline) => timeline.refreshIfStale());
       }),
     );
     this.registerEvent(
       this.app.vault.on("rename", (file, oldPath) => {
+        const descendants = file instanceof TFolder ? descendantPaths(file) : [];
         this.moves.add(
           { from: oldPath, to: file.path, folder: file instanceof TFolder },
-          file instanceof TFolder ? descendantPaths(file) : [],
+          descendants,
         );
+        this.followTimelines(oldPath, file.path, descendants);
       }),
     );
+    this.registerEvent(
+      this.app.vault.on("modify", (file) => {
+        if (!this.timelineShows(file.path)) {
+          return;
+        }
+        this.closedRevisions.set(file.path, (this.closedRevisions.get(file.path) ?? 0) + 1);
+        if (!this.openTab(file.path)) {
+          this.markTimelinesStale((path) => path === file.path);
+        }
+      }),
+    );
+    const appearedOrWent = (file: TAbstractFile): void => {
+      this.closedReads.forget(documentRef(file.path));
+      this.markTimelinesStale(
+        (path) => path === file.path || (file instanceof TFolder && path.startsWith(`${file.path}/`)),
+      );
+    };
+    this.registerEvent(this.app.vault.on("delete", appearedOrWent));
+    this.registerEvent(this.app.vault.on("create", appearedOrWent));
     this.registerEvent(
       this.app.workspace.on("css-change", () => {
         this.forEachView((view) => {
@@ -289,6 +331,10 @@ export default class GedcomPlugin
   }
 
   genealogyChanged(view: GedcomView): void {
+    const path = view.file?.path;
+    if (path !== undefined) {
+      this.markTimelinesStale((shown) => shown === path);
+    }
     if (this.followedView === null || this.followedView === view) {
       this.followedView = view;
       this.redrawDesk();
@@ -348,6 +394,152 @@ export default class GedcomPlugin
     this.followedView = null;
     workspace.detachLeavesOfType(INDEX_VIEW_TYPE);
     workspace.detachLeavesOfType(EVIDENCE_VIEW_TYPE);
+    workspace.detachLeavesOfType(FILE_TIMELINE_VIEW_TYPE);
+  }
+
+  openFileTimeline(view: GedcomView): void {
+    if (view.file) {
+      void this.openTimelineOf(view.file.path, view.recordAtCursor()?.identifier);
+    }
+  }
+
+  /** Matched on the saved state, so a timeline still deferred since a restart is found too. */
+  private async openTimelineOf(path: string, around: string | undefined): Promise<void> {
+    if (!this.settings.genealogyInterface) {
+      return;
+    }
+    const { workspace } = this.app;
+    const open = workspace
+      .getLeavesOfType(FILE_TIMELINE_VIEW_TYPE)
+      .find((leaf) => leaf.getViewState().state?.gedcom === path);
+    if (open) {
+      await workspace.revealLeaf(open);
+      return;
+    }
+    const index = await this.timelineIndex(path);
+    if (!index) {
+      new Notice(t("notice.vaultFileNotFound", { path }));
+      return;
+    }
+    const focus = initialFocus(index, around);
+    const leaf = workspace.getLeaf("tab");
+    await leaf.setViewState({
+      type: FILE_TIMELINE_VIEW_TYPE,
+      active: true,
+      state: { gedcom: path, ...(focus === undefined ? {} : { focus }) },
+    });
+    await workspace.revealLeaf(leaf);
+  }
+
+  /**
+   * An open tab's reading, which holds what is typed and not yet saved; the
+   * vault's only where no tab of the file is open.
+   */
+  async timelineIndex(path: string): Promise<GenealogyIndex | null> {
+    const file = this.app.vault.getAbstractFileByPath(path);
+    if (!(file instanceof TFile)) {
+      return null;
+    }
+    const tab = this.openTab(path);
+    if (tab) {
+      return tab.genealogy();
+    }
+    const document = documentRef(path);
+    const revision = this.closedRevisions.get(path) ?? 0;
+    const held = this.closedReads.held(document);
+    if (held && this.closedReadAt.get(path) === revision) {
+      return held;
+    }
+    const text = await this.app.vault.cachedRead(file);
+    this.closedReadAt.set(path, revision);
+    return this.closedReads.at(document, String(revision), () => new GedcomLanguageService(text));
+  }
+
+  timelineClosed(path: string, view: FileTimelineView): void {
+    if (!this.timelineShows(path, view)) {
+      this.closedReads.forget(documentRef(path));
+      this.closedReadAt.delete(path);
+      this.closedRevisions.delete(path);
+    }
+  }
+
+  private timelineShows(path: string, except?: FileTimelineView): boolean {
+    return this.app.workspace
+      .getLeavesOfType(FILE_TIMELINE_VIEW_TYPE)
+      .some((leaf) => leaf.view !== except && leaf.getViewState().state?.gedcom === path);
+  }
+
+  async openPersonIn(path: string, xref: string): Promise<void> {
+    const tab = await this.bringFileTab(path);
+    if (tab) {
+      openFromIndex(tab, xref);
+    }
+  }
+
+  async showSourceIn(path: string, range: Range): Promise<void> {
+    (await this.bringFileTab(path))?.showInSource(range);
+  }
+
+  /** The timeline covers the main area, so the tab it leads into is brought in front of it. */
+  private async bringFileTab(path: string): Promise<GedcomView | null> {
+    const { workspace } = this.app;
+    let leaf = leafShowingFile(path, (visit) => {
+      workspace.getLeavesOfType(GEDCOM_VIEW_TYPE).forEach(visit);
+    });
+    if (!leaf) {
+      const file = this.app.vault.getAbstractFileByPath(path);
+      if (!(file instanceof TFile)) {
+        new Notice(t("notice.vaultFileNotFound", { path }));
+        return null;
+      }
+      leaf = workspace.getLeaf("tab");
+      await leaf.openFile(file);
+    }
+    await leaf.loadIfDeferred();
+    await workspace.revealLeaf(leaf);
+    return leaf.view instanceof GedcomView ? leaf.view : null;
+  }
+
+  private openTab(path: string): GedcomView | null {
+    for (const leaf of this.app.workspace.getLeavesOfType(GEDCOM_VIEW_TYPE)) {
+      if (leaf.view instanceof GedcomView && leaf.view.file?.path === path) {
+        return leaf.view;
+      }
+    }
+    return null;
+  }
+
+  private forEachTimeline(run: (view: FileTimelineView) => void): void {
+    for (const leaf of this.app.workspace.getLeavesOfType(FILE_TIMELINE_VIEW_TYPE)) {
+      if (leaf.view instanceof FileTimelineView) {
+        run(leaf.view);
+      }
+    }
+  }
+
+  private markTimelinesStale(shows: (path: string) => boolean): void {
+    this.forEachTimeline((timeline) => {
+      const path = timeline.gedcom();
+      if (path !== null && shows(path)) {
+        timeline.markStale();
+      }
+    });
+  }
+
+  /** Rewritten in the saved state too, which is all a timeline still deferred since a restart has. */
+  private followTimelines(from: string, to: string, descendants: string[]): void {
+    const moved = new Map<string, string>([
+      [from, to],
+      ...descendants.map((path): [string, string] => [`${from}${path.slice(to.length)}`, path]),
+    ]);
+    for (const leaf of this.app.workspace.getLeavesOfType(FILE_TIMELINE_VIEW_TYPE)) {
+      const { type, state } = leaf.getViewState();
+      const gedcom = state?.gedcom;
+      const next = typeof gedcom === "string" ? moved.get(gedcom) : undefined;
+      if (next !== undefined) {
+        void leaf.setViewState({ type, state: { ...state, gedcom: next } });
+      }
+    }
   }
 
   private async placeEvidence(): Promise<void> {
@@ -509,6 +701,9 @@ export default class GedcomPlugin
       },
       askForName: (entered) => {
         new RenameReferenceModal(this.app, entered).open();
+      },
+      openFileTimeline: (path, around) => {
+        void this.openTimelineOf(path, around);
       },
     };
   }

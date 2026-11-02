@@ -50,6 +50,7 @@ function host(overrides: Partial<CommandHost> = {}) {
       copy,
       chooseRecord: vi.fn(),
       askForName: vi.fn(),
+      openFileTimeline: vi.fn(),
       ...overrides,
     } satisfies CommandHost,
   };
@@ -177,6 +178,35 @@ describe("what a command offers in Genealogy mode", () => {
     command("toggle-gedcom-mode").run(host().host, view({ toggleMode }));
 
     expect(toggleMode).toHaveBeenCalled();
+  });
+});
+
+describe("the timeline of the file", () => {
+  const open = command("open-gedcom-file-timeline");
+
+  it("is offered for a file while the genealogy interface is on, in either mode", () => {
+    expect(open.isAvailable(view())).toBe(true);
+    expect(open.isAvailable(view({ inSource: () => false }))).toBe(true);
+  });
+
+  it("is not offered while the genealogy interface is off", () => {
+    expect(open.isAvailable(view({ genealogyInterface: () => false }))).toBe(false);
+  });
+
+  it("is not offered without a file", () => {
+    expect(open.isAvailable(view({ file: null }))).toBe(false);
+  });
+
+  it("opens the timeline of the file around the person at the cursor", () => {
+    const openFileTimeline = vi.fn<CommandHost["openFileTimeline"]>();
+
+    open.run(host({ openFileTimeline }).host, view());
+    open.run(host({ openFileTimeline }).host, view({ recordAtCursor: () => undefined }));
+
+    expect(openFileTimeline.mock.calls).toEqual([
+      ["tree.ged", "@I1@"],
+      ["tree.ged", undefined],
+    ]);
   });
 });
 

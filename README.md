@@ -21,7 +21,8 @@ adapted per editor.
 - An optional genealogy interface, off until you turn it on: a Genealogy mode
   that shows the file as people and sources — a page per person with their
   facts, names and family, a page per source — an index of everyone in the
-  file, and an evidence panel for what a fact rests on
+  file, an evidence panel for what a fact rests on, and a timeline of the whole
+  file
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -52,8 +53,9 @@ to a remote service.
    the file declares, and the view header and **Switch between genealogy and
    source** go between the two modes.
 
-The next three paragraphs — Genealogy mode, the index and evidence panels, and
-**Open GEDCOM files as** — are part of the genealogy interface and appear only
+The next four paragraphs — Genealogy mode, the index and evidence panels, the
+timeline of the file, and **Open GEDCOM files as** — are part of the genealogy
+interface and appear only
 while it is on; turning it off hides it again and closes its panels without
 losing the mode a tab was in. The editor features after them need no setting.
 
@@ -74,6 +76,19 @@ panel** puts the selected fact's sources in the right sidebar, kept apart from
 the sources of the whole record so that one is never mistaken for the other.
 On a phone the two are the left and right drawers, and tapping a fact shows
 the gist beneath it.
+
+**Open the timeline of the file**, from the command palette, the tab's menu or
+the calendar icon in its header, opens a tab of its own with one row per person,
+ordered by generation and family, and a lifeline from birth to death — pink for
+a woman, blue for a man, grey where the record states no sex — with the person's
+dated events on it; an approximate date is drawn dashed and a period as a span.
+Pointing at a person picks out their parents, spouses and children with arrows
+from parent to child, and a year cursor gives the age everyone alive reached
+that year. **Branch** on a row narrows it to one person's ancestors and
+descendants, and a file of more than 500 people opens on the branch of the
+person its tab shows. A person opens their page in the file's tab, and an event
+its lines in the source. The timeline follows unsaved edits, a renamed or moved
+file, and is restored with the workspace.
 
 A tab remembers whether it was in Genealogy or Source. **Open GEDCOM files as**
 in the plugin settings chooses which mode a newly opened file starts in, while the

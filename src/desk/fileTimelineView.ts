@@ -248,7 +248,7 @@ export class FileTimelineBoard {
     if (!changed && this.layout) {
       return;
     }
-    this.scope = { ...scope };
+    this.scope = scopeOf(scope);
     this.searchText = new Map(
       [...model.people.values()].map((person) => [
         person.xref,
@@ -416,7 +416,7 @@ export class FileTimelineBoard {
     const centre = this.centreYear();
     this.scope = next;
     this.relayout(focusChanged ? "focus" : centre);
-    this.host.scopeChanged({ ...next });
+    this.host.scopeChanged(scopeOf(next));
   }
 
   private centreYear(): number | null {
@@ -1061,6 +1061,10 @@ export class FileTimelineBoard {
   private closePop(): void {
     this.pop.removeClass("is-shown");
   }
+}
+
+function scopeOf({ focus, up, down, zoom, others }: TimelineScope): TimelineScope {
+  return { ...(focus === undefined ? {} : { focus }), up, down, zoom, others };
 }
 
 function sameScope(a: TimelineScope, b: TimelineScope): boolean {
