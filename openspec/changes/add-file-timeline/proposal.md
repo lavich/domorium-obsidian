@@ -27,8 +27,11 @@ The user's requirement, in their words, with the decisions taken on the way
   filters for births, marriages and deaths, facts without a date written in the
   bar only when zoomed in or under the pointer); a branch scope and a year cursor
   — «да»; «оставь только Families».
-- Ages under the year cursor: «Да, только под курсором». The person timeline
-  keeps showing no age.
+- Ages under the year cursor: «Да, только под курсором», marked approximate where
+  the birth date is. The person timeline keeps showing no age. An age is the one
+  reached during the year under the cursor, which is exact for a birth known by
+  its year alone: the reason the reading-desk change kept ages out (an age read
+  from years is off by one half the time) does not apply to it.
 - What a large file opens on: «Ветку текущего человека, если файл большой».
 
 Proposed scope:
@@ -45,9 +48,8 @@ Proposed scope:
 - A file of more than 500 people opens on the branch of the person its tab shows.
 - The view belongs to the genealogy interface: it is not offered, and an open
   one is closed, while **Genealogy interface** is off.
-- The read model reports, for a date, the year of its second date, whether it
-  states a period or an uncertain moment, and whether its day and month are
-  known.
+- The read model reports, for a date, the year of its second date and whether it
+  states a period or an uncertain moment.
 
 This change belongs in this repository. The language service already parses
 every date this needs; the read model that reports it lives here
@@ -76,8 +78,8 @@ move), and the rest adapts it to Obsidian.
 
 - `genealogy-view`: the genealogy interface setting also hides the file
   timeline and its header action and command.
-- `genealogy-read-model`: a date reports the year of its second date, whether it
-  is a period, and whether its day and month are stated.
+- `genealogy-read-model`: a date reports the year of its second date and whether
+  it is a period.
 
 ## Impact
 

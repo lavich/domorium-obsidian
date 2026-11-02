@@ -32,12 +32,13 @@ wrote it, so a view can show the full date whether or not a year could be read
 from it.
 
 A date stating two dates — `BET … AND …`, `FROM … TO …` — SHALL also report the
-year of the second, read by the same rules. The model SHALL tell a date that
-states a stretch of time, `FROM` and `TO`, from one that states an uncertain
-moment, `BET`, `BEF` and `AFT`, so that a view can draw the first as a period and
-the second as a guess. It SHALL report whether the day and the month of the first
-date are both stated, so that a difference of years read from it can be marked
-as possibly off by one.
+year of the second, read by the same rules; where the second yields no year, as
+one in another calendar does, none SHALL be reported for it, and the first is
+read as before. The two years SHALL be reported in the order the file writes
+them, even where the second is the earlier. The model SHALL tell a date that
+states a stretch of time, `FROM` and `TO` with or without the other, from one
+that states an uncertain moment, `BET`, `BEF` and `AFT`, so that a view can draw
+the first as a period and the second as a guess.
 
 #### Scenario: A plain date
 - **WHEN** the payload reads `7 NOV 1867`
@@ -118,7 +119,15 @@ as possibly off by one.
 - **THEN** the second year is 1870, and the date is reported as uncertain, not as
   a period
 
-#### Scenario: Day and month stated
-- **WHEN** the payload reads `7 NOV 1867`, and another reads `1867`
-- **THEN** the first reports its day and month as stated, and the second does
-  not
+#### Scenario: A period with one end
+- **WHEN** the payload reads `FROM 1891`
+- **THEN** the year is 1891, no second year is reported, and the date is reported
+  as a period
+
+#### Scenario: A second date in another calendar
+- **WHEN** the payload reads `BET 1867 AND HEBREW 5628` in a 7.0 document
+- **THEN** the year is 1867 and no second year is reported
+
+#### Scenario: A second date before the first
+- **WHEN** the payload reads `FROM 1894 TO 1891`
+- **THEN** the year is 1894 and the second year 1891
