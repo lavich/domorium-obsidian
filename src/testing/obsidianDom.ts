@@ -11,9 +11,14 @@
 interface DomOptions {
   cls?: string | string[];
   text?: string;
+  attr?: Record<string, string | number | boolean | null>;
+  title?: string;
+  type?: string;
+  value?: string;
+  placeholder?: string;
 }
 
-const IMPLEMENTED = new Set(["cls", "text"]);
+const IMPLEMENTED = new Set(["cls", "text", "attr", "title", "type", "value", "placeholder"]);
 
 function create(
   doc: Document,
@@ -36,6 +41,19 @@ function create(
   }
   if (options.text !== undefined) {
     node.textContent = options.text;
+  }
+  for (const [name, value] of Object.entries(options.attr ?? {})) {
+    if (value !== null) {
+      node.setAttribute(name, String(value));
+    }
+  }
+  for (const name of ["title", "type", "placeholder"] as const) {
+    if (options[name] !== undefined) {
+      node.setAttribute(name, options[name]);
+    }
+  }
+  if (options.value !== undefined) {
+    (node as HTMLInputElement).value = options.value;
   }
   return node;
 }

@@ -288,5 +288,71 @@
   "tree.moreUp": "Родители за краем",
   "tree.moreDown": "Дети за краем",
   "tree.legendGap": "Ни одного источника",
-  "tree.legendMore": "▲ ▼ родные за краем"
+  "tree.legendMore": "▲ ▼ родные за краем",
+  "command.openFileTimeline": "Открыть хронологию файла",
+  "fileTimeline.title": "Хронология файла {name}",
+  "fileTimeline.others": "Другие события",
+  "fileTimeline.zoom": "Масштаб",
+  "fileTimeline.search": "Найти человека…",
+  "fileTimeline.alive": {
+    "one": "В {year} году жив {count} человек",
+    "few": "В {year} году живы {count} человека",
+    "many": "В {year} году живы {count} человек",
+    "other": "В {year} году живы {count} человека"
+  },
+  "fileTimeline.aliveInBranch": {
+    "one": "В {year} году в этой ветке жив {count} человек",
+    "few": "В {year} году в этой ветке живы {count} человека",
+    "many": "В {year} году в этой ветке живы {count} человек",
+    "other": "В {year} году в этой ветке живы {count} человека"
+  },
+  "fileTimeline.wholeFile": "Весь файл",
+  "fileTimeline.people": {
+    "one": "{count} человек",
+    "few": "{count} человека",
+    "many": "{count} человек",
+    "other": "{count} человека"
+  },
+  "fileTimeline.families": {
+    "one": "{count} семья",
+    "few": "{count} семьи",
+    "many": "{count} семей",
+    "other": "{count} семьи"
+  },
+  "fileTimeline.events": {
+    "one": "{count} событие с датой",
+    "few": "{count} события с датой",
+    "many": "{count} событий с датой",
+    "other": "{count} события с датой"
+  },
+  "fileTimeline.branchHelp": "Выберите ветку в строке человека, чтобы видеть только его предков и потомков.",
+  "fileTimeline.branchOf": {
+    "one": "Ветка: {name} · {shown} из {count} человека",
+    "few": "Ветка: {name} · {shown} из {count} человек",
+    "many": "Ветка: {name} · {shown} из {count} человек",
+    "other": "Ветка: {name} · {shown} из {count} человека"
+  },
+  "fileTimeline.branch": "Ветка",
+  "fileTimeline.branchHint": "Показать только предков и потомков этого человека",
+  "fileTimeline.ancestors": "Предки",
+  "fileTimeline.descendants": "Потомки",
+  "fileTimeline.fewer": "На поколение меньше",
+  "fileTimeline.more": "На поколение больше",
+  "fileTimeline.undated": {
+    "one": "У {count} человека нет ни одной даты",
+    "few": "У {count} человек нет ни одной даты",
+    "many": "У {count} человек нет ни одной даты",
+    "other": "У {count} человека нет ни одной даты"
+  },
+  "fileTimeline.gone": "Файла {path} больше нет в хранилище.",
+  "fileTimeline.legend.woman": "Женщина",
+  "fileTimeline.legend.man": "Мужчина",
+  "fileTimeline.legend.unknown": "Пол не указан",
+  "fileTimeline.legend.birth": "Рождение или крещение",
+  "fileTimeline.legend.marriage": "Брак",
+  "fileTimeline.legend.death": "Смерть или погребение",
+  "fileTimeline.legend.other": "Другое событие: ✎ учёба, ⌂ место жительства, ⇄ переезд, ⚒ занятие, ★ событие",
+  "fileTimeline.legend.period": "Период, с … по",
+  "fileTimeline.legend.uncertain": "Около, до, после, между",
+  "fileTimeline.legend.arrows": "Стрелки ведут от родителя к ребёнку — для человека под указателем"
 }

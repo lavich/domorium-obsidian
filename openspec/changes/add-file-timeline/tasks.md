@@ -15,11 +15,11 @@
 
 ## 4. Drawing
 
-- [ ] 4.1 Extend `src/testing/obsidianDom.ts` with the helpers the toolbar needs (`attr`, inputs), each implemented rather than dropped; covered by its use in 4.2–4.5.
-- [ ] 4.2 Create `src/desk/fileTimelineView.ts`: layout per scope, zoom and switch; the names column and axis; lifelines, marks, spans and marriage lines with `createElementNS`, for a window passed in and one window around it; icons handed in; no `innerHTML`. Test in a new `src/desk/fileTimelineView.test.ts` (happy-dom) that a window draws only its rows, and that a window past the drawn one draws the next.
-- [ ] 4.3 Hover by classes and the arrows layer; test in `src/desk/fileTimelineView.test.ts` that pointing at Marie marks her relatives `on` without replacing any drawn element, draws arrows from both her parents and to her daughters, and none from Pierre's row.
-- [ ] 4.4 The year cursor with ages and the count alive, and undated facts in the bar when zoomed in or under the pointer; test in `src/desk/fileTimelineView.test.ts`.
-- [ ] 4.5 The toolbar: other-events switch, zoom, search, branch with − and +, Whole file; test in `src/desk/fileTimelineView.test.ts`.
+- [x] 4.1 Extend `src/testing/obsidianDom.ts` with the helpers the toolbar needs (`attr`, inputs), each implemented rather than dropped; covered by its use in 4.2–4.5.
+- [x] 4.2 Create `src/desk/fileTimelineView.ts`: layout per scope, zoom and switch; the names column and axis; lifelines, marks, spans and marriage lines with `createElementNS`, for a window passed in and one window around it; icons handed in; no `innerHTML`. Test in a new `src/desk/fileTimelineView.test.ts` (happy-dom) that a window draws only its rows, and that a window past the drawn one draws the next.
+- [x] 4.3 Hover by classes and the arrows layer; test in `src/desk/fileTimelineView.test.ts` that pointing at Marie marks her relatives `on` without replacing any drawn element, draws arrows from both her parents and to her daughters, and none from Pierre's row.
+- [x] 4.4 The year cursor with ages and the count alive, and undated facts in the bar when zoomed in or under the pointer; test in `src/desk/fileTimelineView.test.ts`.
+- [x] 4.5 The toolbar: other-events switch, zoom, search, branch with − and +, Whole file; test in `src/desk/fileTimelineView.test.ts`.
 - [ ] 4.6 Styles in `styles.css` from the theme's variables; the phone layout and the touch behaviour (first touch highlights and places the cursor, second activates, a mark shows its event with Show in source); tested by `tests/fileTimeline.spec.ts` in 6.2.
 
 ## 5. The view in Obsidian

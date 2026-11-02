@@ -272,5 +272,57 @@
   "tree.moreUp": "Parents beyond the edge",
   "tree.moreDown": "Children beyond the edge",
   "tree.legendGap": "No sources at all",
-  "tree.legendMore": "▲ ▼ relatives beyond the edge"
+  "tree.legendMore": "▲ ▼ relatives beyond the edge",
+  "command.openFileTimeline": "Open the timeline of the file",
+  "fileTimeline.title": "Timeline of {name}",
+  "fileTimeline.others": "Other events",
+  "fileTimeline.zoom": "Zoom",
+  "fileTimeline.search": "Find a person…",
+  "fileTimeline.alive": {
+    "one": "In {year}: {count} person alive",
+    "other": "In {year}: {count} people alive"
+  },
+  "fileTimeline.aliveInBranch": {
+    "one": "In {year}: {count} person alive in this branch",
+    "other": "In {year}: {count} people alive in this branch"
+  },
+  "fileTimeline.wholeFile": "Whole file",
+  "fileTimeline.people": {
+    "one": "{count} person",
+    "other": "{count} people"
+  },
+  "fileTimeline.families": {
+    "one": "{count} family",
+    "other": "{count} families"
+  },
+  "fileTimeline.events": {
+    "one": "{count} dated event",
+    "other": "{count} dated events"
+  },
+  "fileTimeline.branchHelp": "Choose the branch on a person's row to see only their ancestors and descendants.",
+  "fileTimeline.branchOf": {
+    "one": "Branch of {name} · {shown} of {count} person",
+    "other": "Branch of {name} · {shown} of {count} people"
+  },
+  "fileTimeline.branch": "Branch",
+  "fileTimeline.branchHint": "Show only this person's ancestors and descendants",
+  "fileTimeline.ancestors": "Ancestors",
+  "fileTimeline.descendants": "Descendants",
+  "fileTimeline.fewer": "One generation fewer",
+  "fileTimeline.more": "One generation more",
+  "fileTimeline.undated": {
+    "one": "{count} person has no dated event",
+    "other": "{count} people have no dated event"
+  },
+  "fileTimeline.gone": "{path} is no longer in the vault.",
+  "fileTimeline.legend.woman": "Woman",
+  "fileTimeline.legend.man": "Man",
+  "fileTimeline.legend.unknown": "Sex not stated",
+  "fileTimeline.legend.birth": "Birth or christening",
+  "fileTimeline.legend.marriage": "Marriage",
+  "fileTimeline.legend.death": "Death or burial",
+  "fileTimeline.legend.other": "Other event: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ★ event",
+  "fileTimeline.legend.period": "A period, from … to",
+  "fileTimeline.legend.uncertain": "About, before, after, between",
+  "fileTimeline.legend.arrows": "Arrows run from parent to child, for the person under the pointer"
 }
