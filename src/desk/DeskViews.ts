@@ -232,13 +232,17 @@ export class FileTimelineView extends ItemView {
   }
 
   onClose(): Promise<void> {
+    this.asked += 1;
+    this.board = null;
     if (this.state.gedcom) {
       this.host.timelineClosed(this.state.gedcom, this);
     }
     return Promise.resolve();
   }
 
+  /** Called as the tab is brought forward, which is when a timeline that went stale out of sight catches up. */
   onResize(): void {
+    this.refreshIfStale();
     this.board?.resized();
   }
 

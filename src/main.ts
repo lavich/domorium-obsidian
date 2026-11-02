@@ -29,7 +29,7 @@ import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
 import { openFromIndex } from "./desk/deskState";
 import { initialFocus } from "./desk/fileTimeline";
-import { documentRef, type GenealogyIndex } from "./genealogy";
+import { buildIndex, documentRef, type GenealogyIndex } from "./genealogy";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import {
@@ -103,6 +103,9 @@ export default class GedcomPlugin
   private readonly closedReads = new IndexCache();
   private readonly closedRevisions = new Map<string, number>();
   private readonly closedReadAt = new Map<string, number>();
+  /** Never reset, so a revision taken before a path was forgotten cannot match one after. */
+  private revisions = 0;
+  private readonly opening = new Set<string>();
   private readonly moves = new MoveFollower<TFile>(
     {
       files: () => this.app.vault.getFiles(),
@@ -273,20 +276,21 @@ export default class GedcomPlugin
         if (!this.timelineShows(file.path)) {
           return;
         }
-        this.closedRevisions.set(file.path, (this.closedRevisions.get(file.path) ?? 0) + 1);
-        if (!this.openTab(file.path)) {
-          this.markTimelinesStale((path) => path === file.path);
-        }
+        this.closedRevisions.set(file.path, (this.revisions += 1));
+        this.markTimelinesStale((path) => path === file.path);
       }),
     );
     const appearedOrWent = (file: TAbstractFile): void => {
-      this.closedReads.forget(documentRef(file.path));
-      this.markTimelinesStale(
-        (path) => path === file.path || (file instanceof TFolder && path.startsWith(`${file.path}/`)),
-      );
+      const under = (path: string): boolean =>
+        path === file.path || (file instanceof TFolder && path.startsWith(`${file.path}/`));
+      for (const path of [...this.closedReadAt.keys(), ...this.closedRevisions.keys()]) {
+        if (under(path)) {
+          this.forgetClosed(path);
+        }
+      }
+      this.markTimelinesStale(under);
     };
     this.registerEvent(this.app.vault.on("delete", appearedOrWent));
-    this.registerEvent(this.app.vault.on("create", appearedOrWent));
     this.registerEvent(
       this.app.workspace.on("css-change", () => {
         this.forEachView((view) => {
@@ -298,6 +302,8 @@ export default class GedcomPlugin
     this.syncInterface();
     // A saved layout restores the panels after onload.
     this.app.workspace.onLayoutReady(() => {
+      // Before the layout is ready the vault announces every file it loads as created.
+      this.registerEvent(this.app.vault.on("create", appearedOrWent));
       this.syncInterface();
     });
   }
@@ -414,21 +420,28 @@ export default class GedcomPlugin
       .find((leaf) => leaf.getViewState().state?.gedcom === path);
     if (open) {
       await workspace.revealLeaf(open);
+      // revealLeaf only selects the tab, and a timeline that went stale while hidden waits to be made active.
+      workspace.setActiveLeaf(open, { focus: true });
       return;
     }
-    const index = await this.timelineIndex(path);
-    if (!index) {
-      new Notice(t("notice.vaultFileNotFound", { path }));
-      return;
+    this.opening.add(path);
+    try {
+      const index = await this.timelineIndex(path);
+      if (!index) {
+        new Notice(t("notice.vaultFileNotFound", { path }));
+        return;
+      }
+      const focus = initialFocus(index, around);
+      const leaf = workspace.getLeaf("tab");
+      await leaf.setViewState({
+        type: FILE_TIMELINE_VIEW_TYPE,
+        active: true,
+        state: { gedcom: path, ...(focus === undefined ? {} : { focus }) },
+      });
+      await workspace.revealLeaf(leaf);
+    } finally {
+      this.opening.delete(path);
     }
-    const focus = initialFocus(index, around);
-    const leaf = workspace.getLeaf("tab");
-    await leaf.setViewState({
-      type: FILE_TIMELINE_VIEW_TYPE,
-      active: true,
-      state: { gedcom: path, ...(focus === undefined ? {} : { focus }) },
-    });
-    await workspace.revealLeaf(leaf);
   }
 
   /**
@@ -445,22 +458,30 @@ export default class GedcomPlugin
       return tab.genealogy();
     }
     const document = documentRef(path);
-    const revision = this.closedRevisions.get(path) ?? 0;
+    const revision = this.closedRevisions.get(path) ?? (this.revisions += 1);
+    this.closedRevisions.set(path, revision);
     const held = this.closedReads.held(document);
     if (held && this.closedReadAt.get(path) === revision) {
       return held;
     }
     const text = await this.app.vault.cachedRead(file);
+    if (!this.timelineShows(path) && !this.opening.has(path)) {
+      return buildIndex(new GedcomLanguageService(text));
+    }
     this.closedReadAt.set(path, revision);
     return this.closedReads.at(document, String(revision), () => new GedcomLanguageService(text));
   }
 
   timelineClosed(path: string, view: FileTimelineView): void {
     if (!this.timelineShows(path, view)) {
-      this.closedReads.forget(documentRef(path));
-      this.closedReadAt.delete(path);
-      this.closedRevisions.delete(path);
+      this.forgetClosed(path);
     }
+  }
+
+  private forgetClosed(path: string): void {
+    this.closedReads.forget(documentRef(path));
+    this.closedReadAt.delete(path);
+    this.closedRevisions.delete(path);
   }
 
   private timelineShows(path: string, except?: FileTimelineView): boolean {
@@ -497,10 +518,15 @@ export default class GedcomPlugin
     }
     await leaf.loadIfDeferred();
     await workspace.revealLeaf(leaf);
+    workspace.setActiveLeaf(leaf, { focus: true });
     return leaf.view instanceof GedcomView ? leaf.view : null;
   }
 
+  /** Two tabs of one file can differ by what is typed and unsaved, so the one last worked in answers. */
   private openTab(path: string): GedcomView | null {
+    if (this.followedView?.file?.path === path && this.isOpen(this.followedView)) {
+      return this.followedView;
+    }
     for (const leaf of this.app.workspace.getLeavesOfType(GEDCOM_VIEW_TYPE)) {
       if (leaf.view instanceof GedcomView && leaf.view.file?.path === path) {
         return leaf.view;
