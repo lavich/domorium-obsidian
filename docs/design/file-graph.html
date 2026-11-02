@@ -125,6 +125,7 @@ svg text{font-family:var(--font-interface)}
     <ul>
       <li>Generations top to bottom, in the same order as the timeline of the file: siblings together, a spouse beside the one they married.</li>
       <li>Spouses form one block, the husband on the left. Someone married twice stands between their two spouses, so one of the two pairs reads the other way.</li>
+      <li>A line meets a block where it belongs: a family between its spouses, a child at their own card. So the husband's parents and siblings settle on the left of a couple and the wife's on the right.</li>
       <li>Blocks are reordered generation by generation to cross as few lines as possible, then pulled towards their parents and children; the subtitle says how many crossings are left.</li>
       <li>Each family is a node between the spouses; a line to a child several generations down keeps a narrow lane free in the rows it passes.</li>
     </ul>
@@ -650,26 +651,35 @@ function layout(){
     const u={members:order,layer:layerOf(p.id),w:order.length*CW+(order.length-1)*GX,up:[],down:[],key:rowIndex.get(p.id)};
     units.push(u);order.forEach(id=>unitOf.set(id,u));
   }
+  // where a line meets a block: a family between its spouses, a child at its own card. This is what puts the
+  // husband's parents above the husband, on the left, and the wife's above the wife, on the right.
+  const at=(u,id)=>u.members.indexOf(id)*(CW+GX)+CW/2;
+  const famAt=(u,par)=>{const i=par.map(id=>u.members.indexOf(id)).filter(i=>i>=0).sort((a,b)=>a-b);
+    return i.length===2&&i[1]-i[0]===1?(i[1])*(CW+GX)-GX/2:i[0]*(CW+GX)+CW/2};
+  const link=(a,ao,b,bo)=>{a.down.push({v:b,vo:bo,mo:ao});b.up.push({v:a,vo:ao,mo:bo})};
   const edges=[];
   for(const f of M.fams.values()){const par=[f.husb,f.wife].filter(id=>on.has(id));if(!par.length)continue;const pu=unitOf.get(par[0]);
     for(const c of f.chil){if(!on.has(c))continue;const cu=unitOf.get(c);const chain=[];
-      let prev=pu;for(let l=pu.layer+1;l<cu.layer;l++){const d={members:[],layer:l,w:10,up:[],down:[],key:pu.key,dummy:true};units.push(d);chain.push(d);prev.down.push(d);d.up.push(prev);prev=d}
-      if(cu.layer>pu.layer){prev.down.push(cu);cu.up.push(prev)}
+      let prev=pu,po=famAt(pu,par);
+      for(let l=pu.layer+1;l<cu.layer;l++){const d={members:[],layer:l,w:10,up:[],down:[],key:pu.key,dummy:true};units.push(d);chain.push(d);link(prev,po,d,5);prev=d;po=5}
+      if(cu.layer>pu.layer)link(prev,po,cu,at(cu,c));
       edges.push({f,par,c,chain})}}
   const nL=Math.max(...units.map(u=>u.layer))+1,layers=Array.from({length:nL},()=>[]);
   units.forEach(u=>layers[u.layer].push(u));layers.forEach(L=>L.sort((a,b)=>a.key-b.key));
   const gap=(a,b)=>a.dummy||b.dummy?20:GX*2;
   const pack=L=>{let x=0;L.forEach((u,i)=>{if(i)x+=gap(L[i-1],u);u.cx=x+u.w/2;x+=u.w})};
   layers.forEach(pack);
-  const crossings=()=>{let n=0;for(let l=0;l<nL-1;l++){const idx=new Map();layers[l].forEach((u,i)=>idx.set(u,i));layers[l+1].forEach((u,i)=>idx.set(u,i));
-    const es=layers[l].flatMap(u=>u.down.map(d=>[idx.get(u),idx.get(d)]));
+  const left=u=>u.cx-u.w/2;
+  const crossings=()=>{let n=0;for(let l=0;l<nL-1;l++){
+    const es=layers[l].flatMap(u=>u.down.map(d=>[left(u)+d.mo,left(d.v)+d.vo]));
     for(let i=0;i<es.length;i++)for(let j=i+1;j<es.length;j++)if((es[i][0]-es[j][0])*(es[i][1]-es[j][1])<0)n++}return n};
   const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  const wish=(u,ls)=>mean(ls.map(k=>left(k.v)+k.vo-k.mo+u.w/2));
   let best=crossings(),bestOrder=layers.map(L=>[...L]);
   for(let it=0;it<24&&best>0;it++){
     const down=it%2===0;
     const seq=down?[...Array(nL).keys()].slice(1):[...Array(nL).keys()].reverse().slice(1);
-    for(const l of seq){const L=layers[l];const k=new Map(L.map(u=>{const nb=down?u.up:u.down;return[u,nb.length?mean(nb.map(v=>v.cx)):u.cx]}));
+    for(const l of seq){const L=layers[l];const k=new Map(L.map(u=>{const nb=down?u.up:u.down;return[u,nb.length?wish(u,nb):u.cx]}));
       L.sort((a,b)=>k.get(a)-k.get(b));pack(L)}
     const c=crossings();if(c<best){best=c;bestOrder=layers.map(L=>[...L])}
   }
@@ -678,7 +688,7 @@ function layout(){
   for(let it=0;it<40;it++){
     const seq=it%2===0?[...Array(nL).keys()]:[...Array(nL).keys()].reverse();
     for(const l of seq){const L=layers[l];if(!L.length)continue;
-      const want=L.map(u=>{const nb=[...u.up,...u.down];return nb.length?mean(nb.map(v=>v.cx)):u.cx});
+      const want=L.map(u=>{const nb=[...u.up,...u.down];return nb.length?wish(u,nb):u.cx});
       const a=[],b=[];
       L.forEach((u,i)=>{a[i]=i?Math.max(want[i],a[i-1]+L[i-1].w/2+gap(L[i-1],u)+u.w/2):want[i]});
       for(let i=L.length-1;i>=0;i--){const u=L[i];b[i]=i<L.length-1?Math.min(want[i],b[i+1]-L[i+1].w/2-gap(u,L[i+1])-u.w/2):want[i]}
