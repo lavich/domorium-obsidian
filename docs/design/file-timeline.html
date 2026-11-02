@@ -118,12 +118,7 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
     <div class="tabbar"><span class="tab" id="tabname">curie.ged</span><span class="crumbs">Genealogy · Timeline</span></div>
     <div class="head"><h1 id="title"></h1><p id="sub"></p></div>
     <div class="tools">
-      <button class="chip" aria-pressed="true" data-t="BIRT">Births<span class="n" id="nBIRT"></span></button>
-      <button class="chip" aria-pressed="true" data-t="MARR">Marriages<span class="n" id="nMARR"></span></button>
-      <button class="chip" aria-pressed="true" data-t="DEAT">Deaths<span class="n" id="nDEAT"></span></button>
       <button class="chip" aria-pressed="true" data-t="OTHER">Other events<span class="n" id="nOTHER"></span></button>
-      <span class="sep"></span>
-      <button class="chip" aria-pressed="true" id="kin">Parent → child</button>
       <button class="chip" aria-pressed="true" id="sample" title="Adds a few dated events to the embedded copy, to show what other events look like">Sample events</button>
       <span class="sep"></span>
       <label>Zoom <input type="range" id="zoom" min="2" max="16" value="6"></label>
@@ -143,15 +138,15 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
       <span><i style="background:var(--text-normal)"></i>death</span>
       <span><i style="background:hsl(35,85%,52%)"></i>other event, its sign by kind: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ★ award</span>
       <span><i style="background:hsl(35,85%,52%);opacity:.55;border-radius:2px;width:18px;height:6px"></i>a period, from … to</span>
-      <span>text in a bar: facts without a date</span>
-      <span><i style="border:1.5px dashed var(--text-muted)"></i>year only, or about</span>
-      <span>– – parent → child</span>
+      <span>text in a bar: facts without a date, when zoomed in or under the pointer</span>
+      <span><i style="border:1.5px dashed var(--text-muted)"></i>about, before, after, between</span>
+      <span>→ parent to child, for the person under the pointer</span>
     </div>
   </div>
   <div class="notes">
     <h4>What to try</h4>
     <ul>
-      <li>Hover a person: their row, their parents and children light up, everyone else fades.</li>
+      <li>Hover a person: their row, parents, spouses and children light up, arrows join them to their parents and children, and their facts without a date are written in the bar; everyone else fades.</li>
       <li>Hover a point for its date as the file writes it, and its place. Click it: in the plugin that is Show in source.</li>
       <li>Click a name: in the plugin that opens the person's page.</li>
       <li>Zoom, scroll sideways; names and the year axis stay in place.</li>
@@ -694,10 +689,10 @@ function render(){
     if(S.on.OTHER)for(const e of p.events)if(cat(e.tag)==="OTHER"&&e.date?.year&&e.end)s+=`<rect class="range${d}" x="${x(e.date.year)}" y="${cy-3}" width="${Math.max(2,x(e.end)-x(e.date.year))}" height="6" rx="2"/>`;
     const cap=[...new Set(p.events.filter(e=>!e.date?.year&&(e.value||cat(e.tag)==="OTHER")).map(e=>e.value||e.label))].join(" · ");
     const room=x(sp.end)-x(sp.b)-22;
-    if(cap&&room>40){const fit=Math.floor(room/5.6);s+=`<text class="cap${d}" x="${x(sp.b)+11}" y="${cy+3.5}">${esc(cap.length>fit?cap.slice(0,fit-1)+"…":cap)}</text>`}}
-  if(S.kin)for(const f of M.fams.values()){const par=[f.wife,f.husb].filter(id=>L.pos.has(id));if(!par.length)continue;
+    if(cap&&room>40&&(S.zoom>=9||S.hl===p.id)){const fit=Math.floor(room/5.6);s+=`<text class="cap${d}" x="${x(sp.b)+11}" y="${cy+3.5}">${esc(cap.length>fit?cap.slice(0,fit-1)+"…":cap)}</text>`}}
+  if(S.hl)for(const f of M.fams.values()){const par=[f.wife,f.husb].filter(id=>L.pos.has(id));if(!par.length)continue;
     for(const c of f.chil){const ch=M.people.get(c),sp=ch&&span(ch);if(!sp||!L.pos.has(c))continue;
-      const from=L.pos.get(par[0]),to=L.pos.get(c),hl=S.hl&&(S.hl===c||par.includes(S.hl));
+      const from=L.pos.get(par[0]),to=L.pos.get(c),hl=S.hl===c||par.includes(S.hl);if(!hl)continue;
       s+=`<path class="kin${hl?" hl":""}${S.hl&&!hl?" dim":""}" marker-end="url(#ah)" d="M${x(sp.b)} ${from+(to>from?10:-10)} V${to+(to>from?-11:11)}"/>`}}
   for(const f of M.fams.values())for(const e of f.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
     const ids=[f.husb,f.wife].filter(id=>L.pos.has(id));const ys=ids.map(id=>L.pos.get(id));
@@ -713,7 +708,7 @@ function render(){
   // header
   const evs=[...M.people.values()].flatMap(p=>p.events).concat([...M.fams.values()].flatMap(f=>f.events));
   const dated=evs.filter(e=>e.date?.year),und=evs.filter(e=>!e.date?.year);
-  for(const c of ["BIRT","MARR","DEAT","OTHER"])$("n"+c).textContent=dated.filter(e=>cat(e.tag)===c).length;
+  for(const c of ["OTHER"])$("n"+c).textContent=dated.filter(e=>cat(e.tag)===c).length;
   const spans=[...M.people.values()].map(span).filter(Boolean);
   $("title").textContent="Timeline of "+M.name;$("tabname").textContent=M.name;
   $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${dated.length} dated events, ${L.lo+5>0?Math.min(...dated.map(e=>e.date.year)):""}–${Math.max(...dated.map(e=>e.date.year))}`;
@@ -721,7 +716,7 @@ function render(){
   $("undated").innerHTML=(und.length?`${und.length} facts without a year have no point on the line; they are written inside the person's bar: ${[...new Set(und.map(e=>e.label))].join(", ").toLowerCase()}.`:"")+(noYear.length?` ${noYear.length} people have no year at all: ${noYear.map(p=>esc(p.name)).join(", ")}.`:"");
 }
 function mark(e,c,x,y,who,id,d){
-  const approx=!e.date.exact||e.date.approx;
+  const approx=/^(about|before|after|between)/.test(e.date.text);
   const attrs=`class="mk ${c}${approx?" approx":""}${d}" data-p="${id}" data-w="${esc(e.label+(e.value?": "+e.value:"")+" · "+who)}" data-d="${esc(e.date.text+(e.end&&!/ (and|—) /.test(e.date.text)?" — "+e.end:""))}" data-pl="${esc(e.place)}" data-l="${e.line}"`;
   return c==="OTHER"?`<g ${attrs}><circle cx="${x}" cy="${y}" r="6.5"/><text x="${x}" y="${y+.5}">${GLYPH[e.tag]||"•"}</text></g>`:`<g ${attrs}><circle cx="${x}" cy="${y}" r="4.5"/></g>`;
 }
