@@ -81,8 +81,12 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
 .mk.BIRT circle{fill:hsl(150,45%,45%)}
 .mk.DEAT circle{fill:var(--text-normal)}
 .mk.MARR circle{fill:hsl(var(--accent-h),var(--accent-s),var(--accent-l))}
-.mk.OTHER rect{fill:hsl(35,80%,55%)}
-.mk.approx circle,.mk.approx rect{fill:var(--background-primary)!important;stroke:var(--text-muted);stroke-dasharray:2 1.5}
+.mk.OTHER circle{fill:hsl(35,85%,52%)}
+.mk.OTHER text{fill:#fff;font-size:9px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+.range{fill:hsl(35,85%,52%);opacity:.55}
+.cap{fill:var(--text-normal);font-size:10.5px;opacity:.8;pointer-events:none}
+.mk.approx:not(.OTHER) circle{fill:var(--background-primary)!important;stroke:var(--text-muted);stroke-dasharray:2 1.5}
+.mk.OTHER.approx circle{fill-opacity:.6;stroke:hsl(35,85%,40%);stroke-dasharray:2 1.5}
 .mk:hover circle{r:6.5}
 .marr{stroke:hsl(var(--accent-h),var(--accent-s),var(--accent-l));stroke-width:2;opacity:.75}
 .kin{stroke:var(--text-faint);fill:none;stroke-dasharray:3 3}
@@ -117,9 +121,10 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
       <button class="chip" aria-pressed="true" data-t="BIRT">Births<span class="n" id="nBIRT"></span></button>
       <button class="chip" aria-pressed="true" data-t="MARR">Marriages<span class="n" id="nMARR"></span></button>
       <button class="chip" aria-pressed="true" data-t="DEAT">Deaths<span class="n" id="nDEAT"></span></button>
-      <button class="chip" aria-pressed="false" data-t="OTHER">Other events<span class="n" id="nOTHER"></span></button>
+      <button class="chip" aria-pressed="true" data-t="OTHER">Other events<span class="n" id="nOTHER"></span></button>
       <span class="sep"></span>
       <button class="chip" aria-pressed="true" id="kin">Parent → child</button>
+      <button class="chip" aria-pressed="true" id="sample" title="Adds a few dated events to the embedded copy, to show what other events look like">Sample events</button>
       <span class="sep"></span>
       <label>Zoom <input type="range" id="zoom" min="2" max="16" value="6"></label>
       <input type="search" id="q" placeholder="Find a person…">
@@ -136,7 +141,9 @@ svg text{fill:var(--text-muted);font-size:11px;font-family:var(--font-interface)
       <span><i style="background:hsl(150,45%,45%)"></i>birth</span>
       <span><i style="background:hsl(var(--accent-h),var(--accent-s),var(--accent-l))"></i>marriage</span>
       <span><i style="background:var(--text-normal)"></i>death</span>
-      <span><i style="background:hsl(35,80%,55%);border-radius:2px"></i>other event</span>
+      <span><i style="background:hsl(35,85%,52%)"></i>other event, its sign by kind: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ★ award</span>
+      <span><i style="background:hsl(35,85%,52%);opacity:.55;border-radius:2px;width:18px;height:6px"></i>a period, from … to</span>
+      <span>text in a bar: facts without a date</span>
       <span><i style="border:1.5px dashed var(--text-muted)"></i>year only, or about</span>
       <span>– – parent → child</span>
     </div>
@@ -557,8 +564,13 @@ function age(b,d){
 
 
 const NOW=new Date().getFullYear();
-const S={on:{BIRT:true,MARR:true,DEAT:true,OTHER:false},kin:true,zoom:6,q:"",hl:null};
-const ROW=30,GEN=24;
+const S={on:{BIRT:true,MARR:true,DEAT:true,OTHER:true},sample:true,kin:true,zoom:6,q:"",hl:null};
+const ROW=34,GEN=24;
+const GLYPH={EDUC:"✎",GRAD:"✎",RESI:"⌂",EMIG:"⇄",IMMI:"⇄",NATU:"⇄",OCCU:"⚒",RETI:"⚒",CENS:"≡",EVEN:"★",FACT:"★",PROB:"§",WILL:"§",ADOP:"+"};
+// Real events of the family, not in demo-vault/curie.ged, added only to show dated events of other kinds
+const SAMPLE={"@I1@":["1 EMIG","2 DATE 1891","2 PLAC Warsaw, Congress Poland","1 EDUC University of Paris","2 DATE FROM 1891 TO 1894","2 PLAC Paris, France","1 EVEN Nobel Prize in Physics","2 TYPE Award","2 DATE DEC 1903","2 PLAC Stockholm, Sweden","1 EVEN Nobel Prize in Chemistry","2 TYPE Award","2 DATE DEC 1911","2 PLAC Stockholm, Sweden"],"@I2@":["1 EVEN Nobel Prize in Physics","2 TYPE Award","2 DATE DEC 1903","2 PLAC Stockholm, Sweden","1 RESI","2 DATE FROM 1895 TO 1906","2 PLAC Paris, France"],"@I12@":["1 EVEN Nobel Prize in Chemistry","2 TYPE Award","2 DATE DEC 1935","2 PLAC Stockholm, Sweden"],"@I14@":["1 EVEN Nobel Prize in Chemistry","2 TYPE Award","2 DATE DEC 1935","2 PLAC Stockholm, Sweden"],"@I13@":["1 IMMI","2 DATE 1940","2 PLAC United States"]};
+function withSample(text){const out=[];let cur=null;const flush=()=>{if(cur&&SAMPLE[cur])out.push(...SAMPLE[cur]);cur=null};
+  for(const ln of text.split(/\r?\n/)){const m=ln.match(/^0 (@[^@]+@) INDI/);if(/^0 /.test(ln))flush();out.push(ln);if(m)cur=m[1]}flush();return out.join("\n")}
 const $=id=>document.getElementById(id);
 const toast=s=>{const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("on"),1500)};
 let M;
@@ -566,7 +578,7 @@ let M;
 function build(text,name){
   const tree=parseGedcom(text);const recs=new Map();
   tree.children.forEach(r=>r.xref&&recs.set(r.xref,r));
-  const ev=n=>({tag:n.tag,label:n.tag==="EVEN"||n.tag==="FACT"?(val(n,"TYPE")||LABEL[n.tag]):LABEL[n.tag],value:n.value&&n.value!=="Y"?n.value:"",date:parseDate(val(n,"DATE")),place:val(n,"PLAC"),line:n.line});
+  const ev=n=>({tag:n.tag,label:n.tag==="EVEN"||n.tag==="FACT"?(val(n,"TYPE")||LABEL[n.tag]):LABEL[n.tag],value:n.value&&n.value!=="Y"?n.value:"",date:parseDate(val(n,"DATE")),end:(()=>{const m=val(n,"DATE").toUpperCase().match(/ (?:AND|TO) (?:.* )?(\d{3,4})$/);return m?+m[1]:null})(),place:val(n,"PLAC"),line:n.line});
   const people=new Map(),fams=new Map();
   for(const r of recs.values()){
     if(r.tag==="INDI"){
@@ -677,11 +689,16 @@ function render(){
   const nowX=x(NOW);if(NOW<=L.hi)s+=`<line x1="${nowX}" x2="${nowX}" y1="0" y2="${L.H}" stroke="var(--text-accent)" stroke-dasharray="2 4" opacity=".6"/>`;
   for(const p of M.people.values()){const sp=span(p);if(!sp)continue;const cy=L.pos.get(p.id);
     const sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
-    s+=`<rect class="bar ${sx}${S.hl===p.id?" hl":""}${dim(p.id)}" x="${x(sp.b)}" y="${cy-6}" width="${Math.max(2,x(sp.end)-x(sp.b))}" height="12" rx="4" ${sp.open?'fill-opacity=".5" mask="url(#fadeR)"':""}/>`}
+    s+=`<rect class="bar ${sx}${S.hl===p.id?" hl":""}${dim(p.id)}" x="${x(sp.b)}" y="${cy-9}" width="${Math.max(2,x(sp.end)-x(sp.b))}" height="18" rx="5" ${sp.open?'fill-opacity=".5" mask="url(#fadeR)"':""}/>`}
+  for(const p of M.people.values()){const sp=span(p);if(!sp)continue;const cy=L.pos.get(p.id),d=dim(p.id);
+    if(S.on.OTHER)for(const e of p.events)if(cat(e.tag)==="OTHER"&&e.date?.year&&e.end)s+=`<rect class="range${d}" x="${x(e.date.year)}" y="${cy-3}" width="${Math.max(2,x(e.end)-x(e.date.year))}" height="6" rx="2"/>`;
+    const cap=[...new Set(p.events.filter(e=>!e.date?.year&&(e.value||cat(e.tag)==="OTHER")).map(e=>e.value||e.label))].join(" · ");
+    const room=x(sp.end)-x(sp.b)-22;
+    if(cap&&room>40){const fit=Math.floor(room/5.6);s+=`<text class="cap${d}" x="${x(sp.b)+11}" y="${cy+3.5}">${esc(cap.length>fit?cap.slice(0,fit-1)+"…":cap)}</text>`}}
   if(S.kin)for(const f of M.fams.values()){const par=[f.wife,f.husb].filter(id=>L.pos.has(id));if(!par.length)continue;
     for(const c of f.chil){const ch=M.people.get(c),sp=ch&&span(ch);if(!sp||!L.pos.has(c))continue;
       const from=L.pos.get(par[0]),to=L.pos.get(c),hl=S.hl&&(S.hl===c||par.includes(S.hl));
-      s+=`<path class="kin${hl?" hl":""}${S.hl&&!hl?" dim":""}" marker-end="url(#ah)" d="M${x(sp.b)} ${from+(to>from?7:-7)} V${to+(to>from?-8:8)}"/>`}}
+      s+=`<path class="kin${hl?" hl":""}${S.hl&&!hl?" dim":""}" marker-end="url(#ah)" d="M${x(sp.b)} ${from+(to>from?10:-10)} V${to+(to>from?-11:11)}"/>`}}
   for(const f of M.fams.values())for(const e of f.events){const c=cat(e.tag);if(!S.on[c]||!e.date?.year)continue;
     const ids=[f.husb,f.wife].filter(id=>L.pos.has(id));const ys=ids.map(id=>L.pos.get(id));
     const who=ids.map(id=>M.people.get(id).name).join(" & ");const d=ids.every(id=>dim(id))?" dim":"";
@@ -701,12 +718,12 @@ function render(){
   $("title").textContent="Timeline of "+M.name;$("tabname").textContent=M.name;
   $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${dated.length} dated events, ${L.lo+5>0?Math.min(...dated.map(e=>e.date.year)):""}–${Math.max(...dated.map(e=>e.date.year))}`;
   const noYear=[...M.people.values()].filter(p=>!span(p));
-  $("undated").innerHTML=(und.length?`${und.length} events without a year are not on the line: ${[...new Set(und.map(e=>e.label))].join(", ").toLowerCase()}.`:"")+(noYear.length?` ${noYear.length} people have no year at all: ${noYear.map(p=>esc(p.name)).join(", ")}.`:"");
+  $("undated").innerHTML=(und.length?`${und.length} facts without a year have no point on the line; they are written inside the person's bar: ${[...new Set(und.map(e=>e.label))].join(", ").toLowerCase()}.`:"")+(noYear.length?` ${noYear.length} people have no year at all: ${noYear.map(p=>esc(p.name)).join(", ")}.`:"");
 }
 function mark(e,c,x,y,who,id,d){
   const approx=!e.date.exact||e.date.approx;
-  const attrs=`class="mk ${c}${approx?" approx":""}${d}" data-p="${id}" data-w="${esc(e.label+(e.value?": "+e.value:"")+" · "+who)}" data-d="${esc(e.date.text)}" data-pl="${esc(e.place)}" data-l="${e.line}"`;
-  return c==="OTHER"?`<g ${attrs}><rect x="${x-4}" y="${y-4}" width="8" height="8" rx="1.5"/></g>`:`<g ${attrs}><circle cx="${x}" cy="${y}" r="4.5"/></g>`;
+  const attrs=`class="mk ${c}${approx?" approx":""}${d}" data-p="${id}" data-w="${esc(e.label+(e.value?": "+e.value:"")+" · "+who)}" data-d="${esc(e.date.text+(e.end&&!/ (and|—) /.test(e.date.text)?" — "+e.end:""))}" data-pl="${esc(e.place)}" data-l="${e.line}"`;
+  return c==="OTHER"?`<g ${attrs}><circle cx="${x}" cy="${y}" r="6.5"/><text x="${x}" y="${y+.5}">${GLYPH[e.tag]||"•"}</text></g>`:`<g ${attrs}><circle cx="${x}" cy="${y}" r="4.5"/></g>`;
 }
 
 const tip=$("tip");
@@ -720,7 +737,8 @@ document.addEventListener("mousemove",e=>{
 $("board").addEventListener("mouseleave",()=>{S.hl=null;render()});
 document.addEventListener("click",e=>{
   const c=e.target.closest(".chip");
-  if(c){if(c.id==="kin"){S.kin=!S.kin;c.setAttribute("aria-pressed",S.kin)}else{const t=c.dataset.t;S.on[t]=!S.on[t];c.setAttribute("aria-pressed",S.on[t])}render();return}
+  if(c){if(c.id==="sample"){S.sample=!S.sample;c.setAttribute("aria-pressed",S.sample);load(RAW,RAWNAME);return}
+    if(c.id==="kin"){S.kin=!S.kin;c.setAttribute("aria-pressed",S.kin)}else{const t=c.dataset.t;S.on[t]=!S.on[t];c.setAttribute("aria-pressed",S.on[t])}render();return}
   const m=e.target.closest(".mk");if(m){toast(`Show in source: line ${m.dataset.l}`);return}
   const p=e.target.closest("[data-p]");if(p){toast("Opens the page of "+M.people.get(p.dataset.p).name)}
   const b=e.target.closest(".seg button");
@@ -728,7 +746,8 @@ document.addEventListener("click",e=>{
 });
 $("zoom").addEventListener("input",e=>{S.zoom=+e.target.value;render()});
 $("q").addEventListener("input",e=>{S.q=e.target.value;render()});
-function load(text,name){M=build(text,name);render()}
+let RAW,RAWNAME;
+function load(text,name){RAW=text;RAWNAME=name;$("sample").style.display=name==="curie.ged"?"":"none";M=build(name==="curie.ged"&&S.sample?withSample(text):text,name);render()}
 $("file").addEventListener("change",async e=>{const f=e.target.files[0];if(f)load(await f.text(),f.name)});
 load($("ged").textContent,"curie.ged");
 </script>
