@@ -83,12 +83,15 @@ move), and the rest adapts it to Obsidian.
 
 ## Impact
 
-- `src/genealogy/dates.ts` and its tests: the three new readings.
+- `src/genealogy/dates.ts` and its tests: the two new readings.
 - New `src/desk/fileTimeline.ts` (generations, rows, branch, lifelines, the
   cursor's ages — no DOM) and `src/desk/fileTimelineView.ts` (drawing, with
   only what is in view in the DOM), with tests beside them.
 - A new view class beside `IndexView` in `src/desk/DeskViews.ts`; `src/main.ts`
   registers it, its command, and folds it into `syncInterface`.
-- `src/GedcomView.ts`: the header action and the pane menu item.
+- `src/GedcomView.ts`: the header action; `src/commands.ts`: the command, which
+  also gives the pane menu item.
+- Test support: `src/testing/curie.ts`, `src/testing/obsidianDom.ts`, and a test
+  in `src/vault/openTabs.test.ts`; `harness/build.mjs`, `harness/palette.css`.
 - `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`, `README.md`.
 - A harness page and a Playwright spec for drawing, hover and size.

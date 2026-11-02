@@ -33,8 +33,8 @@ from it.
 
 A date stating two dates — `BET … AND …`, `FROM … TO …` — SHALL also report the
 year of the second, read by the same rules; where the second yields no year, as
-one in another calendar does, none SHALL be reported for it, and the first is
-read as before. The two years SHALL be reported in the order the file writes
+one in another calendar does, or where the first yields none, no second year
+SHALL be reported, and the first is read as before. The two years SHALL be reported in the order the file writes
 them, even where the second is the earlier. The model SHALL tell a date that
 states a stretch of time, `FROM` and `TO` with or without the other, from one
 that states an uncertain moment, `BET`, `BEF` and `AFT`, so that a view can draw
@@ -127,6 +127,10 @@ the first as a period and the second as a guess.
 #### Scenario: A second date in another calendar
 - **WHEN** the payload reads `BET 1867 AND HEBREW 5628` in a 7.0 document
 - **THEN** the year is 1867 and no second year is reported
+
+#### Scenario: A dual year in the second date
+- **WHEN** the payload reads `FROM 1700 TO 1750/51` in a 5.5.1 document
+- **THEN** the year is 1700 and the second year 1751
 
 #### Scenario: A second date before the first
 - **WHEN** the payload reads `FROM 1894 TO 1891`

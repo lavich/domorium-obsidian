@@ -73,7 +73,8 @@ death SHALL each be marked in a colour of its own, a christening or baptism as a
 birth and a burial or cremation as a death; every other event SHALL be
 marked in one colour with a sign for its kind. A marriage SHALL also join the
 rows of the two spouses. An event dated as a period SHALL be drawn as a span from
-its first year to its second. An event dated as approximate or as an uncertain
+its first year to its second, whichever is the earlier; a period with one end,
+`FROM 1891` or `TO 1894`, SHALL be marked at the year it names. An event dated as approximate or as an uncertain
 moment — `ABT`, `CAL`, `EST`, `BEF`, `AFT`, `BET` — SHALL be marked so that it
 cannot be taken for an exact date; a date stating only a year SHALL be marked as
 an exact one.
@@ -147,7 +148,9 @@ year under it, name that year on the axis, and say how many of the people shown
 were alive in it. A person whose death is not recorded SHALL count as alive only
 up to the end of their faded lifeline. On the lifeline of each person alive that
 year it SHALL show the age they reached during it: the year less the year of
-birth, which does not depend on the day or the month. The age SHALL be marked as
+birth, or of christening or baptism where no birth is dated, which does not
+depend on the day or the month. A person whose lifeline begins at another
+event SHALL be counted but shown no age. The age SHALL be marked as
 approximate where the birth is dated as approximate or uncertain — `ABT`, `CAL`,
 `EST`, `BEF`, `AFT`, `BET`. No age SHALL be shown anywhere else in the
 timeline.

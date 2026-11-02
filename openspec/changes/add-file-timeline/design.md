@@ -49,7 +49,8 @@ existing caller, and the person page's `≈` marks would move.
 
 Day and month are not read. An age at the cursor is the age reached during that
 year, which the year alone gives; only an approximate or uncertain birth makes it
-approximate, and `precision` already says that.
+approximate, which `precision` says once `period` is excluded: `range` without
+`period` is `BET`, `BEF` or `AFT`.
 
 **`src/desk/fileTimeline.ts` holds the model of the view, with no DOM.**
 - It is built once per `GenealogyIndex` and held in a `WeakMap` keyed by it, so
@@ -58,8 +59,8 @@ approximate, and `precision` already says that.
 - It reads every person with an identifier with `index.person(xref)` and every
   family with `index.family(xref)` once. A person without one cannot be read in
   full or opened, and gets no row.
-- A birth falls back to a christening or baptism, a death to a burial or
-  cremation, as the mockup does.
+- A birth falls back to a christening or baptism, as the mockup does, and a
+  death to a burial, as the mockup does, or a cremation.
 - It reports:
   - per person: their sex, lifeline span and dated events, each with a kind
     (`birth`, `marriage`, `death`, `other`), a sign for `other`, uncertainty and
@@ -111,8 +112,11 @@ DOM.**
   - an open `GedcomView` of that path answers with `genealogy()`, which includes
     unsaved text;
   - otherwise the host reads the file from the vault (`cachedRead`, awaited
-    before the synchronous `IndexCache.at`) into a cache keyed by `mtime:size`,
-    forgotten when the last timeline of that path closes.
+    before the synchronous `IndexCache.at`) into a cache whose revision is a
+    counter per path, bumped on the vault's `modify` of that path — not the
+    file's modification time or size, which the read model's "Reading is paid
+    for once per revision" forbids as a revision. It is forgotten when the last
+    timeline of that path closes.
 
   This reverses a non-goal of the reading-desk change, "reading closed files":
   the pages, the Index and the panel still read only an open tab, and the
@@ -123,10 +127,13 @@ DOM.**
   the vault's `modify` of a file with no tab open. A timeline rebuilds only when
   it is shown (`containerEl.isShown()`) and its index is a different object, so
   typing in Source mode with a timeline in a background tab costs nothing until
-  it is looked at. In the foreground the rebuild follows the tab's 300 ms
-  settle, as the Index does.
+  it is looked at. A stale timeline that becomes shown — on `active-leaf-change`
+  and `layout-change` — rebuilds then. In the foreground the rebuild follows the
+  tab's 300 ms settle, as the Index does.
 - The `rename` handler `main.ts` already registers rewrites `gedcom` in the
-  state of timelines of the old path. A timeline whose file is gone says so.
+  state of timelines of the old path, through the `descendantPaths` mapping it
+  already uses for a moved folder. On the vault's `delete` of the path, a
+  timeline says its file no longer exists.
 
 **It is opened from a command in `COMMANDS`, so the palette, the pane menu and
 the header action share one gate.**
@@ -137,7 +144,10 @@ the header action share one gate.**
   `getViewState().state.gedcom` names this path — matched on the state, so a
   deferred leaf after a restart is found too — or open one in a new tab.
 - `GedcomView` adds a header action with the icon `calendar-range` beside the mode
-  switch, shown and hidden with it in `showMode`.
+  switch, shown and hidden with it in `showMode`. It calls a new
+  `GedcomViewHost.openFileTimeline(view)`, which `main.ts` implements with the
+  same function as the command's `CommandHost.openFileTimeline`, so the action
+  and the command cannot drift apart.
 - For a file of more than 500 people, the opener sets `focus` to `around` — the
   tab's `recordAtCursor()`, which already answers the page's record in Genealogy
   mode and the cursor's in Source mode, kept only if it is a person — or to the
