@@ -124,7 +124,8 @@ svg text{font-family:var(--font-interface)}
     <h4>How it is laid out</h4>
     <ul>
       <li>Generations top to bottom, in the same order as the timeline of the file: siblings together, a spouse beside the one they married.</li>
-      <li>Each family is a node between the spouses; its children hang from it, centred beneath it where there is room.</li>
+      <li>Spouses form one block. Blocks are reordered generation by generation to cross as few lines as possible, then pulled towards their parents and children; the subtitle says how many crossings are left.</li>
+      <li>Each family is a node between the spouses; a line to a child several generations down keeps a narrow lane free in the rows it passes.</li>
     </ul>
   </div>
 </div>
@@ -531,7 +532,7 @@ function age(b,d){
 
 const NOW=new Date().getFullYear();
 const S={focus:null,up:2,down:2,hl:null};
-const CW=168,CH=46,GX=36,GY=110;
+const CW=168,CH=46,GX=36,GY=130;
 const $=id=>document.getElementById(id);
 const toast=s=>{const t=$("toast");t.textContent=s;t.classList.add("on");clearTimeout(t._);t._=setTimeout(()=>t.classList.remove("on"),1500)};
 let M;
@@ -625,68 +626,90 @@ function related(id){
   return s;
 }
 
+// Layered layout: spouses form one block, blocks are ordered generation by generation to cross as few lines as
+// possible (barycentre sweeps, keeping the best order seen), then pulled towards their parents and children.
 function layout(){
   const keep=branch();
-  const vis=M.rows.filter(r=>r.p&&(!keep||keep.has(r.p.id))).map(r=>r.p);
-  const byGen=[];for(const p of vis)(byGen[M.gen.get(p.id)]??=[]).push(p);
-  const gens=byGen.map((l,g)=>({g,list:l||[]})).filter(x=>x.list.length);
-  const pos=new Map(),W=CW+GX;
-  const unionX=f=>{const xs=[f.husb,f.wife].filter(id=>pos.has(id)).map(id=>pos.get(id).x+CW/2);return xs.length?xs.reduce((a,b)=>a+b)/xs.length:null};
-  gens.forEach(({list},row)=>{
-    // blocks: siblings together, with the spouses that follow them in the row order
-    const blocks=[];let cur=null;
-    for(const p of list){const key=p.famc[0]&&M.fams.has(p.famc[0])&&[M.fams.get(p.famc[0]).husb,M.fams.get(p.famc[0]).wife].some(id=>pos.has(id))?p.famc[0]:null;
-      if(!cur||key&&key!==cur.key||(!key&&cur.key&&!isSpouseOfBlock(p,cur))||(!key&&!cur.key&&!isSpouseOfBlock(p,cur))){cur={key,ps:[]};blocks.push(cur)}
-      cur.ps.push(p)}
-    let cursor=0;
-    for(const b of blocks){const w=b.ps.length*W-GX;let want=cursor;
-      if(b.key){const ux=unionX(M.fams.get(b.key));if(ux!=null)want=ux-w/2}
-      const start=Math.max(cursor,want);b.ps.forEach((p,i)=>pos.set(p.id,{x:start+i*W,y:row*GY,row}));cursor=start+w+GX*2}
-  });
-  // roots: move a couple with no parents over the middle of their children when there is room
-  for(let pass=0;pass<2;pass++)gens.forEach(({list},row)=>{
-    const shift=new Map();
-    for(const p of list){if(p.famc.some(f=>M.fams.has(f)&&[M.fams.get(f).husb,M.fams.get(f).wife].some(id=>pos.has(id))))continue;
-      const kids=p.fams.map(f=>M.fams.get(f)).filter(Boolean).flatMap(f=>f.chil).filter(c=>pos.has(c));if(!kids.length)continue;
-      const sp=p.fams.map(f=>M.fams.get(f)).filter(Boolean).map(f=>f.husb===p.id?f.wife:f.husb).filter(id=>pos.has(id));
-      const xs=kids.map(c=>pos.get(c).x+CW/2),mid=(Math.min(...xs)+Math.max(...xs))/2;
-      const coupleMid=([p.id,...sp].map(id=>pos.get(id).x+CW/2).reduce((a,b)=>a+b))/(1+sp.length);
-      shift.set(p.id,mid-coupleMid)}
-    const order=[...list].sort((a,b)=>pos.get(a.id).x-pos.get(b.id).x);
-    let last=-Infinity;
-    for(const p of order){const q=pos.get(p.id);q.x=Math.max(last+W,q.x+(shift.get(p.id)??0));last=q.x}
-  });
-  const xs=[...pos.values()].map(p=>p.x),minX=Math.min(...xs);
-  for(const q of pos.values())q.x-=minX;
-  return{pos,vis,rows:gens.length,width:Math.max(...[...pos.values()].map(p=>p.x))+CW,height:gens.length*GY-GY+CH};
+  const vis=[...M.people.values()].filter(p=>!keep||keep.has(p.id)),on=new Set(vis.map(p=>p.id));
+  const rowIndex=new Map();M.rows.forEach((r,i)=>r.p&&rowIndex.set(r.p.id,i));
+  const layerOf=id=>M.gen.get(id);
+  const sp=new Map(vis.map(p=>[p.id,[]]));
+  for(const f of M.fams.values())if(on.has(f.husb)&&on.has(f.wife)&&layerOf(f.husb)===layerOf(f.wife)){sp.get(f.husb).push(f.wife);sp.get(f.wife).push(f.husb)}
+  const unitOf=new Map(),units=[];
+  for(const p of [...vis].sort((a,b)=>rowIndex.get(a.id)-rowIndex.get(b.id))){
+    if(unitOf.has(p.id))continue;
+    const comp=[],seen=new Set([p.id]),st=[p.id];
+    while(st.length){const id=st.pop();comp.push(id);for(const q of sp.get(id))if(!seen.has(q)){seen.add(q);st.push(q)}}
+    const order=[],done=new Set();
+    const walk=id=>{done.add(id);order.push(id);for(const q of sp.get(id))if(!done.has(q))walk(q)};
+    walk(comp.find(id=>sp.get(id).length<=1)??comp[0]);comp.forEach(id=>done.has(id)||order.push(id));
+    const u={members:order,layer:layerOf(p.id),w:order.length*CW+(order.length-1)*GX,up:[],down:[],key:rowIndex.get(p.id)};
+    units.push(u);order.forEach(id=>unitOf.set(id,u));
+  }
+  const edges=[];
+  for(const f of M.fams.values()){const par=[f.husb,f.wife].filter(id=>on.has(id));if(!par.length)continue;const pu=unitOf.get(par[0]);
+    for(const c of f.chil){if(!on.has(c))continue;const cu=unitOf.get(c);const chain=[];
+      let prev=pu;for(let l=pu.layer+1;l<cu.layer;l++){const d={members:[],layer:l,w:10,up:[],down:[],key:pu.key,dummy:true};units.push(d);chain.push(d);prev.down.push(d);d.up.push(prev);prev=d}
+      if(cu.layer>pu.layer){prev.down.push(cu);cu.up.push(prev)}
+      edges.push({f,par,c,chain})}}
+  const nL=Math.max(...units.map(u=>u.layer))+1,layers=Array.from({length:nL},()=>[]);
+  units.forEach(u=>layers[u.layer].push(u));layers.forEach(L=>L.sort((a,b)=>a.key-b.key));
+  const gap=(a,b)=>a.dummy||b.dummy?20:GX*2;
+  const pack=L=>{let x=0;L.forEach((u,i)=>{if(i)x+=gap(L[i-1],u);u.cx=x+u.w/2;x+=u.w})};
+  layers.forEach(pack);
+  const crossings=()=>{let n=0;for(let l=0;l<nL-1;l++){const idx=new Map();layers[l].forEach((u,i)=>idx.set(u,i));layers[l+1].forEach((u,i)=>idx.set(u,i));
+    const es=layers[l].flatMap(u=>u.down.map(d=>[idx.get(u),idx.get(d)]));
+    for(let i=0;i<es.length;i++)for(let j=i+1;j<es.length;j++)if((es[i][0]-es[j][0])*(es[i][1]-es[j][1])<0)n++}return n};
+  const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+  let best=crossings(),bestOrder=layers.map(L=>[...L]);
+  for(let it=0;it<24&&best>0;it++){
+    const down=it%2===0;
+    const seq=down?[...Array(nL).keys()].slice(1):[...Array(nL).keys()].reverse().slice(1);
+    for(const l of seq){const L=layers[l];const k=new Map(L.map(u=>{const nb=down?u.up:u.down;return[u,nb.length?mean(nb.map(v=>v.cx)):u.cx]}));
+      L.sort((a,b)=>k.get(a)-k.get(b));pack(L)}
+    const c=crossings();if(c<best){best=c;bestOrder=layers.map(L=>[...L])}
+  }
+  bestOrder.forEach((L,l)=>{layers[l]=L;pack(L)});
+  // coordinates: pull each block towards the blocks it is joined to, keeping order and gaps
+  for(let it=0;it<40;it++){
+    const seq=it%2===0?[...Array(nL).keys()]:[...Array(nL).keys()].reverse();
+    for(const l of seq){const L=layers[l];if(!L.length)continue;
+      const want=L.map(u=>{const nb=[...u.up,...u.down];return nb.length?mean(nb.map(v=>v.cx)):u.cx});
+      const a=[],b=[];
+      L.forEach((u,i)=>{a[i]=i?Math.max(want[i],a[i-1]+L[i-1].w/2+gap(L[i-1],u)+u.w/2):want[i]});
+      for(let i=L.length-1;i>=0;i--){const u=L[i];b[i]=i<L.length-1?Math.min(want[i],b[i+1]-L[i+1].w/2-gap(u,L[i+1])-u.w/2):want[i]}
+      L.forEach((u,i)=>{u.cx=(a[i]+b[i])/2});
+      L.forEach((u,i)=>{if(i)u.cx=Math.max(u.cx,L[i-1].cx+L[i-1].w/2+gap(L[i-1],u)+u.w/2)})}
+  }
+  const minX=Math.min(...units.map(u=>u.cx-u.w/2));
+  const pos=new Map();
+  for(const u of units){u.cx-=minX;u.members.forEach((id,i)=>pos.set(id,{x:u.cx-u.w/2+i*(CW+GX),y:u.layer*GY,row:u.layer}))}
+  return{pos,vis,edges,rows:nL,crossings:best,width:Math.max(...units.map(u=>u.cx+u.w/2)),height:(nL-1)*GY+CH};
 }
-function isSpouseOfBlock(p,b){return b.ps.some(q=>q.fams.some(f=>p.fams.includes(f)))}
 
 function years(p){const sp=span(p);return sp?`${sp.b}–${sp.d??""}`:""}
+function curve(pts){let d=`M${pts[0][0]} ${pts[0][1]}`;for(let i=1;i<pts.length;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],m=(y1-y0)/2;d+=` C${x0} ${y0+m} ${x1} ${y1-m} ${x1} ${y1}`}return d}
 function render(){
   const L=layout(),rel=S.hl?related(S.hl):null,dim=id=>rel&&!rel.has(id)?" dim":"";
-  let s="";
-  // family edges
+  let s="";const node=new Map();
   for(const f of M.fams.values()){
-    const par=[f.husb,f.wife].filter(id=>L.pos.has(id));const kids=f.chil.filter(c=>L.pos.has(c));
-    if(!par.length)continue;
-    const ps=par.map(id=>L.pos.get(id)),y=ps[0].y+CH/2;
-    const hlF=S.hl&&(par.includes(S.hl)||kids.includes(S.hl));
-    let ux,uy=y;
-    if(ps.length===2){const [a,b]=ps.sort((a,b)=>a.x-b.x);ux=(a.x+CW+b.x)/2;
-      s+=`<path class="edge sp${hlF&&par.includes(S.hl)?" hl":""}${S.hl&&!hlF?" dim":""}" d="M${a.x+CW} ${y} H${b.x}"/>`}
-    else{ux=ps[0].x+CW/2;uy=ps[0].y+CH}
-    if(kids.length){const ky=L.pos.get(kids[0]).y,midY=uy+(ky-uy)/2+(ps.length===2?CH/4:0);
-      const kx=kids.map(c=>L.pos.get(c).x+CW/2);
-      s+=`<path class="edge${hlF?" hl":""}${S.hl&&!hlF?" dim":""}" d="M${ux} ${uy} V${midY} M${Math.min(ux,...kx)} ${midY} H${Math.max(ux,...kx)} ${kx.map(x=>`M${x} ${midY} V${ky}`).join(" ")}"/>`}
-    if(ps.length===2){const m=f.events.find(e=>e.tag==="MARR"),yr=m?.date?.year;
-      s+=`<g class="${S.hl&&!hlF?"dim":""}"><circle class="union${yr?"":" nodate"}" data-f="${f.id}" cx="${ux}" cy="${y}" r="${yr?11:6}"/>${yr?`<text x="${ux}" y="${y+3.5}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#fff" pointer-events="none">${String(yr).slice(-2).padStart(2,"0")==String(yr).slice(-2)?"’"+String(yr).slice(-2):yr}</text>`:""}</g>`}
-  }
-  // cards
+    const par=[f.husb,f.wife].filter(id=>L.pos.has(id));if(!par.length)continue;
+    const ps=par.map(id=>L.pos.get(id));
+    if(ps.length===2&&ps[0].row===ps[1].row){const [a,b]=[...ps].sort((a,b)=>a.x-b.x);node.set(f.id,{x:(a.x+CW+b.x)/2,y:a.y+CH/2,pair:[a,b]})}
+    else node.set(f.id,{x:ps[0].x+CW/2,y:ps[0].y+CH})}
+  for(const e of L.edges){const n=node.get(e.f.id),c=L.pos.get(e.c);
+    const pts=[[n.x,n.y],...e.chain.map(d=>[d.cx,d.layer*GY+CH/2]),[c.x+CW/2,c.y]];
+    const hl=S.hl&&(S.hl===e.c||e.par.includes(S.hl));
+    s+=`<path class="edge${hl?" hl":""}${S.hl&&!hl?" dim":""}" d="${curve(pts)}"/>`}
+  for(const f of M.fams.values()){const n=node.get(f.id);if(!n?.pair)continue;
+    const par=[f.husb,f.wife],hl=S.hl&&(par.includes(S.hl)||f.chil.includes(S.hl));
+    const [a,b]=n.pair;s+=`<path class="edge sp${hl?" hl":""}${S.hl&&!hl?" dim":""}" d="M${a.x+CW} ${n.y} H${b.x}"/>`;
+    const yr=f.events.find(e=>e.tag==="MARR")?.date?.year;
+    s+=`<g class="${S.hl&&!hl?"dim":""}"><circle class="union${yr?"":" nodate"}" data-f="${f.id}" cx="${n.x}" cy="${n.y}" r="${yr?11:6}"/>${yr?`<text x="${n.x}" y="${n.y+3.5}" text-anchor="middle" font-size="9.5" font-weight="600" fill="#fff" pointer-events="none">’${String(yr).slice(-2)}</text>`:""}</g>`}
   for(const p of L.vis){const q=L.pos.get(p.id),sx=p.sex==="M"||p.sex==="F"?p.sex:"U";
     const nm=p.name.length>22?p.name.slice(0,21)+"…":p.name;
     s+=`<g class="card ${sx}${S.hl===p.id?" hl":""}${S.focus===p.id?" focus":""}${dim(p.id)}" data-p="${p.id}" transform="translate(${q.x},${q.y})">
-      <rect class="bg" width="${CW}" height="${CH}" rx="7"/><rect class="side" width="4" height="${CH-12}" x="5" y="6" rx="2"/>
+      <title>${esc(p.name)}</title><rect class="bg" width="${CW}" height="${CH}" rx="7"/><rect class="side" width="4" height="${CH-12}" x="5" y="6" rx="2"/>
       <text class="nm" x="16" y="19">${esc(nm)}</text><text class="yr" x="16" y="35">${years(p)}</text>
       <g class="brb" data-br="${p.id}"><rect x="${CW-52}" y="${CH-20}" width="46" height="15" rx="7.5"/><text x="${CW-29}" y="${CH-9}" text-anchor="middle">Branch</text></g></g>`}
   $("view").innerHTML=s;
@@ -697,7 +720,7 @@ function render(){
     <span class="step"><button data-step="down:-1">−</button><span>${S.down}</span><button data-step="down:1">+</button></span>
     <button class="link" data-whole>Whole file</button>`:`Whole file · ${M.people.size} people in ${L.rows} generations. Hover a person and choose <b>Branch</b> to see only their ancestors and descendants.`;
   $("title").textContent="Graph of "+M.name;$("tabname").textContent=M.name;
-  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families`;
+  $("sub").textContent=`${M.people.size} people · ${M.fams.size} families · ${L.crossings} crossing${L.crossings===1?"":"s"} left`;
 }
 
 // pan and zoom
@@ -733,7 +756,8 @@ document.addEventListener("click",e=>{
   const b=e.target.closest(".seg button");
   if(b){document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));const a=$("app");a.classList.toggle("theme-dark",b.dataset.theme==="dark");a.classList.toggle("theme-light",b.dataset.theme==="light")}
 });
-function load(text,name){S.focus=null;M=build(text,name);render();fit()}
+function start(){fit();if(VIEW.k<.55){VIEW.k=.6;VIEW.x=20;VIEW.y=20;apply()}}
+function load(text,name){S.focus=null;M=build(text,name);render();start()}
 $("file").addEventListener("change",async e=>{const f=e.target.files[0];if(f)load(await f.text(),f.name)});
 load($("ged").textContent,"curie.ged");
 </script>
