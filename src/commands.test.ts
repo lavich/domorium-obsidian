@@ -31,6 +31,7 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     showSearch: vi.fn<(replace: boolean) => void>(),
     inSource: () => true,
     toggleMode: vi.fn(),
+    genealogyInterface: () => true,
     ...overrides,
   };
 }
@@ -161,6 +162,14 @@ describe("what a command offers in Genealogy mode", () => {
     ]) {
       expect(command(id).isAvailable(genealogy), id).toBe(true);
     }
+  });
+
+  it("does not offer switching mode while the genealogy interface is off", () => {
+    expect(
+      command("toggle-gedcom-mode").isAvailable(
+        view({ genealogyInterface: () => false }),
+      ),
+    ).toBe(false);
   });
 
   it("switches the tab's mode", () => {

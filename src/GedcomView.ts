@@ -69,6 +69,8 @@ import type { SearchKeyBinding } from "./editor/searchKeys";
 import { routeDocumentLink } from "./editor/service";
 import {
   cursorInside,
+  effectiveMode,
+  initialMode,
   pageKind,
   readDeskState,
   shownRange,
@@ -149,7 +151,7 @@ export class GedcomView extends TextFileView {
   ) {
     super(leaf);
     this.contentEl.addClass("gedcom-gedcom-view");
-    this.mode = settings.openAs;
+    this.mode = initialMode(undefined, settings.openAs, settings.genealogyInterface);
     this.editorEl = this.contentEl.createDiv({ cls: "gedcom-gedcom-editor" });
     this.deskEl = this.contentEl.createDiv({ cls: "gedcom-desk" });
     this.editor = new EditorView({
@@ -160,6 +162,10 @@ export class GedcomView extends TextFileView {
       this.toggleMode();
     });
     this.showMode();
+  }
+
+  private get shownMode(): DeskMode {
+    return effectiveMode(this.mode, this.settings.genealogyInterface);
   }
 
   getViewType(): string {
@@ -245,7 +251,11 @@ export class GedcomView extends TextFileView {
     const file = (state as { file?: unknown } | null)?.file;
     const sameFile = file === undefined || file === this.file?.path;
     if (!sameFile) {
-      this.mode = desk.mode ?? this.settings.openAs;
+      this.mode = initialMode(
+        desk.mode,
+        this.settings.openAs,
+        this.settings.genealogyInterface,
+      );
       this.record = null;
       this.selected = null;
     }
@@ -296,8 +306,17 @@ export class GedcomView extends TextFileView {
   }
 
   applySettings(settings: GedcomSettings): void {
+    const before = this.shownMode;
+    const interfaceChanged =
+      settings.genealogyInterface !== this.settings.genealogyInterface;
     this.settings = settings;
     this.refresh();
+    if (interfaceChanged) {
+      this.showMode();
+    }
+    if (this.shownMode !== before) {
+      this.host.genealogyChanged(this);
+    }
   }
 
   refresh(): void {
@@ -324,17 +343,24 @@ export class GedcomView extends TextFileView {
   }
 
   recordAtCursor(): GedcomRecord | undefined {
-    if (this.mode === "genealogy") {
+    if (this.shownMode === "genealogy") {
       return this.records().find((entry) => entry.identifier === this.record);
     }
     return this.sourceRecordAtCursor();
   }
 
   inSource(): boolean {
-    return this.mode === "source";
+    return this.shownMode === "source";
+  }
+
+  genealogyInterface(): boolean {
+    return this.settings.genealogyInterface;
   }
 
   toggleMode(): void {
+    if (!this.settings.genealogyInterface) {
+      return;
+    }
     if (this.mode === "source") {
       const atCursor = this.sourceRecordAtCursor()?.identifier;
       if (atCursor && pageKind(this.genealogy(), atCursor)) {
@@ -376,18 +402,21 @@ export class GedcomView extends TextFileView {
   }
 
   deskSelection(): DeskSelection | null {
-    if (this.mode !== "genealogy" || this.record === null) {
+    if (this.shownMode !== "genealogy" || this.record === null) {
       return null;
     }
     return { index: this.genealogy(), record: this.record, fact: this.selected };
   }
 
   shownRecord(): string | null {
-    return this.mode === "genealogy" ? this.record : null;
+    return this.shownMode === "genealogy" ? this.record : null;
   }
 
   /** A step Back returns from: the index, a page and the panel all come here. */
   openRecord(xref: string): void {
+    if (!this.settings.genealogyInterface) {
+      return;
+    }
     void this.leaf.setViewState({
       type: GEDCOM_VIEW_TYPE,
       state: { ...this.getState(), mode: "genealogy", record: xref },
@@ -417,7 +446,7 @@ export class GedcomView extends TextFileView {
   }
 
   goToXref(xref: string): boolean {
-    if (this.mode === "genealogy") {
+    if (this.shownMode === "genealogy") {
       const route = routeLink(this.genealogy(), xref, (wanted) =>
         this.records().some((entry) => entry.identifier === wanted),
       );
@@ -443,7 +472,7 @@ export class GedcomView extends TextFileView {
   }
 
   goToRecord(record: GedcomRecord): void {
-    if (this.mode === "genealogy" && record.identifier) {
+    if (this.shownMode === "genealogy" && record.identifier) {
       this.goToXref(record.identifier);
       return;
     }
@@ -600,7 +629,7 @@ export class GedcomView extends TextFileView {
   }
 
   private setMode(mode: DeskMode): void {
-    if (mode === this.mode) {
+    if (!this.settings.genealogyInterface || mode === this.mode) {
       return;
     }
     this.mode = mode;
@@ -610,7 +639,8 @@ export class GedcomView extends TextFileView {
   }
 
   private showMode(): void {
-    const genealogy = this.mode === "genealogy";
+    const genealogy = this.shownMode === "genealogy";
+    this.modeAction.toggle(this.settings.genealogyInterface);
     this.editorEl.toggle(!genealogy);
     this.deskEl.toggle(genealogy);
     setIcon(this.modeAction, genealogy ? "code" : "users");
@@ -625,7 +655,7 @@ export class GedcomView extends TextFileView {
   }
 
   private drawDesk(): void {
-    if (this.mode !== "genealogy") {
+    if (this.shownMode !== "genealogy") {
       return;
     }
     const index = this.genealogy();

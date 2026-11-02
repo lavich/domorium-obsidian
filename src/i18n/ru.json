@@ -47,8 +47,10 @@
     "many": "{count} файлах",
     "other": "{count} файлах"
   },
+  "setting.genealogyInterface.name": "Генеалогический интерфейс",
+  "setting.genealogyInterface.desc": "Показывать режим «Генеалогия», указатель Domorium и панель доказательств, а также значок в ленте и их команды. Выключено — файлы GEDCOM открываются как исходник.",
   "setting.openAs.name": "Открывать файлы GEDCOM как",
-  "setting.openAs.desc": "Как файл GEDCOM открывается в новой вкладке. Каждая вкладка помнит режим, в котором была.",
+  "setting.openAs.desc": "Как файл GEDCOM открывается в новой вкладке. Каждая вкладка помнит режим, в котором была. Действует при включённом генеалогическом интерфейсе.",
   "openAsOption.genealogy": "Генеалогию",
   "openAsOption.source": "Исходник",
   "setting.diagnostics.name": "Диагностика",
