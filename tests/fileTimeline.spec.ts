@@ -219,7 +219,8 @@ test.describe("a large file", () => {
     await expect(page.locator(".gedcom-ft-scope")).toContainText("Branch of Person 500 Generated");
     await expect(page.locator(".gedcom-ft-name.is-focus")).toHaveAttribute("data-p", "@I500@");
     await page.locator(".gedcom-ft-whole").click();
-    await expect(page.locator(".gedcom-ft-scope")).toContainText("Whole file · 2000 people");
+    await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
+    await expect(page.locator(".gedcom-ft-summary")).toContainText("2000 people");
   });
 });
 
@@ -229,7 +230,8 @@ test.describe("the timeline of a file of 10 000 people", () => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await mountTimeline(page, { doc: generated(10_000), whole: true });
 
-    await expect(page.locator(".gedcom-ft-scope")).toContainText("Whole file · 10000 people");
+    await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
+    await expect(page.locator(".gedcom-ft-summary")).toContainText("10000 people");
     const drawn = () => page.locator(".gedcom-ft-name").count();
     expect(await drawn()).toBeLessThan(300);
 

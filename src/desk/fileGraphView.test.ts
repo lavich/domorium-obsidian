@@ -164,6 +164,14 @@ describe("drawing the graph of a file", () => {
     expect(all("[data-branch]")).toHaveLength(0);
   });
 
+  it("shows no scope line for the whole file, the count of people staying in the subtitle", () => {
+    board();
+
+    expect(scopeText()).toBe("");
+    expect(container.querySelector<HTMLElement>(".gedcom-fg-scope")?.style.display).toBe("none");
+    expect(container.querySelector(".gedcom-fg-summary")?.textContent).toBe("17 people · 5 families");
+  });
+
   it("says when the file is gone", () => {
     board().showGone("curie.ged");
 

@@ -325,7 +325,6 @@
     "many": "{count} событий с датой",
     "other": "{count} события с датой"
   },
-  "fileTimeline.branchHelp": "Выберите ветку в строке человека, чтобы видеть только его предков и потомков.",
   "overview.branchOf": {
     "one": "Ветка: {name} · {shown} из {count} человека",
     "few": "Ветка: {name} · {shown} из {count} человек",
@@ -369,7 +368,6 @@
   "command.openFileGraph": "Открыть граф файла",
   "fileGraph.name": "Граф файла",
   "fileGraph.title": "Граф файла {name}",
-  "fileGraph.branchHelp": "Выберите ветку на карточке человека, чтобы видеть только его предков и потомков.",
   "fileGraph.branchOf": "Ветка: {name}",
   "fileGraph.zoomIn": "Приблизить",
   "fileGraph.zoomOut": "Отдалить",

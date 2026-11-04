@@ -299,7 +299,6 @@
     "one": "{count} dated event",
     "other": "{count} dated events"
   },
-  "fileTimeline.branchHelp": "Choose the branch on a person's row to see only their ancestors and descendants.",
   "overview.branchOf": {
     "one": "Branch of {name} · {shown} of {count} person",
     "other": "Branch of {name} · {shown} of {count} people"
@@ -337,7 +336,6 @@
   "command.openFileGraph": "Open the graph of the file",
   "fileGraph.name": "Graph of the file",
   "fileGraph.title": "Graph of {name}",
-  "fileGraph.branchHelp": "Choose the branch on a person's card to see only their ancestors and descendants.",
   "fileGraph.branchOf": "Branch of {name}",
   "fileGraph.zoomIn": "Zoom in",
   "fileGraph.zoomOut": "Zoom out",

@@ -84,7 +84,6 @@ export class FileGraphBoard {
     const zoom = tools.createDiv({ cls: "gedcom-fg-zoom" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-fg",
-      help: t("fileGraph.branchHelp"),
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (next) => this.setScope(next),
     });

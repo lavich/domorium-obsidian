@@ -205,7 +205,6 @@ export class FileTimelineBoard {
     this.aliveEl = tools.createSpan({ cls: "gedcom-ft-alive" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-ft",
-      help: t("fileTimeline.branchHelp"),
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (next) => this.setScope(next),
     });

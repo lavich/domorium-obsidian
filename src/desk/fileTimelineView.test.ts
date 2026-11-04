@@ -484,11 +484,11 @@ describe("the keyboard", () => {
     expect(document.activeElement?.getAttribute("data-step")).toBe("up:1");
   });
 
-  it("says whether it shows the whole file or a branch, and stops each stepper at zero and nine", () => {
+  it("shows no scope line for the whole file, says whose branch it shows, and stops each stepper at zero and nine", () => {
     board();
-    expect(scopeText()).toBe(
-      "Whole file · 17 people. Choose the branch on a person's row to see only their ancestors and descendants.",
-    );
+    expect(scopeText()).toBe("");
+    expect(container.querySelector<HTMLElement>(".gedcom-ft-scope")?.style.display).toBe("none");
+    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("17 people");
 
     container.replaceChildren();
     board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 9, down: 0 });

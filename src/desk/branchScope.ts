@@ -29,7 +29,6 @@ export function sameBranch(a: BranchScope, b: BranchScope): boolean {
 export interface BranchScopeBarOptions {
   /** `gedcom-ft` gives `gedcom-ft-scope`, `gedcom-ft-step`, `gedcom-ft-whole`. */
   prefix: string;
-  help: string;
   setIcon(element: HTMLElement, icon: string): void;
   change(next: Partial<BranchScope>): void;
 }
@@ -86,10 +85,8 @@ export class BranchScopeBar {
 
   private drawParts(scope: BranchScope, counts: BranchScopeCounts): void {
     const { prefix } = this.options;
+    this.el.toggle(counts.focusName !== null);
     if (counts.focusName === null) {
-      this.el.createSpan({
-        text: `${t("overview.wholeFile")} · ${plural("overview.people", counts.total)}. ${this.options.help}`,
-      });
       return;
     }
     this.el.createSpan({

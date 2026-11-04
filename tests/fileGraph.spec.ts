@@ -219,7 +219,7 @@ test.describe("the graph of a file on a phone", () => {
     await page.touchscreen.tap(at.x, at.y);
 
     await expect(person(page, "@I1@")).toHaveClass(/is-armed/);
-    await expect(page.locator(".gedcom-fg-scope")).toContainText("Whole file");
+    await expect(page.locator(".gedcom-fg-scope")).toBeHidden();
     await page.touchscreen.tap(at.x, at.y);
     await expect(page.locator(".gedcom-fg-scope")).toContainText("Branch of Marie Skłodowska-Curie");
   });
@@ -268,7 +268,8 @@ test.describe("the graph of a file of 10 000 people", () => {
       const took = await mountGraph(page, { doc: doc(), whole: true });
 
       expect(took).toBeLessThan(1_000);
-      await expect(page.locator(".gedcom-fg-scope")).toContainText("Whole file · 10000 people");
+      await expect(page.locator(".gedcom-fg-scope")).toBeHidden();
+      await expect(page.locator(".gedcom-fg-summary")).toContainText("10000 people");
       expect(await page.locator(".gedcom-fg-person").count()).toBeLessThan(300);
       const outside = await page.evaluate(() => {
         const window_ = window.graph.board?.windowOf();
