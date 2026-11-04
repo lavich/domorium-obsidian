@@ -47,6 +47,9 @@ script, not committed):
 Both counts agree in every case. With 8 sweeps instead of 24 the third case
 takes 97 ms and keeps 1 482 302 crossings: the later sweeps buy little.
 
+None of the generated files had a line spanning more than one row, so the cost
+of lanes is not in these figures.
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -57,16 +60,16 @@ takes 97 ms and keeps 1 482 302 crossings: the later sweeps buy little.
 
 **Non-Goals:**
 - Changing the timeline's behaviour. Its code moves onto shared pieces; its
-  spec, strings and tests stay as they are, apart from renamed shared keys.
+  spec is untouched, and its tests change only where task 1.3 lists.
 - A Web Worker. The layout is a few hundred milliseconds at the worst measured
   and runs once per reading and scope; a worker would mean bundling a second
   entry and copying the model across.
 
 ## Decisions
 
-Choices marked **(mine)** were not made by the user and are open to their
-review; everything else follows the user's decisions quoted in the proposal or
-the mockup.
+The user's answers of 2026-11-04 are recorded in the proposal. Choices marked
+**(mine)** were not made by the user and are open to their review; everything
+else follows the user's decisions or the mockup.
 
 ### The model is the timeline's, read as it is
 
@@ -84,14 +87,17 @@ renaming it to a neutral name touches every timeline file for no behaviour.
 
 `layoutFileGraph(model, scope, clock)` returns plain values: for each card its
 person, row, x and y; for each family node its family, position, marriage year
-or none, and the two cards it joins; for each line its family, child, parents
-and the points it passes through; the size, the number of rows and the
-crossings kept. It is the mockup's `layout()` and `scene()`, with these
-decisions:
+or none, and the cards it joins; for each line its family, child, parents and
+the points it passes through; the size, the number of rows and the crossings
+kept. It is the mockup's `layout()` and `scene()`, with these decisions:
 
-- **Rows.** A person's row is their generation in the model. Generations
-  with no one in the scope are dropped, so a branch has no empty rows **(mine;
-  the mockup left Marie's 0/0 branch with an empty row above it)**.
+- **No spreads or recursion over the file.** Minima and maxima use `least` and
+  `most` from `fileTimeline.ts`, never `Math.min(...list)`, and the walk along
+  a chain of spouses is a loop with an explicit stack, so a block or a row of
+  thousands cannot overflow the call stack.
+- **Rows.** A person's row is their generation in the model. Generations with
+  no one in the scope are dropped, so a branch has no empty rows **(mine; the
+  mockup left Marie's 0/0 branch with an empty row above it)**.
 - **Blocks.** People joined by marriage within one row form a block, walked
   from an end of the chain, so someone married twice stands between two
   spouses; the block is reversed when that makes more neighbouring pairs read
@@ -102,6 +108,7 @@ decisions:
   a husband's parents to the left and a wife's to the right.
 - **Lanes.** A line spanning rows gets a 10-pixel lane in each row between,
   20 pixels from its neighbours, which takes part in ordering like a block.
+  Their number is not bounded: one per line per row crossed.
 - **Order.** Each row starts in the model's `rows` order; barycentre sweeps
   alternate downward and upward, and the order with the fewest crossings seen
   is kept. Sweeps stop at 24, at zero crossings, after 4 sweeps without
@@ -131,53 +138,87 @@ decisions:
   ends, as the mockup's `curve()`.
 
 `fileGraphOf(model, scope)` holds the last four layouts of each model in a
-`WeakMap` keyed by the model, by focus, up and down **(mine)**: switching back
-and forth between a branch and the whole file costs nothing, an edit makes a
+`WeakMap` keyed by the model **(mine)**. The key within it is normalised: the
+whole file is one key whatever `up` and `down` say, and a focus the model does
+not know counts as the whole file, as the timeline treats it. Switching back
+and forth between a branch and the whole file costs nothing; an edit makes a
 new index and so a new model.
 
 ### `src/desk/fileGraphView.ts` draws it, with only what is in view in the DOM
 
 `FileGraphBoard` mirrors `FileTimelineBoard`:
 
-- **The view.** A transform `{ x, y, k }` on one SVG group. Zoom runs from 0.05
-  to 3 **(mine; the mockup's floor of 0.2 cannot fit 500 people)**; **Fit**
-  shows the whole scope, at most at 1.4. A graph opens fitted when that scale
-  is at least 0.55; otherwise at 0.6, centred on the card of the person the tab
-  showed when it was opened, else the first card of the top row **(mine; the
-  mockup went to the top left)**. Revealing an open graph keeps its view.
+- **The view.** A transform `{ x, y, k }` on the SVG's content. Zoom runs from
+  0.05 to 3 **(mine; the mockup's floor of 0.2 cannot fit 500 people)**.
+  **Fit** shows the whole scope at a scale of at most 1.4; where the whole scope
+  needs less than 0.05, it shows the scope's centre at 0.05 **(mine)**, so the
+  number of shapes in the DOM stays bounded by the view's size. Going below the
+  floor with boxes only was rejected: at 10 000 people it would put every card
+  in the DOM.
+- **What is saved.** The view is saved as the graph point at the centre of the
+  canvas and `k` **(mine: a centre, not an offset, so a tab of another size
+  shows the same place)**, in the state with the scope and `around`.
+- **When the view is set.**
+  - *First show*: a saved view if the state has one; otherwise the opening view
+    — fitted when Fit's scale is at least 0.55, else 0.6 centred on the card of
+    `around` where it is shown, else on the focus of a branch, else on the first
+    card of the top row **(mine; the mockup went to the top left)**. It is
+    computed only once the canvas has a non-zero size: a graph opened in a
+    background tab waits for `onResize`.
+  - *A new model with the same scope* (an edit, a rename): the view is kept.
+  - *A change of scope* (Branch, the steppers, Whole file): the opening view of
+    the new scope, centred on the person whose branch it is.
+  - *Revealing an open graph*: nothing changes.
+- **`around` is in the state.** The opener always passes the person of the tab
+  it was opened from, whatever the size of the file, so the opening view can
+  centre on them; `initialFocus` still decides whether there is a branch.
 - **Drawing.** `draw(window)` takes the window in graph coordinates as an
   argument rather than measuring the DOM, so a happy-dom test can drive it. It
-  draws the items meeting the window extended by one window on each side, or
-  a quarter window when zoomed out past 0.35 **(mine)**, where cards are drawn
-  as boxes without text. Elements are built with `createElementNS`, never
+  draws the items meeting the window extended by one window on each side, or a
+  quarter window when zoomed out past 0.35 **(mine)**, where cards are drawn as
+  boxes without text. Elements are built with `createElementNS`, never
   `innerHTML`, and kept between draws by item: an item still in range keeps its
-  element, so the focus and the highlight survive a redraw. Lines first, then
-  family nodes, then cards. A transform change asks, in an animation frame,
-  whether the view has left the drawn window or crossed 0.35, and only then
-  draws.
+  element, so the focus and the highlight survive a redraw, and the focused item
+  is never dropped. Two layers: the lines, then the nodes and cards, which a new
+  element joins at its place in row order, not at the end. A transform change
+  asks, in an animation frame, whether the view has left the drawn window or
+  crossed 0.35, and only then draws.
 - **Hover.** Maps filled while drawing find a person's card, the lines whose
   child or parent they are, and the family groups they are a spouse or child
   in; `on` and `hl` classes are set on those and a class on the board fades the
   rest, as in the mockup. The family node's tooltip and the phone popover use
   the timeline's placing, moved to `src/desk/dom.ts`.
-- **Pointer.** A press on empty space starts a drag after 4 pixels, so a click
-  is never a pan **(mine)**; the wheel zooms at the pointer with
-  `preventDefault` on a non-passive listener; two pointers down pinch around
-  their midpoint. The canvas has `touch-action: none`.
+- **Search** **(the user's; its details mine)**. An input in the toolbar, as the
+  timeline's, matching a person's names: non-matching cards get a fading class.
+  The matches are listed in row order, left to right, from the layout, not
+  from the DOM, so Enter can move the view to a card not drawn yet; each Enter
+  centres the next at the current zoom, or at 0.6 when zoomed out past 0.35,
+  and lights it. Searching neither lays out nor redraws more than moving does.
+- **Pointer** **(mine)**. A press anywhere, a card or node included, becomes a
+  drag once it has moved 4 pixels; it then takes pointer capture, and the click
+  that follows the release is swallowed, so a drag is never an activation.
+  Two pointers down pinch around their midpoint, and the click after a pinch
+  is swallowed too. The wheel: with `ctrlKey` (a trackpad's pinch, or
+  Ctrl+wheel) it zooms at the pointer; without it, an event with a horizontal
+  delta, or a vertical delta under 40 pixels in pixel mode, is a trackpad's
+  scroll and pans; anything else is a mouse wheel and zooms at the pointer, as
+  the user asked. The listener is non-passive and calls `preventDefault`. The
+  canvas has `touch-action: none`.
 - **Activating.** A card calls `openRecord(xref)`; a family node calls
-  `openRecord(familyXref)`, which leads to the family page **(mine; the
-  mockup did nothing)**. On a phone, as in the timeline, the first touch lights
-  the person and shows their Branch pill, the second opens them; a touch on a
-  node opens a popover with its details and **Open the family**; a touch on
-  empty space puts the light out. A click with `detail` 0 and no pointer type
-  is the keyboard's, never a touch.
-- **Keyboard (mine).** Each drawn card is an SVG group with `tabindex="0"`,
-  `role="button"` and an `aria-label` of name and years; Enter or Space opens
-  it, and focus lights it as hover does. Its Branch pill is a sibling element
-  after it, also focusable, shown while the card is hovered, focused or armed.
-  Cards are drawn row by row, left to right, so Tab walks a row. A focused
-  card partly out of view pans the view to show it; the focused item is never
-  dropped by a redraw. **+**, **−** and **Fit** are buttons.
+  `openRecord(familyXref)`, which leads to the family page. On a phone, as in
+  the timeline, the first touch lights the person and shows their Branch pill,
+  the second opens them; a touch on a node opens a popover with its details
+  and **Open the family**; a touch on empty space puts the light out. A click
+  with `detail` 0 and no pointer type is the keyboard's, never a touch.
+- **Keyboard** **(mine)**. Each card is an SVG group holding two focusable
+  children with `tabindex="0"` and `role="button"`: the card, labelled with
+  name and years, and its Branch pill, shown while the pointer is on the group,
+  the group has the focus (`:focus-within`) or the card is armed. Each family
+  node is focusable too, labelled with the spouses and the marriage year,
+  since it now opens the family's page. They sit in the DOM in row order, left
+  to right, node between its spouses, so Tab walks a row. Enter or Space
+  activates; focus lights as hover does; a focused element partly out of view
+  pans the view to show it. **+**, **−** and **Fit** are buttons.
 - **Icons** are handed in as a function, as in the timeline.
 
 ### Shared with the timeline
@@ -186,16 +227,42 @@ What now exists twice is extracted, and the timeline moved onto it:
 
 - `src/desk/branchScope.ts`: `BranchScope { focus?, up, down }`, its reading
   from saved state (clamped to 0–9, default 2) and the scope bar — "Whole file ·
-  N people" or "Branch of X · n of N", the two steppers and **Whole file** — with
-  its focus kept across redraws. The timeline's `readTimelineState` and
-  `drawScopeParts` use it.
+  N people", "Branch of X · n of N", the two steppers and **Whole file** — with
+  its focus kept across redraws. The caller hands in the class prefix, so the
+  timeline keeps `gedcom-ft-scope`, `gedcom-ft-step*` and `gedcom-ft-whole`,
+  its CSS and its tests' selectors, and the graph gets `gedcom-fg-*`; the
+  `data-step` and `data-whole` attributes are the same. The caller hands in its
+  help text too: the timeline says "a person's row", the graph "a person's
+  card". `readTimelineState` stays exported, built on it.
 - `src/desk/labels.ts`: the years of a lifeline (`≈`, an open end, BCE through
   `yearText`), moved from `fileTimelineView.ts`.
 - `src/desk/dom.ts`: placing a tooltip or popover inside a root, above the point
   where it would pass the bottom edge.
 - Strings both use move from `fileTimeline.*` to `overview.*` keys: the scope
-  bar, Branch and its hint, the steppers, the legend's three sexes, and the
-  "no longer in the vault" message.
+  bar's counts, Branch and its hint, the steppers, the legend's three sexes,
+  and the "no longer in the vault" message. Each view keeps its own help text.
+  Counts go through `plural()`, which gives Russian its three forms.
+
+### Reading a closed file is a module of its own
+
+The bookkeeping now in `src/main.ts` — the plugin-wide revision counter, the
+revision per path, the revision a reading was made at, the paths being opened,
+forgetting a path, which overviews show a path — moves to a new
+`src/vault/overviewReads.ts` with no `obsidian` import, tested in
+`src/vault/overviewReads.test.ts`. It is handed a function listing the open
+overviews as `{ type, gedcom, view }` for both view types, and answers:
+
+- `shows(path, except?)`: whether any overview of either type shows the path,
+  leaving out a view being closed;
+- `opening(path)` and its release: a **count** per path, not a set, since a
+  timeline and a graph of one path can be opening at once;
+- `modified(path)`: a new revision, if anything shows the path;
+- `closed(path, view)`: forget the path when no other overview shows it;
+- `went(path, folder)` on delete and create: forget every path under it;
+- `moved(from, to, descendants)`: the mapping of old paths to new ones that
+  the rename handler applies to every overview's state.
+
+`main.ts` keeps the vault reads, the `IndexCache` and the events, and calls it.
 
 ### The view and the host
 
@@ -205,32 +272,42 @@ What now exists twice is extracted, and the timeline moved onto it:
   flag and the `asked` counter, `refresh` only when shown, `onResize`,
   `onClose`. `FileTimelineView` and a new `FileGraphView` extend it, each
   creating its board and reading its own state. `FileGraphView` has view type
-  `domorium-file-graph`, icon `git-fork`, display text "Graph of {name}", and
-  state `{ gedcom, focus?, up, down }`.
+  `domorium-file-graph`, display text "Graph of {name}", and state
+  `{ gedcom, focus?, around?, up, down, view? }`.
 - The host interface becomes `FileOverviewHost`: `overviewIndex(path)`,
   `openRecordIn(path, xref)`, `showSourceIn(path, range)` and
   `overviewClosed(path, view)`.
-- In `src/main.ts` the timeline plumbing iterates the leaves of both view types
-  (`OVERVIEW_VIEW_TYPES`): opening (`openOverviewOf(type, path, around)`, matched
-  on type and `state.gedcom` so a deferred leaf is found), the closed-file
-  reading, which a timeline and a graph of one path share, staleness, rename,
-  delete, and `syncInterface`, which detaches both. `bringFileTab` and
-  `openFromIndex` serve both unchanged.
+- In `src/main.ts` the plumbing serves both view types
+  (`OVERVIEW_VIEW_TYPES`) through `overviewReads`: opening
+  (`openOverview(kind, path, around)`, matched on type and `state.gedcom` so a
+  deferred leaf is found), the closed-file reading, which a timeline and a graph
+  of one path share, staleness, rename, delete, and `syncInterface`, which
+  detaches both. `bringFileTab` and `openFromIndex` serve both unchanged.
+- One signature, kind first, everywhere: `CommandHost.openOverview(kind, path,
+  around)` and `GedcomViewHost.openOverview(kind, view)`, with `kind`
+  `"timeline"` or `"graph"`; they replace `openFileTimeline` on both.
 - `src/commands.ts`: `open-gedcom-file-graph`, "Open the graph of the file",
-  icon `git-fork`, with the timeline's gate (a file and `genealogyInterface()`).
-  `CommandHost.openFileTimeline` and `GedcomViewHost.openFileTimeline` become
-  `openOverview(kind, …)` with `kind` `"timeline"` or `"graph"`, so the header
-  actions, the commands and the menu share one function.
-- `GedcomView`: a `git-fork` header action, toggled with the mode switch and the
-  timeline action in `showMode`.
+  with the timeline's gate (a file and `genealogyInterface()`).
+- `GedcomView`: a header action for the graph, toggled with the mode switch and
+  the timeline action in `showMode`.
 
-### Icon and colours (mine)
+### Icon: to be confirmed
 
-- `git-fork` is in the installed Obsidian app bundle 1.8.9
-  (`/Applications/Obsidian.app/Contents/Resources/obsidian.asar`) and in the
-  1.15.0 update (`~/Library/Application Support/obsidian/obsidian-1.15.0.asar`);
-  `network`, `waypoints` and `workflow` are in neither. A fork reads as a family
-  splitting into lines.
+The user is being asked again. What the installed app holds, read from
+`/Applications/Obsidian.app/Contents/Resources/obsidian.asar` (1.8.9) and
+`~/Library/Application Support/obsidian/obsidian-1.15.0.asar`:
+
+- `git-fork` is Obsidian's own graph-view icon: the bundle maps `graph-glyph`
+  (and `dot-network`) to it. Using it would make the plugin's graph look like
+  Obsidian's in the header and the tab.
+- `network`, `waypoints`, `workflow` and `chart-network` are lucide icons
+  defined in both bundles.
+
+The icon is one constant, `FILE_GRAPH_ICON`, used by the view, the command and
+the header action, so the answer changes one line.
+
+### Colours (mine)
+
 - Card side bar: `--color-pink`, `--color-blue`, `--text-faint`, as the
   timeline's lifelines. Card tint: `rgba(var(--color-pink-rgb), 0.14)`,
   `rgba(var(--color-blue-rgb), 0.12)`, `rgba(var(--mono-rgb-100), 0.08)`. Card
@@ -242,31 +319,40 @@ What now exists twice is extracted, and the timeline moved onto it:
 
 ### What the header shows (mine)
 
-The scope bar, as the timeline's, and a summary of people and families. The
-mockup's "N crossings left" and "read N ms" are a mockup's diagnostics and are
-not shown. No legend of generations; the legend has the three sexes and the two
-kinds of node.
+The scope bar, the search, **+**, **−**, **Fit**, and a summary of people and
+families. The mockup's "N crossings left" and "read N ms" are a mockup's
+diagnostics and are not shown. The legend has the three sexes and the two kinds
+of node. On a phone, as the timeline: the title is hidden (the tab names the
+file) and the legend folds behind a **Legend** button.
 
 ## Risks / Trade-offs
 
 - **Layout time on a phone.** A phone is several times slower than the
   measurements. → A file over 500 people opens on a branch; the sweep budget
   bounds ordering; **Whole file** on a very large file is the reader's choice.
-- **Far out on a large file.** At the zoom floor a 10 000-person graph can
-  bring a few thousand boxes into view. → No text far out, a quarter-window
-  margin, and the browser spec bounds the count after **Fit**.
+- **Lanes are unbounded and unmeasured.** A file where many lines span several
+  rows adds a lane per line per row, which lengthens ordering and widens rows.
+  → The tangled generator of the browser spec includes marriages across
+  generations, so the one-second bound covers lanes.
+- **Far out on a large file.** At the zoom floor a 10 000-person graph can bring
+  a few thousand shapes into view. → No text far out, a quarter-window margin,
+  Fit stopping at the floor, and the browser spec bounds the count after Fit at
+  1 400 by 900.
+- **Telling a mouse wheel from a trackpad** is a heuristic: a mouse with smooth
+  scrolling can be taken for a trackpad and pan. → Ctrl+wheel and the buttons
+  always zoom; the thresholds are constants checked on the demo vault in 6.1.
 - **The budget makes the order depend on speed.** Two machines can keep
-  different orders for a huge, tangled file. → The best order found is
-  kept; for files the size of the user's 111 people the sweeps end on their
-  own long before 250 ms.
+  different orders for a huge, tangled file. → The best order found is kept;
+  for files the size of the user's 111 people the sweeps end on their own long
+  before 250 ms.
 - **Barycentre is a heuristic.** Crossings remain in tangled files (the mockup
   kept 767 000 at 10 000 people). → It is what the user accepted; a better
   method can replace the ordering behind the same layout API.
-- **SVG focus.** `tabindex` on SVG groups works in Chromium and WebKit, which
+- **SVG focus.** `tabindex` on SVG elements works in Chromium and WebKit, which
   are Obsidian's desktop and iOS engines. → Covered by the browser spec in
-  Chromium; the phone check in 7.1 confirms it on the app.
-- **Shared code moves under the timeline.** → Its unit tests and browser spec
-  run unchanged apart from renamed string keys, and are the guard.
+  Chromium; the phone check in 6.1 confirms it on the app.
+- **Shared code moves under the timeline.** → Its spec does not change, and its
+  unit tests and browser spec run with only the changes task 1.3 lists.
 
 ## Migration Plan
 

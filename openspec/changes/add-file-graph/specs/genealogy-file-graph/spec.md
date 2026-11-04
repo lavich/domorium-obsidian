@@ -19,9 +19,9 @@ reader left them, rather than open a second.
 The graph SHALL show the file as the plugin reads it, including text typed in a
 tab of that file and not yet saved, and SHALL follow every later change to it.
 Where no tab of the file is open, it SHALL read the file from the vault. It SHALL
-keep its file and scope across closing and reopening the workspace, SHALL follow
-the file when it is renamed or moved, and SHALL say so when the file no longer
-exists.
+keep its file, scope, position and zoom across closing and reopening the
+workspace, SHALL follow the file when it is renamed or moved, and SHALL say so
+when the file no longer exists.
 
 Nothing in the graph SHALL write to the file.
 
@@ -51,9 +51,9 @@ Nothing in the graph SHALL write to the file.
 - **THEN** the graph says that `curie.ged` is no longer in the vault
 
 #### Scenario: Restored with the workspace
-- **WHEN** the graph of `curie.ged` is open on Irène's branch and Obsidian is
-  restarted
-- **THEN** the graph shows Irène's branch
+- **WHEN** the graph of `curie.ged` is open on Irène's branch, zoomed in and
+  moved, and Obsidian is restarted
+- **THEN** the graph shows Irène's branch at the same zoom and position
 
 ### Requirement: A card is a person, coloured by sex
 
@@ -67,7 +67,7 @@ The graph SHALL NOT label generations.
 #### Scenario: Marie's card
 - **WHEN** the graph of `curie.ged` is shown
 - **THEN** Marie's card names her with `1867–1934` and is marked pink, and
-  Pierre's is marked blue
+  Pierre Curie's is marked blue
 
 #### Scenario: No labels for generations
 - **WHEN** the graph of `curie.ged` is shown
@@ -92,14 +92,14 @@ parent's card.
 
 #### Scenario: Pierre and Marie
 - **WHEN** the graph of `curie.ged` is shown
-- **THEN** Pierre's card stands to the left of Marie's, with a node showing `’95`
-  between them; Jacques stands to the left of Pierre, and Zofia, Józef,
-  Bronisława and Helena to the right of Marie
+- **THEN** Pierre Curie's card stands to the left of Marie's, with a node showing
+  `’95` between them; Jacques stands to the left of Pierre Curie, and Zofia,
+  Józef, Bronisława Dłuska and Helena to the right of Marie
 
 #### Scenario: The parents of each side
 - **WHEN** the graph of `curie.ged` is shown
 - **THEN** Eugène and Sophie-Claire stand in the top row to the left of
-  Władysław and Bronisława
+  Władysław and Bronisława Boguska
 
 #### Scenario: A marriage with no date
 - **WHEN** the graph of `curie.ged` is shown
@@ -115,9 +115,9 @@ generation below SHALL pass through the rows between in a lane of its own,
 where no card stands.
 
 The order of the cards in each row SHALL be chosen to cross as few lines as the
-graph can find within the time the next requirement allows, and the cards then
-placed as close above their children and below their parents as that order and
-the room between cards allow. No two cards SHALL overlap.
+graph can find within the time the requirement on size allows, and the cards
+then placed as close above their children and below their parents as that order
+and the room between cards allow. No two cards SHALL overlap.
 
 #### Scenario: The Curie file
 - **WHEN** the graph of `curie.ged` is shown whole
@@ -138,20 +138,36 @@ and those people, and the family nodes they belong to, and SHALL fade everything
 else, until the pointer or the focus leaves. Lighting SHALL NOT lay the graph
 out or draw it again.
 
-Pointing at a family node SHALL show its spouses, the date of the marriage as the
-file writes it and its place, or that it has no date, and how many children the
-family has.
+Pointing at a family node, or giving it the keyboard focus, SHALL show its
+spouses, the date of the marriage as the file writes it and its place, or that
+it has no date, and how many children the family has.
 
 #### Scenario: Pointing at Marie
 - **WHEN** the reader points at Marie's card in the graph of `curie.ged`
-- **THEN** the cards of Marie, Władysław, Bronisława, Pierre, Irène and Ève are
-  lit, with the lines from her parents' family to her and from her family with
-  Pierre to Irène and to Ève, and every other card fades
+- **THEN** the cards of Marie, Władysław, Bronisława Boguska, Pierre Curie, Irène
+  and Ève are lit, with the lines from her parents' family to her and from her
+  family with Pierre Curie to Irène and to Ève, and every other card fades
 
 #### Scenario: Pointing at the Curies' family node
-- **WHEN** the reader points at the node between Pierre and Marie
+- **WHEN** the reader points at the node between Pierre Curie and Marie
 - **THEN** it shows Pierre Curie and Marie Skłodowska-Curie, married
   `26 JUL 1895` in Sceaux, France, and 2 children
+
+### Requirement: Finding a person
+
+The graph SHALL offer a search by name that fades the cards that do not match.
+Pressing Enter in the search SHALL move the view to the first matching card, in
+the order of the rows from top to bottom and of the cards from left to right,
+and each further Enter to the next, coming back to the first after the last.
+
+#### Scenario: Searching
+- **WHEN** the reader types `joliot` in the graph of `curie.ged`
+- **THEN** the cards of Frédéric, Irène, Hélène and Pierre Joliot stand out and
+  the others fade
+
+#### Scenario: Going from match to match
+- **WHEN** the reader has typed `joliot` and presses Enter three times
+- **THEN** the view moves to Frédéric's card, then to Irène's, then to Hélène's
 
 ### Requirement: A branch scope shows one person's ancestors and descendants
 
@@ -171,14 +187,14 @@ declares where neither names one. A smaller file SHALL open on all of it.
 
 #### Scenario: Irène's branch
 - **WHEN** the reader chooses Irène's branch in the graph of `curie.ged`
-- **THEN** four rows show Eugène, Sophie-Claire, Władysław and Bronisława; Pierre
-  and Marie; Frédéric and Irène; Hélène and Pierre Joliot — and the graph says
-  this is 10 of 17 people
+- **THEN** four rows show Eugène, Sophie-Claire, Władysław and Bronisława
+  Boguska; Pierre Curie and Marie; Frédéric and Irène; Hélène and Pierre Joliot
+  — and the graph says this is 10 of 17 people
 
 #### Scenario: No ancestors and no descendants
 - **WHEN** the reader shows Marie's branch with zero generations of ancestors
   and zero of descendants
-- **THEN** one row shows Pierre and Marie
+- **THEN** one row shows Pierre Curie and Marie
 
 #### Scenario: A large file
 - **WHEN** a file of 2 000 people is open on a person's page and the reader opens
@@ -188,13 +204,20 @@ declares where neither names one. A smaller file SHALL open on all of it.
 
 ### Requirement: Moving about the graph
 
-The reader SHALL be able to move the graph by dragging it, to zoom in and out
-around the pointer with the wheel and with buttons, and to fit the whole scope
-in the view with **Fit**. A graph SHALL open fitted to its view where it can then
-be read; otherwise it SHALL open at a readable size around the person of the tab
-it was opened from where that person is shown, else around the first card of
-the top row. Zoomed out beyond the point where names can be read, cards SHALL be
-drawn without text.
+The reader SHALL be able to move the graph by dragging it from anywhere, a card
+included; a press that moves before it is released SHALL NOT activate what it
+began on. A mouse wheel SHALL zoom around the pointer; a trackpad's two-finger
+scroll SHALL move the graph and its pinch SHALL zoom; buttons SHALL zoom in and
+out. **Fit** SHALL show the whole scope where the zoom range allows, and
+otherwise as much of it as the farthest zoom shows, centred on it. Zoomed out
+beyond the point where names can be read, cards SHALL be drawn without text.
+
+A graph SHALL first be shown fitted to its view where it can then be read, and
+otherwise at a readable size around the person of the tab it was opened from
+where that person is shown, else around the first card of the top row; a graph
+restored with the workspace SHALL be shown as it was left. An edit of the file
+SHALL leave the view where it is. Changing the scope SHALL show the new scope as
+a graph is first shown, around the person whose branch it is.
 
 #### Scenario: Opening on a small file
 - **WHEN** the graph of `curie.ged` is opened in a tab 1 400 pixels wide
@@ -204,6 +227,15 @@ drawn without text.
 - **WHEN** the reader zooms out until names could not be read
 - **THEN** the cards are drawn as coloured boxes without names or years
 
+#### Scenario: A drag that begins on a card
+- **WHEN** the reader presses on Marie's card, moves the pointer and releases it
+- **THEN** the graph has moved, and Marie's page is not opened
+
+#### Scenario: An edit keeps the view
+- **WHEN** the reader has moved and zoomed the graph and then corrects a date in
+  the source
+- **THEN** the graph shows the correction at the same position and zoom
+
 ### Requirement: The graph leads to the pages
 
 Activating a person's card SHALL show that person in the GEDCOM tab of the file,
@@ -212,10 +244,11 @@ record in Source mode. Activating a family node SHALL show that family the same
 way. The file's tab SHALL be brought to the front; where no tab of the file is
 open, one SHALL be opened. The graph tab SHALL stay open behind it.
 
-Every card drawn SHALL be reachable with the keyboard, SHALL say whom it shows
-to assistive technology, and SHALL be activated with Enter or Space; its
-**Branch** choice SHALL be reachable with the keyboard too. A card given the
-focus SHALL be brought into view.
+Every card and family node drawn SHALL be reachable with the keyboard, in the
+order of the rows and, within a row, from left to right; SHALL say whom it
+shows to assistive technology; and SHALL be activated with Enter or Space. A
+card's **Branch** choice SHALL be reachable with the keyboard too. A card or node
+given the focus SHALL be brought into view.
 
 #### Scenario: From the graph to Irène's page
 - **WHEN** the GEDCOM tab of `curie.ged` is in Genealogy mode and the reader
@@ -224,8 +257,8 @@ focus SHALL be brought into view.
   open in its own tab
 
 #### Scenario: From a family node to the family page
-- **WHEN** the reader activates the node between Pierre and Marie
-- **THEN** the GEDCOM tab shows the Curies' family page
+- **WHEN** the reader activates the node between Pierre Curie and Marie
+- **THEN** the GEDCOM tab comes to the front showing the Curies' family page
 
 #### Scenario: From the keyboard
 - **WHEN** the reader moves the focus to Marie's card and presses Enter
@@ -235,30 +268,33 @@ focus SHALL be brought into view.
 
 The graph of a file of 10 000 people shown whole SHALL be laid out in under a
 second on a desktop, once for each reading of the file and scope: pointing,
-dragging and zooming SHALL NOT lay it out again. The graph SHALL draw only the
-shapes in view and near it, and SHALL keep up with the pointer.
+dragging, zooming and searching SHALL NOT lay it out again. The graph SHALL draw
+only the shapes in view and near it, and SHALL keep up with the pointer.
 
 #### Scenario: A file of 10 000 people
-- **WHEN** a file of 10 000 people is shown whole, and the reader drags, zooms
-  and points at people
+- **WHEN** a file of 10 000 people is shown whole in a view of 1 400 by 900
+  pixels, and the reader drags, zooms and points at people
 - **THEN** it was laid out in under a second, the highlight follows the pointer
-  without a visible delay, and the graph holds no more than a few hundred cards
-  at a time at its opening size
+  without a visible delay, the graph holds no more than a few hundred cards at
+  its opening size, and no more than a few thousand shapes after **Fit**
 
 ### Requirement: The graph on a phone
 
-On a phone the graph SHALL fill the screen's width. Dragging with one finger
-SHALL move it and pinching with two SHALL zoom it. Touching a card SHALL light
-that person and their family as pointing does and offer their **Branch**;
-touching it again SHALL show the person as activating does on a desktop.
-Touching a family node SHALL show its details, with the way to the family's
-page. Touching empty space SHALL put the light out.
+On a phone the graph SHALL fill the screen's width, with the title hidden and the
+legend folded behind a button, as the timeline of the file does. Dragging with
+one finger SHALL move it and pinching with two SHALL zoom it; neither SHALL
+activate what it began on. Touching a card SHALL light that person and their
+family as pointing does and offer their **Branch**; touching it again SHALL show
+the person as activating does on a desktop. Touching a family node SHALL show
+its details, with the way to the family's page. Touching empty space SHALL put
+the light out.
 
 #### Scenario: Touching Marie's card
 - **WHEN** the reader touches Marie's card on a phone, and then touches it again
 - **THEN** her family is lit, and then her page is shown
 
 #### Scenario: Pinching
-- **WHEN** the reader pinches the graph on a phone
-- **THEN** it zooms around the point between the two fingers, and no page of the
-  app scrolls or zooms with it
+- **WHEN** the reader pinches the graph on a phone, beginning with a finger on a
+  card
+- **THEN** it zooms around the point between the two fingers, the card's person
+  is not opened, and no page of the app scrolls or zooms with it

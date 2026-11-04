@@ -44,6 +44,19 @@ The user's requirement, in their words, with the decisions taken on the way
   and the number of children. The graph is part of the genealogy interface,
   as the timeline is.
 
+Answers to the plan's open questions (2026-11-04):
+
+- Activating a family node opens the family's page in the file's tab, brought
+  to the front; pointing at it still shows the marriage date and place and the
+  number of children.
+- The graph's position and zoom are saved with the workspace, as the
+  timeline's zoom is.
+- The graph has a search: cards that do not match fade, Enter moves the view to
+  the first match, and each further Enter to the next.
+- The header icon: **to be confirmed**. `git-fork` was proposed, but it is the
+  icon of Obsidian's own graph view (`graph-glyph`), so the user is being asked
+  again; `network`, `waypoints` and `workflow` are also in the 1.8.9 app.
+
 Proposed scope:
 
 - A new view, **Graph of the file**, opened in a tab of its own from a header
@@ -52,14 +65,17 @@ Proposed scope:
   by a family node from which lines run to their children.
 - The layered layout above, computed once per reading of the file and scope,
   and kept responsive for a file of 10 000 people.
-- Hover highlight, the branch scope, pan, zoom and Fit, a far view without
-  text, the family node's details, keyboard access to cards, and the phone's
-  drag, pinch and two-touch.
+- Hover highlight, a search by name, the branch scope, pan, zoom and Fit saved
+  with the workspace, a far view without text, the family node's details,
+  keyboard access to cards and family nodes, and the phone's drag, pinch and
+  two-touch.
 - A person opens their page, and a family node its family's page, in the
   file's tab, brought to the front.
 - The timeline and the graph share their model of the file, the branch scope
   bar, and the host plumbing that reads a file, follows its edits, renames and
-  deletion, and leads into its tab. The timeline behaves as it does today.
+  deletion, and leads into its tab; the bookkeeping of reading a closed file
+  moves into a module of its own with unit tests. The timeline behaves as it
+  does today.
 
 This change belongs in this repository. It reads only what the read model
 already reports (people, families, sex, dates, generations); nothing in the
@@ -71,12 +87,10 @@ parser or the language service changes.
   in that order.
 - Adopting the graph's crossing reduction in the timeline's row order: that
   would change the timeline and is its own change if wanted.
-- A search in the graph, a minimap, a fan chart, or a map.
+- A minimap, a fan chart, or a map.
 - Exporting the graph as an image or printing it.
 - Editing anything from the graph: like the rest of the genealogy interface it
   never writes to the file.
-- Saving the pan and zoom with the workspace: the scope is saved, the view
-  reopens as on first opening.
 - A Web Worker for the layout, or a layout cached across sessions.
 - Raising `minAppVersion`.
 
@@ -86,8 +100,8 @@ parser or the language service changes.
 
 - `genealogy-file-graph`: the graph of a whole file — how it opens, what a card
   and a family node show, how couples, families and generations are placed,
-  hover, the branch scope, pan and zoom, what activating does, how it holds up
-  at size, and the phone.
+  hover, the search, the branch scope, pan and zoom, what activating does, how
+  it holds up at size, and the phone.
 
 ### Modified Capabilities
 
@@ -103,13 +117,16 @@ parser or the language service changes.
   new `src/desk/branchScope.ts` (the scope bar and the reading of its saved
   state), the years of a card in `src/desk/labels.ts`, the placing of a tooltip
   in `src/desk/dom.ts`.
+- New `src/vault/overviewReads.ts`: the bookkeeping of reading a closed file
+  for an overview, shared by the timeline and the graph, with tests beside it.
 - `src/desk/DeskViews.ts`: a base view for both overviews, `FileTimelineView`
   moved onto it, and `FileGraphView` beside it.
 - `src/main.ts`: the overview plumbing — opening, reading a closed file,
   staleness, rename, delete, the interface switch — made to serve both view
   types.
 - `src/commands.ts` and `src/GedcomView.ts`: the command, the menu item and the
-  `git-fork` header action.
+  header action, its icon to be confirmed.
 - `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`, `README.md`.
 - `harness/fileGraph.ts` and page, `harness/build.mjs`, `harness/palette.css`,
-  and a Playwright spec `tests/fileGraph.spec.ts`.
+  a Playwright spec `tests/fileGraph.spec.ts`, and the 10 000-person generator
+  moved from `tests/fileTimeline.spec.ts` to a shared `tests/generated.ts`.
