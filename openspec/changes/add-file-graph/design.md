@@ -665,3 +665,10 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   nodes, the timeline's marks and signs) are removed, as is the tree's. The
   header on a phone keeps the title hidden and no longer needs the button. The
   main timeline spec never required a legend, so it has no delta.
+- **Beta marker.** The setting is **Genealogy interface (beta)** in English and
+  **Генеалогический интерфейс (бета)** in Russian, and its description begins by
+  saying it is a beta that may change and have rough edges, then names what it
+  shows, now with the timeline, the graph and a family tree. The other
+  requirements that speak of the **Genealogy interface** setting do so as of a
+  name; they are left as they were, and the requirement that names the setting
+  is restated.

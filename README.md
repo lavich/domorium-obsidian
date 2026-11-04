@@ -48,8 +48,8 @@ to a remote service.
 1. Enable **GEDCOM** in **Settings → Community plugins**.
 2. Open a `.ged` or `.gedcom` file in your vault. It opens in the editor, and
    Obsidian saves changes back to the same file.
-3. To read the file as people and sources, turn on **Genealogy interface** in the
-   plugin settings. Files then open in **Genealogy** mode, on the first person
+3. To read the file as people and sources, turn on **Genealogy interface (beta)**
+   in the plugin settings; it is still a beta and may change. Files then open in **Genealogy** mode, on the first person
    the file declares, and the view header and **Switch between genealogy and
    source** go between the two modes.
 

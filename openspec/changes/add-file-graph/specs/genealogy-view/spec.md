@@ -2,9 +2,10 @@
 
 ### Requirement: The genealogy interface is off until the reader turns it on
 
-The plugin SHALL have a setting, **Genealogy interface**, that SHALL be off by
-default for every reader, including one whose settings were saved before the
-setting existed. It SHALL be changed only in the plugin settings. While it is
+The plugin SHALL have a setting, **Genealogy interface (beta)**, that SHALL be
+off by default for every reader, including one whose settings were saved before
+the setting existed, and whose description SHALL say that the interface is still
+in beta and may change. It SHALL be changed only in the plugin settings. While it is
 off, the plugin SHALL NOT offer Genealogy mode, the Index, the Evidence panel,
 the timeline of the file, the graph of the file, the ribbon icon, the header
 actions that open the timeline and the graph, or the commands that open any of
@@ -20,6 +21,11 @@ say that it applies only while the interface is on.
 - **WHEN** the plugin is installed or updated and the setting is not changed
 - **THEN** no ribbon icon, no Index, Evidence, timeline or graph command, and no
   mode switch, timeline action or graph action in a tab header is offered
+
+#### Scenario: The setting says it is a beta
+- **WHEN** the reader opens the plugin settings
+- **THEN** the setting is named **Genealogy interface (beta)**, and its
+  description says that the interface is still in beta and may change
 
 #### Scenario: A reader who used Genealogy mode before
 - **WHEN** the plugin updates and their saved settings name Genealogy in *Open
