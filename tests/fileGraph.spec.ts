@@ -257,16 +257,14 @@ test.describe("the graph of a file", () => {
 test.describe("the graph of a file on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test("fits the screen's width, with the title hidden and the legend folded", async ({ page }) => {
+  test("fits the screen's width, with the title hidden and no legend", async ({ page }) => {
     await mountGraph(page, { phone: true });
 
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
     ).toBe(true);
     await expect(page.locator(".gedcom-fg-title")).toBeHidden();
-    await expect(page.locator(".gedcom-fg-legend-item").first()).toBeHidden();
-    await page.locator(".gedcom-fg-legend-toggle").tap();
-    await expect(page.locator(".gedcom-fg-legend-item").first()).toBeVisible();
+    await expect(page.locator('[class*="legend"]')).toHaveCount(0);
     expect(await page.locator(".gedcom-fg-canvas").evaluate((canvas) => getComputedStyle(canvas).touchAction)).toBe(
       "none",
     );

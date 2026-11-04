@@ -234,6 +234,7 @@ describe("drawing the graph of a file", () => {
   it("shows no scope line for the whole file, the count of people staying in the subtitle", () => {
     board();
 
+    expect(container.querySelector('[class*="legend"]')).toBeNull();
     expect(scopeText()).toBe("");
     expect(container.querySelector<HTMLElement>(".gedcom-fg-scope")?.style.display).toBe("none");
     expect(container.querySelector(".gedcom-fg-summary")?.textContent).toBe("17 people · 5 families");

@@ -224,7 +224,6 @@ export class FileTimelineBoard {
     this.chart.append(this.grid, this.items, this.hover);
 
     this.undatedEl = this.root.createDiv({ cls: "gedcom-ft-undated" });
-    this.legend(this.root.createDiv({ cls: "gedcom-ft-legend" }));
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
     this.goneEl = this.root.createDiv({ cls: "gedcom-ft-gone" });
@@ -862,35 +861,6 @@ export class FileTimelineBoard {
     mask.append(svg(this.doc, "rect", null, { width: 1, height: 1, fill: `url(#gedcom-ft-fade-g-${this.id})` }));
     defs.append(marker, gradient, mask);
     return defs;
-  }
-
-  private legend(parent: HTMLElement): void {
-    const toggle = parent.createEl("button", {
-      cls: "gedcom-ft-legend-toggle",
-      text: t("overview.legend"),
-      attr: { type: "button", "aria-expanded": "false" },
-    });
-    toggle.addEventListener("click", () => {
-      const open = !parent.hasClass("is-open");
-      parent.toggleClass("is-open", open);
-      toggle.setAttribute("aria-expanded", String(open));
-    });
-    const entry = (cls: string, text: string) => {
-      const item = parent.createSpan({ cls: "gedcom-ft-legend-item" });
-      item.createSpan({ cls: `gedcom-ft-swatch ${cls}` });
-      item.appendText(text);
-    };
-    entry("is-f", t("overview.legend.woman"));
-    entry("is-m", t("overview.legend.man"));
-    entry("is-u", t("overview.legend.unknown"));
-    entry("is-birth", t("fileTimeline.legend.birth"));
-    entry("is-marriage", t("fileTimeline.legend.marriage"));
-    entry("is-death", t("fileTimeline.legend.death"));
-    entry("is-other", t("fileTimeline.legend.other"));
-    entry("is-period", t("fileTimeline.legend.period"));
-    entry("is-uncertain", t("fileTimeline.legend.uncertain"));
-    entry("is-caption", t("fileTimeline.legend.captions"));
-    parent.createSpan({ cls: "gedcom-ft-legend-item", text: t("fileTimeline.legend.arrows") });
   }
 
   private misses(ids: string[]): boolean {

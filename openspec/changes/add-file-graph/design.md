@@ -335,11 +335,11 @@ bundle, not on 1.8.7, the minimum; task 6.1 confirms them on 1.8.7.
 
 ### What the header shows (mine)
 
-The scope bar, the search, **+**, **−**, **Fit**, and a summary of people and
-families. The mockup's "N crossings left" and "read N ms" are a mockup's
-diagnostics and are not shown. The legend has the three sexes and the two kinds
-of node. On a phone, as the timeline: the title is hidden (the tab names the
-file) and the legend folds behind a **Legend** button.
+The scope bar (while a branch is shown), the search, and a summary of people and
+families; **+**, **−** and **Fit** float over the canvas. The mockup's "N
+crossings left" and "read N ms" are a mockup's diagnostics and are not shown.
+There is no legend (the user's decision, 2026-11-04). On a phone, as the
+timeline: the title is hidden (the tab names the file).
 
 ### The person page's tree on the graph's pieces
 
@@ -370,9 +370,9 @@ by the graph.
   by classes, pan, zoom, pinch, the keyboard, touch, the node's tooltip and
   popover — moves out of `FileGraphBoard` into `src/desk/graphCanvas.ts`, fed a
   layout and a description of each card and family. `FileGraphBoard` keeps its
-  header, search, scope bar and legend; the tree's view
+  header, search and scope bar; the tree's view
   (`src/desk/personTreeView.ts`) puts the canvas in the page at a fixed height,
-  with **+**, **−**, **Fit** and a legend. The tree's cards have no Branch pill.
+  with **+**, **−** and **Fit**. The tree's cards have no Branch pill.
 - **Marks (mine).** The focus is drawn as the graph's branch person is, a
   thicker accent border; no source is the old warning dot at the top right of
   the card; relatives beyond the edge are ▲ above the card and ▼ below it; a
@@ -660,3 +660,8 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   cards still carry their text; on a phone Marie's tree opens at 0.6 around
   her. The floating buttons fall back to −, + and ⤢ where no icon setter is
   handed in, as in the harness.
+- **No legends.** The graph's and the timeline's blocks, the phone's *Legend*
+  button, their styles and swatches and every string of them (the sexes, the
+  nodes, the timeline's marks and signs) are removed, as is the tree's. The
+  header on a phone keeps the title hidden and no longer needs the button. The
+  main timeline spec never required a legend, so it has no delta.

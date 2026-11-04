@@ -297,7 +297,7 @@ test.describe("the tree", () => {
           .map((one) => one.className),
       );
       expect(scrolls).toEqual([]);
-      await expect(page.locator(".gedcom-desk-legend")).toHaveCount(0);
+      await expect(page.locator('[class*="legend"]')).toHaveCount(0);
       const canvas = await page.locator(".gedcom-desk-graph .gedcom-fg-canvas").boundingBox();
       expect((canvas?.y ?? 0) + (canvas?.height ?? 0)).toBeLessThanOrEqual(height);
       expect(canvas?.height ?? 0).toBeGreaterThan(height / 3);

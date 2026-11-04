@@ -66,6 +66,7 @@ describe("drawing the timeline of a file", () => {
   it("draws a row for each person, a lifeline coloured by sex, and the years", () => {
     board();
 
+    expect(container.querySelector('[class*="legend"]')).toBeNull();
     expect(names()).toHaveLength(17);
     expect(nameRow("@I1@")?.textContent).toContain("Marie Skłodowska-Curie");
     expect(nameRow("@I1@")?.querySelector(".gedcom-ft-name-years")?.textContent).toBe("1867–1934");

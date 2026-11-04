@@ -54,7 +54,7 @@ export function readGraphState(state: unknown): GraphState {
   };
 }
 
-/** The graph of a file: its header, search, scope bar and legend around a canvas. */
+/** The graph of a file: its header, search, scope bar around a canvas. */
 export class FileGraphBoard {
   private readonly root: HTMLElement;
   private readonly title: HTMLElement;
@@ -94,7 +94,6 @@ export class FileGraphBoard {
       branch: (xref) => this.setScope({ focus: xref === this.scope.focus ? undefined : xref }),
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
     }, { setIcon: (element, icon) => this.host.setIcon(element, icon) });
-    this.legend(this.root.createDiv({ cls: "gedcom-fg-legend" }));
     this.goneEl = this.root.createDiv({ cls: "gedcom-fg-gone" });
     this.goneEl.toggle(false);
 
@@ -223,29 +222,6 @@ export class FileGraphBoard {
     }
     this.shown = layout;
     this.canvas.show(sceneOf(model, layout, this.scope, (xref) => this.host.portrait?.(xref) ?? null), opening);
-  }
-
-  private legend(parent: HTMLElement): void {
-    const toggle = parent.createEl("button", {
-      cls: "gedcom-fg-legend-toggle",
-      text: t("overview.legend"),
-      attr: { type: "button", "aria-expanded": "false" },
-    });
-    toggle.addEventListener("click", () => {
-      const open = !parent.hasClass("is-open");
-      parent.toggleClass("is-open", open);
-      toggle.setAttribute("aria-expanded", String(open));
-    });
-    const entry = (cls: string, text: string) => {
-      const item = parent.createSpan({ cls: "gedcom-fg-legend-item" });
-      item.createSpan({ cls: `gedcom-fg-swatch ${cls}` });
-      item.appendText(text);
-    };
-    entry("is-f", t("overview.legend.woman"));
-    entry("is-m", t("overview.legend.man"));
-    entry("is-u", t("overview.legend.unknown"));
-    entry("is-family", t("fileGraph.legend.family"));
-    entry("is-undated", t("fileGraph.legend.undated"));
   }
 
 }

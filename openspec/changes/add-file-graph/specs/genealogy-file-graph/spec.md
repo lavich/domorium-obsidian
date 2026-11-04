@@ -315,8 +315,8 @@ only the shapes in view and near it, and SHALL keep up with the pointer.
 
 ### Requirement: The graph on a phone
 
-On a phone the graph SHALL fill the screen's width, with the title hidden and the
-legend folded behind a button, as the timeline of the file does. Dragging with
+On a phone the graph SHALL fill the screen's width, with the title hidden, as
+the timeline of the file does. The graph SHALL show no legend. Dragging with
 one finger SHALL move it and pinching with two SHALL zoom it; neither SHALL
 activate what it began on. Touching a card SHALL light that person and their
 family as pointing does and offer their **Branch**; touching it again SHALL show

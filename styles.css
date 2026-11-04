@@ -1119,27 +1119,6 @@ button.gedcom-desk-moment-what:disabled {
   max-width: none;
 }
 
-.gedcom-desk-legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--size-4-4);
-  margin-top: var(--size-4-3);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-faint);
-}
-
-.gedcom-desk-legend-gap::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-inline-end: var(--size-2-3);
-  border-radius: 50%;
-  background: var(--text-warning);
-  vertical-align: middle;
-}
-
 /* ── The timeline of a file ──────────────────────────────────────────────
    */
 
@@ -1685,112 +1664,9 @@ button.gedcom-ft-branch[aria-pressed="true"] {
   color: var(--text-muted);
 }
 
-.gedcom-ft-legend,
-.gedcom-fg-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-2-2) var(--size-4-4);
-  padding: var(--size-4-2) var(--size-4-4);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-button.gedcom-ft-legend-toggle,
-button.gedcom-fg-legend-toggle {
-  display: none;
-  height: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-accent);
-  font-size: inherit;
-  cursor: pointer;
-}
-
-/* A phone has the height for the rows or for the legend, not both. */
-.is-phone button.gedcom-ft-legend-toggle,
-.is-phone button.gedcom-fg-legend-toggle {
-  display: inline-block;
-}
-
-.is-phone .gedcom-ft-legend:not(.is-open) > .gedcom-ft-legend-item,
-.is-phone .gedcom-fg-legend:not(.is-open) > .gedcom-fg-legend-item {
-  display: none;
-}
-
 .is-phone .gedcom-ft-title,
 .is-phone .gedcom-fg-title {
   display: none;
-}
-
-.gedcom-ft-legend-item,
-.gedcom-fg-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-2-3);
-}
-
-.gedcom-ft-swatch,
-.gedcom-fg-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.gedcom-ft-swatch.is-f,
-.gedcom-fg-swatch.is-f {
-  background: var(--color-pink);
-  opacity: 0.6;
-}
-
-.gedcom-ft-swatch.is-m,
-.gedcom-fg-swatch.is-m {
-  background: var(--color-blue);
-  opacity: 0.6;
-}
-
-.gedcom-ft-swatch.is-u,
-.gedcom-fg-swatch.is-u {
-  background: var(--text-faint);
-  opacity: 0.6;
-}
-
-.gedcom-ft-swatch.is-birth {
-  background: var(--color-green);
-}
-
-.gedcom-ft-swatch.is-marriage {
-  background: var(--interactive-accent);
-}
-
-.gedcom-ft-swatch.is-death {
-  background: var(--text-normal);
-}
-
-.gedcom-ft-swatch.is-other {
-  background: var(--color-orange);
-}
-
-.gedcom-ft-swatch.is-period {
-  width: 18px;
-  height: 6px;
-  border-radius: 2px;
-  background: var(--color-orange);
-  opacity: 0.55;
-}
-
-.gedcom-ft-swatch.is-uncertain {
-  border: 1.5px dashed var(--text-muted);
-}
-
-.gedcom-ft-swatch.is-caption {
-  width: 18px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--color-pink);
-  opacity: 0.35;
 }
 
 .gedcom-ft-tip,
@@ -2086,15 +1962,6 @@ input.gedcom-fg-search {
 
 .gedcom-fg-person.is-dim {
   opacity: 0.25;
-}
-
-.gedcom-fg-swatch.is-family {
-  background: var(--interactive-accent);
-}
-
-.gedcom-fg-swatch.is-undated {
-  border: 1.5px solid var(--interactive-accent);
-  background: var(--background-primary);
 }
 
 .gedcom-desk-graph {

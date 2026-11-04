@@ -95,6 +95,9 @@ The Tree tab (2026-11-04): «когда переключение на вклад
 fills the space under the page's heading and tabs, opens fitted to it, and has
 no legend.
 
+The legends (2026-11-04): «в таймлайне и на странице графа тоже убери
+легенду» — no legend remains in the timeline, the graph or the tree.
+
 Proposed scope:
 
 - A new view, **Graph of the file**, opened in a tab of its own from a header
