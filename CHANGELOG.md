@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.14.0
+
+- **A timeline and a graph of the whole file.** Both open in a tab of their own,
+  from a header action on a GEDCOM tab, from a command and from the tab's menu,
+  and follow the file as it is edited, renamed or moved. The **timeline** puts
+  each person on a lifeline, pink for a woman, blue for a man, with births,
+  marriages, deaths and other events marked on it, a year cursor that shows how
+  old everyone was that year, and a search. The **graph** draws a card for each
+  person and a node for each family, the husband on the left with each side's
+  family on its own side, laid out to cross as few lines as possible. Both can
+  show just one person's branch, and both draw only what is in view, so a file of
+  thousands of people stays quick. A person opens their page in the file's tab,
+  and a family node opens the family's.
+- **The tree on a person's page is drawn like the graph.** It shows the same
+  people as before: parents and grandparents, the first spouse's parents, spouses,
+  siblings, children and grandchildren. It is drawn with the graph's cards, which
+  show a portrait, the given name, the surname and the years, and it fills the
+  page without scrolling.
+- **The genealogy interface is a beta.** The setting is now called **Genealogy
+  interface (beta)** and says so: this release adds a good deal to it, and it may
+  still change.
+- **The Branch button toggles.** Pressing it again on the person whose branch is
+  shown returns to the whole file.
+
 ## 1.13.0
 
 - **The genealogy interface is off until you turn it on.** Genealogy mode, the
