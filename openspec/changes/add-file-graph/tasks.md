@@ -46,7 +46,7 @@
 - [x] 6.6 Update the tree's browser specs in `tests/desk.spec.ts` — Marie's family, the focus moved, the phone with the focus in view — and add the colours, Pierre to Marie's left, and the node that opens the family page.
 
 - [x] 6.7 Hide the scope bar in the whole-file scope, in the graph and the timeline, and remove `fileTimeline.branchHelp` and `fileGraph.branchHelp`; tests in `src/desk/fileTimelineView.test.ts` and `src/desk/fileGraphView.test.ts`, and the whole-file counts in `tests/fileTimeline.spec.ts` and `tests/fileGraph.spec.ts` read from the subtitle.
-- [ ] 6.8 Branch again on the person whose branch is shown returns to the whole file, centred on them, with `aria-pressed` and a pressed look, by mouse, keyboard and touch, in the graph and the timeline; tests in `src/desk/fileGraphView.test.ts` and `src/desk/fileTimelineView.test.ts`, and in both browser specs.
+- [x] 6.8 Branch again on the person whose branch is shown returns to the whole file, centred on them, with `aria-pressed` and a pressed look, by mouse, keyboard and touch, in the graph and the timeline; tests in `src/desk/fileGraphView.test.ts` and `src/desk/fileTimelineView.test.ts`, and in both browser specs.
 
 ## 7. Verify
 

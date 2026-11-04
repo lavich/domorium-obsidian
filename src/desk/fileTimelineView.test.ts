@@ -502,6 +502,18 @@ describe("the keyboard", () => {
     ]);
   });
 
+  it("returns to the whole file on Branch again, the button pressed while the branch is shown", () => {
+    board();
+    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+
+    expect(names()).toHaveLength(10);
+    expect(nameRow("@I12@")?.querySelector(".gedcom-ft-branch")?.getAttribute("aria-pressed")).toBe("true");
+    expect(nameRow("@I14@")?.querySelector(".gedcom-ft-branch")?.getAttribute("aria-pressed")).toBe("false");
+    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+    expect(names()).toHaveLength(17);
+    expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
+  });
+
   it("names each stepper's buttons for what they widen or narrow", () => {
     board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
     const labels = all("[data-step]").map((button) => button.getAttribute("aria-label"));

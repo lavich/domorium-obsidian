@@ -1430,14 +1430,21 @@ button.gedcom-ft-branch:hover {
 
 .gedcom-ft-name:hover .gedcom-ft-branch,
 .gedcom-ft-name.is-hl .gedcom-ft-branch,
-.gedcom-ft-name:focus-within .gedcom-ft-branch {
+.gedcom-ft-name:focus-within .gedcom-ft-branch,
+button.gedcom-ft-branch[aria-pressed="true"] {
   display: inline-block;
 }
 
 .gedcom-ft-name:hover .gedcom-ft-name-years,
 .gedcom-ft-name.is-hl .gedcom-ft-name-years,
-.gedcom-ft-name:focus-within .gedcom-ft-name-years {
+.gedcom-ft-name:focus-within .gedcom-ft-name-years,
+.gedcom-ft-name.is-focus .gedcom-ft-name-years {
   display: none;
+}
+
+button.gedcom-ft-branch[aria-pressed="true"] {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
 }
 
 /* Too narrow for a name and its years side by side, so the years go beneath. */
@@ -1990,7 +1997,8 @@ input.gedcom-fg-search {
 
 .gedcom-fg-person:hover .gedcom-fg-pill,
 .gedcom-fg-person:focus-within .gedcom-fg-pill,
-.gedcom-fg-person.is-armed .gedcom-fg-pill {
+.gedcom-fg-person.is-armed .gedcom-fg-pill,
+.gedcom-fg-pill[aria-pressed="true"] {
   opacity: 1;
   pointer-events: auto;
 }
@@ -2003,6 +2011,16 @@ input.gedcom-fg-search {
   fill: var(--text-on-accent);
   font-size: 10px;
   font-weight: var(--font-semibold);
+}
+
+.gedcom-fg-pill[aria-pressed="true"] rect {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-pill[aria-pressed="true"] text {
+  fill: var(--interactive-accent);
 }
 
 .gedcom-fg-line {

@@ -126,6 +126,20 @@ test.describe("the graph of a file", () => {
     expect(Math.abs(irene.x - canvas.x)).toBeLessThan(2);
   });
 
+  test("returns to the whole file on Branch again, which reads pressed while the branch is shown", async ({ page }) => {
+    await mountGraph(page);
+    await card(page, "@I12@").hover();
+    await page.locator('[data-branch="@I12@"]').click();
+    await page.mouse.move(5, 5);
+
+    const pill = page.locator('[data-branch="@I12@"]');
+    await expect(pill).toHaveAttribute("aria-pressed", "true");
+    expect(await pill.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
+    await pill.click();
+    await expect(page.locator(".gedcom-fg-person")).toHaveCount(17);
+    await expect(page.locator(".gedcom-fg-scope")).toBeHidden();
+  });
+
   test("zooms with the wheel and the buttons, fits, and draws cards without text far out", async ({ page }) => {
     await mountGraph(page);
     const fitted = await zoom(page);

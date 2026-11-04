@@ -776,7 +776,12 @@ export class FileTimelineBoard {
       row.createEl("button", {
         cls: "gedcom-ft-branch",
         text: t("overview.branch"),
-        attr: { type: "button", "data-branch": xref, title: t("overview.branchHint") },
+        attr: {
+          type: "button",
+          "data-branch": xref,
+          "aria-pressed": String(xref === this.scope.focus),
+          title: t("overview.branchHint"),
+        },
       });
       this.byName.set(xref, row);
     }
@@ -966,7 +971,7 @@ export class FileTimelineBoard {
     const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
     if (branch) {
       this.closePop();
-      this.setScope({ focus: branch });
+      this.setScope({ focus: branch === this.scope.focus ? undefined : branch });
       return;
     }
     // A click from the keyboard has no pointer, and is no touch whatever pointer came before it.

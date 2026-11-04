@@ -681,6 +681,7 @@ export class GraphCanvas {
       tabindex: 0,
       role: "button",
       "data-branch": xref,
+      "aria-pressed": String(shown.focus === true),
       "aria-label": t("fileGraph.branchOf", { name }),
     });
     const hint = svg(this.doc, "title", null);
@@ -995,7 +996,8 @@ export class GraphCanvas {
       : (event as PointerEvent).pointerType || ((event as MouseEvent).detail === 0 ? "keyboard" : this.pointer);
     const touch = kind === "touch";
     const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
-    if (branch && !(touch && this.armed !== branch)) {
+    const offered = branch ? this.armed === branch || this.scene?.card(branch)?.focus === true : false;
+    if (branch && (!touch || offered)) {
       this.closePop();
       this.host.branch?.(branch);
       return;

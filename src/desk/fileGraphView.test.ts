@@ -487,6 +487,31 @@ describe("activating", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I1@");
   });
 
+  it("returns to the whole file on Branch again, centred on the person, by mouse, keyboard and touch", () => {
+    const model = curie();
+    const drawn = board(model);
+    click(pill("@I12@")?.querySelector("rect"));
+    expect(pill("@I12@")?.getAttribute("aria-pressed")).toBe("true");
+    expect(pill("@I14@")?.getAttribute("aria-pressed")).toBe("false");
+
+    click(pill("@I12@")?.querySelector("rect"));
+    expect(drawnPeople()).toHaveLength(17);
+    expect(scopeText()).toBe("");
+    expectCentredOn(drawn.view(), centreOf(model, "@I12@"), ZOOM.readable);
+    expect(host.stateChanged.mock.lastCall?.[0].scope).toEqual({ up: 2, down: 2 });
+
+    pill("@I12@")?.focus();
+    key(pill("@I12@"), "Enter");
+    expect(drawnPeople()).toHaveLength(10);
+    key(document.activeElement, "Enter");
+    expect(drawnPeople()).toHaveLength(17);
+    expect(document.activeElement?.getAttribute("data-branch")).toBe("@I12@");
+
+    click(pill("@I12@")?.querySelector("rect"));
+    tap(pill("@I12@")?.querySelector("rect"));
+    expect(drawnPeople()).toHaveLength(17);
+  });
+
   it("on a touch, takes the hidden branch of a card not yet lit for the card", () => {
     board();
     tap(pill("@I12@")?.querySelector("rect"));

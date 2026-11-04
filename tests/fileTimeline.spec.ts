@@ -132,6 +132,20 @@ test.describe("the timeline of a file", () => {
     await expect(page.locator(".gedcom-ft-name")).toHaveCount(18);
   });
 
+  test("returns to the whole file on Branch again, which reads pressed while the branch is shown", async ({ page }) => {
+    await mountTimeline(page);
+    await name(page, "@I12@").hover();
+    await name(page, "@I12@").locator(".gedcom-ft-branch").click();
+    await page.mouse.move(0, 0);
+
+    const branch = name(page, "@I12@").locator(".gedcom-ft-branch");
+    await expect(branch).toBeVisible();
+    await expect(branch).toHaveAttribute("aria-pressed", "true");
+    await branch.click();
+    await expect(page.locator(".gedcom-ft-name")).toHaveCount(18);
+    await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
+  });
+
   test("keeps the names and the years in place while the board scrolls", async ({ page }) => {
     await page.setViewportSize({ width: 900, height: 500 });
     await mountTimeline(page);

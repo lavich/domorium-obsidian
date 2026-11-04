@@ -90,7 +90,7 @@ export class FileGraphBoard {
     this.canvas = new GraphCanvas(this.root, {
       activateCard: (xref) => this.host.openRecord(xref),
       activateFamily: (xref) => this.host.openRecord(xref),
-      branch: (xref) => this.setScope({ focus: xref }),
+      branch: (xref) => this.setScope({ focus: xref === this.scope.focus ? undefined : xref }),
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
     });
     zoomButtons(zoom, this.canvas, (element, icon) => this.host.setIcon(element, icon));
