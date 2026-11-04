@@ -142,6 +142,16 @@ describe("drawing the graph of a file", () => {
     expect(asked).toEqual([]);
   });
 
+  it("tints a card by sex with no stripe, its lines centred", () => {
+    board();
+
+    expect(container.querySelector(".gedcom-fg-card-side")).toBeNull();
+    const lines = [...(card("@I1@")?.querySelectorAll("text") ?? [])];
+    expect(lines.map((line) => [line.getAttribute("x"), line.getAttribute("text-anchor")])).toEqual(
+      lines.map(() => [String(CARD.width / 2), "middle"]),
+    );
+  });
+
   it("writes a name with no surname on one line", () => {
     board(fileTimelineOf(indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 NAME John", "0 TRLR", ""].join("\n"))));
 

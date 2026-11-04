@@ -256,11 +256,12 @@ test.describe("the tree", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await mountDesk(page);
     await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
-    const side = (name: string) =>
-      card(page, name).locator(".gedcom-fg-card-side").evaluate((shape) => getComputedStyle(shape).fill);
+    const tint = (name: string) =>
+      card(page, name).locator(".gedcom-fg-card-bg").evaluate((shape) => getComputedStyle(shape).fill);
 
-    expect(await side("Marie Skłodowska-Curie")).toBe("rgb(255, 0, 128)");
-    expect(await side("Pierre Curie")).toBe("rgb(0, 0, 255)");
+    expect(await tint("Marie Skłodowska-Curie")).toBe("rgba(255, 0, 128, 0.2)");
+    expect(await tint("Pierre Curie")).toBe("rgba(0, 0, 255, 0.18)");
+    await expect(page.locator(".gedcom-fg-card-side")).toHaveCount(0);
     const pierre = await card(page, "Pierre Curie").locator(".gedcom-fg-card-bg").boundingBox();
     const marie = await card(page, "Marie Skłodowska-Curie").locator(".gedcom-fg-card-bg").boundingBox();
     const node = page.locator("[data-node]", { hasText: "’95" });

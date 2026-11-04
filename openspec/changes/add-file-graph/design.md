@@ -104,7 +104,7 @@ kept. It is the mockup's `layout()` and `scene()`, with these decisions:
 - **Blocks.** People joined by marriage within one row form a block, walked
   from an end of the chain, so someone married twice stands between two
   spouses; the block is reversed when that makes more neighbouring pairs read
-  husband on the left. Cards are 120 pixels wide — the narrowest that keeps
+  husband on the left. Cards are 124 pixels wide — the narrowest that keeps, with 4 pixels to spare for fonts that set it wider,
   `Skłodowska-Curie` (108 pixels in 12-pixel semibold) on one line within 6
   pixels of padding a side — 36 apart within a block, which holds the family
   node and its year, 48 between blocks and 12 between siblings standing alone
@@ -607,3 +607,12 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
 - **Edges.** In the tree, a two-finger scroll that would take the drawing's
   top or bottom further in than the margin is left to the page; a mouse wheel
   still zooms.
+- **Narrower cards** (fourth request). 124 pixels: `Skłodowska-Curie` measures
+  108 in Chromium's 12-pixel semibold system font, and 120 cut it there by a
+  fraction of a pixel, so 4 more are kept for fonts that set it wider. Text and
+  portrait are centred; the stripe is gone and the tints are a little stronger
+  (0.2, 0.18, 0.1) to carry sex alone. Gaps: 36 within a block (the node with
+  its year), 48 between blocks, 12 between siblings standing alone. Widths:
+  `curieWithEvents()` 1 624 → 1 215 pixels, tangled(300) 49 833 → 37 372. The
+  portrait takes no pointer events, so a press on it drags or opens as a press
+  on the card does.

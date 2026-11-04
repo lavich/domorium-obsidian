@@ -14,7 +14,7 @@ const TRACKPAD_DELTA = 40;
 /** A wheel event this soon after the last one belongs to the same gesture. */
 const GESTURE_GAP = 150;
 const NAME_ROOM = 22;
-const NAME_WIDTH = CARD.width - 16 - 6;
+const NAME_WIDTH = CARD.width - 2 * 6;
 const AVATAR = { width: 36, height: 44 } as const;
 const BUTTON_STEP = 1.2;
 
@@ -731,7 +731,6 @@ export class GraphCanvas {
     card.append(
       title,
       svg(this.doc, "rect", "gedcom-fg-card-bg", { width: CARD.width, height, rx: 7 }),
-      svg(this.doc, "rect", "gedcom-fg-card-side", { x: 5, y: 6, width: 4, height: height - 12, rx: 2 }),
     );
     if (shown.gap) {
       card.append(svg(this.doc, "circle", "gedcom-fg-card-gap", { cx: CARD.width - 9, cy: 9, r: 3 }));
@@ -761,7 +760,7 @@ export class GraphCanvas {
     }
     this.measureName ??= nameMeasure(this.root);
     const line = (cls: string, at: number, content: string): void => {
-      const written = svg(this.doc, "text", cls, { x: 16, y: text + at });
+      const written = svg(this.doc, "text", cls, { x: CARD.width / 2, y: text + at, "text-anchor": "middle" });
       written.textContent = fitText(content, NAME_WIDTH, this.measureName ?? ((one) => one.length));
       card.append(written);
     };
@@ -812,7 +811,9 @@ export class GraphCanvas {
     frame.className = "gedcom-desk-portrait gedcom-fg-avatar";
     holder.append(frame);
     const picture = drawPicture(frame, content, AVATAR.width, AVATAR.height);
-    picture.querySelector("img")?.addEventListener("error", () => holder.remove());
+    const image = picture.querySelector("img");
+    image?.setAttribute("draggable", "false");
+    image?.addEventListener("error", () => holder.remove());
     card.append(holder);
   }
 

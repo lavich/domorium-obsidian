@@ -36,9 +36,9 @@ test.describe("the graph of a file", () => {
     await expect(card(page, "@I1@").locator(".gedcom-fg-card-years")).toHaveText("1867–1934");
     const fill = (xref: string, part: string) =>
       person(page, xref).locator(part).evaluate((shape) => getComputedStyle(shape).fill);
-    expect(await fill("@I1@", ".gedcom-fg-card-side")).toBe("rgb(255, 0, 128)");
-    expect(await fill("@I1@", ".gedcom-fg-card-bg")).toBe("rgba(255, 0, 128, 0.14)");
-    expect(await fill("@I2@", ".gedcom-fg-card-side")).toBe("rgb(0, 0, 255)");
+    expect(await fill("@I1@", ".gedcom-fg-card-bg")).toBe("rgba(255, 0, 128, 0.2)");
+    expect(await fill("@I2@", ".gedcom-fg-card-bg")).toBe("rgba(0, 0, 255, 0.18)");
+    await expect(page.locator(".gedcom-fg-card-side")).toHaveCount(0);
     for (const xref of ["@I1@", "@I17@", "@I9@", "@I8@"]) {
       await expect(card(page, xref).locator(".gedcom-fg-card-name").first()).toBeInViewport();
     }
@@ -83,11 +83,11 @@ test.describe("the graph of a file", () => {
     await mountGraph(page, { dark: true });
 
     expect(
-      await person(page, "@I1@").locator(".gedcom-fg-card-side").evaluate((shape) => getComputedStyle(shape).fill),
-    ).toBe("rgb(255, 100, 180)");
+      await person(page, "@I1@").locator(".gedcom-fg-card-bg").evaluate((shape) => getComputedStyle(shape).fill),
+    ).toBe("rgba(255, 100, 180, 0.2)");
     expect(
       await person(page, "@I2@").locator(".gedcom-fg-card-bg").evaluate((shape) => getComputedStyle(shape).fill),
-    ).toBe("rgba(80, 160, 255, 0.12)");
+    ).toBe("rgba(80, 160, 255, 0.18)");
   });
 
   test("stands Pierre Curie left of Marie with ’95 between them, and draws Eugène's marriage hollow", async ({ page }) => {
@@ -183,15 +183,16 @@ test.describe("the graph of a file", () => {
 
   test("moves with a drag begun on a card, and opens nothing", async ({ page }) => {
     await mountGraph(page);
-    const before = await card(page, "@I1@").boundingBox();
+    const before = await card(page, "@I1@").locator(".gedcom-fg-card-bg").boundingBox();
     const at = { x: (before?.x ?? 0) + 20, y: (before?.y ?? 0) + 10 };
     await page.mouse.move(at.x, at.y);
     await page.mouse.down();
     await page.mouse.move(at.x + 60, at.y + 40, { steps: 5 });
     await page.mouse.up();
 
-    const after = await card(page, "@I1@").boundingBox();
-    expect((after?.x ?? 0) - (before?.x ?? 0)).toBeCloseTo(60, 0);
+    const after = await card(page, "@I1@").locator(".gedcom-fg-card-bg").boundingBox();
+    const middle = (box: typeof before) => (box?.x ?? 0) + (box?.width ?? 0) / 2;
+    expect(middle(after) - middle(before)).toBeCloseTo(60, 0);
     expect(await opened(page)).toEqual([]);
     await card(page, "@I1@").click();
     expect(await opened(page)).toEqual(["@I1@"]);

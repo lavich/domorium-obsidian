@@ -2,14 +2,14 @@ import type { BranchScope } from "./branchScope";
 import { least, most, type FileTimeline, type Sex } from "./fileTimeline";
 
 /** `height` is a card's text; a card with a portrait is `portrait` taller. */
-export const CARD = { width: 168, height: 58, portrait: 50 } as const;
+export const CARD = { width: 124, height: 58, portrait: 50 } as const;
 const SPOUSE_GAP = 36;
-const BLOCK_GAP = 72;
+const BLOCK_GAP = 48;
 /** Between one row's bottom edge and the next row's top. */
 export const ROW_GAP = 84;
 export const LANE = 10;
 const LANE_GAP = 20;
-const SIBLING_GAP = 16;
+const SIBLING_GAP = 12;
 const BELOW = 16;
 const CLEAR = 10;
 /** The widest stretch of x left with no unit in any row. */

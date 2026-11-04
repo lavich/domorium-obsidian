@@ -296,8 +296,8 @@ describe("the families the Curies do not have", () => {
     });
     const xs = ["a", "b", "c"].map((id) => layout.card.get(id)?.x ?? NaN);
 
-    expect(xs[1] - xs[0]).toBe(CARD.width + 16);
-    expect(xs[2] - xs[1]).toBe(CARD.width + 16);
+    expect(xs[1] - xs[0]).toBe(CARD.width + 12);
+    expect(xs[2] - xs[1]).toBe(CARD.width + 12);
   });
 
   it("lays out an input of its own, with cards that are not people", () => {

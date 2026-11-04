@@ -1945,27 +1945,15 @@ input.gedcom-fg-search {
 }
 
 .gedcom-fg-person.is-f .gedcom-fg-card-bg {
-  fill: rgba(var(--color-pink-rgb), 0.14);
+  fill: rgba(var(--color-pink-rgb), 0.2);
 }
 
 .gedcom-fg-person.is-m .gedcom-fg-card-bg {
-  fill: rgba(var(--color-blue-rgb), 0.12);
+  fill: rgba(var(--color-blue-rgb), 0.18);
 }
 
 .gedcom-fg-person.is-u .gedcom-fg-card-bg {
-  fill: rgba(var(--mono-rgb-100), 0.08);
-}
-
-.gedcom-fg-person.is-f .gedcom-fg-card-side {
-  fill: var(--color-pink);
-}
-
-.gedcom-fg-person.is-m .gedcom-fg-card-side {
-  fill: var(--color-blue);
-}
-
-.gedcom-fg-person.is-u .gedcom-fg-card-side {
-  fill: var(--text-faint);
+  fill: rgba(var(--mono-rgb-100), 0.1);
 }
 
 .gedcom-fg-card-name {
@@ -2131,4 +2119,8 @@ input.gedcom-fg-search {
 .gedcom-fg-avatar .gedcom-desk-picture:not(.is-cropped) {
   width: 100%;
   height: 100%;
+}
+
+.gedcom-fg-avatar-holder {
+  pointer-events: none;
 }

@@ -54,7 +54,7 @@
 - [x] 6.12 The tree after review: every copy of a person lit; siblings closer; the opening that shows a child; zoom and keyboard focus kept after activating; a touch on a pressed Branch arms first; real spouses only in the order of the focus's row; the canvas capped and edge scrolls passed to the page; tests in `src/desk/personTree.test.ts`, `src/desk/personTreeView.test.ts`, `src/desk/fileGraphView.test.ts`, `src/desk/fileTimelineView.test.ts`.
 - [x] 6.13 Browser specs: Marie's card and her tree with portrait and two name lines in `tests/fileGraph.spec.ts` and `tests/desk.spec.ts`.
 
-- [ ] 6.14 Remove the cards' stripe, tint by sex alone, and narrow the cards to 120 pixels with portrait and text centred and the gaps retuned; tests in `src/desk/fileGraph.test.ts`, `src/desk/fileGraphView.test.ts`, `tests/fileGraph.spec.ts` and `tests/desk.spec.ts`.
+- [x] 6.14 Remove the cards' stripe, tint by sex alone, and narrow the cards to 124 pixels with portrait and text centred and the gaps retuned; tests in `src/desk/fileGraph.test.ts`, `src/desk/fileGraphView.test.ts`, `tests/fileGraph.spec.ts` and `tests/desk.spec.ts`.
 
 ## 7. Verify
 
