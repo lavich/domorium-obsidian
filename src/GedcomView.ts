@@ -766,7 +766,7 @@ export class GedcomView extends TextFileView {
     if (!isViewMode(mode) || !this.modes.needsDraw(this.containerEl.isShown() && this.viewsEl.isShown())) {
       return;
     }
-    this.views.show(mode, this.genealogy(), { ...this.memory, ...this.views.memory() }, this.record ?? undefined);
+    this.views.show(mode, this.genealogy(), { ...this.views.memory(), ...this.memory }, this.record ?? undefined);
   }
 
   onResize(): void {

@@ -1824,7 +1824,7 @@ button.gedcom-fg-pop-open {
 .gedcom-ft-life.is-selected {
   stroke: var(--text-normal);
   stroke-width: 2;
-  opacity: 1;
+  opacity: 0.85;
 }
 
 .gedcom-fg-find,
@@ -2054,7 +2054,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-person.is-selected .gedcom-fg-card-bg {
   stroke: var(--text-normal);
   stroke-width: 3;
-  filter: drop-shadow(0 0 5px var(--interactive-accent));
 }
 
 .gedcom-fg-person .gedcom-fg-card:focus-visible .gedcom-fg-card-bg,

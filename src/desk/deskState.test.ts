@@ -275,6 +275,9 @@ describe("the modes a tab offers", () => {
 
   it("names the two overview tabs of an earlier version, which no view is registered under", () => {
     expect(RETIRED_VIEW_TYPES).toEqual(["domorium-file-timeline", "domorium-file-graph"]);
+    for (const registered of ["domorium-gedcom", "domorium-index", "domorium-evidence"]) {
+      expect(RETIRED_VIEW_TYPES).not.toContain(registered);
+    }
   });
 });
 

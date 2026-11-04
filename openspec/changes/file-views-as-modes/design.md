@@ -718,3 +718,56 @@ Purpose alone.
 None for the user at the time of writing. Decided by me and open to a change:
 selecting a person outside the branch shown changes the branch to theirs, and an
 Index row for a family, a source or a media record opens its page.
+
+## Implementation
+
+What differs from the plan above, or was settled while building it.
+
+- **No stale flag in `TabModes`.** Drawing is idempotent: the boards return early
+  on the same model and scope, and `fileTimelineOf` is kept per reading. So
+  `needsDraw(shown)` is "loaded, in Graph or Timeline, shown" and nothing else,
+  and a tab that changed behind another draws when it is next shown because it
+  is asked to, not because it was marked. The test says that (`draws again when
+  the tab is shown after text changed under it`).
+- **`TabModes` also has `applyState(desk)`**, which `setState` calls once for
+  the mode, the record, the history step and a selection ended, so the rule lives
+  in one place; `openRecord(xref)` is the pure patch `{ mode, record, step }` that
+  `GedcomView.openRecord` builds its `setViewState` from. `setMode(next,
+  { cursorRecord, index })` takes the cursor's record and the index lazily (the
+  index only where Source is left), `fileChanged(mode)` takes the mode the new
+  file starts in, and `shownRecord()` is there for the Index. `selectionCleared`
+  and `recordChanged` come back from each, for the tab to apply.
+- **`FileViews.show` takes the tab's memory as the authority for a scope**; the
+  tab passes `{ ...views.memory(), ...memory }`, so a `graph` or `timeline` that
+  came back with a history step wins over what the board last reported, and
+  `show` writes what it applied into its own memory. A pending selection is
+  applied by a `show` that restores (the first, or after a hide) or finds the
+  board displayed; the scroll of the timeline is put back only after a hide.
+- **The selection of a canvas** keeps the zoom the reader has where it is at
+  least `ZOOM.far`, else the readable one, as a step to a match does. Before the
+  canvas has a size it replaces the pending opening with a centring on the person,
+  so a selection made before the first draw wins over a saved view; a selection
+  made after the opening (`show` then `resized`, the order `FileViews` uses) glides
+  from the opening.
+- **The look of the selection** is a stroke in the text colour (not the accent,
+  which the focus person and the search's ring already use) on a card; on the
+  timeline a tinted band across the row, a ring on the name and a lifeline stroked
+  in the text colour. The band is an SVG rectangle (`gedcom-ft-row-selected`)
+  placed behind the items, redrawn with every draw.
+- **Chromium keeps the scroll of an element set to `display: none`**, so the
+  browser spec for the timeline's scroll passes without the restore; the unit test
+  (`records the scroll of the timeline when it is hidden, and puts it back`)
+  is what pins the restore, which stays for a webview that resets it.
+- **`DESK_MODES` helpers.** `isViewMode`, `modeLook(mode)` (icon and title key,
+  which the commands read too) and `ViewKind` live in `deskState.ts`.
+- **Harness.** The two board pages wrap their board in the chain the tab really
+  has (`workspace-leaf-content` › `view-content gedcom-gedcom-view` ›
+  `gedcom-gedcom-views`), not only a class, so the specs see the content rules
+  the tab gives. `harness/fileViews.ts` mirrors `GedcomView.drawViews` and
+  `renderMode` in a few lines (a draw only where both the leaf and the views have
+  a box, both kinds' selections cleared on a mode change); it is a stand-in, and
+  the tab itself is what the manual check covers. The unit tests of `FileViews`
+  give happy-dom a layout by a stand-in for `clientWidth` and its kin that is zero
+  under a `display: none` ancestor.
+- **Strings.** `mode.toGenealogy` and `mode.toSource` went with the old header
+  action; the description of *Genealogy interface (beta)* is as it was.
