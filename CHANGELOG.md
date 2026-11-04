@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.14.1
+
+- **The timeline and the graph are calmer.** The captions under the timeline, its
+  title, its header line and the zoom slider are gone, and so are the title and
+  the summary above the graph. Zoom is by floating **−**, **+** and **Fit**
+  buttons over the board, in the timeline, the graph and the tree on a person's
+  page. On a phone the timeline now uses the whole screen. Its scrollbars no
+  longer run over the axis or the names, and the **Other events** switch and the
+  count of people alive are gone: every dated event is always shown.
+- **Search floats over the board.** In the timeline, the graph and the tree on a
+  person's page, a search icon opens into a field with a counter and ↑ / ↓ arrows
+  that step through the matches (Enter for the next, Shift+Enter for the
+  previous), and the view glides to each one. **×** clears the query.
+- **One tooltip, not two.** The buttons show Obsidian's own tooltip only, placed
+  so that it does not cover the buttons next to it.
+
 ## 1.14.0
 
 - **A timeline and a graph of the whole file.** Both open in a tab of their own,
