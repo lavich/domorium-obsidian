@@ -132,7 +132,7 @@ describe("drawing the graph of a file", () => {
     const layout = fileGraphOf(curie(), WHOLE);
     const expected = layout.cards
       .filter((one) => one.x <= 600 && one.x + CARD.width >= -300 && one.y <= 120 && one.y + CARD.height >= -60)
-      .map((one) => one.xref);
+      .map((one) => one.id);
 
     expect(drawnPeople()).toEqual(expected);
     expect(expected.length).toBeLessThan(17);
@@ -153,7 +153,7 @@ describe("drawing the graph of a file", () => {
     drawn.draw({ left: 1600, top: 0, right: 1700, bottom: 10 });
     drawn.draw({ left: 0, top: 0, right: 2000, bottom: 500 });
 
-    expect(drawnPeople()).toEqual(layout.cards.map((one) => one.xref));
+    expect(drawnPeople()).toEqual(layout.cards.map((one) => one.id));
   });
 
   it("draws no text far out", () => {
@@ -267,7 +267,7 @@ describe("the view", () => {
       centreOf(model, "@I12@", branch),
       ZOOM.readable,
     );
-    const first = fileGraphOf(model, WHOLE).cards[0]?.xref ?? "";
+    const first = fileGraphOf(model, WHOLE).cards[0]?.id ?? "";
     expectCentredOn(board(model, {}, NARROW).view(), centreOf(model, first), ZOOM.readable);
   });
 
@@ -538,9 +538,9 @@ describe("the keyboard", () => {
     );
     const layout = fileGraphOf(curie(), WHOLE);
     const expected = layout.cards.flatMap((one) => [
-      one.xref,
-      `branch ${one.xref}`,
-      ...layout.nodes.filter((family) => family.spouses[0] === one.xref).map((family) => family.family),
+      one.id,
+      `branch ${one.id}`,
+      ...layout.nodes.filter((family) => family.spouses[0] === one.id).map((family) => family.family),
     ]);
 
     expect(order).toEqual(expected);

@@ -1,5 +1,5 @@
 import type { BranchScope } from "./branchScope";
-import { least, most, type FileTimeline } from "./fileTimeline";
+import { least, most, type FileTimeline, type Sex } from "./fileTimeline";
 
 export const CARD = { width: 168, height: 46 } as const;
 const SPOUSE_GAP = 36;
@@ -25,8 +25,33 @@ export const SWEEPS = { most: 24, idle: 4, budget: 250, pulls: 500 } as const;
 
 export type Point = [number, number];
 
+/** A card to lay out: a person in the graph of a file, a box of its own in a person's tree. */
+export interface GraphInputCard {
+  id: string;
+  /** Rows without a card are dropped. */
+  row: number;
+  sex: Sex;
+}
+
+export interface GraphInputFamily {
+  id: string;
+  /** Card ids; the first is the husband where the family names one. */
+  spouses: string[];
+  children: string[];
+  /** Null where the marriage is undated. */
+  year: number | null;
+}
+
+export interface GraphInput {
+  /** In the order each row starts from. */
+  cards: GraphInputCard[];
+  /** In the order a person's marriages come, which decides who stands left where sex and role cannot. */
+  families: GraphInputFamily[];
+  focus: string | null;
+}
+
 export interface GraphCard {
-  xref: string;
+  id: string;
   row: number;
   x: number;
   y: number;
@@ -405,32 +430,60 @@ export function layoutFileGraph(
 ): FileGraphLayout {
   const focus = scope.focus !== undefined && model.people.has(scope.focus) ? scope.focus : null;
   const keep = focus === null ? null : model.branch(focus, scope.up, scope.down);
-  const shown = keep ? model.rows.filter((xref) => keep.has(xref)) : [...model.rows];
+  const shown = keep ? model.rows.filter((xref) => keep.has(xref)) : model.rows;
+  return layoutGraph(
+    {
+      cards: shown.map((xref) => ({
+        id: xref,
+        row: model.generations.get(xref) ?? 0,
+        sex: model.people.get(xref)?.sex ?? "U",
+      })),
+      families: [...model.families.values()].map((family) => ({
+        id: family.xref,
+        spouses: family.spouses,
+        children: family.children,
+        year: family.marriage?.year ?? null,
+      })),
+      focus,
+    },
+    clock,
+  );
+}
+
+export function layoutGraph(input: GraphInput, clock: () => number = () => performance.now()): FileGraphLayout {
+  const { focus } = input;
+  const shown = input.cards.map((one) => one.id);
   const on = new Set(shown);
-  const rowIndex = new Map(model.rows.map((xref, at) => [xref, at]));
+  const rowIndex = new Map(shown.map((id, at) => [id, at]));
+  const rowOf = new Map(input.cards.map((one) => [one.id, one.row]));
+  const sexes = new Map(input.cards.map((one) => [one.id, one.sex]));
 
-  const generations = [...new Set(shown.map((xref) => model.generations.get(xref) ?? 0))].sort((a, b) => a - b);
+  const generations = [...new Set(input.cards.map((one) => one.row))].sort((a, b) => a - b);
   const layerOfGeneration = new Map(generations.map((generation, at) => [generation, at]));
-  const layerOf = (xref: string): number => layerOfGeneration.get(model.generations.get(xref) ?? 0) ?? 0;
+  const layerOf = (id: string): number => layerOfGeneration.get(rowOf.get(id) ?? 0) ?? 0;
 
-  const spouses = new Map<string, string[]>(shown.map((xref) => [xref, []]));
-  for (const family of model.families.values()) {
+  const spouses = new Map<string, string[]>(shown.map((id) => [id, []]));
+  const husbands = new Set<string>();
+  const marriedAt = new Map<string, number>();
+  input.families.forEach((family, at) => {
     const [a, b] = family.spouses;
-    if (a !== undefined && b !== undefined && on.has(a) && on.has(b) && layerOf(a) === layerOf(b)) {
+    if (a === undefined || b === undefined) {
+      return;
+    }
+    husbands.add(`${a}|${b}`);
+    for (const key of [`${a}|${b}`, `${b}|${a}`]) {
+      if (!marriedAt.has(key)) {
+        marriedAt.set(key, at);
+      }
+    }
+    if (on.has(a) && on.has(b) && layerOf(a) === layerOf(b)) {
       spouses.get(a)?.push(b);
       spouses.get(b)?.push(a);
     }
-  }
+  });
 
-  const sexOf = (xref: string) => model.people.get(xref)?.sex ?? "U";
-  const husbands = new Set<string>();
-  for (const family of model.families.values()) {
-    const [husband, wife] = family.spouses;
-    if (husband !== undefined && wife !== undefined) {
-      husbands.add(`${husband}|${wife}`);
-    }
-  }
-  const husbandLeft = (order: string[]): number => {
+  const sexOf = (id: string) => sexes.get(id) ?? "U";
+  const husbandLeft = (order: string[]): [number, number] => {
     let bySex = 0;
     let byRole = 0;
     for (let at = 1; at < order.length; at += 1) {
@@ -443,7 +496,20 @@ export function layoutFileGraph(
         byRole += 1;
       }
     }
-    return bySex * (order.length + 1) + byRole;
+    return [bySex, byRole];
+  };
+  const firstMarriageLeft = (order: string[]): number =>
+    order.length < 2 ? 0 : (marriedAt.get(`${order[0] ?? ""}|${order[1] ?? ""}`) ?? Infinity);
+  const readsBetter = (one: string[], other: string[]): boolean => {
+    const [sexOne, roleOne] = husbandLeft(one);
+    const [sexOther, roleOther] = husbandLeft(other);
+    if (sexOne !== sexOther) {
+      return sexOne > sexOther;
+    }
+    if (roleOne !== roleOther) {
+      return roleOne > roleOther;
+    }
+    return firstMarriageLeft(one) < firstMarriageLeft(other);
   };
 
   const units: Unit[] = [];
@@ -455,7 +521,7 @@ export function layoutFileGraph(
     }
     let members = walkBlock(xref, spouses);
     const reversed = [...members].reverse();
-    if (husbandLeft(reversed) > husbandLeft(members)) {
+    if (readsBetter(reversed, members)) {
       members = reversed;
     }
     const unit: Unit = {
@@ -482,7 +548,7 @@ export function layoutFileGraph(
   const edges: Edge[] = [];
   const laneCap = LANES_PER_PERSON * shown.length;
   let laneCount = 0;
-  for (const family of model.families.values()) {
+  for (const family of input.families) {
     const parents = family.spouses.filter((xref) => on.has(xref));
     const upper = least(parents.map(layerOf));
     const anchor = parents.find((xref) => layerOf(xref) === upper);
@@ -505,7 +571,7 @@ export function layoutFileGraph(
         missing += shared.has(layer) ? 0 : 1;
       }
       if (laneCount + missing > laneCap) {
-        edges.push({ family: family.xref, parents, child, lanes: [] });
+        edges.push({ family: family.id, parents, child, lanes: [] });
         continue;
       }
       const lanes: Unit[] = [];
@@ -525,7 +591,7 @@ export function layoutFileGraph(
         near = LANE / 2;
       }
       link(previous, near, to, (place.get(child) ?? 0) * pitch + CARD.width / 2);
-      edges.push({ family: family.xref, parents, child, lanes });
+      edges.push({ family: family.id, parents, child, lanes });
     }
   }
 
@@ -626,25 +692,25 @@ export function layoutFileGraph(
   layers.forEach((layer) => {
     for (const unit of layer) {
       unit.cx -= minX;
-      unit.members.forEach((xref, at) => {
-        const placed = { xref, row: unit.layer, x: leftOf(unit) + at * pitch, y: unit.layer * ROW_PITCH };
+      unit.members.forEach((id, at) => {
+        const placed = { id, row: unit.layer, x: leftOf(unit) + at * pitch, y: unit.layer * ROW_PITCH };
         cards.push(placed);
-        card.set(xref, placed);
+        card.set(id, placed);
       });
     }
   });
 
   const nodes: GraphNode[] = [];
   const node = new Map<string, GraphNode>();
-  for (const family of model.families.values()) {
+  for (const family of input.families) {
     const placed = family.spouses
-      .map((xref) => card.get(xref))
+      .map((id) => card.get(id))
       .filter((one): one is GraphCard => one !== undefined);
     const [one, other] = placed;
     if (!one || !other) {
       continue;
     }
-    const year = family.marriage?.year ?? null;
+    const { year } = family;
     const bottom = (at: GraphCard): Point => [at.x + CARD.width / 2, at.y + CARD.height];
     let made: GraphNode;
     if (one.row === other.row) {
@@ -653,24 +719,24 @@ export function layoutFileGraph(
       if (neighbours) {
         const y = a.y + CARD.height / 2;
         made = {
-          family: family.xref,
+          family: family.id,
           kind: "pair",
           x: (a.x + CARD.width + b.x) / 2,
           y,
           year,
-          spouses: [a.xref, b.xref],
+          spouses: [a.id, b.id],
           joins: [[[a.x + CARD.width, y], [b.x, y]]],
         };
       } else {
         const x = (a.x + b.x + CARD.width) / 2;
         const y = a.y + CARD.height + BELOW;
         made = {
-          family: family.xref,
+          family: family.id,
           kind: "below",
           x,
           y,
           year,
-          spouses: [a.xref, b.xref],
+          spouses: [a.id, b.id],
           joins: [[bottom(a), [x, y]], [bottom(b), [x, y]]],
         };
       }
@@ -681,17 +747,17 @@ export function layoutFileGraph(
       const next = lower.row - upper.row === 1;
       const at: Point = next ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : [from[0], from[1] + BELOW];
       made = {
-        family: family.xref,
+        family: family.id,
         kind: "across",
         x: at[0],
         y: at[1],
         year,
-        spouses: [upper.xref, lower.xref],
+        spouses: [upper.id, lower.id],
         joins: next ? [[from, to]] : [[from, at], [at, to]],
       };
     }
     nodes.push(made);
-    node.set(family.xref, made);
+    node.set(family.id, made);
   }
 
   const lines: GraphLine[] = [];

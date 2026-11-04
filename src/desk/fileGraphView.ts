@@ -446,7 +446,7 @@ export class FileGraphBoard {
     this.matches =
       this.query === "" || !this.layout
         ? []
-        : this.layout.cards.map((card) => card.xref).filter((xref) => !this.misses(xref));
+        : this.layout.cards.map((card) => card.id).filter((xref) => !this.misses(xref));
     for (const [xref, element] of this.cardOf) {
       element.classList.toggle("is-dim", this.misses(xref));
     }
@@ -543,7 +543,7 @@ export class FileGraphBoard {
       this.fit();
       return;
     }
-    const first = layout.cards[0]?.xref;
+    const first = layout.cards[0]?.id;
     for (const xref of [pending.open, layout.focus ?? undefined, first]) {
       if (this.centreOn(xref, ZOOM.readable)) {
         return;
@@ -645,7 +645,7 @@ export class FileGraphBoard {
     }
     const placed: Item[] = [];
     for (const card of layout.cards) {
-      const person = model.people.get(card.xref);
+      const person = model.people.get(card.id);
       if (!person) {
         continue;
       }
@@ -653,15 +653,15 @@ export class FileGraphBoard {
       const years = lifelineYears(person.lifeline);
       placed.push({
         kind: "card",
-        xref: card.xref,
+        xref: card.id,
         left: card.x,
         top: card.y,
         right: card.x + CARD.width,
         bottom: card.y + CARD.height,
-        people: [card.xref],
-        make: (far) => this.cardShape(card.xref, card.x, card.y, person.sex, name, years, far),
+        people: [card.id],
+        make: (far) => this.cardShape(card.id, card.x, card.y, person.sex, name, years, far),
       });
-      for (const node of nodesAfter.get(card.xref) ?? []) {
+      for (const node of nodesAfter.get(card.id) ?? []) {
         const family = model.families.get(node.family);
         if (!family) {
           continue;

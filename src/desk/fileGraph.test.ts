@@ -9,6 +9,7 @@ import {
   fileGraphOf,
   LANE,
   layoutFileGraph,
+  layoutGraph,
   marriageDigits,
   ROW_PITCH,
   SWEEPS,
@@ -84,7 +85,7 @@ function overlapping(layout: FileGraphLayout): string[] {
     sorted.slice(1).forEach((card, index) => {
       const before = sorted[index];
       if (before && before.x + CARD.width > card.x) {
-        found.push(`${before.xref}/${card.xref}`);
+        found.push(`${before.id}/${card.id}`);
       }
     });
   }
@@ -240,6 +241,39 @@ describe("the families the Curies do not have", () => {
     const layout = layoutFileGraph(file(["W:U", "H:U"], [{ id: "F1", husb: "H", wife: "W" }]), WHOLE);
 
     expect(leftOf(layout, "@H@", "@W@")).toBe(true);
+  });
+
+  it("keeps a first wife on the left of a man married twice, and each marriage's child beneath it", () => {
+    const layout = layoutFileGraph(
+      file(
+        ["W:F", "M:M", "V:F", "A:F", "B:M"],
+        [
+          { id: "F1", husb: "M", wife: "V", children: ["A"] },
+          { id: "F2", husb: "M", wife: "W", children: ["B"] },
+        ],
+      ),
+      WHOLE,
+    );
+
+    expect(layout.cards.filter((card) => card.row === 0).map((card) => card.id)).toEqual(["@V@", "@M@", "@W@"]);
+    expect(leftOf(layout, "@A@", "@B@")).toBe(true);
+  });
+
+  it("lays out an input of its own, with cards that are not people", () => {
+    const layout = layoutGraph({
+      cards: [
+        { id: "a", row: -1, sex: "M" },
+        { id: "b", row: -1, sex: "F" },
+        { id: "c", row: 0, sex: "U" },
+        { id: "d", row: 0, sex: "U" },
+      ],
+      families: [{ id: "f", spouses: ["b", "a"], children: ["c", "d"], year: 1900 }],
+      focus: "c",
+    });
+
+    expect(layout.cards.map((card) => [card.id, card.row])).toEqual([["a", 0], ["b", 0], ["c", 1], ["d", 1]]);
+    expect(layout.node.get("f")?.spouses).toEqual(["a", "b"]);
+    expect(layout.lines).toHaveLength(2);
   });
 
   it("draws no line up to a child who stands no lower than their parents, as a loop in the file makes", () => {
@@ -403,7 +437,7 @@ describe("a branch", () => {
   it("shows Marie with no ancestors and no descendants in one row, beside Pierre", () => {
     const layout = layoutFileGraph(curie(), { focus: "@I1@", up: 0, down: 0 });
 
-    expect(layout.cards.map((card) => [card.xref, card.row])).toEqual([
+    expect(layout.cards.map((card) => [card.id, card.row])).toEqual([
       ["@I2@", 0],
       ["@I1@", 0],
     ]);
