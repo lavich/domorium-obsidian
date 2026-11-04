@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import type { TimelineOptions } from "../harness/fileTimeline";
+import { generated } from "./generated";
 
 const ZOOM = 6;
 const PAD = 12;
@@ -22,64 +23,6 @@ const life = (page: Page, xref: string) => page.locator(`.gedcom-ft-life[data-p=
 async function yearX(page: Page, year: number): Promise<number> {
   const chart = await page.locator(".gedcom-ft-chart").boundingBox();
   return (chart?.x ?? 0) + PAD + (year - FIRST_DECADE) * ZOOM;
-}
-
-function generated(count: number): string {
-  interface Person { id: string; sex: "M" | "F"; born: number; famc?: string; fams: string[] }
-  interface Family { id: string; husb: string; wife: string; year: number; children: string[] }
-  const people: Person[] = [];
-  const families: Family[] = [];
-  const person = (sex: "M" | "F", born: number, famc?: string): Person => {
-    const one = { id: `@I${people.length + 1}@`, sex, born, ...(famc ? { famc } : {}), fams: [] };
-    people.push(one);
-    return one;
-  };
-  const couple = (husb: Person, wife: Person, year: number): Family => {
-    const family = { id: `@F${families.length + 1}@`, husb: husb.id, wife: wife.id, year, children: [] };
-    families.push(family);
-    husb.fams.push(family.id);
-    wife.fams.push(family.id);
-    return family;
-  };
-  const queue: Family[] = [];
-  for (let at = 0; at < 40; at += 1) {
-    queue.push(couple(person("M", 1700 + at), person("F", 1702 + at), 1725 + at));
-  }
-  for (let next = queue.shift(); next && people.length < count; next = queue.shift()) {
-    for (let child = 0; child < 3 && people.length < count; child += 1) {
-      const sex = child % 2 === 0 ? "M" : "F";
-      const kid = person(sex, next.year + 2 + child * 3, next.id);
-      next.children.push(kid.id);
-      if (people.length < count) {
-        const outsider = person(sex === "M" ? "F" : "M", kid.born + 1);
-        queue.push(sex === "M" ? couple(kid, outsider, kid.born + 25) : couple(outsider, kid, kid.born + 25));
-      }
-    }
-  }
-  const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
-  for (const one of people) {
-    lines.push(`0 ${one.id} INDI`, `1 NAME Person ${one.id.slice(2, -1)} /Generated/`, `1 SEX ${one.sex}`);
-    lines.push("1 BIRT", `2 DATE ${one.born}`, "1 CHR", `2 DATE ${one.born}`);
-    lines.push("1 RESI", `2 DATE FROM ${one.born + 20} TO ${one.born + 40}`);
-    lines.push("1 CENS", `2 DATE ${one.born + 10}`, "1 CENS", `2 DATE ${one.born + 30}`);
-    lines.push("1 OCCU Miller", `2 DATE ${one.born + 25}`);
-    lines.push("1 DEAT", `2 DATE ${one.born + 70}`, "1 BURI", `2 DATE ${one.born + 70}`);
-    if (one.famc) {
-      lines.push(`1 FAMC ${one.famc}`);
-    }
-    for (const family of one.fams) {
-      lines.push(`1 FAMS ${family}`);
-    }
-  }
-  for (const family of families) {
-    lines.push(`0 ${family.id} FAM`, `1 HUSB ${family.husb}`, `1 WIFE ${family.wife}`);
-    for (const child of family.children) {
-      lines.push(`1 CHIL ${child}`);
-    }
-    lines.push("1 MARR", `2 DATE ${family.year}`);
-  }
-  lines.push("0 TRLR", "");
-  return lines.join("\n");
 }
 
 test.describe("the timeline of a file", () => {
