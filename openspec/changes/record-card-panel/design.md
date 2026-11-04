@@ -753,3 +753,19 @@ Decided by me and open to a change: the card's back and forward are buttons only
 with no key and no mouse buttons; placing the card does not reveal it; the old `record`
 key is ignored rather than read as the selection; the Evidence leaf is closed rather
 than converted.
+
+## Implementation
+
+Deviations and decisions made while implementing (mine):
+
+- `CardTab.filePath()` is added: the card must tell the same xref in two files apart when deciding whether a redraw is for the same record, and `file` is already a property of `FileView`.
+- `RecordCardView.onResize` redraws only a card that skipped drawing while hidden, and `main.ts` calls it on `layout-change`, so a card revealed without a resize event still draws.
+- Sub-headings inside the Evidence section and the timeline's *Undated* are `h4.gedcom-desk-subsection`; only `h3.gedcom-desk-section` are section headings.
+- Cursor-follow in Source reacts to user `select` transactions only, so a restored cursor or our own dispatch does not change the selection.
+- `FileViews.select` keeps a pending `reveal: true` only for the same xref; a different xref takes the new flag.
+- `RecordHistory.visit` of the current record turns a followed step into an explicit one, so it is kept.
+- `notesFor` caches the notes linking a file (per path) and the whole cache is cleared on any metadata `changed`.
+- `TabModes.applyState` returns `{ selectionChanged }`; `setMode` returns `{ changed, moveCursor, selectionChanged }`.
+- The harness `fileViews` tab keeps the selection across modes and hands it over with `reveal: false` on a mode switch, as `renderMode` does; the old spec on marks being cleared by a mode switch is replaced by one on the selection following the modes.
+- `recordToShow` is deleted with the Genealogy page; the card never selects a record on its own.
+- The Media section of a person card is absent when the record links no file, as before; the Marie scenario holds on the demo vault.
