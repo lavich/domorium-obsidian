@@ -53,9 +53,9 @@ Answers to the plan's open questions (2026-11-04):
   timeline's zoom is.
 - The graph has a search: cards that do not match fade, Enter moves the view to
   the first match, and each further Enter to the next.
-- The header icon: **to be confirmed**. `git-fork` was proposed, but it is the
-  icon of Obsidian's own graph view (`graph-glyph`), so the user is being asked
-  again; `network`, `waypoints` and `workflow` are also in the 1.8.9 app.
+- The header icon: «network». `git-fork` was proposed first, but it is the icon
+  of Obsidian's own graph view (`graph-glyph`), and the user chose `network`
+  instead.
 
 Proposed scope:
 
@@ -125,7 +125,7 @@ parser or the language service changes.
   staleness, rename, delete, the interface switch — made to serve both view
   types.
 - `src/commands.ts` and `src/GedcomView.ts`: the command, the menu item and the
-  header action, its icon to be confirmed.
+  header action, with the `network` icon.
 - `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`, `README.md`.
 - `harness/fileGraph.ts` and page, `harness/build.mjs`, `harness/palette.css`,
   a Playwright spec `tests/fileGraph.spec.ts`, and the 10 000-person generator

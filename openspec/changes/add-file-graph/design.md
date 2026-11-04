@@ -291,9 +291,9 @@ overviews as `{ type, gedcom, view }` for both view types, and answers:
 - `GedcomView`: a header action for the graph, toggled with the mode switch and
   the timeline action in `showMode`.
 
-### Icon: to be confirmed
+### Icon: `network`
 
-The user is being asked again. What the installed app holds, read from
+The user chose `network` (2026-11-04). What the installed app holds, read from
 `/Applications/Obsidian.app/Contents/Resources/obsidian.asar` (1.8.9) and
 `~/Library/Application Support/obsidian/obsidian-1.15.0.asar`:
 
@@ -304,7 +304,7 @@ The user is being asked again. What the installed app holds, read from
   defined in both bundles.
 
 The icon is one constant, `FILE_GRAPH_ICON`, used by the view, the command and
-the header action, so the answer changes one line.
+the header action.
 
 ### Colours (mine)
 
