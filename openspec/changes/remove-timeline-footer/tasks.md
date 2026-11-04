@@ -1,0 +1,15 @@
+## 1. Remove the captions of the timeline
+
+- [x] 1.1 In `src/desk/fileTimelineView.ts`, `src/desk/fileTimeline.ts`, `styles.css`, `src/i18n/en.json` and `src/i18n/ru.json`, remove the two lines under the board, the subtitle, and the captions of undated facts inside a lifeline, with the `undated` fields of the model and the strings and styles only they used. Test in `src/desk/fileTimelineView.test.ts`: the tests that asserted the lines, the subtitle and the captions are gone, a person with no dated event (Kazimierz Żorawski on `curieWithEvents()`) still has a row and no lifeline, and the rest passes unchanged; in `src/desk/fileTimeline.test.ts` the same person has a row and a null lifeline; `src/i18n/i18n.test.ts` passes.
+- [x] 1.2 Replace the browser assertions of the removed subtitle in `tests/fileTimeline.spec.ts` ("a large file", "the timeline of a file of 10 000 people") so that the specs still check what they are about: the branch scope and its way back, and the rows drawn.
+
+- [x] 1.3 On a phone give the board the freed height: hide the empty header, keep the toolbar compact. Test in `tests/fileTimeline.spec.ts`: at 390 px the board reaches the bottom of the view, nothing stands below it and the page does not scroll.
+
+## 2. The zoom buttons
+
+- [x] 2.1 Move the −, + and Fit group of `src/desk/graphCanvas.ts` to `zoomControls` in `src/desk/dom.ts`, with its three strings as `overview.*` keys; the graph passes `src/desk/fileGraphView.test.ts` unchanged, `src/i18n/i18n.test.ts` checks parity.
+- [x] 2.2 In `src/desk/fileTimelineView.ts` remove the slider and its label, put the group over a stage around the board, step the zoom by 1.2 within 2–16 and let Fit fit the span of years to the board; style it with the graph's rules in `styles.css`. Test in `src/desk/fileTimelineView.test.ts`: no slider, zoom in then out reaches the range's ends and `scopeChanged` carries the zoom, Fit makes the chart as wide as the board; in `tests/fileTimeline.spec.ts` the group is inside the board's box and does not move while the rows scroll, and the buttons widen and narrow the axis.
+
+## 3. Verify
+
+- [x] 3.1 `npm run check`, `npm run test:browser` and `npm run openspec:validate` pass.
