@@ -50,7 +50,7 @@ to a remote service.
    Obsidian saves changes back to the same file.
 3. To read the file as people and sources, turn on **Genealogy interface (beta)**
    in the plugin settings; it is still a beta and may change. Files then open in **Genealogy** mode, on the first person
-   the file declares, and the mode control in the view header, with the commands
+   the file declares, and the mode buttons in the view header, with the commands
    **Show as genealogy**, **Show as graph**, **Show as timeline** and **Show as
    source**, goes between its modes.
 
@@ -79,8 +79,8 @@ On a phone the two are the left and right drawers, and tapping a fact shows
 the gist beneath it.
 
 A GEDCOM tab shows its file in four modes — **Genealogy**, **Graph**,
-**Timeline** and **Source** — which the mode control in the tab's header chooses
-from a menu; its icon is the current mode's. The commands **Show as genealogy**,
+**Timeline** and **Source** — which the four buttons in the tab's header choose,
+the current mode's in the accent colour. The commands **Show as genealogy**,
 **Show as graph**, **Show as timeline** and **Show as source**, from the command
 palette or the tab's menu, do the same, and **Switch between source and the last
 view** goes back and forth between Source and the mode before it. The graph and
