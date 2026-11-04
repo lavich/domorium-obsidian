@@ -174,7 +174,7 @@ describe("the families the Curies do not have", () => {
     expect(below[0]?.joins).toHaveLength(2);
   });
 
-  it("puts the node of spouses in different rows on the curve between them", () => {
+  it("puts the node of spouses rows apart in the gap under the upper spouse, off every card", () => {
     const layout = layoutFileGraph(
       file(
         ["M:M", "W:F", "C:M", "V:F", "G:F", "K:M"],
@@ -193,8 +193,11 @@ describe("the families the Curies do not have", () => {
     expect(man.row).not.toBe(wife.row);
     expect(node?.kind).toBe("across");
     expect(node?.spouses).toEqual(["@M@", "@G@"]);
-    expect(node?.x).toBe((man.x + wife.x + CARD.width) / 2);
-    expect(node?.y).toBe((man.y + CARD.height + wife.y) / 2);
+    expect(wife.row - man.row).toBeGreaterThan(1);
+    expect(node?.x).toBe(man.x + CARD.width / 2);
+    expect(node?.y).toBeGreaterThan(man.y + CARD.height);
+    expect(node?.y).toBeLessThan(man.y + ROW_PITCH);
+    expect(node?.joins.at(-1)?.at(-1)).toEqual([wife.x + CARD.width / 2, wife.y]);
     expect(layout.lines.find((line) => line.family === "@F3@")?.points[0]).toEqual([node?.x, node?.y]);
     expect(overlapping(layout)).toEqual([]);
   });
@@ -227,9 +230,65 @@ describe("the families the Curies do not have", () => {
     expect(line?.lanes).toEqual([{ row: sister.row, x: laneX }]);
     const through = line?.points.filter((point) => point[1] >= sister.y && point[1] <= sister.y + CARD.height) ?? [];
     expect(through).toEqual([]);
-    expect(line?.points.filter((point) => point[0] === laneX)).toHaveLength(2);
+    expect(line?.points).toContainEqual([laneX, sister.y - 10]);
+    expect(line?.points).toContainEqual([laneX, sister.y + CARD.height + 10]);
     const inRow = layout.cards.filter((card) => card.row === sister.row);
     expect(inRow.filter((card) => card.x < laneX + LANE / 2 && card.x + CARD.width > laneX - LANE / 2)).toEqual([]);
+  });
+
+  it("stands a man left of his wife by their roles where neither states a sex", () => {
+    const layout = layoutFileGraph(file(["W:U", "H:U"], [{ id: "F1", husb: "H", wife: "W" }]), WHOLE);
+
+    expect(leftOf(layout, "@H@", "@W@")).toBe(true);
+  });
+
+  it("draws no line up to a child who stands no lower than their parents, as a loop in the file makes", () => {
+    const layout = layoutFileGraph(
+      file(
+        ["P:M", "Q:F", "A:M", "B:F"],
+        [
+          { id: "F1", husb: "P", wife: "Q", children: ["A"] },
+          { id: "F2", husb: "A", wife: "B", children: ["P"] },
+        ],
+      ),
+      WHOLE,
+    );
+
+    for (const line of layout.lines) {
+      expect(line.points.at(-1)?.[1], line.child).toBeGreaterThan(line.points[0]?.[1] ?? Infinity);
+    }
+  });
+
+  it("shares one lane per family and row, and lays out a deep line with many sons quickly", () => {
+    const depth = 250;
+    const sons = 500;
+    const people: string[] = ["R:M", "S:F"];
+    const families: Family[] = [];
+    let parent = "R";
+    for (let level = 0; level < depth; level += 1) {
+      people.push(`C${level}:M`, `W${level}:F`);
+      families.push({ id: `L${level}`, husb: parent, wife: level === 0 ? "S" : `W${level - 1}`, children: [`C${level}`] });
+      parent = `C${level}`;
+    }
+    const founders = ["T:M", "U:F"];
+    const daughters = Array.from({ length: sons }, (_, at) => `D${at}`);
+    const boys = Array.from({ length: sons }, (_, at) => `B${at}`);
+    people.push(...founders, ...daughters.map((one) => `${one}:F`), ...boys.map((one) => `${one}:M`));
+    families.push({ id: "TOP", husb: "T", wife: "U", children: boys });
+    families.push({ id: "BOTTOM", husb: parent, wife: `W${depth - 1}`, children: daughters });
+    boys.forEach((boy, at) => families.push({ id: `M${at}`, husb: boy, wife: daughters[at] ?? "" }));
+    const model = file(people, families);
+
+    const started = performance.now();
+    const layout = layoutFileGraph(model, WHOLE);
+    const took = performance.now() - started;
+
+    const lanes = new Set(layout.lines.flatMap((line) => line.lanes.map((lane) => `${line.family}|${lane.row}|${lane.x}`)));
+    expect(lanes.size).toBeLessThanOrEqual(4 * layout.cards.length);
+    expect(new Set(layout.lines.filter((line) => line.family === "@TOP@").flatMap((line) => line.lanes.map((lane) => lane.row))).size).toBe(
+      layout.lines.find((line) => line.family === "@TOP@")?.lanes.length,
+    );
+    expect(took).toBeLessThan(2_000);
   });
 
   it("lays out five thousand people married in a chain without running out of stack", () => {
@@ -284,14 +343,49 @@ describe("the order of the rows", () => {
     expect(overlapping(layout)).toEqual([]);
   });
 
-  it("stops after the first sweep once the clock has run out, keeping the best order so far", () => {
+  it("keeps a tangled file not much wider than its widest row packed", () => {
+    const layout = layoutFileGraph(buildFileTimeline(indexOf(tangled(300)), 2026), WHOLE);
+    const widths = new Map<number, number>();
+    for (const card of layout.cards) {
+      widths.set(card.row, (widths.get(card.row) ?? 0) + CARD.width + 72);
+    }
+
+    expect(layout.width).toBeLessThan(1.5 * Math.max(...widths.values()));
+  });
+
+  it("bends the long lines of each family in a gap at a height of their own", () => {
+    const layout = layoutFileGraph(buildFileTimeline(indexOf(tangled(300)), 2026), WHOLE);
+    const heights = new Map<string, Set<number>>();
+    for (const line of layout.lines) {
+      line.points.forEach((point, at) => {
+        const next = line.points[at + 1];
+        if (next && next[1] - point[1] === 16 && Math.abs(next[0] - point[0]) > ROW_PITCH) {
+          const gap = Math.floor(point[1] / ROW_PITCH);
+          heights.set(`${gap}|${line.family}`, (heights.get(`${gap}|${line.family}`) ?? new Set()).add(point[1]));
+        }
+      });
+    }
+    const byGap = new Map<number, number[]>();
+    for (const [key, ys] of heights) {
+      expect(ys.size, key).toBe(1);
+      const gap = Number(key.split("|")[0]);
+      byGap.set(gap, [...(byGap.get(gap) ?? []), ...ys]);
+    }
+
+    expect(byGap.size).toBeGreaterThan(0);
+    for (const ys of byGap.values()) {
+      expect(new Set(ys).size).toBe(ys.length);
+    }
+  });
+
+  it("stops sweeping once the clock has run out, keeping the best order so far", () => {
     let now = 0;
     const layout = layoutFileGraph(buildFileTimeline(indexOf(tangled(600)), 2026), WHOLE, () => {
       now += SWEEPS.budget;
       return now;
     });
 
-    expect(layout.sweeps).toBe(1);
+    expect(layout.sweeps).toBeLessThanOrEqual(1);
     expect(layout.crossings).toBeLessThanOrEqual(layout.crossingsAtStart);
   });
 });
@@ -330,15 +424,20 @@ describe("the layouts held for a model", () => {
     expect(fileGraphOf(curie(), WHOLE)).not.toBe(whole);
   });
 
-  it("keeps the last four", () => {
+  it("keeps the four last asked for", () => {
     const model = curie();
     const whole = fileGraphOf(model, WHOLE);
+    const branch = (focus: string) => fileGraphOf(model, { focus, up: 1, down: 1 });
     for (const focus of ["@I1@", "@I2@", "@I3@"]) {
-      fileGraphOf(model, { focus, up: 1, down: 1 });
+      branch(focus);
     }
     expect(fileGraphOf(model, WHOLE)).toBe(whole);
-    fileGraphOf(model, { focus: "@I4@", up: 1, down: 1 });
-    fileGraphOf(model, { focus: "@I5@", up: 1, down: 1 });
+    branch("@I4@");
+    branch("@I5@");
+    expect(fileGraphOf(model, WHOLE)).toBe(whole);
+    for (const focus of ["@I6@", "@I7@", "@I8@", "@I9@"]) {
+      branch(focus);
+    }
     expect(fileGraphOf(model, WHOLE)).not.toBe(whole);
   });
 });

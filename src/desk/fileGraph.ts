@@ -9,10 +9,17 @@ export const LANE = 10;
 const LANE_GAP = 20;
 const BELOW = 16;
 const CLEAR = 10;
+/** The widest stretch of x left with no unit in any row. */
+const MOST_GAP = 2 * CARD.width;
+/** Lanes are one per family and row; past this many per person shown, further lines go straight. */
+const LANES_PER_PERSON = 4;
+const BEND = 8;
+const LONG = ROW_PITCH;
 const PULLS = 40;
 const TRANSPOSE_ROUNDS = 4;
 
-export const SWEEPS = { most: 24, idle: 4, budget: 250 } as const;
+/** `budget` bounds the ordering, and `pulls` the ordering and the pulling together, in milliseconds. */
+export const SWEEPS = { most: 24, idle: 4, budget: 250, pulls: 500 } as const;
 
 export type Point = [number, number];
 
@@ -152,6 +159,48 @@ function familyAnchor(place: ReadonlyMap<string, number>, parents: string[]): nu
   return ((first + second) * pitch + CARD.width) / 2;
 }
 
+/** Each unit at least its gap from the one before it. */
+function keepGaps(layer: Unit[]): void {
+  layer.forEach((unit, at) => {
+    const before = layer[at - 1];
+    if (before) {
+      unit.cx = Math.max(unit.cx, before.cx + before.width / 2 + gapBetween(before, unit) + unit.width / 2);
+    }
+  });
+}
+
+/** Every stretch of x where no row has a unit is shortened to `most`, the same for every row. */
+function squeeze(units: Unit[], most: number): void {
+  const spans = units.map((unit) => [leftOf(unit), unit.cx + unit.width / 2] as const).sort((a, b) => a[0] - b[0]);
+  const cuts: { at: number; by: number }[] = [];
+  let reach = -Infinity;
+  let removed = 0;
+  for (const [left, right] of spans) {
+    if (reach !== -Infinity && left - reach > most) {
+      removed += left - reach - most;
+      cuts.push({ at: left, by: removed });
+    }
+    reach = Math.max(reach, right);
+  }
+  if (cuts.length === 0) {
+    return;
+  }
+  for (const unit of units) {
+    const left = leftOf(unit);
+    let low = 0;
+    let high = cuts.length;
+    while (low < high) {
+      const middle = (low + high) >> 1;
+      if ((cuts[middle]?.at ?? Infinity) <= left) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    unit.cx -= cuts[low - 1]?.by ?? 0;
+  }
+}
+
 function pack(layer: Unit[]): void {
   let x = 0;
   layer.forEach((unit, at) => {
@@ -265,6 +314,47 @@ function transpose(layer: Unit[]): void {
   pack(layer);
 }
 
+/**
+ * A long line crosses the gap between two rows at a height of its family's
+ * own, ranked by where the family stands, so lines bundled in one gap can be
+ * told apart.
+ */
+function bendApart(lines: GraphLine[]): void {
+  const crossings = new Map<number, { line: GraphLine; at: number }[]>();
+  for (const line of lines) {
+    line.points.forEach((point, at) => {
+      const next = line.points[at + 1];
+      if (next && Math.abs(next[0] - point[0]) > LONG && next[1] > point[1]) {
+        const gap = Math.floor(point[1] / ROW_PITCH);
+        crossings.set(gap, [...(crossings.get(gap) ?? []), { line, at }]);
+      }
+    });
+  }
+  for (const [gap, found] of crossings) {
+    const families = [...new Set(found.map((one) => one.line.family))];
+    const startOf = new Map(found.map((one) => [one.line.family, one.line.points[one.at]?.[0] ?? 0]));
+    families.sort((a, b) => (startOf.get(a) ?? 0) - (startOf.get(b) ?? 0));
+    const rank = new Map(families.map((family, at) => [family, at]));
+    const top = gap * ROW_PITCH + CARD.height + CLEAR + BEND;
+    const bottom = (gap + 1) * ROW_PITCH - CLEAR - BEND;
+    const replaced = new Map<GraphLine, Map<number, Point[]>>();
+    for (const { line, at } of found) {
+      const [x0 = 0, y0 = 0] = line.points[at] ?? [];
+      const [x1 = 0, y1 = 0] = line.points[at + 1] ?? [];
+      const bend = top + ((bottom - top) * ((rank.get(line.family) ?? 0) + 1)) / (families.length + 1);
+      if (bend - BEND < y0 || bend + BEND > y1) {
+        continue;
+      }
+      const own = replaced.get(line) ?? new Map<number, Point[]>();
+      own.set(at, [[x0, bend - BEND], [x1, bend + BEND]]);
+      replaced.set(line, own);
+    }
+    for (const [line, at] of replaced) {
+      line.points = line.points.flatMap((point, index) => [point, ...(at.get(index) ?? [])]);
+    }
+  }
+}
+
 /** A chain of spouses walked from an end, so someone married twice stands between two of them. */
 function walkBlock(start: string, spouses: ReadonlyMap<string, string[]>): string[] {
   const component: string[] = [];
@@ -327,14 +417,27 @@ export function layoutFileGraph(
   }
 
   const sexOf = (xref: string) => model.people.get(xref)?.sex ?? "U";
+  const husbands = new Set<string>();
+  for (const family of model.families.values()) {
+    const [husband, wife] = family.spouses;
+    if (husband !== undefined && wife !== undefined) {
+      husbands.add(`${husband}|${wife}`);
+    }
+  }
   const husbandLeft = (order: string[]): number => {
-    let count = 0;
+    let bySex = 0;
+    let byRole = 0;
     for (let at = 1; at < order.length; at += 1) {
-      if (sexOf(order[at - 1] ?? "") === "M" || sexOf(order[at] ?? "") === "F") {
-        count += 1;
+      const left = order[at - 1] ?? "";
+      const right = order[at] ?? "";
+      if (sexOf(left) === "M" || sexOf(right) === "F") {
+        bySex += 1;
+      }
+      if (husbands.has(`${left}|${right}`)) {
+        byRole += 1;
       }
     }
-    return count;
+    return bySex * (order.length + 1) + byRole;
   };
 
   const units: Unit[] = [];
@@ -371,6 +474,8 @@ export function layoutFileGraph(
     to.up.push({ to: from, far: near, near: far });
   };
   const edges: Edge[] = [];
+  const laneCap = LANES_PER_PERSON * shown.length;
+  let laneCount = 0;
   for (const family of model.families.values()) {
     const parents = family.spouses.filter((xref) => on.has(xref));
     const upper = least(parents.map(layerOf));
@@ -383,25 +488,37 @@ export function layoutFileGraph(
       place,
       parents.filter((xref) => unitOf.get(xref) === from),
     );
+    const shared = new Map<number, Unit>();
     for (const child of family.children) {
       const to = unitOf.get(child);
-      if (!on.has(child) || !to) {
+      if (!on.has(child) || !to || to.layer <= from.layer) {
+        continue;
+      }
+      let missing = 0;
+      for (let layer = from.layer + 1; layer < to.layer; layer += 1) {
+        missing += shared.has(layer) ? 0 : 1;
+      }
+      if (laneCount + missing > laneCap) {
+        edges.push({ family: family.xref, parents, child, lanes: [] });
         continue;
       }
       const lanes: Unit[] = [];
       let previous = from;
       let near = leaves;
       for (let layer = from.layer + 1; layer < to.layer; layer += 1) {
-        const lane: Unit = { members: [], layer, width: LANE, up: [], down: [], key: from.key, lane: true, cx: 0 };
-        units.push(lane);
+        let lane = shared.get(layer);
+        if (!lane) {
+          lane = { members: [], layer, width: LANE, up: [], down: [], key: from.key, lane: true, cx: 0 };
+          units.push(lane);
+          shared.set(layer, lane);
+          laneCount += 1;
+          link(previous, near, lane, LANE / 2);
+        }
         lanes.push(lane);
-        link(previous, near, lane, LANE / 2);
         previous = lane;
         near = LANE / 2;
       }
-      if (to.layer > from.layer) {
-        link(previous, near, to, (place.get(child) ?? 0) * pitch + CARD.width / 2);
-      }
+      link(previous, near, to, (place.get(child) ?? 0) * pitch + CARD.width / 2);
       edges.push({ family: family.xref, parents, child, lanes });
     }
   }
@@ -415,16 +532,28 @@ export function layoutFileGraph(
     pack(layer);
   }
 
+  const started = clock();
+  const late = (budget: number): boolean => clock() - started >= budget;
   const crossingsAtStart = crossingsOf(layers);
-  layers.forEach(transpose);
+  for (const layer of layers) {
+    if (late(SWEEPS.budget)) {
+      break;
+    }
+    transpose(layer);
+  }
   let best = crossingsOf(layers);
   let bestOrder = layers.map((layer) => [...layer]);
   let sweeps = 0;
   let idle = 0;
-  const started = clock();
-  while (sweeps < SWEEPS.most && best > 0 && idle < SWEEPS.idle) {
+  let stopped = late(SWEEPS.budget);
+  while (!stopped && sweeps < SWEEPS.most && best > 0 && idle < SWEEPS.idle) {
     const down = sweeps % 2 === 0;
+    sweeps += 1;
     for (let step = 1; step < layers.length; step += 1) {
+      if (late(SWEEPS.budget)) {
+        stopped = true;
+        break;
+      }
       const layer = layers[down ? step : layers.length - 1 - step] ?? [];
       const wanted = new Map<Unit, number>();
       for (const unit of layer) {
@@ -435,7 +564,6 @@ export function layoutFileGraph(
       pack(layer);
       transpose(layer);
     }
-    sweeps += 1;
     const found = crossingsOf(layers);
     if (found < best) {
       best = found;
@@ -444,16 +572,13 @@ export function layoutFileGraph(
     } else {
       idle += 1;
     }
-    if (clock() - started >= SWEEPS.budget) {
-      break;
-    }
   }
   bestOrder.forEach((layer, at) => {
     layers[at] = layer;
     pack(layer);
   });
 
-  for (let pass = 0; pass < PULLS; pass += 1) {
+  for (let pass = 0; pass < PULLS && !late(SWEEPS.pulls); pass += 1) {
     const forward = pass % 2 === 0;
     for (let step = 0; step < layers.length; step += 1) {
       const layer = layers[forward ? step : layers.length - 1 - step] ?? [];
@@ -484,14 +609,10 @@ export function layoutFileGraph(
       layer.forEach((unit, at) => {
         unit.cx = ((fromLeft[at] ?? 0) + (fromRight[at] ?? 0)) / 2;
       });
-      layer.forEach((unit, at) => {
-        const before = layer[at - 1];
-        if (before) {
-          unit.cx = Math.max(unit.cx, before.cx + before.width / 2 + gapBetween(before, unit) + unit.width / 2);
-        }
-      });
+      keepGaps(layer);
     }
   }
+  squeeze(units, MOST_GAP);
 
   const minX = units.length > 0 ? least(units.map(leftOf)) : 0;
   const cards: GraphCard[] = [];
@@ -551,14 +672,16 @@ export function layoutFileGraph(
       const [upper, lower] = one.row < other.row ? [one, other] : [other, one];
       const from = bottom(upper);
       const to: Point = [lower.x + CARD.width / 2, lower.y];
+      const next = lower.row - upper.row === 1;
+      const at: Point = next ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : [from[0], from[1] + BELOW];
       made = {
         family: family.xref,
         kind: "across",
-        x: (from[0] + to[0]) / 2,
-        y: (from[1] + to[1]) / 2,
+        x: at[0],
+        y: at[1],
         year,
         spouses: [upper.xref, lower.xref],
-        joins: [[from, to]],
+        joins: next ? [[from, to]] : [[from, at], [at, to]],
       };
     }
     nodes.push(made);
@@ -602,6 +725,8 @@ export function layoutFileGraph(
     });
   }
 
+  bendApart(lines);
+
   const rights = units.map((unit) => unit.cx + unit.width / 2);
   return {
     cards,
@@ -628,10 +753,7 @@ export function fileGraphOf(model: FileTimeline, scope: BranchScope): FileGraphL
     scope.focus !== undefined && model.people.has(scope.focus) ? `${scope.focus}|${scope.up}|${scope.down}` : "";
   const list = held.get(model) ?? [];
   const found = list.find((one) => one.key === key);
-  if (found) {
-    return found.layout;
-  }
-  const layout = layoutFileGraph(model, scope);
-  held.set(model, [{ key, layout }, ...list].slice(0, LAYOUTS_HELD));
+  const layout = found?.layout ?? layoutFileGraph(model, scope);
+  held.set(model, [{ key, layout }, ...list.filter((one) => one !== found)].slice(0, LAYOUTS_HELD));
   return layout;
 }
