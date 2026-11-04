@@ -524,3 +524,23 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   to fit, with no person of the tab, centres the first card of the top row, which
   leaves the upper half of the canvas empty, as specified. Lines of a tangled
   file between families far apart run in long bundles through the gaps.
+- **The person page's tree** (second request). Its rows start in the order the
+  sides call for — with the spouse to the left, the spouse's siblings and
+  parents before the person's own — because barycentre sweeps alone left
+  Marie's parents and Pierre's on the wrong sides with one crossing they could
+  not undo. The canvas in the page is a fixed 560 pixels (60 % of the screen on
+  a phone) rather than the height of the tree, so a tree wider than it is tall
+  opens fitted with room above and below. A wide family, opened at a readable
+  size on the focus, shows the focus and the grandchildren nearest them; the
+  children stand above their own children, further to the sides. The harness's
+  desk page gains the viewport meta tag Obsidian's mobile app has, without
+  which a phone-width screenshot laid out at 980 pixels.
+- **Lighting from the tree's families** links spouses to each other and to
+  their children only, so a run of siblings is not lit with the person; the
+  graph of the file keeps the model's `related`, which is the same set.
+- **Whole file, no scope line.** The bar is hidden rather than emptied, and the
+  help strings are gone; no requirement named the line, so the specs say only
+  that none is shown.
+- **Branch as a toggle.** The pressed look is the outlined pill (and the
+  outlined button in the timeline) in the accent colour, the unpressed one
+  being filled; the pressed Branch stays shown on its card or row.
