@@ -271,7 +271,7 @@ export default class GedcomPlugin
 
   fillMenu(menu: Menu, view: GedcomView): void {
     for (const command of COMMANDS) {
-      if (!command.isAvailable(view)) {
+      if (command.menu === false || !command.isAvailable(view)) {
         continue;
       }
       menu.addItem((item) => {

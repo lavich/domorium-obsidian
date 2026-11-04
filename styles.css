@@ -9,8 +9,12 @@
 /* ── The view and its chrome ─────────────────────────────────────────────
    */
 
-.gedcom-gedcom-view {
+.gedcom-gedcom-view,
+.gedcom-gedcom-views,
+.gedcom-views-root {
   height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* Obsidian pads a view and lets it scroll, and iOS reports the keyboard's height
@@ -1122,11 +1126,6 @@ button.gedcom-desk-moment-what:disabled {
 /* ── The timeline of a file ──────────────────────────────────────────────
    */
 
-.workspace-leaf-content[data-type="domorium-file-timeline"] .view-content {
-  padding: 0;
-  overflow: hidden;
-}
-
 .gedcom-ft {
   --gedcom-ft-names: 210px;
   --gedcom-ft-axis: 26px;
@@ -1658,11 +1657,6 @@ button.gedcom-fg-pop-open {
   color: var(--text-accent);
   font-size: inherit;
   cursor: pointer;
-}
-
-.workspace-leaf-content[data-type="domorium-file-graph"] .view-content {
-  padding: 0;
-  overflow: hidden;
 }
 
 .gedcom-fg {
