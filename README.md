@@ -50,12 +50,13 @@ to a remote service.
    Obsidian saves changes back to the same file.
 3. To read the file as people and sources, turn on **Genealogy interface (beta)**
    in the plugin settings; it is still a beta and may change. Files then open in **Genealogy** mode, on the first person
-   the file declares, and the view header and **Switch between genealogy and
-   source** go between the two modes.
+   the file declares, and the mode control in the view header, with the commands
+   **Show as genealogy**, **Show as graph**, **Show as timeline** and **Show as
+   source**, goes between its modes.
 
-The next five paragraphs — Genealogy mode, the index and evidence panels, the
-timeline and the graph of the file, and **Open GEDCOM files as** — are part of
-the genealogy interface and appear only
+The next paragraphs — Genealogy mode, the index and evidence panels, the modes
+of a tab with the timeline and the graph of the file, and **Open GEDCOM files
+as** — are part of the genealogy interface and appear only
 while it is on; turning it off hides it again and closes its panels without
 losing the mode a tab was in. The editor features after them need no setting.
 
@@ -77,41 +78,56 @@ the sources of the whole record so that one is never mistaken for the other.
 On a phone the two are the left and right drawers, and tapping a fact shows
 the gist beneath it.
 
-**Open the timeline of the file**, from the command palette, the tab's menu or
-the calendar icon in its header, opens a tab of its own with one row per person,
-ordered by generation and family, and a lifeline from birth to death — pink for
-a woman, blue for a man, grey where the record states no sex — with the person's
-dated events on it; an approximate date is drawn dashed and a period as a span.
-Pointing at a person picks out their parents, spouses and children with arrows
-from parent to child, and a year cursor gives the age everyone alive reached
-that year. A search icon over the board opens into a field that fades everyone
-else and steps from match to match with arrows, and the zoom buttons widen,
-narrow or fit the years. **Branch** on a row narrows it to one person's ancestors and
-descendants, and a file of more than 500 people opens on the branch of the
-person its tab shows. A person opens their page in the file's tab, and an event
-its lines in the source; on a phone the first touch picks a person out and
-places the year cursor, and a second touch opens them. The timeline follows
-unsaved edits, a renamed or moved file, and is restored with the workspace.
+A GEDCOM tab shows its file in four modes — **Genealogy**, **Graph**,
+**Timeline** and **Source** — which the mode control in the tab's header chooses
+from a menu; its icon is the current mode's. The commands **Show as genealogy**,
+**Show as graph**, **Show as timeline** and **Show as source**, from the command
+palette or the tab's menu, do the same, and **Switch between source and the last
+view** goes back and forth between Source and the mode before it. The graph and
+the timeline read the tab's own text, so what is typed and not yet saved is
+already in them. **Find**, and its key, opens the search of the mode the tab is
+in: the editor's panel in Source, the search over the board in Graph and
+Timeline, and nothing in Genealogy, which has none; **Replace** stays in Source.
 
-**Open the graph of the file**, from the command palette, the tab's menu or
-the network icon in its header, opens a tab of its own with a card per person,
-generations from top to bottom and coloured as in the timeline. Spouses stand
-side by side, a husband to the left of his wife, joined by a node with the year
-of their marriage — hollow where it is undated — from which curved lines run to
-their children; the husband's family tends to stand on the left and the wife's
-on the right, and the rows are ordered to cross as few lines as it can find.
-Pointing at a person lights their parents, spouses and children; pointing at a
-node shows the marriage and the number of children. Drag or scroll with two
-fingers to move, use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the cards are drawn
-without names. The search, **Branch** and the 500-person rule work as in the
-timeline. A card opens the person's page in the file's tab, a node the family's,
-and every card and node can be reached and opened from the keyboard. The graph
-follows unsaved edits and a renamed or moved file, and is restored with the
-workspace at its scope, position and zoom.
+In **Timeline** mode the tab shows one row per person, ordered by generation and
+family, and a lifeline from birth to death — pink for a woman, blue for a man,
+grey where the record states no sex — with the person's dated events on it; an
+approximate date is drawn dashed and a period as a span. Pointing at a person
+picks out their parents, spouses and children with arrows from parent to child,
+and a year cursor gives the age everyone alive reached that year. A search icon
+over the board opens into a field that fades everyone else and steps from match
+to match with arrows, and the zoom buttons widen, narrow or fit the years.
+**Branch** on a row narrows it to one person's ancestors and descendants, and a
+file of more than 500 people opens on the branch of the person its tab shows. A
+person opens their page in the same tab, and Back returns to the timeline; an
+event shows its lines in Source. On a phone the first touch picks a person out
+and places the year cursor, and a second touch opens them.
 
-A tab remembers whether it was in Genealogy or Source. **Open GEDCOM files as**
-in the plugin settings chooses which mode a newly opened file starts in, while the
-genealogy interface is on; set it to Source to keep the editor as the default.
+In **Graph** mode the tab shows a card per person, generations from top to
+bottom and coloured as in the timeline. Spouses stand side by side, a husband to
+the left of his wife, joined by a node with the year of their marriage — hollow
+where it is undated — from which curved lines run to their children; the
+husband's family tends to stand on the left and the wife's on the right, and the
+rows are ordered to cross as few lines as it can find. Pointing at a person
+lights their parents, spouses and children; pointing at a node shows the
+marriage and the number of children. Drag or scroll with two fingers to move,
+use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the
+cards are drawn without names. The search, **Branch** and the 500-person rule
+work as in the timeline. A card opens the person's page in the same tab, a node
+the family's, and every card and node can be reached and opened from the
+keyboard.
+
+While a tab is in Graph or Timeline, a row of the index selects that person
+instead of opening their page: the view glides to their card or row and marks it
+until another is selected or the mode changes, and the evidence panel shows their
+record. A row for a family, a source or a media record still opens its page. In
+Source the row puts the cursor on the record, and in Genealogy it opens the page.
+
+Each tab remembers its mode, and the branch, position and zoom of its graph and
+its timeline, across a restart. **Open GEDCOM files as** in the plugin settings
+chooses which mode a newly opened file starts in — Genealogy, Graph, Timeline or
+Source — while the genealogy interface is on; set it to Source to keep the
+editor as the default.
 
 Use **Go to GEDCOM definition** from the command palette to jump from an XREF
 usage to its record declaration. **Find GEDCOM references** moves between
