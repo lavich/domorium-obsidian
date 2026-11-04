@@ -236,28 +236,58 @@ test.describe("the views of a person page", () => {
 });
 
 test.describe("the tree", () => {
+  const card = (page: Page, name: string) =>
+    page.locator(".gedcom-fg-person", { has: page.locator(`title:text-is("${name}")`) });
+
   test("draws Marie's family around her and moves the focus on a click", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await mountDesk(page);
     await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
 
-    await expect(page.locator(".gedcom-desk-node.is-focus .gedcom-desk-node-name")).toHaveText("Marie Skłodowska-Curie");
-    await expect(page.locator(".gedcom-desk-node")).toHaveCount(14);
-    await page.locator(".gedcom-desk-node", { hasText: "4 siblings" }).click();
-    await expect(page.locator(".gedcom-desk-node")).toHaveCount(17);
-    await page.locator(".gedcom-desk-node", { hasText: "Pierre Curie" }).first().click();
-    await expect(page.locator(".gedcom-desk-node.is-focus .gedcom-desk-node-name")).toHaveText("Pierre Curie");
+    await expect(page.locator(".gedcom-fg-person.is-focus title").first()).toHaveText("Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-fg-person")).toHaveCount(14);
+    await card(page, "4 siblings").locator(".gedcom-fg-card-bg").click();
+    await expect(page.locator(".gedcom-fg-person")).toHaveCount(17);
+    await card(page, "Pierre Curie").first().locator(".gedcom-fg-card-bg").click();
+    await expect(page.locator(".gedcom-fg-person.is-focus title").first()).toHaveText("Pierre Curie");
   });
 
-  test("opens on a phone with the focus in view, the rest reached by scrolling sideways", async ({ page }) => {
+  test("colours the cards by sex and stands Pierre Curie left of Marie, with their node between", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await mountDesk(page);
+    await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
+    const side = (name: string) =>
+      card(page, name).locator(".gedcom-fg-card-side").evaluate((shape) => getComputedStyle(shape).fill);
+
+    expect(await side("Marie Skłodowska-Curie")).toBe("rgb(255, 0, 128)");
+    expect(await side("Pierre Curie")).toBe("rgb(0, 0, 255)");
+    const pierre = await card(page, "Pierre Curie").locator(".gedcom-fg-card-bg").boundingBox();
+    const marie = await card(page, "Marie Skłodowska-Curie").locator(".gedcom-fg-card-bg").boundingBox();
+    const node = page.locator("[data-node]", { hasText: "’95" });
+    const between = await node.boundingBox();
+    expect((pierre?.x ?? 0) + (pierre?.width ?? 0)).toBeLessThan(between?.x ?? 0);
+    expect((between?.x ?? 0) + (between?.width ?? 0)).toBeLessThan(marie?.x ?? 0);
+    const jacques = await card(page, "Jacques Curie").locator(".gedcom-fg-card-bg").boundingBox();
+    const sisters = await card(page, "4 siblings").locator(".gedcom-fg-card-bg").boundingBox();
+    expect(jacques?.x ?? Infinity).toBeLessThan(pierre?.x ?? 0);
+    expect(sisters?.x ?? 0).toBeGreaterThan(marie?.x ?? Infinity);
+
+    await node.locator("circle").click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie and Marie Skłodowska-Curie");
+  });
+
+  test("opens on a phone with the focus in view, moved by dragging rather than by scrolling the page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await mountDesk(page, { phone: true });
     await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
-    const focus = await page.locator(".gedcom-desk-node.is-focus").boundingBox();
+    const focus = await page.locator(".gedcom-fg-person.is-focus .gedcom-fg-card-bg").boundingBox();
 
     expect(focus?.x ?? -1).toBeGreaterThanOrEqual(0);
     expect((focus?.x ?? 0) + (focus?.width ?? 0)).toBeLessThanOrEqual(390);
     expect(await overflowsSideways(page)).toBe(false);
+    expect(await page.locator(".gedcom-fg-canvas").evaluate((canvas) => getComputedStyle(canvas).touchAction)).toBe(
+      "none",
+    );
   });
 });
 

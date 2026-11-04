@@ -738,6 +738,7 @@ export class GedcomView extends TextFileView {
       showInSource: (range) => this.showInSource(range),
       openEvidence: () => this.host.openEvidence(),
       openFile: (path) => this.openVaultFile(path),
+      setIcon: (element, icon) => setIcon(element, icon),
       toggleSiblings: (xref) => {
         if (!this.expandedSiblings.delete(xref)) {
           this.expandedSiblings.add(xref);

@@ -13,8 +13,8 @@ import { linkButton } from "./dom";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
-import { layoutTree } from "./treeLayout";
-import { renderTree } from "./treeView";
+import { treeOf } from "./personTree";
+import { renderTree } from "./personTreeView";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
@@ -41,6 +41,7 @@ export interface PageHost {
   openFile(path: string): void;
   chooseView?(view: PersonView): void;
   toggleSiblings?(xref: string): void;
+  setIcon?(element: HTMLElement, icon: string): void;
 }
 
 export interface PersonPageOptions {
@@ -83,9 +84,9 @@ export function renderPersonPage(
   renderTabs(top, view, host);
   if (view === "tree") {
     page.addClass("is-wide");
-    const layout = person.xref ? layoutTree(index, person.xref, options.expanded) : null;
-    if (layout) {
-      renderTree(page, layout, host);
+    const tree = person.xref ? treeOf(index, person.xref, options.expanded) : null;
+    if (tree) {
+      renderTree(page, tree, host);
     }
     return;
   }

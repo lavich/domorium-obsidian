@@ -41,9 +41,9 @@
 - [x] 6.1 Split `layoutGraph(input, clock)` out of `layoutFileGraph` in `src/desk/fileGraph.ts`, with card ids of the input's own; where sex and role tie, the first-listed spouse stands left. `src/desk/fileGraph.test.ts` passes, with a test that a man between two wives has the first on his left.
 - [x] 6.2 Create `src/desk/personTree.ts`: the old tree's composition as an input to `layoutGraph`, with each card's name, years, sex and marks and each family's record; port the old `treeLayout.test.ts` cases to a new `src/desk/personTree.test.ts` — Marie's rows with Pierre to her left and her siblings' box to her right, the expanded siblings, the marks, the BCE run, the second spouse, ninety-six grandchildren without overlap, the cousin marriage.
 - [x] 6.3 Move the canvas out of `FileGraphBoard` to `src/desk/graphCanvas.ts`, fed a layout and descriptions of cards and families; `src/desk/fileGraphView.test.ts` and `tests/fileGraph.spec.ts` pass unchanged.
-- [ ] 6.4 Create `src/desk/personTreeView.ts` drawing the tree on the canvas, with the marks, no Branch pill, a run that unfolds, a node that opens its family, **+**, **−**, **Fit** and a legend; test in a new `src/desk/personTreeView.test.ts` (happy-dom).
-- [ ] 6.5 Draw the person page's tree with it in `src/desk/personPage.ts`, styles in `styles.css` and strings in `src/i18n/{en,ru}.json`; remove `src/desk/treeLayout.ts`, `src/desk/treeView.ts` and their tests; `src/desk/personPage.test.ts` passes.
-- [ ] 6.6 Update the tree's browser specs in `tests/desk.spec.ts` — Marie's family, the focus moved, the phone with the focus in view — and add the colours, Pierre to Marie's left, and the node that opens the family page.
+- [x] 6.4 Create `src/desk/personTreeView.ts` drawing the tree on the canvas, with the marks, no Branch pill, a run that unfolds, a node that opens its family, **+**, **−**, **Fit** and a legend; test in a new `src/desk/personTreeView.test.ts` (happy-dom).
+- [x] 6.5 Draw the person page's tree with it in `src/desk/personPage.ts`, styles in `styles.css` and strings in `src/i18n/{en,ru}.json`; remove `src/desk/treeLayout.ts`, `src/desk/treeView.ts` and their tests; `src/desk/personPage.test.ts` passes.
+- [x] 6.6 Update the tree's browser specs in `tests/desk.spec.ts` — Marie's family, the focus moved, the phone with the focus in view — and add the colours, Pierre to Marie's left, and the node that opens the family page.
 
 ## 7. Verify
 
