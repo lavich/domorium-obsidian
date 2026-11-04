@@ -5,50 +5,6 @@ TBD - created by archiving change add-file-timeline. Update Purpose after archiv
 
 ## Requirements
 
-### Requirement: The timeline of a file is a tab of its own
-
-The plugin SHALL offer a view, **Timeline of the file**, that shows one GEDCOM
-file and opens in a tab of the main area, as Obsidian's graph view does. It SHALL
-open from an action in the header of a GEDCOM tab, in either mode, from a command
-available while a GEDCOM tab is active, and from that tab's menu. Opening it for a
-file that already has a timeline open SHALL reveal that one rather than open a
-second.
-
-The timeline SHALL show the file as the plugin reads it, including text typed in
-a tab of that file and not yet saved, and SHALL follow every later change to it.
-Where no tab of the file is open, it SHALL read the file from the vault. It SHALL
-keep its file, scope and zoom across closing and reopening the workspace, SHALL
-follow the file when it is renamed or moved, and SHALL say so when the file no
-longer exists.
-
-Like the rest of Genealogy mode, nothing in the timeline SHALL write to the file.
-
-#### Scenario: Opening it from the header
-- **WHEN** `curie.ged` is open and the reader chooses the timeline action in its
-  header
-- **THEN** a new tab shows the timeline of `curie.ged`, with a row for each of
-  its 17 people
-
-#### Scenario: Opening it twice
-- **WHEN** the timeline of `curie.ged` is open in a tab and the reader chooses the
-  action again
-- **THEN** that tab is shown, and no second timeline opens
-
-#### Scenario: An edit not yet saved
-- **WHEN** the reader changes Marie's year of death in the source and the file is
-  not yet saved
-- **THEN** her lifeline in the timeline ends at the new year
-
-#### Scenario: The file is renamed
-- **WHEN** the timeline of `curie.ged` is open and the file is renamed to
-  `family.ged`
-- **THEN** the timeline shows `family.ged`
-
-#### Scenario: Restored with the workspace
-- **WHEN** the timeline of `curie.ged` is open, zoomed in, on Irène's branch, and
-  Obsidian is restarted
-- **THEN** the timeline shows Irène's branch at the same zoom
-
 ### Requirement: A row is a person, and their lifeline is coloured by sex
 
 Each person the file declares with an identifier SHALL have a row: their name
@@ -192,10 +148,12 @@ again on the person whose branch is shown SHALL return to the whole file, and
 that person's Branch SHALL read as pressed while their branch is shown. While
 the whole file is shown, no line about the scope SHALL be shown.
 
-A file of more than 500 people SHALL open on the branch of the person shown by
-the GEDCOM tab the timeline was opened from — the page's person in Genealogy
-mode, the person at the cursor in Source mode — or of the first person the file
-declares where neither names one. A smaller file SHALL open on all of it.
+A file of more than 500 people SHALL show its timeline, the first time the tab
+does, on the branch of the person the tab had in view when it was brought to the
+timeline — the page's person in Genealogy mode, the person at the cursor in
+Source mode — or of the first person the file declares where neither names one. A
+smaller file SHALL open on all of it. Once the tab has shown the timeline, the
+scope the reader leaves it on SHALL be kept, the whole file included.
 
 #### Scenario: Irène's branch
 - **WHEN** the reader chooses Irène's branch in the timeline of `curie.ged`
@@ -208,28 +166,46 @@ declares where neither names one. A smaller file SHALL open on all of it.
   the scope is shown
 
 #### Scenario: A large file
-- **WHEN** a file of 2 000 people is open on a person's page and the reader opens
-  its timeline
+- **WHEN** a file of 2 000 people is open on a person's page and the reader
+  switches the tab to Timeline mode
 - **THEN** the timeline shows that person's branch, with the way back to the
   whole file
 
+#### Scenario: A large file opened as a timeline
+- **WHEN** *Open GEDCOM files as* names Timeline and the reader opens a file of
+  2 000 people
+- **THEN** the timeline shows the branch of the first person the file declares
+
+#### Scenario: The whole file, chosen, stays
+- **WHEN** the reader returns a large file's timeline to the whole file, switches
+  to Source mode and back to Timeline mode
+- **THEN** the whole file is shown
+
 ### Requirement: The timeline leads to the page and to the source
 
-Activating a person's name or lifeline SHALL show that person in the GEDCOM tab
-of the file, as a row of the index does: their page in Genealogy mode, the
-cursor on their record in Source mode. Activating a mark SHALL show the lines of
-its event in the source. The file's tab SHALL be brought to the front; where no tab of the file is open,
-one SHALL be opened. The timeline tab SHALL stay open behind it.
+Activating a person's name or lifeline SHALL show that person's page in the
+same tab, until a later change gives the person a place of its own: the tab leaves
+Timeline mode for Genealogy mode, and Back SHALL return it to the timeline, at the scope and zoom it had.
+Activating a mark SHALL show the lines of its event in the source: the tab
+leaves Timeline mode for Source mode with those lines selected and in view.
+Activating either SHALL open no other tab.
 
 #### Scenario: From the timeline to Irène's page
-- **WHEN** the GEDCOM tab of `curie.ged` is in Genealogy mode and the reader
-  activates Irène's lifeline
-- **THEN** that tab comes to the front showing Irène's page, and the timeline
-  stays open in its own tab
+- **WHEN** the tab of `curie.ged` is in Timeline mode and the reader activates
+  Irène's lifeline
+- **THEN** the same tab is in Genealogy mode showing Irène's page, and no other
+  tab has opened
+
+#### Scenario: Back to the timeline
+- **WHEN** Irène's page was opened from the timeline of Irène's branch, and the
+  reader presses back
+- **THEN** the tab is in Timeline mode again, showing Irène's branch at the zoom
+  it had
 
 #### Scenario: From a mark to the source
 - **WHEN** the reader activates the mark of Marie's birth
-- **THEN** the GEDCOM tab shows the source with her `1 BIRT` lines selected
+- **THEN** the tab is in Source mode with her `1 BIRT` lines selected — `1 BIRT`,
+  `2 DATE 7 NOV 1867` and `2 PLAC Warsaw, Congress Poland` — and in view
 
 ### Requirement: Finding a person and zooming
 
@@ -338,3 +314,107 @@ mark SHALL show its event, with the way to its lines in the source.
   again
 - **THEN** her family stands out with the cursor at the touched year, and then
   her page is shown
+
+### Requirement: The timeline is a mode of the file's tab
+
+A GEDCOM tab SHALL offer a **Timeline** mode that shows the whole of its file as
+the timeline of the file, in the tab itself, with no tab of its own. The tab
+SHALL enter it from the mode control in its header, from a command, and from the
+tab's menu, as the requirement on the mode control of a GEDCOM tab says.
+Entering it SHALL NOT open another tab.
+
+The timeline SHALL show the file as the tab holds it, including text typed in the
+tab and not yet saved, and SHALL show every later change to it: at once while the
+tab is in view, and the next time it is brought into view otherwise. It SHALL keep
+its scope, zoom and scroll position across leaving the mode and coming back and
+across closing and reopening the workspace, and SHALL stay on the file when it is renamed or moved,
+as the tab does.
+
+Like the rest of the plugin's genealogy modes, nothing in the timeline SHALL
+write to the file.
+
+#### Scenario: Choosing it from the mode control
+- **WHEN** `curie.ged` is open in Genealogy mode and the reader chooses Timeline
+  from the mode control in its header
+- **THEN** the same tab shows the timeline of `curie.ged`, with a row for each of
+  its 17 people, and no new tab is open
+
+#### Scenario: An edit not yet saved
+- **WHEN** the reader changes Marie's year of death in Source mode, the file is not
+  yet saved, and the reader switches to Timeline mode
+- **THEN** her lifeline in the timeline ends at the new year
+
+#### Scenario: Leaving the mode and coming back
+- **WHEN** the tab is in Timeline mode, zoomed in, on Irène's branch, scrolled
+  down and to the right, and the reader switches to Source mode and then to
+  Timeline mode again
+- **THEN** the timeline shows Irène's branch at the same zoom, scrolled to the
+  same place
+
+#### Scenario: The file is renamed
+- **WHEN** the tab of `curie.ged` is in Timeline mode and the file is renamed to
+  `family.ged`
+- **THEN** the tab is named `family.ged` and still shows the timeline
+
+#### Scenario: Restored with the workspace
+- **WHEN** a tab of `curie.ged` is in Timeline mode, zoomed in, on Irène's branch,
+  and Obsidian is restarted
+- **THEN** the tab shows the timeline of Irène's branch at the same zoom
+
+### Requirement: A selected row
+
+The timeline SHALL mark one person's row as **selected** when the GEDCOM tab is
+told to select them, as an index row does in Timeline mode. The row SHALL be
+brought to the middle of the board's height, and its lifeline into view sideways
+where it is out of it, smoothly unless the reader has asked for reduced motion or
+the row is further away than a smooth scroll can show without leaving rows blank,
+as stepping to a match does. The mark SHALL be unlike the light of pointing and
+unlike the ring of the search's current match, SHALL stay while the pointer lights
+other people and while the reader searches, and SHALL stay until another person is
+selected or the tab leaves Timeline mode. Where the person is not in the branch
+shown, the timeline SHALL show their branch, with the way back to the whole file.
+The selection SHALL belong to the person, not to what is drawn: a row out of view,
+outside a branch the reader has narrowed, or absent from a text that has changed
+SHALL show the mark again when it is drawn. Searching, and changing the scope,
+SHALL NOT end it. Selecting SHALL NOT open a page, change the mode or write to
+the file.
+
+#### Scenario: Selecting Irène from the index
+- **WHEN** the tab is in Timeline mode and the reader activates Irène's row in the
+  index
+- **THEN** Irène's row is marked selected and scrolled to the middle, the tab is
+  still in Timeline mode, and no page is open
+
+#### Scenario: The mark outlasts hover and search
+- **WHEN** Irène is selected, the pointer rests on Marie's name and the reader
+  types `joliot` and steps to the first match
+- **THEN** Irène's row still carries the selected mark, apart from Marie's light
+  and from the ring of the current match
+
+#### Scenario: A row out of view and back
+- **WHEN** Irène is selected and the reader scrolls until her row is out of the
+  drawn rows, and then back
+- **THEN** her row carries the selected mark again
+
+#### Scenario: A person outside the branch
+- **WHEN** the timeline shows Marie's branch with zero generations of ancestors
+  and zero of descendants and the reader activates Hélène's row in the index
+- **THEN** the timeline shows Hélène's branch, with her row selected
+
+### Requirement: The find key opens the timeline's search
+
+In Timeline mode the editor's find — the command **Find**, and the key Obsidian
+dispatches to the tab for it — SHALL open the search of the timeline: the icon
+floating over the board expands into the field, which takes the focus. Where
+the field is already open it SHALL only take the focus. It SHALL NOT open the
+editor's search panel or change the mode. Replace SHALL NOT be offered.
+
+#### Scenario: Find with the search closed
+- **WHEN** the tab of `curie.ged` is in Timeline mode with the search closed and the
+  reader presses the find key
+- **THEN** the icon is replaced by the field, and the field has the focus
+
+#### Scenario: Find with the search open
+- **WHEN** the search is open with `joliot` typed and the focus is elsewhere in
+  the timeline, and the reader runs **Find**
+- **THEN** the field keeps its text and takes the focus
