@@ -14,6 +14,8 @@ const MOST_GAP = 2 * CARD.width;
 /** Lanes are one per family and row; past this many per person shown, further lines go straight. */
 const LANES_PER_PERSON = 4;
 const BEND = 8;
+/** The least distance between two bent lines in one gap; past as many families as fit, heights repeat. */
+const BEND_STEP = 4;
 const LONG = ROW_PITCH;
 const PULLS = 40;
 const TRANSPOSE_ROUNDS = 4;
@@ -315,9 +317,9 @@ function transpose(layer: Unit[]): void {
 }
 
 /**
- * A long line crosses the gap between two rows at a height of its family's
- * own, ranked by where the family stands, so lines bundled in one gap can be
- * told apart.
+ * Where long lines of several families cross one gap between rows, each
+ * family's cross at a height of their own, ranked by where the family stands,
+ * so a bundle of them can be told apart; neighbours never share a height.
  */
 function bendApart(lines: GraphLine[]): void {
   const crossings = new Map<number, { line: GraphLine; at: number }[]>();
@@ -332,6 +334,9 @@ function bendApart(lines: GraphLine[]): void {
   }
   for (const [gap, found] of crossings) {
     const families = [...new Set(found.map((one) => one.line.family))];
+    if (families.length < 2) {
+      continue;
+    }
     const startOf = new Map(found.map((one) => [one.line.family, one.line.points[one.at]?.[0] ?? 0]));
     families.sort((a, b) => (startOf.get(a) ?? 0) - (startOf.get(b) ?? 0));
     const rank = new Map(families.map((family, at) => [family, at]));
@@ -341,7 +346,8 @@ function bendApart(lines: GraphLine[]): void {
     for (const { line, at } of found) {
       const [x0 = 0, y0 = 0] = line.points[at] ?? [];
       const [x1 = 0, y1 = 0] = line.points[at + 1] ?? [];
-      const bend = top + ((bottom - top) * ((rank.get(line.family) ?? 0) + 1)) / (families.length + 1);
+      const levels = Math.max(1, Math.min(families.length, Math.floor((bottom - top) / BEND_STEP)));
+      const bend = top + ((bottom - top) * (((rank.get(line.family) ?? 0) % levels) + 0.5)) / levels;
       if (bend - BEND < y0 || bend + BEND > y1) {
         continue;
       }
