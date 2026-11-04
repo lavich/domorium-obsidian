@@ -53,7 +53,7 @@ export function renderMediaPage(
     renderTile(page.createDiv({ cls: "gedcom-desk-gallery" }), { ...whole, record: undefined }, host);
   }
 
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.usedBy") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.usedBy") });
   const list = page.createDiv({ cls: "gedcom-desk-used-by" });
   if (media.links.length === 0) {
     list.createDiv({ cls: "gedcom-desk-none", text: t("desk.usedByNone") });

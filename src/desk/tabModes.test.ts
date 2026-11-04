@@ -129,14 +129,16 @@ describe("the selected record", () => {
     expect(modes.selected).toBeNull();
   });
 
-  it("ends, and the tab shows as Source, when the interface is turned off", () => {
+  it("is shown no more, and the tab shows as Source, when the interface is turned off, and is back when it is turned on", () => {
     const modes = tab("graph");
     modes.select("@I2@", index);
 
     expect(modes.interfaceChanged(false).selectionCleared).toBe(true);
-    expect(modes.selected).toBeNull();
+    expect(modes.selected).toBe("@I2@");
     expect(modes.shownRecord()).toBeNull();
     expect(modes.shown).toBe("source");
+    modes.interfaceChanged(true);
+    expect(modes.shownRecord()).toBe("@I2@");
   });
 
   it("is what the Index marks while it stands", () => {
@@ -158,11 +160,22 @@ describe("the selected record", () => {
     expect(modes.selected).toBe("@I2@");
   });
 
-  it("is not taken from a state while the interface is off", () => {
+  it("is kept from a state while the interface is off, and not shown", () => {
     const modes = tab("source", false);
 
-    expect(modes.applyState({ selected: "@I2@" })).toEqual({ selectionChanged: false });
-    expect(modes.selected).toBeNull();
+    expect(modes.applyState({ selected: "@I2@" })).toEqual({ selectionChanged: true });
+    expect(modes.selected).toBe("@I2@");
+    expect(modes.shownRecord()).toBeNull();
+  });
+
+  it("is left alone by a state of the same file that names none, and replaced by one that names another", () => {
+    const modes = tab("graph");
+    modes.select("@I2@", index);
+
+    expect(modes.applyState({ mode: "graph" })).toEqual({ selectionChanged: false });
+    expect(modes.selected).toBe("@I2@");
+    expect(modes.applyState({ selected: "@I12@" })).toEqual({ selectionChanged: true });
+    expect(modes.selected).toBe("@I12@");
   });
 
   it("is dropped by the first reading of a file that does not declare a restored one", () => {

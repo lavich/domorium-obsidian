@@ -297,6 +297,21 @@
   background: var(--background-primary);
 }
 
+.gedcom-card-head {
+  align-items: center;
+}
+
+.gedcom-card-head-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-inline-start: var(--size-2-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
 button.gedcom-card-nav:disabled {
   opacity: 0.4;
   cursor: default;
@@ -326,7 +341,7 @@ button.gedcom-card-nav:disabled {
   text-align: center;
 }
 
-.gedcom-card-evidence > h3 {
+.gedcom-card-evidence > h2 {
   scroll-margin-top: var(--size-4-2);
 }
 
@@ -467,11 +482,6 @@ button.gedcom-desk-fact.is-selected {
   background: var(--background-secondary);
   font-size: var(--font-ui-small);
   color: var(--text-muted);
-}
-
-.gedcom-desk-unfold-none {
-  color: var(--text-warning);
-  font-weight: var(--font-semibold);
 }
 
 .gedcom-desk-name {
@@ -914,6 +924,17 @@ button.gedcom-desk-tile-face:disabled {
   align-items: center;
   padding: var(--size-4-2) 0;
   border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-user .gedcom-desk-picture:not(.is-cropped) {
+  width: 72px;
+  height: 90px;
+}
+
+.gedcom-desk-user .gedcom-desk-picture:not(.is-cropped) img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .gedcom-desk-user .gedcom-desk-picture {

@@ -42,7 +42,7 @@
   "setting.genealogyInterface.name": "Genealogy interface (beta)",
   "setting.genealogyInterface.desc": "Still in beta: it may change and have rough edges. Show the Domorium index, the record card, the timeline and the graph of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
   "setting.openAs.name": "Open GEDCOM files as",
-  "setting.openAs.desc": "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
+  "setting.openAs.desc": "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source; the record card appears beside the graph or the timeline. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
   "openAsOption.graph": "Graph",
   "openAsOption.timeline": "Timeline",
   "openAsOption.source": "Source",

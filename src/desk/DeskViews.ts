@@ -78,6 +78,11 @@ export class IndexView extends ItemView {
 
   private drawn: { view: GedcomView; index: GenealogyIndex } | null = null;
 
+  onClose(): Promise<void> {
+    this.drawn = null;
+    return Promise.resolve();
+  }
+
   redraw(): void {
     const view = this.host.followed();
     if (!view?.file) {
@@ -160,7 +165,19 @@ export class RecordCardView extends ItemView {
     });
   }
 
-  forgetNotes(): void {
-    this.notes = null;
+  refreshNotes(): void {
+    const asked = this.notes;
+    const view = this.host.followed();
+    const path = view?.file?.path;
+    const record = view?.shownRecord();
+    if (!asked || !path || !record) {
+      return;
+    }
+    void this.host.notesFor(path, record).then((hits) => {
+      if (this.notes === asked && JSON.stringify(hits) !== JSON.stringify(asked.hits)) {
+        asked.hits = hits;
+        this.redraw();
+      }
+    });
   }
 }

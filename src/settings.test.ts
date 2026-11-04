@@ -124,7 +124,7 @@ describe("GEDCOM settings", () => {
       },
       {
         name: "Open GEDCOM files as",
-        desc: "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
+        desc: "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source; the record card appears beside the graph or the timeline. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
         control: {
           type: "dropdown",
           key: "openAs",

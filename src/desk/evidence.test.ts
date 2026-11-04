@@ -168,7 +168,7 @@ describe("the section of a person and of a family", () => {
   it("is headed Evidence, with the whole record as its context", () => {
     draw("@I1@", null);
 
-    expect(texts(".gedcom-card-evidence > h3")).toEqual(["Evidence"]);
+    expect(texts(".gedcom-card-evidence > h2")).toEqual(["Evidence"]);
   });
 
   it("appends to what is there instead of emptying it", () => {

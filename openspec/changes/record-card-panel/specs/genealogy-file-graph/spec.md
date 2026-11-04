@@ -222,7 +222,7 @@ the selection came from outside the graph, the view SHALL centre on the card at 
 readable zoom, gliding there rather than jumping unless the reader has asked for
 reduced motion or the card is further away than a glide can show without a streak,
 as stepping to a match does; where it came from activating a card of the graph, the
-view SHALL NOT move. A selection made from outside the graph while the tab was behind another tab, in another mode or not yet drawn SHALL, when the graph is shown, centre on the card; one that was only kept while the reader switched modes, or restored with the workspace, SHALL mark the card without moving a view that has a position. The mark SHALL be unlike the light of pointing and unlike the ring of the
+view SHALL NOT move. A selection made from outside the graph while the tab was behind another tab, in another mode or not yet drawn SHALL, when the graph is shown, centre on the card; one that the reader switched into the view with, SHALL also centre on the card, as the reader has just chosen this view; one restored with the workspace SHALL mark the card without moving a view that has a position. The mark SHALL be unlike the light of pointing and unlike the ring of the
 search's current match, SHALL stay while the pointer lights other people and while
 the reader searches, and SHALL stay until another record is selected or the
 selection ends. Where the person is not in the branch shown and the view is asked
@@ -272,13 +272,12 @@ Selecting SHALL NOT open a page, change the mode or write to the file.
 #### Scenario: Selected in Source and then shown
 - **WHEN** the reader activates Pierre Curie's row while the tab is in Source mode,
   and then switches to Graph mode
-- **THEN** his card is marked selected and the graph is not moved to it
+- **THEN** his card is marked selected and the graph is centred on it
 
 #### Scenario: Switching to Graph mode with a selection
 - **WHEN** Marie is selected, the graph was zoomed in and moved, the reader
   switched to Timeline mode and then back to Graph mode
-- **THEN** Marie's card is marked selected and the graph is at the same zoom and
-  position
+- **THEN** Marie's card is marked selected and the graph is centred on it
 
 #### Scenario: Restored with the workspace
 - **WHEN** Marie is selected in a tab in Graph mode, zoomed in and moved, and

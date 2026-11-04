@@ -27,6 +27,7 @@ import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
 import { RETIRED_VIEW_TYPES, type Origin } from "./desk/deskState";
 import { originRules } from "./desk/tabModes";
+import { adoptsFollow, fallbackFollowed, noteChangeMatters } from "./desk/followRules";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -88,6 +89,8 @@ export default class GedcomPlugin
   /** Placed once a session, so a card the reader closes stays closed. */
   private cardPlaced = false;
   private notesCache = new Map<string, Promise<NoteLinks[]>>();
+  private linkingNotes = new Map<string, Set<string>>();
+  private recentViews: GedcomView[] = [];
   private readonly moves = new MoveFollower<TFile>(
     {
       files: () => this.app.vault.getFiles(),
@@ -213,6 +216,9 @@ export default class GedcomPlugin
       this.app.workspace.on("active-leaf-change", () => {
         this.refreshStatusBar();
         const active = this.app.workspace.getActiveViewOfType(GedcomView);
+        if (active) {
+          this.recentViews = [active, ...this.recentViews.filter((view) => view !== active)];
+        }
         if (active && active !== this.followedView) {
           this.followedView = active;
           this.redrawDesk();
@@ -220,14 +226,8 @@ export default class GedcomPlugin
       }),
     );
     this.registerEvent(
-      this.app.metadataCache.on("changed", () => {
-        this.notesCache.clear();
-        for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
-          if (leaf.view instanceof RecordCardView) {
-            leaf.view.forgetNotes();
-            leaf.view.redraw();
-          }
-        }
+      this.app.metadataCache.on("changed", (file) => {
+        this.notesMayHaveChanged(file.path);
       }),
     );
     this.registerEvent(
@@ -241,8 +241,9 @@ export default class GedcomPlugin
             leaf.view.onResize();
           }
         }
+        this.recentViews = this.recentViews.filter((view) => this.isOpen(view));
         if (this.followedView && !this.isOpen(this.followedView)) {
-          this.followedView = null;
+          this.followedView = fallbackFollowed(this.recentViews, (view) => this.isOpen(view));
           this.redrawDesk();
         }
       }),
@@ -301,7 +302,7 @@ export default class GedcomPlugin
   }
 
   genealogyChanged(view: GedcomView): void {
-    if (this.followedView === null || this.followedView === view) {
+    if (adoptsFollow(this.followedView, view, this.app.workspace.getActiveViewOfType(GedcomView))) {
       this.followedView = view;
       this.redrawDesk();
     }
@@ -322,14 +323,46 @@ export default class GedcomPlugin
     const { metadataCache } = this.app;
     let asked = this.notesCache.get(path);
     if (!asked) {
-      asked = this.noteLinksTo(path);
-      this.notesCache.set(path, asked);
+      const fresh = this.noteLinksTo(path);
+      asked = fresh;
+      this.notesCache.set(path, fresh);
+      void fresh.then(
+        (notes) => {
+          this.linkingNotes.set(path, new Set(notes.map((note) => note.path)));
+        },
+        () => {
+          if (this.notesCache.get(path) === fresh) {
+            this.notesCache.delete(path);
+          }
+        },
+      );
     }
     return notesLinking(
       await asked,
       { path, xref },
       (linkPath, from) => metadataCache.getFirstLinkpathDest(linkPath, from)?.path ?? null,
     );
+  }
+
+  private notesMayHaveChanged(changed: string): void {
+    const { resolvedLinks } = this.app.metadataCache;
+    const stale = [...this.notesCache.keys()].filter(
+      (path) =>
+        noteChangeMatters(changed, [path], this.linkingNotes.get(path) ?? new Set()) ||
+        path in (resolvedLinks[changed] ?? {}),
+    );
+    if (stale.length === 0) {
+      return;
+    }
+    for (const path of stale) {
+      this.notesCache.delete(path);
+      this.linkingNotes.delete(path);
+    }
+    for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
+      if (leaf.view instanceof RecordCardView) {
+        leaf.view.refreshNotes();
+      }
+    }
   }
 
   private async noteLinksTo(path: string): Promise<NoteLinks[]> {
@@ -391,12 +424,17 @@ export default class GedcomPlugin
     if (!this.settings.genealogyInterface || this.cardPlaced) {
       return;
     }
-    this.cardPlaced = true;
     const { workspace } = this.app;
     if (workspace.getLeavesOfType(RECORD_VIEW_TYPE).length > 0) {
+      this.cardPlaced = true;
       return;
     }
-    await workspace.getRightLeaf(false)?.setViewState({ type: RECORD_VIEW_TYPE, active: false });
+    const leaf = workspace.getRightLeaf(false);
+    if (!leaf) {
+      return;
+    }
+    this.cardPlaced = true;
+    await leaf.setViewState({ type: RECORD_VIEW_TYPE, active: false });
   }
 
   private async revealCardDrawer(): Promise<void> {

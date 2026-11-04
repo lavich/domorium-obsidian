@@ -769,3 +769,19 @@ Deviations and decisions made while implementing (mine):
 - The harness `fileViews` tab keeps the selection across modes and hands it over with `reveal: false` on a mode switch, as `renderMode` does; the old spec on marks being cleared by a mode switch is replaced by one on the selection following the modes.
 - `recordToShow` is deleted with the Genealogy page; the card never selects a record on its own.
 - The Media section of a person card is absent when the record links no file, as before; the Marie scenario holds on the demo vault.
+
+### After review
+
+Two reviews found no blocker. Decisions and fixes (mine):
+
+- A pending cursor-follow is cancelled by every selection but its own and by a mode switch (`CursorFollow`, `followRules.ts`), so a late follow cannot overwrite Back or Forward. The rule for when a resting cursor selects is the pure `shouldFollowCursor`.
+- `records()` is memoised by revision (`RevisionMemo`), so a cursor rest does not rescan a large file.
+- A changed note invalidates the notes cache only when it is a followed file or a note that links one (cached linking set, or its resolved links); a rejected lookup drops its entry; the card redraws only when the hits for the shown record differ (`refreshNotes`).
+- A state for the same file that names another `selected` replaces the selection and adds a history step; a state that names none leaves the selection untouched, because Obsidian's own Back and duplicate states omit it.
+- The saved `selected` is kept while the interface is off and only its use is gated (`shownRecord` is null); turning the interface on shows it again. This replaces "nothing is saved while off".
+- Switching into Graph or Timeline with a selection centres on it, as the reader just chose the view; a click inside a view still does not move it, and a restore does not either. A tab opened in Source, or an interface switched on, with the cursor in a record shows "nothing selected" until the first user selection; kept.
+- A fact's unfold lists the sources it cites and the actions; the "No source of its own" notice lives only in the Evidence section.
+- Card sections are `h2` under the name's `h1`, Evidence's sub-headings `h3`; the sticky header shows the record's name between the chevrons, `aria-hidden`.
+- The media card's uncropped thumbnails are 72 by 90 and contained; the narrow-column specs cover a person, a family, a source and a media card in English at 320 and in Russian at 320 and 390.
+- `placeCard` sets `cardPlaced` only once a leaf exists or is created; a closed followed tab falls back to the most recently active remaining GEDCOM tab and a background tab cannot take the follow while another GEDCOM tab is active (`adoptsFollow`, `fallbackFollowed`).
+- Skipped: a test that `GedcomView.selectRecord` itself calls `CursorFollow.selected` (the view imports `obsidian`, which Vitest cannot load); the rule is tested on the class and the call is one line. The redraw-only-on-change of `refreshNotes` is likewise untested in a unit.

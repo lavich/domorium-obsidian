@@ -63,7 +63,7 @@ describe("the family page", () => {
   it("has a Facts section and a Family section", () => {
     draw("@F3@");
 
-    expect(texts("h3")).toEqual(["Facts", "Family"]);
+    expect(texts("h2")).toEqual(["Facts", "Family"]);
   });
 
   it("shows the spouses by their roles and the children", () => {

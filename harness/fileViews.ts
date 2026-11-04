@@ -81,7 +81,7 @@ function draw(): void {
 function showMode(next: Mode): void {
   mode = next;
   if (mode !== "source") {
-    views?.select(mode, selected, false);
+    views?.select(mode, selected, true);
   }
   draw();
 }

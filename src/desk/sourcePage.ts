@@ -23,7 +23,7 @@ export function renderSourcePage(
   });
   linkButton(heading, t("desk.showInSource"), () => host.showInSource(source.range));
 
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.repository") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.repository") });
   const repository = page.createDiv({ cls: "gedcom-desk-repository" });
   if (source.heldAt) {
     for (const line of [source.heldAt.name, source.heldAt.address, source.heldAt.web]) {
@@ -47,7 +47,7 @@ function renderCitedBy(
   index: GenealogyIndex,
   host: PageHost,
 ): void {
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.citedBy") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.citedBy") });
   const list = page.createDiv({ cls: "gedcom-desk-cited-by" });
   const byRecord = new Map<string, Citation[]>();
   for (const citation of source.xref ? index.citedBy(source.xref) : []) {

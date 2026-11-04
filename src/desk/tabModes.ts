@@ -98,7 +98,7 @@ export class TabModes {
       }
       this.mode = desk.mode;
     }
-    if (this.interfaceOn && desk.selected !== undefined && desk.selected !== this.selected) {
+    if (desk.selected !== undefined && desk.selected !== this.selected) {
       this.selected = desk.selected;
       return { selectionChanged: true };
     }
@@ -122,7 +122,7 @@ export class TabModes {
 
   interfaceChanged(on: boolean): { selectionCleared: boolean } {
     this.interfaceOn = on;
-    return { selectionCleared: on ? false : this.endSelection() };
+    return { selectionCleared: !on && this.selected !== null };
   }
 
   fileChanged(mode: DeskMode): void {

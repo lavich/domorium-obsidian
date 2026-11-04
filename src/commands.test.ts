@@ -250,11 +250,10 @@ describe("showing the file in a mode", () => {
     }
   });
 
-  it("has none for Genealogy mode, and no command opens the evidence panel", () => {
+  it("has no command for Genealogy mode", () => {
     const ids = COMMANDS.map((entry) => entry.id);
 
     expect(ids).not.toContain("show-gedcom-as-genealogy");
-    expect(ids).not.toContain("open-gedcom-evidence");
   });
 
   it("opens no overview tab of its own, as the two commands of an earlier version did", () => {
@@ -286,7 +285,7 @@ describe("what a command offers in Graph and Timeline", () => {
     expect(command("rename-gedcom-reference").isAvailable(timeline)).toBe(false);
   });
 
-  it("offers a link to the person selected, and none with nobody selected", () => {
+  it("offers a link to the record selected in a view, and none with nobody selected", () => {
     expect(command("copy-gedcom-record-link").isAvailable(timeline)).toBe(true);
     expect(command("copy-gedcom-record-link").isAvailable(view({ ...timeline, recordAtCursor: () => undefined }))).toBe(false);
   });

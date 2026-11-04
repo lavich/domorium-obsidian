@@ -44,7 +44,7 @@ export function renderFamilyPage(
 
   renderFactList(page, familyFacts(family), index, options, host);
 
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.family") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.family") });
   const members = page.createDiv({ cls: "gedcom-desk-family" });
   for (const spouse of family.spouses) {
     const role =

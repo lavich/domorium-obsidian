@@ -115,9 +115,16 @@ describe("the page of each kind of record, with its evidence", () => {
   it("shows Marie's sections in order, ending with Evidence", () => {
     draw();
 
-    expect(texts(".gedcom-card-body h3")).toEqual(["Facts", "Other names", "Family", "Timeline", "Places", "Evidence"]);
+    expect(texts(".gedcom-card-body h2")).toEqual(["Facts", "Other names", "Family", "Timeline", "Places", "Evidence"]);
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
-    expect(container.querySelector(".gedcom-desk-tabs")).toBeNull();
+  });
+
+  it("names the record in the header, hidden from assistive technology, beside the page's own heading", () => {
+    draw();
+
+    expect(texts(".gedcom-card-head-name")).toEqual(["Marie Skłodowska-Curie"]);
+    expect(container.querySelector(".gedcom-card-head-name")?.getAttribute("aria-hidden")).toBe("true");
+    expect(texts("h1")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
   it("shows the Curies' family with its evidence", () => {
@@ -125,7 +132,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie and Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-card-body h3").at(-1)).toBe("Evidence");
+    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Evidence");
   });
 
   it("shows a source with the notes section last", () => {
@@ -133,7 +140,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw([]);
 
     expect(texts(".gedcom-desk-title")).toEqual(["The Nobel Prize in Chemistry 1911 and 1935"]);
-    expect(texts(".gedcom-card-body h3").at(-1)).toBe("Notes in the vault · 0");
+    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault · 0");
     expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
   });
 
@@ -142,7 +149,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw([]);
 
     expect(texts(".gedcom-desk-title")).toEqual(["The Curie family, about 1908"]);
-    expect(texts(".gedcom-card-body h3").at(-1)).toBe("Notes in the vault · 0");
+    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault · 0");
   });
 
   it("lists the notes of the vault in Marie's evidence", () => {

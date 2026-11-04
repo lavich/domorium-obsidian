@@ -80,7 +80,7 @@ export function renderRecordCard(
   const shown = tab && record ? `${tab.filePath() ?? ""}\n${record}` : "";
 
   if (tab) {
-    renderHeader(root, tab, view);
+    renderHeader(root, tab, view, index && record ? recordName(index, record) : null);
   }
   const body = root.createDiv({ cls: "gedcom-card-body" });
   body.setAttribute("tabindex", "-1");
@@ -126,7 +126,7 @@ function makeRoot(container: HTMLElement): HTMLElement {
   return root;
 }
 
-function renderHeader(root: HTMLElement, tab: CardTab, view: CardView): void {
+function renderHeader(root: HTMLElement, tab: CardTab, view: CardView, name: string | null): void {
   const head = root.createDiv({ cls: "gedcom-card-head" });
   const { canBack, canForward } = tab.history();
   const button = (label: "card.back" | "card.forward", icon: string, enabled: boolean, go: () => void): void => {
@@ -142,6 +142,10 @@ function renderHeader(root: HTMLElement, tab: CardTab, view: CardView): void {
   };
   button("card.back", "chevron-left", canBack, () => tab.back());
   button("card.forward", "chevron-right", canForward, () => tab.forward());
+  if (name !== null) {
+    const title = head.createDiv({ cls: "gedcom-card-head-name", text: name });
+    title.setAttribute("aria-hidden", "true");
+  }
 }
 
 function drawRecord(
@@ -199,7 +203,7 @@ function missingAt(at: Position): MediaItem {
 }
 
 function scrollToEvidence(body: HTMLElement): void {
-  const heading = body.querySelector<HTMLElement>(".gedcom-card-evidence > h3");
+  const heading = body.querySelector<HTMLElement>(".gedcom-card-evidence > h2");
   const reduced = body.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
   heading?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
 }

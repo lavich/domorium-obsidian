@@ -173,7 +173,8 @@ describe("the person card", () => {
     expect(container.querySelector(".gedcom-desk-unfold")).toBeNull();
 
     draw("@I1@", { selected: "p:0" });
-    expect(texts(".gedcom-desk-unfold-none")).toEqual(["No source of its own"]);
+    expect(container.querySelector(".gedcom-desk-unfold")).not.toBeNull();
+    expect(container.textContent).not.toContain("No source of its own");
     const [allEvidence] = container.querySelectorAll<HTMLElement>(".gedcom-desk-unfold .gedcom-desk-link");
     allEvidence?.click();
     expect(host.scrollToEvidence).toHaveBeenCalled();
@@ -227,8 +228,7 @@ describe("the sections of a person card", () => {
       host,
     );
 
-    expect(texts("h3")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline", "Places"]);
-    expect(container.querySelector(".gedcom-desk-tabs")).toBeNull();
+    expect(texts("h2")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline", "Places"]);
     expect(container.querySelector(".gedcom-fg-canvas")).toBeNull();
   });
 
@@ -240,7 +240,7 @@ describe("the sections of a person card", () => {
     expect(years).toHaveLength(17);
     expect(years[0]).toBe("1860");
     expect(years.at(-1)).toBe("1934");
-    expect(texts("h4")).toEqual(["Undated"]);
+    expect(texts("h3")).toEqual(["Undated"]);
     const undated = [...container.querySelectorAll(".gedcom-desk-timeline")][1];
     expect([...(undated?.querySelectorAll(".gedcom-desk-moment-what") ?? [])].map((node) => node.textContent)).toEqual([
       "Occupation",

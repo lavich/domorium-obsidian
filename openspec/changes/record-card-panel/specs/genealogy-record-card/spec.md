@@ -99,9 +99,8 @@ write to the file.
 
 The selection SHALL belong to the tab and to the record, not to what is drawn. It
 SHALL be kept when the tab changes mode, and when the workspace is closed and
-reopened. It SHALL end when the record no longer exists in the file, when the
-Genealogy interface is turned off, and when the tab is navigated to another file.
-A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected, remembered or saved. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
+reopened. It SHALL end when the record no longer exists in the file and when the tab is navigated to another file, and SHALL NOT be shown while the Genealogy interface is off.
+A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected or shown, and a saved selection SHALL be kept in the tab's state unused, to come back when the interface is turned on. A state handed to a tab for the same file that names no selection SHALL leave the selection as it is. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
 
 While a record is selected the index SHALL mark its row as the current one. A
 fact of a person or a family SHALL be selectable on its card, which makes it the
@@ -168,7 +167,7 @@ card or row to mark, and while one is selected nobody is marked.
 - **WHEN** Marie is selected in Graph mode and the reader turns the Genealogy
   interface off
 - **THEN** the tab shows the source, the card is closed, and no row of the index is
-  marked
+  marked; turning the interface on again shows Marie selected
 
 #### Scenario: Another file
 - **WHEN** Marie is selected in a tab and the same tab is navigated to another
@@ -555,7 +554,7 @@ The card SHALL be readable and usable in one column at the width a sidebar has,
 from 320 pixels up, and at a phone's width, without horizontal scrolling of the
 card. The card as a whole SHALL scroll beneath a header carrying Back and Forward,
 which stays at the top. Selecting a fact SHALL unfold beneath it the titles of the
-sources the fact cites, or that it cites none, with an action that takes the reader
+sources the fact cites, with an action that takes the reader
 to the Evidence section. Redrawing the card for the same record — selecting a fact,
 or the file changing — SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record SHALL scroll the card to
 the top.
@@ -570,7 +569,7 @@ the top.
 
 #### Scenario: Tapping a fact
 - **WHEN** the reader taps Marie's birth
-- **THEN** beneath it the card says it cites no source of its own, and offers to go
+- **THEN** beneath it the card lists the sources the fact cites, none here, and offers to go
   to the Evidence section
 
 #### Scenario: Selecting a fact in a scrolled card

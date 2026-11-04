@@ -32,11 +32,11 @@ export function renderEvidenceSection(
   const person = index.person(record);
   const family = person ? undefined : index.family(record);
   if (!person && !family) {
-    renderNotes(parent, selection.notes, host, "h3");
+    renderNotes(parent, selection.notes, host, "h2");
     return;
   }
   const root = parent.createDiv({ cls: "gedcom-card-evidence" });
-  root.createEl("h3", { cls: "gedcom-desk-section", text: t("evidence.title") });
+  root.createEl("h2", { cls: "gedcom-desk-section", text: t("evidence.title") });
   const head = root.createDiv({ cls: "gedcom-desk-evidence-head" });
   const context = head.createDiv({ cls: "gedcom-desk-evidence-context" });
   const actions = head.createDiv({ cls: "gedcom-desk-actions" });
@@ -77,7 +77,7 @@ export function renderEvidenceSection(
     linkButton(actions, `← ${t("desk.wholeRecord")}`, () => host.wholeRecord());
     linkButton(actions, t("desk.showInSource"), () => host.showInSource(fact.event.range));
 
-    body.createEl("h4", { cls: "gedcom-desk-subsection", text: t("evidence.factSources") });
+    body.createEl("h3", { cls: "gedcom-desk-subsection", text: t("evidence.factSources") });
     if (fact.event.citations.length > 0) {
       for (const citation of fact.event.citations) {
         renderCitation(body, citation, index, host);
@@ -89,7 +89,7 @@ export function renderEvidenceSection(
         text: t(ofRecord.length > 0 ? "evidence.belowBelong" : "evidence.recordNone"),
       });
     }
-    body.createEl("h4", {
+    body.createEl("h3", {
       cls: ["gedcom-desk-subsection", "gedcom-desk-scope"],
       text: t("desk.wholeRecord"),
     });
@@ -99,7 +99,7 @@ export function renderEvidenceSection(
     linkButton(actions, t("desk.showInSource"), () => host.showInSource(subject.range));
   }
 
-  body.createEl("h4", {
+  body.createEl("h3", {
     cls: "gedcom-desk-subsection",
     text: `${t("evidence.recordSources")} · ${ofRecord.length}`,
   });
@@ -109,20 +109,20 @@ export function renderEvidenceSection(
   for (const citation of ofRecord) {
     renderCitation(body, citation, index, host);
   }
-  renderNotes(body, selection.notes, host, "h4");
+  renderNotes(body, selection.notes, host, "h3");
 }
 
 function renderNotes(
   parent: HTMLElement,
   notes: NoteHit[] | null | undefined,
   host: EvidenceHost,
-  heading: "h3" | "h4",
+  heading: "h2" | "h3",
 ): void {
   if (notes === undefined) {
     return;
   }
   parent.createEl(heading, {
-    cls: heading === "h3" ? "gedcom-desk-section" : "gedcom-desk-subsection",
+    cls: heading === "h2" ? "gedcom-desk-section" : "gedcom-desk-subsection",
     text: notes === null ? t("evidence.notes") : `${t("evidence.notes")} · ${notes.length}`,
   });
   if (notes?.length === 0) {

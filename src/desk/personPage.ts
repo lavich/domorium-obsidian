@@ -70,7 +70,7 @@ export function renderPersonPage(
   renderHeading(container, person, options, host);
   renderFactList(container, factsOf(person), index, options, host);
   if (person.otherNames.length > 0) {
-    container.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.otherNames") });
+    container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.otherNames") });
     const names = container.createDiv({ cls: "gedcom-desk-names" });
     for (const name of person.otherNames) {
       names.createDiv({ cls: "gedcom-desk-name", text: personName({ name }) });
@@ -79,9 +79,9 @@ export function renderPersonPage(
   renderFamily(container, person, host);
   renderGallery(container, options.media ?? [], host);
   const timeline = timelineOf(person, index);
-  container.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.timeline") });
+  container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.timeline") });
   renderTimeline(container, timeline, host);
-  container.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.places") });
+  container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.places") });
   renderPlaces(container, placesOf(timeline));
 }
 
@@ -115,7 +115,7 @@ export function renderFactList(
   options: PersonPageOptions,
   host: PageHost,
 ): void {
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.facts") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.facts") });
   const list = page.createDiv({ cls: "gedcom-desk-facts" });
   if (facts.length === 0) {
     list.createDiv({ cls: "gedcom-desk-none", text: t("desk.noFacts") });
@@ -163,9 +163,6 @@ function renderUnfold(
 ): void {
   const unfold = list.createDiv({ cls: "gedcom-desk-unfold" });
   const citations = fact.event.citations;
-  if (citations.length === 0) {
-    unfold.createDiv({ cls: "gedcom-desk-unfold-none", text: t("desk.noOwnSource") });
-  }
   for (const citation of citations) {
     const title = citation.source
       ? sourceTitle(index.source(citation.source)?.title ?? citation.source)
@@ -178,7 +175,7 @@ function renderUnfold(
 }
 
 function renderFamily(page: HTMLElement, person: Person, host: PageHost): void {
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.family") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.family") });
   const family = page.createDiv({ cls: "gedcom-desk-family" });
 
   const parents = kinGroup(family, t("desk.parents"));

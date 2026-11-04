@@ -86,6 +86,8 @@ import type { MediaItem } from "./desk/media";
 import type { FactKey } from "./desk/personPage";
 import type { CardTab } from "./desk/recordCard";
 import { RecordHistory } from "./desk/recordHistory";
+import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
+import { RevisionMemo } from "./editor/revisionMemo";
 import { documentRef, type GenealogyIndex } from "./genealogy";
 import type { Position } from "@domorium/language-service";
 import { IndexCache } from "./genealogy/cache";
@@ -128,7 +130,8 @@ export class GedcomView extends TextFileView implements CardTab {
   // Edits come a keystroke at a time; the index and the panel need the text
   // once it has settled.
   private readonly announceEdit = debounce(() => this.editsSettled(), 300, true);
-  private readonly followCursor = debounce(() => this.cursorSettled(), 250, true);
+  private readonly followCursor = new CursorFollow(window, () => this.cursorSettled());
+  private readonly recordsMemo = new RevisionMemo<GedcomRecord[]>();
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -246,7 +249,7 @@ export class GedcomView extends TextFileView implements CardTab {
     return {
       ...super.getState(),
       mode: this.modes.mode,
-      ...(this.modes.shownRecord() === null ? {} : { selected: this.modes.shownRecord() }),
+      ...(this.modes.selected === null ? {} : { selected: this.modes.selected }),
       ...this.memory,
       ...this.views.memory(),
     };
@@ -270,10 +273,18 @@ export class GedcomView extends TextFileView implements CardTab {
       ...(desk.graph ? { graph: desk.graph } : {}),
       ...(desk.timeline ? { timeline: desk.timeline } : {}),
     };
-    if (this.modes.applyState(desk).selectionChanged) {
+    const restored = this.modes.applyState(desk).selectionChanged;
+    if (restored) {
       this.selectedFact = null;
     }
     await super.setState(state, result);
+    if (restored && this.modes.loaded) {
+      this.dropGoneSelection();
+      const selected = this.modes.shownRecord();
+      if (selected !== null) {
+        this.recordHistory.visit(selected);
+      }
+    }
     this.renderMode();
     this.host.genealogyChanged(this);
   }
@@ -318,6 +329,7 @@ export class GedcomView extends TextFileView implements CardTab {
         this.recordHistory.reset();
         this.clearViewSelections();
       }
+      this.seedHistory();
       this.renderMode();
     }
     if (this.modes.shown !== before) {
@@ -343,8 +355,8 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   records(): GedcomRecord[] {
-    return recordEntries(
-      this.language.update(this.editor.state.doc).getDocumentSymbols(),
+    return this.recordsMemo.get(this.revision, () =>
+      recordEntries(this.language.update(this.editor.state.doc).getDocumentSymbols()),
     );
   }
 
@@ -435,6 +447,7 @@ export class GedcomView extends TextFileView implements CardTab {
     if (!this.modes.select(xref, this.genealogy())) {
       return false;
     }
+    this.followCursor.selected(origin);
     const rules = originRules(origin, Platform.isMobile);
     this.selectedFact = null;
     if (rules.addsStep === "visit") {
@@ -705,12 +718,13 @@ export class GedcomView extends TextFileView implements CardTab {
     if (!change.changed) {
       return;
     }
+    this.followCursor.cancel();
     const selected = this.modes.shownRecord();
     if (change.selectionChanged && selected !== null) {
       this.selectedFact = null;
       this.recordHistory.follow(selected);
     }
-    this.renderMode();
+    this.renderMode(true);
     if (change.moveCursor) {
       this.moveCursorToShown();
     }
@@ -718,7 +732,7 @@ export class GedcomView extends TextFileView implements CardTab {
     this.host.genealogyChanged(this);
   }
 
-  private renderMode(): void {
+  private renderMode(switched = false): void {
     const mode = this.modes.shown;
     for (const button of modeButtons(mode)) {
       const action = this.modeActions.get(button.mode);
@@ -735,7 +749,7 @@ export class GedcomView extends TextFileView implements CardTab {
       this.hidePreviews();
     }
     if (isViewMode(mode)) {
-      this.handSelectionOver(mode);
+      this.handSelectionOver(mode, switched);
       this.drawViews();
     }
   }
@@ -752,9 +766,9 @@ export class GedcomView extends TextFileView implements CardTab {
     this.drawViews();
   }
 
-  private handSelectionOver(mode: ViewKind): void {
+  private handSelectionOver(mode: ViewKind, reveal: boolean): void {
     const selected = this.modes.shownRecord();
-    this.views.select(mode, selected !== null && this.genealogy().person(selected) ? selected : null, false);
+    this.views.select(mode, selected !== null && this.genealogy().person(selected) ? selected : null, reveal);
   }
 
   private clearViewSelections(): void {
@@ -777,11 +791,17 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   private cursorSettled(): void {
-    if (this.modes.shown !== "source") {
-      return;
-    }
     const xref = this.sourceRecordAtCursor()?.identifier;
-    if (xref && xref !== this.modes.selected) {
+    if (
+      xref &&
+      shouldFollowCursor({
+        interfaceOn: this.settings.genealogyInterface,
+        mode: this.modes.shown,
+        selected: this.modes.selected,
+        atCursor: xref,
+        hasCard: this.has(xref),
+      })
+    ) {
       this.selectRecord(xref, "cursor");
     }
   }
@@ -896,7 +916,7 @@ export class GedcomView extends TextFileView implements CardTab {
             this.settings.genealogyInterface &&
             update.transactions.some((transaction) => transaction.isUserEvent("select"))
           ) {
-            this.followCursor();
+            this.followCursor.rested();
           }
           this.host.statusChanged(this);
         }),
