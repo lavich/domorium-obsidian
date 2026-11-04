@@ -30,7 +30,7 @@ import {
   debounce,
   HoverPopover,
   Keymap,
-  Menu,
+  type Menu,
   normalizePath,
   Notice,
   Platform,
@@ -71,8 +71,7 @@ import {
   cursorInside,
   initialMode,
   isViewMode,
-  modeChoices,
-  modeLook,
+  modeButtons,
   pageKind,
   readDeskState,
   shownRange,
@@ -144,7 +143,7 @@ export class GedcomView extends TextFileView {
   private readonly editorEl: HTMLElement;
   private readonly deskEl: HTMLElement;
   private readonly viewsEl: HTMLElement;
-  private readonly modeAction: HTMLElement;
+  private readonly modeActions = new Map<DeskMode, HTMLElement>();
   // Edits come a keystroke at a time; the index and the panel need the text
   // once it has settled.
   private readonly announceEdit = debounce(() => this.editsSettled(), 300, true);
@@ -177,9 +176,13 @@ export class GedcomView extends TextFileView {
       parent: this.editorEl,
       state: this.createState(""),
     });
-    this.modeAction = this.addAction("code", t("mode.source"), (event) => {
-      this.openModeMenu(event);
-    });
+    for (const { mode, icon, title } of modeButtons(this.modes.shown)) {
+      const action = this.addAction(icon, t(title), () => {
+        this.setMode(mode);
+      });
+      action.setAttribute("data-tooltip-position", "bottom");
+      this.modeActions.set(mode, action);
+    }
     this.renderMode();
   }
 
@@ -724,28 +727,14 @@ export class GedcomView extends TextFileView {
     this.host.genealogyChanged(this);
   }
 
-  private openModeMenu(event: MouseEvent): void {
-    const menu = new Menu();
-    for (const choice of modeChoices(this.modes.shown)) {
-      menu.addItem((item) =>
-        item
-          .setTitle(t(choice.title))
-          .setIcon(choice.icon)
-          .setChecked(choice.checked)
-          .onClick(() => {
-            this.setMode(choice.mode);
-          }),
-      );
-    }
-    menu.showAtMouseEvent(event);
-  }
-
   private renderMode(): void {
     const mode = this.modes.shown;
-    const { icon, title } = modeLook(mode);
-    this.modeAction.toggle(this.settings.genealogyInterface);
-    setIcon(this.modeAction, icon);
-    this.modeAction.setAttribute("aria-label", t("mode.control", { mode: t(title) }));
+    for (const button of modeButtons(mode)) {
+      const action = this.modeActions.get(button.mode);
+      action?.toggle(this.settings.genealogyInterface);
+      action?.toggleClass("is-active", button.active);
+      action?.setAttribute("aria-pressed", String(button.active));
+    }
     if (!isViewMode(mode)) {
       this.views.hide();
     }

@@ -110,7 +110,6 @@
   "mode.graph": "Граф",
   "mode.timeline": "Хронология",
   "mode.source": "Исходник",
-  "mode.control": "Режим: {mode}",
   "command.showGenealogy": "Показать как генеалогию",
   "command.showGraph": "Показать как граф",
   "command.showTimeline": "Показать как хронологию",

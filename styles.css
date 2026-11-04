@@ -9,6 +9,10 @@
 /* ── The view and its chrome ─────────────────────────────────────────────
    */
 
+.workspace-leaf-content[data-type="domorium-gedcom"] .view-action.is-active {
+  color: var(--interactive-accent);
+}
+
 .gedcom-gedcom-view,
 .gedcom-gedcom-views,
 .gedcom-views-root {

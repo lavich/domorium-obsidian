@@ -10,7 +10,7 @@ import {
   cursorInside,
   effectiveMode,
   initialMode,
-  modeChoices,
+  modeButtons,
   navigationStep,
   openFromIndex,
   openingMemory,
@@ -248,17 +248,17 @@ describe("the mode a tab shows while the genealogy interface is off", () => {
 });
 
 describe("the modes a tab offers", () => {
-  it("lists Genealogy, Graph, Timeline and Source in that order, with the current one checked", () => {
+  it("lists Genealogy, Graph, Timeline and Source in that order, with the current one active", () => {
     for (const current of DESK_MODES) {
-      const choices = modeChoices(current);
+      const choices = modeButtons(current);
 
       expect(choices.map((choice) => choice.mode)).toEqual(["genealogy", "graph", "timeline", "source"]);
-      expect(choices.filter((choice) => choice.checked).map((choice) => choice.mode)).toEqual([current]);
+      expect(choices.filter((choice) => choice.active).map((choice) => choice.mode)).toEqual([current]);
     }
   });
 
   it("gives each mode an icon and a title of its own", () => {
-    const choices = modeChoices("graph");
+    const choices = modeButtons("graph");
 
     expect(choices.map((choice) => choice.icon)).toEqual(["users", "network", "calendar-range", "code"]);
     expect(new Set(choices.map((choice) => choice.title)).size).toBe(4);

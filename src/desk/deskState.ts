@@ -101,11 +101,11 @@ export function openFromIndex(tab: IndexTarget, xref: string): void {
   }
 }
 
-export interface ModeChoice {
+export interface ModeButton {
   mode: DeskMode;
   title: MessageKey;
   icon: string;
-  checked: boolean;
+  active: boolean;
 }
 
 const MODE_LOOKS: Record<DeskMode, { title: MessageKey; icon: string }> = {
@@ -117,8 +117,8 @@ const MODE_LOOKS: Record<DeskMode, { title: MessageKey; icon: string }> = {
 
 export const modeLook = (mode: DeskMode): { title: MessageKey; icon: string } => MODE_LOOKS[mode];
 
-export function modeChoices(current: DeskMode): ModeChoice[] {
-  return DESK_MODES.map((mode) => ({ mode, ...MODE_LOOKS[mode], checked: mode === current }));
+export function modeButtons(current: DeskMode): ModeButton[] {
+  return DESK_MODES.map((mode) => ({ mode, ...MODE_LOOKS[mode], active: mode === current }));
 }
 
 /** From Source to the mode before it, Genealogy where this session has none; from anywhere else to Source. */

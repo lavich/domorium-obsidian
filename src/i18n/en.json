@@ -100,7 +100,6 @@
   "mode.graph": "Graph",
   "mode.timeline": "Timeline",
   "mode.source": "Source",
-  "mode.control": "Mode: {mode}",
   "command.showGenealogy": "Show as genealogy",
   "command.showGraph": "Show as graph",
   "command.showTimeline": "Show as timeline",

@@ -795,3 +795,20 @@ What differs from the plan above, or was settled while building it.
   leaves of a retired view type nobody registers, and whether `result.history =
   true` while Obsidian itself navigates Back or Forward truncates the forward
   history.
+
+### Mode buttons instead of a menu (the user, 2026-11-05)
+
+The single header action with its `Menu` (alternative 3 above) is replaced by
+alternative 1: one `addAction` icon button per mode, in `DESK_MODES` order, with
+the icons the modes had. `modeChoices` is `modeButtons(current)` (`active` for
+`checked`); `renderMode`, which every mode change, `setState`, `applySettings` and
+a restore reach, sets `is-active` and `aria-pressed` and shows or hides the four
+with the interface. The tooltip is the mode's name (`aria-label`, position
+bottom), no `title`; `mode.control` and the `Menu` code are gone. The active
+colour is `--interactive-accent`. Four icons take the room the three of 1.14 did,
+plus one; at 390 px they sit in Obsidian's header beside its own actions, which
+nothing here has measured: the header's width on a phone, the order in which
+`addAction` lays out several actions (Obsidian may prepend them), and the look of
+`is-active` there are for the manual check. If the phone header overflows, the
+fallback is the menu again on a phone only. The harness has no header, so no
+browser spec covers the buttons.

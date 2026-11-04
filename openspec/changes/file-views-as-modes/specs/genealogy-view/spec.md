@@ -83,11 +83,15 @@ change the tab. Two tabs of one file SHALL each have a mode of their own.
 ### Requirement: The mode control
 
 While the **Genealogy interface** setting is on, the header of a GEDCOM tab SHALL
-carry one action, the mode control, in place of any action for a single mode. It
-SHALL show the icon of the tab's mode, and activating it SHALL open a menu of the
-four modes — Genealogy, Graph, Timeline and Source, in that order — with the
-tab's mode checked; choosing a mode SHALL switch the tab to it. It SHALL be
-reachable in the header on a phone as Obsidian's own view actions are.
+carry the mode control: one icon button for each mode — Genealogy, Graph,
+Timeline and Source, in that order — each a header action of the tab, labelled
+with the name of its mode. The button of the tab's mode SHALL be marked as the
+active one, in the accent colour and as pressed to assistive technology, and the
+mark SHALL follow every change of the tab's mode, however it came about.
+Pressing a button SHALL switch the tab to that mode, and pressing the active one
+SHALL do nothing. While the setting is off none of the buttons SHALL be shown. The
+buttons SHALL be reachable in the header on a phone as Obsidian's own view
+actions are.
 
 The plugin SHALL offer a command for each mode — **Show as genealogy**, **Show as
 graph**, **Show as timeline** and **Show as source** — each available while the
@@ -98,12 +102,27 @@ mode — Genealogy where it has none in this session — and a tab in any other 
 to Source mode. The tab's menu SHALL offer the four mode commands that are
 available, and the commands SHALL be offered in the command palette as well.
 
-#### Scenario: Choosing Graph from the mode control
-- **WHEN** `curie.ged` is open in Genealogy mode and the reader activates the mode
-  control and chooses Graph
-- **THEN** the menu listed Genealogy, Graph, Timeline and Source with Genealogy
-  checked, and the tab shows the graph with the mode control showing the graph's
-  icon
+#### Scenario: A button for each mode
+- **WHEN** `curie.ged` is open in Genealogy mode with the interface on
+- **THEN** the header shows buttons for Genealogy, Graph, Timeline and Source in
+  that order, and the Genealogy button is marked as active and no other
+
+#### Scenario: Pressing a button
+- **WHEN** the tab is in Genealogy mode and the reader presses the Graph button
+- **THEN** the tab shows the graph, and the Graph button is the one marked active
+
+#### Scenario: Pressing the active button
+- **WHEN** the tab is in Graph mode and the reader presses the Graph button
+- **THEN** nothing changes
+
+#### Scenario: The mark follows the mode
+- **WHEN** the reader switches the tab by a command, goes Back to an earlier mode,
+  or restarts Obsidian
+- **THEN** the button of the mode the tab is then in is the one marked active
+
+#### Scenario: The interface is off
+- **WHEN** the interface setting is off
+- **THEN** none of the four buttons is in the tab's header
 
 #### Scenario: A command
 - **WHEN** a tab is in Source mode and the reader runs **Show as timeline** from
@@ -132,8 +151,9 @@ available, and the commands SHALL be offered in the command palette as well.
   not as timeline
 
 #### Scenario: The mode control on a phone
-- **WHEN** the reader taps the mode control in the header of a tab on a phone
-- **THEN** a menu lists the four modes with the tab's mode checked
+- **WHEN** the reader opens a tab on a phone
+- **THEN** the four buttons are in the tab's header, and tapping one switches the
+  tab to its mode
 
 ### Requirement: Graph and Timeline draw the tab's own reading of the file
 
