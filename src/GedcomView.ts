@@ -99,7 +99,8 @@ import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
-import { GEDCOM_ICON_ID } from "./icon";
+import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON, GEDCOM_ICON_ID } from "./icon";
+import type { OverviewKind } from "./commands";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -112,7 +113,7 @@ export interface GedcomViewHost {
   allowRemoteImages(scope: AllowScope): void;
   genealogyChanged(view: GedcomView): void;
   openEvidence(): void;
-  openFileTimeline(view: GedcomView): void;
+  openOverview(kind: OverviewKind, view: GedcomView): void;
 }
 
 export interface DeskSelection {
@@ -138,6 +139,7 @@ export class GedcomView extends TextFileView {
   private readonly deskEl: HTMLElement;
   private readonly modeAction: HTMLElement;
   private readonly timelineAction: HTMLElement;
+  private readonly graphAction: HTMLElement;
   // Edits come a keystroke at a time; the index and the panel need the text
   // once it has settled.
   private readonly announceEdit = debounce(
@@ -163,8 +165,11 @@ export class GedcomView extends TextFileView {
     this.modeAction = this.addAction("code", t("mode.toSource"), () => {
       this.toggleMode();
     });
-    this.timelineAction = this.addAction("calendar-range", t("command.openFileTimeline"), () => {
-      this.host.openFileTimeline(this);
+    this.graphAction = this.addAction(FILE_GRAPH_ICON, t("command.openFileGraph"), () => {
+      this.host.openOverview("graph", this);
+    });
+    this.timelineAction = this.addAction(FILE_TIMELINE_ICON, t("command.openFileTimeline"), () => {
+      this.host.openOverview("timeline", this);
     });
     this.showMode();
   }
@@ -647,6 +652,7 @@ export class GedcomView extends TextFileView {
     const genealogy = this.shownMode === "genealogy";
     this.modeAction.toggle(this.settings.genealogyInterface);
     this.timelineAction.toggle(this.settings.genealogyInterface);
+    this.graphAction.toggle(this.settings.genealogyInterface);
     this.editorEl.toggle(!genealogy);
     this.deskEl.toggle(genealogy);
     setIcon(this.modeAction, genealogy ? "code" : "users");

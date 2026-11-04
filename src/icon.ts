@@ -1,3 +1,8 @@
+export const FILE_TIMELINE_ICON = "calendar-range";
+
+/** Not `git-fork`, which Obsidian draws for its own graph view. */
+export const FILE_GRAPH_ICON = "network";
+
 export const GEDCOM_ICON_ID = "domorium-gedcom-icon";
 
 export const GEDCOM_ICON_SVG = `

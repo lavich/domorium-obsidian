@@ -1,5 +1,6 @@
 import type { GedcomRecord } from "./editor/records";
 import { plural, t, type MessageKey } from "./i18n";
+import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON } from "./icon";
 import {
   gedcomLinkUrl,
   recordLinkText,
@@ -27,6 +28,8 @@ export interface CommandView {
   genealogyInterface(): boolean;
 }
 
+export type OverviewKind = "timeline" | "graph";
+
 /** Everything outside the view, which is where `obsidian` stays. */
 export interface CommandHost {
   vaultName(): string;
@@ -40,7 +43,7 @@ export interface CommandHost {
   ): void;
   askForName(entered: (newName: string) => void): void;
   /** `around` is the record the tab shows or the cursor is on, which may not be a person. */
-  openFileTimeline(path: string, around: string | undefined): void;
+  openOverview(kind: OverviewKind, path: string, around: string | undefined): void;
 }
 
 /** Obsidian's own `Hotkey`, spelt here so `obsidian` stays out of this file. */
@@ -97,11 +100,22 @@ export const COMMANDS: GedcomCommand[] = [
   {
     id: "open-gedcom-file-timeline",
     name: "command.openFileTimeline",
-    icon: "calendar-range",
+    icon: FILE_TIMELINE_ICON,
     isAvailable: (view) => view.file !== null && view.genealogyInterface(),
     run: (host, view) => {
       if (view.file) {
-        host.openFileTimeline(view.file.path, view.recordAtCursor()?.identifier);
+        host.openOverview("timeline", view.file.path, view.recordAtCursor()?.identifier);
+      }
+    },
+  },
+  {
+    id: "open-gedcom-file-graph",
+    name: "command.openFileGraph",
+    icon: FILE_GRAPH_ICON,
+    isAvailable: (view) => view.file !== null && view.genealogyInterface(),
+    run: (host, view) => {
+      if (view.file) {
+        host.openOverview("graph", view.file.path, view.recordAtCursor()?.identifier);
       }
     },
   },
