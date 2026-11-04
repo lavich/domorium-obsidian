@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Views of a file in a tab harness</title>
+    <link rel="stylesheet" href="palette.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        background: var(--background-primary);
+        color: var(--text-normal);
+        font-family: var(--font-interface);
+        font-size: 14px;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+      #bar {
+        display: flex;
+        gap: 4px;
+        padding: 4px;
+      }
+      #leaf {
+        height: calc(100vh - 40px);
+      }
+    </style>
+  </head>
+  <body class="theme-light">
+    <div id="bar">
+      <button id="show-graph" type="button">Graph</button>
+      <button id="show-timeline" type="button">Timeline</button>
+      <button id="show-source" type="button">Source</button>
+      <button id="select-pierre" type="button">Select Pierre</button>
+      <button id="select-irene" type="button">Select Irène</button>
+      <button id="open-search" type="button">Find</button>
+    </div>
+    <div id="leaf" class="workspace-leaf-content" data-type="domorium-gedcom">
+      <div class="view-content gedcom-gedcom-view">
+        <div id="source" class="gedcom-gedcom-editor">Source</div>
+        <div id="views" class="gedcom-gedcom-views"></div>
+      </div>
+    </div>
+    <script src="dist/fileViews.js"></script>
+  </body>
+</html>
