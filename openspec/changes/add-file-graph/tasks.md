@@ -39,4 +39,4 @@
 ## 6. Verify
 
 - [ ] 6.1 In Obsidian on the demo vault, and on a phone: the header action and command open the graph and reveal it the second time, also after a restart; it follows an unsaved edit, a rename and a moved folder, and says so when the file is deleted; a person brings the file's tab forward on their page and a family node on the family's; it is restored with its scope, position and zoom; a mouse wheel zooms and a trackpad scrolls; it closes when the interface is turned off; the `network` icon draws, on 1.8.7 as well as the current app; the timeline still does all of this.
-- [ ] 6.2 `npm run check` and `npm run test:browser`; screenshot the graph at desktop and phone width from a temporary Playwright script, then delete it.
+- [x] 6.2 `npm run check` and `npm run test:browser`; screenshot the graph at desktop and phone width from a temporary Playwright script, then delete it.

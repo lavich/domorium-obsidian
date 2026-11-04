@@ -373,5 +373,49 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
 
 ## Implementation
 
-To be filled in while applying: every place the implementation departs from
-this design or the mockup, and why.
+- **Transposing neighbours.** Barycentre sweeps alone made the tangled
+  generated files worse than the starting order within the four idle sweeps
+  (600 people: 1 814 crossings at the start, more after each of the first four
+  sweeps). After each row is sorted, and once on the starting order, neighbours
+  are swapped wherever that crosses fewer lines to the rows above and below —
+  an exact local count, so it never adds a crossing. 600 tangled people now end
+  at 1 667, 10 000 at 160 000 of 372 000, in about 180 ms in Node.
+- **Lines turn only between rows.** The mockup's curve from the node straight
+  to the child travels sideways through the parents' row for a long line, behind
+  the cards beside it. A line now drops straight out of the parents' row, runs
+  straight down each lane from above its row to below it, and drops straight
+  into the child's row; it curves only in the gaps. `GraphLine` carries these
+  points and, separately, its `lanes`.
+- **A person joined to no one** (Kazimierz Żorawski in `curieWithEvents()`)
+  is pulled to stand beside their neighbour in the row; left where the row was
+  first packed, they ended 2 400 pixels to the right of everyone else as the
+  joined blocks moved.
+- **A node across rows** drops the lanes above it, so a line from it does not
+  climb back to a lane in a row the node is already below.
+- **The view base class** is not generic: `FileTimelineView` and
+  `FileGraphView` each keep their own board, which `instanceof` on a generic
+  class could not type without `any`.
+- **Icons.** `FILE_TIMELINE_ICON` and `FILE_GRAPH_ICON` live in `src/icon.ts`,
+  since `src/commands.ts` may not import `DeskViews` (it imports `obsidian`).
+  `OverviewKind` is in `src/commands.ts`. The header reads, left to right, the
+  timeline, the graph, then the mode switch.
+- **The scope bar** owns its clicks and reports the change through a callback;
+  the timeline's tests that click its steppers pass unchanged.
+- **Openings.** Releasing the last opening of a path that nothing shows forgets
+  its reading, where `main.ts` used to keep it cached.
+- **The harness** answers the time from after the file is read — the model, the
+  layout and the first drawing — since reading is the read model's cost and the
+  same for every view: 200 ms for the generated 10 000 and 270 ms for the
+  tangled one in headless Chromium. The DOM stand-in gains `hasClass`, which the
+  legends' *Legend* toggle needs; the timeline's toggle threw in the harness
+  before, untested.
+- **The tangled generator** takes the number of founding couples, so the
+  screenshots could use a deeper 150-person file than forty couples give; the
+  unit test of the ordering imports it from `tests/generated.ts`.
+- **Labels.** A card's label is the name and the years joined by a comma, with
+  no message of its own; a node's label gives the year, its tooltip the date as
+  the file writes it.
+- **Seen in the screenshots, not changed:** the opening view of a file too wide
+  to fit, with no person of the tab, centres the first card of the top row, which
+  leaves the upper half of the canvas empty, as specified. Lines of a tangled
+  file between families far apart run in long bundles through the gaps.
