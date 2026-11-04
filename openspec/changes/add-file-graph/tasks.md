@@ -45,6 +45,9 @@
 - [x] 6.5 Draw the person page's tree with it in `src/desk/personPage.ts`, styles in `styles.css` and strings in `src/i18n/{en,ru}.json`; remove `src/desk/treeLayout.ts`, `src/desk/treeView.ts` and their tests; `src/desk/personPage.test.ts` passes.
 - [x] 6.6 Update the tree's browser specs in `tests/desk.spec.ts` — Marie's family, the focus moved, the phone with the focus in view — and add the colours, Pierre to Marie's left, and the node that opens the family page.
 
+- [ ] 6.7 Hide the scope bar in the whole-file scope, in the graph and the timeline, and remove `fileTimeline.branchHelp` and `fileGraph.branchHelp`; tests in `src/desk/fileTimelineView.test.ts` and `src/desk/fileGraphView.test.ts`, and the whole-file counts in `tests/fileTimeline.spec.ts` and `tests/fileGraph.spec.ts` read from the subtitle.
+- [ ] 6.8 Branch again on the person whose branch is shown returns to the whole file, centred on them, with `aria-pressed` and a pressed look, by mouse, keyboard and touch, in the graph and the timeline; tests in `src/desk/fileGraphView.test.ts` and `src/desk/fileTimelineView.test.ts`, and in both browser specs.
+
 ## 7. Verify
 
 - [ ] 7.1 In Obsidian on the demo vault, and on a phone: the header action and command open the graph and reveal it the second time, also after a restart; it follows an unsaved edit, a rename and a moved folder, and says so when the file is deleted; a person brings the file's tab forward on their page and a family node on the family's; it is restored with its scope, position and zoom; a mouse wheel zooms and a trackpad scrolls; it closes when the interface is turned off; the `network` icon draws, on 1.8.7 as well as the current app; the timeline still does all of this; the person page's tree pans, zooms, opens a family from its node and moves the focus, on a phone too.

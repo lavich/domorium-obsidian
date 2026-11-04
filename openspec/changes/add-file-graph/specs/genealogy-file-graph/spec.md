@@ -178,7 +178,10 @@ descendants down to a number, and the spouses of everyone so shown. Both numbers
 SHALL start at two and be changed in steps of one, from zero to nine. The graph
 SHALL say whose branch it shows and how many of the file's people that is,
 SHALL return to the whole file on request, and SHALL show the rows of a branch
-without empty rows between them.
+without empty rows between them. Choosing Branch again on the person whose
+branch is shown SHALL return to the whole file, and that person's Branch SHALL
+read as pressed while their branch is shown. While the whole file is shown, no
+line about the scope SHALL be shown.
 
 A file of more than 500 people SHALL open on the branch of the person shown by
 the GEDCOM tab the graph was opened from — the page's person in Genealogy mode,
@@ -190,6 +193,11 @@ declares where neither names one. A smaller file SHALL open on all of it.
 - **THEN** four rows show Eugène, Sophie-Claire, Władysław and Bronisława
   Boguska; Pierre Curie and Marie; Frédéric and Irène; Hélène and Pierre Joliot
   — and the graph says this is 10 of 17 people
+
+#### Scenario: Branch again
+- **WHEN** Irène's branch is shown and the reader chooses Branch on Irène's card
+- **THEN** the whole file is shown, centred on Irène's card, and no line about
+  the scope is shown
 
 #### Scenario: No ancestors and no descendants
 - **WHEN** the reader shows Marie's branch with zero generations of ancestors

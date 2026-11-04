@@ -382,6 +382,19 @@ by the graph.
   children of its families and the parents of the family it is a child of —
   computed from the input, so a person standing twice lights each place.
 
+### The scope line and Branch as a toggle
+
+From the demo vault (proposal). The scope bar draws nothing, and is hidden,
+while the whole file is shown; its help text goes, with its two strings, and the
+count of people stays in the subtitle. Branch on the person whose branch is
+shown returns to the whole file through the same path as **Whole file**, so the
+view follows the rule for it: centred on the person just left. The Branch of
+that person carries `aria-pressed="true"` and stays shown — the graph's pill on
+the card, the timeline's button on the row — in the pressed look of the theme's
+accent; every other Branch carries `aria-pressed="false"`. On a phone the
+pressed pill is shown, so a touch on it acts at once rather than first lighting
+the card.
+
 ## Risks / Trade-offs
 
 - **Layout time on a phone.** A phone is several times slower than the

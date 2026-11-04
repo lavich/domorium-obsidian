@@ -71,6 +71,14 @@ side's family on its side, curved lines in the gaps, hover by classes, and the
 graph's keyboard and phone behaviour. One renderer serves both; the old tree's
 layout and drawing are retired.
 
+From the demo vault (2026-11-04): the line «Whole file · 17 people. Choose the
+branch on a person's card…» is superfluous and takes room — in the whole-file
+scope no scope line is shown, in the graph and in the timeline; the branch line
+stays while a branch is shown, and the count of people stays in the subtitle.
+And Branch pressed again on the person whose branch is shown returns to the
+whole file, in the graph and in the timeline, by keyboard and touch too, shown
+as a toggle that reads pressed while that branch is shown.
+
 Proposed scope:
 
 - A new view, **Graph of the file**, opened in a tab of its own from a header
@@ -107,6 +115,7 @@ parser or the language service changes.
   never writes to the file.
 - A Web Worker for the layout, or a layout cached across sessions.
 - Raising `minAppVersion`.
+- Colouring cards by family line (male line) — later, its own change.
 
 ## Capabilities
 
@@ -119,6 +128,8 @@ parser or the language service changes.
 
 ### Modified Capabilities
 
+- `genealogy-file-timeline`: Branch on the person whose branch is shown returns
+  to the whole file.
 - `genealogy-view`: the genealogy interface setting also hides the graph of the
   file, its header action and its command; the tree of a person's page is drawn
   as the graph of the file is drawn, with the same people in it as before.
