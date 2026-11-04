@@ -579,4 +579,27 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   that none is shown.
 - **Branch as a toggle.** The pressed look is the outlined pill (and the
   outlined button in the timeline) in the accent colour, the unpressed one
-  being filled; the pressed Branch stays shown on its card or row.
+  being filled; the pressed Branch stays shown on its card or row. After
+  review a touch on it lights its card first, as on any other card.
+- **Portraits** (third request). The layout knows only whether a person has a
+  portrait (`Person.portrait`, the first of their media that looks like an
+  image) and makes the card tall for it; which picture is drawn is asked of the
+  host as the card is drawn — the first of the person's media the page can draw,
+  as `renderPortrait` takes it. Where that finds none, or the picture fails to
+  load, the card keeps its height with no picture: its row is as tall as its
+  tallest card in any case. The picture is 36 by 44 pixels, centred at the top.
+  A closed file's pictures are resolved against the language service of the
+  last reading, which `OverviewReads` keeps beside its index. The name's font is
+  12 pixels semibold; given names and surname each get their own measured cut.
+- **Siblings standing alone** are 16 pixels apart rather than 72, in the tree
+  and the file. The 12×8 family opened before on the focus with no child in
+  view (the children stood above their own children, 1 500 pixels to each
+  side); it now opens between the focus and the nearest child, at 0.5 or more.
+- **Unfolded siblings' parents** stand over the whole group of their children,
+  the focus at its end, as the barycentre puts them; keeping them over the focus
+  alone would have taken their lines across the siblings.
+- **The tree's memory** is a small object the tab keeps beside its unfolded
+  siblings: the zoom, and whether the focus was moved from the keyboard.
+- **Edges.** In the tree, a two-finger scroll that would take the drawing's
+  top or bottom further in than the margin is left to the page; a mouse wheel
+  still zooms.
