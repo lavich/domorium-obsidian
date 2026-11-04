@@ -20,7 +20,10 @@ first step forward goes to the first match and the first step back to the last,
 and each step past either end comes round to the other. The view SHALL centre on
 the card at a readable zoom, and the card SHALL carry a ring of its own, unlike
 that of the light of pointing, while the other matches stay lit and the rest
-faded. The buttons SHALL be disabled where nothing matches, and pressing one
+faded. The view SHALL glide there rather than jump, unless the reader has asked
+for reduced motion or the card is further away than a glide can show without a
+streak, when it SHALL jump; a drag, the wheel or a key SHALL take over from a
+glide at the place it has reached. The buttons SHALL be disabled where nothing matches, and pressing one
 with a mouse or a key SHALL leave the focus in the field.
 
 #### Scenario: Searching
@@ -31,6 +34,12 @@ with a mouse or a key SHALL leave the focus in the field.
 #### Scenario: Going from match to match
 - **WHEN** the reader has typed `joliot` and presses Enter three times
 - **THEN** the view moves to Frédéric's card, then to Irène's, then to Hélène's
+
+#### Scenario: Gliding to a match
+- **WHEN** the reader presses the next button with `joliot` typed
+- **THEN** the view passes through intermediate positions to Frédéric's card with
+  the cards of the whole path already drawn, and a drag begun on the way stops it
+  where it is; where reduced motion is asked for the view jumps
 
 #### Scenario: Counting the matches
 - **WHEN** the reader types `joliot`, and then presses the next button

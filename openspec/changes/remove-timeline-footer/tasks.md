@@ -19,6 +19,13 @@
 
 - [x] 3.3 Replace the icon with the field while the box is open, fading and growing, and add the counter and the previous and next arrows to `src/desk/floatingSearch.ts`, with the current match marked and centred in `src/desk/graphCanvas.ts` and `src/desk/fileTimelineView.ts`, the strings in `src/i18n/en.json` and `src/i18n/ru.json`. Test in `src/desk/fileGraphView.test.ts` and `src/desk/fileTimelineView.test.ts` (the counter, both arrows, wrapping, no results, the ring on one card or row) and in `tests/fileGraph.spec.ts` and `tests/fileTimeline.spec.ts` at 1400 and 390 px (the icon hidden while open, the box inside the canvas, arrows 44 px on a phone, the focus kept in the field).
 
-## 4. Verify
+## 4. Glide, toolbar, tree search, tooltips
 
-- [x] 4.1 `npm run check`, `npm run test:browser` and `npm run openspec:validate` pass.
+- [x] 4.1 Glide: `apply(at, glide)` in `src/desk/graphCanvas.ts` moves the view by a CSS transition behind `is-gliding`, with `drawBetween` drawing both ends first, a drag, the wheel or a key calling `stopGlide`; `glideTo` in `src/desk/fileTimelineView.ts` scrolls smoothly, the echo of the names and the axis not cutting it short; `prefersReducedMotion` in `src/desk/dom.ts`. Test in `src/desk/fileGraphView.test.ts` (class set, cleared by a pointerdown, none for a far move or reduced motion) and in `tests/fileGraph.spec.ts` and `tests/fileTimeline.spec.ts` (intermediate transforms and scroll positions, no blank frame, reduced motion jumps).
+- [x] 4.2 Remove the timeline's toolbar row: the Other-events switch and the count of people alive, `others` read from no saved state, their strings and styles. Test in `src/desk/fileTimelineView.test.ts` and `tests/fileTimeline.spec.ts` (no toolbar, the board starts at the top at 390 px, ages stay).
+- [x] 4.3 The tree's search: `search` on `TreeCard` in `src/desk/personTree.ts`, `searchOver` in `src/desk/floatingSearch.ts` used by the graph and the tree. Test in `src/desk/personTreeView.test.ts` (`joliot` is four matches in the order Frédéric, Irène, Hélène, Pierre; a box of siblings lit by `zofia`) and `tests/desk.spec.ts` at 1280 and 390 px.
+- [x] 4.4 Tooltips: no `title`, no `<title>`, `data-tooltip-position` per control (`tipPlace` in `src/desk/dom.ts`), `--no-tooltip` on cards. Test in `src/desk/fileGraphView.test.ts`, `src/desk/fileTimelineView.test.ts`, `src/desk/personTreeView.test.ts` and `tests/desk.spec.ts`.
+
+## 5. Verify
+
+- [x] 5.1 `npm run check`, `npm run test:browser` and `npm run openspec:validate` pass.

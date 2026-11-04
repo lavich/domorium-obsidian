@@ -51,6 +51,30 @@ Proposed scope, taken from that:
   marking it. Pressing an arrow with a mouse or a key leaves the focus in the
   field, a touch leaves the keyboard alone. The graph's toolbar is then
   empty and is removed; the timeline's keeps its Other-events switch.
+- «очень резкий скачок при навигации во время поиска. А можно его сделать более
+  плавным? средствами css?» — the graph's view and the timeline's plot glide to
+  the current match, to a card after a scope change and for the zoom buttons'
+  steps: the graph by a CSS transition of the view's transform with the cards of
+  the whole path drawn first, the timeline by a smooth `scrollTo`. A drag, the
+  wheel or a key takes over at the place the glide has reached. Reduced motion
+  jumps as before, and so does a move longer than about two and a half
+  viewports (graph) or one and a half heights (timeline), which a glide could
+  only show as a streak or as blank rows.
+- «вот эту строку удали — мне она не нужна» (the timeline's «Other events 0 … In
+  1955: 7 people alive» row) — the switch and the count go; every dated event is
+  always shown, an old saved `others` is ignored, and the ages under the year
+  cursor stay.
+- «в графе на странице пользователя тоже должен быть поиск» — the tree of the
+  person page gets the same floating search, reusing `floatingSearch.ts` and the
+  canvas's stepping; a box of siblings is lit by the names of its members
+  without being opened.
+- «два тайтла: системный надо удалить, а чёрный поправить чтобы он корректно
+  работал на кнопках масштаба» — no `title` beside an `aria-label` on any
+  button of the overviews and the tree, no native `<title>` on a card; Obsidian's
+  tooltip is placed per control with `data-tooltip-position` (zoom group: top;
+  search box: bottom; rows' buttons: right; scope steppers: bottom), which the
+  app reads along with `data-tooltip-delay`, and is suppressed on cards with
+  `--no-tooltip`. The app ignores touch for tooltips by itself.
 - On a phone the board takes the height the removed lines and subtitle
   freed, with nothing below it and no empty band above it.
 - A person with no dated event still has a row, and no lifeline; the timeline
@@ -74,7 +98,9 @@ Nothing is needed from `@domorium/*`.
 - Capability `genealogy-file-timeline`: three requirements are modified — «A row
   is a person, and their lifeline is coloured by sex», «A person's events are
   drawn on their lifeline» and «Finding a person and zooming». In
-  `genealogy-file-graph`, «Finding a person» and «The graph on a phone».
+  `genealogy-file-graph`, «Finding a person» and «The graph on a phone»; in
+  `genealogy-file-timeline` also «A year cursor follows the pointer»; in
+  `genealogy-view`, «The tree».
 - Code: `src/desk/fileTimelineView.ts`, `src/desk/fileTimeline.ts`,
   `src/desk/floatingSearch.ts`, `src/desk/fileGraphView.ts`, `src/desk/dom.ts`, `src/desk/graphCanvas.ts`, `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`.
 - No setting, no `minAppVersion` change, no dependency.

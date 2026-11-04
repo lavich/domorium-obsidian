@@ -36,8 +36,8 @@ cannot be taken for an exact date; a date stating only a year SHALL be marked as
 an exact one.
 
 Pointing at a mark SHALL show the event's name, the date as the file writes it,
-and its place. Events other than births, marriages and deaths SHALL be shown or
-hidden together by one switch, on by default.
+and its place. Every dated event SHALL be shown; the timeline SHALL have no
+switch for any kind of event and no toolbar above the board.
 
 Facts without a date — an occupation, for example — SHALL NOT be written on the
 timeline.
@@ -79,7 +79,10 @@ rows: the first step forward goes to the first match and the first step back to
 the last, and each step past either end comes round to the other. The board
 SHALL scroll to bring that row to the middle of its height, and to bring its
 lifeline into view sideways where it is out of it, and the row SHALL be marked as
-the current match. The buttons SHALL be disabled where nothing matches, and
+the current match. The board SHALL scroll to it smoothly rather than jump, unless
+the reader has asked for reduced motion or the row is further away than a smooth
+scroll can show without leaving rows blank, when it SHALL jump; the reader's own
+scrolling SHALL stay as the platform has it. The buttons SHALL be disabled where nothing matches, and
 pressing one with a mouse or a key SHALL leave the focus in the field.
 
 The timeline SHALL also offer a zoom that widens or narrows the axis of
@@ -109,6 +112,11 @@ while the rows and years scroll beneath and beside them.
   current row moves from Irène's to Frédéric's, Hélène's and Pierre's, each
   scrolled into view
 
+#### Scenario: Gliding to a match
+- **WHEN** the reader presses the previous button with `joliot` typed
+- **THEN** the board scrolls to Pierre's row through intermediate positions, with
+  no blank frame on the way, and jumps there where reduced motion is asked for
+
 #### Scenario: Coming round
 - **WHEN** the view is on the last of the four matches and the reader presses
   Enter
@@ -133,3 +141,29 @@ while the rows and years scroll beneath and beside them.
 - **WHEN** the reader presses Fit
 - **THEN** the whole span of years, from the first to the last, is as wide as the
   board beside the column of names, unless the zoom range stops it
+
+### Requirement: A year cursor follows the pointer
+
+While the pointer is over the lifelines, the timeline SHALL draw a line at the
+year under it and name that year on the axis. On the lifeline of each person
+alive that year it SHALL show the age they reached during it: the year less the
+year of birth, or of christening or baptism where no birth is dated, which does
+not depend on the day or the month. A person whose death is not recorded SHALL
+count as alive only up to the end of their faded lifeline. A person whose
+lifeline begins at another event SHALL be shown no age. The age SHALL be marked as
+approximate where the birth is dated as approximate or uncertain — `ABT`, `CAL`,
+`EST`, `BEF`, `AFT`, `BET`. No age SHALL be shown anywhere else in the timeline,
+and the timeline SHALL NOT write how many people were alive.
+
+#### Scenario: 1906
+- **WHEN** the cursor is on 1906 in the timeline of `curie.ged`
+- **THEN** Marie's lifeline shows 39 and Irène's shows 9, and no count of the
+  people alive is written anywhere
+
+#### Scenario: A birth known only by its year
+- **WHEN** a person was born in `1832` and the cursor is on 1900
+- **THEN** their age is shown as 68
+
+#### Scenario: An approximate birth
+- **WHEN** a person was born `ABT 1832` and the cursor is on 1900
+- **THEN** their age is shown as approximately 68
