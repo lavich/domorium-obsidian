@@ -1119,126 +1119,6 @@ button.gedcom-desk-moment-what:disabled {
   max-width: none;
 }
 
-.gedcom-desk-tree {
-  overflow: auto;
-  padding: var(--size-4-4) 0 var(--size-4-2);
-}
-
-.gedcom-desk-tree-canvas {
-  position: relative;
-  margin: 0 auto;
-}
-
-.gedcom-desk-tree-lines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.gedcom-desk-tree-lines path {
-  fill: none;
-  stroke: var(--background-modifier-border);
-  stroke-width: 1.5;
-}
-
-button.gedcom-desk-node {
-  position: absolute;
-  width: 172px;
-  height: 48px;
-  padding: var(--size-2-2) var(--size-4-2);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 1px;
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  box-shadow: none;
-  text-align: start;
-  font-weight: normal;
-  cursor: pointer;
-}
-
-button.gedcom-desk-node:hover {
-  background: var(--background-primary);
-  border-color: var(--text-faint);
-}
-
-button.gedcom-desk-node.is-focus {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 3px var(--background-modifier-active-hover);
-  cursor: default;
-}
-
-button.gedcom-desk-node.is-dim {
-  opacity: 0.65;
-}
-
-.gedcom-desk-node-name {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--font-ui-small);
-  color: var(--text-normal);
-}
-
-.gedcom-desk-node-years {
-  font-size: var(--font-ui-smaller);
-  color: var(--text-faint);
-}
-
-button.gedcom-desk-node.is-gap::after {
-  content: "";
-  position: absolute;
-  top: 7px;
-  inset-inline-end: 7px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-warning);
-}
-
-.gedcom-desk-node-more {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 9px;
-  line-height: 1;
-  color: var(--text-faint);
-}
-
-.gedcom-desk-node-more.is-up {
-  top: -12px;
-}
-
-.gedcom-desk-node-more.is-down {
-  bottom: -12px;
-}
-
-.gedcom-desk-legend {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--size-4-4);
-  margin-top: var(--size-4-3);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-faint);
-}
-
-.gedcom-desk-legend-gap::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-inline-end: var(--size-2-3);
-  border-radius: 50%;
-  background: var(--text-warning);
-  vertical-align: middle;
-}
-
 /* ── The timeline of a file ──────────────────────────────────────────────
    */
 
@@ -1265,21 +1145,25 @@ button.gedcom-desk-node.is-gap::after {
   padding-bottom: var(--navbar-height, 0px);
 }
 
-.gedcom-ft-head {
+.gedcom-ft-head,
+.gedcom-fg-head {
   padding: var(--size-4-3) var(--size-4-4) 0;
 }
 
-.gedcom-ft-title {
+.gedcom-ft-title,
+.gedcom-fg-title {
   font-size: var(--font-ui-medium);
   font-weight: var(--font-semibold);
 }
 
-.gedcom-ft-summary {
+.gedcom-ft-summary,
+.gedcom-fg-summary {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
 }
 
-.gedcom-ft-tools {
+.gedcom-ft-tools,
+.gedcom-fg-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1342,7 +1226,8 @@ input.gedcom-ft-search {
   margin-inline-start: 0;
 }
 
-.gedcom-ft-scope {
+.gedcom-ft-scope,
+.gedcom-fg-scope {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1352,11 +1237,13 @@ input.gedcom-ft-search {
   color: var(--text-muted);
 }
 
-.gedcom-ft-step-label {
+.gedcom-ft-step-label,
+.gedcom-fg-step-label {
   margin-inline-start: var(--size-2-3);
 }
 
-.gedcom-ft-step {
+.gedcom-ft-step,
+.gedcom-fg-step {
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--background-modifier-border);
@@ -1364,7 +1251,8 @@ input.gedcom-ft-search {
   overflow: hidden;
 }
 
-button.gedcom-ft-step-button {
+button.gedcom-ft-step-button,
+button.gedcom-fg-step-button {
   height: auto;
   padding: 1px var(--size-2-3);
   border: 0;
@@ -1375,27 +1263,32 @@ button.gedcom-ft-step-button {
   cursor: pointer;
 }
 
-button.gedcom-ft-step-button:hover {
+button.gedcom-ft-step-button:hover,
+button.gedcom-fg-step-button:hover {
   background: var(--background-modifier-hover);
 }
 
-button.gedcom-ft-step-button[disabled] {
+button.gedcom-ft-step-button[disabled],
+button.gedcom-fg-step-button[disabled] {
   color: var(--text-faint);
   cursor: default;
 }
 
-.gedcom-ft-step-button .svg-icon {
+.gedcom-ft-step-button .svg-icon,
+.gedcom-fg-step-button .svg-icon {
   width: 12px;
   height: 12px;
 }
 
-.gedcom-ft-step-value {
+.gedcom-ft-step-value,
+.gedcom-fg-step-value {
   padding: 0 var(--size-2-3);
   color: var(--text-normal);
   font-variant-numeric: tabular-nums;
 }
 
-button.gedcom-ft-whole {
+button.gedcom-ft-whole,
+button.gedcom-fg-whole {
   height: auto;
   margin-inline-start: var(--size-2-3);
   padding: 0;
@@ -1516,14 +1409,21 @@ button.gedcom-ft-branch:hover {
 
 .gedcom-ft-name:hover .gedcom-ft-branch,
 .gedcom-ft-name.is-hl .gedcom-ft-branch,
-.gedcom-ft-name:focus-within .gedcom-ft-branch {
+.gedcom-ft-name:focus-within .gedcom-ft-branch,
+button.gedcom-ft-branch[aria-pressed="true"] {
   display: inline-block;
 }
 
 .gedcom-ft-name:hover .gedcom-ft-name-years,
 .gedcom-ft-name.is-hl .gedcom-ft-name-years,
-.gedcom-ft-name:focus-within .gedcom-ft-name-years {
+.gedcom-ft-name:focus-within .gedcom-ft-name-years,
+.gedcom-ft-name.is-focus .gedcom-ft-name-years {
   display: none;
+}
+
+button.gedcom-ft-branch[aria-pressed="true"] {
+  border-color: var(--interactive-accent);
+  color: var(--interactive-accent);
 }
 
 /* Too narrow for a name and its years side by side, so the years go beneath. */
@@ -1764,106 +1664,15 @@ button.gedcom-ft-branch:hover {
   color: var(--text-muted);
 }
 
-.gedcom-ft-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-2-2) var(--size-4-4);
-  padding: var(--size-4-2) var(--size-4-4);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-button.gedcom-ft-legend-toggle {
+.is-phone .gedcom-ft-title,
+.is-phone .gedcom-fg-title {
   display: none;
-  height: auto;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-accent);
-  font-size: inherit;
-  cursor: pointer;
-}
-
-/* A phone has the height for the rows or for the legend, not both. */
-.is-phone button.gedcom-ft-legend-toggle {
-  display: inline-block;
-}
-
-.is-phone .gedcom-ft-legend:not(.is-open) > .gedcom-ft-legend-item {
-  display: none;
-}
-
-.is-phone .gedcom-ft-title {
-  display: none;
-}
-
-.gedcom-ft-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-2-3);
-}
-
-.gedcom-ft-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.gedcom-ft-swatch.is-f {
-  background: var(--color-pink);
-  opacity: 0.6;
-}
-
-.gedcom-ft-swatch.is-m {
-  background: var(--color-blue);
-  opacity: 0.6;
-}
-
-.gedcom-ft-swatch.is-u {
-  background: var(--text-faint);
-  opacity: 0.6;
-}
-
-.gedcom-ft-swatch.is-birth {
-  background: var(--color-green);
-}
-
-.gedcom-ft-swatch.is-marriage {
-  background: var(--interactive-accent);
-}
-
-.gedcom-ft-swatch.is-death {
-  background: var(--text-normal);
-}
-
-.gedcom-ft-swatch.is-other {
-  background: var(--color-orange);
-}
-
-.gedcom-ft-swatch.is-period {
-  width: 18px;
-  height: 6px;
-  border-radius: 2px;
-  background: var(--color-orange);
-  opacity: 0.55;
-}
-
-.gedcom-ft-swatch.is-uncertain {
-  border: 1.5px dashed var(--text-muted);
-}
-
-.gedcom-ft-swatch.is-caption {
-  width: 18px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--color-pink);
-  opacity: 0.35;
 }
 
 .gedcom-ft-tip,
-.gedcom-ft-pop {
+.gedcom-ft-pop,
+.gedcom-fg-tip,
+.gedcom-fg-pop {
   position: absolute;
   z-index: var(--layer-popover);
   max-width: min(300px, calc(100% - var(--size-4-4)));
@@ -1875,32 +1684,39 @@ button.gedcom-ft-legend-toggle {
   font-size: var(--font-ui-smaller);
 }
 
-.gedcom-ft-tip {
+.gedcom-ft-tip,
+.gedcom-fg-tip {
   pointer-events: none;
   opacity: 0;
 }
 
-.gedcom-ft-tip.is-shown {
+.gedcom-ft-tip.is-shown,
+.gedcom-fg-tip.is-shown {
   opacity: 1;
 }
 
-.gedcom-ft-pop {
+.gedcom-ft-pop,
+.gedcom-fg-pop {
   display: none;
 }
 
-.gedcom-ft-pop.is-shown {
+.gedcom-ft-pop.is-shown,
+.gedcom-fg-pop.is-shown {
   display: block;
 }
 
-.gedcom-ft-tip-what {
+.gedcom-ft-tip-what,
+.gedcom-fg-tip-what {
   font-weight: var(--font-semibold);
 }
 
-.gedcom-ft-tip-where {
+.gedcom-ft-tip-where,
+.gedcom-fg-tip-where {
   color: var(--text-muted);
 }
 
-button.gedcom-ft-pop-source {
+button.gedcom-ft-pop-source,
+button.gedcom-fg-pop-open {
   height: auto;
   margin-top: var(--size-2-3);
   padding: 0;
@@ -1912,13 +1728,346 @@ button.gedcom-ft-pop-source {
   cursor: pointer;
 }
 
-.gedcom-ft.is-gone > :not(.gedcom-ft-gone) {
+.gedcom-ft.is-gone > :not(.gedcom-ft-gone),
+.gedcom-fg.is-gone > :not(.gedcom-fg-gone) {
   display: none;
 }
 
-.gedcom-ft-gone {
+.gedcom-ft-gone,
+.gedcom-fg-gone {
   margin: auto;
   padding: var(--size-4-8);
   color: var(--text-muted);
   text-align: center;
+}
+
+.workspace-leaf-content[data-type="domorium-file-graph"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.gedcom-fg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--text-normal);
+}
+
+.is-mobile .gedcom-fg {
+  padding-bottom: var(--navbar-height, 0px);
+}
+
+input.gedcom-fg-search {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.gedcom-fg-controls {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: var(--size-4-2);
+  bottom: calc(var(--size-4-2) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: var(--size-2-1);
+  padding: var(--size-2-1);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+  cursor: default;
+}
+
+.gedcom-fg-controls button {
+  height: auto;
+  padding: var(--size-2-2) var(--size-2-3);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--icon-color, var(--text-muted));
+  font-size: var(--font-ui-small);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.gedcom-fg-controls button:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.gedcom-fg-controls .svg-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.gedcom-fg-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--background-modifier-border);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gedcom-fg-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.gedcom-fg-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gedcom-fg-svg text {
+  font-family: var(--font-interface);
+}
+
+.gedcom-fg-card,
+.gedcom-fg-pill,
+.gedcom-fg-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.gedcom-fg-card-bg {
+  fill: var(--background-primary);
+  stroke: var(--background-modifier-border);
+  stroke-width: 1;
+}
+
+.gedcom-fg-person.is-f .gedcom-fg-card-bg {
+  fill: rgba(var(--color-pink-rgb), 0.2);
+}
+
+.gedcom-fg-person.is-m .gedcom-fg-card-bg {
+  fill: rgba(var(--color-blue-rgb), 0.18);
+}
+
+.gedcom-fg-person.is-u .gedcom-fg-card-bg {
+  fill: rgba(var(--mono-rgb-100), 0.1);
+}
+
+.gedcom-fg-card-name {
+  fill: var(--text-normal);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.gedcom-fg-card-years {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gedcom-fg-person:hover .gedcom-fg-card-bg,
+.gedcom-fg-person.is-focus .gedcom-fg-card-bg {
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+.gedcom-fg-person.is-focus .gedcom-fg-card-bg {
+  stroke-width: 2.5;
+}
+
+.gedcom-fg-pill {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.gedcom-fg-person:hover .gedcom-fg-pill,
+.gedcom-fg-person:focus-within .gedcom-fg-pill,
+.gedcom-fg-person.is-armed .gedcom-fg-pill,
+.gedcom-fg-pill[aria-pressed="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.gedcom-fg-pill rect {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-fg-pill text {
+  fill: var(--text-on-accent);
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-fg-pill[aria-pressed="true"] rect {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-pill[aria-pressed="true"] text {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-fg-line {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-join {
+  fill: none;
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+.gedcom-fg-node circle {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-fg-node.is-undated circle {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-node-year {
+  fill: var(--text-on-accent);
+  font-size: 9.5px;
+  font-weight: var(--font-semibold);
+  pointer-events: none;
+}
+
+.gedcom-fg-svg.has-hl .gedcom-fg-person:not(.is-on),
+.gedcom-fg-svg.has-hl .gedcom-fg-line:not(.is-on),
+.gedcom-fg-svg.has-hl .gedcom-fg-family:not(.is-on) {
+  opacity: 0.18;
+}
+
+.gedcom-fg-line.is-hl,
+.gedcom-fg-family.is-hl .gedcom-fg-join {
+  stroke: var(--text-accent);
+  stroke-width: 2.5;
+}
+
+.gedcom-fg-person.is-hl .gedcom-fg-card-bg {
+  stroke: var(--text-accent);
+  stroke-width: 2;
+}
+
+.gedcom-fg-person .gedcom-fg-card:focus-visible .gedcom-fg-card-bg,
+.gedcom-fg-pill:focus-visible rect,
+.gedcom-fg-node:focus-visible circle {
+  stroke: var(--text-normal);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+.gedcom-fg-person.is-dim {
+  opacity: 0.25;
+}
+
+.gedcom-desk-graph {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-3);
+  padding-top: var(--size-4-2);
+}
+
+.gedcom-desk-graph .gedcom-fg-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+}
+
+.gedcom-desk:has(.gedcom-desk-page.is-tree) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gedcom-desk-body:has(> .gedcom-desk-page.is-tree) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: var(--size-4-4);
+}
+
+.gedcom-desk-page.is-tree {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.gedcom-desk-page.is-tree > .gedcom-desk-graph {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gedcom-fg-person.is-aside {
+  opacity: 0.65;
+}
+
+.gedcom-fg-card-gap {
+  fill: var(--text-warning);
+}
+
+.gedcom-fg-card-more {
+  fill: var(--text-faint);
+  font-size: 9px;
+}
+
+.gedcom-fg-avatar.gedcom-desk-portrait {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.gedcom-fg-avatar .gedcom-desk-picture:not(.is-cropped) {
+  width: 100%;
+  height: 100%;
+}
+
+.gedcom-fg-avatar-holder {
+  pointer-events: none;
+}
+
+.gedcom-fg-person,
+.gedcom-fg-line,
+.gedcom-fg-family,
+.gedcom-fg-card-bg,
+.gedcom-fg-join,
+.gedcom-fg-node circle,
+.gedcom-ft-life,
+.gedcom-ft-span,
+.gedcom-ft-mark,
+.gedcom-ft-marriage,
+.gedcom-ft-name,
+.gedcom-ft-age,
+.gedcom-ft-caption {
+  transition:
+    opacity 150ms ease-out,
+    fill 150ms ease-out,
+    stroke 150ms ease-out,
+    stroke-width 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gedcom-fg-person,
+  .gedcom-fg-line,
+  .gedcom-fg-family,
+  .gedcom-fg-card-bg,
+  .gedcom-fg-join,
+  .gedcom-fg-node circle,
+  .gedcom-ft-life,
+  .gedcom-ft-span,
+  .gedcom-ft-mark,
+  .gedcom-ft-marriage,
+  .gedcom-ft-name,
+  .gedcom-ft-age,
+  .gedcom-ft-caption {
+    transition: none;
+  }
 }

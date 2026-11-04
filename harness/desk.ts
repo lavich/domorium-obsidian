@@ -13,6 +13,8 @@ import { renderSourcePage } from "../src/desk/sourcePage";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
 import { installObsidianDom } from "../src/testing/obsidianDom";
+import type { PortraitContent } from "../src/desk/graphCanvas";
+import type { TreeMemory } from "../src/desk/personTreeView";
 
 export interface DeskOptions {
   /** A GEDCOM text; the demo vault's curie.ged where none is given. */
@@ -106,9 +108,16 @@ const host = {
   },
   chooseView: (chosen: PersonView): void => {
     view = chosen;
+    delete treeMemory.k;
     draw();
   },
+  portrait: (xref: string): PortraitContent | null => {
+    const person = index.person(xref);
+    const found = person ? mediaItems(person.media).find((item) => item.content.kind === "image") : undefined;
+    return found?.content.kind === "image" ? found.content : null;
+  },
 };
+const treeMemory: TreeMemory = {};
 
 function mediaItem(at: Position): MediaItem | null {
   const reference = service.getMediaAt(at);
@@ -139,7 +148,7 @@ function draw(): void {
   const source = index.source(record);
   const media = index.media(record);
   if (person) {
-    renderPersonPage(page, person, index, { selected, phone, media: mediaItems(person.media), view, expanded }, host);
+    renderPersonPage(page, person, index, { selected, phone, media: mediaItems(person.media), view, expanded, tree: treeMemory }, host);
   } else if (family) {
     renderFamilyPage(page, family, index, { selected, phone, media: mediaItems(family.media) }, host);
   } else if (source) {

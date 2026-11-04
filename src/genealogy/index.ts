@@ -7,7 +7,7 @@ import type {
 } from "@domorium/language-service";
 
 import { readingOf, type DateReading } from "./dates";
-import { readName } from "./names";
+import { readName, readNameParts } from "./names";
 import {
   CHILD_FAMILY_TAG,
   CHILD_ROLE_TAGS,
@@ -87,6 +87,9 @@ export interface Row {
 
 export interface PersonRow extends Row {
   name: string;
+  /** Set where the name's line writes both. */
+  given?: string;
+  surname?: string;
   otherNames: string[];
   sex?: string;
   birth?: DateReading;
@@ -456,6 +459,7 @@ function familyName(names: string[]): string | undefined {
 function rowOf(record: DocumentSymbol, dateOf: DateOf): PersonRow {
   const nameLines = childrenOf(record, "NAME");
   const name = readName(payload(nameLines[0]));
+  const parts = readNameParts(payload(nameLines[0]));
   const otherNames = nameLines
     .slice(1)
     .map((line) => readName(payload(line)))
@@ -476,6 +480,7 @@ function rowOf(record: DocumentSymbol, dateOf: DateOf): PersonRow {
     ...(xref === undefined ? {} : { xref }),
     unaddressable: xref === undefined,
     name,
+    ...(parts ?? {}),
     otherNames,
     ...(sex === undefined ? {} : { sex }),
     ...(birthEvent && birth !== undefined ? { birth: dateOf(birth) } : {}),

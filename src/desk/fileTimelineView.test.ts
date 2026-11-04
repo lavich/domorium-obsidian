@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
+import { HOVER_DELAY } from "./dom";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
 import {
   FileTimelineBoard,
@@ -65,6 +66,7 @@ describe("drawing the timeline of a file", () => {
   it("draws a row for each person, a lifeline coloured by sex, and the years", () => {
     board();
 
+    expect(container.querySelector('[class*="legend"]')).toBeNull();
     expect(names()).toHaveLength(17);
     expect(nameRow("@I1@")?.textContent).toContain("Marie Skłodowska-Curie");
     expect(nameRow("@I1@")?.querySelector(".gedcom-ft-name-years")?.textContent).toBe("1867–1934");
@@ -170,11 +172,29 @@ describe("pointing at a person", () => {
     expect(container.querySelector(".gedcom-ft-row-hl")).toBeNull();
   });
 
-  it("lights a person under the pointer as it moves", () => {
-    board();
-    nameRow("@I2@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+  it("lights a person once the pointer has rested on them, and only the last of a sweep", () => {
+    vi.useFakeTimers();
+    try {
+      board();
+      nameRow("@I1@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+      vi.advanceTimersByTime(HOVER_DELAY / 2);
+      nameRow("@I2@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+      vi.advanceTimersByTime(HOVER_DELAY - 1);
+      expect(container.querySelectorAll(".is-hl")).toHaveLength(0);
 
-    expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+      expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(false);
+      container.querySelector(".gedcom-ft-board")?.dispatchEvent(new MouseEvent("pointerleave"));
+      expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+      vi.advanceTimersByTime(HOVER_DELAY);
+      expect(container.querySelectorAll(".is-hl")).toHaveLength(0);
+
+      nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-name-open")?.focus();
+      expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
@@ -482,6 +502,38 @@ describe("the keyboard", () => {
     expect(document.activeElement?.getAttribute("data-step")).toBe("up:-1");
     step("up:-1")?.click();
     expect(document.activeElement?.getAttribute("data-step")).toBe("up:1");
+  });
+
+  it("shows no scope line for the whole file, says whose branch it shows, and stops each stepper at zero and nine", () => {
+    board();
+    expect(scopeText()).toBe("");
+    expect(container.querySelector<HTMLElement>(".gedcom-ft-scope")?.style.display).toBe("none");
+    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("17 people");
+
+    container.replaceChildren();
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 9, down: 0 });
+    const disabled = (which: string) => container.querySelector(`[data-step="${which}"]`)?.hasAttribute("disabled");
+    expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 8 of 17 people");
+    expect([disabled("up:1"), disabled("up:-1"), disabled("down:-1"), disabled("down:1")]).toEqual([
+      true,
+      false,
+      true,
+      false,
+    ]);
+  });
+
+  it("returns to the whole file on Branch again, the button pressed while the branch is shown", () => {
+    board();
+    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+
+    expect(names()).toHaveLength(10);
+    expect(nameRow("@I12@")?.querySelector(".gedcom-ft-branch")?.getAttribute("aria-pressed")).toBe("true");
+    expect(nameRow("@I14@")?.querySelector(".gedcom-ft-branch")?.getAttribute("aria-pressed")).toBe("false");
+    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+    expect(names()).toHaveLength(17);
+    expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
+    const irene = fileTimelineOf(curieIndex()).rows.indexOf("@I12@");
+    expect(container.querySelector(".gedcom-ft-board")?.scrollTop).toBe(irene * ROW + ROW / 2);
   });
 
   it("names each stepper's buttons for what they widen or narrow", () => {

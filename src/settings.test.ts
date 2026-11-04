@@ -99,8 +99,8 @@ describe("GEDCOM settings", () => {
   it("exposes every option to Obsidian settings search", () => {
     expect(settingDefinitions()).toEqual([
       {
-        name: "Genealogy interface",
-        desc: "Show genealogy mode, the Domorium index and the evidence panel, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
+        name: "Genealogy interface (beta)",
+        desc: "Still in beta: it may change and have rough edges. Show genealogy mode, the Domorium index and evidence panel, the timeline and graph of the file and a family tree, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
         control: {
           type: "toggle",
           key: "genealogyInterface",

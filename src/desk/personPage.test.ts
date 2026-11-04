@@ -227,3 +227,16 @@ describe("a page whose record has gone", () => {
     expect(openSource).toHaveBeenCalled();
   });
 });
+
+describe("the Tree tab", () => {
+  it("gives the page to the tree, which fills it, with no legend", () => {
+    const person = curieIndex().person("@I1@");
+    if (!person) {
+      throw new Error("no Marie");
+    }
+    renderPersonPage(container, person, curieIndex(), { selected: null, phone: false, view: "tree" }, host);
+
+    expect(container.querySelector(".gedcom-desk-page.is-tree > .gedcom-desk-graph > .gedcom-fg-canvas")).not.toBeNull();
+    expect(container.querySelector(".gedcom-desk-legend")).toBeNull();
+  });
+});

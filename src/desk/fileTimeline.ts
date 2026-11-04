@@ -1,4 +1,4 @@
-import type { DateReading, GenealogyIndex, PersonEvent, PersonRow } from "../genealogy";
+import type { DateReading, GenealogyIndex, PersonEvent, PersonMedia, PersonRow } from "../genealogy";
 
 export type MarkKind = "birth" | "marriage" | "death" | "other";
 
@@ -39,6 +39,7 @@ export interface TimelinePerson {
   parents: string[];
   spouses: string[];
   children: string[];
+  portrait?: PersonMedia;
 }
 
 export interface TimelineFamily {
@@ -399,6 +400,7 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       parents: xrefsOf(person.parents, known),
       spouses: xrefsOf(person.partners, known),
       children: xrefsOf(person.children, known),
+      ...(person.portrait === undefined ? {} : { portrait: person.portrait }),
     });
   }
 

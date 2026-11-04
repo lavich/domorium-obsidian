@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Graph of a file harness</title>
+    <link rel="stylesheet" href="palette.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        background: var(--background-primary);
+        color: var(--text-normal);
+        font-family: var(--font-interface);
+        font-size: 14px;
+      }
+      button,
+      input {
+        font: inherit;
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body class="theme-light">
+    <div class="workspace-leaf-content" data-type="domorium-file-graph">
+      <div id="graph" class="view-content"></div>
+    </div>
+    <script src="dist/fileGraph.js"></script>
+  </body>
+</html>

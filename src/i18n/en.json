@@ -39,8 +39,8 @@
     "one": "{count} file",
     "other": "{count} files"
   },
-  "setting.genealogyInterface.name": "Genealogy interface",
-  "setting.genealogyInterface.desc": "Show genealogy mode, the Domorium index and the evidence panel, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
+  "setting.genealogyInterface.name": "Genealogy interface (beta)",
+  "setting.genealogyInterface.desc": "Still in beta: it may change and have rough edges. Show genealogy mode, the Domorium index and evidence panel, the timeline and graph of the file and a family tree, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
   "setting.openAs.name": "Open GEDCOM files as",
   "setting.openAs.desc": "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
   "openAsOption.genealogy": "Genealogy",
@@ -271,13 +271,11 @@
   },
   "tree.moreUp": "Parents beyond the edge",
   "tree.moreDown": "Children beyond the edge",
-  "tree.legendGap": "No sources at all",
-  "tree.legendMore": "▲ ▼ relatives beyond the edge",
   "command.openFileTimeline": "Open the timeline of the file",
   "fileTimeline.title": "Timeline of {name}",
   "fileTimeline.others": "Other events",
   "fileTimeline.zoom": "Zoom",
-  "fileTimeline.search": "Find a person…",
+  "overview.search": "Find a person…",
   "fileTimeline.alive": {
     "one": "In {year}: {count} person alive",
     "other": "In {year}: {count} people alive"
@@ -286,12 +284,12 @@
     "one": "In {year}: {count} person alive in this branch",
     "other": "In {year}: {count} people alive in this branch"
   },
-  "fileTimeline.wholeFile": "Whole file",
-  "fileTimeline.people": {
+  "overview.wholeFile": "Whole file",
+  "overview.people": {
     "one": "{count} person",
     "other": "{count} people"
   },
-  "fileTimeline.families": {
+  "overview.families": {
     "one": "{count} family",
     "other": "{count} families"
   },
@@ -299,39 +297,42 @@
     "one": "{count} dated event",
     "other": "{count} dated events"
   },
-  "fileTimeline.branchHelp": "Choose the branch on a person's row to see only their ancestors and descendants.",
-  "fileTimeline.branchOf": {
+  "overview.branchOf": {
     "one": "Branch of {name} · {shown} of {count} person",
     "other": "Branch of {name} · {shown} of {count} people"
   },
-  "fileTimeline.branch": "Branch",
-  "fileTimeline.branchHint": "Show only this person's ancestors and descendants",
-  "fileTimeline.ancestors": "Ancestors",
-  "fileTimeline.descendants": "Descendants",
+  "overview.branch": "Branch",
+  "overview.branchHint": "Show only this person's ancestors and descendants",
+  "overview.ancestors": "Ancestors",
+  "overview.descendants": "Descendants",
   "fileTimeline.undated": {
     "one": "{count} person has no dated event",
     "other": "{count} people have no dated event"
   },
-  "fileTimeline.gone": "{path} is no longer in the vault.",
-  "fileTimeline.legend.woman": "Woman",
-  "fileTimeline.legend.man": "Man",
-  "fileTimeline.legend.unknown": "Sex not stated",
-  "fileTimeline.legend.birth": "Birth or christening",
-  "fileTimeline.legend.marriage": "Marriage",
-  "fileTimeline.legend.death": "Death or burial",
-  "fileTimeline.legend.other": "Other event: ✎ education, ⌂ residence, ⇄ migration, ⚒ occupation, ≡ census, § probate or will, + adoption, ★ event, • any other",
-  "fileTimeline.legend.period": "A period, from … to",
-  "fileTimeline.legend.uncertain": "About, before, after, between",
-  "fileTimeline.legend.arrows": "Arrows run from parent to child, for the person under the pointer",
+  "overview.gone": "{path} is no longer in the vault.",
   "fileTimeline.name": "Timeline of the file",
-  "fileTimeline.legend": "Legend",
-  "fileTimeline.fewerAncestors": "One generation of ancestors fewer",
-  "fileTimeline.moreAncestors": "One generation of ancestors more",
-  "fileTimeline.fewerDescendants": "One generation of descendants fewer",
-  "fileTimeline.moreDescendants": "One generation of descendants more",
+  "overview.fewerAncestors": "One generation of ancestors fewer",
+  "overview.moreAncestors": "One generation of ancestors more",
+  "overview.fewerDescendants": "One generation of descendants fewer",
+  "overview.moreDescendants": "One generation of descendants more",
   "fileTimeline.undatedFacts": {
     "one": "{count} fact without a year has no mark on the line: {kinds}.",
     "other": "{count} facts without a year have no mark on the line: {kinds}."
   },
-  "fileTimeline.legend.captions": "Text in a lifeline: facts without a date, when zoomed in or under the pointer"
+  "command.openFileGraph": "Open the graph of the file",
+  "fileGraph.name": "Graph of the file",
+  "fileGraph.title": "Graph of {name}",
+  "fileGraph.branchOf": "Branch of {name}",
+  "fileGraph.zoomIn": "Zoom in",
+  "fileGraph.zoomOut": "Zoom out",
+  "fileGraph.fit": "Fit",
+  "fileGraph.married": "Married {date}",
+  "fileGraph.noDate": "No marriage date",
+  "fileGraph.children": {
+    "one": "{count} child",
+    "other": "{count} children"
+  },
+  "fileGraph.openFamily": "Open the family",
+  "fileGraph.nodeLabel": "Family of {couple}, married in {year}",
+  "fileGraph.nodeUndated": "Family of {couple}, no marriage date"
 }

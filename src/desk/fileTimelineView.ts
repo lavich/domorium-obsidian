@@ -1,15 +1,16 @@
 import type { Range } from "@domorium/language-service";
 
 import { plural, t } from "../i18n";
+import { BranchScopeBar, clampTo, readBranchScope, type BranchScope } from "./branchScope";
 import {
-  BRANCH_STEPS,
   least,
   most,
   type FileTimeline,
   type TimelineMark,
   type TimelinePerson,
 } from "./fileTimeline";
-import { eventName, personName, yearText } from "./labels";
+import { HoverDelay, placeInside } from "./dom";
+import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
 const AXIS = 26;
@@ -18,10 +19,7 @@ const UNDATED_NAMES = 20;
 
 export const ZOOM = { min: 2, max: 16, initial: 6, captions: 9 } as const;
 
-export interface TimelineScope {
-  focus?: string;
-  up: number;
-  down: number;
+export interface TimelineScope extends BranchScope {
   zoom: number;
   others: boolean;
 }
@@ -45,21 +43,12 @@ export interface FileTimelineHost {
   setIcon(element: HTMLElement, icon: string): void;
 }
 
-const clamp = (value: unknown, min: number, max: number, fallback: number): number =>
-  typeof value === "number" && Number.isFinite(value)
-    ? Math.min(max, Math.max(min, Math.round(value)))
-    : fallback;
-
 export function readTimelineState(state: unknown): TimelineState {
   const raw = typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
-  const steps = (value: unknown) =>
-    clamp(value, BRANCH_STEPS.min, BRANCH_STEPS.max, BRANCH_STEPS.initial);
   return {
     gedcom: typeof raw.gedcom === "string" && raw.gedcom ? raw.gedcom : null,
-    ...(typeof raw.focus === "string" && raw.focus ? { focus: raw.focus } : {}),
-    up: steps(raw.up),
-    down: steps(raw.down),
-    zoom: clamp(raw.zoom, ZOOM.min, ZOOM.max, ZOOM.initial),
+    ...readBranchScope(raw),
+    zoom: clampTo(raw.zoom, ZOOM.min, ZOOM.max, ZOOM.initial),
     others: raw.others !== false,
   };
 }
@@ -135,15 +124,6 @@ function fitted(text: string, room: number): string {
   return text.length > fit ? `${text.slice(0, fit - 1)}…` : text;
 }
 
-function yearsLabel(person: TimelinePerson): string {
-  const line = person.lifeline;
-  if (!line) {
-    return "";
-  }
-  const mark = (uncertain: boolean, year: number) => `${uncertain ? "≈" : ""}${yearText(year)}`;
-  return `${mark(line.startUncertain, line.start)}–${line.open ? "" : mark(line.endUncertain, line.end)}`;
-}
-
 /**
  * Laid out once per file, scope, zoom and switch; drawn for the window it is
  * handed and one window around it. Hovering only changes classes on what is
@@ -161,7 +141,7 @@ export class FileTimelineBoard {
   private readonly zoomInput: HTMLInputElement;
   private readonly searchInput: HTMLInputElement;
   private readonly aliveEl: HTMLElement;
-  private readonly scopeEl: HTMLElement;
+  private readonly scopeBar: BranchScopeBar;
   private readonly board: HTMLElement;
   private readonly names: HTMLElement;
   private readonly plot: HTMLElement;
@@ -193,6 +173,7 @@ export class FileTimelineBoard {
   /** The person a first touch lit, whom a second touch opens. */
   private armed: string | null = null;
   private pending = false;
+  private readonly resting: HoverDelay<string>;
 
   constructor(
     parent: HTMLElement,
@@ -219,11 +200,15 @@ export class FileTimelineBoard {
     this.searchInput = tools.createEl("input", {
       cls: "gedcom-ft-search",
       type: "search",
-      placeholder: t("fileTimeline.search"),
-      attr: { "aria-label": t("fileTimeline.search") },
+      placeholder: t("overview.search"),
+      attr: { "aria-label": t("overview.search") },
     });
     this.aliveEl = tools.createSpan({ cls: "gedcom-ft-alive" });
-    this.scopeEl = this.root.createDiv({ cls: "gedcom-ft-scope" });
+    this.scopeBar = new BranchScopeBar(this.root, {
+      prefix: "gedcom-ft",
+      setIcon: (element, icon) => this.host.setIcon(element, icon),
+      change: (next) => this.setScope(next),
+    });
 
     this.board = this.root.createDiv({ cls: "gedcom-ft-board" });
     this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
@@ -239,11 +224,11 @@ export class FileTimelineBoard {
     this.chart.append(this.grid, this.items, this.hover);
 
     this.undatedEl = this.root.createDiv({ cls: "gedcom-ft-undated" });
-    this.legend(this.root.createDiv({ cls: "gedcom-ft-legend" }));
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
     this.goneEl = this.root.createDiv({ cls: "gedcom-ft-gone" });
     this.goneEl.toggle(false);
+    this.resting = new HoverDelay(this.doc.defaultView ?? window, (xref) => this.highlight(xref));
     this.listen();
   }
 
@@ -272,7 +257,7 @@ export class FileTimelineBoard {
   showGone(path: string): void {
     this.root.addClass("is-gone");
     this.goneEl.toggle(true);
-    this.goneEl.setText(t("fileTimeline.gone", { path }));
+    this.goneEl.setText(t("overview.gone", { path }));
   }
 
   draw(view: TimelineWindow): void {
@@ -347,7 +332,13 @@ export class FileTimelineBoard {
     }
   }
 
+  /** Stops a light the pointer has asked for and not yet waited out, as a view closes. */
+  cancelHover(): void {
+    this.resting.cancel();
+  }
+
   highlight(xref: string | null, force = false): void {
+    this.resting.cancel();
     if (xref === this.highlighted && !force) {
       return;
     }
@@ -457,7 +448,12 @@ export class FileTimelineBoard {
     const layout = this.layout;
     this.othersChip.setAttribute("aria-pressed", String(this.scope.others));
     this.zoomInput.value = String(this.scope.zoom);
-    this.drawScope(model, layout);
+    const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
+    this.scopeBar.draw(this.scope, {
+      total: model.rows.length,
+      shown: layout.shown.length,
+      focusName: focus && layout.branch ? personName(focus.row) : null,
+    });
     this.axis.setAttribute("width", String(layout.width));
     this.chart.setAttribute("width", String(layout.width));
     this.chart.setAttribute("height", String(Math.max(layout.height, 1)));
@@ -783,11 +779,16 @@ export class FileTimelineBoard {
         attr: { type: "button", title: name },
       });
       open.createSpan({ cls: "gedcom-ft-name-text", text: name });
-      open.createSpan({ cls: "gedcom-ft-name-years", text: yearsLabel(person) });
+      open.createSpan({ cls: "gedcom-ft-name-years", text: lifelineYears(person.lifeline) });
       row.createEl("button", {
         cls: "gedcom-ft-branch",
-        text: t("fileTimeline.branch"),
-        attr: { type: "button", "data-branch": xref, title: t("fileTimeline.branchHint") },
+        text: t("overview.branch"),
+        attr: {
+          type: "button",
+          "data-branch": xref,
+          "aria-pressed": String(xref === this.scope.focus),
+          title: t("overview.branchHint"),
+        },
       });
       this.byName.set(xref, row);
     }
@@ -795,63 +796,6 @@ export class FileTimelineBoard {
       .createDiv({ cls: "gedcom-ft-spacer" })
       .setCssProps({ height: `${(layout.shown.length - last) * ROW}px` });
     return focused;
-  }
-
-  private drawScope(model: FileTimeline, layout: Layout): void {
-    const scope = this.scope;
-    const active = this.doc.activeElement;
-    const step = active && this.scopeEl.contains(active) ? active.getAttribute("data-step") : null;
-    this.scopeEl.empty();
-    this.drawScopeParts(model, layout, scope);
-    if (step) {
-      const [key] = step.split(":");
-      const again = [
-        this.scopeEl.querySelector<HTMLElement>(`[data-step="${step}"]:not([disabled])`),
-        this.scopeEl.querySelector<HTMLElement>(`[data-step^="${key}:"]:not([disabled])`),
-      ].find((one) => one !== null);
-      again?.focus({ preventScroll: true });
-    }
-  }
-
-  private drawScopeParts(model: FileTimeline, layout: Layout, scope: TimelineScope): void {
-    const focus = scope.focus ? model.people.get(scope.focus) : undefined;
-    if (!focus || !layout.branch) {
-      this.scopeEl.createSpan({
-        text: `${t("fileTimeline.wholeFile")} · ${plural("fileTimeline.people", model.rows.length)}. ${t("fileTimeline.branchHelp")}`,
-      });
-      return;
-    }
-    this.scopeEl.createSpan({
-      text: plural("fileTimeline.branchOf", model.rows.length, {
-        name: personName(focus.row),
-        shown: layout.shown.length,
-      }),
-    });
-    const stepper = (label: string, key: "up" | "down") => {
-      this.scopeEl.createSpan({ cls: "gedcom-ft-step-label", text: label });
-      const step = this.scopeEl.createSpan({ cls: "gedcom-ft-step" });
-      const button = (icon: string, aria: string, by: number) => {
-        const node = step.createEl("button", {
-          cls: "gedcom-ft-step-button",
-          attr: { type: "button", "aria-label": aria, "data-step": `${key}:${by}` },
-        });
-        this.host.setIcon(node, icon);
-        const next = scope[key] + by;
-        if (next < BRANCH_STEPS.min || next > BRANCH_STEPS.max) {
-          node.setAttribute("disabled", "");
-        }
-      };
-      button("minus", t(key === "up" ? "fileTimeline.fewerAncestors" : "fileTimeline.fewerDescendants"), -1);
-      step.createSpan({ cls: "gedcom-ft-step-value", text: String(scope[key]) });
-      button("plus", t(key === "up" ? "fileTimeline.moreAncestors" : "fileTimeline.moreDescendants"), 1);
-    };
-    stepper(t("fileTimeline.ancestors"), "up");
-    stepper(t("fileTimeline.descendants"), "down");
-    this.scopeEl.createEl("button", {
-      cls: "gedcom-ft-whole",
-      text: t("fileTimeline.wholeFile"),
-      attr: { type: "button", "data-whole": "" },
-    });
   }
 
   private summarise(model: FileTimeline): void {
@@ -865,8 +809,8 @@ export class FileTimelineBoard {
     }
     this.othersCount.setText(String(others));
     const parts = [
-      plural("fileTimeline.people", model.rows.length),
-      plural("fileTimeline.families", model.families.size),
+      plural("overview.people", model.rows.length),
+      plural("overview.families", model.families.size),
       plural("fileTimeline.events", dated.size),
     ];
     if (dated.size > 0) {
@@ -919,35 +863,6 @@ export class FileTimelineBoard {
     return defs;
   }
 
-  private legend(parent: HTMLElement): void {
-    const toggle = parent.createEl("button", {
-      cls: "gedcom-ft-legend-toggle",
-      text: t("fileTimeline.legend"),
-      attr: { type: "button", "aria-expanded": "false" },
-    });
-    toggle.addEventListener("click", () => {
-      const open = !parent.hasClass("is-open");
-      parent.toggleClass("is-open", open);
-      toggle.setAttribute("aria-expanded", String(open));
-    });
-    const entry = (cls: string, text: string) => {
-      const item = parent.createSpan({ cls: "gedcom-ft-legend-item" });
-      item.createSpan({ cls: `gedcom-ft-swatch ${cls}` });
-      item.appendText(text);
-    };
-    entry("is-f", t("fileTimeline.legend.woman"));
-    entry("is-m", t("fileTimeline.legend.man"));
-    entry("is-u", t("fileTimeline.legend.unknown"));
-    entry("is-birth", t("fileTimeline.legend.birth"));
-    entry("is-marriage", t("fileTimeline.legend.marriage"));
-    entry("is-death", t("fileTimeline.legend.death"));
-    entry("is-other", t("fileTimeline.legend.other"));
-    entry("is-period", t("fileTimeline.legend.period"));
-    entry("is-uncertain", t("fileTimeline.legend.uncertain"));
-    entry("is-caption", t("fileTimeline.legend.captions"));
-    parent.createSpan({ cls: "gedcom-ft-legend-item", text: t("fileTimeline.legend.arrows") });
-  }
-
   private misses(ids: string[]): boolean {
     return this.query !== "" && ids.every((xref) => !(this.searchText.get(xref) ?? "").includes(this.query));
   }
@@ -975,21 +890,6 @@ export class FileTimelineBoard {
     this.othersChip.addEventListener("click", () => this.setScope({ others: !this.scope.others }));
     this.zoomInput.addEventListener("input", () => this.setScope({ zoom: Number(this.zoomInput.value) }));
     this.searchInput.addEventListener("input", () => this.setQuery(this.searchInput.value));
-    this.scopeEl.addEventListener("click", (event) => {
-      const target = event.target instanceof Element ? event.target : null;
-      const step = target?.closest("[data-step]")?.getAttribute("data-step");
-      if (step) {
-        const [key, by] = step.split(":");
-        if (key === "up" || key === "down") {
-          const next = this.scope[key] + Number(by);
-          this.setScope({ [key]: Math.max(BRANCH_STEPS.min, Math.min(BRANCH_STEPS.max, next)) });
-        }
-        return;
-      }
-      if (target?.closest("[data-whole]")) {
-        this.setScope({ focus: undefined });
-      }
-    });
 
     this.board.addEventListener("pointerdown", (event) => {
       this.pointer = event.pointerType || "mouse";
@@ -1001,7 +901,7 @@ export class FileTimelineBoard {
       this.pointer = event.pointerType || "mouse";
       const xref = this.personAt(event.target);
       if (xref !== null) {
-        this.highlight(xref);
+        this.resting.rest(xref, this.highlighted);
       }
       this.showTip(this.markAt(event.target), event);
       const onPlot = event.target instanceof Node && this.plot.contains(event.target);
@@ -1011,7 +911,7 @@ export class FileTimelineBoard {
       if (event.pointerType === "touch") {
         return;
       }
-      this.highlight(null);
+      this.resting.rest(null, this.highlighted);
       this.setYear(null);
       this.showTip(null, event);
     });
@@ -1049,7 +949,7 @@ export class FileTimelineBoard {
     const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
     if (branch) {
       this.closePop();
-      this.setScope({ focus: branch });
+      this.setScope({ focus: branch === this.scope.focus ? undefined : branch });
       return;
     }
     // A click from the keyboard has no pointer, and is no touch whatever pointer came before it.
@@ -1097,16 +997,6 @@ export class FileTimelineBoard {
     }
   }
 
-  /** Below and right of the point where it fits, else above it, so its button is never off the edge. */
-  private place(element: HTMLElement, event: MouseEvent, width: number): void {
-    const box = this.root.getBoundingClientRect();
-    const left = Math.max(0, Math.min(event.clientX - box.left + 14, this.root.clientWidth - width));
-    const y = event.clientY - box.top;
-    const height = element.offsetHeight;
-    const top = y + 14 + height > this.root.clientHeight ? Math.max(0, y - 14 - height) : y + 14;
-    element.setCssProps({ left: `${left}px`, top: `${top}px` });
-  }
-
   private showTip(placed: Placed | null, event: MouseEvent): void {
     if (!placed) {
       this.tip.removeClass("is-shown");
@@ -1115,7 +1005,7 @@ export class FileTimelineBoard {
     this.tip.empty();
     this.describe(this.tip, placed);
     this.tip.addClass("is-shown");
-    this.place(this.tip, event, 300);
+    placeInside(this.root, this.tip, event);
   }
 
   private openPop(placed: Placed, event: MouseEvent): void {
@@ -1130,7 +1020,7 @@ export class FileTimelineBoard {
       this.host.showInSource(placed.mark.event.range);
     });
     this.pop.addClass("is-shown");
-    this.place(this.pop, event, 260);
+    placeInside(this.root, this.pop, event);
   }
 
   private closePop(): void {

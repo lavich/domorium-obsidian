@@ -99,7 +99,10 @@ import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
-import { GEDCOM_ICON_ID } from "./icon";
+import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON, GEDCOM_ICON_ID } from "./icon";
+import type { OverviewKind } from "./commands";
+import type { PortraitContent } from "./desk/graphCanvas";
+import type { TreeMemory } from "./desk/personTreeView";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -112,7 +115,7 @@ export interface GedcomViewHost {
   allowRemoteImages(scope: AllowScope): void;
   genealogyChanged(view: GedcomView): void;
   openEvidence(): void;
-  openFileTimeline(view: GedcomView): void;
+  openOverview(kind: OverviewKind, view: GedcomView): void;
 }
 
 export interface DeskSelection {
@@ -132,12 +135,14 @@ export class GedcomView extends TextFileView {
   private selected: FactKey | null = null;
   private personView: PersonView = "card";
   private readonly expandedSiblings = new Set<string>();
+  private readonly treeMemory: TreeMemory = {};
   private revision = 0;
   private readonly genealogyCache = new IndexCache();
   private readonly editorEl: HTMLElement;
   private readonly deskEl: HTMLElement;
   private readonly modeAction: HTMLElement;
   private readonly timelineAction: HTMLElement;
+  private readonly graphAction: HTMLElement;
   // Edits come a keystroke at a time; the index and the panel need the text
   // once it has settled.
   private readonly announceEdit = debounce(
@@ -163,8 +168,11 @@ export class GedcomView extends TextFileView {
     this.modeAction = this.addAction("code", t("mode.toSource"), () => {
       this.toggleMode();
     });
-    this.timelineAction = this.addAction("calendar-range", t("command.openFileTimeline"), () => {
-      this.host.openFileTimeline(this);
+    this.graphAction = this.addAction(FILE_GRAPH_ICON, t("command.openFileGraph"), () => {
+      this.host.openOverview("graph", this);
+    });
+    this.timelineAction = this.addAction(FILE_TIMELINE_ICON, t("command.openFileTimeline"), () => {
+      this.host.openOverview("timeline", this);
     });
     this.showMode();
   }
@@ -647,6 +655,7 @@ export class GedcomView extends TextFileView {
     const genealogy = this.shownMode === "genealogy";
     this.modeAction.toggle(this.settings.genealogyInterface);
     this.timelineAction.toggle(this.settings.genealogyInterface);
+    this.graphAction.toggle(this.settings.genealogyInterface);
     this.editorEl.toggle(!genealogy);
     this.deskEl.toggle(genealogy);
     setIcon(this.modeAction, genealogy ? "code" : "users");
@@ -691,6 +700,7 @@ export class GedcomView extends TextFileView {
           media: this.mediaItems(person.media),
           view: this.personView,
           expanded: this.expandedSiblings,
+          tree: this.treeMemory,
         },
         this.pageHost(),
       );
@@ -732,6 +742,8 @@ export class GedcomView extends TextFileView {
       showInSource: (range) => this.showInSource(range),
       openEvidence: () => this.host.openEvidence(),
       openFile: (path) => this.openVaultFile(path),
+      setIcon: (element, icon) => setIcon(element, icon),
+      portrait: (xref) => this.portraitOf(xref),
       toggleSiblings: (xref) => {
         if (!this.expandedSiblings.delete(xref)) {
           this.expandedSiblings.add(xref);
@@ -740,10 +752,18 @@ export class GedcomView extends TextFileView {
       },
       chooseView: (view) => {
         this.personView = view;
+        delete this.treeMemory.k;
         this.drawDesk();
         this.app.workspace.requestSaveLayout();
       },
     };
+  }
+
+  /** The picture a person's page shows, for a card: the first of their media that can be drawn. */
+  portraitOf(xref: string): PortraitContent | null {
+    const person = this.genealogy().person(xref);
+    const found = person ? this.mediaItems(person.media).find((item) => item.content.kind === "image") : undefined;
+    return found?.content.kind === "image" ? found.content : null;
   }
 
   private mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {

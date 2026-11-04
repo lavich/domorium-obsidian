@@ -70,6 +70,21 @@ describe("the leaf a file is already open in", () => {
     expect(leafShowingFile("tree.ged", walk(timeline))).toBeNull();
   });
 
+  it("does not take the graph of a file for a tab of that file", () => {
+    const graph = {
+      getViewState: () =>
+        state({
+          type: "domorium-file-graph",
+          state: { gedcom: "tree.ged", around: "@I1@", up: 2, down: 2, view: { x: 10, y: 20, k: 0.6 } },
+        }),
+    } as unknown as WorkspaceLeaf;
+    const tab = leaf("tree.ged");
+
+    expect(shownFilePath(graph.getViewState())).toBeNull();
+    expect(leafShowingFile("tree.ged", walk(graph, tab))).toBe(tab);
+    expect(leafShowingFile("tree.ged", walk(graph))).toBeNull();
+  });
+
   it("walks whatever it is handed, and a workspace with nothing open is that", () => {
     expect(leafShowingFile("Media/marie.svg", walk())).toBeNull();
   });

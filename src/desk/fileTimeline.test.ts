@@ -9,6 +9,7 @@ import {
   OPEN_SPAN,
   type FileTimeline,
 } from "./fileTimeline";
+import { lifelineYears } from "./labels";
 
 const NOW = 2026;
 
@@ -53,6 +54,19 @@ describe("a person on the timeline of a file", () => {
 
     expect(helene).toMatchObject({ start: 1927, open: true, end: Math.min(NOW, 1927 + OPEN_SPAN) });
     expect(buildFileTimeline(curieIndex(), 1990).people.get("@I16@")?.lifeline?.end).toBe(1990);
+  });
+
+  it("writes the years of a lifeline, with an open end, an approximate start and a year before the era", () => {
+    const bce = buildFileTimeline(
+      indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 BIRT", "2 DATE 1401 BCE", "1 DEAT", "2 DATE 1350 BCE", "0 TRLR", ""].join("\n")),
+      NOW,
+    );
+
+    expect(lifelineYears(curie().people.get("@I1@")?.lifeline ?? null)).toBe("1867–1934");
+    expect(lifelineYears(curie().people.get("@I16@")?.lifeline ?? null)).toBe("1927–");
+    expect(lifelineYears(withEvents().people.get("@I3@")?.lifeline ?? null)).toBe("≈1832–1902");
+    expect(lifelineYears(bce.people.get("@I1@")?.lifeline ?? null)).toBe("1401 BCE–1350 BCE");
+    expect(lifelineYears(null)).toBe("");
   });
 
   it("marks each event by its kind, and another kind with a sign", () => {

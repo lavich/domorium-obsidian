@@ -21,8 +21,8 @@ adapted per editor.
 - An optional genealogy interface, off until you turn it on: a Genealogy mode
   that shows the file as people and sources — a page per person with their
   facts, names and family, a page per source — an index of everyone in the
-  file, an evidence panel for what a fact rests on, and a timeline of the whole
-  file
+  file, an evidence panel for what a fact rests on, and a timeline and a graph
+  of the whole file
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -48,14 +48,14 @@ to a remote service.
 1. Enable **GEDCOM** in **Settings → Community plugins**.
 2. Open a `.ged` or `.gedcom` file in your vault. It opens in the editor, and
    Obsidian saves changes back to the same file.
-3. To read the file as people and sources, turn on **Genealogy interface** in the
-   plugin settings. Files then open in **Genealogy** mode, on the first person
+3. To read the file as people and sources, turn on **Genealogy interface (beta)**
+   in the plugin settings; it is still a beta and may change. Files then open in **Genealogy** mode, on the first person
    the file declares, and the view header and **Switch between genealogy and
    source** go between the two modes.
 
-The next four paragraphs — Genealogy mode, the index and evidence panels, the
-timeline of the file, and **Open GEDCOM files as** — are part of the genealogy
-interface and appear only
+The next five paragraphs — Genealogy mode, the index and evidence panels, the
+timeline and the graph of the file, and **Open GEDCOM files as** — are part of
+the genealogy interface and appear only
 while it is on; turning it off hides it again and closes its panels without
 losing the mode a tab was in. The editor features after them need no setting.
 
@@ -92,6 +92,22 @@ person its tab shows. A person opens their page in the file's tab, and an event
 its lines in the source; on a phone the first touch picks a person out and
 places the year cursor, and a second touch opens them. The timeline follows
 unsaved edits, a renamed or moved file, and is restored with the workspace.
+
+**Open the graph of the file**, from the command palette, the tab's menu or
+the network icon in its header, opens a tab of its own with a card per person,
+generations from top to bottom and coloured as in the timeline. Spouses stand
+side by side, a husband to the left of his wife, joined by a node with the year
+of their marriage — hollow where it is undated — from which curved lines run to
+their children; the husband's family tends to stand on the left and the wife's
+on the right, and the rows are ordered to cross as few lines as it can find.
+Pointing at a person lights their parents, spouses and children; pointing at a
+node shows the marriage and the number of children. Drag or scroll with two
+fingers to move, use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the cards are drawn
+without names. The search, **Branch** and the 500-person rule work as in the
+timeline. A card opens the person's page in the file's tab, a node the family's,
+and every card and node can be reached and opened from the keyboard. The graph
+follows unsaved edits and a renamed or moved file, and is restored with the
+workspace at its scope, position and zoom.
 
 A tab remembers whether it was in Genealogy or Source. **Open GEDCOM files as**
 in the plugin settings chooses which mode a newly opened file starts in, while the

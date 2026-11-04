@@ -50,7 +50,7 @@ function host(overrides: Partial<CommandHost> = {}) {
       copy,
       chooseRecord: vi.fn(),
       askForName: vi.fn(),
-      openFileTimeline: vi.fn(),
+      openOverview: vi.fn(),
       ...overrides,
     } satisfies CommandHost,
   };
@@ -198,15 +198,41 @@ describe("the timeline of the file", () => {
   });
 
   it("opens the timeline of the file around the person at the cursor", () => {
-    const openFileTimeline = vi.fn<CommandHost["openFileTimeline"]>();
+    const openOverview = vi.fn<CommandHost["openOverview"]>();
 
-    open.run(host({ openFileTimeline }).host, view());
-    open.run(host({ openFileTimeline }).host, view({ recordAtCursor: () => undefined }));
+    open.run(host({ openOverview }).host, view());
+    open.run(host({ openOverview }).host, view({ recordAtCursor: () => undefined }));
 
-    expect(openFileTimeline.mock.calls).toEqual([
-      ["tree.ged", "@I1@"],
-      ["tree.ged", undefined],
+    expect(openOverview.mock.calls).toEqual([
+      ["timeline", "tree.ged", "@I1@"],
+      ["timeline", "tree.ged", undefined],
     ]);
+  });
+});
+
+describe("the graph of the file", () => {
+  const open = command("open-gedcom-file-graph");
+
+  it("is offered for a file while the genealogy interface is on, in either mode", () => {
+    expect(open.isAvailable(view())).toBe(true);
+    expect(open.isAvailable(view({ inSource: () => false }))).toBe(true);
+  });
+
+  it("is not offered while the genealogy interface is off", () => {
+    expect(open.isAvailable(view({ genealogyInterface: () => false }))).toBe(false);
+  });
+
+  it("is not offered without a file", () => {
+    expect(open.isAvailable(view({ file: null }))).toBe(false);
+  });
+
+  it("opens the graph of the file around the person at the cursor", () => {
+    const openOverview = vi.fn<CommandHost["openOverview"]>();
+
+    open.run(host({ openOverview }).host, view());
+
+    expect(openOverview.mock.calls).toEqual([["graph", "tree.ged", "@I1@"]]);
+    expect(open.icon).toBe("network");
   });
 });
 
