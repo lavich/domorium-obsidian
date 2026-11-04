@@ -1,6 +1,6 @@
 import esbuild from "esbuild";
 
-for (const entry of ["mount", "desk"]) {
+for (const entry of ["mount", "desk", "fileTimeline"]) {
   await esbuild.build({
     entryPoints: [`harness/${entry}.ts`],
     bundle: true,

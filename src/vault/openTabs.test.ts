@@ -58,6 +58,18 @@ describe("the leaf a file is already open in", () => {
     ).toBeNull();
   });
 
+  it("does not take the timeline of a file for a tab of that file", () => {
+    const timeline = {
+      getViewState: () =>
+        state({ type: "domorium-file-timeline", state: { gedcom: "tree.ged", focus: "@I1@", up: 2 } }),
+    } as unknown as WorkspaceLeaf;
+    const tab = leaf("tree.ged");
+
+    expect(shownFilePath(timeline.getViewState())).toBeNull();
+    expect(leafShowingFile("tree.ged", walk(timeline, tab))).toBe(tab);
+    expect(leafShowingFile("tree.ged", walk(timeline))).toBeNull();
+  });
+
   it("walks whatever it is handed, and a workspace with nothing open is that", () => {
     expect(leafShowingFile("Media/marie.svg", walk())).toBeNull();
   });

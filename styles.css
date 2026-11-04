@@ -1238,3 +1238,687 @@ button.gedcom-desk-node.is-gap::after {
   background: var(--text-warning);
   vertical-align: middle;
 }
+
+/* ── The timeline of a file ──────────────────────────────────────────────
+   */
+
+.workspace-leaf-content[data-type="domorium-file-timeline"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.gedcom-ft {
+  --gedcom-ft-names: 210px;
+  --gedcom-ft-axis: 26px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--text-normal);
+}
+
+.is-phone .gedcom-ft {
+  --gedcom-ft-names: 120px;
+}
+
+.is-mobile .gedcom-ft {
+  padding-bottom: var(--navbar-height, 0px);
+}
+
+.gedcom-ft-head {
+  padding: var(--size-4-3) var(--size-4-4) 0;
+}
+
+.gedcom-ft-title {
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-ft-summary {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.gedcom-ft-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-4-2);
+  padding: var(--size-4-2) var(--size-4-4);
+}
+
+button.gedcom-ft-chip {
+  height: auto;
+  padding: 2px var(--size-4-3);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 99px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+button.gedcom-ft-chip[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.gedcom-ft-chip-count {
+  margin-inline-start: var(--size-2-2);
+  opacity: 0.65;
+}
+
+.gedcom-ft-zoom {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-3);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.gedcom-ft-zoom input {
+  width: 110px;
+}
+
+input.gedcom-ft-search {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.gedcom-ft-alive {
+  margin-inline-start: auto;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The count comes and goes with the pointer; a line of its own on a phone
+   keeps the rows below from jumping when it does. */
+.is-phone .gedcom-ft-alive {
+  flex-basis: 100%;
+  min-height: 1.5em;
+  margin-inline-start: 0;
+}
+
+.gedcom-ft-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--size-2-3);
+  padding: 0 var(--size-4-4) var(--size-4-2);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.gedcom-ft-step-label {
+  margin-inline-start: var(--size-2-3);
+}
+
+.gedcom-ft-step {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+button.gedcom-ft-step-button {
+  height: auto;
+  padding: 1px var(--size-2-3);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+button.gedcom-ft-step-button:hover {
+  background: var(--background-modifier-hover);
+}
+
+button.gedcom-ft-step-button[disabled] {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.gedcom-ft-step-button .svg-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.gedcom-ft-step-value {
+  padding: 0 var(--size-2-3);
+  color: var(--text-normal);
+  font-variant-numeric: tabular-nums;
+}
+
+button.gedcom-ft-whole {
+  height: auto;
+  margin-inline-start: var(--size-2-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.gedcom-ft-board {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: var(--gedcom-ft-names) 1fr;
+  align-items: start;
+  overflow: auto;
+  border-top: 1px solid var(--background-modifier-border);
+  overscroll-behavior: contain;
+}
+
+.gedcom-ft-names {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-height: 100%;
+  background: var(--background-primary);
+  border-inline-end: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-ft-axis-pad {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: var(--gedcom-ft-axis);
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-ft-name {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-3);
+  height: 34px;
+  padding: 0 var(--size-4-2) 0 var(--size-4-3);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--font-ui-small);
+}
+
+button.gedcom-ft-name-open {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-3);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+button.gedcom-ft-name-open:focus-visible,
+button.gedcom-ft-branch:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
+
+.gedcom-ft-name:hover,
+.gedcom-ft-name.is-hl {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-ft-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gedcom-ft-name.is-focus .gedcom-ft-name-text {
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-ft-name-years {
+  margin-inline-start: auto;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+button.gedcom-ft-branch {
+  display: none;
+  flex: none;
+  height: auto;
+  margin-inline-start: auto;
+  padding: 0 var(--size-2-3);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+button.gedcom-ft-branch:hover {
+  border-color: transparent;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.gedcom-ft-name:hover .gedcom-ft-branch,
+.gedcom-ft-name.is-hl .gedcom-ft-branch,
+.gedcom-ft-name:focus-within .gedcom-ft-branch {
+  display: inline-block;
+}
+
+.gedcom-ft-name:hover .gedcom-ft-name-years,
+.gedcom-ft-name.is-hl .gedcom-ft-name-years,
+.gedcom-ft-name:focus-within .gedcom-ft-name-years {
+  display: none;
+}
+
+/* Too narrow for a name and its years side by side, so the years go beneath. */
+.is-phone .gedcom-ft-name {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  padding-inline: var(--size-4-2);
+  line-height: 1.2;
+}
+
+.is-phone button.gedcom-ft-name-open {
+  flex: none;
+  width: 100%;
+  height: auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.is-phone .gedcom-ft-name-text {
+  max-width: 100%;
+}
+
+.is-phone .gedcom-ft-name-years,
+.is-phone button.gedcom-ft-branch {
+  margin-inline-start: 0;
+}
+
+.is-phone button.gedcom-ft-branch {
+  line-height: 1.2;
+}
+
+.gedcom-ft-plot {
+  position: relative;
+}
+
+.gedcom-ft svg {
+  display: block;
+}
+
+.gedcom-ft svg text {
+  fill: var(--text-muted);
+  font-family: var(--font-interface);
+  font-size: 11px;
+}
+
+.gedcom-ft-axis {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-ft-gridline {
+  stroke: var(--background-modifier-border);
+}
+
+.gedcom-ft-gridline.is-minor {
+  opacity: 0.5;
+}
+
+.gedcom-ft-now {
+  stroke: var(--text-accent);
+  stroke-dasharray: 2 4;
+  opacity: 0.6;
+}
+
+.gedcom-ft-row-hl {
+  fill: var(--background-modifier-hover);
+}
+
+.gedcom-ft-life {
+  cursor: pointer;
+  opacity: 0.35;
+}
+
+.gedcom-ft-life.is-f {
+  fill: var(--color-pink);
+}
+
+.gedcom-ft-life.is-m {
+  fill: var(--color-blue);
+}
+
+.gedcom-ft-life.is-u {
+  fill: var(--text-faint);
+}
+
+.gedcom-ft-life.is-open {
+  fill-opacity: 0.5;
+}
+
+.gedcom-ft-life.is-hl {
+  opacity: 0.7;
+}
+
+.gedcom-ft-span {
+  fill: var(--color-orange);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.gedcom-ft-span.is-birth {
+  fill: var(--color-green);
+}
+
+.gedcom-ft-span.is-death {
+  fill: var(--text-normal);
+}
+
+.gedcom-ft-span.is-marriage {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-ft svg text.gedcom-ft-caption {
+  fill: var(--text-normal);
+  font-size: 10.5px;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.gedcom-ft-mark {
+  cursor: pointer;
+}
+
+.gedcom-ft-mark circle {
+  stroke: var(--background-primary);
+  stroke-width: 1.5;
+}
+
+.gedcom-ft-mark:hover circle {
+  r: 6.5px;
+}
+
+.gedcom-ft-mark.is-birth circle {
+  fill: var(--color-green);
+}
+
+.gedcom-ft-mark.is-death circle {
+  fill: var(--text-normal);
+}
+
+.gedcom-ft-mark.is-marriage circle {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-ft-mark.is-other circle {
+  fill: var(--color-orange);
+}
+
+.gedcom-ft-mark.is-other:hover circle {
+  r: 8px;
+}
+
+.gedcom-ft svg text.gedcom-ft-sign {
+  fill: var(--text-on-accent);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+.gedcom-ft-mark.is-uncertain:not(.is-other) circle {
+  fill: var(--background-primary);
+  stroke: var(--text-muted);
+  stroke-dasharray: 2 1.5;
+}
+
+.gedcom-ft-mark.is-other.is-uncertain circle {
+  fill-opacity: 0.6;
+  stroke: var(--color-orange);
+  stroke-dasharray: 2 1.5;
+}
+
+.gedcom-ft-marriage {
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+  opacity: 0.75;
+}
+
+.gedcom-ft-kin {
+  fill: none;
+  stroke: var(--text-accent);
+  stroke-width: 1.5;
+}
+
+.gedcom-ft-arrowhead {
+  fill: var(--text-accent);
+}
+
+.gedcom-ft-items > .is-dim,
+.gedcom-ft-name.is-dim,
+.gedcom-ft-board.has-hl .gedcom-ft-items > :not(.is-on),
+.gedcom-ft-board.has-hl .gedcom-ft-name:not(.is-on),
+.gedcom-ft-board.has-hl .gedcom-ft-age:not(.is-on),
+.gedcom-ft-age.is-dim {
+  opacity: 0.18;
+}
+
+.gedcom-ft-cursor {
+  position: absolute;
+  top: var(--gedcom-ft-axis);
+  left: 0;
+  pointer-events: none;
+}
+
+.gedcom-ft-cursor-line {
+  stroke: var(--text-accent);
+}
+
+.gedcom-ft-age rect {
+  fill: var(--background-primary);
+  stroke: var(--text-accent);
+}
+
+.gedcom-ft svg .gedcom-ft-age text {
+  fill: var(--text-normal);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gedcom-ft-axis-cursor rect {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-ft svg .gedcom-ft-axis-cursor text {
+  fill: var(--text-on-accent);
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-ft-undated {
+  padding: var(--size-2-3) var(--size-4-4) 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.gedcom-ft-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-2) var(--size-4-4);
+  padding: var(--size-4-2) var(--size-4-4);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+button.gedcom-ft-legend-toggle {
+  display: none;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+/* A phone has the height for the rows or for the legend, not both. */
+.is-phone button.gedcom-ft-legend-toggle {
+  display: inline-block;
+}
+
+.is-phone .gedcom-ft-legend:not(.is-open) > .gedcom-ft-legend-item {
+  display: none;
+}
+
+.is-phone .gedcom-ft-title {
+  display: none;
+}
+
+.gedcom-ft-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-3);
+}
+
+.gedcom-ft-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.gedcom-ft-swatch.is-f {
+  background: var(--color-pink);
+  opacity: 0.6;
+}
+
+.gedcom-ft-swatch.is-m {
+  background: var(--color-blue);
+  opacity: 0.6;
+}
+
+.gedcom-ft-swatch.is-u {
+  background: var(--text-faint);
+  opacity: 0.6;
+}
+
+.gedcom-ft-swatch.is-birth {
+  background: var(--color-green);
+}
+
+.gedcom-ft-swatch.is-marriage {
+  background: var(--interactive-accent);
+}
+
+.gedcom-ft-swatch.is-death {
+  background: var(--text-normal);
+}
+
+.gedcom-ft-swatch.is-other {
+  background: var(--color-orange);
+}
+
+.gedcom-ft-swatch.is-period {
+  width: 18px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--color-orange);
+  opacity: 0.55;
+}
+
+.gedcom-ft-swatch.is-uncertain {
+  border: 1.5px dashed var(--text-muted);
+}
+
+.gedcom-ft-swatch.is-caption {
+  width: 18px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--color-pink);
+  opacity: 0.35;
+}
+
+.gedcom-ft-tip,
+.gedcom-ft-pop {
+  position: absolute;
+  z-index: var(--layer-popover);
+  max-width: min(300px, calc(100% - var(--size-4-4)));
+  padding: var(--size-2-3) var(--size-4-3);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-ft-tip {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.gedcom-ft-tip.is-shown {
+  opacity: 1;
+}
+
+.gedcom-ft-pop {
+  display: none;
+}
+
+.gedcom-ft-pop.is-shown {
+  display: block;
+}
+
+.gedcom-ft-tip-what {
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-ft-tip-where {
+  color: var(--text-muted);
+}
+
+button.gedcom-ft-pop-source {
+  height: auto;
+  margin-top: var(--size-2-3);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-accent);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.gedcom-ft.is-gone > :not(.gedcom-ft-gone) {
+  display: none;
+}
+
+.gedcom-ft-gone {
+  margin: auto;
+  padding: var(--size-4-8);
+  color: var(--text-muted);
+  text-align: center;
+}
