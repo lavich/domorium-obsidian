@@ -204,10 +204,18 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
       await expect(page.locator(".gedcom-ft-find-count")).toHaveText("1 / 4");
       await expect(name(page, "@I12@")).toHaveClass(/is-current/);
       await expect(page.locator(".gedcom-ft-search")).toBeFocused();
-      const plot = await box(".gedcom-ft-plot");
-      const row = await name(page, "@I12@").boundingBox();
-      expect(row?.y ?? 0).toBeGreaterThanOrEqual(plot?.y ?? 0);
-      expect((row?.y ?? 0) + (row?.height ?? 0)).toBeLessThanOrEqual((plot?.y ?? 0) + (plot?.height ?? 0));
+      await expect
+        .poll(async () => {
+          const plot = await box(".gedcom-ft-plot");
+          const row = await name(page, "@I12@").boundingBox();
+          return (
+            plot !== null &&
+            row !== null &&
+            row.y >= plot.y &&
+            row.y + row.height <= plot.y + plot.height
+          );
+        })
+        .toBe(true);
       await page.locator(".gedcom-ft-find-prev").click();
       await expect(page.locator(".gedcom-ft-find-count")).toHaveText("4 / 4");
       await expect(name(page, "@I17@")).toHaveClass(/is-current/);
