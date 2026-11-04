@@ -115,6 +115,8 @@ const MODE_LOOKS: Record<DeskMode, { title: MessageKey; icon: string }> = {
   source: { title: "mode.source", icon: "code" },
 };
 
+export const modeLook = (mode: DeskMode): { title: MessageKey; icon: string } => MODE_LOOKS[mode];
+
 export function modeChoices(current: DeskMode): ModeChoice[] {
   return DESK_MODES.map((mode) => ({ mode, ...MODE_LOOKS[mode], checked: mode === current }));
 }

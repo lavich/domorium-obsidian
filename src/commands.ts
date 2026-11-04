@@ -1,6 +1,7 @@
+import { modeLook, type DeskMode } from "./desk/deskState";
 import type { GedcomRecord } from "./editor/records";
 import { plural, t, type MessageKey } from "./i18n";
-import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON } from "./icon";
+import { DESK_MODES } from "./settingsData";
 import {
   gedcomLinkUrl,
   recordLinkText,
@@ -22,13 +23,15 @@ export interface CommandView {
   goToPreviousProblem(): boolean;
   toggleProblemsPanel(): void;
   showSearch(replace: boolean): void;
-  /** Editor commands answer only here; Genealogy mode has no editor to act on. */
+  /** Editor commands answer only here; no other mode has an editor to act on. */
   inSource(): boolean;
+  /** Find answers in Source, and in Graph and Timeline, which have a search of their own. */
+  canFind(): boolean;
+  mode(): DeskMode;
+  showMode(mode: DeskMode): void;
   toggleMode(): void;
   genealogyInterface(): boolean;
 }
-
-export type OverviewKind = "timeline" | "graph";
 
 /** Everything outside the view, which is where `obsidian` stays. */
 export interface CommandHost {
@@ -42,8 +45,6 @@ export interface CommandHost {
     chosen: (record: GedcomRecord) => void,
   ): void;
   askForName(entered: (newName: string) => void): void;
-  /** `around` is the record the tab shows or the cursor is on, which may not be a person. */
-  openOverview(kind: OverviewKind, path: string, around: string | undefined): void;
 }
 
 /** Obsidian's own `Hotkey`, spelt here so `obsidian` stays out of this file. */
@@ -57,11 +58,30 @@ export interface GedcomCommand {
   name: MessageKey;
   icon: string;
   section?: string;
+  /** False keeps it out of the tab's menu, where something else already says the same. */
+  menu?: boolean;
   /** The default binding, which differs by platform where Obsidian's own do. */
   hotkeys?: (mac: boolean) => CommandHotkey[];
   isAvailable(view: CommandView): boolean;
   run(host: CommandHost, view: CommandView): void;
 }
+
+const SHOW_NAMES: Record<DeskMode, MessageKey> = {
+  genealogy: "command.showGenealogy",
+  graph: "command.showGraph",
+  timeline: "command.showTimeline",
+  source: "command.showSource",
+};
+
+const showAs = (mode: DeskMode): GedcomCommand => ({
+  id: `show-gedcom-as-${mode}`,
+  name: SHOW_NAMES[mode],
+  icon: modeLook(mode).icon,
+  isAvailable: (view) => view.genealogyInterface() && view.mode() !== mode,
+  run: (_host, view) => {
+    view.showMode(mode);
+  },
+});
 
 const identifiedRecord = (view: CommandView): boolean =>
   view.file !== null && view.recordAtCursor()?.identifier !== undefined;
@@ -92,33 +112,13 @@ export const COMMANDS: GedcomCommand[] = [
     id: "toggle-gedcom-mode",
     name: "command.toggleMode",
     icon: "users",
+    menu: false,
     isAvailable: (view) => view.genealogyInterface(),
     run: (_host, view) => {
       view.toggleMode();
     },
   },
-  {
-    id: "open-gedcom-file-timeline",
-    name: "command.openFileTimeline",
-    icon: FILE_TIMELINE_ICON,
-    isAvailable: (view) => view.file !== null && view.genealogyInterface(),
-    run: (host, view) => {
-      if (view.file) {
-        host.openOverview("timeline", view.file.path, view.recordAtCursor()?.identifier);
-      }
-    },
-  },
-  {
-    id: "open-gedcom-file-graph",
-    name: "command.openFileGraph",
-    icon: FILE_GRAPH_ICON,
-    isAvailable: (view) => view.file !== null && view.genealogyInterface(),
-    run: (host, view) => {
-      if (view.file) {
-        host.openOverview("graph", view.file.path, view.recordAtCursor()?.identifier);
-      }
-    },
-  },
+  ...DESK_MODES.map(showAs),
   {
     id: "go-to-gedcom-record",
     name: "command.goToRecord",
@@ -220,7 +220,7 @@ export const COMMANDS: GedcomCommand[] = [
     name: "command.find",
     icon: "file-search",
     section: "find",
-    isAvailable: (view) => view.inSource(),
+    isAvailable: (view) => view.canFind(),
     run: (_host, view) => {
       view.showSearch(false);
     },

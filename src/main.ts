@@ -1,4 +1,3 @@
-import type { Range } from "@domorium/language-service";
 import {
   addIcon,
   type App,
@@ -12,28 +11,21 @@ import {
   Plugin,
   removeIcon,
   Setting,
-  type TAbstractFile,
   TFile,
   TFolder,
 } from "obsidian";
 
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
-import { COMMANDS, type CommandHost, type OverviewKind } from "./commands";
+import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
-import { mediaPreviewContent, type MediaVault } from "./editor/media";
 import { formatStatus } from "./editor/status";
-import type { PortraitContent } from "./desk/graphCanvas";
 import { setLanguage, t } from "./i18n";
 import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
-import { openFromIndex } from "./desk/deskState";
-import { initialFocus } from "./desk/fileTimeline";
-import type { GenealogyIndex } from "./genealogy";
-import { leafShowingFile } from "./vault/openTabs";
-import { OverviewReads } from "./vault/overviewReads";
+import { RETIRED_VIEW_TYPES } from "./desk/deskState";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -45,16 +37,9 @@ import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView"
 import {
   EVIDENCE_VIEW_TYPE,
   EvidenceView,
-  FILE_GRAPH_VIEW_TYPE,
-  FILE_TIMELINE_VIEW_TYPE,
-  FileGraphView,
-  FileOverviewView,
-  FileTimelineView,
   INDEX_VIEW_TYPE,
   IndexView,
-  OVERVIEW_VIEW_TYPES,
   type DeskViewsHost,
-  type FileOverviewHost,
 } from "./desk/DeskViews";
 import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
@@ -73,7 +58,7 @@ interface SuggestRegistry {
 
 export default class GedcomPlugin
   extends Plugin
-  implements GedcomViewHost, DeskViewsHost, FileOverviewHost
+  implements GedcomViewHost, DeskViewsHost
 {
   settings: GedcomSettings = DEFAULT_SETTINGS;
   /**
@@ -101,16 +86,6 @@ export default class GedcomPlugin
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a panel the reader closes stays closed. */
   private evidencePlaced = false;
-  private readonly overviewsOpening = new Map<string, Promise<void>>();
-  private readonly reads = new OverviewReads(() =>
-    OVERVIEW_VIEW_TYPES.flatMap((type) =>
-      this.app.workspace.getLeavesOfType(type).map((leaf) => ({
-        type,
-        gedcom: leaf.getViewState().state?.gedcom,
-        view: leaf.view,
-      })),
-    ),
-  );
   private readonly moves = new MoveFollower<TFile>(
     {
       files: () => this.app.vault.getFiles(),
@@ -142,8 +117,6 @@ export default class GedcomPlugin
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
     this.registerView(INDEX_VIEW_TYPE, (leaf) => new IndexView(leaf, this));
     this.registerView(EVIDENCE_VIEW_TYPE, (leaf) => new EvidenceView(leaf, this));
-    this.registerView(FILE_TIMELINE_VIEW_TYPE, (leaf) => new FileTimelineView(leaf, this));
-    this.registerView(FILE_GRAPH_VIEW_TYPE, (leaf) => new FileGraphView(leaf, this));
     this.addCommand({
       id: "open-gedcom-index",
       name: t("command.openIndex"),
@@ -242,7 +215,6 @@ export default class GedcomPlugin
           this.followedView = active;
           this.redrawDesk();
         }
-        this.forEachOverview((overview) => overview.refreshIfStale());
       }),
     );
     this.registerEvent(
@@ -257,6 +229,7 @@ export default class GedcomPlugin
     );
     this.registerEvent(
       this.app.workspace.on("layout-change", () => {
+        this.sweepRetiredViews();
         if (!this.settings.genealogyInterface) {
           this.syncInterface();
         }
@@ -264,7 +237,6 @@ export default class GedcomPlugin
           this.followedView = null;
           this.redrawDesk();
         }
-        this.forEachOverview((overview) => overview.refreshIfStale());
       }),
     );
     this.registerEvent(
@@ -274,20 +246,8 @@ export default class GedcomPlugin
           { from: oldPath, to: file.path, folder: file instanceof TFolder },
           descendants,
         );
-        this.followOverviews(oldPath, file.path, descendants);
       }),
     );
-    this.registerEvent(
-      this.app.vault.on("modify", (file) => {
-        if (this.reads.modified(file.path)) {
-          this.markOverviewsStale((path) => path === file.path);
-        }
-      }),
-    );
-    const appearedOrWent = (file: TAbstractFile): void => {
-      this.markOverviewsStale(this.reads.went(file.path, file instanceof TFolder));
-    };
-    this.registerEvent(this.app.vault.on("delete", appearedOrWent));
     this.registerEvent(
       this.app.workspace.on("css-change", () => {
         this.forEachView((view) => {
@@ -299,8 +259,7 @@ export default class GedcomPlugin
     this.syncInterface();
     // A saved layout restores the panels after onload.
     this.app.workspace.onLayoutReady(() => {
-      // Before the layout is ready the vault announces every file it loads as created.
-      this.registerEvent(this.app.vault.on("create", appearedOrWent));
+      this.sweepRetiredViews();
       this.syncInterface();
     });
   }
@@ -334,10 +293,6 @@ export default class GedcomPlugin
   }
 
   genealogyChanged(view: GedcomView): void {
-    const path = view.file?.path;
-    if (path !== undefined) {
-      this.markOverviewsStale((shown) => shown === path);
-    }
     if (this.followedView === null || this.followedView === view) {
       this.followedView = view;
       this.redrawDesk();
@@ -397,191 +352,12 @@ export default class GedcomPlugin
     this.followedView = null;
     workspace.detachLeavesOfType(INDEX_VIEW_TYPE);
     workspace.detachLeavesOfType(EVIDENCE_VIEW_TYPE);
-    for (const type of OVERVIEW_VIEW_TYPES) {
-      workspace.detachLeavesOfType(type);
-    }
   }
 
-  openOverview(kind: OverviewKind, view: GedcomView): void {
-    if (view.file) {
-      void this.openOverviewOf(kind, view.file.path, view.recordAtCursor()?.identifier);
-    }
-  }
-
-  /** One opening at a time per overview of a path, so two quick activations do not open two tabs. */
-  private openOverviewOf(kind: OverviewKind, path: string, around: string | undefined): Promise<void> {
-    const key = `${kind}|${path}`;
-    const running = this.overviewsOpening.get(key);
-    if (running) {
-      return running;
-    }
-    const opening = this.openOrReveal(kind, path, around).finally(() => {
-      this.overviewsOpening.delete(key);
-    });
-    this.overviewsOpening.set(key, opening);
-    return opening;
-  }
-
-  /** Matched on the saved state, so an overview still deferred since a restart is found too. */
-  private async openOrReveal(kind: OverviewKind, path: string, around: string | undefined): Promise<void> {
-    if (!this.settings.genealogyInterface) {
-      return;
-    }
-    const { workspace } = this.app;
-    const type = kind === "graph" ? FILE_GRAPH_VIEW_TYPE : FILE_TIMELINE_VIEW_TYPE;
-    const open = workspace.getLeavesOfType(type).find((leaf) => leaf.getViewState().state?.gedcom === path);
-    if (open) {
-      await workspace.revealLeaf(open);
-      // revealLeaf only selects the tab, and an overview that went stale while hidden waits to be made active.
-      workspace.setActiveLeaf(open, { focus: true });
-      return;
-    }
-    const release = this.reads.opening(path);
-    try {
-      const index = await this.overviewIndex(path);
-      if (!index) {
-        new Notice(t("notice.vaultFileNotFound", { path }));
-        return;
-      }
-      const focus = initialFocus(index, around);
-      const leaf = workspace.getLeaf("tab");
-      await leaf.setViewState({
-        type,
-        active: true,
-        state: {
-          gedcom: path,
-          ...(focus === undefined ? {} : { focus }),
-          ...(kind === "graph" && around !== undefined ? { around } : {}),
-        },
-      });
-      await workspace.revealLeaf(leaf);
-    } finally {
-      release();
-    }
-  }
-
-  /**
-   * An open tab's reading, which holds what is typed and not yet saved; the
-   * vault's only where no tab of the file is open.
-   */
-  async overviewIndex(path: string): Promise<GenealogyIndex | null> {
-    const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) {
-      return null;
-    }
-    const tab = this.openTab(path);
-    if (tab) {
-      return tab.genealogy();
-    }
-    return this.reads.read(path, () => this.app.vault.cachedRead(file));
-  }
-
-  portraitIn(path: string, xref: string): PortraitContent | null {
-    const tab = this.openTab(path);
-    if (tab) {
-      return tab.portraitOf(xref);
-    }
-    const held = this.reads.held(path);
-    const person = held?.index.person(xref);
-    if (!held || !person) {
-      return null;
-    }
-    const vault: MediaVault = {
-      documentPath: path,
-      dialect: held.service.getDocument().getDialect(),
-      resolve: (target) => {
-        const file = this.app.vault.getAbstractFileByPath(normalizePath(target));
-        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
-      },
-    };
-    for (const media of person.media) {
-      const reference = held.service.getMediaAt(media.at);
-      const content = reference ? mediaPreviewContent(reference, vault, this.remoteImages()) : null;
-      if (content?.kind === "image") {
-        return content;
-      }
-    }
-    return null;
-  }
-
-  overviewClosed(path: string, view: FileOverviewView): void {
-    this.reads.closed(path, view);
-  }
-
-  async openRecordIn(path: string, xref: string): Promise<void> {
-    const tab = await this.bringFileTab(path);
-    if (tab) {
-      openFromIndex(tab, xref);
-    }
-  }
-
-  async showSourceIn(path: string, range: Range): Promise<void> {
-    (await this.bringFileTab(path))?.showInSource(range);
-  }
-
-  /** An overview covers the main area, so the tab it leads into is brought in front of it. */
-  private async bringFileTab(path: string): Promise<GedcomView | null> {
-    const { workspace } = this.app;
-    let leaf = leafShowingFile(path, (visit) => {
-      workspace.getLeavesOfType(GEDCOM_VIEW_TYPE).forEach(visit);
-    });
-    if (!leaf) {
-      const file = this.app.vault.getAbstractFileByPath(path);
-      if (!(file instanceof TFile)) {
-        new Notice(t("notice.vaultFileNotFound", { path }));
-        return null;
-      }
-      leaf = workspace.getLeaf("tab");
-      await leaf.openFile(file);
-    }
-    await leaf.loadIfDeferred();
-    await workspace.revealLeaf(leaf);
-    workspace.setActiveLeaf(leaf, { focus: true });
-    return leaf.view instanceof GedcomView ? leaf.view : null;
-  }
-
-  /** Two tabs of one file can differ by what is typed and unsaved, so the one last worked in answers. */
-  private openTab(path: string): GedcomView | null {
-    if (this.followedView?.file?.path === path && this.isOpen(this.followedView)) {
-      return this.followedView;
-    }
-    for (const leaf of this.app.workspace.getLeavesOfType(GEDCOM_VIEW_TYPE)) {
-      if (leaf.view instanceof GedcomView && leaf.view.file?.path === path) {
-        return leaf.view;
-      }
-    }
-    return null;
-  }
-
-  private forEachOverview(run: (view: FileOverviewView) => void): void {
-    for (const type of OVERVIEW_VIEW_TYPES) {
-      for (const leaf of this.app.workspace.getLeavesOfType(type)) {
-        if (leaf.view instanceof FileOverviewView) {
-          run(leaf.view);
-        }
-      }
-    }
-  }
-
-  private markOverviewsStale(shows: (path: string) => boolean): void {
-    this.forEachOverview((overview) => {
-      const path = overview.gedcom();
-      if (path !== null && shows(path)) {
-        overview.markStale();
-      }
-    });
-  }
-
-  /** Rewritten in the saved state too, which is all an overview still deferred since a restart has. */
-  private followOverviews(from: string, to: string, descendants: string[]): void {
-    const moved = this.reads.moved(from, to, descendants);
-    for (const leaf of OVERVIEW_VIEW_TYPES.flatMap((type) => this.app.workspace.getLeavesOfType(type))) {
-      const { type, state } = leaf.getViewState();
-      const gedcom = state?.gedcom;
-      const next = typeof gedcom === "string" ? moved.get(gedcom) : undefined;
-      if (next !== undefined) {
-        void leaf.setViewState({ type, state: { ...state, gedcom: next } });
-      }
+  /** Obsidian keeps a leaf of a view type nobody registers, as a pane that says it does not know what it is. */
+  private sweepRetiredViews(): void {
+    for (const type of RETIRED_VIEW_TYPES) {
+      this.app.workspace.detachLeavesOfType(type);
     }
   }
 
@@ -744,9 +520,6 @@ export default class GedcomPlugin
       },
       askForName: (entered) => {
         new RenameReferenceModal(this.app, entered).open();
-      },
-      openOverview: (kind, path, around) => {
-        void this.openOverviewOf(kind, path, around);
       },
     };
   }
