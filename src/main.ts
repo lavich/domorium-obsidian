@@ -99,6 +99,7 @@ export default class GedcomPlugin
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a panel the reader closes stays closed. */
   private evidencePlaced = false;
+  private readonly overviewsOpening = new Map<string, Promise<void>>();
   private readonly reads = new OverviewReads(() =>
     OVERVIEW_VIEW_TYPES.flatMap((type) =>
       this.app.workspace.getLeavesOfType(type).map((leaf) => ({
@@ -405,8 +406,22 @@ export default class GedcomPlugin
     }
   }
 
+  /** One opening at a time per overview of a path, so two quick activations do not open two tabs. */
+  private openOverviewOf(kind: OverviewKind, path: string, around: string | undefined): Promise<void> {
+    const key = `${kind}|${path}`;
+    const running = this.overviewsOpening.get(key);
+    if (running) {
+      return running;
+    }
+    const opening = this.openOrReveal(kind, path, around).finally(() => {
+      this.overviewsOpening.delete(key);
+    });
+    this.overviewsOpening.set(key, opening);
+    return opening;
+  }
+
   /** Matched on the saved state, so an overview still deferred since a restart is found too. */
-  private async openOverviewOf(kind: OverviewKind, path: string, around: string | undefined): Promise<void> {
+  private async openOrReveal(kind: OverviewKind, path: string, around: string | undefined): Promise<void> {
     if (!this.settings.genealogyInterface) {
       return;
     }

@@ -45,6 +45,19 @@ test.describe("the graph of a file", () => {
     await expect(page.locator(".gedcom-fg")).not.toContainText("Generation");
   });
 
+  test("cuts a long name to the width of its card", async ({ page }) => {
+    const name = "АЛЕКСАНДРА ВЛАДИМИРОВНА /ЩЕРБАТСКАЯ-ВОЛКОНСКАЯ/";
+    await mountGraph(page, {
+      doc: ["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", `1 NAME ${name}`, "1 SEX F", "0 TRLR", ""].join("\n"),
+    });
+    const text = page.locator('[data-card="@I1@"] .gedcom-fg-card-name');
+
+    await expect(text).toHaveText(/…$/);
+    const card = await page.locator('[data-card="@I1@"] .gedcom-fg-card-bg').boundingBox();
+    const written = await text.boundingBox();
+    expect((written?.x ?? 0) + (written?.width ?? 0)).toBeLessThan((card?.x ?? 0) + (card?.width ?? 0) - 4);
+  });
+
   test("takes its colours from a dark theme too", async ({ page }) => {
     await mountGraph(page, { dark: true });
 
@@ -199,6 +212,18 @@ test.describe("the graph of a file on a phone", () => {
     expect(await opened(page)).toEqual(["@I1@"]);
   });
 
+  test("takes a touch where the branch of a card not yet lit would be for the card", async ({ page }) => {
+    await mountGraph(page, { phone: true, around: "@I1@" });
+    const pill = await page.locator('[data-branch="@I1@"] rect').boundingBox();
+    const at = { x: (pill?.x ?? 0) + (pill?.width ?? 0) / 2, y: (pill?.y ?? 0) + (pill?.height ?? 0) / 2 };
+    await page.touchscreen.tap(at.x, at.y);
+
+    await expect(person(page, "@I1@")).toHaveClass(/is-armed/);
+    await expect(page.locator(".gedcom-fg-scope")).toContainText("Whole file");
+    await page.touchscreen.tap(at.x, at.y);
+    await expect(page.locator(".gedcom-fg-scope")).toContainText("Branch of Marie Skłodowska-Curie");
+  });
+
   test("shows a touched family node, with the way to the family's page", async ({ page }) => {
     await mountGraph(page, { phone: true, around: "@I1@" });
     const at = await centreOf(page, '[data-node="@F3@"] circle');
@@ -245,6 +270,19 @@ test.describe("the graph of a file of 10 000 people", () => {
       expect(took).toBeLessThan(1_000);
       await expect(page.locator(".gedcom-fg-scope")).toContainText("Whole file · 10000 people");
       expect(await page.locator(".gedcom-fg-person").count()).toBeLessThan(300);
+      const outside = await page.evaluate(() => {
+        const window_ = window.graph.board?.windowOf();
+        if (!window_) {
+          return -1;
+        }
+        const width = window_.right - window_.left;
+        const height = window_.bottom - window_.top;
+        return [...document.querySelectorAll(".gedcom-fg-person")].filter((card) => {
+          const [x = NaN, y = NaN] = (card.getAttribute("transform")?.match(/-?[\d.]+/g) ?? []).map(Number);
+          return x + 168 < window_.left - width || x > window_.right + width || y + 46 < window_.top - height || y > window_.bottom + height;
+        }).length;
+      });
+      expect(outside).toBe(0);
 
       const target = page.locator("[data-card]").nth(10);
       const hover = await target.evaluate((element) => {
@@ -256,6 +294,7 @@ test.describe("the graph of a file of 10 000 people", () => {
 
       await page.locator(".gedcom-fg-fit").click();
       await page.waitForTimeout(100);
+      expect(await zoom(page)).toBe(0.05);
       expect(await page.locator(".gedcom-fg-view *").count()).toBeLessThan(6_000);
     });
   }

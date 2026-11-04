@@ -385,6 +385,6 @@
     "other": "{count} ребёнка"
   },
   "fileGraph.openFamily": "Открыть семью",
-  "fileGraph.nodeLabel": "Семья: {couple}, брак {year}",
+  "fileGraph.nodeLabel": "Семья: {couple}, брак — {year}",
   "fileGraph.nodeUndated": "Семья: {couple}, дата брака не указана"
 }

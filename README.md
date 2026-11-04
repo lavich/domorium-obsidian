@@ -101,8 +101,8 @@ of their marriage — hollow where it is undated — from which curved lines run
 their children; the husband's family tends to stand on the left and the wife's
 on the right, and the rows are ordered to cross as few lines as it can find.
 Pointing at a person lights their parents, spouses and children; pointing at a
-node shows the marriage and the number of children. Drag to move, use the wheel
-or pinch to zoom, and **Fit** to see the whole scope; far out the cards are drawn
+node shows the marriage and the number of children. Drag or scroll with two
+fingers to move, use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the cards are drawn
 without names. The search, **Branch** and the 500-person rule work as in the
 timeline. A card opens the person's page in the file's tab, a node the family's,
 and every card and node can be reached and opened from the keyboard. The graph

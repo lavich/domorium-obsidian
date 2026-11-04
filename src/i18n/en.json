@@ -351,6 +351,6 @@
     "other": "{count} children"
   },
   "fileGraph.openFamily": "Open the family",
-  "fileGraph.nodeLabel": "Family of {couple}, married {year}",
+  "fileGraph.nodeLabel": "Family of {couple}, married in {year}",
   "fileGraph.nodeUndated": "Family of {couple}, no marriage date"
 }

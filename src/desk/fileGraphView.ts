@@ -5,13 +5,16 @@ import { CARD, fileGraphOf, marriageDigits, type FileGraphLayout, type GraphNode
 import { least, most, type FileTimeline, type TimelineFamily } from "./fileTimeline";
 import { familyTitle, lifelineYears, personName, yearText } from "./labels";
 
-export const ZOOM = { min: 0.05, max: 3, fit: 1.4, readable: 0.6, opens: 0.55, far: 0.35 } as const;
+export const ZOOM = { min: 0.05, max: 3, fit: 1.4, readable: 0.6, opens: 0.55, far: 0.5 } as const;
 const MARGIN = 20;
 const DRAG = 4;
 const WHEEL_STEP = 1.12;
 const BUTTON_STEP = 1.2;
 const TRACKPAD_DELTA = 40;
+/** A wheel event this soon after the last one belongs to the same gesture. */
+const GESTURE_GAP = 150;
 const NAME_ROOM = 22;
+const NAME_WIDTH = CARD.width - 16 - 6;
 
 /** Where the view looks: the graph point at the centre of the canvas, and the scale. */
 export interface GraphView {
@@ -44,7 +47,8 @@ export interface GraphWindow {
 export interface FileGraphHost {
   /** A person or a family. */
   openRecord(xref: string): void;
-  stateChanged(settings: { scope: BranchScope; view: GraphView }): void;
+  /** `view` is absent until the canvas has had a size. */
+  stateChanged(settings: { scope: BranchScope; view?: GraphView }): void;
   setIcon(element: HTMLElement, icon: string): void;
 }
 
@@ -97,7 +101,53 @@ export function curve(points: readonly Point[]): string {
   return d;
 }
 
-const cut = (text: string, room: number): string => (text.length > room ? `${text.slice(0, room - 1)}…` : text);
+/** The longest start of `text` that, with an ellipsis, `measure` says fits in `room`, cut between code points. */
+export function fitText(text: string, room: number, measure: (text: string) => number): string {
+  if (measure(text) <= room) {
+    return text;
+  }
+  const points = Array.from(text);
+  let low = 0;
+  let high = points.length;
+  while (low < high) {
+    const middle = (low + high + 1) >> 1;
+    if (measure(`${points.slice(0, middle).join("")}…`) <= room) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  return `${points.slice(0, low).join("")}…`;
+}
+
+/** The width of a card's name in the font it is drawn in; by count of code points where no canvas can measure. */
+function nameMeasure(root: HTMLElement): (text: string) => number {
+  let context: CanvasRenderingContext2D | null | undefined;
+  const widths = new Map<string, number>();
+  return (text) => {
+    if (context === undefined) {
+      try {
+        context = createEl("canvas").getContext("2d");
+      } catch {
+        context = null;
+      }
+      if (context) {
+        const family = getComputedStyle(root).getPropertyValue("--font-interface").trim() || "sans-serif";
+        context.font = `600 12px ${family}`;
+      }
+    }
+    if (!context) {
+      return (Array.from(text).length * NAME_WIDTH) / NAME_ROOM;
+    }
+    const known = widths.get(text);
+    if (known !== undefined) {
+      return known;
+    }
+    const width = context.measureText(text).width;
+    widths.set(text, width);
+    return width;
+  };
+}
 
 type ItemKind = "card" | "node" | "line";
 
@@ -167,6 +217,8 @@ export class FileGraphBoard {
   private pinch: { distance: number; k: number; mid: Point; vx: number; vy: number } | null = null;
   private swallow = false;
   private refocusing = false;
+  private wheel: { at: number; pans: boolean } | null = null;
+  private measureName: ((text: string) => number) | null = null;
 
   constructor(
     parent: HTMLElement,
@@ -227,7 +279,6 @@ export class FileGraphBoard {
     this.listen();
   }
 
-  /** Laid out again only where the model or the scope is not the one shown. */
   show(model: FileTimeline, fileName: string, settings: GraphSettings): void {
     this.goneEl.toggle(false);
     this.root.removeClass("is-gone");
@@ -264,7 +315,6 @@ export class FileGraphBoard {
     this.goneEl.setText(t("overview.gone", { path }));
   }
 
-  /** The canvas's size, measured where none is handed in. */
   resized(size?: { width: number; height: number }): void {
     this.size = size ?? { width: this.canvas.clientWidth, height: this.canvas.clientHeight };
     if (this.size.width <= 0 || this.size.height <= 0) {
@@ -402,7 +452,6 @@ export class FileGraphBoard {
     }
   }
 
-  /** The next card the search matches, in row order, moved to the centre of the view. */
   nextMatch(): string | null {
     if (this.matches.length === 0) {
       return null;
@@ -548,12 +597,10 @@ export class FileGraphBoard {
     const centre = next.focus ?? this.scope.focus;
     this.scope = next;
     this.pending = { centre };
-    this.armed = null;
+    this.arm(null);
     this.relayout();
     const view = this.view();
-    if (view) {
-      this.host.stateChanged({ scope: scopeOf(next), view });
-    }
+    this.host.stateChanged({ scope: scopeOf(next), ...(view ? { view } : {}) });
   }
 
   private relayout(): void {
@@ -689,7 +736,8 @@ export class FileGraphBoard {
       return group;
     }
     const named = svg(this.doc, "text", "gedcom-fg-card-name", { x: 16, y: 19 });
-    named.textContent = cut(name, NAME_ROOM);
+    this.measureName ??= nameMeasure(this.root);
+    named.textContent = fitText(name, NAME_WIDTH, this.measureName);
     const lived = svg(this.doc, "text", "gedcom-fg-card-years", { x: 16, y: 35 });
     lived.textContent = years;
     card.append(named, lived);
@@ -861,7 +909,23 @@ export class FileGraphBoard {
       }
     });
 
+    const lift = (event: PointerEvent): void => {
+      this.down.delete(event.pointerId);
+      if (this.drag?.moving || this.pinch) {
+        this.swallow = true;
+      }
+      if (this.drag?.id === event.pointerId || this.down.size === 0) {
+        this.drag = null;
+        this.canvas.removeClass("is-dragging");
+      }
+      if (this.down.size < 2) {
+        this.pinch = null;
+      }
+    };
     this.canvas.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) {
+        return;
+      }
       this.pointer = event.pointerType || "mouse";
       this.swallow = false;
       this.down.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -883,6 +947,9 @@ export class FileGraphBoard {
       }
     });
     this.canvas.addEventListener("pointermove", (event) => {
+      if (event.buttons === 0 && this.down.has(event.pointerId)) {
+        lift(event);
+      }
       if (this.down.has(event.pointerId)) {
         this.down.set(event.pointerId, { x: event.clientX, y: event.clientY });
       }
@@ -914,10 +981,7 @@ export class FileGraphBoard {
         return;
       }
       this.pointer = event.pointerType || "mouse";
-      const xref = this.personAt(event.target);
-      if (xref !== null) {
-        this.highlight(xref);
-      }
+      this.highlight(this.personAt(event.target));
       const family = this.nodeAt(event.target);
       if (family !== null) {
         this.showTip(family, event);
@@ -925,19 +989,6 @@ export class FileGraphBoard {
         this.hideTip();
       }
     });
-    const lift = (event: PointerEvent): void => {
-      this.down.delete(event.pointerId);
-      if (this.drag?.moving || this.pinch) {
-        this.swallow = true;
-      }
-      if (this.drag?.id === event.pointerId || this.down.size === 0) {
-        this.drag = null;
-        this.canvas.removeClass("is-dragging");
-      }
-      if (this.down.size < 2) {
-        this.pinch = null;
-      }
-    };
     this.canvas.addEventListener("pointerup", lift);
     this.canvas.addEventListener("pointercancel", lift);
     this.canvas.addEventListener("pointerleave", (event) => {
@@ -956,9 +1007,12 @@ export class FileGraphBoard {
           this.zoomAt(Math.exp(-event.deltaY / 100), x, y);
           return;
         }
-        const trackpad =
-          event.deltaX !== 0 || (event.deltaMode === 0 && Math.abs(event.deltaY) < TRACKPAD_DELTA);
-        if (trackpad) {
+        const fresh = this.wheel === null || event.timeStamp - this.wheel.at > GESTURE_GAP;
+        const pans = fresh
+          ? event.deltaX !== 0 || (event.deltaMode === 0 && Math.abs(event.deltaY) < TRACKPAD_DELTA)
+          : (this.wheel?.pans ?? false);
+        this.wheel = { at: event.timeStamp, pans };
+        if (pans) {
           this.panBy(-event.deltaX, -event.deltaY);
           return;
         }
@@ -996,7 +1050,16 @@ export class FileGraphBoard {
         this.showTip(family, { clientX: box.left + box.width / 2, clientY: box.top + box.height / 2 });
       }
     });
-    this.canvas.addEventListener("focusout", () => this.hideTip());
+    this.canvas.addEventListener("focusout", (event) => {
+      this.hideTip();
+      const next = event.relatedTarget instanceof Element ? event.relatedTarget : null;
+      if (this.refocusing || (next && this.canvas.contains(next) && this.personAt(next) !== null)) {
+        return;
+      }
+      if (this.armed === null) {
+        this.highlight(null);
+      }
+    });
     this.root.addEventListener("click", (event) => {
       const target = event.target instanceof Node ? event.target : null;
       if (target && !this.pop.contains(target) && !this.canvas.contains(target)) {
@@ -1029,21 +1092,21 @@ export class FileGraphBoard {
       return;
     }
     const target = event.target instanceof Element ? event.target : null;
-    const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
-    if (branch) {
-      this.closePop();
-      this.setScope({ focus: branch });
-      return;
-    }
     // A click from the keyboard has no pointer, and is no touch whatever pointer came before it.
     const kind = keyboard
       ? "keyboard"
       : (event as PointerEvent).pointerType || ((event as MouseEvent).detail === 0 ? "keyboard" : this.pointer);
     const touch = kind === "touch";
+    const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
+    if (branch && !(touch && this.armed !== branch)) {
+      this.closePop();
+      this.setScope({ focus: branch });
+      return;
+    }
     const family = this.nodeAt(target);
     if (family !== null) {
       if (touch) {
-        this.armed = null;
+        this.arm(null);
         this.openPop(family, event as MouseEvent);
       } else {
         this.host.openRecord(family);
@@ -1124,7 +1187,7 @@ export class FileGraphBoard {
     this.tip.empty();
     this.describe(this.tip, xref);
     this.tip.addClass("is-shown");
-    placeInside(this.root, this.tip, point, 300);
+    placeInside(this.root, this.tip, point);
   }
 
   private hideTip(): void {
@@ -1142,7 +1205,7 @@ export class FileGraphBoard {
         this.host.openRecord(xref);
       });
     this.pop.addClass("is-shown");
-    placeInside(this.root, this.pop, event, 260);
+    placeInside(this.root, this.pop, event);
   }
 
   private closePop(): void {

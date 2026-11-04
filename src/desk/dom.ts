@@ -14,10 +14,9 @@ export function placeInside(
   root: HTMLElement,
   element: HTMLElement,
   point: { clientX: number; clientY: number },
-  width: number,
 ): void {
   const box = root.getBoundingClientRect();
-  const left = Math.max(0, Math.min(point.clientX - box.left + 14, root.clientWidth - width));
+  const left = Math.max(0, Math.min(point.clientX - box.left + 14, root.clientWidth - element.offsetWidth));
   const y = point.clientY - box.top;
   const height = element.offsetHeight;
   const top = y + 14 + height > root.clientHeight ? Math.max(0, y - 14 - height) : y + 14;

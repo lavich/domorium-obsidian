@@ -1023,7 +1023,7 @@ export class FileTimelineBoard {
     this.tip.empty();
     this.describe(this.tip, placed);
     this.tip.addClass("is-shown");
-    placeInside(this.root, this.tip, event, 300);
+    placeInside(this.root, this.tip, event);
   }
 
   private openPop(placed: Placed, event: MouseEvent): void {
@@ -1038,7 +1038,7 @@ export class FileTimelineBoard {
       this.host.showInSource(placed.mark.event.range);
     });
     this.pop.addClass("is-shown");
-    placeInside(this.root, this.pop, event, 260);
+    placeInside(this.root, this.pop, event);
   }
 
   private closePop(): void {

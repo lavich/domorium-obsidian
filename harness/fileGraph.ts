@@ -70,7 +70,9 @@ function mount(options: GraphOptions): number {
     },
     stateChanged: ({ scope, view }) => {
       calls.scopes.push(scope);
-      calls.views.push(view);
+      if (view) {
+        calls.views.push(view);
+      }
     },
     setIcon: stubSetIcon,
   });

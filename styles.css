@@ -2062,8 +2062,8 @@ input.gedcom-fg-search {
 
 .gedcom-fg-card-name {
   fill: var(--text-normal);
-  font-size: 12.5px;
-  font-weight: var(--font-semibold);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .gedcom-fg-card-years {
@@ -2073,8 +2073,7 @@ input.gedcom-fg-search {
 }
 
 .gedcom-fg-person:hover .gedcom-fg-card-bg,
-.gedcom-fg-person.is-focus .gedcom-fg-card-bg,
-.gedcom-fg-card:focus-visible .gedcom-fg-card-bg {
+.gedcom-fg-person.is-focus .gedcom-fg-card-bg {
   stroke: var(--interactive-accent);
   stroke-width: 2;
 }
@@ -2085,21 +2084,18 @@ input.gedcom-fg-search {
 
 .gedcom-fg-pill {
   opacity: 0;
+  pointer-events: none;
 }
 
 .gedcom-fg-person:hover .gedcom-fg-pill,
 .gedcom-fg-person:focus-within .gedcom-fg-pill,
 .gedcom-fg-person.is-armed .gedcom-fg-pill {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .gedcom-fg-pill rect {
   fill: var(--interactive-accent);
-}
-
-.gedcom-fg-pill:focus-visible rect {
-  stroke: var(--text-normal);
-  stroke-width: 1.5;
 }
 
 .gedcom-fg-pill text {
@@ -2130,11 +2126,6 @@ input.gedcom-fg-search {
   stroke-width: 1.5;
 }
 
-.gedcom-fg-node:focus-visible circle {
-  stroke: var(--text-normal);
-  stroke-width: 2;
-}
-
 .gedcom-fg-node-year {
   fill: var(--text-on-accent);
   font-size: 9.5px;
@@ -2157,6 +2148,14 @@ input.gedcom-fg-search {
 .gedcom-fg-person.is-hl .gedcom-fg-card-bg {
   stroke: var(--text-accent);
   stroke-width: 2;
+}
+
+.gedcom-fg-person .gedcom-fg-card:focus-visible .gedcom-fg-card-bg,
+.gedcom-fg-pill:focus-visible rect,
+.gedcom-fg-node:focus-visible circle {
+  stroke: var(--text-normal);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
 }
 
 .gedcom-fg-person.is-dim {

@@ -9,6 +9,7 @@ import { CARD, fileGraphOf } from "./fileGraph";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
 import {
   FileGraphBoard,
+  fitText,
   readGraphState,
   ZOOM,
   type FileGraphHost,
@@ -195,6 +196,19 @@ describe("pointing at a person", () => {
     expect(all(".is-on")).toHaveLength(0);
   });
 
+  it("puts the light out as the pointer moves off a card within the canvas, or the focus leaves the cards", () => {
+    board();
+    pointer("pointermove", card("@I2@"));
+    pointer("pointermove", container.querySelector(".gedcom-fg-svg"));
+
+    expect(all(".is-on")).toHaveLength(0);
+    card("@I1@")?.focus();
+    card("@I2@")?.focus();
+    expect(person("@I2@")?.classList.contains("is-hl")).toBe(true);
+    container.querySelector<HTMLInputElement>(".gedcom-fg-search")?.focus();
+    expect(all(".is-on")).toHaveLength(0);
+  });
+
   it("shows a family node's spouses, marriage and children", () => {
     board();
     pointer("pointermove", node("@F3@")?.querySelector("circle"));
@@ -282,7 +296,7 @@ describe("the view", () => {
     expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 10 of 17 people");
     expectCentredOn(drawn.view(), centreOf(model, "@I12@", branch), ZOOM.readable);
     expect(host.stateChanged.mock.lastCall?.[0].scope).toEqual(branch);
-    expect(host.stateChanged.mock.lastCall?.[0].view.k).toBeCloseTo(ZOOM.readable, 6);
+    expect(host.stateChanged.mock.lastCall?.[0].view?.k).toBeCloseTo(ZOOM.readable, 6);
 
     container.querySelector<HTMLElement>(".gedcom-fg-whole")?.click();
     expect(drawnPeople()).toHaveLength(17);
@@ -292,12 +306,15 @@ describe("the view", () => {
   it("zooms at the pointer with a mouse wheel or Ctrl, and pans with a trackpad's scroll", () => {
     const drawn = board();
     const canvas = container.querySelector(".gedcom-fg-canvas");
-    const wheel = ({ ctrlKey = false, ...init }: WheelEventInit) => {
+    let time = 0;
+    const wheel = ({ ctrlKey = false, ...init }: WheelEventInit, after = 1000) => {
       const event = Object.assign(new WheelEvent("wheel", { bubbles: true, cancelable: true, ...init }), {
         clientX: 200,
         clientY: 100,
         ctrlKey,
       });
+      time += after;
+      Object.defineProperty(event, "timeStamp", { value: time });
       canvas?.dispatchEvent(event);
       return event;
     };
@@ -318,6 +335,34 @@ describe("the view", () => {
 
     wheel({ deltaY: -10, ctrlKey: true });
     expect(drawn.view()?.k).toBeGreaterThan(k);
+
+    const scale = drawn.view()?.k ?? 1;
+    wheel({ deltaY: 10 });
+    wheel({ deltaY: 120 }, 20);
+    expect(drawn.view()?.k).toBe(scale);
+    wheel({ deltaY: 120 }, 400);
+    expect(drawn.view()?.k).toBeLessThan(scale);
+  });
+
+  it("ends a drag whose button was let go outside the canvas, and drags with no other button", () => {
+    const drawn = board();
+    const target = card("@I1@");
+    pointer("pointerdown", target, { clientX: 100, clientY: 100 });
+    pointer("pointermove", target, { buttons: 1, clientX: 140, clientY: 100 });
+    const dragged = drawn.view();
+    pointer("pointermove", target, { buttons: 0, clientX: 300, clientY: 300 });
+
+    expect(drawn.view()).toEqual(dragged);
+    pointer("pointerdown", target, { button: 2, buttons: 2, clientX: 100, clientY: 100 });
+    pointer("pointermove", target, { buttons: 2, clientX: 200, clientY: 200 });
+    expect(drawn.view()).toEqual(dragged);
+  });
+
+  it("saves a change of scope made before the canvas has a size", () => {
+    board(curie(), { scope: { focus: "@I12@", up: 2, down: 2 } }, null);
+    container.querySelector<HTMLElement>('[data-step="up:-1"]')?.click();
+
+    expect(host.stateChanged.mock.lastCall?.[0]).toEqual({ scope: { focus: "@I12@", up: 1, down: 2 } });
   });
 
   it("zooms around the middle of a pinch, and opens nothing after it", () => {
@@ -326,9 +371,17 @@ describe("the view", () => {
     const k = drawn.view()?.k ?? 1;
     pointer("pointerdown", target, { pointerId: 1, pointerType: "touch", clientX: 100, clientY: 100 });
     pointer("pointerdown", target, { pointerId: 2, pointerType: "touch", clientX: 200, clientY: 100 });
-    pointer("pointermove", target, { pointerId: 2, pointerType: "touch", clientX: 300, clientY: 100 });
+    const graphAt = (x: number, y: number): [number, number] => {
+      const view = drawn.view();
+      const scale = view?.k ?? 1;
+      return [(x - (WIDE.width / 2 - (view?.x ?? 0) * scale)) / scale, (y - (WIDE.height / 2 - (view?.y ?? 0) * scale)) / scale];
+    };
+    const under = graphAt(150, 100);
+    pointer("pointermove", target, { pointerId: 2, pointerType: "touch", buttons: 1, clientX: 300, clientY: 100 });
 
     expect(drawn.view()?.k).toBeCloseTo(k * 2, 6);
+    expect(graphAt(200, 100)[0]).toBeCloseTo(under[0], 6);
+    expect(graphAt(200, 100)[1]).toBeCloseTo(under[1], 6);
     pointer("pointerup", target, { pointerId: 2, pointerType: "touch" });
     pointer("pointerup", target, { pointerId: 1, pointerType: "touch" });
     click(target);
@@ -399,9 +452,9 @@ describe("activating", () => {
     const target = card("@I1@");
     const before = drawn.view();
     pointer("pointerdown", target, { clientX: 100, clientY: 100 });
-    pointer("pointermove", target, { clientX: 102, clientY: 101 });
+    pointer("pointermove", target, { buttons: 1, clientX: 102, clientY: 101 });
     expect(drawn.view()).toEqual(before);
-    pointer("pointermove", target, { clientX: 130, clientY: 120 });
+    pointer("pointermove", target, { buttons: 1, clientX: 130, clientY: 120 });
     pointer("pointerup", target, { clientX: 130, clientY: 120 });
     click(target);
 
@@ -409,7 +462,7 @@ describe("activating", () => {
     expect(host.openRecord).not.toHaveBeenCalled();
 
     pointer("pointerdown", target, { clientX: 100, clientY: 100 });
-    pointer("pointermove", target, { clientX: 102, clientY: 101 });
+    pointer("pointermove", target, { buttons: 1, clientX: 102, clientY: 101 });
     pointer("pointerup", target, { clientX: 102, clientY: 101 });
     click(target);
     expect(host.openRecord).toHaveBeenCalledWith("@I1@");
@@ -424,6 +477,24 @@ describe("activating", () => {
     expect(host.openRecord).not.toHaveBeenCalled();
     tap(card("@I1@"));
     expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("on a touch, takes the hidden branch of a card not yet lit for the card", () => {
+    board();
+    tap(pill("@I12@")?.querySelector("rect"));
+
+    expect(drawnPeople()).toHaveLength(17);
+    expect(person("@I12@")?.classList.contains("is-armed")).toBe(true);
+    tap(pill("@I12@")?.querySelector("rect"));
+    expect(drawnPeople()).toHaveLength(10);
+  });
+
+  it("cuts a name too wide for its card by its measured width, between code points", () => {
+    const measure = (text: string) => Array.from(text).length * 10;
+
+    expect(fitText("Short", 100, measure)).toBe("Short");
+    expect(fitText("ЖЖЖЖЖЖЖЖЖЖЖЖ", 100, measure)).toBe("ЖЖЖЖЖЖЖЖЖ…");
+    expect(fitText("👪👪👪👪👪👪👪👪👪👪👪", 50, measure)).toBe("👪👪👪👪…");
   });
 
   it("on a touch of a family node, shows it with the way to the family's page", () => {
@@ -477,7 +548,7 @@ describe("the keyboard", () => {
     expect(card("@I1@")?.getAttribute("aria-label")).toBe("Marie Skłodowska-Curie, 1867–1934");
     expect(card("@I1@")?.getAttribute("role")).toBe("button");
     expect(node("@F3@")?.getAttribute("aria-label")).toBe(
-      "Family of Pierre Curie and Marie Skłodowska-Curie, married 1895",
+      "Family of Pierre Curie and Marie Skłodowska-Curie, married in 1895",
     );
     expect(node("@F2@")?.getAttribute("aria-label")).toBe(
       "Family of Eugène Curie and Sophie-Claire Depouilly, no marriage date",

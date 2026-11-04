@@ -354,7 +354,8 @@ export class FileGraphView extends FileOverviewView {
       openRecord: (xref) => this.openRecord(xref),
       stateChanged: ({ scope, view }) => {
         const { gedcom, around } = this.state;
-        this.state = { gedcom, ...(around === undefined ? {} : { around }), ...scope, view };
+        const kept = view ?? this.state.view;
+        this.state = { gedcom, ...(around === undefined ? {} : { around }), ...scope, ...(kept ? { view: kept } : {}) };
         this.app.workspace.requestSaveLayout();
       },
       setIcon,
