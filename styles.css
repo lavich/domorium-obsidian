@@ -1294,8 +1294,9 @@ button.gedcom-fg-whole {
   min-height: 0;
 }
 
-.gedcom-ft-controls {
-  inset-inline-end: calc(var(--size-4-2) + 14px);
+.gedcom-ft-stage > .gedcom-ft-controls {
+  inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
+  bottom: calc(var(--size-4-2) + var(--gedcom-ft-hbar, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
 .gedcom-ft-board {
@@ -1304,29 +1305,47 @@ button.gedcom-fg-whole {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--gedcom-ft-names) 1fr;
-  align-items: start;
-  overflow: auto;
+  grid-template-columns: var(--gedcom-ft-names) minmax(0, 1fr);
+  grid-template-rows: var(--gedcom-ft-axis) minmax(0, 1fr);
   border-top: 1px solid var(--background-modifier-border);
-  overscroll-behavior: contain;
+}
+
+.gedcom-ft-names,
+.gedcom-ft-axis-clip {
+  scrollbar-width: none;
+}
+
+.gedcom-ft-names::-webkit-scrollbar,
+.gedcom-ft-axis-clip::-webkit-scrollbar {
+  display: none;
 }
 
 .gedcom-ft-names {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  min-height: 100%;
+  align-self: start;
+  height: calc(100% - var(--gedcom-ft-hbar, 0px));
+  overflow: hidden auto;
+  overscroll-behavior: contain;
   background: var(--background-primary);
   border-inline-end: 1px solid var(--background-modifier-border);
 }
 
-.gedcom-ft-axis-pad {
-  position: sticky;
-  top: 0;
-  z-index: 3;
+.gedcom-ft-axis-pad,
+.gedcom-ft-axis-band {
+  box-sizing: border-box;
   height: var(--gedcom-ft-axis);
   background: var(--background-secondary);
   border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-ft-axis-band {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gedcom-ft-axis-clip {
+  width: calc(100% - var(--gedcom-ft-vbar, 0px));
+  overflow: auto hidden;
+  overscroll-behavior: contain;
 }
 
 .gedcom-ft-name {
@@ -1459,6 +1478,10 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 
 .gedcom-ft-plot {
   position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .gedcom-ft svg {
@@ -1472,11 +1495,7 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 }
 
 .gedcom-ft-axis {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   background: var(--background-secondary);
-  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .gedcom-ft-gridline {
@@ -1621,7 +1640,7 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 
 .gedcom-ft-cursor {
   position: absolute;
-  top: var(--gedcom-ft-axis);
+  top: 0;
   left: 0;
   pointer-events: none;
 }

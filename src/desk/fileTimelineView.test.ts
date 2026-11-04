@@ -531,7 +531,7 @@ describe("the keyboard", () => {
     expect(names()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
     const irene = fileTimelineOf(curieIndex()).rows.indexOf("@I12@");
-    expect(container.querySelector(".gedcom-ft-board")?.scrollTop).toBe(irene * ROW + ROW / 2);
+    expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(irene * ROW + ROW / 2);
   });
 
   it("names each stepper's buttons for what they widen or narrow", () => {

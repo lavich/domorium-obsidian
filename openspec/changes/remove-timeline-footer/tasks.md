@@ -5,6 +5,8 @@
 
 - [x] 1.3 On a phone give the board the freed height: hide the empty header, keep the toolbar compact. Test in `tests/fileTimeline.spec.ts`: at 390 px the board reaches the bottom of the view, nothing stands below it and the page does not scroll.
 
+- [x] 1.4 Make the plot the only scroller, with the names and the axis outside it and following it (`design.md`), in `src/desk/fileTimelineView.ts` and `styles.css`. Test in `tests/fileTimeline.spec.ts`, at 1400 and 390 px with classic scrollbars: the names, the axis and the corner end where the plot begins, the names column stops above the horizontal bar, and after scrolling the names and the axis stand at the plot's offsets.
+
 ## 2. The zoom buttons
 
 - [x] 2.1 Move the −, + and Fit group of `src/desk/graphCanvas.ts` to `zoomControls` in `src/desk/dom.ts`, with its three strings as `overview.*` keys; the graph passes `src/desk/fileGraphView.test.ts` unchanged, `src/i18n/i18n.test.ts` checks parity.

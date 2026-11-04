@@ -6,6 +6,8 @@ import { expect, test, type Page } from "@playwright/test";
 import type { TimelineOptions } from "../harness/fileTimeline";
 import { generated } from "./generated";
 
+test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
+
 const ZOOM = 6;
 const PAD = 12;
 const FIRST_DECADE = 1820;
@@ -160,7 +162,7 @@ test.describe("the timeline of a file", () => {
     await mountTimeline(page);
     const before = await page.locator(".gedcom-ft-axis").boundingBox();
     const column = await page.locator(".gedcom-ft-names").boundingBox();
-    await page.locator(".gedcom-ft-board").evaluate((board) => {
+    await page.locator(".gedcom-ft-plot").evaluate((board) => {
       board.scrollTop = 200;
       board.scrollLeft = 300;
     });
@@ -187,7 +189,7 @@ test.describe("the zoom buttons of the timeline", () => {
     expect((before.box?.x ?? 0) + (before.box?.width ?? 0)).toBeLessThanOrEqual((before.board?.x ?? 0) + (before.board?.width ?? 0));
     expect((before.box?.y ?? 0) + (before.box?.height ?? 0)).toBeLessThanOrEqual((before.board?.y ?? 0) + (before.board?.height ?? 0));
 
-    await page.locator(".gedcom-ft-board").evaluate((board) => {
+    await page.locator(".gedcom-ft-plot").evaluate((board) => {
       board.scrollTop = board.scrollHeight;
       board.scrollLeft = 300;
     });
@@ -208,6 +210,62 @@ test.describe("the zoom buttons of the timeline", () => {
   });
 });
 
+for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 500 }]) {
+  test.describe(`the scrollbars of the timeline at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    test("belong to the rows and years only, and leave the axis, the names and the corner alone", async ({ page }) => {
+      await mountTimeline(page, { phone: viewport.width < 600 });
+      await page.addStyleTag({ content: ".gedcom-ft-plot::-webkit-scrollbar { width: 15px; height: 15px; } .gedcom-ft-plot::-webkit-scrollbar-thumb { background: #888; border-radius: 6px; }" });
+      await page.locator(".gedcom-ft-zoom-in").click();
+
+      const m = await page.evaluate(() => {
+        const box = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
+        const plot = document.querySelector<HTMLElement>(".gedcom-ft-plot");
+        return {
+          names: box(".gedcom-ft-names"),
+          axis: box(".gedcom-ft-axis-band"),
+          corner: box(".gedcom-ft-axis-pad"),
+          plot: box(".gedcom-ft-plot"),
+          verticalBar: (plot?.offsetWidth ?? 0) - (plot?.clientWidth ?? 0),
+          horizontalBar: (plot?.offsetHeight ?? 0) - (plot?.clientHeight ?? 0),
+          namesBar: (document.querySelector<HTMLElement>(".gedcom-ft-names")?.offsetWidth ?? 0) - (document.querySelector<HTMLElement>(".gedcom-ft-names")?.clientWidth ?? 0),
+        };
+      });
+      expect(m.verticalBar).toBeGreaterThan(0);
+      expect(m.horizontalBar).toBeGreaterThan(0);
+      expect(m.namesBar).toBeLessThanOrEqual(1);
+      expect(m.names?.right ?? Infinity).toBeLessThanOrEqual((m.plot?.left ?? 0) + 0.5);
+      expect(m.axis?.bottom ?? Infinity).toBeLessThanOrEqual((m.plot?.top ?? 0) + 0.5);
+      expect(m.corner?.bottom ?? Infinity).toBeLessThanOrEqual((m.plot?.top ?? 0) + 0.5);
+      expect(m.corner?.right ?? Infinity).toBeLessThanOrEqual((m.plot?.left ?? 0) + 0.5);
+      expect((m.names?.bottom ?? Infinity)).toBeLessThanOrEqual((m.plot?.bottom ?? 0) - m.horizontalBar + 0.5);
+      expect((m.axis?.right ?? 0)).toBeLessThanOrEqual((m.plot?.right ?? 0) + 0.5);
+
+      await page.locator(".gedcom-ft-plot").evaluate((plot) => {
+        plot.scrollTop = plot.scrollHeight;
+        plot.scrollLeft = plot.scrollWidth;
+      });
+      await expect
+        .poll(() => page.evaluate(() => document.querySelector<HTMLElement>(".gedcom-ft-names")?.scrollTop ?? 0))
+        .toBeGreaterThan(0);
+      await expect
+        .poll(() => page.evaluate(() => document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft ?? 0))
+        .toBeGreaterThan(0);
+      const synced = await page.evaluate(() => ({
+        plotTop: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollTop,
+        namesTop: document.querySelector<HTMLElement>(".gedcom-ft-names")?.scrollTop,
+        plotLeft: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollLeft,
+        axisLeft: document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft,
+      }));
+      expect(synced.plotTop).toBeGreaterThan(0);
+      expect(synced.namesTop).toBe(synced.plotTop);
+      expect(synced.plotLeft).toBeGreaterThan(0);
+      expect(synced.axisLeft).toBe(synced.plotLeft);
+    });
+  });
+}
+
 test.describe("the timeline of a file on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -216,7 +274,7 @@ test.describe("the timeline of a file on a phone", () => {
 
     const page_ = await page.evaluate(() => ({
       document: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
-      board: document.querySelector(".gedcom-ft-board")?.scrollWidth ?? 0,
+      board: document.querySelector(".gedcom-ft-plot")?.scrollWidth ?? 0,
       names: document.querySelector<HTMLElement>(".gedcom-ft-names")?.offsetWidth ?? 0,
     }));
     expect(page_.document).toBe(true);
@@ -256,7 +314,7 @@ test.describe("the timeline of a file on a phone", () => {
 
   test("lights Marie's family and places the cursor on the first touch, and opens her on the second", async ({ page }) => {
     await mountTimeline(page, { phone: true });
-    await page.locator(".gedcom-ft-board").evaluate((board) => {
+    await page.locator(".gedcom-ft-plot").evaluate((board) => {
       board.scrollLeft = 200;
     });
     const bar = await life(page, "@I1@").boundingBox();
@@ -275,7 +333,7 @@ test.describe("the timeline of a file on a phone", () => {
 
   test("shows a touched mark's event, with the way to its lines", async ({ page }) => {
     await mountTimeline(page, { phone: true });
-    await page.locator(".gedcom-ft-board").evaluate((board) => {
+    await page.locator(".gedcom-ft-plot").evaluate((board) => {
       board.scrollLeft = 200;
     });
     const mark = await page.locator('.gedcom-ft-mark.is-birth[data-p="@I1@"]').boundingBox();
@@ -288,7 +346,7 @@ test.describe("the timeline of a file on a phone", () => {
 
   test("keeps a touched mark's event on the screen at the bottom of the rows", async ({ page }) => {
     await mountTimeline(page, { phone: true });
-    await page.locator(".gedcom-ft-board").evaluate((board) => {
+    await page.locator(".gedcom-ft-plot").evaluate((board) => {
       board.scrollTop = board.scrollHeight;
       board.scrollLeft = 520;
     });
@@ -325,7 +383,7 @@ test.describe("the timeline of a file of 10 000 people", () => {
     expect(await drawn()).toBeLessThan(300);
 
     for (const top of [50_000, 150_000, 300_000]) {
-      await page.locator(".gedcom-ft-board").evaluate((board, to) => {
+      await page.locator(".gedcom-ft-plot").evaluate((board, to) => {
         board.scrollTop = to;
       }, top);
       await page.waitForFunction(

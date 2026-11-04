@@ -130,7 +130,9 @@ export class FileTimelineBoard {
   private readonly scopeBar: BranchScopeBar;
   private readonly board: HTMLElement;
   private readonly names: HTMLElement;
+  private readonly stage: HTMLElement;
   private readonly plot: HTMLElement;
+  private readonly axisClip: HTMLElement;
   private readonly axis: SVGSVGElement;
   private readonly chart: SVGSVGElement;
   private readonly grid: SVGGElement;
@@ -189,19 +191,22 @@ export class FileTimelineBoard {
       change: (next) => this.setScope(next),
     });
 
-    const stage = this.root.createDiv({ cls: "gedcom-ft-stage" });
-    zoomControls(stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
+    this.stage = this.root.createDiv({ cls: "gedcom-ft-stage" });
+    zoomControls(this.stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
       out: () => this.zoomBy(1 / ZOOM.step),
       in: () => this.zoomBy(ZOOM.step),
       fit: () => this.fit(),
     });
-    this.board = stage.createDiv({ cls: "gedcom-ft-board" });
+    this.board = this.stage.createDiv({ cls: "gedcom-ft-board" });
+    this.board.createDiv({ cls: "gedcom-ft-axis-pad" });
+    this.axisClip = this.board.createDiv({ cls: "gedcom-ft-axis-band" }).createDiv({ cls: "gedcom-ft-axis-clip" });
     this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
     this.plot = this.board.createDiv({ cls: "gedcom-ft-plot" });
     this.axis = svg(this.doc, "svg", "gedcom-ft-axis", { height: AXIS });
     this.chart = svg(this.doc, "svg", "gedcom-ft-chart");
     this.cursor = svg(this.doc, "svg", "gedcom-ft-cursor");
-    this.plot.append(this.axis, this.chart, this.cursor);
+    this.axisClip.append(this.axis);
+    this.plot.append(this.chart, this.cursor);
     this.chart.append(this.definitions());
     this.grid = svg(this.doc, "g", "gedcom-ft-grid");
     this.items = svg(this.doc, "g", "gedcom-ft-items");
@@ -301,16 +306,16 @@ export class FileTimelineBoard {
   }
 
   measure(): TimelineWindow {
-    const names = this.names.offsetWidth;
     return {
-      top: this.board.scrollTop,
-      left: this.board.scrollLeft,
-      width: Math.max(this.board.clientWidth - names, 0) || 1600,
-      height: Math.max(this.board.clientHeight - AXIS, 0) || 1000,
+      top: this.plot.scrollTop,
+      left: this.plot.scrollLeft,
+      width: this.plot.clientWidth || 1600,
+      height: this.plot.clientHeight || 1000,
     };
   }
 
   resized(): void {
+    this.fitGutters();
     if (this.layout && this.needsDraw(this.measure())) {
       this.draw(this.measure());
     }
@@ -390,6 +395,20 @@ export class FileTimelineBoard {
     }
   }
 
+  /** The names and the axis sit outside the scroller, so its bars never run over them; they keep its place. */
+  private follow(to: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
+    if (to[axis] !== from[axis]) {
+      to[axis] = from[axis];
+    }
+  }
+
+  private fitGutters(): void {
+    this.stage.setCssProps({
+      "--gedcom-ft-vbar": `${this.plot.offsetWidth - this.plot.clientWidth}px`,
+      "--gedcom-ft-hbar": `${this.plot.offsetHeight - this.plot.clientHeight}px`,
+    });
+  }
+
   private zoomBy(factor: number): void {
     this.setScope({ zoom: clampZoom(this.scope.zoom * factor) });
   }
@@ -446,11 +465,12 @@ export class FileTimelineBoard {
     this.chart.setAttribute("height", String(Math.max(layout.height, 1)));
     this.cursor.setAttribute("width", String(layout.width));
     this.cursor.setAttribute("height", String(Math.max(layout.height, 1)));
+    this.fitGutters();
     this.drawGrid(layout);
     if (typeof keep === "object" && keep !== null) {
-      this.board.scrollTop = Math.max(0, (layout.y.get(keep.person) ?? 0) - this.board.clientHeight / 2);
+      this.plot.scrollTop = Math.max(0, (layout.y.get(keep.person) ?? 0) - this.plot.clientHeight / 2);
     } else if (typeof keep === "number") {
-      this.board.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
+      this.plot.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
     }
     if (this.highlighted !== null && !layout.y.has(this.highlighted)) {
       this.highlighted = null;
@@ -738,7 +758,6 @@ export class FileTimelineBoard {
       : null;
     this.names.empty();
     this.byName = new Map();
-    this.names.createDiv({ cls: "gedcom-ft-axis-pad" });
     this.names.createDiv({ cls: "gedcom-ft-spacer" }).setCssProps({ height: `${first * ROW}px` });
     for (const xref of layout.shown.slice(first, last)) {
       const person = model?.people.get(xref);
@@ -770,6 +789,7 @@ export class FileTimelineBoard {
     this.names
       .createDiv({ cls: "gedcom-ft-spacer" })
       .setCssProps({ height: `${(layout.shown.length - last) * ROW}px` });
+    this.follow(this.names, this.plot, "scrollTop");
     return focused;
   }
 
@@ -851,7 +871,7 @@ export class FileTimelineBoard {
         this.resting.rest(xref, this.highlighted);
       }
       this.showTip(this.markAt(event.target), event);
-      const onPlot = event.target instanceof Node && this.plot.contains(event.target);
+      const onPlot = event.target instanceof Node && (this.plot.contains(event.target) || this.axisClip.contains(event.target));
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
     });
     this.board.addEventListener("pointerleave", (event) => {
@@ -862,7 +882,9 @@ export class FileTimelineBoard {
       this.setYear(null);
       this.showTip(null, event);
     });
-    this.board.addEventListener("scroll", () => {
+    this.plot.addEventListener("scroll", () => {
+      this.follow(this.names, this.plot, "scrollTop");
+      this.follow(this.axisClip, this.plot, "scrollLeft");
       if (this.pending) {
         return;
       }
@@ -875,6 +897,8 @@ export class FileTimelineBoard {
         }
       });
     });
+    this.names.addEventListener("scroll", () => this.follow(this.plot, this.names, "scrollTop"));
+    this.axisClip.addEventListener("scroll", () => this.follow(this.plot, this.axisClip, "scrollLeft"));
     this.board.addEventListener("click", (event) => this.activate(event));
     this.names.addEventListener("focusin", (event) => {
       const xref = this.personAt(event.target);
@@ -926,7 +950,7 @@ export class FileTimelineBoard {
     if (touch && this.armed !== xref) {
       this.armed = xref;
       this.highlight(xref);
-      const onPlot = target !== null && this.plot.contains(target);
+      const onPlot = target !== null && (this.plot.contains(target) || this.axisClip.contains(target));
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
       return;
     }

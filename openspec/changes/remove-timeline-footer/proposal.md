@@ -29,6 +29,9 @@ Proposed scope, taken from that:
   of the graph, over a corner of the board; the code that makes them is shared
   with the graph. A step is a fifth of the width of a year within the slider's
   old range; Fit widens or narrows the years to the width of the board.
+- «в таймлайне есть скроллбары — они не должны заходить на шапку и на имена» —
+  only the rows and years scroll with bars of their own; the axis and the names
+  follow them (`design.md`).
 - On a phone the board takes the height the removed lines and subtitle
   freed, with nothing below it and no empty band above it.
 - A person with no dated event still has a row, and no lifeline; the timeline
