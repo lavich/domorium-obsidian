@@ -48,3 +48,66 @@ say that it applies only while the interface is on.
 - **WHEN** the interface is off, `curie.ged` is opened and the reader then
   turns the interface on
 - **THEN** the tab is still in Source mode
+
+### Requirement: The tree
+
+The tree SHALL show the person in focus with, above, their parents and their
+parents' parents, and the parents of their first spouse; beside them, their
+spouses and their siblings and the first spouse's siblings; below, their
+children with each child's spouse, and their grandchildren. More than one
+sibling SHALL be shown as one box saying how many, which shows them one by one
+when activated. A husband SHALL stand to the left of his wife, and each side's
+parents and siblings SHALL tend to stand on that side. A person married more
+than once SHALL stand between their first two spouses with the first spouse to
+the left, so that each marriage's children sit beneath it.
+
+Each box SHALL be a card coloured by sex as the graph of the file colours it —
+pink for a woman, blue for a man, grey where no sex is stated, from the theme —
+showing a name and years. It SHALL mark the person in focus, mark a person
+whose record cites no source at all, and mark a person with parents above, or
+children below, that the tree does not reach. Each couple SHALL be joined
+through a family node between them showing the year of the marriage, hollow
+where no marriage is dated; activating the node SHALL show that family's page.
+Curved lines SHALL lead from each family node, or a single parent's card, to
+each child, turning only between rows. No two boxes SHALL overlap, however wide
+a family is; a tree larger than its view SHALL be moved and zoomed as the graph
+of the file is, and SHALL open with the person in focus in view.
+
+Pointing at a person, or giving them the keyboard focus, SHALL light them and
+their parents, spouses and children in the tree, and the lines between them.
+Every card and family node SHALL be reachable with the keyboard and activated
+with Enter or Space; on a phone a first touch SHALL light a person and a second
+activate them.
+
+Activating a person SHALL make them the focus.
+
+#### Scenario: Marie's tree
+- **WHEN** Marie's tree is shown
+- **THEN** her parents and Pierre's parents are above, four siblings are one
+  box beside her with Pierre and his brother Jacques, Irène and Ève are below
+  with their husbands, and Hélène and Pierre Joliot below Irène
+
+#### Scenario: A wide family
+- **WHEN** a person has twelve children with eight children each
+- **THEN** all ninety-six grandchildren are shown and no boxes overlap
+
+#### Scenario: Moving the focus
+- **WHEN** the reader activates Pierre Curie in Marie's tree
+- **THEN** the tree shows Pierre Curie in focus
+
+#### Scenario: Colours and sides
+- **WHEN** Marie's tree is shown
+- **THEN** Marie's card is marked pink and Pierre Curie's blue, in the theme's
+  colours; Pierre Curie stands to her left with a node showing `’95` between
+  them; Jacques and Pierre's parents stand on his side, and her siblings' box
+  and her parents on hers
+
+#### Scenario: A family node
+- **WHEN** the reader activates the node between Pierre Curie and Marie in her
+  tree
+- **THEN** the Curies' family page is shown
+
+#### Scenario: Married twice
+- **WHEN** Anna married Bert and then Carl, with a child of each
+- **THEN** Bert stands to her left and Carl to her right, and each child stands
+  beneath their own parents

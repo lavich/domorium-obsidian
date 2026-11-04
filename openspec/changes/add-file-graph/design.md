@@ -337,6 +337,51 @@ diagnostics and are not shown. The legend has the three sexes and the two kinds
 of node. On a phone, as the timeline: the title is hidden (the tab names the
 file) and the legend folds behind a **Legend** button.
 
+### The person page's tree on the graph's pieces
+
+Added at the user's request (proposal): the tree keeps its people and is drawn
+by the graph.
+
+- **Who is in it** stays the old `layoutTree`'s composition, moved to a new
+  `src/desk/personTree.ts` that answers not positions but an input to the
+  graph's layout: cards (with the row, sex, name, years and marks of each) and
+  families (spouses, children, marriage year, the family record a node opens).
+  A card's id is its own, not the person's identifier, because one person can
+  stand in the tree twice, as a cousin marriage makes.
+- **The layout** is split: `layoutGraph(input, clock)` is everything
+  `layoutFileGraph` did after reading the model, and `layoutFileGraph(model,
+  scope)` builds its input from the model and calls it. The tree calls
+  `layoutGraph` with rows −2…2. Blocks, husband-left, anchors, lanes, sweeps,
+  pulls, the squeeze of empty columns and the bends all serve both.
+- **Husband-left and the first spouse (mine).** The old tree put a first spouse
+  to the person's left when there was a second. In a chain of three — a person
+  between two spouses — the two orientations always score the same by sex and
+  by HUSB role, one pair reading husband-left either way. Where they tie the
+  layout now keeps the first-listed spouse on the left, for the tree and the
+  file alike: Anna between Bert and Carl, a man between his first and second
+  wife. `curie.ged` has no one married twice, so nothing in it moves by this
+  rule; what moves is Marie's own pair, Pierre now to her left, with her
+  siblings and parents to her right and his to his left.
+- **Drawing.** The canvas — the SVG, drawing only what is near the view, hover
+  by classes, pan, zoom, pinch, the keyboard, touch, the node's tooltip and
+  popover — moves out of `FileGraphBoard` into `src/desk/graphCanvas.ts`, fed a
+  layout and a description of each card and family. `FileGraphBoard` keeps its
+  header, search, scope bar and legend; the tree's view
+  (`src/desk/personTreeView.ts`) puts the canvas in the page at a fixed height,
+  with **+**, **−**, **Fit** and a legend. The tree's cards have no Branch pill.
+- **Marks (mine).** The focus is drawn as the graph's branch person is, a
+  thicker accent border; no source is the old warning dot at the top right of
+  the card; relatives beyond the edge are ▲ above the card and ▼ below it; a
+  sibling, or the run of them, is faded as before; the run is a grey card
+  saying how many, which unfolds them when activated.
+- **Opening (mine).** Each drawing of the tree — and the page draws it again on
+  each new focus — opens fitted where that is readable, else at 0.6 centred on
+  the focus, by the graph's rule with the focus as the tab's person. Nothing is
+  saved: the old tree saved no scroll either.
+- **Lighting** reaches the people the tree joins to the card — the spouses and
+  children of its families and the parents of the family it is a child of —
+  computed from the input, so a person standing twice lights each place.
+
 ## Risks / Trade-offs
 
 - **Layout time on a phone.** A phone is several times slower than the

@@ -57,6 +57,20 @@ Answers to the plan's open questions (2026-11-04):
   of Obsidian's own graph view (`graph-glyph`), and the user chose `network`
   instead.
 
+Added to this change (2026-11-04): «на странице персоны надо заменить старый
+граф на новый». Asked how, the user chose «Состав старого дерева, вид нового
+графа»: the Tree tab of a person's page keeps exactly who it shows today —
+parents and their parents, the first spouse's parents; spouses, siblings in one
+box with a count that unfolds them, the first spouse's siblings; children with
+their spouses; grandchildren — with its no-source mark, its marks for relatives
+beyond the edge, its focus mark, activating a person to make them the focus, no
+overlaps however wide the family, and the focus in view on opening; but it is
+drawn by the graph's pieces: cards coloured by sex, a family node with the
+marriage year that opens the family's page, husband on the left with each
+side's family on its side, curved lines in the gaps, hover by classes, and the
+graph's keyboard and phone behaviour. One renderer serves both; the old tree's
+layout and drawing are retired.
+
 Proposed scope:
 
 - A new view, **Graph of the file**, opened in a tab of its own from a header
@@ -106,7 +120,8 @@ parser or the language service changes.
 ### Modified Capabilities
 
 - `genealogy-view`: the genealogy interface setting also hides the graph of the
-  file, its header action and its command.
+  file, its header action and its command; the tree of a person's page is drawn
+  as the graph of the file is drawn, with the same people in it as before.
 
 ## Impact
 
@@ -127,6 +142,11 @@ parser or the language service changes.
 - `src/commands.ts` and `src/GedcomView.ts`: the command, the menu item and the
   header action, with the `network` icon.
 - `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`, `README.md`.
+- The person page's tree: new `src/desk/personTree.ts` (who the tree shows, as
+  an input to the graph's layout) and `src/desk/personTreeView.ts` (drawing it
+  on the graph's canvas), the canvas itself moved from `fileGraphView.ts` to a
+  new `src/desk/graphCanvas.ts`; `src/desk/treeLayout.ts`, `src/desk/treeView.ts`
+  and their tests removed; `src/desk/personPage.ts`; `tests/desk.spec.ts`.
 - `harness/fileGraph.ts` and page, `harness/build.mjs`, `harness/palette.css`,
   a Playwright spec `tests/fileGraph.spec.ts`, and the 10 000-person generator
   moved from `tests/fileTimeline.spec.ts` to a shared `tests/generated.ts`.
