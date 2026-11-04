@@ -80,133 +80,6 @@ change the tab. Two tabs of one file SHALL each have a mode of their own.
   mode
 - **THEN** switching the first to Timeline mode leaves the second in Source mode
 
-### Requirement: The mode control
-
-While the **Genealogy interface** setting is on, the header of a GEDCOM tab SHALL
-carry the mode control: one icon button for each mode — Genealogy, Graph,
-Timeline and Source, in that order — each a header action of the tab, labelled
-with the name of its mode. The button of the tab's mode SHALL be marked as the
-active one, in the accent colour and as pressed to assistive technology, and the
-mark SHALL follow every change of the tab's mode, however it came about.
-Pressing a button SHALL switch the tab to that mode, and pressing the active one
-SHALL do nothing. While the setting is off none of the buttons SHALL be shown. The
-buttons SHALL be reachable in the header on a phone as Obsidian's own view
-actions are.
-
-The plugin SHALL offer a command for each mode — **Show as genealogy**, **Show as
-graph**, **Show as timeline** and **Show as source** — each available while the
-interface is on and a GEDCOM tab is active in another mode, and no hotkey SHALL
-be assigned to any of them by default. A command **Switch between source and the
-last view** SHALL switch a tab in Source mode to the mode it was in before Source
-mode — Genealogy where it has none in this session — and a tab in any other mode
-to Source mode. The tab's menu SHALL offer the four mode commands that are
-available, and the commands SHALL be offered in the command palette as well.
-
-#### Scenario: A button for each mode
-- **WHEN** `curie.ged` is open in Genealogy mode with the interface on
-- **THEN** the header shows buttons for Genealogy, Graph, Timeline and Source in
-  that order, and the Genealogy button is marked as active and no other
-
-#### Scenario: Pressing a button
-- **WHEN** the tab is in Genealogy mode and the reader presses the Graph button
-- **THEN** the tab shows the graph, and the Graph button is the one marked active
-
-#### Scenario: Pressing the active button
-- **WHEN** the tab is in Graph mode and the reader presses the Graph button
-- **THEN** nothing changes
-
-#### Scenario: The mark follows the mode
-- **WHEN** the reader switches the tab by a command, goes Back to an earlier mode,
-  or restarts Obsidian
-- **THEN** the button of the mode the tab is then in is the one marked active
-
-#### Scenario: The interface is off
-- **WHEN** the interface setting is off
-- **THEN** none of the four buttons is in the tab's header
-
-#### Scenario: A command
-- **WHEN** a tab is in Source mode and the reader runs **Show as timeline** from
-  the command palette
-- **THEN** the tab is in Timeline mode
-
-#### Scenario: The current mode is not offered
-- **WHEN** a tab is in Graph mode and the reader opens the command palette
-- **THEN** **Show as graph** is not offered and **Show as genealogy**, **Show as
-  timeline** and **Show as source** are
-
-#### Scenario: Back to the last view
-- **WHEN** a tab is in Graph mode and the reader runs **Switch between source and
-  the last view** twice
-- **THEN** the tab is in Source mode after the first and in Graph mode after the
-  second
-
-#### Scenario: A tab that has had only Source
-- **WHEN** a tab opened in Source mode and the reader runs **Switch between source
-  and the last view**
-- **THEN** the tab is in Genealogy mode
-
-#### Scenario: The tab's menu
-- **WHEN** a tab is in Timeline mode and the reader opens the tab's menu
-- **THEN** it offers to show the tab as genealogy, as graph and as source, and
-  not as timeline
-
-#### Scenario: The mode control on a phone
-- **WHEN** the reader opens a tab on a phone
-- **THEN** the four buttons are in the tab's header, and tapping one switches the
-  tab to its mode
-
-### Requirement: Graph and Timeline draw the tab's own reading of the file
-
-The Graph and Timeline modes SHALL draw the file from the same reading of the
-tab's text that the pages, the Index and the Evidence panel use, and SHALL NOT
-read the file from the vault themselves. A mode not in view SHALL NOT be drawn: a
-tab whose file changes while it is behind another, or while it is in another mode,
-SHALL draw it when it is next in view. Switching between modes SHALL NOT lay the
-graph or the timeline out again where the text and the scope are the same, and
-SHALL leave each at the scope, position, zoom and scroll position it was left at. Graph and
-Timeline SHALL each keep a scope of their own: choosing a branch in one SHALL NOT
-change the other. A tab SHALL NOT draw either mode before it has read its file. A change of the
-tab's size SHALL NOT disturb either mode: a tab that is not displayed, or whose
-size is momentarily nothing, SHALL keep the position and zoom it had. Where the
-text changes by any route — typed, changed on disk, or rewritten by the plugin
-as a renamed file is followed — the mode shown SHALL show it. A tab that is
-navigated to another file SHALL NOT carry the scope, position, zoom, selection or
-drawn views of the first into the second.
-
-#### Scenario: A restored tab
-- **WHEN** a tab of `curie.ged` in Graph mode, zoomed in and moved, is restored
-  with the workspace
-- **THEN** the graph is shown at that zoom and position, not at the position of
-  an empty graph
-
-#### Scenario: Each view keeps its own branch
-- **WHEN** the reader chooses Irène's branch in Graph mode and switches to
-  Timeline mode
-- **THEN** the timeline shows all 17 people
-
-#### Scenario: A tab resized while it is hidden
-- **WHEN** a tab in Graph mode, zoomed in and moved, is behind another tab, the
-  window is resized, and the reader brings the tab to the front
-- **THEN** the graph is at the same position and zoom as before
-
-#### Scenario: Rewritten by the plugin
-- **WHEN** the tab is in Graph mode and the plugin rewrites a `FILE` path in the
-  text because the media file was renamed
-- **THEN** the graph is drawn from the new text, and a card whose portrait it
-  names shows the portrait at the new path
-
-#### Scenario: Navigated to another file
-- **WHEN** a tab of `curie.ged` is in Graph mode on Irène's branch, zoomed in, and
-  the same tab is navigated to another GEDCOM file
-- **THEN** the tab shows the other file's graph, opened by the rule for a view
-  never shown, and not Irène's branch or zoom
-
-#### Scenario: A tab that is not in view
-- **WHEN** a tab of `curie.ged` in Timeline mode is behind another tab, and
-  Marie's year of death is changed on disk
-- **THEN** the timeline is not drawn again until the reader brings the tab to the
-  front, and then her lifeline ends at the new year
-
 ### Requirement: Which record Genealogy mode shows
 
 When a tab enters Genealogy mode it SHALL show, in order of preference: the
@@ -433,6 +306,133 @@ interface is on.
 - **THEN** the tab is still in Source mode
 
 ## ADDED Requirements
+
+### Requirement: The mode control
+
+While the **Genealogy interface** setting is on, the header of a GEDCOM tab SHALL
+carry the mode control: one icon button for each mode — Genealogy, Graph,
+Timeline and Source, in that order — each a header action of the tab, labelled
+with the name of its mode. The button of the tab's mode SHALL be marked as the
+active one, in the accent colour and as pressed to assistive technology, and the
+mark SHALL follow every change of the tab's mode, however it came about.
+Pressing a button SHALL switch the tab to that mode, and pressing the active one
+SHALL do nothing. While the setting is off none of the buttons SHALL be shown. The
+buttons SHALL be reachable in the header on a phone as Obsidian's own view
+actions are.
+
+The plugin SHALL offer a command for each mode — **Show as genealogy**, **Show as
+graph**, **Show as timeline** and **Show as source** — each available while the
+interface is on and a GEDCOM tab is active in another mode, and no hotkey SHALL
+be assigned to any of them by default. A command **Switch between source and the
+last view** SHALL switch a tab in Source mode to the mode it was in before Source
+mode — Genealogy where it has none in this session — and a tab in any other mode
+to Source mode. The tab's menu SHALL offer the four mode commands that are
+available, and the commands SHALL be offered in the command palette as well.
+
+#### Scenario: A button for each mode
+- **WHEN** `curie.ged` is open in Genealogy mode with the interface on
+- **THEN** the header shows buttons for Genealogy, Graph, Timeline and Source in
+  that order, and the Genealogy button is marked as active and no other
+
+#### Scenario: Pressing a button
+- **WHEN** the tab is in Genealogy mode and the reader presses the Graph button
+- **THEN** the tab shows the graph, and the Graph button is the one marked active
+
+#### Scenario: Pressing the active button
+- **WHEN** the tab is in Graph mode and the reader presses the Graph button
+- **THEN** nothing changes
+
+#### Scenario: The mark follows the mode
+- **WHEN** the reader switches the tab by a command, goes Back to an earlier mode,
+  or restarts Obsidian
+- **THEN** the button of the mode the tab is then in is the one marked active
+
+#### Scenario: The interface is off
+- **WHEN** the interface setting is off
+- **THEN** none of the four buttons is in the tab's header
+
+#### Scenario: A command
+- **WHEN** a tab is in Source mode and the reader runs **Show as timeline** from
+  the command palette
+- **THEN** the tab is in Timeline mode
+
+#### Scenario: The current mode is not offered
+- **WHEN** a tab is in Graph mode and the reader opens the command palette
+- **THEN** **Show as graph** is not offered and **Show as genealogy**, **Show as
+  timeline** and **Show as source** are
+
+#### Scenario: Back to the last view
+- **WHEN** a tab is in Graph mode and the reader runs **Switch between source and
+  the last view** twice
+- **THEN** the tab is in Source mode after the first and in Graph mode after the
+  second
+
+#### Scenario: A tab that has had only Source
+- **WHEN** a tab opened in Source mode and the reader runs **Switch between source
+  and the last view**
+- **THEN** the tab is in Genealogy mode
+
+#### Scenario: The tab's menu
+- **WHEN** a tab is in Timeline mode and the reader opens the tab's menu
+- **THEN** it offers to show the tab as genealogy, as graph and as source, and
+  not as timeline
+
+#### Scenario: The mode control on a phone
+- **WHEN** the reader opens a tab on a phone
+- **THEN** the four buttons are in the tab's header, and tapping one switches the
+  tab to its mode
+
+### Requirement: Graph and Timeline draw the tab's own reading of the file
+
+The Graph and Timeline modes SHALL draw the file from the same reading of the
+tab's text that the pages, the Index and the Evidence panel use, and SHALL NOT
+read the file from the vault themselves. A mode not in view SHALL NOT be drawn: a
+tab whose file changes while it is behind another, or while it is in another mode,
+SHALL draw it when it is next in view. Switching between modes SHALL NOT lay the
+graph or the timeline out again where the text and the scope are the same, and
+SHALL leave each at the scope, position, zoom and scroll position it was left at. Graph and
+Timeline SHALL each keep a scope of their own: choosing a branch in one SHALL NOT
+change the other. A tab SHALL NOT draw either mode before it has read its file. A change of the
+tab's size SHALL NOT disturb either mode: a tab that is not displayed, or whose
+size is momentarily nothing, SHALL keep the position and zoom it had. Where the
+text changes by any route — typed, changed on disk, or rewritten by the plugin
+as a renamed file is followed — the mode shown SHALL show it. A tab that is
+navigated to another file SHALL NOT carry the scope, position, zoom, selection or
+drawn views of the first into the second.
+
+#### Scenario: A restored tab
+- **WHEN** a tab of `curie.ged` in Graph mode, zoomed in and moved, is restored
+  with the workspace
+- **THEN** the graph is shown at that zoom and position, not at the position of
+  an empty graph
+
+#### Scenario: Each view keeps its own branch
+- **WHEN** the reader chooses Irène's branch in Graph mode and switches to
+  Timeline mode
+- **THEN** the timeline shows all 17 people
+
+#### Scenario: A tab resized while it is hidden
+- **WHEN** a tab in Graph mode, zoomed in and moved, is behind another tab, the
+  window is resized, and the reader brings the tab to the front
+- **THEN** the graph is at the same position and zoom as before
+
+#### Scenario: Rewritten by the plugin
+- **WHEN** the tab is in Graph mode and the plugin rewrites a `FILE` path in the
+  text because the media file was renamed
+- **THEN** the graph is drawn from the new text, and a card whose portrait it
+  names shows the portrait at the new path
+
+#### Scenario: Navigated to another file
+- **WHEN** a tab of `curie.ged` is in Graph mode on Irène's branch, zoomed in, and
+  the same tab is navigated to another GEDCOM file
+- **THEN** the tab shows the other file's graph, opened by the rule for a view
+  never shown, and not Irène's branch or zoom
+
+#### Scenario: A tab that is not in view
+- **WHEN** a tab of `curie.ged` in Timeline mode is behind another tab, and
+  Marie's year of death is changed on disk
+- **THEN** the timeline is not drawn again until the reader brings the tab to the
+  front, and then her lifeline ends at the new year
 
 ### Requirement: An index row selects a person in Graph and Timeline
 

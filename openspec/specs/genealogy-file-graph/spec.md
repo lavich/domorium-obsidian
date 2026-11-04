@@ -7,55 +7,6 @@ to cross as little as possible, in a tab of its own beside the person pages.
 
 ## Requirements
 
-### Requirement: The graph of a file is a tab of its own
-
-The plugin SHALL offer a view, **Graph of the file**, that shows one GEDCOM file
-and opens in a tab of the main area, as Obsidian's graph view does. It SHALL
-open from an action in the header of a GEDCOM tab, in either mode, beside the
-action that opens the timeline of the file; from a command available while a
-GEDCOM tab is active; and from that tab's menu. Opening it for a file that
-already has a graph open SHALL reveal that one, with its scope and view as the
-reader left them, rather than open a second.
-
-The graph SHALL show the file as the plugin reads it, including text typed in a
-tab of that file and not yet saved, and SHALL follow every later change to it.
-Where no tab of the file is open, it SHALL read the file from the vault. It SHALL
-keep its file, scope, position and zoom across closing and reopening the
-workspace, SHALL follow the file when it is renamed or moved, and SHALL say so
-when the file no longer exists.
-
-Nothing in the graph SHALL write to the file.
-
-#### Scenario: Opening it from the header
-- **WHEN** `curie.ged` is open and the reader chooses the graph action in its
-  header
-- **THEN** a new tab shows the graph of `curie.ged`, with a card for each of its
-  17 people in four generations
-
-#### Scenario: Opening it twice
-- **WHEN** the graph of `curie.ged` is open in a tab and the reader chooses the
-  action again
-- **THEN** that tab is shown, and no second graph opens
-
-#### Scenario: An edit not yet saved
-- **WHEN** the reader changes Marie's year of death to 1935 in the source and the
-  file is not yet saved
-- **THEN** her card in the graph reads `1867–1935`
-
-#### Scenario: The file is renamed
-- **WHEN** the graph of `curie.ged` is open and the file is renamed to
-  `family.ged`
-- **THEN** the graph shows `family.ged`
-
-#### Scenario: The file is deleted
-- **WHEN** the graph of `curie.ged` is open and the file is deleted
-- **THEN** the graph says that `curie.ged` is no longer in the vault
-
-#### Scenario: Restored with the workspace
-- **WHEN** the graph of `curie.ged` is open on Irène's branch, zoomed in and
-  moved, and Obsidian is restarted
-- **THEN** the graph shows Irène's branch at the same zoom and position
-
 ### Requirement: A card is a person, coloured by sex
 
 Each person the file declares with an identifier SHALL have a card showing,
@@ -262,10 +213,12 @@ branch is shown SHALL return to the whole file, and that person's Branch SHALL
 read as pressed while their branch is shown. While the whole file is shown, no
 line about the scope SHALL be shown.
 
-A file of more than 500 people SHALL open on the branch of the person shown by
-the GEDCOM tab the graph was opened from — the page's person in Genealogy mode,
-the person at the cursor in Source mode — or of the first person the file
-declares where neither names one. A smaller file SHALL open on all of it.
+A file of more than 500 people SHALL show its graph, the first time the tab does,
+on the branch of the person the tab had in view when it was brought to the graph
+— the page's person in Genealogy mode, the person at the cursor in Source mode —
+or of the first person the file declares where neither names one. A smaller file
+SHALL open on all of it. Once the tab has shown the graph, the scope the reader
+leaves it on SHALL be kept, the whole file included.
 
 #### Scenario: Irène's branch
 - **WHEN** the reader chooses Irène's branch in the graph of `curie.ged`
@@ -284,10 +237,20 @@ declares where neither names one. A smaller file SHALL open on all of it.
 - **THEN** one row shows Pierre Curie and Marie
 
 #### Scenario: A large file
-- **WHEN** a file of 2 000 people is open on a person's page and the reader opens
-  its graph
+- **WHEN** a file of 2 000 people is open on a person's page and the reader
+  switches the tab to Graph mode
 - **THEN** the graph shows that person's branch, with the way back to the whole
   file
+
+#### Scenario: A large file opened as a graph
+- **WHEN** *Open GEDCOM files as* names Graph and the reader opens a file of
+  2 000 people
+- **THEN** the graph shows the branch of the first person the file declares
+
+#### Scenario: The whole file, chosen, stays
+- **WHEN** the reader returns a large file's graph to the whole file, switches to
+  Source mode and back to Graph mode
+- **THEN** the whole file is shown
 
 ### Requirement: Moving about the graph
 
@@ -300,17 +263,18 @@ out. **Fit** SHALL show the whole scope where the zoom range allows, and
 otherwise as much of it as the farthest zoom shows, centred on it. Zoomed out
 beyond the point where names can be read, cards SHALL be drawn without text.
 
-A graph restored with the workspace SHALL first be shown as it was left. Any
-other graph SHALL first be shown fitted to its view where it can then be read,
-and otherwise at a readable size around the first of these that is shown: the
-person of the tab it was opened from, the person whose branch it shows, the
-first card of the top row. An edit of the file SHALL leave the view where it
-is. Changing the scope SHALL show the new scope at a readable size around the
-person whose branch it now shows, or, on returning to the whole file, around
-the person whose branch it showed.
+A graph restored with the workspace, or shown again after the tab was in another
+mode, SHALL be shown as it was left. Any other graph SHALL first be shown fitted
+to its view where it can then be read, and otherwise at a readable size around
+the first of these that is shown: the person the tab had in view when it was
+brought to the graph, the person whose branch it shows, the first card of the top
+row. An edit of the file SHALL leave the view where it is. Changing the scope
+SHALL show the new scope at a readable size around the person whose branch it now
+shows, or, on returning to the whole file, around the person whose branch it
+showed.
 
 #### Scenario: Opening on a small file
-- **WHEN** the graph of `curie.ged` is opened in a tab 1 400 pixels wide
+- **WHEN** the graph of `curie.ged` is shown in a tab 1 400 pixels wide
 - **THEN** every card of the file is in view, with its name
 
 #### Scenario: Far out
@@ -322,22 +286,28 @@ the person whose branch it showed.
 - **THEN** the graph has moved, and Marie's page is not opened
 
 #### Scenario: Choosing a branch
-- **WHEN** the graph of `curie.ged` was opened from Marie's page and the reader
-  chooses Irène's branch, and then returns to the whole file
+- **WHEN** the tab of `curie.ged` was on Marie's page when it was switched to
+  Graph mode and the reader chooses Irène's branch, and then returns to the whole
+  file
 - **THEN** the view is centred on Irène's card both times, at a readable size
 
 #### Scenario: An edit keeps the view
 - **WHEN** the reader has moved and zoomed the graph and then corrects a date in
-  the source
+  the source and returns to Graph mode
 - **THEN** the graph shows the correction at the same position and zoom
+
+#### Scenario: Another mode and back
+- **WHEN** the reader has moved and zoomed the graph, switches to Timeline mode
+  and then back to Graph mode
+- **THEN** the graph is at the same position and zoom, and was not laid out again
 
 ### Requirement: The graph leads to the pages
 
-Activating a person's card SHALL show that person in the GEDCOM tab of the file,
-as a row of the index does: their page in Genealogy mode, the cursor on their
-record in Source mode. Activating a family node SHALL show that family the same
-way. The file's tab SHALL be brought to the front; where no tab of the file is
-open, one SHALL be opened. The graph tab SHALL stay open behind it.
+Activating a person's card SHALL show that person's page in the same tab, until
+a later change gives the card a place of its own: the tab leaves Graph mode for Genealogy mode, and Back
+SHALL return it to the graph, at the scope, position and zoom it had. Activating
+a family node SHALL show that family's page the same way. Activating either SHALL
+open no other tab.
 
 Every card and family node drawn SHALL be reachable with the keyboard, in the
 order of the rows and, within a row, from left to right; SHALL say whom it
@@ -346,18 +316,24 @@ card's **Branch** choice SHALL be reachable with the keyboard too. A card or nod
 given the focus SHALL be brought into view.
 
 #### Scenario: From the graph to Irène's page
-- **WHEN** the GEDCOM tab of `curie.ged` is in Genealogy mode and the reader
-  activates Irène's card
-- **THEN** that tab comes to the front showing Irène's page, and the graph stays
-  open in its own tab
+- **WHEN** the tab of `curie.ged` is in Graph mode and the reader activates
+  Irène's card
+- **THEN** the same tab is in Genealogy mode showing Irène's page, and no other
+  tab has opened
+
+#### Scenario: Back to the graph
+- **WHEN** Irène's page was opened from the graph of Irène's branch, zoomed in,
+  and the reader presses back
+- **THEN** the tab is in Graph mode again, showing Irène's branch at the same
+  position and zoom
 
 #### Scenario: From a family node to the family page
 - **WHEN** the reader activates the node between Pierre Curie and Marie
-- **THEN** the GEDCOM tab comes to the front showing the Curies' family page
+- **THEN** the tab is in Genealogy mode showing the Curies' family page
 
 #### Scenario: From the keyboard
 - **WHEN** the reader moves the focus to Marie's card and presses Enter
-- **THEN** Marie's page is shown in the file's tab
+- **THEN** Marie's page is shown in the tab
 
 ### Requirement: The graph holds up at size
 
@@ -397,3 +373,113 @@ the light out.
   card
 - **THEN** it zooms around the point between the two fingers, the card's person
   is not opened, and no page of the app scrolls or zooms with it
+
+### Requirement: The graph is a mode of the file's tab
+
+A GEDCOM tab SHALL offer a **Graph** mode that shows the whole of its file as
+the graph of the file, in the tab itself, with no tab of its own. The tab SHALL
+enter it from the mode control in its header, from a command, and from the tab's
+menu, as the requirement on the mode control of a GEDCOM tab says. Entering it
+SHALL NOT open another tab.
+
+The graph SHALL show the file as the tab holds it, including text typed in the
+tab and not yet saved, and SHALL show every later change to it: at once while the
+tab is in view, and the next time it is brought into view otherwise. It SHALL
+keep its scope, position and zoom across leaving the mode and coming back and
+across closing and reopening the workspace, and SHALL stay on the file when it is
+renamed or moved, as the tab does.
+
+Nothing in the graph SHALL write to the file.
+
+#### Scenario: Choosing it from the mode control
+- **WHEN** `curie.ged` is open in Genealogy mode and the reader chooses Graph from
+  the mode control in its header
+- **THEN** the same tab shows the graph of `curie.ged`, with a card for each of
+  its 17 people in four generations, and no new tab is open
+
+#### Scenario: An edit not yet saved
+- **WHEN** the reader changes Marie's year of death to 1935 in Source mode, the
+  file is not yet saved, and the reader switches to Graph mode
+- **THEN** her card in the graph reads `1867–1935`
+
+#### Scenario: Changed on disk while out of view
+- **WHEN** a tab in Graph mode is behind another tab and the file is changed on
+  disk so that Marie's year of death is 1935, and the reader brings the tab to the
+  front
+- **THEN** her card reads `1867–1935`
+
+#### Scenario: The file is renamed
+- **WHEN** the tab of `curie.ged` is in Graph mode and the file is renamed to
+  `family.ged`
+- **THEN** the tab is named `family.ged` and still shows the graph
+
+#### Scenario: Leaving the mode and coming back
+- **WHEN** the tab is in Graph mode on Irène's branch, zoomed in and moved, and
+  the reader switches to Timeline mode and then back to Graph mode
+- **THEN** the graph shows Irène's branch at the same zoom and position
+
+#### Scenario: Restored with the workspace
+- **WHEN** a tab of `curie.ged` is in Graph mode on Irène's branch, zoomed in and
+  moved, and Obsidian is restarted
+- **THEN** the tab shows the graph of Irène's branch at the same zoom and position
+
+### Requirement: A selected card
+
+The graph SHALL mark one person's card as **selected** when the GEDCOM tab is told
+to select them, as an index row does in Graph mode. The view SHALL centre on the
+card at a readable zoom, gliding there rather than jumping unless the reader has
+asked for reduced motion or the card is further away than a glide can show without
+a streak, as stepping to a match does. The mark SHALL be unlike the light of
+pointing and unlike the ring of the search's current match, SHALL stay while the
+pointer lights other people and while the reader searches, and SHALL stay until
+another person is selected or the tab leaves Graph mode. Where the person is not
+in the branch shown, the graph SHALL show their branch, with the way back to the
+whole file. The selection SHALL belong to the person, not to what is drawn: a card out of view,
+outside a scope the reader has narrowed, or absent from a text that has changed
+SHALL show the mark again when it is drawn, and every card of a person drawn more
+than once SHALL carry it. Searching, and changing the scope, SHALL NOT end it.
+Selecting SHALL NOT open a page, change the mode or write to the file.
+
+#### Scenario: Selecting Pierre from the index
+- **WHEN** the tab is in Graph mode and the reader activates Pierre Curie's row in
+  the index
+- **THEN** his card is marked selected and centred, the tab is still in Graph
+  mode, and no page is open
+
+#### Scenario: The mark outlasts hover and search
+- **WHEN** Pierre Curie is selected, the pointer rests on Marie's card and the
+  reader types `joliot` and presses Enter
+- **THEN** Pierre Curie's card still carries the selected mark, apart from the
+  light on Marie's and the ring on Frédéric's
+
+#### Scenario: A card out of view and back
+- **WHEN** Pierre Curie is selected and the reader moves the graph until his card
+  is out of the drawn window, and then back
+- **THEN** his card carries the selected mark again
+
+#### Scenario: Another selection
+- **WHEN** Pierre Curie is selected and the reader activates Irène's row
+- **THEN** only Irène's card is marked selected
+
+#### Scenario: A person outside the branch
+- **WHEN** the graph shows Marie's branch with zero generations of ancestors and
+  zero of descendants and the reader activates Hélène's row in the index
+- **THEN** the graph shows Hélène's branch, with her card selected
+
+### Requirement: The find key opens the graph's search
+
+In Graph mode the editor's find — the command **Find**, and the key Obsidian
+dispatches to the tab for it — SHALL open the search of the graph: the icon
+floating over the canvas expands into the field, which takes the focus. Where
+the field is already open it SHALL only take the focus. It SHALL NOT open the
+editor's search panel or change the mode. Replace SHALL NOT be offered.
+
+#### Scenario: Find with the search closed
+- **WHEN** the tab of `curie.ged` is in Graph mode with the search closed and the
+  reader presses the find key
+- **THEN** the icon is replaced by the field, and the field has the focus
+
+#### Scenario: Find with the search open
+- **WHEN** the search is open with `joliot` typed and the focus is elsewhere in
+  the graph, and the reader runs **Find**
+- **THEN** the field keeps its text and takes the focus
