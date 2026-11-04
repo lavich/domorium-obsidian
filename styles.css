@@ -1145,87 +1145,6 @@ button.gedcom-desk-moment-what:disabled {
   padding-bottom: var(--navbar-height, 0px);
 }
 
-.gedcom-ft-head,
-.gedcom-fg-head {
-  padding: var(--size-4-3) var(--size-4-4) 0;
-}
-
-.gedcom-ft-title,
-.gedcom-fg-title {
-  font-size: var(--font-ui-medium);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-ft-summary,
-.gedcom-fg-summary {
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-.gedcom-ft-tools,
-.gedcom-fg-tools {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--size-4-2);
-  padding: var(--size-4-2) var(--size-4-4);
-}
-
-button.gedcom-ft-chip {
-  height: auto;
-  padding: 2px var(--size-4-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 99px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-normal);
-  font-size: var(--font-ui-smaller);
-  cursor: pointer;
-}
-
-button.gedcom-ft-chip[aria-pressed="true"] {
-  border-color: transparent;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.gedcom-ft-chip-count {
-  margin-inline-start: var(--size-2-2);
-  opacity: 0.65;
-}
-
-.gedcom-ft-zoom {
-  display: flex;
-  align-items: center;
-  gap: var(--size-2-3);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-.gedcom-ft-zoom input {
-  width: 110px;
-}
-
-input.gedcom-ft-search {
-  flex: 0 1 220px;
-  min-width: 0;
-}
-
-.gedcom-ft-alive {
-  margin-inline-start: auto;
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-/* The count comes and goes with the pointer; a line of its own on a phone
-   keeps the rows below from jumping when it does. */
-.is-phone .gedcom-ft-alive {
-  flex-basis: 100%;
-  min-height: 1.5em;
-  margin-inline-start: 0;
-}
-
 .gedcom-ft-scope,
 .gedcom-fg-scope {
   display: flex;
@@ -1300,34 +1219,65 @@ button.gedcom-fg-whole {
   cursor: pointer;
 }
 
+.gedcom-ft-stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.gedcom-ft-stage > .gedcom-ft-controls {
+  inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
+  bottom: calc(var(--size-4-2) + var(--gedcom-ft-hbar, 0px) + env(safe-area-inset-bottom, 0px));
+}
+
 .gedcom-ft-board {
   position: relative;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: var(--gedcom-ft-names) 1fr;
-  align-items: start;
-  overflow: auto;
+  grid-template-columns: var(--gedcom-ft-names) minmax(0, 1fr);
+  grid-template-rows: var(--gedcom-ft-axis) minmax(0, 1fr);
   border-top: 1px solid var(--background-modifier-border);
-  overscroll-behavior: contain;
+}
+
+.gedcom-ft-names,
+.gedcom-ft-axis-clip {
+  scrollbar-width: none;
+}
+
+.gedcom-ft-names::-webkit-scrollbar,
+.gedcom-ft-axis-clip::-webkit-scrollbar {
+  display: none;
 }
 
 .gedcom-ft-names {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  min-height: 100%;
+  align-self: start;
+  height: calc(100% - var(--gedcom-ft-hbar, 0px));
+  overflow: hidden auto;
+  overscroll-behavior: contain;
   background: var(--background-primary);
   border-inline-end: 1px solid var(--background-modifier-border);
 }
 
-.gedcom-ft-axis-pad {
-  position: sticky;
-  top: 0;
-  z-index: 3;
+.gedcom-ft-axis-pad,
+.gedcom-ft-axis-band {
+  box-sizing: border-box;
   height: var(--gedcom-ft-axis);
   background: var(--background-secondary);
   border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-ft-axis-band {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gedcom-ft-axis-clip {
+  width: calc(100% - var(--gedcom-ft-vbar, 0px));
+  overflow: auto hidden;
+  overscroll-behavior: contain;
 }
 
 .gedcom-ft-name {
@@ -1460,6 +1410,10 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 
 .gedcom-ft-plot {
   position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .gedcom-ft svg {
@@ -1473,11 +1427,7 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 }
 
 .gedcom-ft-axis {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   background: var(--background-secondary);
-  border-bottom: 1px solid var(--background-modifier-border);
 }
 
 .gedcom-ft-gridline {
@@ -1539,13 +1489,6 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 
 .gedcom-ft-span.is-marriage {
   fill: var(--interactive-accent);
-}
-
-.gedcom-ft svg text.gedcom-ft-caption {
-  fill: var(--text-normal);
-  font-size: 10.5px;
-  opacity: 0.8;
-  pointer-events: none;
 }
 
 .gedcom-ft-mark {
@@ -1629,7 +1572,7 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 
 .gedcom-ft-cursor {
   position: absolute;
-  top: var(--gedcom-ft-axis);
+  top: 0;
   left: 0;
   pointer-events: none;
 }
@@ -1656,17 +1599,6 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 .gedcom-ft svg .gedcom-ft-axis-cursor text {
   fill: var(--text-on-accent);
   font-weight: var(--font-semibold);
-}
-
-.gedcom-ft-undated {
-  padding: var(--size-2-3) var(--size-4-4) 0;
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-.is-phone .gedcom-ft-title,
-.is-phone .gedcom-fg-title {
-  display: none;
 }
 
 .gedcom-ft-tip,
@@ -1758,12 +1690,10 @@ button.gedcom-fg-pop-open {
   padding-bottom: var(--navbar-height, 0px);
 }
 
-input.gedcom-fg-search {
-  flex: 0 1 220px;
-  min-width: 0;
-}
-
-.gedcom-fg-controls {
+.gedcom-fg-controls,
+.gedcom-ft-controls,
+.gedcom-fg-find,
+.gedcom-ft-find {
   position: absolute;
   z-index: 1;
   inset-inline-end: var(--size-4-2);
@@ -1778,7 +1708,10 @@ input.gedcom-fg-search {
   cursor: default;
 }
 
-.gedcom-fg-controls button {
+.gedcom-fg-controls button,
+.gedcom-ft-controls button,
+.gedcom-fg-find button,
+.gedcom-ft-find button {
   height: auto;
   padding: var(--size-2-2) var(--size-2-3);
   border: 0;
@@ -1790,14 +1723,183 @@ input.gedcom-fg-search {
   cursor: pointer;
 }
 
-.gedcom-fg-controls button:hover {
+.gedcom-fg-controls button:hover,
+.gedcom-ft-controls button:hover,
+.gedcom-fg-find button:hover,
+.gedcom-ft-find button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
-.gedcom-fg-controls .svg-icon {
+.gedcom-fg-controls .svg-icon,
+.gedcom-ft-controls .svg-icon,
+.gedcom-fg-find .svg-icon,
+.gedcom-ft-find .svg-icon {
   width: 16px;
   height: 16px;
+}
+
+.gedcom-fg-find,
+.gedcom-ft-find {
+  top: var(--size-4-2);
+  bottom: auto;
+  align-items: center;
+}
+
+.gedcom-ft-stage > .gedcom-ft-find {
+  top: calc(var(--gedcom-ft-axis) + var(--size-4-2));
+  inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
+}
+
+.gedcom-fg-find input.gedcom-fg-search,
+.gedcom-ft-find input.gedcom-ft-search {
+  width: 0;
+  min-width: 0;
+  height: var(--gedcom-find-size);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width 180ms ease-out,
+    opacity 180ms ease-out,
+    visibility 0s linear 180ms;
+}
+
+.gedcom-fg-find.is-open input.gedcom-fg-search,
+.gedcom-ft-find.is-open input.gedcom-ft-search {
+  width: 220px;
+  flex: 0 1 220px;
+  padding: 0 var(--size-2-3);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.gedcom-fg-search::-webkit-search-cancel-button,
+.gedcom-ft-search::-webkit-search-cancel-button {
+  display: none;
+  appearance: none;
+}
+
+.gedcom-fg-find:not(.is-open) :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
+.gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count) {
+  display: none;
+}
+
+.gedcom-fg-find,
+.gedcom-ft-find {
+  max-width: calc(100% - 2 * var(--size-4-2));
+}
+
+.gedcom-ft-stage > .gedcom-ft-find {
+  max-width: calc(100% - 2 * var(--size-4-2) - var(--gedcom-ft-vbar, 0px));
+}
+
+.gedcom-fg-find-count,
+.gedcom-ft-find-count {
+  flex: none;
+  padding: 0 var(--size-2-3);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gedcom-fg-find button:disabled,
+.gedcom-ft-find button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gedcom-fg-person.is-current .gedcom-fg-card-bg,
+.gedcom-fg-person.is-current.is-hl .gedcom-fg-card-bg {
+  stroke: var(--interactive-accent);
+  stroke-width: 3.5;
+}
+
+.gedcom-ft-name.is-current {
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-ft-life.is-current {
+  stroke: var(--interactive-accent);
+  stroke-width: 2.5;
+}
+
+.gedcom-fg-find,
+.gedcom-ft-find {
+  --gedcom-find-size: 28px;
+  gap: 0;
+}
+
+.is-phone .gedcom-fg-find,
+.is-phone .gedcom-ft-find {
+  --gedcom-find-size: 44px;
+}
+
+.gedcom-fg-find button,
+.gedcom-ft-find button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--gedcom-find-size);
+  min-width: var(--gedcom-find-size);
+  height: var(--gedcom-find-size);
+  min-height: var(--gedcom-find-size);
+  flex: none;
+}
+
+.gedcom-fg-find .gedcom-fg-find-toggle,
+.gedcom-ft-find .gedcom-ft-find-toggle {
+  overflow: hidden;
+  transition:
+    width 180ms ease-out,
+    min-width 180ms ease-out,
+    padding 180ms ease-out,
+    opacity 120ms ease-out,
+    visibility 0s linear 0s;
+}
+
+.gedcom-fg-find.is-open .gedcom-fg-find-toggle,
+.gedcom-ft-find.is-open .gedcom-ft-find-toggle {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition-delay: 0s, 0s, 0s, 0s, 180ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gedcom-fg-find input.gedcom-fg-search,
+  .gedcom-ft-find input.gedcom-ft-search,
+  .gedcom-fg-find .gedcom-fg-find-toggle,
+  .gedcom-ft-find .gedcom-ft-find-toggle {
+    transition: none;
+  }
+}
+
+.gedcom-fg-view {
+  transform-origin: 0 0;
+}
+
+.gedcom-fg-card {
+  --no-tooltip: true;
+}
+
+.gedcom-fg-view.is-gliding {
+  transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gedcom-fg-view.is-gliding {
+    transition: none;
+  }
 }
 
 .gedcom-fg-canvas {
@@ -2044,8 +2146,7 @@ input.gedcom-fg-search {
 .gedcom-ft-mark,
 .gedcom-ft-marriage,
 .gedcom-ft-name,
-.gedcom-ft-age,
-.gedcom-ft-caption {
+.gedcom-ft-age {
   transition:
     opacity 150ms ease-out,
     fill 150ms ease-out,
@@ -2066,8 +2167,7 @@ input.gedcom-fg-search {
   .gedcom-ft-mark,
   .gedcom-ft-marriage,
   .gedcom-ft-name,
-  .gedcom-ft-age,
-  .gedcom-ft-caption {
+  .gedcom-ft-age {
     transition: none;
   }
 }

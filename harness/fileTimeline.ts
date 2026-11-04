@@ -76,7 +76,7 @@ function mount(options: TimelineOptions): number {
     },
     setIcon: stubSetIcon,
   });
-  board.show(fileTimelineOf(index), options.doc === undefined ? "curie.ged" : "family.ged", scope);
+  board.show(fileTimelineOf(index), scope);
   return performance.now() - started;
 }
 

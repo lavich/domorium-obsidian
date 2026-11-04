@@ -73,6 +73,10 @@ const ICONS: Record<string, Shape[]> = {
     { tag: "rect", attrs: { x: 2, y: 14, width: 8, height: 8, rx: 2 } },
   ],
   "chevron-right": [{ tag: "path", attrs: { d: "m9 18 6-6-6-6" } }],
+  search: [
+    { tag: "circle", attrs: { cx: 11, cy: 11, r: 8 } },
+    { tag: "path", attrs: { d: "m21 21-4.3-4.3" } },
+  ],
   minus: [{ tag: "path", attrs: { d: "M5 12h14" } }],
   maximize: [
     { tag: "path", attrs: { d: "M8 3H5a2 2 0 0 0-2 2v3" } },
@@ -84,6 +88,7 @@ const ICONS: Record<string, Shape[]> = {
     { tag: "path", attrs: { d: "M5 12h14" } },
     { tag: "path", attrs: { d: "M12 5v14" } },
   ],
+  "chevron-up": [{ tag: "path", attrs: { d: "m18 15-6-6-6 6" } }],
   "chevron-down": [{ tag: "path", attrs: { d: "m6 9 6 6 6-6" } }],
   x: [
     { tag: "path", attrs: { d: "M18 6 6 18" } },

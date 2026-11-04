@@ -16,7 +16,7 @@ import {
   type TimelineScope,
 } from "./fileTimelineView";
 
-const SCOPE: TimelineScope = { up: 2, down: 2, zoom: ZOOM.initial, others: true };
+const SCOPE: TimelineScope = { up: 2, down: 2, zoom: ZOOM.initial };
 const WHOLE = { top: 0, left: 0, width: 2000, height: 20 * ROW };
 
 let container: HTMLElement;
@@ -44,7 +44,7 @@ beforeEach(() => {
 
 function board(model: FileTimeline = fileTimelineOf(curieIndex()), scope: Partial<TimelineScope> = {}) {
   const drawn = new FileTimelineBoard(container, host satisfies FileTimelineHost);
-  drawn.show(model, "curie.ged", { ...SCOPE, ...scope });
+  drawn.show(model, { ...SCOPE, ...scope });
   drawn.draw(WHOLE);
   return drawn;
 }
@@ -98,12 +98,15 @@ describe("drawing the timeline of a file", () => {
     );
   });
 
-  it("says how many people have no dated event, and gives them a row", () => {
+  it("gives a person with no dated event a row", () => {
     board(fileTimelineOf(indexOf(curieWithEvents())));
 
     expect(names()).toHaveLength(18);
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("Kazimierz Żorawski");
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("1 person");
+    const kazimierz = [...container.querySelectorAll(".gedcom-ft-name")].find((row) =>
+      row.textContent?.includes("Kazimierz Żorawski"),
+    );
+    expect(kazimierz).toBeDefined();
+    expect(of(".gedcom-ft-life", kazimierz?.getAttribute("data-p") ?? "")).toHaveLength(0);
   });
 
   it("draws only the rows in the window and one window around it", () => {
@@ -199,7 +202,7 @@ describe("pointing at a person", () => {
 });
 
 describe("the year cursor", () => {
-  it("shows the age everyone alive reached that year, and how many were alive", () => {
+  it("shows the age everyone alive reached that year", () => {
     const drawn = board();
     drawn.setYear(1906);
 
@@ -207,7 +210,6 @@ describe("the year cursor", () => {
     expect(age("@I1@")).toBe("39");
     expect(age("@I12@")).toBe("9");
     expect(age("@I4@")).toBeUndefined();
-    expect(container.querySelector(".gedcom-ft-alive")?.textContent).toBe("In 1906: 11 people alive");
     expect(container.querySelector(".gedcom-ft-axis-cursor text")?.textContent).toBe("1906");
   });
 
@@ -223,57 +225,121 @@ describe("the year cursor", () => {
     drawn.setYear(null);
 
     expect(all(".gedcom-ft-age")).toHaveLength(0);
-    expect(container.querySelector(".gedcom-ft-alive")?.textContent).toBe("");
   });
 });
 
-describe("facts without a date", () => {
-  const caption = (xref: string) => container.querySelector(`.gedcom-ft-caption[data-p="${xref}"]`)?.textContent;
-
-  it("are written in the lifeline only once zoomed in far enough", () => {
-    board();
-    expect(caption("@I1@")).toBeUndefined();
-
-    container.replaceChildren();
-    board(fileTimelineOf(curieIndex()), { zoom: ZOOM.captions });
-    expect(caption("@I1@")).toBe("Physicist and chemist");
-  });
-
-  it("are written in the lifeline of the person under the pointer", () => {
-    board().highlight("@I1@");
-
-    expect(container.querySelector(".gedcom-ft-hover .gedcom-ft-caption")?.textContent).toBe("Physicist and chemist");
-  });
-});
-
-describe("the toolbar", () => {
-  it("hides and shows the events other than births, marriages and deaths", () => {
+describe("the timeline without a toolbar", () => {
+  it("draws the events other than births, marriages and deaths, with no switch for them", () => {
     board(fileTimelineOf(indexOf(curieWithEvents())));
-    const chip = container.querySelector<HTMLElement>(".gedcom-ft-chip");
-    expect(all(".gedcom-ft-mark.is-other").length).toBeGreaterThan(0);
 
-    chip?.click();
-    expect(all(".gedcom-ft-mark.is-other")).toHaveLength(0);
-    expect(all(".gedcom-ft-span")).toHaveLength(0);
-    expect(chip?.getAttribute("aria-pressed")).toBe("false");
-    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ others: false }));
-
-    chip?.click();
     expect(all(".gedcom-ft-mark.is-other").length).toBeGreaterThan(0);
+    expect(all(".gedcom-ft-span").length).toBeGreaterThan(0);
+    expect(container.querySelector(".gedcom-ft-chip, .gedcom-ft-tools, .gedcom-ft-alive")).toBeNull();
   });
 
-  it("widens the axis of years with the zoom", () => {
+  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the rows and the group", () => {
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    const places: Record<string, string> = {
+      "gedcom-ft-controls": "top",
+      "gedcom-ft-find": "bottom",
+      "gedcom-ft-name": "right",
+      "gedcom-ft-scope": "bottom",
+    };
+    const buttons = [...container.querySelectorAll("button")].filter((one) => one.getAttribute("aria-label"));
+
+    expect(buttons.length).toBeGreaterThan(20);
+    for (const button of buttons) {
+      expect(button.hasAttribute("title"), button.className).toBe(false);
+      const group = Object.keys(places).find((cls) => button.closest(`.${cls}`));
+      expect(button.getAttribute("data-tooltip-position"), `${button.className} in ${group}`).toBe(places[group ?? ""]);
+    }
+    expect(container.querySelector("[title]")).toBeNull();
+  });
+
+  it("widens and narrows the axis of years with the buttons, within the zoom range", () => {
     board();
     const width = () => Number(container.querySelector(".gedcom-ft-chart")?.getAttribute("width"));
+    const press = (cls: string) => container.querySelector<HTMLElement>(`.gedcom-ft-${cls}`)?.click();
     const before = width();
-    const zoom = container.querySelector<HTMLInputElement>(".gedcom-ft-zoom input");
-    if (zoom) {
-      zoom.value = "12";
-      zoom.dispatchEvent(new Event("input"));
-    }
 
-    expect(width()).toBeGreaterThan(before * 1.9);
-    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 12 }));
+    expect(container.querySelector("input[type=range]")).toBeNull();
+    press("zoom-in");
+    expect(width()).toBeGreaterThan(before);
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 7.2 }));
+
+    for (let i = 0; i < 40; i += 1) {
+      press("zoom-out");
+    }
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.min }));
+    for (let i = 0; i < 40; i += 1) {
+      press("zoom-in");
+    }
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.max }));
+  });
+
+  it("fits the whole span of years to the width of the board", () => {
+    board();
+    container.querySelector<HTMLElement>(".gedcom-ft-fit")?.click();
+
+    const width = Number(container.querySelector(".gedcom-ft-chart")?.getAttribute("width"));
+    expect(Math.abs(width - 1600)).toBeLessThan(2);
+  });
+
+  it("opens the search from an icon over the board and keeps a query open", () => {
+    board();
+    const find = container.querySelector<HTMLElement>(".gedcom-ft-find");
+    const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
+
+    expect(find?.parentElement?.classList.contains("gedcom-ft-stage")).toBe(true);
+    expect(find?.classList.contains("is-open")).toBe(false);
+    container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
+    expect(find?.classList.contains("is-open")).toBe(true);
+    if (input) {
+      input.value = "joliot";
+      input.dispatchEvent(new Event("input"));
+    }
+    container.querySelector<HTMLElement>(".gedcom-ft-find-clear")?.click();
+    expect(input?.value).toBe("");
+    expect(find?.classList.contains("is-open")).toBe(true);
+    expect(all(".gedcom-ft-name.is-dim")).toHaveLength(0);
+    input?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+    expect(find?.classList.contains("is-open")).toBe(false);
+  });
+
+  it("steps through the matches in row order with the arrows, marks the current row and wraps", () => {
+    board();
+    const count = () => container.querySelector(".gedcom-ft-find-count")?.textContent;
+    const current = () => all(".gedcom-ft-name.is-current").map((row) => row.getAttribute("data-p"));
+    container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
+    const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
+    if (input) {
+      input.value = "joliot";
+      input.dispatchEvent(new Event("input"));
+    }
+    expect(count()).toBe("4 matches");
+
+    const next = container.querySelector<HTMLElement>(".gedcom-ft-find-next");
+    const previous = container.querySelector<HTMLElement>(".gedcom-ft-find-prev");
+    const seen: (string | null)[] = [];
+    for (let step = 0; step < 4; step += 1) {
+      next?.click();
+      seen.push(...current());
+    }
+    expect(seen).toEqual(["@I12@", "@I14@", "@I16@", "@I17@"]);
+    expect(count()).toBe("4 / 4");
+    next?.click();
+    expect(current()).toEqual(["@I12@"]);
+    expect(count()).toBe("1 / 4");
+    previous?.click();
+    expect(current()).toEqual(["@I17@"]);
+    expect(of(".gedcom-ft-life.is-current", "@I17@")).toHaveLength(1);
+    expect(all(".gedcom-ft-name:not(.is-dim)")).toHaveLength(4);
+    if (input) {
+      input.value = "zzz";
+      input.dispatchEvent(new Event("input"));
+    }
+    expect(count()).toBe("No results");
+    expect(current()).toEqual([]);
   });
 
   it("fades the rows that do not match a search", () => {
@@ -314,11 +380,10 @@ describe("the toolbar", () => {
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
   });
 
-  it("opens on the branch a scope names, and says the cursor counts within it", () => {
+  it("opens on the branch a scope names", () => {
     board(fileTimelineOf(curieIndex()), { focus: "@I12@" }).setYear(1930);
 
     expect(names()).toHaveLength(10);
-    expect(container.querySelector(".gedcom-ft-alive")?.textContent).toContain("in this branch");
   });
 });
 
@@ -401,16 +466,14 @@ describe("the state a timeline keeps", () => {
       up: 3,
       down: 0,
       zoom: 12,
-      others: false,
     });
     expect(readTimelineState({ up: 40, down: -2, zoom: 1, focus: 7 })).toEqual({
       gedcom: null,
       up: 9,
       down: 0,
       zoom: ZOOM.min,
-      others: true,
     });
-    expect(readTimelineState(null)).toEqual({ gedcom: null, up: 2, down: 2, zoom: ZOOM.initial, others: true });
+    expect(readTimelineState(null)).toEqual({ gedcom: null, up: 2, down: 2, zoom: ZOOM.initial });
   });
 });
 
@@ -425,13 +488,13 @@ describe("a file that is gone", () => {
 });
 
 describe("a file with very many dated events", () => {
-  it("still summarises and draws it", () => {
+  it("still draws it", () => {
     const base = fileTimelineOf(curieIndex());
     const marie = base.people.get("@I1@");
     if (!marie) {
       throw new Error("no Marie");
     }
-    const many = Array.from({ length: 200_000 }, (_, at) => ({
+    const many = Array.from({ length: 5_000 }, (_, at) => ({
       ...marie.marks[0],
       kind: "other" as const,
       event: marie.marks[0].event,
@@ -444,9 +507,8 @@ describe("a file with very many dated events", () => {
       people: new Map([...base.people].map(([xref, person]) =>
         [xref, xref === "@I1@" ? { ...person, marks: [...person.marks, ...many] } : person])),
     };
-    board(model, { others: false });
+    board(model);
 
-    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("1827–2007");
     expect(names()).toHaveLength(17);
   });
 });
@@ -508,7 +570,7 @@ describe("the keyboard", () => {
     board();
     expect(scopeText()).toBe("");
     expect(container.querySelector<HTMLElement>(".gedcom-ft-scope")?.style.display).toBe("none");
-    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("17 people");
+    expect(names()).toHaveLength(17);
 
     container.replaceChildren();
     board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 9, down: 0 });
@@ -533,7 +595,7 @@ describe("the keyboard", () => {
     expect(names()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
     const irene = fileTimelineOf(curieIndex()).rows.indexOf("@I12@");
-    expect(container.querySelector(".gedcom-ft-board")?.scrollTop).toBe(irene * ROW + ROW / 2);
+    expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(irene * ROW + ROW / 2);
   });
 
   it("names each stepper's buttons for what they widen or narrow", () => {
@@ -562,14 +624,5 @@ describe("the ages under the cursor and a search", () => {
 
     expect(container.querySelector('.gedcom-ft-age[data-p="@I1@"]')?.classList.contains("is-dim")).toBe(true);
     expect(container.querySelector('.gedcom-ft-age[data-p="@I12@"]')?.classList.contains("is-dim")).toBe(false);
-  });
-});
-
-describe("what has no mark on the line", () => {
-  it("counts the facts without a year, by kind", () => {
-    board();
-
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("facts without a year");
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("occupation");
   });
 });

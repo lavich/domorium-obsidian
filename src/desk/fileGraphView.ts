@@ -1,4 +1,5 @@
-import { plural, t } from "../i18n";
+import { t } from "../i18n";
+import { searchOver, type FloatingSearch } from "./floatingSearch";
 import { BranchScopeBar, readBranchScope, sameBranch, type BranchScope } from "./branchScope";
 import { fileGraphOf } from "./fileGraph";
 import type { FileTimeline } from "./fileTimeline";
@@ -54,12 +55,10 @@ export function readGraphState(state: unknown): GraphState {
   };
 }
 
-/** The graph of a file: its header, search, scope bar around a canvas. */
+/** The graph of a file: a scope bar and a canvas with its search and zoom floating over it. */
 export class FileGraphBoard {
   private readonly root: HTMLElement;
-  private readonly title: HTMLElement;
-  private readonly summary: HTMLElement;
-  private readonly searchInput: HTMLInputElement;
+  private readonly find: FloatingSearch;
   private readonly scopeBar: BranchScopeBar;
   private readonly canvas: GraphCanvas;
   private readonly goneEl: HTMLElement;
@@ -72,17 +71,6 @@ export class FileGraphBoard {
     private readonly host: FileGraphHost,
   ) {
     this.root = parent.createDiv({ cls: "gedcom-fg" });
-    const head = this.root.createDiv({ cls: "gedcom-fg-head" });
-    this.title = head.createDiv({ cls: "gedcom-fg-title" });
-    this.summary = head.createDiv({ cls: "gedcom-fg-summary" });
-
-    const tools = this.root.createDiv({ cls: "gedcom-fg-tools" });
-    this.searchInput = tools.createEl("input", {
-      cls: "gedcom-fg-search",
-      type: "search",
-      placeholder: t("overview.search"),
-      attr: { "aria-label": t("overview.search") },
-    });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-fg",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
@@ -94,22 +82,14 @@ export class FileGraphBoard {
       branch: (xref) => this.setScope({ focus: xref === this.scope.focus ? undefined : xref }),
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
     }, { setIcon: (element, icon) => this.host.setIcon(element, icon) });
+    this.find = searchOver(this.canvas, (element, icon) => this.host.setIcon(element, icon));
     this.goneEl = this.root.createDiv({ cls: "gedcom-fg-gone" });
     this.goneEl.toggle(false);
-
-    this.searchInput.addEventListener("input", () => this.canvas.setQuery(this.searchInput.value));
-    this.searchInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        this.canvas.nextMatch();
-      }
-    });
   }
 
-  show(model: FileTimeline, fileName: string, settings: GraphSettings): void {
+  show(model: FileTimeline, settings: GraphSettings): void {
     this.goneEl.toggle(false);
     this.root.removeClass("is-gone");
-    this.title.setText(t("fileGraph.title", { name: fileName }));
     const scope = scopeOf(settings.scope);
     const first = this.model === null;
     const scoped = !sameBranch(scope, this.scope);
@@ -125,10 +105,8 @@ export class FileGraphBoard {
         : null;
     this.model = model;
     this.scope = scope;
-    this.summary.setText(
-      [plural("overview.people", model.people.size), plural("overview.families", model.families.size)].join(" · "),
-    );
     this.relayout(opening);
+    this.find.refresh();
   }
 
   /** Where the file is gone, the last reading stays out of sight rather than passing for the file. */
@@ -168,10 +146,6 @@ export class FileGraphBoard {
 
   setQuery(query: string): void {
     this.canvas.setQuery(query);
-  }
-
-  nextMatch(): string | null {
-    return this.canvas.nextMatch();
   }
 
   zoomAt(factor: number, cx: number, cy: number): void {

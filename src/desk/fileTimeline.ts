@@ -35,7 +35,6 @@ export interface TimelinePerson {
   sex: Sex;
   lifeline: Lifeline | null;
   marks: TimelineMark[];
-  undated: PersonEvent[];
   parents: string[];
   spouses: string[];
   children: string[];
@@ -61,8 +60,6 @@ export interface FileTimeline {
   families: ReadonlyMap<string, TimelineFamily>;
   generations: ReadonlyMap<string, number>;
   rows: readonly string[];
-  /** The people with no dated event at all, who have a row and no lifeline. */
-  undated: readonly string[];
   branch(focus: string, up: number, down: number): Set<string>;
   alive(year: number, among?: ReadonlySet<string>): AliveAt[];
   related(xref: string): Set<string>;
@@ -396,7 +393,6 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       sex: sexOf(person),
       lifeline: lifelineOf(own, marks, now),
       marks,
-      undated: person.events.filter((event) => event.date?.year === undefined),
       parents: xrefsOf(person.parents, known),
       spouses: xrefsOf(person.partners, known),
       children: xrefsOf(person.children, known),
@@ -440,7 +436,6 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
     families,
     generations: generation,
     rows,
-    undated: order.filter((xref) => people.get(xref)?.lifeline === null),
     branch(focus, up, down) {
       const keep = new Set<string>();
       if (!people.has(focus)) {

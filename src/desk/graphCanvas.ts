@@ -1,6 +1,6 @@
 import { plural, t } from "../i18n";
 import type { MediaPreviewContent } from "../editor/media";
-import { HoverDelay, placeInside } from "./dom";
+import { HoverDelay, placeInside, prefersReducedMotion, zoomControls } from "./dom";
 import { CARD, marriageDigits, type FileGraphLayout, type GraphCard, type GraphNode, type Point } from "./fileGraph";
 import { least, most, type Sex } from "./fileTimeline";
 import { yearText } from "./labels";
@@ -17,6 +17,8 @@ const NAME_ROOM = 22;
 const NAME_WIDTH = CARD.width - 2 * 6;
 const AVATAR = { width: 36, height: 44 } as const;
 const BUTTON_STEP = 1.2;
+const GLIDE_MS = 400;
+const GLIDE_REACH = 2.5;
 
 /** Where the view looks: the graph point at the centre of the canvas, and the scale. */
 export interface GraphView {
@@ -97,7 +99,6 @@ export interface GraphCanvasOptions {
   setIcon?(element: HTMLElement, icon: string): void;
 }
 
-const SIGNS: Record<string, string> = { minus: "−", plus: "+", maximize: "⤢" };
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -248,8 +249,10 @@ export class GraphCanvas {
   private query = "";
   private matches: string[] = [];
   private match = -1;
+  private current: string | null = null;
   private size = { width: 0, height: 0 };
   private transform: { x: number; y: number; k: number } | null = null;
+  private glideTimer: number | null = null;
   private pending: Opening | null = null;
   private frame = false;
   private pointer = "mouse";
@@ -272,13 +275,21 @@ export class GraphCanvas {
   ) {
     this.doc = root.ownerDocument;
     this.el = root.createDiv({ cls: "gedcom-fg-canvas" });
-    this.controls = this.el.createDiv({ cls: "gedcom-fg-controls" });
-    this.zoomButtons();
+    this.controls = zoomControls(this.el, "gedcom-fg", this.options.setIcon && ((element, icon) => this.options.setIcon?.(element, icon)), {
+      out: () => this.zoomBy(1 / BUTTON_STEP),
+      in: () => this.zoomBy(BUTTON_STEP),
+      fit: () => this.fit(),
+    });
     this.svgEl = svg(this.doc, "svg", "gedcom-fg-svg");
     this.viewEl = svg(this.doc, "g", "gedcom-fg-view");
     this.linesEl = svg(this.doc, "g", "gedcom-fg-lines");
     this.itemsEl = svg(this.doc, "g", "gedcom-fg-items");
     this.viewEl.append(this.linesEl, this.itemsEl);
+    this.viewEl.addEventListener("transitionend", (event) => {
+      if (event.target === this.viewEl) {
+        this.endGlide();
+      }
+    });
     this.svgEl.append(this.viewEl);
     this.el.append(this.svgEl);
     this.tip = root.createDiv({ cls: "gedcom-fg-tip", attr: { role: "tooltip", id: `gedcom-fg-tip-${this.id}` } });
@@ -358,14 +369,14 @@ export class GraphCanvas {
     );
   }
 
-  draw(window: GraphWindow): void {
+  draw(window: GraphWindow, around?: number): void {
     if (!this.layout) {
       return;
     }
     const far = this.far();
     const width = window.right - window.left;
     const height = window.bottom - window.top;
-    const margin = far ? 0.25 : 1;
+    const margin = around ?? (far ? 0.25 : 1);
     const range: GraphWindow = {
       left: window.left - width * margin,
       top: window.top - height * margin,
@@ -389,6 +400,9 @@ export class GraphCanvas {
     this.place(this.lineItems, this.linesEl, inRange, far);
     this.place(this.placedItems, this.itemsEl, inRange, far);
     this.mapDrawn();
+    for (const element of this.lit) {
+      element.classList.remove("is-on", "is-hl");
+    }
     this.lit = [];
     this.highlight(this.highlighted, true);
     if (focused) {
@@ -411,25 +425,6 @@ export class GraphCanvas {
         this.refocusing = false;
       }
     }
-  }
-
-  /** −, + and Fit, floating over the canvas and first in its order for the keyboard. */
-  private zoomButtons(): void {
-    const button = (cls: string, label: string, icon: string, run: () => void): void => {
-      const made = this.controls.createEl("button", {
-        cls: ["clickable-icon", cls],
-        attr: { type: "button", "aria-label": label, title: label },
-      });
-      if (this.options.setIcon) {
-        this.options.setIcon(made, icon);
-      } else {
-        made.setText(SIGNS[icon] ?? icon);
-      }
-      made.addEventListener("click", run);
-    };
-    button("gedcom-fg-zoom-out", t("fileGraph.zoomOut"), "minus", () => this.zoomBy(1 / BUTTON_STEP));
-    button("gedcom-fg-zoom-in", t("fileGraph.zoomIn"), "plus", () => this.zoomBy(BUTTON_STEP));
-    button("gedcom-fg-fit", t("fileGraph.fit"), "maximize", () => this.fit());
   }
 
   /** Stops a light the pointer has asked for and not yet waited out, as a view closes. */
@@ -487,56 +482,78 @@ export class GraphCanvas {
   setQuery(query: string): void {
     this.query = query.trim().toLowerCase();
     this.match = -1;
+    this.current = null;
     this.matches =
       this.query === "" || !this.layout
         ? []
         : this.layout.cards.map((card) => card.id).filter((id) => !this.misses(id));
     for (const [id, element] of this.cardOf) {
       element.classList.toggle("is-dim", this.misses(id));
+      element.classList.remove("is-current");
     }
   }
 
-  nextMatch(): string | null {
+  matchInfo(): { index: number; total: number } {
+    return { index: this.match, total: this.matches.length };
+  }
+
+  private onControls(target: EventTarget | null): boolean {
+    return target instanceof Element && target.closest(".gedcom-fg-controls, .gedcom-fg-find") !== null;
+  }
+
+  stepMatch(by: 1 | -1): string | null {
     if (this.matches.length === 0) {
       return null;
     }
-    this.match = (this.match + 1) % this.matches.length;
+    const total = this.matches.length;
+    this.match = this.match < 0 ? (by > 0 ? 0 : total - 1) : (this.match + by + total) % total;
     const id = this.matches[this.match] ?? null;
+    this.current = id;
+    for (const [one, element] of this.cardOf) {
+      element.classList.toggle("is-current", one === id);
+    }
     if (id !== null) {
       const k = this.transform && this.transform.k >= ZOOM.far ? this.transform.k : ZOOM.readable;
-      this.centreOn(id, k);
       this.highlight(id);
+      this.centreOn(id, k, true);
     }
     return id;
   }
 
-  zoomAt(factor: number, cx: number, cy: number): void {
+  zoomAt(factor: number, cx: number, cy: number, glide = false): void {
+    if (!glide) {
+      this.stopGlide();
+    }
     const at = this.transform;
     if (!at) {
       return;
     }
     const k = Math.max(ZOOM.min, Math.min(ZOOM.max, at.k * factor));
-    this.apply({ x: cx - ((cx - at.x) * k) / at.k, y: cy - ((cy - at.y) * k) / at.k, k });
+    this.apply({ x: cx - ((cx - at.x) * k) / at.k, y: cy - ((cy - at.y) * k) / at.k, k }, glide);
   }
 
   zoomBy(factor: number): void {
-    this.zoomAt(factor, this.size.width / 2, this.size.height / 2);
+    this.zoomAt(factor, this.size.width / 2, this.size.height / 2, true);
   }
 
-  fit(): void {
+  fit(glide = true): void {
     const layout = this.layout;
     if (!layout || this.size.width <= 0) {
       return;
     }
     const k = this.fitScale(layout);
-    this.apply({
-      x: this.size.width / 2 - (layout.width / 2) * k,
-      y: this.size.height / 2 - (layout.height / 2) * k,
-      k,
-    });
+    this.apply(
+      {
+        x: this.size.width / 2 - (layout.width / 2) * k,
+        y: this.size.height / 2 - (layout.height / 2) * k,
+        k,
+      },
+      glide,
+    );
   }
 
   panBy(dx: number, dy: number): void {
+    this.stopGlide();
     const at = this.transform;
     if (at) {
       this.apply({ x: at.x + dx, y: at.y + dy, k: at.k });
@@ -552,16 +569,19 @@ export class GraphCanvas {
     return Math.max(ZOOM.min, k);
   }
 
-  private centreOn(id: string | undefined, k: number): boolean {
+  private centreOn(id: string | undefined, k: number, glide = false): boolean {
     const card = id === undefined ? undefined : this.layout?.card.get(id);
     if (!card) {
       return false;
     }
-    this.apply({
-      x: this.size.width / 2 - (card.x + CARD.width / 2) * k,
-      y: this.size.height / 2 - (card.y + card.height / 2) * k,
-      k,
-    });
+    this.apply(
+      {
+        x: this.size.width / 2 - (card.x + CARD.width / 2) * k,
+        y: this.size.height / 2 - (card.y + card.height / 2) * k,
+        k,
+      },
+      glide,
+    );
     return true;
   }
 
@@ -578,8 +598,8 @@ export class GraphCanvas {
       return;
     }
     if ("centre" in pending) {
-      if (!this.centreOn(pending.centre, pending.k ?? ZOOM.readable) && !this.transform) {
-        this.fit();
+      if (!this.centreOn(pending.centre, pending.k ?? ZOOM.readable, this.transform !== null) && !this.transform) {
+        this.fit(false);
       }
       return;
     }
@@ -641,15 +661,101 @@ export class GraphCanvas {
     return true;
   }
 
-  private apply(at: { x: number; y: number; k: number }): void {
+  /**
+   * A move the reader did not drag glides by a CSS transition, unless they ask for reduced motion or
+   * the move is longer than a glide can show without a streak, which jumps as a drag does.
+   */
+  private apply(at: { x: number; y: number; k: number }, glide = false): void {
+    const from = this.visibleTransform() ?? this.transform;
+    const gliding = glide && from !== null && !prefersReducedMotion(this.doc) && this.glides(from, at);
     this.transform = at;
-    this.viewEl.setAttribute("transform", `translate(${at.x},${at.y}) scale(${at.k})`);
+    if (gliding && from) {
+      this.drawBetween(from, at);
+      this.beginGlide();
+    } else {
+      this.endGlide();
+    }
+    this.viewEl.style.transform = `translate(${at.x}px, ${at.y}px) scale(${at.k})`;
     this.root.toggleClass("is-far", this.far());
     this.closePop();
     this.scheduleDraw();
     const view = this.view();
     if (view) {
       this.host.viewChanged(view);
+    }
+  }
+
+  private glides(from: { x: number; y: number }, to: { x: number; y: number }): boolean {
+    return (
+      this.size.width > 0 &&
+      Math.abs(to.x - from.x) <= GLIDE_REACH * this.size.width &&
+      Math.abs(to.y - from.y) <= GLIDE_REACH * this.size.height
+    );
+  }
+
+  /** Both ends of a glide are drawn before it starts, and stay, so nothing appears in the middle of it. */
+  private drawBetween(from: { x: number; y: number; k: number }, to: { x: number; y: number; k: number }): void {
+    const [a, b] = [from, to].map((at) => ({
+      left: -at.x / at.k,
+      top: -at.y / at.k,
+      right: (this.size.width - at.x) / at.k,
+      bottom: (this.size.height - at.y) / at.k,
+    }));
+    if (a && b) {
+      this.draw(
+        {
+          left: Math.min(a.left, b.left),
+          top: Math.min(a.top, b.top),
+          right: Math.max(a.right, b.right),
+          bottom: Math.max(a.bottom, b.bottom),
+        },
+        0.25,
+      );
+    }
+  }
+
+  private beginGlide(): void {
+    this.viewEl.classList.add("is-gliding");
+    this.clearGlideTimer();
+    this.glideTimer = (this.doc.defaultView ?? window).setTimeout(() => this.endGlide(), GLIDE_MS + 150);
+  }
+
+  private endGlide(): void {
+    this.viewEl.classList.remove("is-gliding");
+    this.clearGlideTimer();
+  }
+
+  private clearGlideTimer(): void {
+    if (this.glideTimer !== null) {
+      (this.doc.defaultView ?? window).clearTimeout(this.glideTimer);
+      this.glideTimer = null;
+    }
+  }
+
+  /** Where the view is drawn right now, which is between where it was and where it goes while it glides. */
+  private visibleTransform(): { x: number; y: number; k: number } | null {
+    if (!this.viewEl.classList.contains("is-gliding")) {
+      return this.transform;
+    }
+    const matrix = this.doc.defaultView?.getComputedStyle(this.viewEl).transform ?? "";
+    const parts = /^matrix\(([^)]+)\)$/.exec(matrix)?.[1]?.split(",").map(Number);
+    const [a, , , , e, f] = parts ?? [];
+    return a !== undefined && e !== undefined && f !== undefined && [a, e, f].every(Number.isFinite)
+      ? { x: e, y: f, k: a }
+      : this.transform;
+  }
+
+  /** A drag, the wheel or a key takes over from a glide at the place it has reached, with no jump. */
+  private stopGlide(): void {
+    if (!this.viewEl.classList.contains("is-gliding")) {
+      return;
+    }
+    const at = this.visibleTransform();
+    this.endGlide();
+    if (at) {
+      this.transform = at;
+      this.viewEl.style.transform = `translate(${at.x}px, ${at.y}px) scale(${at.k})`;
+      this.scheduleDraw();
     }
   }
 
@@ -755,16 +861,14 @@ export class GraphCanvas {
     group.classList.toggle("is-aside", shown.aside === true);
     group.classList.toggle("is-dim", this.misses(id));
     group.classList.toggle("is-armed", id === this.armed);
+    group.classList.toggle("is-current", id === this.current);
     const card = svg(this.doc, "g", "gedcom-fg-card", {
       tabindex: 0,
       role: "button",
       "data-card": id,
       "aria-label": years ? `${name}, ${years}` : name,
     });
-    const title = svg(this.doc, "title", null);
-    title.textContent = name;
     card.append(
-      title,
       svg(this.doc, "rect", "gedcom-fg-card-bg", { width: CARD.width, height, rx: 7 }),
     );
     if (shown.gap) {
@@ -817,12 +921,9 @@ export class GraphCanvas {
       "aria-pressed": String(shown.focus === true),
       "aria-label": t("fileGraph.branchOf", { name }),
     });
-    const hint = svg(this.doc, "title", null);
-    hint.textContent = t("overview.branchHint");
     const label = svg(this.doc, "text", null, { x: CARD.width - 29, y: height - 9, "text-anchor": "middle" });
     label.textContent = t("overview.branch");
     pill.append(
-      hint,
       svg(this.doc, "rect", null, { x: CARD.width - 54, y: height - 20, width: 50, height: 15, rx: 7.5 }),
       label,
     );
@@ -976,9 +1077,10 @@ export class GraphCanvas {
       }
     };
     this.el.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0 || (event.target instanceof Node && this.controls.contains(event.target))) {
+      if (event.button !== 0 || this.onControls(event.target)) {
         return;
       }
+      this.stopGlide();
       this.pointer = event.pointerType || "mouse";
       this.swallow = false;
       this.down.set(event.pointerId, { x: event.clientX, y: event.clientY });
@@ -1055,6 +1157,7 @@ export class GraphCanvas {
       "wheel",
       (event) => {
         event.preventDefault();
+        this.stopGlide();
         const [x, y] = this.local(event);
         if (event.ctrlKey) {
           this.zoomAt(Math.exp(-event.deltaY / 100), x, y);
@@ -1074,7 +1177,7 @@ export class GraphCanvas {
       { passive: false },
     );
     this.el.addEventListener("click", (event) => {
-      if (!(event.target instanceof Node && this.controls.contains(event.target))) {
+      if (!this.onControls(event.target)) {
         this.activate(event, false);
       }
     });

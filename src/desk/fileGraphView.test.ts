@@ -52,7 +52,7 @@ function board(
   size: { width: number; height: number } | null = WIDE,
 ): FileGraphBoard {
   const drawn = new FileGraphBoard(container, host satisfies FileGraphHost);
-  drawn.show(model, "curie.ged", { scope: WHOLE, ...settings });
+  drawn.show(model, { scope: WHOLE, ...settings });
   if (size) {
     drawn.resized(size);
   }
@@ -115,8 +115,9 @@ describe("drawing the graph of a file", () => {
     ]);
     expect(card("@I1@")?.querySelector(".gedcom-fg-card-years")?.textContent).toBe("1867–1934");
     expect(card("@I15@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Henry Richardson");
-    expect(card("@I15@")?.querySelector("title")?.textContent).toBe("Henry Richardson Labouisse");
-    expect(container.querySelector(".gedcom-fg-summary")?.textContent).toBe("17 people · 5 families");
+    expect(card("@I15@")?.getAttribute("aria-label")).toBe("Henry Richardson Labouisse, 1904–1987");
+    expect(container.querySelector("title")).toBeNull();
+    expect(container.querySelector(".gedcom-fg-title, .gedcom-fg-summary, .gedcom-fg-head")).toBeNull();
   });
 
   it("draws a portrait at the top of a card whose person has one, and none for the others or far out", () => {
@@ -143,12 +144,13 @@ describe("drawing the graph of a file", () => {
     expect(asked).toEqual([]);
   });
 
-  it("floats −, + and Fit over the canvas, first for the keyboard, without starting a drag or a touch", () => {
+  it("floats −, + and Fit over the canvas, right after the search, without starting a drag or a touch", () => {
     const drawn = board();
     const controls = container.querySelector(".gedcom-fg-canvas > .gedcom-fg-controls");
     const k = drawn.view()?.k ?? 1;
 
-    expect(container.querySelector(".gedcom-fg-canvas")?.firstElementChild).toBe(controls);
+    expect(container.querySelector(".gedcom-fg-canvas")?.firstElementChild).toBe(container.querySelector(".gedcom-fg-find"));
+    expect(container.querySelector(".gedcom-fg-find")?.nextElementSibling).toBe(controls);
     expect([...(controls?.querySelectorAll("button") ?? [])].map((one) => one.getAttribute("aria-label"))).toEqual([
       "Zoom out",
       "Zoom in",
@@ -231,13 +233,13 @@ describe("drawing the graph of a file", () => {
     expect(all("[data-branch]")).toHaveLength(0);
   });
 
-  it("shows no scope line for the whole file, the count of people staying in the subtitle", () => {
+  it("shows no scope line for the whole file", () => {
     board();
 
     expect(container.querySelector('[class*="legend"]')).toBeNull();
     expect(scopeText()).toBe("");
     expect(container.querySelector<HTMLElement>(".gedcom-fg-scope")?.style.display).toBe("none");
-    expect(container.querySelector(".gedcom-fg-summary")?.textContent).toBe("17 people · 5 families");
+    expect(container.querySelector(".gedcom-fg-tools")).toBeNull();
   });
 
   it("says when the file is gone", () => {
@@ -374,7 +376,7 @@ describe("the view", () => {
     drawn.zoomAt(1.5, 100, 100);
     drawn.panBy(40, -30);
     const before = drawn.view();
-    drawn.show(fileTimelineOf(curieIndex()), "curie.ged", { scope: WHOLE, around: "@I17@" });
+    drawn.show(fileTimelineOf(curieIndex()), { scope: WHOLE, around: "@I17@" });
 
     expect(drawn.view()).toEqual(before);
   });
@@ -521,6 +523,182 @@ describe("the search", () => {
     }
   });
 
+  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the group", () => {
+    board();
+    const buttons = [...container.querySelectorAll(".gedcom-fg-controls button, .gedcom-fg-find button, .gedcom-fg-pill, [data-step]")];
+
+    expect(buttons.length).toBeGreaterThanOrEqual(7);
+    for (const button of buttons.filter((one) => one.tagName === "BUTTON")) {
+      expect(button.hasAttribute("title"), button.className).toBe(false);
+      expect(button.getAttribute("aria-label"), button.className).toBeTruthy();
+      expect(button.getAttribute("data-tooltip-position"), button.className).toBe(
+        button.closest(".gedcom-fg-controls") ? "top" : "bottom",
+      );
+    }
+    expect(container.querySelector("title, [title]")).toBeNull();
+  });
+
+  describe("gliding to a match", () => {
+    const view = () => container.querySelector<SVGElement>(".gedcom-fg-view");
+    const gliding = () => view()?.classList.contains("is-gliding");
+    const search = (text: string) => {
+      container.querySelector<HTMLElement>(".gedcom-fg-find-toggle")?.click();
+      const field = container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+      if (field) {
+        field.value = text;
+        field.dispatchEvent(new Event("input"));
+      }
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("moves by a transition for a step to a match, and stops where it is when a drag begins", () => {
+      board(curie(), { view: { x: 0, y: 0, k: 0.6 } });
+      expect(gliding()).toBe(false);
+      search("joliot");
+      container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+
+      expect(gliding()).toBe(true);
+      expect(view()?.style.transform).toMatch(/^translate\(.+\) scale\(.+\)$/);
+      pointer("pointerdown", container.querySelector(".gedcom-fg-canvas"), { clientX: 10, clientY: 10 });
+      expect(gliding()).toBe(false);
+    });
+
+    it("jumps for a move too long to show, and for a drag, the wheel and a first view", () => {
+      board(curie(), { view: { x: 0, y: 0, k: 0.6 } }, { width: 60, height: 40 });
+      expect(gliding()).toBe(false);
+      search("joliot");
+      container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+      expect(gliding()).toBe(false);
+    });
+
+    it("does not glide when the reader asks for reduced motion", () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+      board(curie(), { view: { x: 0, y: 0, k: 0.6 } });
+      search("joliot");
+      container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+
+      expect(gliding()).toBe(false);
+    });
+  });
+
+  describe("the search over the canvas", () => {
+    const find = () => container.querySelector<HTMLElement>(".gedcom-fg-find");
+    const input = () => container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+    const type = (text: string) => {
+      const field = input();
+      if (field) {
+        field.value = text;
+        field.dispatchEvent(new Event("input"));
+      }
+    };
+    const click = (selector: string) => container.querySelector<HTMLElement>(selector)?.click();
+
+    it("floats inside the canvas, first in its order, as an icon that opens into a field", () => {
+      board();
+
+      expect(find()?.parentElement?.classList.contains("gedcom-fg-canvas")).toBe(true);
+      expect(find()?.nextElementSibling?.classList.contains("gedcom-fg-controls")).toBe(true);
+      expect(find()?.classList.contains("is-open")).toBe(false);
+      expect(input()?.tabIndex).toBe(-1);
+      click(".gedcom-fg-find-toggle");
+      expect(find()?.classList.contains("is-open")).toBe(true);
+      expect(input()?.tabIndex).toBe(0);
+      const toggle = container.querySelector<HTMLElement>(".gedcom-fg-find-toggle");
+      expect(toggle?.getAttribute("aria-expanded")).toBe("true");
+      expect(toggle?.tabIndex).toBe(-1);
+      expect(document.activeElement).toBe(input());
+      key(input(), "Escape");
+      expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+      expect(toggle?.tabIndex).toBe(0);
+      expect(document.activeElement).toBe(toggle);
+    });
+
+    it("clears with the cross and stays open, then closes on the cross of an empty field", () => {
+      board();
+      click(".gedcom-fg-find-toggle");
+      type("joliot");
+      expect(all(".gedcom-fg-person:not(.is-dim)")).toHaveLength(4);
+
+      click(".gedcom-fg-find-clear");
+      expect(input()?.value).toBe("");
+      expect(find()?.classList.contains("is-open")).toBe(true);
+      expect(all(".gedcom-fg-person.is-dim")).toHaveLength(0);
+
+      click(".gedcom-fg-find-clear");
+      expect(find()?.classList.contains("is-open")).toBe(false);
+    });
+
+    it("clears on Escape, then closes on Escape of an empty field, and keeps a query open when focus leaves", async () => {
+      board();
+      click(".gedcom-fg-find-toggle");
+      type("joliot");
+      key(input(), "Escape");
+      expect(input()?.value).toBe("");
+      expect(find()?.classList.contains("is-open")).toBe(true);
+      key(input(), "Escape");
+      expect(find()?.classList.contains("is-open")).toBe(false);
+
+      click(".gedcom-fg-find-toggle");
+      type("joliot");
+      input()?.blur();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+      expect(find()?.classList.contains("is-open")).toBe(true);
+      expect(all(".gedcom-fg-person:not(.is-dim)")).toHaveLength(4);
+      type("");
+      input()?.focus();
+      input()?.blur();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+      expect(find()?.classList.contains("is-open")).toBe(false);
+    });
+
+    it("counts the matches, steps with the arrows in the cards' order, wraps, and says when there are none", () => {
+      board();
+      const count = () => container.querySelector(".gedcom-fg-find-count")?.textContent;
+      const next = container.querySelector<HTMLButtonElement>(".gedcom-fg-find-next");
+      const previous = container.querySelector<HTMLButtonElement>(".gedcom-fg-find-prev");
+      click(".gedcom-fg-find-toggle");
+      expect(next?.disabled).toBe(true);
+
+      type("joliot");
+      expect(count()).toBe("4 matches");
+      expect(next?.disabled).toBe(false);
+      next?.click();
+      expect(count()).toBe("1 / 4");
+      expect(person("@I14@")?.classList.contains("is-current")).toBe(true);
+      previous?.click();
+      expect(count()).toBe("4 / 4");
+      expect(person("@I17@")?.classList.contains("is-current")).toBe(true);
+      expect(person("@I14@")?.classList.contains("is-current")).toBe(false);
+      next?.click();
+      expect(count()).toBe("1 / 4");
+      expect(all(".gedcom-fg-person.is-current")).toHaveLength(1);
+      expect(all(".gedcom-fg-person:not(.is-dim)")).toHaveLength(4);
+
+      type("zzz");
+      expect(count()).toBe("No results");
+      expect(next?.disabled).toBe(true);
+      expect(previous?.disabled).toBe(true);
+      type("");
+      expect(count()).toBe("");
+    });
+
+    it("goes back to the previous match on Shift+Enter", async () => {
+      const model = curie();
+      board(model, { view: { x: 0, y: 0, k: 2 } }, { width: 200, height: 150 });
+      type("joliot");
+      key(input(), "Enter");
+      key(input(), "Enter");
+      const back = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: "Enter", shiftKey: true });
+      input()?.dispatchEvent(back);
+      await frame();
+
+      expect(person("@I14@")?.classList.contains("is-hl")).toBe(true);
+    });
+  });
+
   function drawnPeopleCentre(): number[] {
     const changed = host.stateChanged.mock.lastCall?.[0].view;
     return [Math.round(changed?.x ?? NaN), Math.round(changed?.y ?? NaN)];
@@ -651,7 +829,7 @@ describe("activating", () => {
 describe("the keyboard", () => {
   it("reaches cards, their branch and family nodes in row order, each node after its left spouse", () => {
     board();
-    const order = all("[tabindex]").map(
+    const order = all("[tabindex]").filter((one) => !one.closest(".gedcom-fg-find")).map(
       (one) =>
         one.getAttribute("data-card") ??
         (one.hasAttribute("data-branch") ? `branch ${one.getAttribute("data-branch")}` : one.getAttribute("data-node")),

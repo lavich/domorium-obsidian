@@ -1,7 +1,7 @@
 import type { Range } from "@domorium/language-service";
 
-import { plural, t } from "../i18n";
-import { BranchScopeBar, clampTo, readBranchScope, type BranchScope } from "./branchScope";
+import { t } from "../i18n";
+import { BranchScopeBar, readBranchScope, type BranchScope } from "./branchScope";
 import {
   least,
   most,
@@ -9,19 +9,19 @@ import {
   type TimelineMark,
   type TimelinePerson,
 } from "./fileTimeline";
-import { HoverDelay, placeInside } from "./dom";
+import { FloatingSearch } from "./floatingSearch";
+import { HoverDelay, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
 const AXIS = 26;
+const GLIDE_REACH = 1.5;
 const PAD = 12;
-const UNDATED_NAMES = 20;
 
-export const ZOOM = { min: 2, max: 16, initial: 6, captions: 9 } as const;
+export const ZOOM = { min: 2, max: 16, initial: 6, step: 1.2 } as const;
 
 export interface TimelineScope extends BranchScope {
   zoom: number;
-  others: boolean;
 }
 
 export interface TimelineState extends TimelineScope {
@@ -43,13 +43,17 @@ export interface FileTimelineHost {
   setIcon(element: HTMLElement, icon: string): void;
 }
 
+const clampZoom = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value)
+    ? Math.min(ZOOM.max, Math.max(ZOOM.min, Math.round(value * 100) / 100))
+    : ZOOM.initial;
+
 export function readTimelineState(state: unknown): TimelineState {
   const raw = typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
   return {
     gedcom: typeof raw.gedcom === "string" && raw.gedcom ? raw.gedcom : null,
     ...readBranchScope(raw),
-    zoom: clampTo(raw.zoom, ZOOM.min, ZOOM.max, ZOOM.initial),
-    others: raw.others !== false,
+    zoom: clampZoom(raw.zoom),
   };
 }
 
@@ -109,49 +113,28 @@ interface Span {
   right: number;
 }
 
-function captionOf(person: TimelinePerson): string {
-  const parts = person.undated
-    .filter((event) => (event.value && event.value !== "Y") || !["BIRT", "CHR", "BAPM", "DEAT", "BURI", "CREM"].includes(event.tag))
-    .map((event) => (event.value && event.value !== "Y" ? event.value : eventName(event)));
-  return [...new Set(parts)].join(" · ");
-}
-
-function fitted(text: string, room: number): string {
-  if (!text || room <= 40) {
-    return "";
-  }
-  const fit = Math.floor(room / 5.6);
-  return text.length > fit ? `${text.slice(0, fit - 1)}…` : text;
-}
-
 /**
  * Laid out once per file, scope, zoom and switch; drawn for the window it is
  * handed and one window around it. Hovering only changes classes on what is
- * drawn, and puts arrows and the hovered person's undated facts in a layer of
- * their own.
+ * drawn, and puts arrows in a layer of their own.
  */
 export class FileTimelineBoard {
   private readonly doc: Document;
   private readonly id = (boards += 1);
   private readonly root: HTMLElement;
-  private readonly title: HTMLElement;
-  private readonly summary: HTMLElement;
-  private readonly othersChip: HTMLButtonElement;
-  private readonly othersCount: HTMLElement;
-  private readonly zoomInput: HTMLInputElement;
-  private readonly searchInput: HTMLInputElement;
-  private readonly aliveEl: HTMLElement;
+  private readonly find: FloatingSearch;
   private readonly scopeBar: BranchScopeBar;
   private readonly board: HTMLElement;
   private readonly names: HTMLElement;
+  private readonly stage: HTMLElement;
   private readonly plot: HTMLElement;
+  private readonly axisClip: HTMLElement;
   private readonly axis: SVGSVGElement;
   private readonly chart: SVGSVGElement;
   private readonly grid: SVGGElement;
   private readonly items: SVGGElement;
   private readonly hover: SVGGElement;
   private readonly cursor: SVGSVGElement;
-  private readonly undatedEl: HTMLElement;
   private readonly tip: HTMLElement;
   private readonly pop: HTMLElement;
   private readonly goneEl: HTMLElement;
@@ -160,6 +143,8 @@ export class FileTimelineBoard {
   private scope: TimelineScope = readTimelineState(null);
   private layout: Layout | null = null;
   private query = "";
+  private current: string | null = null;
+  private readonly echo = new WeakMap<HTMLElement, number>();
   private searchText = new Map<string, string>();
   private drawn: Span = { top: 0, bottom: 0, left: 0, right: 0 };
   private readonly elements = new Map<Element, string[]>();
@@ -181,49 +166,41 @@ export class FileTimelineBoard {
   ) {
     this.doc = parent.ownerDocument;
     this.root = parent.createDiv({ cls: "gedcom-ft" });
-    const head = this.root.createDiv({ cls: "gedcom-ft-head" });
-    this.title = head.createDiv({ cls: "gedcom-ft-title" });
-    this.summary = head.createDiv({ cls: "gedcom-ft-summary" });
-
-    const tools = this.root.createDiv({ cls: "gedcom-ft-tools" });
-    this.othersChip = tools.createEl("button", {
-      cls: "gedcom-ft-chip",
-      text: t("fileTimeline.others"),
-      attr: { type: "button" },
-    });
-    this.othersCount = this.othersChip.createSpan({ cls: "gedcom-ft-chip-count" });
-    const zoom = tools.createEl("label", { cls: "gedcom-ft-zoom", text: t("fileTimeline.zoom") });
-    this.zoomInput = zoom.createEl("input", {
-      type: "range",
-      attr: { min: ZOOM.min, max: ZOOM.max, step: 1, "aria-label": t("fileTimeline.zoom") },
-    });
-    this.searchInput = tools.createEl("input", {
-      cls: "gedcom-ft-search",
-      type: "search",
-      placeholder: t("overview.search"),
-      attr: { "aria-label": t("overview.search") },
-    });
-    this.aliveEl = tools.createSpan({ cls: "gedcom-ft-alive" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-ft",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (next) => this.setScope(next),
     });
 
-    this.board = this.root.createDiv({ cls: "gedcom-ft-board" });
+    this.stage = this.root.createDiv({ cls: "gedcom-ft-stage" });
+    this.find = new FloatingSearch(this.stage, {
+      prefix: "gedcom-ft",
+      setIcon: (element, icon) => this.host.setIcon(element, icon),
+      change: (query) => this.setQuery(query),
+      step: (by) => this.stepMatch(by),
+      info: () => this.matchInfo(),
+    });
+    zoomControls(this.stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
+      out: () => this.zoomBy(1 / ZOOM.step),
+      in: () => this.zoomBy(ZOOM.step),
+      fit: () => this.fit(),
+    });
+    this.board = this.stage.createDiv({ cls: "gedcom-ft-board" });
+    this.board.createDiv({ cls: "gedcom-ft-axis-pad" });
+    this.axisClip = this.board.createDiv({ cls: "gedcom-ft-axis-band" }).createDiv({ cls: "gedcom-ft-axis-clip" });
     this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
     this.plot = this.board.createDiv({ cls: "gedcom-ft-plot" });
     this.axis = svg(this.doc, "svg", "gedcom-ft-axis", { height: AXIS });
     this.chart = svg(this.doc, "svg", "gedcom-ft-chart");
     this.cursor = svg(this.doc, "svg", "gedcom-ft-cursor");
-    this.plot.append(this.axis, this.chart, this.cursor);
+    this.axisClip.append(this.axis);
+    this.plot.append(this.chart, this.cursor);
     this.chart.append(this.definitions());
     this.grid = svg(this.doc, "g", "gedcom-ft-grid");
     this.items = svg(this.doc, "g", "gedcom-ft-items");
     this.hover = svg(this.doc, "g", "gedcom-ft-hover");
     this.chart.append(this.grid, this.items, this.hover);
 
-    this.undatedEl = this.root.createDiv({ cls: "gedcom-ft-undated" });
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
     this.goneEl = this.root.createDiv({ cls: "gedcom-ft-gone" });
@@ -233,12 +210,11 @@ export class FileTimelineBoard {
   }
 
   /** Laid out again only where the model or the scope is not the one shown. */
-  show(model: FileTimeline, fileName: string, scope: TimelineScope): void {
+  show(model: FileTimeline, scope: TimelineScope): void {
     this.goneEl.toggle(false);
     this.root.removeClass("is-gone");
     const changed = model !== this.model || !sameScope(scope, this.scope);
     this.model = model;
-    this.title.setText(t("fileTimeline.title", { name: fileName }));
     if (!changed && this.layout) {
       return;
     }
@@ -249,7 +225,6 @@ export class FileTimelineBoard {
         [personName(person.row), ...person.row.otherNames].join(" ").toLowerCase(),
       ]),
     );
-    this.summarise(model);
     this.relayout();
   }
 
@@ -283,6 +258,7 @@ export class FileTimelineBoard {
       }
       const shape = item.make();
       shape.classList.toggle("is-dim", this.misses(item.ids));
+      shape.classList.toggle("is-current", this.current !== null && item.ids[0] === this.current && shape.classList.contains("gedcom-ft-life"));
       this.items.append(shape);
       this.elements.set(shape, item.ids);
       if (item.placed) {
@@ -317,16 +293,16 @@ export class FileTimelineBoard {
   }
 
   measure(): TimelineWindow {
-    const names = this.names.offsetWidth;
     return {
-      top: this.board.scrollTop,
-      left: this.board.scrollLeft,
-      width: Math.max(this.board.clientWidth - names, 0) || 1600,
-      height: Math.max(this.board.clientHeight - AXIS, 0) || 1000,
+      top: this.plot.scrollTop,
+      left: this.plot.scrollLeft,
+      width: this.plot.clientWidth || 1600,
+      height: this.plot.clientHeight || 1000,
     };
   }
 
   resized(): void {
+    this.fitGutters();
     if (this.layout && this.needsDraw(this.measure())) {
       this.draw(this.measure());
     }
@@ -381,14 +357,6 @@ export class FileTimelineBoard {
     if (this.year !== null) {
       this.drawCursor();
     }
-    const person = model.people.get(xref);
-    if (person?.lifeline && this.scope.zoom < ZOOM.captions) {
-      const line = person.lifeline;
-      const text = fitted(captionOf(person), layout.x(line.end) - layout.x(line.start) - 22);
-      if (text) {
-        this.hover.append(this.caption(layout.x(line.start) + 11, cy, text, xref));
-      }
-    }
   }
 
   setYear(year: number | null): void {
@@ -401,8 +369,78 @@ export class FileTimelineBoard {
     this.drawCursor();
   }
 
+  private matchIds(): string[] {
+    const layout = this.layout;
+    return this.query === "" || !layout ? [] : layout.shown.filter((xref) => !this.misses([xref]));
+  }
+
+  matchInfo(): { index: number; total: number } {
+    const ids = this.matchIds();
+    return { index: this.current === null ? -1 : ids.indexOf(this.current), total: ids.length };
+  }
+
+  stepMatch(by: 1 | -1): string | null {
+    const layout = this.layout;
+    const ids = this.matchIds();
+    if (!layout || ids.length === 0) {
+      return null;
+    }
+    const at = this.current === null ? -1 : ids.indexOf(this.current);
+    const id = ids[at < 0 ? (by > 0 ? 0 : ids.length - 1) : (at + by + ids.length) % ids.length] ?? null;
+    if (id === null) {
+      return null;
+    }
+    this.current = id;
+    this.markCurrent();
+    const cy = layout.y.get(id) ?? 0;
+    let left: number | undefined;
+    const line = this.model?.people.get(id)?.lifeline;
+    if (line) {
+      const view = this.measure();
+      const from = layout.x(line.start);
+      const to = layout.x(line.end);
+      if (to < view.left || from > view.left + view.width) {
+        left = Math.max(0, from - 40);
+      }
+    }
+    this.glideTo(Math.max(0, cy - this.plot.clientHeight / 2), left);
+    return id;
+  }
+
+  /**
+   * The plot scrolls smoothly to a place the reader did not scroll to, unless they ask for reduced
+   * motion or it is further than a smooth scroll can show without leaving blank rows, which jumps.
+   */
+  private glideTo(top: number, left?: number): void {
+    const plot = this.plot;
+    const room = plot.scrollHeight - plot.clientHeight;
+    top = room > 0 ? Math.min(Math.max(0, top), room) : Math.max(0, top);
+    const far =
+      Math.abs(top - plot.scrollTop) > GLIDE_REACH * plot.clientHeight ||
+      (left !== undefined && Math.abs(left - plot.scrollLeft) > GLIDE_REACH * plot.clientWidth);
+    if (far || prefersReducedMotion(this.doc) || typeof plot.scrollTo !== "function") {
+      plot.scrollTop = top;
+      if (left !== undefined) {
+        plot.scrollLeft = left;
+      }
+      return;
+    }
+    plot.scrollTo({ top, ...(left === undefined ? {} : { left }), behavior: "smooth" });
+  }
+
+  private markCurrent(): void {
+    for (const [element, ids] of this.elements) {
+      element.classList.toggle("is-current", this.current !== null && ids[0] === this.current && element.classList.contains("gedcom-ft-life"));
+    }
+    for (const [xref, name] of this.byName) {
+      name.toggleClass("is-current", xref === this.current);
+    }
+  }
+
   setQuery(query: string): void {
     this.query = query.trim().toLowerCase();
+    this.current = null;
+    this.markCurrent();
     for (const [element, ids] of this.elements) {
       element.classList.toggle("is-dim", this.misses(ids));
     }
@@ -411,6 +449,41 @@ export class FileTimelineBoard {
     }
     if (this.year !== null) {
       this.drawCursor();
+    }
+  }
+
+  /** The names and the axis sit outside the scroller, so its bars never run over them; they keep its place. */
+  private follow(to: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
+    if (to[axis] !== from[axis]) {
+      to[axis] = from[axis];
+    }
+    this.echo.set(to, to[axis]);
+  }
+
+  /** What the names or the axis scroll by themselves moves the plot too, but not their echo of the plot, which would cut a smooth scroll short. */
+  private pull(plot: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
+    const echo = this.echo.get(from);
+    if (echo === undefined || Math.abs(from[axis] - echo) >= 1.5) {
+      this.follow(plot, from, axis);
+    }
+  }
+
+  private fitGutters(): void {
+    this.stage.setCssProps({
+      "--gedcom-ft-vbar": `${this.plot.offsetWidth - this.plot.clientWidth}px`,
+      "--gedcom-ft-hbar": `${this.plot.offsetHeight - this.plot.clientHeight}px`,
+    });
+  }
+
+  private zoomBy(factor: number): void {
+    this.setScope({ zoom: clampZoom(this.scope.zoom * factor) });
+  }
+
+  private fit(): void {
+    const layout = this.layout;
+    if (layout) {
+      const room = this.measure().width - 2 * PAD;
+      this.setScope({ zoom: clampZoom(room / (layout.hi - layout.lo)) });
     }
   }
 
@@ -446,8 +519,9 @@ export class FileTimelineBoard {
     }
     this.layout = this.layoutOf(model);
     const layout = this.layout;
-    this.othersChip.setAttribute("aria-pressed", String(this.scope.others));
-    this.zoomInput.value = String(this.scope.zoom);
+    if (this.current !== null && !layout.shownSet.has(this.current)) {
+      this.current = null;
+    }
     const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
     this.scopeBar.draw(this.scope, {
       total: model.rows.length,
@@ -459,11 +533,12 @@ export class FileTimelineBoard {
     this.chart.setAttribute("height", String(Math.max(layout.height, 1)));
     this.cursor.setAttribute("width", String(layout.width));
     this.cursor.setAttribute("height", String(Math.max(layout.height, 1)));
+    this.fitGutters();
     this.drawGrid(layout);
     if (typeof keep === "object" && keep !== null) {
-      this.board.scrollTop = Math.max(0, (layout.y.get(keep.person) ?? 0) - this.board.clientHeight / 2);
+      this.glideTo(Math.max(0, (layout.y.get(keep.person) ?? 0) - this.plot.clientHeight / 2));
     } else if (typeof keep === "number") {
-      this.board.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
+      this.plot.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
     }
     if (this.highlighted !== null && !layout.y.has(this.highlighted)) {
       this.highlighted = null;
@@ -472,6 +547,7 @@ export class FileTimelineBoard {
       this.year = Math.max(layout.lo, Math.min(layout.hi, this.year));
     }
     this.draw(this.measure());
+    this.find.refresh();
   }
 
   private layoutOf(model: FileTimeline): Layout {
@@ -524,7 +600,6 @@ export class FileTimelineBoard {
     const lines: Item[] = [];
     const marks: Item[] = [];
     const row = (cy: number) => ({ top: cy - ROW / 2, bottom: cy + ROW / 2 });
-    const showsMark = (mark: TimelineMark) => mark.kind !== "other" || this.scope.others;
     for (const xref of layout.shown) {
       const person = model.people.get(xref);
       const cy = y.get(xref) ?? 0;
@@ -555,15 +630,9 @@ export class FileTimelineBoard {
             return bar;
           },
         });
-        if (this.scope.zoom >= ZOOM.captions) {
-          const text = fitted(captionOf(person), right - left - 22);
-          if (text) {
-            lines.push({ ...row(cy), left, right, ids: [xref], make: () => this.caption(left + 11, cy, text, xref) });
-          }
-        }
       }
       for (const mark of person.marks) {
-        if (mark.until !== undefined && showsMark(mark)) {
+        if (mark.until !== undefined) {
           const left = x(mark.year);
           const right = x(mark.until);
           lines.push({
@@ -584,9 +653,6 @@ export class FileTimelineBoard {
         }
       }
       for (const mark of person.marks) {
-        if (!showsMark(mark)) {
-          continue;
-        }
         const at = x(mark.year);
         marks.push({
           ...row(cy),
@@ -646,12 +712,6 @@ export class FileTimelineBoard {
     return group;
   }
 
-  private caption(left: number, cy: number, text: string, xref: string): SVGElement {
-    const node = svg(this.doc, "text", "gedcom-ft-caption", { x: left, y: cy + 3.5, "data-p": xref });
-    node.textContent = text;
-    return node;
-  }
-
   private drawArrows(layout: Layout, model: FileTimeline, xref: string): void {
     const person = model.people.get(xref);
     if (!person) {
@@ -691,7 +751,6 @@ export class FileTimelineBoard {
     this.cursor.replaceChildren();
     this.axis.querySelector(".gedcom-ft-axis-cursor")?.remove();
     if (!layout || !model || this.year === null) {
-      this.aliveEl.setText("");
       return;
     }
     const year = this.year;
@@ -721,11 +780,6 @@ export class FileTimelineBoard {
     label.textContent = yearText(year);
     flag.append(label);
     this.axis.append(flag);
-    this.aliveEl.setText(
-      plural(layout.branch ? "fileTimeline.aliveInBranch" : "fileTimeline.alive", alive.length, {
-        year: yearText(year),
-      }),
-    );
   }
 
   private drawGrid(layout: Layout): void {
@@ -763,7 +817,6 @@ export class FileTimelineBoard {
       : null;
     this.names.empty();
     this.byName = new Map();
-    this.names.createDiv({ cls: "gedcom-ft-axis-pad" });
     this.names.createDiv({ cls: "gedcom-ft-spacer" }).setCssProps({ height: `${first * ROW}px` });
     for (const xref of layout.shown.slice(first, last)) {
       const person = model?.people.get(xref);
@@ -774,67 +827,33 @@ export class FileTimelineBoard {
       const row = this.names.createDiv({ cls: "gedcom-ft-name", attr: { "data-p": xref } });
       row.toggleClass("is-focus", xref === this.scope.focus);
       row.toggleClass("is-dim", this.misses([xref]));
+      row.toggleClass("is-current", xref === this.current);
+      const years = lifelineYears(person.lifeline);
       const open = row.createEl("button", {
         cls: "gedcom-ft-name-open",
-        attr: { type: "button", title: name },
+        attr: { type: "button", "aria-label": years ? `${name}, ${years}` : name },
       });
+      tipPlace(open, "right");
       open.createSpan({ cls: "gedcom-ft-name-text", text: name });
-      open.createSpan({ cls: "gedcom-ft-name-years", text: lifelineYears(person.lifeline) });
-      row.createEl("button", {
+      open.createSpan({ cls: "gedcom-ft-name-years", text: years });
+      const branch = row.createEl("button", {
         cls: "gedcom-ft-branch",
         text: t("overview.branch"),
         attr: {
           type: "button",
           "data-branch": xref,
           "aria-pressed": String(xref === this.scope.focus),
-          title: t("overview.branchHint"),
+          "aria-label": t("fileGraph.branchOf", { name }),
         },
       });
+      tipPlace(branch, "right");
       this.byName.set(xref, row);
     }
     this.names
       .createDiv({ cls: "gedcom-ft-spacer" })
       .setCssProps({ height: `${(layout.shown.length - last) * ROW}px` });
+    this.follow(this.names, this.plot, "scrollTop");
     return focused;
-  }
-
-  private summarise(model: FileTimeline): void {
-    const dated = new Set<TimelineMark>();
-    for (const person of model.people.values()) {
-      person.marks.forEach((mark) => dated.add(mark));
-    }
-    let others = 0;
-    for (const mark of dated) {
-      others += mark.kind === "other" ? 1 : 0;
-    }
-    this.othersCount.setText(String(others));
-    const parts = [
-      plural("overview.people", model.rows.length),
-      plural("overview.families", model.families.size),
-      plural("fileTimeline.events", dated.size),
-    ];
-    if (dated.size > 0) {
-      const from = least([...dated].map((mark) => mark.year));
-      const to = most([...dated].map((mark) => mark.until ?? mark.year));
-      parts.push(`${yearText(from)}–${yearText(to)}`);
-    }
-    this.summary.setText(parts.join(" · "));
-    this.undatedEl.empty();
-    const facts = [...model.people.values()].flatMap((person) => person.undated);
-    if (facts.length > 0) {
-      const kinds = [...new Set(facts.map((event) => eventName(event).toLowerCase()))].join(", ");
-      this.undatedEl.createDiv({ text: plural("fileTimeline.undatedFacts", facts.length, { kinds }) });
-    }
-    if (model.undated.length > 0) {
-      const listed = model.undated
-        .slice(0, UNDATED_NAMES)
-        .map((xref) => model.people.get(xref))
-        .filter((person): person is TimelinePerson => person !== undefined)
-        .map((person) => personName(person.row))
-        .join(", ");
-      const more = model.undated.length > UNDATED_NAMES ? "…" : "";
-      this.undatedEl.createDiv({ text: `${plural("fileTimeline.undated", model.undated.length)}: ${listed}${more}.` });
-    }
   }
 
   private definitions(): SVGDefsElement {
@@ -887,9 +906,6 @@ export class FileTimelineBoard {
   }
 
   private listen(): void {
-    this.othersChip.addEventListener("click", () => this.setScope({ others: !this.scope.others }));
-    this.zoomInput.addEventListener("input", () => this.setScope({ zoom: Number(this.zoomInput.value) }));
-    this.searchInput.addEventListener("input", () => this.setQuery(this.searchInput.value));
 
     this.board.addEventListener("pointerdown", (event) => {
       this.pointer = event.pointerType || "mouse";
@@ -904,7 +920,7 @@ export class FileTimelineBoard {
         this.resting.rest(xref, this.highlighted);
       }
       this.showTip(this.markAt(event.target), event);
-      const onPlot = event.target instanceof Node && this.plot.contains(event.target);
+      const onPlot = event.target instanceof Node && (this.plot.contains(event.target) || this.axisClip.contains(event.target));
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
     });
     this.board.addEventListener("pointerleave", (event) => {
@@ -915,7 +931,9 @@ export class FileTimelineBoard {
       this.setYear(null);
       this.showTip(null, event);
     });
-    this.board.addEventListener("scroll", () => {
+    this.plot.addEventListener("scroll", () => {
+      this.follow(this.names, this.plot, "scrollTop");
+      this.follow(this.axisClip, this.plot, "scrollLeft");
       if (this.pending) {
         return;
       }
@@ -928,6 +946,8 @@ export class FileTimelineBoard {
         }
       });
     });
+    this.names.addEventListener("scroll", () => this.pull(this.plot, this.names, "scrollTop"));
+    this.axisClip.addEventListener("scroll", () => this.pull(this.plot, this.axisClip, "scrollLeft"));
     this.board.addEventListener("click", (event) => this.activate(event));
     this.names.addEventListener("focusin", (event) => {
       const xref = this.personAt(event.target);
@@ -979,7 +999,7 @@ export class FileTimelineBoard {
     if (touch && this.armed !== xref) {
       this.armed = xref;
       this.highlight(xref);
-      const onPlot = target !== null && this.plot.contains(target);
+      const onPlot = target !== null && (this.plot.contains(target) || this.axisClip.contains(target));
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
       return;
     }
@@ -1028,10 +1048,10 @@ export class FileTimelineBoard {
   }
 }
 
-function scopeOf({ focus, up, down, zoom, others }: TimelineScope): TimelineScope {
-  return { ...(focus === undefined ? {} : { focus }), up, down, zoom, others };
+function scopeOf({ focus, up, down, zoom }: TimelineScope): TimelineScope {
+  return { ...(focus === undefined ? {} : { focus }), up, down, zoom };
 }
 
 function sameScope(a: TimelineScope, b: TimelineScope): boolean {
-  return a.focus === b.focus && a.up === b.up && a.down === b.down && a.zoom === b.zoom && a.others === b.others;
+  return a.focus === b.focus && a.up === b.up && a.down === b.down && a.zoom === b.zoom;
 }

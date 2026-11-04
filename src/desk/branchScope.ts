@@ -1,4 +1,5 @@
 import { plural, t } from "../i18n";
+import { tipPlace } from "./dom";
 import { BRANCH_STEPS } from "./fileTimeline";
 
 export interface BranchScope {
@@ -100,6 +101,7 @@ export class BranchScopeBar {
           cls: `${prefix}-step-button`,
           attr: { type: "button", "aria-label": aria, "data-step": `${key}:${by}` },
         });
+        tipPlace(node, "bottom");
         this.options.setIcon(node, icon);
         const next = scope[key] + by;
         if (next < BRANCH_STEPS.min || next > BRANCH_STEPS.max) {

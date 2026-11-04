@@ -238,19 +238,21 @@ test.describe("the views of a person page", () => {
 
 test.describe("the tree", () => {
   const card = (page: Page, name: string) =>
-    page.locator(".gedcom-fg-person", { has: page.locator(`title:text-is("${name}")`) });
+    page.locator(".gedcom-fg-person", {
+      has: page.locator(`[data-card][aria-label="${name}"], [data-card][aria-label^="${name}, "]`),
+    });
 
   test("draws Marie's family around her and moves the focus on a click", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await mountDesk(page);
     await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
 
-    await expect(page.locator(".gedcom-fg-person.is-focus title").first()).toHaveText("Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-fg-person.is-focus [data-card]").first()).toHaveAttribute("aria-label", /^Marie Skłodowska-Curie/);
     await expect(page.locator(".gedcom-fg-person")).toHaveCount(14);
     await card(page, "4 siblings").locator(".gedcom-fg-card-bg").click();
     await expect(page.locator(".gedcom-fg-person")).toHaveCount(17);
     await card(page, "Pierre Curie").first().locator(".gedcom-fg-card-bg").click();
-    await expect(page.locator(".gedcom-fg-person.is-focus title").first()).toHaveText("Pierre Curie");
+    await expect(page.locator(".gedcom-fg-person.is-focus [data-card]").first()).toHaveAttribute("aria-label", /^Pierre Curie/);
   });
 
   test("colours the cards by sex and stands Pierre Curie left of Marie, with their node between", async ({ page }) => {
@@ -286,6 +288,54 @@ test.describe("the tree", () => {
   });
 
   for (const [width, height, phone] of [[1280, 800, false], [390, 760, true]] as const) {
+    test(`searches the tree at ${width} pixels, with the box inside the canvas and no native tooltip`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await mountDesk(page, { phone });
+      await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
+      await page.waitForSelector(".gedcom-fg-find");
+      const box = (selector: string) => page.locator(selector).boundingBox();
+
+      const canvas = await box(".gedcom-fg-canvas");
+      const zoomGroup = await box(".gedcom-fg-controls");
+      const closed = await box(".gedcom-fg-find");
+      expect(closed?.x ?? 0).toBeGreaterThanOrEqual(canvas?.x ?? 0);
+      expect((closed?.y ?? 0) + (closed?.height ?? 0)).toBeLessThan(zoomGroup?.y ?? 0);
+      expect(closed?.height ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 24);
+      await page.locator(".gedcom-fg-find-toggle").click();
+      await expect(page.locator(".gedcom-fg-search")).toBeFocused();
+      await expect(page.locator(".gedcom-fg-find-toggle")).toBeHidden();
+      await page.locator(".gedcom-fg-search").fill("joliot");
+      await expect(page.locator(".gedcom-fg-find-count")).toHaveText("4 matches");
+      await expect(page.locator(".gedcom-fg-person:not(.is-dim)")).toHaveCount(4);
+      await page.locator(".gedcom-fg-find-next").click();
+      await expect(page.locator(".gedcom-fg-find-count")).toHaveText("1 / 4");
+      await expect(page.locator(".gedcom-fg-person.is-current")).toHaveCount(1);
+      const open = await box(".gedcom-fg-find");
+      expect((open?.x ?? 0) + (open?.width ?? 0)).toBeLessThanOrEqual((canvas?.x ?? 0) + (canvas?.width ?? 0));
+      expect(open?.x ?? 0).toBeGreaterThanOrEqual(canvas?.x ?? 0);
+      const arrow = await box(".gedcom-fg-find-next");
+      expect(arrow?.width ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 24);
+
+      await expect(page.locator(".gedcom-fg-canvas title, .gedcom-fg-canvas [title]")).toHaveCount(0);
+      const places = await page
+        .locator(".gedcom-fg-controls button, .gedcom-fg-find button")
+        .evaluateAll((buttons) =>
+          buttons.map((button) => [
+            button.hasAttribute("aria-label"),
+            button.getAttribute("data-tooltip-position"),
+            button.closest(".gedcom-fg-controls") !== null,
+          ]),
+        );
+      for (const [labelled, place, zoom] of places) {
+        expect(labelled).toBe(true);
+        expect(place).toBe(zoom ? "top" : "bottom");
+      }
+      await page.locator(".gedcom-fg-find-clear").click();
+      await expect(page.locator(".gedcom-fg-person.is-dim")).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      await expect(page.locator(".gedcom-fg-find-toggle")).toBeFocused();
+    });
+
     test(`fills the Tree tab at ${width} pixels with nothing to scroll, fitted, and no legend`, async ({ page }) => {
       await page.setViewportSize({ width, height });
       await mountDesk(page, { phone });
