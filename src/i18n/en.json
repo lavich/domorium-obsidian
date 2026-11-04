@@ -333,5 +333,24 @@
     "one": "{count} fact without a year has no mark on the line: {kinds}.",
     "other": "{count} facts without a year have no mark on the line: {kinds}."
   },
-  "fileTimeline.legend.captions": "Text in a lifeline: facts without a date, when zoomed in or under the pointer"
+  "fileTimeline.legend.captions": "Text in a lifeline: facts without a date, when zoomed in or under the pointer",
+  "command.openFileGraph": "Open the graph of the file",
+  "fileGraph.name": "Graph of the file",
+  "fileGraph.title": "Graph of {name}",
+  "fileGraph.branchHelp": "Choose the branch on a person's card to see only their ancestors and descendants.",
+  "fileGraph.branchOf": "Branch of {name}",
+  "fileGraph.zoomIn": "Zoom in",
+  "fileGraph.zoomOut": "Zoom out",
+  "fileGraph.fit": "Fit",
+  "fileGraph.legend.family": "Family, with the year of the marriage",
+  "fileGraph.legend.undated": "Family without a marriage date",
+  "fileGraph.married": "Married {date}",
+  "fileGraph.noDate": "No marriage date",
+  "fileGraph.children": {
+    "one": "{count} child",
+    "other": "{count} children"
+  },
+  "fileGraph.openFamily": "Open the family",
+  "fileGraph.nodeLabel": "Family of {couple}, married {year}",
+  "fileGraph.nodeUndated": "Family of {couple}, no marriage date"
 }

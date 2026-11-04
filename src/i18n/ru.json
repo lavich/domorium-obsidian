@@ -365,5 +365,26 @@
     "many": "{count} фактов без года не отмечены на линии: {kinds}.",
     "other": "{count} факта без года не отмечены на линии: {kinds}."
   },
-  "fileTimeline.legend.captions": "Текст на линии жизни: факты без даты — при крупном масштабе или под указателем"
+  "fileTimeline.legend.captions": "Текст на линии жизни: факты без даты — при крупном масштабе или под указателем",
+  "command.openFileGraph": "Открыть граф файла",
+  "fileGraph.name": "Граф файла",
+  "fileGraph.title": "Граф файла {name}",
+  "fileGraph.branchHelp": "Выберите ветку на карточке человека, чтобы видеть только его предков и потомков.",
+  "fileGraph.branchOf": "Ветка: {name}",
+  "fileGraph.zoomIn": "Приблизить",
+  "fileGraph.zoomOut": "Отдалить",
+  "fileGraph.fit": "Вписать",
+  "fileGraph.legend.family": "Семья, с годом брака",
+  "fileGraph.legend.undated": "Семья без даты брака",
+  "fileGraph.married": "Брак: {date}",
+  "fileGraph.noDate": "Дата брака не указана",
+  "fileGraph.children": {
+    "one": "{count} ребёнок",
+    "few": "{count} ребёнка",
+    "many": "{count} детей",
+    "other": "{count} ребёнка"
+  },
+  "fileGraph.openFamily": "Открыть семью",
+  "fileGraph.nodeLabel": "Семья: {couple}, брак {year}",
+  "fileGraph.nodeUndated": "Семья: {couple}, дата брака не указана"
 }

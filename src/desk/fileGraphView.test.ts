@@ -1,0 +1,581 @@
+// @vitest-environment happy-dom
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { resetLanguage, setLanguage } from "../i18n";
+import { curieIndex, indexOf } from "../testing/curie";
+import { installObsidianDom } from "../testing/obsidianDom";
+import type { BranchScope } from "./branchScope";
+import { CARD, fileGraphOf } from "./fileGraph";
+import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
+import {
+  FileGraphBoard,
+  readGraphState,
+  ZOOM,
+  type FileGraphHost,
+  type GraphSettings,
+  type GraphView,
+} from "./fileGraphView";
+
+const WIDE = { width: 1400, height: 900 };
+const NARROW = { width: 390, height: 600 };
+const WHOLE: BranchScope = { up: 2, down: 2 };
+
+let container: HTMLElement;
+let host: {
+  openRecord: ReturnType<typeof vi.fn<(xref: string) => void>>;
+  stateChanged: ReturnType<typeof vi.fn<FileGraphHost["stateChanged"]>>;
+  setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
+};
+
+beforeAll(installObsidianDom);
+afterEach(resetLanguage);
+beforeEach(() => {
+  container = document.createElement("div");
+  document.body.replaceChildren(container);
+  host = {
+    openRecord: vi.fn(),
+    stateChanged: vi.fn(),
+    setIcon: vi.fn((element: HTMLElement, icon: string) => {
+      element.setAttribute("data-icon", icon);
+    }),
+  };
+});
+
+const curie = (): FileTimeline => fileTimelineOf(curieIndex());
+
+function board(
+  model: FileTimeline = curie(),
+  settings: Partial<GraphSettings> = {},
+  size: { width: number; height: number } | null = WIDE,
+): FileGraphBoard {
+  const drawn = new FileGraphBoard(container, host satisfies FileGraphHost);
+  drawn.show(model, "curie.ged", { scope: WHOLE, ...settings });
+  if (size) {
+    drawn.resized(size);
+  }
+  return drawn;
+}
+
+const all = (selector: string) => [...container.querySelectorAll(selector)];
+const drawnPeople = (): string[] => all(".gedcom-fg-person").map((card) => card.getAttribute("data-p") ?? "");
+const person = (xref: string) => container.querySelector<SVGElement>(`.gedcom-fg-person[data-p="${xref}"]`);
+const card = (xref: string) => container.querySelector<SVGElement>(`[data-card="${xref}"]`);
+const pill = (xref: string) => container.querySelector<SVGElement>(`[data-branch="${xref}"]`);
+const node = (family: string) => container.querySelector<SVGElement>(`[data-node="${family}"]`);
+const scopeText = () => container.querySelector(".gedcom-fg-scope")?.textContent ?? "";
+
+function centreOf(model: FileTimeline, xref: string, scope: BranchScope = WHOLE): [number, number] {
+  const placed = fileGraphOf(model, scope).card.get(xref);
+  return [(placed?.x ?? NaN) + CARD.width / 2, (placed?.y ?? NaN) + CARD.height / 2];
+}
+
+function expectCentredOn(view: GraphView | null, at: [number, number], k?: number): void {
+  expect(view?.x).toBeCloseTo(at[0], 3);
+  expect(view?.y).toBeCloseTo(at[1], 3);
+  if (k !== undefined) {
+    expect(view?.k).toBeCloseTo(k, 6);
+  }
+}
+
+function pointer(type: string, target: Element | null | undefined, init: PointerEventInit = {}): void {
+  target?.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, pointerType: "mouse", ...init }));
+}
+
+function click(target: Element | null | undefined, detail = 1): void {
+  target?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail }));
+}
+
+function tap(target: Element | null | undefined): void {
+  pointer("pointerdown", target, { pointerType: "touch" });
+  pointer("pointerup", target, { pointerType: "touch" });
+  target?.dispatchEvent(Object.assign(new MouseEvent("click", { bubbles: true, detail: 1 }), { pointerType: "touch" }));
+}
+
+function key(target: Element | null | undefined, which: string): KeyboardEvent {
+  const event = new KeyboardEvent("keydown", { bubbles: true, cancelable: true, key: which });
+  target?.dispatchEvent(event);
+  return event;
+}
+
+const frame = () => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+
+describe("drawing the graph of a file", () => {
+  it("draws a card for each person in view, coloured by sex, with the name and the years", () => {
+    board();
+
+    expect(drawnPeople()).toHaveLength(17);
+    expect(person("@I1@")?.getAttribute("class")).toContain("is-f");
+    expect(person("@I2@")?.getAttribute("class")).toContain("is-m");
+    expect(card("@I1@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Marie Skłodowska-Curie");
+    expect(card("@I1@")?.querySelector(".gedcom-fg-card-years")?.textContent).toBe("1867–1934");
+    expect(card("@I15@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Henry Richardson Labo…");
+    expect(card("@I15@")?.querySelector("title")?.textContent).toBe("Henry Richardson Labouisse");
+    expect(container.querySelector(".gedcom-fg-summary")?.textContent).toBe("17 people · 5 families");
+  });
+
+  it("builds the drawing as elements, with no markup handed in", () => {
+    board();
+
+    expect(container.querySelector("svg")?.namespaceURI).toBe("http://www.w3.org/2000/svg");
+    expect(container.querySelector(".gedcom-fg-card-bg")?.namespaceURI).toBe("http://www.w3.org/2000/svg");
+    expect(all(".gedcom-fg-line")).toHaveLength(11);
+    expect(node("@F3@")?.textContent).toBe("’95");
+    expect(node("@F2@")?.getAttribute("class")).toContain("is-undated");
+    expect(node("@F2@")?.textContent).toBe("");
+  });
+
+  it("draws only the cards meeting the window and one window around it", () => {
+    const drawn = board();
+    const window = { left: 0, top: 0, right: 300, bottom: 60 };
+    drawn.draw(window);
+    const layout = fileGraphOf(curie(), WHOLE);
+    const expected = layout.cards
+      .filter((one) => one.x <= 600 && one.x + CARD.width >= -300 && one.y <= 120 && one.y + CARD.height >= -60)
+      .map((one) => one.xref);
+
+    expect(drawnPeople()).toEqual(expected);
+    expect(expected.length).toBeLessThan(17);
+  });
+
+  it("keeps the element of a card still in range as the window moves", () => {
+    const drawn = board();
+    drawn.draw({ left: 0, top: 0, right: 400, bottom: 200 });
+    const kept = person("@I9@");
+    drawn.draw({ left: 100, top: 0, right: 500, bottom: 200 });
+
+    expect(person("@I9@")).toBe(kept);
+  });
+
+  it("puts a card drawn later at its place in row order", () => {
+    const drawn = board();
+    const layout = fileGraphOf(curie(), WHOLE);
+    drawn.draw({ left: 1600, top: 0, right: 1700, bottom: 10 });
+    drawn.draw({ left: 0, top: 0, right: 2000, bottom: 500 });
+
+    expect(drawnPeople()).toEqual(layout.cards.map((one) => one.xref));
+  });
+
+  it("draws no text far out", () => {
+    board(curie(), { view: { x: 900, y: 200, k: 0.2 } });
+
+    expect(drawnPeople()).toHaveLength(17);
+    expect(all(".gedcom-fg-items text")).toHaveLength(0);
+    expect(all("[data-branch]")).toHaveLength(0);
+  });
+
+  it("says when the file is gone", () => {
+    board().showGone("curie.ged");
+
+    expect(container.querySelector(".gedcom-fg-gone")?.textContent).toBe("curie.ged is no longer in the vault.");
+    expect(container.querySelector(".gedcom-fg")?.classList.contains("is-gone")).toBe(true);
+  });
+});
+
+describe("pointing at a person", () => {
+  it("lights Marie, her parents, husband and daughters and the lines to them, replacing nothing", () => {
+    const drawn = board();
+    const before = all(".gedcom-fg-view *");
+    drawn.highlight("@I1@");
+
+    const lit = all(".gedcom-fg-person.is-on").map((one) => one.getAttribute("data-p"));
+    expect(lit.sort()).toEqual(["@I1@", "@I12@", "@I13@", "@I2@", "@I3@", "@I4@"].sort());
+    expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
+    const lines = all(".gedcom-fg-line.is-on").map((one) => `${one.getAttribute("data-f")}>${one.getAttribute("data-child")}`);
+    expect(lines.sort()).toEqual(["@F1@>@I1@", "@F3@>@I12@", "@F3@>@I13@"]);
+    expect(container.querySelector(".gedcom-fg-svg")?.classList.contains("has-hl")).toBe(true);
+    expect(all(".gedcom-fg-view *")).toEqual(before);
+  });
+
+  it("lights a person under the pointer, and puts the light out as it leaves", () => {
+    board();
+    pointer("pointermove", card("@I2@"));
+
+    expect(person("@I2@")?.classList.contains("is-hl")).toBe(true);
+    pointer("pointerleave", container.querySelector(".gedcom-fg-canvas"));
+    expect(all(".is-on")).toHaveLength(0);
+  });
+
+  it("shows a family node's spouses, marriage and children", () => {
+    board();
+    pointer("pointermove", node("@F3@")?.querySelector("circle"));
+    const tip = container.querySelector(".gedcom-fg-tip");
+
+    expect(tip?.classList.contains("is-shown")).toBe(true);
+    expect(tip?.textContent).toContain("Pierre Curie and Marie Skłodowska-Curie");
+    expect(tip?.textContent).toContain("Married 26 JUL 1895");
+    expect(tip?.textContent).toContain("Sceaux, France");
+    expect(tip?.textContent).toContain("2 children");
+
+    pointer("pointermove", node("@F2@")?.querySelector("circle"));
+    expect(tip?.textContent).toContain("No marriage date");
+  });
+});
+
+describe("the view", () => {
+  it("zooms between 0.05 and 3", () => {
+    const drawn = board();
+    drawn.zoomAt(1000, 0, 0);
+    expect(drawn.view()?.k).toBe(ZOOM.max);
+    drawn.zoomAt(0.00001, 0, 0);
+    expect(drawn.view()?.k).toBe(ZOOM.min);
+  });
+
+  it("fits at most at 1.4, and at the floor stops centred on the scope", () => {
+    const layout = fileGraphOf(curie(), WHOLE);
+    const roomy = board(curie(), {}, { width: 20_000, height: 20_000 });
+    roomy.fit();
+    expectCentredOn(roomy.view(), [layout.width / 2, layout.height / 2], ZOOM.fit);
+
+    const tiny = board(curie(), {}, { width: 60, height: 60 });
+    tiny.fit();
+    expectCentredOn(tiny.view(), [layout.width / 2, layout.height / 2], ZOOM.min);
+  });
+
+  it("opens fitted where that can be read, and waits for the canvas to have a size", () => {
+    const drawn = board(curie(), {}, null);
+    expect(drawn.view()).toBeNull();
+    drawn.resized({ width: 0, height: 0 });
+    expect(drawn.view()).toBeNull();
+    drawn.resized(WIDE);
+
+    const layout = fileGraphOf(curie(), WHOLE);
+    expectCentredOn(drawn.view(), [layout.width / 2, layout.height / 2]);
+    expect(drawn.view()?.k).toBeGreaterThanOrEqual(ZOOM.opens);
+  });
+
+  it("opens readable on the person of the tab, else the branch's person, else the first card of the top row", () => {
+    const model = curie();
+    expectCentredOn(board(model, { around: "@I1@" }, NARROW).view(), centreOf(model, "@I1@"), ZOOM.readable);
+
+    const branch = { focus: "@I12@", up: 2, down: 2 };
+    expectCentredOn(
+      board(model, { scope: branch, around: "@F1@" }, { width: 300, height: 600 }).view(),
+      centreOf(model, "@I12@", branch),
+      ZOOM.readable,
+    );
+    const first = fileGraphOf(model, WHOLE).cards[0]?.xref ?? "";
+    expectCentredOn(board(model, {}, NARROW).view(), centreOf(model, first), ZOOM.readable);
+  });
+
+  it("restores a saved view as its centre and zoom", () => {
+    const drawn = board(curie(), { view: { x: 500, y: 200, k: 0.8 } }, NARROW);
+
+    expectCentredOn(drawn.view(), [500, 200], 0.8);
+  });
+
+  it("keeps the view for a new reading of the file with the same scope", () => {
+    const drawn = board();
+    drawn.zoomAt(1.5, 100, 100);
+    drawn.panBy(40, -30);
+    const before = drawn.view();
+    drawn.show(fileTimelineOf(curieIndex()), "curie.ged", { scope: WHOLE, around: "@I17@" });
+
+    expect(drawn.view()).toEqual(before);
+  });
+
+  it("centres a new branch on its person, and the whole file on the person just left", () => {
+    const model = curie();
+    const drawn = board(model, { around: "@I1@" });
+    pill("@I12@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+
+    const branch = { focus: "@I12@", up: 2, down: 2 };
+    expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 10 of 17 people");
+    expectCentredOn(drawn.view(), centreOf(model, "@I12@", branch), ZOOM.readable);
+    expect(host.stateChanged.mock.lastCall?.[0].scope).toEqual(branch);
+    expect(host.stateChanged.mock.lastCall?.[0].view.k).toBeCloseTo(ZOOM.readable, 6);
+
+    container.querySelector<HTMLElement>(".gedcom-fg-whole")?.click();
+    expect(drawnPeople()).toHaveLength(17);
+    expectCentredOn(drawn.view(), centreOf(model, "@I12@"), ZOOM.readable);
+  });
+
+  it("zooms at the pointer with a mouse wheel or Ctrl, and pans with a trackpad's scroll", () => {
+    const drawn = board();
+    const canvas = container.querySelector(".gedcom-fg-canvas");
+    const wheel = ({ ctrlKey = false, ...init }: WheelEventInit) => {
+      const event = Object.assign(new WheelEvent("wheel", { bubbles: true, cancelable: true, ...init }), {
+        clientX: 200,
+        clientY: 100,
+        ctrlKey,
+      });
+      canvas?.dispatchEvent(event);
+      return event;
+    };
+    const before = drawn.view();
+    const k = before?.k ?? 1;
+
+    expect(wheel({ deltaY: 100 }).defaultPrevented).toBe(true);
+    expect(drawn.view()?.k).toBeCloseTo(k / 1.12, 6);
+    wheel({ deltaY: -100 });
+    expect(drawn.view()?.k).toBeCloseTo(k, 6);
+    expect(drawn.view()?.x).toBeCloseTo(before?.x ?? 0, 6);
+
+    wheel({ deltaY: 10 });
+    expect(drawn.view()?.k).toBeCloseTo(k, 6);
+    expect(drawn.view()?.y).toBeCloseTo((before?.y ?? 0) + 10 / k, 6);
+    wheel({ deltaX: 30, deltaY: 0 });
+    expect(drawn.view()?.x).toBeCloseTo((before?.x ?? 0) + 30 / k, 6);
+
+    wheel({ deltaY: -10, ctrlKey: true });
+    expect(drawn.view()?.k).toBeGreaterThan(k);
+  });
+
+  it("zooms around the middle of a pinch, and opens nothing after it", () => {
+    const drawn = board();
+    const target = card("@I1@");
+    const k = drawn.view()?.k ?? 1;
+    pointer("pointerdown", target, { pointerId: 1, pointerType: "touch", clientX: 100, clientY: 100 });
+    pointer("pointerdown", target, { pointerId: 2, pointerType: "touch", clientX: 200, clientY: 100 });
+    pointer("pointermove", target, { pointerId: 2, pointerType: "touch", clientX: 300, clientY: 100 });
+
+    expect(drawn.view()?.k).toBeCloseTo(k * 2, 6);
+    pointer("pointerup", target, { pointerId: 2, pointerType: "touch" });
+    pointer("pointerup", target, { pointerId: 1, pointerType: "touch" });
+    click(target);
+    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(person("@I1@")?.classList.contains("is-armed")).toBe(false);
+  });
+
+  it("reads a saved state, keeping its scope and view within bounds", () => {
+    expect(readGraphState({ gedcom: "a.ged", focus: "@I1@", around: "@I2@", up: 12, down: -3, view: { x: 1, y: 2, k: 9 } })).toEqual({
+      gedcom: "a.ged",
+      focus: "@I1@",
+      around: "@I2@",
+      up: 9,
+      down: 0,
+      view: { x: 1, y: 2, k: ZOOM.max },
+    });
+    expect(readGraphState({ gedcom: "", focus: "", view: { x: 1 } })).toEqual({ gedcom: null, up: 2, down: 2 });
+  });
+});
+
+describe("the search", () => {
+  it("fades the cards that do not match", () => {
+    const drawn = board();
+    drawn.setQuery("joliot");
+
+    const kept = all(".gedcom-fg-person:not(.is-dim)").map((one) => one.getAttribute("data-p"));
+    expect(kept.sort()).toEqual(["@I12@", "@I14@", "@I16@", "@I17@"]);
+  });
+
+  it("moves the view to each match in turn on Enter, drawing a card not drawn before", async () => {
+    const model = curie();
+    board(model, { view: { x: 0, y: 0, k: 2 } }, { width: 200, height: 150 });
+    const search = container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+    if (search) {
+      search.value = "joliot";
+      search.dispatchEvent(new Event("input"));
+    }
+    expect(person("@I17@")).toBeNull();
+
+    for (const xref of ["@I14@", "@I12@", "@I16@", "@I17@", "@I14@"]) {
+      key(search, "Enter");
+      await frame();
+      expect(drawnPeopleCentre(), xref).toEqual(centreOf(model, xref).map((value) => Math.round(value)));
+      expect(person(xref)?.classList.contains("is-hl"), xref).toBe(true);
+    }
+  });
+
+  function drawnPeopleCentre(): number[] {
+    const changed = host.stateChanged.mock.lastCall?.[0].view;
+    return [Math.round(changed?.x ?? NaN), Math.round(changed?.y ?? NaN)];
+  }
+});
+
+describe("activating", () => {
+  it("opens a person from their card and a family from its node, and shows a branch from its pill", () => {
+    board();
+    click(card("@I12@")?.querySelector(".gedcom-fg-card-bg"));
+    click(node("@F3@")?.querySelector("circle"));
+
+    expect(host.openRecord.mock.calls).toEqual([["@I12@"], ["@F3@"]]);
+    click(pill("@I12@")?.querySelector("rect"));
+    expect(scopeText()).toContain("Branch of Irène Joliot-Curie");
+    expect(drawnPeople()).toHaveLength(10);
+  });
+
+  it("drags from a card once it has moved four pixels, and opens nothing after the drag", () => {
+    const drawn = board();
+    const target = card("@I1@");
+    const before = drawn.view();
+    pointer("pointerdown", target, { clientX: 100, clientY: 100 });
+    pointer("pointermove", target, { clientX: 102, clientY: 101 });
+    expect(drawn.view()).toEqual(before);
+    pointer("pointermove", target, { clientX: 130, clientY: 120 });
+    pointer("pointerup", target, { clientX: 130, clientY: 120 });
+    click(target);
+
+    expect(drawn.view()?.x).toBeCloseTo((before?.x ?? 0) - 30 / (before?.k ?? 1), 6);
+    expect(host.openRecord).not.toHaveBeenCalled();
+
+    pointer("pointerdown", target, { clientX: 100, clientY: 100 });
+    pointer("pointermove", target, { clientX: 102, clientY: 101 });
+    pointer("pointerup", target, { clientX: 102, clientY: 101 });
+    click(target);
+    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("on a touch, lights the person and offers the branch first, and opens them on the second", () => {
+    board();
+    tap(card("@I1@"));
+
+    expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
+    expect(person("@I1@")?.classList.contains("is-armed")).toBe(true);
+    expect(host.openRecord).not.toHaveBeenCalled();
+    tap(card("@I1@"));
+    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("on a touch of a family node, shows it with the way to the family's page", () => {
+    board();
+    tap(node("@F3@")?.querySelector("circle"));
+    const pop = container.querySelector(".gedcom-fg-pop");
+
+    expect(pop?.classList.contains("is-shown")).toBe(true);
+    expect(pop?.textContent).toContain("Married 26 JUL 1895");
+    expect(host.openRecord).not.toHaveBeenCalled();
+    container.querySelector<HTMLElement>(".gedcom-fg-pop-open")?.click();
+    expect(host.openRecord).toHaveBeenCalledWith("@F3@");
+  });
+
+  it("on a touch of empty space, puts the light out", () => {
+    board();
+    tap(card("@I1@"));
+    tap(container.querySelector(".gedcom-fg-svg"));
+
+    expect(all(".is-on")).toHaveLength(0);
+    tap(card("@I1@"));
+    expect(host.openRecord).not.toHaveBeenCalled();
+  });
+
+  it("opens a person from a keyboard's click even after a touch", () => {
+    board();
+    tap(card("@I2@"));
+    click(card("@I1@"), 0);
+
+    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+  });
+});
+
+describe("the keyboard", () => {
+  it("reaches cards, their branch and family nodes in row order, each node after its left spouse", () => {
+    board();
+    const order = all("[tabindex]").map(
+      (one) =>
+        one.getAttribute("data-card") ??
+        (one.hasAttribute("data-branch") ? `branch ${one.getAttribute("data-branch")}` : one.getAttribute("data-node")),
+    );
+    const layout = fileGraphOf(curie(), WHOLE);
+    const expected = layout.cards.flatMap((one) => [
+      one.xref,
+      `branch ${one.xref}`,
+      ...layout.nodes.filter((family) => family.spouses[0] === one.xref).map((family) => family.family),
+    ]);
+
+    expect(order).toEqual(expected);
+    expect(order.indexOf("@F3@")).toBe(order.indexOf("branch @I2@") + 1);
+    expect(card("@I1@")?.getAttribute("aria-label")).toBe("Marie Skłodowska-Curie, 1867–1934");
+    expect(card("@I1@")?.getAttribute("role")).toBe("button");
+    expect(node("@F3@")?.getAttribute("aria-label")).toBe(
+      "Family of Pierre Curie and Marie Skłodowska-Curie, married 1895",
+    );
+    expect(node("@F2@")?.getAttribute("aria-label")).toBe(
+      "Family of Eugène Curie and Sophie-Claire Depouilly, no marriage date",
+    );
+  });
+
+  it("places the node of a third marriage and of a marriage across rows after the left or upper spouse", () => {
+    const people = (...ids: string[]) =>
+      ids.flatMap((id) => {
+        const [xref = "", sex = "", ...links] = id.split(" ");
+        return [`0 @${xref}@ INDI`, `1 NAME ${xref} /T/`, `1 SEX ${sex}`, ...links.map((one) => `1 ${one.replace(":", " @")}@`)];
+      });
+    const families = (...ids: string[]) =>
+      ids.flatMap((id) => {
+        const [xref = "", husb = "", wife = "", ...children] = id.split(" ");
+        return [`0 @${xref}@ FAM`, `1 HUSB @${husb}@`, `1 WIFE @${wife}@`, ...children.map((child) => `1 CHIL @${child}@`)];
+      });
+    const text = (...lines: string[]) => ["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n");
+    const followsSpouse = (model: FileTimeline, kind: string): void => {
+      container.replaceChildren();
+      board(model);
+      const found = fileGraphOf(model, WHOLE).nodes.find((family) => family.kind === kind);
+      const order = all("[data-card], [data-node]").map((one) => one.getAttribute("data-card") ?? one.getAttribute("data-node"));
+      const spouse = order.indexOf(found?.spouses[0] ?? "");
+      const nextCard = order.findIndex((one, index) => index > spouse && one?.startsWith("@I"));
+      expect(found, kind).toBeDefined();
+      expect(order.slice(spouse + 1, nextCard < 0 ? undefined : nextCard), kind).toContain(found?.family);
+    };
+
+    followsSpouse(
+      fileTimelineOf(
+        indexOf(
+          text(
+            ...people("IA M FAMS:F1 FAMS:F2 FAMS:F3", "IB F FAMS:F1", "IC F FAMS:F2", "ID F FAMS:F3"),
+            ...families("F1 IA IB", "F2 IA IC", "F3 IA ID"),
+          ),
+        ),
+      ),
+      "below",
+    );
+    followsSpouse(
+      fileTimelineOf(
+        indexOf(
+          text(
+            ...people("IM M FAMS:F1 FAMS:F3", "IW F FAMS:F1", "IC M FAMC:F1 FAMS:F2", "IV F FAMS:F2", "IG F FAMC:F2 FAMS:F3"),
+            ...families("F1 IM IW IC", "F2 IC IV IG", "F3 IM IG"),
+          ),
+        ),
+      ),
+      "across",
+    );
+  });
+
+  it("activates a focused card, branch or node on Enter or Space, without scrolling", () => {
+    board();
+    card("@I1@")?.focus();
+    expect(key(card("@I1@"), "Enter").defaultPrevented).toBe(true);
+    expect(key(node("@F3@"), " ").defaultPrevented).toBe(true);
+
+    expect(host.openRecord.mock.calls).toEqual([["@I1@"], ["@F3@"]]);
+    pill("@I12@")?.focus();
+    key(pill("@I12@"), " ");
+    expect(drawnPeople()).toHaveLength(10);
+    expect(document.activeElement?.getAttribute("data-branch")).toBe("@I12@");
+  });
+
+  it("lights the person whose card takes the focus, and keeps the focus through a redraw", () => {
+    const drawn = board();
+    card("@I1@")?.focus();
+
+    expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
+    drawn.draw({ left: 5000, top: 5000, right: 5100, bottom: 5100 });
+    expect(document.activeElement?.getAttribute("data-card")).toBe("@I1@");
+    drawn.zoomAt(0.1, 0, 0);
+    drawn.draw(drawn.windowOf() ?? { left: 0, top: 0, right: 1, bottom: 1 });
+    expect(document.activeElement?.getAttribute("data-card")).toBe("@I1@");
+  });
+
+  it("brings a focused card into view", () => {
+    const model = curie();
+    const placed = fileGraphOf(model, WHOLE).card.get("@I3@");
+    const drawn = board(model, { view: { x: (placed?.x ?? 0) - 100, y: 100, k: 1 } }, { width: 400, height: 300 });
+    expect(drawn.windowOf()?.right).toBeLessThan((placed?.x ?? 0) + CARD.width);
+    card("@I3@")?.focus();
+    const window = drawn.windowOf();
+
+    expect(window?.right).toBeGreaterThanOrEqual((placed?.x ?? 0) + CARD.width);
+    expect(window?.left).toBeLessThanOrEqual(placed?.x ?? 0);
+  });
+});
+
+describe("the graph in Russian", () => {
+  it("counts the branch's people and the family's children in the form the number takes", () => {
+    setLanguage("ru");
+    board(curie(), { scope: { focus: "@I12@", up: 2, down: 2 } });
+
+    expect(scopeText()).toContain("10 из 17 человек");
+    pointer("pointermove", node("@F3@")?.querySelector("circle"));
+    expect(container.querySelector(".gedcom-fg-tip")?.textContent).toContain("2 ребёнка");
+  });
+});

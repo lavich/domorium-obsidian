@@ -1265,21 +1265,25 @@ button.gedcom-desk-node.is-gap::after {
   padding-bottom: var(--navbar-height, 0px);
 }
 
-.gedcom-ft-head {
+.gedcom-ft-head,
+.gedcom-fg-head {
   padding: var(--size-4-3) var(--size-4-4) 0;
 }
 
-.gedcom-ft-title {
+.gedcom-ft-title,
+.gedcom-fg-title {
   font-size: var(--font-ui-medium);
   font-weight: var(--font-semibold);
 }
 
-.gedcom-ft-summary {
+.gedcom-ft-summary,
+.gedcom-fg-summary {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
 }
 
-.gedcom-ft-tools {
+.gedcom-ft-tools,
+.gedcom-fg-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1342,7 +1346,8 @@ input.gedcom-ft-search {
   margin-inline-start: 0;
 }
 
-.gedcom-ft-scope {
+.gedcom-ft-scope,
+.gedcom-fg-scope {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1352,11 +1357,13 @@ input.gedcom-ft-search {
   color: var(--text-muted);
 }
 
-.gedcom-ft-step-label {
+.gedcom-ft-step-label,
+.gedcom-fg-step-label {
   margin-inline-start: var(--size-2-3);
 }
 
-.gedcom-ft-step {
+.gedcom-ft-step,
+.gedcom-fg-step {
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--background-modifier-border);
@@ -1364,7 +1371,8 @@ input.gedcom-ft-search {
   overflow: hidden;
 }
 
-button.gedcom-ft-step-button {
+button.gedcom-ft-step-button,
+button.gedcom-fg-step-button {
   height: auto;
   padding: 1px var(--size-2-3);
   border: 0;
@@ -1375,27 +1383,32 @@ button.gedcom-ft-step-button {
   cursor: pointer;
 }
 
-button.gedcom-ft-step-button:hover {
+button.gedcom-ft-step-button:hover,
+button.gedcom-fg-step-button:hover {
   background: var(--background-modifier-hover);
 }
 
-button.gedcom-ft-step-button[disabled] {
+button.gedcom-ft-step-button[disabled],
+button.gedcom-fg-step-button[disabled] {
   color: var(--text-faint);
   cursor: default;
 }
 
-.gedcom-ft-step-button .svg-icon {
+.gedcom-ft-step-button .svg-icon,
+.gedcom-fg-step-button .svg-icon {
   width: 12px;
   height: 12px;
 }
 
-.gedcom-ft-step-value {
+.gedcom-ft-step-value,
+.gedcom-fg-step-value {
   padding: 0 var(--size-2-3);
   color: var(--text-normal);
   font-variant-numeric: tabular-nums;
 }
 
-button.gedcom-ft-whole {
+button.gedcom-ft-whole,
+button.gedcom-fg-whole {
   height: auto;
   margin-inline-start: var(--size-2-3);
   padding: 0;
@@ -1764,7 +1777,8 @@ button.gedcom-ft-branch:hover {
   color: var(--text-muted);
 }
 
-.gedcom-ft-legend {
+.gedcom-ft-legend,
+.gedcom-fg-legend {
   display: flex;
   flex-wrap: wrap;
   gap: var(--size-2-2) var(--size-4-4);
@@ -1773,7 +1787,8 @@ button.gedcom-ft-branch:hover {
   color: var(--text-muted);
 }
 
-button.gedcom-ft-legend-toggle {
+button.gedcom-ft-legend-toggle,
+button.gedcom-fg-legend-toggle {
   display: none;
   height: auto;
   padding: 0;
@@ -1786,42 +1801,50 @@ button.gedcom-ft-legend-toggle {
 }
 
 /* A phone has the height for the rows or for the legend, not both. */
-.is-phone button.gedcom-ft-legend-toggle {
+.is-phone button.gedcom-ft-legend-toggle,
+.is-phone button.gedcom-fg-legend-toggle {
   display: inline-block;
 }
 
-.is-phone .gedcom-ft-legend:not(.is-open) > .gedcom-ft-legend-item {
+.is-phone .gedcom-ft-legend:not(.is-open) > .gedcom-ft-legend-item,
+.is-phone .gedcom-fg-legend:not(.is-open) > .gedcom-fg-legend-item {
   display: none;
 }
 
-.is-phone .gedcom-ft-title {
+.is-phone .gedcom-ft-title,
+.is-phone .gedcom-fg-title {
   display: none;
 }
 
-.gedcom-ft-legend-item {
+.gedcom-ft-legend-item,
+.gedcom-fg-legend-item {
   display: inline-flex;
   align-items: center;
   gap: var(--size-2-3);
 }
 
-.gedcom-ft-swatch {
+.gedcom-ft-swatch,
+.gedcom-fg-swatch {
   display: inline-block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
 }
 
-.gedcom-ft-swatch.is-f {
+.gedcom-ft-swatch.is-f,
+.gedcom-fg-swatch.is-f {
   background: var(--color-pink);
   opacity: 0.6;
 }
 
-.gedcom-ft-swatch.is-m {
+.gedcom-ft-swatch.is-m,
+.gedcom-fg-swatch.is-m {
   background: var(--color-blue);
   opacity: 0.6;
 }
 
-.gedcom-ft-swatch.is-u {
+.gedcom-ft-swatch.is-u,
+.gedcom-fg-swatch.is-u {
   background: var(--text-faint);
   opacity: 0.6;
 }
@@ -1863,7 +1886,9 @@ button.gedcom-ft-legend-toggle {
 }
 
 .gedcom-ft-tip,
-.gedcom-ft-pop {
+.gedcom-ft-pop,
+.gedcom-fg-tip,
+.gedcom-fg-pop {
   position: absolute;
   z-index: var(--layer-popover);
   max-width: min(300px, calc(100% - var(--size-4-4)));
@@ -1875,32 +1900,39 @@ button.gedcom-ft-legend-toggle {
   font-size: var(--font-ui-smaller);
 }
 
-.gedcom-ft-tip {
+.gedcom-ft-tip,
+.gedcom-fg-tip {
   pointer-events: none;
   opacity: 0;
 }
 
-.gedcom-ft-tip.is-shown {
+.gedcom-ft-tip.is-shown,
+.gedcom-fg-tip.is-shown {
   opacity: 1;
 }
 
-.gedcom-ft-pop {
+.gedcom-ft-pop,
+.gedcom-fg-pop {
   display: none;
 }
 
-.gedcom-ft-pop.is-shown {
+.gedcom-ft-pop.is-shown,
+.gedcom-fg-pop.is-shown {
   display: block;
 }
 
-.gedcom-ft-tip-what {
+.gedcom-ft-tip-what,
+.gedcom-fg-tip-what {
   font-weight: var(--font-semibold);
 }
 
-.gedcom-ft-tip-where {
+.gedcom-ft-tip-where,
+.gedcom-fg-tip-where {
   color: var(--text-muted);
 }
 
-button.gedcom-ft-pop-source {
+button.gedcom-ft-pop-source,
+button.gedcom-fg-pop-open {
   height: auto;
   margin-top: var(--size-2-3);
   padding: 0;
@@ -1912,13 +1944,230 @@ button.gedcom-ft-pop-source {
   cursor: pointer;
 }
 
-.gedcom-ft.is-gone > :not(.gedcom-ft-gone) {
+.gedcom-ft.is-gone > :not(.gedcom-ft-gone),
+.gedcom-fg.is-gone > :not(.gedcom-fg-gone) {
   display: none;
 }
 
-.gedcom-ft-gone {
+.gedcom-ft-gone,
+.gedcom-fg-gone {
   margin: auto;
   padding: var(--size-4-8);
   color: var(--text-muted);
   text-align: center;
+}
+
+.workspace-leaf-content[data-type="domorium-file-graph"] .view-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.gedcom-fg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--text-normal);
+}
+
+.is-mobile .gedcom-fg {
+  padding-bottom: var(--navbar-height, 0px);
+}
+
+input.gedcom-fg-search {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.gedcom-fg-zoom {
+  display: inline-flex;
+  gap: var(--size-2-2);
+  margin-inline-start: auto;
+}
+
+.gedcom-fg-zoom button {
+  height: auto;
+  padding: 2px var(--size-4-2);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+.gedcom-fg-zoom .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.gedcom-fg-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  border-top: 1px solid var(--background-modifier-border);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.gedcom-fg-canvas.is-dragging {
+  cursor: grabbing;
+}
+
+.gedcom-fg-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.gedcom-fg-svg text {
+  font-family: var(--font-interface);
+}
+
+.gedcom-fg-card,
+.gedcom-fg-pill,
+.gedcom-fg-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.gedcom-fg-card-bg {
+  fill: var(--background-primary);
+  stroke: var(--background-modifier-border);
+  stroke-width: 1;
+}
+
+.gedcom-fg-person.is-f .gedcom-fg-card-bg {
+  fill: rgba(var(--color-pink-rgb), 0.14);
+}
+
+.gedcom-fg-person.is-m .gedcom-fg-card-bg {
+  fill: rgba(var(--color-blue-rgb), 0.12);
+}
+
+.gedcom-fg-person.is-u .gedcom-fg-card-bg {
+  fill: rgba(var(--mono-rgb-100), 0.08);
+}
+
+.gedcom-fg-person.is-f .gedcom-fg-card-side {
+  fill: var(--color-pink);
+}
+
+.gedcom-fg-person.is-m .gedcom-fg-card-side {
+  fill: var(--color-blue);
+}
+
+.gedcom-fg-person.is-u .gedcom-fg-card-side {
+  fill: var(--text-faint);
+}
+
+.gedcom-fg-card-name {
+  fill: var(--text-normal);
+  font-size: 12.5px;
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-fg-card-years {
+  fill: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gedcom-fg-person:hover .gedcom-fg-card-bg,
+.gedcom-fg-person.is-focus .gedcom-fg-card-bg,
+.gedcom-fg-card:focus-visible .gedcom-fg-card-bg {
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+.gedcom-fg-person.is-focus .gedcom-fg-card-bg {
+  stroke-width: 2.5;
+}
+
+.gedcom-fg-pill {
+  opacity: 0;
+}
+
+.gedcom-fg-person:hover .gedcom-fg-pill,
+.gedcom-fg-person:focus-within .gedcom-fg-pill,
+.gedcom-fg-person.is-armed .gedcom-fg-pill {
+  opacity: 1;
+}
+
+.gedcom-fg-pill rect {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-fg-pill:focus-visible rect {
+  stroke: var(--text-normal);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-pill text {
+  fill: var(--text-on-accent);
+  font-size: 10px;
+  font-weight: var(--font-semibold);
+}
+
+.gedcom-fg-line {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-join {
+  fill: none;
+  stroke: var(--interactive-accent);
+  stroke-width: 2;
+}
+
+.gedcom-fg-node circle {
+  fill: var(--interactive-accent);
+}
+
+.gedcom-fg-node.is-undated circle {
+  fill: var(--background-primary);
+  stroke: var(--interactive-accent);
+  stroke-width: 1.5;
+}
+
+.gedcom-fg-node:focus-visible circle {
+  stroke: var(--text-normal);
+  stroke-width: 2;
+}
+
+.gedcom-fg-node-year {
+  fill: var(--text-on-accent);
+  font-size: 9.5px;
+  font-weight: var(--font-semibold);
+  pointer-events: none;
+}
+
+.gedcom-fg-svg.has-hl .gedcom-fg-person:not(.is-on),
+.gedcom-fg-svg.has-hl .gedcom-fg-line:not(.is-on),
+.gedcom-fg-svg.has-hl .gedcom-fg-family:not(.is-on) {
+  opacity: 0.18;
+}
+
+.gedcom-fg-line.is-hl,
+.gedcom-fg-family.is-hl .gedcom-fg-join {
+  stroke: var(--text-accent);
+  stroke-width: 2.5;
+}
+
+.gedcom-fg-person.is-hl .gedcom-fg-card-bg {
+  stroke: var(--text-accent);
+  stroke-width: 2;
+}
+
+.gedcom-fg-person.is-dim {
+  opacity: 0.25;
+}
+
+.gedcom-fg-swatch.is-family {
+  background: var(--interactive-accent);
+}
+
+.gedcom-fg-swatch.is-undated {
+  border: 1.5px solid var(--interactive-accent);
+  background: var(--background-primary);
 }
