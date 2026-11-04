@@ -1,6 +1,6 @@
 import { plural, t } from "../i18n";
 import type { MediaPreviewContent } from "../editor/media";
-import { HoverDelay, placeInside } from "./dom";
+import { HoverDelay, placeInside, zoomControls } from "./dom";
 import { CARD, marriageDigits, type FileGraphLayout, type GraphCard, type GraphNode, type Point } from "./fileGraph";
 import { least, most, type Sex } from "./fileTimeline";
 import { yearText } from "./labels";
@@ -97,7 +97,6 @@ export interface GraphCanvasOptions {
   setIcon?(element: HTMLElement, icon: string): void;
 }
 
-const SIGNS: Record<string, string> = { minus: "−", plus: "+", maximize: "⤢" };
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -272,8 +271,11 @@ export class GraphCanvas {
   ) {
     this.doc = root.ownerDocument;
     this.el = root.createDiv({ cls: "gedcom-fg-canvas" });
-    this.controls = this.el.createDiv({ cls: "gedcom-fg-controls" });
-    this.zoomButtons();
+    this.controls = zoomControls(this.el, "gedcom-fg", this.options.setIcon && ((element, icon) => this.options.setIcon?.(element, icon)), {
+      out: () => this.zoomBy(1 / BUTTON_STEP),
+      in: () => this.zoomBy(BUTTON_STEP),
+      fit: () => this.fit(),
+    });
     this.svgEl = svg(this.doc, "svg", "gedcom-fg-svg");
     this.viewEl = svg(this.doc, "g", "gedcom-fg-view");
     this.linesEl = svg(this.doc, "g", "gedcom-fg-lines");
@@ -411,25 +413,6 @@ export class GraphCanvas {
         this.refocusing = false;
       }
     }
-  }
-
-  /** −, + and Fit, floating over the canvas and first in its order for the keyboard. */
-  private zoomButtons(): void {
-    const button = (cls: string, label: string, icon: string, run: () => void): void => {
-      const made = this.controls.createEl("button", {
-        cls: ["clickable-icon", cls],
-        attr: { type: "button", "aria-label": label, title: label },
-      });
-      if (this.options.setIcon) {
-        this.options.setIcon(made, icon);
-      } else {
-        made.setText(SIGNS[icon] ?? icon);
-      }
-      made.addEventListener("click", run);
-    };
-    button("gedcom-fg-zoom-out", t("fileGraph.zoomOut"), "minus", () => this.zoomBy(1 / BUTTON_STEP));
-    button("gedcom-fg-zoom-in", t("fileGraph.zoomIn"), "plus", () => this.zoomBy(BUTTON_STEP));
-    button("gedcom-fg-fit", t("fileGraph.fit"), "maximize", () => this.fit());
   }
 
   /** Stops a light the pointer has asked for and not yet waited out, as a view closes. */

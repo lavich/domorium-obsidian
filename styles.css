@@ -1156,7 +1156,6 @@ button.gedcom-desk-moment-what:disabled {
   font-weight: var(--font-semibold);
 }
 
-.gedcom-ft-summary,
 .gedcom-fg-summary {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
@@ -1192,18 +1191,6 @@ button.gedcom-ft-chip[aria-pressed="true"] {
 .gedcom-ft-chip-count {
   margin-inline-start: var(--size-2-2);
   opacity: 0.65;
-}
-
-.gedcom-ft-zoom {
-  display: flex;
-  align-items: center;
-  gap: var(--size-2-3);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-.gedcom-ft-zoom input {
-  width: 110px;
 }
 
 input.gedcom-ft-search {
@@ -1300,9 +1287,21 @@ button.gedcom-fg-whole {
   cursor: pointer;
 }
 
+.gedcom-ft-stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.gedcom-ft-controls {
+  inset-inline-end: calc(var(--size-4-2) + 14px);
+}
+
 .gedcom-ft-board {
   position: relative;
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: grid;
   grid-template-columns: var(--gedcom-ft-names) 1fr;
@@ -1541,13 +1540,6 @@ button.gedcom-ft-branch[aria-pressed="true"] {
   fill: var(--interactive-accent);
 }
 
-.gedcom-ft svg text.gedcom-ft-caption {
-  fill: var(--text-normal);
-  font-size: 10.5px;
-  opacity: 0.8;
-  pointer-events: none;
-}
-
 .gedcom-ft-mark {
   cursor: pointer;
 }
@@ -1658,12 +1650,7 @@ button.gedcom-ft-branch[aria-pressed="true"] {
   font-weight: var(--font-semibold);
 }
 
-.gedcom-ft-undated {
-  padding: var(--size-2-3) var(--size-4-4) 0;
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
+.is-phone .gedcom-ft-head,
 .is-phone .gedcom-ft-title,
 .is-phone .gedcom-fg-title {
   display: none;
@@ -1763,7 +1750,8 @@ input.gedcom-fg-search {
   min-width: 0;
 }
 
-.gedcom-fg-controls {
+.gedcom-fg-controls,
+.gedcom-ft-controls {
   position: absolute;
   z-index: 1;
   inset-inline-end: var(--size-4-2);
@@ -1778,7 +1766,8 @@ input.gedcom-fg-search {
   cursor: default;
 }
 
-.gedcom-fg-controls button {
+.gedcom-fg-controls button,
+.gedcom-ft-controls button {
   height: auto;
   padding: var(--size-2-2) var(--size-2-3);
   border: 0;
@@ -1790,12 +1779,14 @@ input.gedcom-fg-search {
   cursor: pointer;
 }
 
-.gedcom-fg-controls button:hover {
+.gedcom-fg-controls button:hover,
+.gedcom-ft-controls button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
-.gedcom-fg-controls .svg-icon {
+.gedcom-fg-controls .svg-icon,
+.gedcom-ft-controls .svg-icon {
   width: 16px;
   height: 16px;
 }
@@ -2044,8 +2035,7 @@ input.gedcom-fg-search {
 .gedcom-ft-mark,
 .gedcom-ft-marriage,
 .gedcom-ft-name,
-.gedcom-ft-age,
-.gedcom-ft-caption {
+.gedcom-ft-age {
   transition:
     opacity 150ms ease-out,
     fill 150ms ease-out,
@@ -2066,8 +2056,7 @@ input.gedcom-fg-search {
   .gedcom-ft-mark,
   .gedcom-ft-marriage,
   .gedcom-ft-name,
-  .gedcom-ft-age,
-  .gedcom-ft-caption {
+  .gedcom-ft-age {
     transition: none;
   }
 }

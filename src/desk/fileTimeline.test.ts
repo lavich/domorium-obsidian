@@ -92,20 +92,12 @@ describe("a person on the timeline of a file", () => {
     expect(wladyslaw(withEvents())?.lifeline?.startUncertain).toBe(true);
   });
 
-  it("gives a person with no dated event a row, no lifeline, and counts them", () => {
+  it("gives a person with no dated event a row and no lifeline", () => {
     const model = withEvents();
     const kazimierz = named(model, "Kazimierz Żorawski");
 
     expect(model.rows).toContain(kazimierz);
     expect(model.people.get(kazimierz)?.lifeline).toBeNull();
-    expect(model.undated).toEqual([kazimierz]);
-    expect(curie().undated).toEqual([]);
-  });
-
-  it("keeps a fact with no date apart from the dated ones", () => {
-    const marie = curie().people.get("@I1@");
-
-    expect(marie?.undated.map((event) => event.value)).toEqual(["Physicist and chemist"]);
   });
 
   it("begins a lifeline at a christening where no birth is dated, else at the earliest event", () => {

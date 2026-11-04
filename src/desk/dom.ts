@@ -1,3 +1,5 @@
+import { t } from "../i18n";
+
 /** How long the pointer rests on a person before their family is lit, so a sweep across cards does not flicker. */
 export const HOVER_DELAY = 130;
 
@@ -58,4 +60,38 @@ export function placeInside(
   const height = element.offsetHeight;
   const top = y + 14 + height > root.clientHeight ? Math.max(0, y - 14 - height) : y + 14;
   element.setCssProps({ left: `${left}px`, top: `${top}px` });
+}
+
+const SIGNS: Record<string, string> = { minus: "−", plus: "+", maximize: "⤢" };
+
+export interface ZoomActions {
+  out: () => void;
+  in: () => void;
+  fit: () => void;
+}
+
+/** −, + and Fit, floating over `parent` and first in its order for the keyboard. */
+export function zoomControls(
+  parent: HTMLElement,
+  prefix: string,
+  setIcon: ((element: HTMLElement, icon: string) => void) | undefined,
+  actions: ZoomActions,
+): HTMLElement {
+  const controls = parent.createDiv({ cls: `${prefix}-controls` });
+  const button = (cls: string, label: string, icon: string, run: () => void): void => {
+    const made = controls.createEl("button", {
+      cls: ["clickable-icon", `${prefix}-${cls}`],
+      attr: { type: "button", "aria-label": label, title: label },
+    });
+    if (setIcon) {
+      setIcon(made, icon);
+    } else {
+      made.setText(SIGNS[icon] ?? icon);
+    }
+    made.addEventListener("click", run);
+  };
+  button("zoom-out", t("overview.zoomOut"), "minus", actions.out);
+  button("zoom-in", t("overview.zoomIn"), "plus", actions.in);
+  button("fit", t("overview.fit"), "maximize", actions.fit);
+  return controls;
 }

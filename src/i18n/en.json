@@ -274,7 +274,6 @@
   "command.openFileTimeline": "Open the timeline of the file",
   "fileTimeline.title": "Timeline of {name}",
   "fileTimeline.others": "Other events",
-  "fileTimeline.zoom": "Zoom",
   "overview.search": "Find a person…",
   "fileTimeline.alive": {
     "one": "In {year}: {count} person alive",
@@ -293,10 +292,6 @@
     "one": "{count} family",
     "other": "{count} families"
   },
-  "fileTimeline.events": {
-    "one": "{count} dated event",
-    "other": "{count} dated events"
-  },
   "overview.branchOf": {
     "one": "Branch of {name} · {shown} of {count} person",
     "other": "Branch of {name} · {shown} of {count} people"
@@ -305,27 +300,19 @@
   "overview.branchHint": "Show only this person's ancestors and descendants",
   "overview.ancestors": "Ancestors",
   "overview.descendants": "Descendants",
-  "fileTimeline.undated": {
-    "one": "{count} person has no dated event",
-    "other": "{count} people have no dated event"
-  },
   "overview.gone": "{path} is no longer in the vault.",
   "fileTimeline.name": "Timeline of the file",
   "overview.fewerAncestors": "One generation of ancestors fewer",
   "overview.moreAncestors": "One generation of ancestors more",
   "overview.fewerDescendants": "One generation of descendants fewer",
   "overview.moreDescendants": "One generation of descendants more",
-  "fileTimeline.undatedFacts": {
-    "one": "{count} fact without a year has no mark on the line: {kinds}.",
-    "other": "{count} facts without a year have no mark on the line: {kinds}."
-  },
   "command.openFileGraph": "Open the graph of the file",
   "fileGraph.name": "Graph of the file",
   "fileGraph.title": "Graph of {name}",
   "fileGraph.branchOf": "Branch of {name}",
-  "fileGraph.zoomIn": "Zoom in",
-  "fileGraph.zoomOut": "Zoom out",
-  "fileGraph.fit": "Fit",
+  "overview.zoomIn": "Zoom in",
+  "overview.zoomOut": "Zoom out",
+  "overview.fit": "Fit",
   "fileGraph.married": "Married {date}",
   "fileGraph.noDate": "No marriage date",
   "fileGraph.children": {

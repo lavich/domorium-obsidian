@@ -98,12 +98,15 @@ describe("drawing the timeline of a file", () => {
     );
   });
 
-  it("says how many people have no dated event, and gives them a row", () => {
+  it("gives a person with no dated event a row", () => {
     board(fileTimelineOf(indexOf(curieWithEvents())));
 
     expect(names()).toHaveLength(18);
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("Kazimierz Żorawski");
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("1 person");
+    const kazimierz = [...container.querySelectorAll(".gedcom-ft-name")].find((row) =>
+      row.textContent?.includes("Kazimierz Żorawski"),
+    );
+    expect(kazimierz).toBeDefined();
+    expect(of(".gedcom-ft-life", kazimierz?.getAttribute("data-p") ?? "")).toHaveLength(0);
   });
 
   it("draws only the rows in the window and one window around it", () => {
@@ -227,25 +230,6 @@ describe("the year cursor", () => {
   });
 });
 
-describe("facts without a date", () => {
-  const caption = (xref: string) => container.querySelector(`.gedcom-ft-caption[data-p="${xref}"]`)?.textContent;
-
-  it("are written in the lifeline only once zoomed in far enough", () => {
-    board();
-    expect(caption("@I1@")).toBeUndefined();
-
-    container.replaceChildren();
-    board(fileTimelineOf(curieIndex()), { zoom: ZOOM.captions });
-    expect(caption("@I1@")).toBe("Physicist and chemist");
-  });
-
-  it("are written in the lifeline of the person under the pointer", () => {
-    board().highlight("@I1@");
-
-    expect(container.querySelector(".gedcom-ft-hover .gedcom-ft-caption")?.textContent).toBe("Physicist and chemist");
-  });
-});
-
 describe("the toolbar", () => {
   it("hides and shows the events other than births, marriages and deaths", () => {
     board(fileTimelineOf(indexOf(curieWithEvents())));
@@ -262,18 +246,33 @@ describe("the toolbar", () => {
     expect(all(".gedcom-ft-mark.is-other").length).toBeGreaterThan(0);
   });
 
-  it("widens the axis of years with the zoom", () => {
+  it("widens and narrows the axis of years with the buttons, within the zoom range", () => {
     board();
     const width = () => Number(container.querySelector(".gedcom-ft-chart")?.getAttribute("width"));
+    const press = (cls: string) => container.querySelector<HTMLElement>(`.gedcom-ft-${cls}`)?.click();
     const before = width();
-    const zoom = container.querySelector<HTMLInputElement>(".gedcom-ft-zoom input");
-    if (zoom) {
-      zoom.value = "12";
-      zoom.dispatchEvent(new Event("input"));
-    }
 
-    expect(width()).toBeGreaterThan(before * 1.9);
-    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 12 }));
+    expect(container.querySelector(".gedcom-ft-tools input[type=range]")).toBeNull();
+    press("zoom-in");
+    expect(width()).toBeGreaterThan(before);
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 7.2 }));
+
+    for (let i = 0; i < 40; i += 1) {
+      press("zoom-out");
+    }
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.min }));
+    for (let i = 0; i < 40; i += 1) {
+      press("zoom-in");
+    }
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.max }));
+  });
+
+  it("fits the whole span of years to the width of the board", () => {
+    board();
+    container.querySelector<HTMLElement>(".gedcom-ft-fit")?.click();
+
+    const width = Number(container.querySelector(".gedcom-ft-chart")?.getAttribute("width"));
+    expect(Math.abs(width - 1600)).toBeLessThan(2);
   });
 
   it("fades the rows that do not match a search", () => {
@@ -446,7 +445,6 @@ describe("a file with very many dated events", () => {
     };
     board(model, { others: false });
 
-    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("1827–2007");
     expect(names()).toHaveLength(17);
   });
 });
@@ -508,7 +506,7 @@ describe("the keyboard", () => {
     board();
     expect(scopeText()).toBe("");
     expect(container.querySelector<HTMLElement>(".gedcom-ft-scope")?.style.display).toBe("none");
-    expect(container.querySelector(".gedcom-ft-summary")?.textContent).toContain("17 people");
+    expect(names()).toHaveLength(17);
 
     container.replaceChildren();
     board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 9, down: 0 });
@@ -562,14 +560,5 @@ describe("the ages under the cursor and a search", () => {
 
     expect(container.querySelector('.gedcom-ft-age[data-p="@I1@"]')?.classList.contains("is-dim")).toBe(true);
     expect(container.querySelector('.gedcom-ft-age[data-p="@I12@"]')?.classList.contains("is-dim")).toBe(false);
-  });
-});
-
-describe("what has no mark on the line", () => {
-  it("counts the facts without a year, by kind", () => {
-    board();
-
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("facts without a year");
-    expect(container.querySelector(".gedcom-ft-undated")?.textContent).toContain("occupation");
   });
 });

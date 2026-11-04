@@ -170,6 +170,44 @@ test.describe("the timeline of a file", () => {
   });
 });
 
+test.describe("the zoom buttons of the timeline", () => {
+  test("float in the corner of the board while the rows scroll, and widen and narrow the years", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 400 });
+    await mountTimeline(page);
+
+    await expect(page.locator(".gedcom-ft-tools input[type=range]")).toHaveCount(0);
+    const group = page.locator(".gedcom-ft-controls");
+    const inside = async () => {
+      const box = await group.boundingBox();
+      const board = await page.locator(".gedcom-ft-board").boundingBox();
+      return { box, board };
+    };
+    const before = await inside();
+    expect(before.box?.x).toBeGreaterThan(before.board?.x ?? Infinity);
+    expect((before.box?.x ?? 0) + (before.box?.width ?? 0)).toBeLessThanOrEqual((before.board?.x ?? 0) + (before.board?.width ?? 0));
+    expect((before.box?.y ?? 0) + (before.box?.height ?? 0)).toBeLessThanOrEqual((before.board?.y ?? 0) + (before.board?.height ?? 0));
+
+    await page.locator(".gedcom-ft-board").evaluate((board) => {
+      board.scrollTop = board.scrollHeight;
+      board.scrollLeft = 300;
+    });
+    expect((await inside()).box).toEqual(before.box);
+
+    const width = () => page.locator(".gedcom-ft-chart").evaluate((chart) => chart.getBoundingClientRect().width);
+    const start = await width();
+    await page.locator(".gedcom-ft-zoom-in").click();
+    const wider = await width();
+    expect(wider).toBeGreaterThan(start);
+    await page.locator(".gedcom-ft-zoom-out").click();
+    await page.locator(".gedcom-ft-zoom-out").click();
+    expect(await width()).toBeLessThan(start);
+    await page.locator(".gedcom-ft-fit").click();
+    const board = await page.locator(".gedcom-ft-board").boundingBox();
+    const names = await page.locator(".gedcom-ft-names").boundingBox();
+    expect(await width()).toBeLessThanOrEqual((board?.width ?? 0) - (names?.width ?? 0) + 2);
+  });
+});
+
 test.describe("the timeline of a file on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -184,6 +222,36 @@ test.describe("the timeline of a file on a phone", () => {
     expect(page_.document).toBe(true);
     expect(page_.board).toBeGreaterThan(390);
     expect(page_.names).toBe(120);
+  });
+
+  test("gives the board all the height under the compact toolbar, with nothing below it", async ({ page }) => {
+    await mountTimeline(page, { phone: true });
+
+    const box = await page.evaluate(() => {
+      const rect = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
+      const root = rect(".gedcom-ft");
+      const board = rect(".gedcom-ft-board");
+      const tools = rect(".gedcom-ft-tools");
+      const below = [...document.querySelectorAll(".gedcom-ft > *")]
+        .filter((node) => getComputedStyle(node).position !== "absolute" && !node.classList.contains("gedcom-ft-stage"))
+        .map((node) => node.getBoundingClientRect())
+        .filter((rectangle) => rectangle.height > 0 && rectangle.top >= (board?.bottom ?? 0));
+      return {
+        top: root?.top ?? 0,
+        toolsHeight: tools?.height ?? 0,
+        toolsTop: tools?.top ?? 0,
+        boardTop: board?.top ?? 0,
+        boardBottom: board?.bottom ?? 0,
+        below: below.length,
+        pageScrolls: document.documentElement.scrollHeight > document.documentElement.clientHeight,
+      };
+    });
+    expect(box.below).toBe(0);
+    expect(box.pageScrolls).toBe(false);
+    expect(box.boardBottom).toBeCloseTo(844, 0);
+    expect(box.toolsTop - box.top).toBeLessThan(2);
+    expect(box.boardTop - box.toolsTop - box.toolsHeight).toBeLessThan(2);
+    expect(box.toolsHeight).toBeLessThan(110);
   });
 
   test("lights Marie's family and places the cursor on the first touch, and opens her on the second", async ({ page }) => {
@@ -243,7 +311,6 @@ test.describe("a large file", () => {
     await expect(page.locator(".gedcom-ft-name.is-focus")).toHaveAttribute("data-p", "@I500@");
     await page.locator(".gedcom-ft-whole").click();
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
-    await expect(page.locator(".gedcom-ft-summary")).toContainText("2000 people");
   });
 });
 
@@ -254,7 +321,6 @@ test.describe("the timeline of a file of 10 000 people", () => {
     await mountTimeline(page, { doc: generated(10_000), whole: true });
 
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
-    await expect(page.locator(".gedcom-ft-summary")).toContainText("10000 people");
     const drawn = () => page.locator(".gedcom-ft-name").count();
     expect(await drawn()).toBeLessThan(300);
 

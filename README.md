@@ -84,7 +84,7 @@ a woman, blue for a man, grey where the record states no sex — with the person
 dated events on it; an approximate date is drawn dashed and a period as a span.
 Pointing at a person picks out their parents, spouses and children with arrows
 from parent to child, and a year cursor gives the age everyone alive reached
-that year. A search by name fades everyone else, the zoom widens the years,
+that year. A search by name fades everyone else, the zoom buttons widen, narrow or fit the years,
 and **Other events** shows or hides every event that is not a birth, a marriage
 or a death. **Branch** on a row narrows it to one person's ancestors and
 descendants, and a file of more than 500 people opens on the branch of the

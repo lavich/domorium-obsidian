@@ -1,7 +1,7 @@
 import type { Range } from "@domorium/language-service";
 
 import { plural, t } from "../i18n";
-import { BranchScopeBar, clampTo, readBranchScope, type BranchScope } from "./branchScope";
+import { BranchScopeBar, readBranchScope, type BranchScope } from "./branchScope";
 import {
   least,
   most,
@@ -9,15 +9,14 @@ import {
   type TimelineMark,
   type TimelinePerson,
 } from "./fileTimeline";
-import { HoverDelay, placeInside } from "./dom";
+import { HoverDelay, placeInside, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
 const AXIS = 26;
 const PAD = 12;
-const UNDATED_NAMES = 20;
 
-export const ZOOM = { min: 2, max: 16, initial: 6, captions: 9 } as const;
+export const ZOOM = { min: 2, max: 16, initial: 6, step: 1.2 } as const;
 
 export interface TimelineScope extends BranchScope {
   zoom: number;
@@ -43,12 +42,17 @@ export interface FileTimelineHost {
   setIcon(element: HTMLElement, icon: string): void;
 }
 
+const clampZoom = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value)
+    ? Math.min(ZOOM.max, Math.max(ZOOM.min, Math.round(value * 100) / 100))
+    : ZOOM.initial;
+
 export function readTimelineState(state: unknown): TimelineState {
   const raw = typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
   return {
     gedcom: typeof raw.gedcom === "string" && raw.gedcom ? raw.gedcom : null,
     ...readBranchScope(raw),
-    zoom: clampTo(raw.zoom, ZOOM.min, ZOOM.max, ZOOM.initial),
+    zoom: clampZoom(raw.zoom),
     others: raw.others !== false,
   };
 }
@@ -109,36 +113,18 @@ interface Span {
   right: number;
 }
 
-function captionOf(person: TimelinePerson): string {
-  const parts = person.undated
-    .filter((event) => (event.value && event.value !== "Y") || !["BIRT", "CHR", "BAPM", "DEAT", "BURI", "CREM"].includes(event.tag))
-    .map((event) => (event.value && event.value !== "Y" ? event.value : eventName(event)));
-  return [...new Set(parts)].join(" · ");
-}
-
-function fitted(text: string, room: number): string {
-  if (!text || room <= 40) {
-    return "";
-  }
-  const fit = Math.floor(room / 5.6);
-  return text.length > fit ? `${text.slice(0, fit - 1)}…` : text;
-}
-
 /**
  * Laid out once per file, scope, zoom and switch; drawn for the window it is
  * handed and one window around it. Hovering only changes classes on what is
- * drawn, and puts arrows and the hovered person's undated facts in a layer of
- * their own.
+ * drawn, and puts arrows in a layer of their own.
  */
 export class FileTimelineBoard {
   private readonly doc: Document;
   private readonly id = (boards += 1);
   private readonly root: HTMLElement;
   private readonly title: HTMLElement;
-  private readonly summary: HTMLElement;
   private readonly othersChip: HTMLButtonElement;
   private readonly othersCount: HTMLElement;
-  private readonly zoomInput: HTMLInputElement;
   private readonly searchInput: HTMLInputElement;
   private readonly aliveEl: HTMLElement;
   private readonly scopeBar: BranchScopeBar;
@@ -151,7 +137,6 @@ export class FileTimelineBoard {
   private readonly items: SVGGElement;
   private readonly hover: SVGGElement;
   private readonly cursor: SVGSVGElement;
-  private readonly undatedEl: HTMLElement;
   private readonly tip: HTMLElement;
   private readonly pop: HTMLElement;
   private readonly goneEl: HTMLElement;
@@ -183,7 +168,6 @@ export class FileTimelineBoard {
     this.root = parent.createDiv({ cls: "gedcom-ft" });
     const head = this.root.createDiv({ cls: "gedcom-ft-head" });
     this.title = head.createDiv({ cls: "gedcom-ft-title" });
-    this.summary = head.createDiv({ cls: "gedcom-ft-summary" });
 
     const tools = this.root.createDiv({ cls: "gedcom-ft-tools" });
     this.othersChip = tools.createEl("button", {
@@ -192,11 +176,6 @@ export class FileTimelineBoard {
       attr: { type: "button" },
     });
     this.othersCount = this.othersChip.createSpan({ cls: "gedcom-ft-chip-count" });
-    const zoom = tools.createEl("label", { cls: "gedcom-ft-zoom", text: t("fileTimeline.zoom") });
-    this.zoomInput = zoom.createEl("input", {
-      type: "range",
-      attr: { min: ZOOM.min, max: ZOOM.max, step: 1, "aria-label": t("fileTimeline.zoom") },
-    });
     this.searchInput = tools.createEl("input", {
       cls: "gedcom-ft-search",
       type: "search",
@@ -210,7 +189,13 @@ export class FileTimelineBoard {
       change: (next) => this.setScope(next),
     });
 
-    this.board = this.root.createDiv({ cls: "gedcom-ft-board" });
+    const stage = this.root.createDiv({ cls: "gedcom-ft-stage" });
+    zoomControls(stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
+      out: () => this.zoomBy(1 / ZOOM.step),
+      in: () => this.zoomBy(ZOOM.step),
+      fit: () => this.fit(),
+    });
+    this.board = stage.createDiv({ cls: "gedcom-ft-board" });
     this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
     this.plot = this.board.createDiv({ cls: "gedcom-ft-plot" });
     this.axis = svg(this.doc, "svg", "gedcom-ft-axis", { height: AXIS });
@@ -223,7 +208,6 @@ export class FileTimelineBoard {
     this.hover = svg(this.doc, "g", "gedcom-ft-hover");
     this.chart.append(this.grid, this.items, this.hover);
 
-    this.undatedEl = this.root.createDiv({ cls: "gedcom-ft-undated" });
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
     this.goneEl = this.root.createDiv({ cls: "gedcom-ft-gone" });
@@ -249,7 +233,7 @@ export class FileTimelineBoard {
         [personName(person.row), ...person.row.otherNames].join(" ").toLowerCase(),
       ]),
     );
-    this.summarise(model);
+    this.countOthers(model);
     this.relayout();
   }
 
@@ -381,14 +365,6 @@ export class FileTimelineBoard {
     if (this.year !== null) {
       this.drawCursor();
     }
-    const person = model.people.get(xref);
-    if (person?.lifeline && this.scope.zoom < ZOOM.captions) {
-      const line = person.lifeline;
-      const text = fitted(captionOf(person), layout.x(line.end) - layout.x(line.start) - 22);
-      if (text) {
-        this.hover.append(this.caption(layout.x(line.start) + 11, cy, text, xref));
-      }
-    }
   }
 
   setYear(year: number | null): void {
@@ -411,6 +387,18 @@ export class FileTimelineBoard {
     }
     if (this.year !== null) {
       this.drawCursor();
+    }
+  }
+
+  private zoomBy(factor: number): void {
+    this.setScope({ zoom: clampZoom(this.scope.zoom * factor) });
+  }
+
+  private fit(): void {
+    const layout = this.layout;
+    if (layout) {
+      const room = this.measure().width - 2 * PAD;
+      this.setScope({ zoom: clampZoom(room / (layout.hi - layout.lo)) });
     }
   }
 
@@ -447,7 +435,6 @@ export class FileTimelineBoard {
     this.layout = this.layoutOf(model);
     const layout = this.layout;
     this.othersChip.setAttribute("aria-pressed", String(this.scope.others));
-    this.zoomInput.value = String(this.scope.zoom);
     const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
     this.scopeBar.draw(this.scope, {
       total: model.rows.length,
@@ -555,12 +542,6 @@ export class FileTimelineBoard {
             return bar;
           },
         });
-        if (this.scope.zoom >= ZOOM.captions) {
-          const text = fitted(captionOf(person), right - left - 22);
-          if (text) {
-            lines.push({ ...row(cy), left, right, ids: [xref], make: () => this.caption(left + 11, cy, text, xref) });
-          }
-        }
       }
       for (const mark of person.marks) {
         if (mark.until !== undefined && showsMark(mark)) {
@@ -644,12 +625,6 @@ export class FileTimelineBoard {
       group.append(sign);
     }
     return group;
-  }
-
-  private caption(left: number, cy: number, text: string, xref: string): SVGElement {
-    const node = svg(this.doc, "text", "gedcom-ft-caption", { x: left, y: cy + 3.5, "data-p": xref });
-    node.textContent = text;
-    return node;
   }
 
   private drawArrows(layout: Layout, model: FileTimeline, xref: string): void {
@@ -798,7 +773,7 @@ export class FileTimelineBoard {
     return focused;
   }
 
-  private summarise(model: FileTimeline): void {
+  private countOthers(model: FileTimeline): void {
     const dated = new Set<TimelineMark>();
     for (const person of model.people.values()) {
       person.marks.forEach((mark) => dated.add(mark));
@@ -808,33 +783,6 @@ export class FileTimelineBoard {
       others += mark.kind === "other" ? 1 : 0;
     }
     this.othersCount.setText(String(others));
-    const parts = [
-      plural("overview.people", model.rows.length),
-      plural("overview.families", model.families.size),
-      plural("fileTimeline.events", dated.size),
-    ];
-    if (dated.size > 0) {
-      const from = least([...dated].map((mark) => mark.year));
-      const to = most([...dated].map((mark) => mark.until ?? mark.year));
-      parts.push(`${yearText(from)}–${yearText(to)}`);
-    }
-    this.summary.setText(parts.join(" · "));
-    this.undatedEl.empty();
-    const facts = [...model.people.values()].flatMap((person) => person.undated);
-    if (facts.length > 0) {
-      const kinds = [...new Set(facts.map((event) => eventName(event).toLowerCase()))].join(", ");
-      this.undatedEl.createDiv({ text: plural("fileTimeline.undatedFacts", facts.length, { kinds }) });
-    }
-    if (model.undated.length > 0) {
-      const listed = model.undated
-        .slice(0, UNDATED_NAMES)
-        .map((xref) => model.people.get(xref))
-        .filter((person): person is TimelinePerson => person !== undefined)
-        .map((person) => personName(person.row))
-        .join(", ");
-      const more = model.undated.length > UNDATED_NAMES ? "…" : "";
-      this.undatedEl.createDiv({ text: `${plural("fileTimeline.undated", model.undated.length)}: ${listed}${more}.` });
-    }
   }
 
   private definitions(): SVGDefsElement {
@@ -888,7 +836,6 @@ export class FileTimelineBoard {
 
   private listen(): void {
     this.othersChip.addEventListener("click", () => this.setScope({ others: !this.scope.others }));
-    this.zoomInput.addEventListener("input", () => this.setScope({ zoom: Number(this.zoomInput.value) }));
     this.searchInput.addEventListener("input", () => this.setQuery(this.searchInput.value));
 
     this.board.addEventListener("pointerdown", (event) => {

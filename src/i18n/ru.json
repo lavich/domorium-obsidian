@@ -290,7 +290,6 @@
   "command.openFileTimeline": "Открыть хронологию файла",
   "fileTimeline.title": "Хронология файла {name}",
   "fileTimeline.others": "Другие события",
-  "fileTimeline.zoom": "Масштаб",
   "overview.search": "Найти человека…",
   "fileTimeline.alive": {
     "one": "В {year} году жив {count} человек",
@@ -317,12 +316,6 @@
     "many": "{count} семей",
     "other": "{count} семьи"
   },
-  "fileTimeline.events": {
-    "one": "{count} событие с датой",
-    "few": "{count} события с датой",
-    "many": "{count} событий с датой",
-    "other": "{count} события с датой"
-  },
   "overview.branchOf": {
     "one": "Ветка: {name} · {shown} из {count} человека",
     "few": "Ветка: {name} · {shown} из {count} человек",
@@ -333,31 +326,19 @@
   "overview.branchHint": "Показать только предков и потомков этого человека",
   "overview.ancestors": "Предки",
   "overview.descendants": "Потомки",
-  "fileTimeline.undated": {
-    "one": "У {count} человека нет ни одной даты",
-    "few": "У {count} человек нет ни одной даты",
-    "many": "У {count} человек нет ни одной даты",
-    "other": "У {count} человека нет ни одной даты"
-  },
   "overview.gone": "Файла {path} больше нет в хранилище.",
   "fileTimeline.name": "Хронология файла",
   "overview.fewerAncestors": "На поколение предков меньше",
   "overview.moreAncestors": "На поколение предков больше",
   "overview.fewerDescendants": "На поколение потомков меньше",
   "overview.moreDescendants": "На поколение потомков больше",
-  "fileTimeline.undatedFacts": {
-    "one": "{count} факт без года не отмечен на линии: {kinds}.",
-    "few": "{count} факта без года не отмечены на линии: {kinds}.",
-    "many": "{count} фактов без года не отмечены на линии: {kinds}.",
-    "other": "{count} факта без года не отмечены на линии: {kinds}."
-  },
   "command.openFileGraph": "Открыть граф файла",
   "fileGraph.name": "Граф файла",
   "fileGraph.title": "Граф файла {name}",
   "fileGraph.branchOf": "Ветка: {name}",
-  "fileGraph.zoomIn": "Приблизить",
-  "fileGraph.zoomOut": "Отдалить",
-  "fileGraph.fit": "Вписать",
+  "overview.zoomIn": "Приблизить",
+  "overview.zoomOut": "Отдалить",
+  "overview.fit": "Вписать",
   "fileGraph.married": "Брак: {date}",
   "fileGraph.noDate": "Дата брака не указана",
   "fileGraph.children": {
