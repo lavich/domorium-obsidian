@@ -66,6 +66,10 @@ Proposed scope, taken from that:
   commands. A workspace saved with an old overview tab opens without it:
   those leaves are closed once the layout is ready (mine; `design.md` records
   what Obsidian does with an unknown view type, which was checked).
+- **Find.** Mod+F, and the command **Find**, open the search of the mode the tab
+  is in (the user, 2026-11-05): the editor's panel in Source, the floating search
+  of the view — expanded and focused — in Graph and Timeline; Genealogy mode has
+  no search and the key does nothing there. **Replace** stays Source-only.
 - The interface stays behind **Genealogy interface (beta)**: with it off every
   tab is in Source mode, a stored mode is kept and honoured again when it is
   turned on.
@@ -94,14 +98,19 @@ None. The modes are the tab's, so their requirements are added to
 
 - `genealogy-view`: the tab has four modes; the mode control and the mode
   commands; the views draw the tab's own reading and keep their own scope; Back
-  from a page opened out of Graph or Timeline; links, commands, phone and
-  Genealogy interface follow the modes; a workspace saved with the overview tabs.
+  from a page opened out of Graph or Timeline; which record Genealogy mode shows
+  (through Graph and Timeline); links, Go to record, find and replace, phone and
+  Genealogy interface follow the modes. Added: an Index row selects a person in
+  Graph and Timeline; a tab navigated to another file starts afresh; a workspace
+  saved with the overview tabs.
 - `genealogy-file-timeline` and `genealogy-file-graph`: "a tab of its own"
   becomes "a mode of the file's tab" (renamed, restated whole); where the large
   file opens; what activating a person, a family or a mark does; for the graph,
   where it first opens.
 - `genealogy-index`: a row selects the person in a tab in Graph or Timeline, and
   the selected row is marked.
+- `genealogy-file-graph` and `genealogy-file-timeline` also gain the selected
+  card or row and the find key.
 - `genealogy-evidence`: the panel for a tab in Graph or Timeline with a selection.
 
 ## Non-goals
@@ -117,8 +126,6 @@ None. The modes are the tab's, so their requirements are added to
   Index row still opens its page.
 - A scope shared between Graph and Timeline. Each keeps its own (mine); whether
   to share it is a question for the user.
-- Making Mod+F find a person in Graph or Timeline. The editor's find stays a
-  Source command.
 - Converting an old overview tab into a GEDCOM tab in the matching mode.
 - A change to the drawing, the layout, the read model, the person page, the
   settings other than the options of *Open GEDCOM files as*, or `minAppVersion`.

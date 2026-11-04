@@ -292,31 +292,38 @@ In Source mode a link SHALL behave as it does today.
 ### Requirement: Commands follow the mode
 
 Commands that act on the editor — go to definition, find references, rename,
-the problems commands, search and replace — SHALL be offered only when the
-active GEDCOM tab is in Source mode, and the editor's find, which Obsidian
-dispatches to the tab, SHALL do nothing in any other mode. Copying a link to a
+the problems commands, and replace — SHALL be offered only when the active GEDCOM
+tab is in Source mode. The command **Find**, and the key Obsidian dispatches to the
+tab for it, SHALL be offered in Source, Graph and Timeline modes: in Source it
+opens the editor's search, and in Graph and Timeline the search of the view, as the
+requirements of those views say. In Genealogy mode, which has no search of its
+own, it SHALL NOT be offered and the key SHALL do nothing. Copying a link to a
 record SHALL be offered in Source and Genealogy modes; in Genealogy mode it SHALL
 copy the link to the record the page shows. In Graph and Timeline modes it SHALL
 be offered while a person is selected, and copy the link to them.
 
 #### Scenario: The palette in Genealogy mode
 - **WHEN** the active tab is in Genealogy mode and the reader opens the palette
-- **THEN** search in the file is not offered, and copying a link to the record
-  is
+- **THEN** neither find nor replace in the file is offered, and copying a link to
+  the record is
 
 #### Scenario: The palette in Graph mode
 - **WHEN** the active tab is in Graph mode with nobody selected and the reader
   opens the palette
-- **THEN** neither search in the file nor copying a link to a record is offered
+- **THEN** find is offered, and replace and copying a link to a record are not
 
 #### Scenario: A person selected in the graph
 - **WHEN** Pierre Curie is selected in Graph mode and the reader opens the palette
 - **THEN** copying a link to the record is offered, and copies the link to
   `@I2@`
 
-#### Scenario: Find in the graph
-- **WHEN** the tab is in Graph mode and the reader presses the editor's find key
-- **THEN** nothing opens and the tab stays in Graph mode
+#### Scenario: The find key in Genealogy mode
+- **WHEN** the tab is in Genealogy mode and the reader presses the find key
+- **THEN** nothing opens and the tab stays in Genealogy mode
+
+#### Scenario: The find key in Source mode
+- **WHEN** the tab is in Source mode and the reader presses the find key
+- **THEN** the editor's search panel opens
 
 ### Requirement: Nothing in Genealogy mode writes to the file
 
@@ -413,8 +420,11 @@ While a tab is in Graph or Timeline mode, activating a person's row in the index
 SHALL select that person in the view, without opening their page and without
 changing the mode. The tab SHALL keep at most one selected person; selecting
 another replaces them. The selection SHALL end when the tab leaves the mode,
-including for the other of the two views, and SHALL NOT be saved with the
-workspace. While a person is selected, the index SHALL mark their row as the
+including for the other of the two views, when the person's record no longer
+exists in the file, and when the Genealogy interface is turned off, and SHALL NOT
+be saved with the workspace. A person selected while the tab is not in view or not
+yet drawn SHALL be shown selected, and centred, when the view is drawn. Where a
+person is drawn more than once, every copy SHALL carry the mark. While a person is selected, the index SHALL mark their row as the
 current one, the Evidence panel SHALL show their whole record, and the command
 that copies a link to a record SHALL copy a link to them. Activating the row of a
 family, a source or a media record in these modes SHALL show its page, as it does
@@ -430,6 +440,21 @@ person's page, as the requirements of the two views say.
 #### Scenario: Leaving the mode ends the selection
 - **WHEN** Marie is selected in Graph mode and the reader switches to Timeline mode
 - **THEN** nobody is selected, and no row of the index is marked
+
+#### Scenario: Selected while the tab is behind another
+- **WHEN** a tab in Graph mode is behind another tab and the reader activates
+  Pierre Curie's row in the index, and then brings the tab to the front
+- **THEN** the graph shows his card selected and centred, and no page was opened
+
+#### Scenario: The record goes
+- **WHEN** Marie is selected in Graph mode and her record is removed from the file
+  on disk
+- **THEN** nobody is selected, and no row of the index is marked
+
+#### Scenario: The interface is turned off
+- **WHEN** Marie is selected in Graph mode and the reader turns the Genealogy
+  interface off
+- **THEN** the tab shows the source and no row of the index is marked
 
 #### Scenario: Not kept by the workspace
 - **WHEN** Marie is selected in Graph mode and Obsidian is restarted

@@ -56,8 +56,8 @@ scope the reader leaves it on SHALL be kept, the whole file included.
 ### Requirement: The timeline leads to the page and to the source
 
 Activating a person's name or lifeline SHALL show that person's page in the
-same tab, as a row of the index does: the tab leaves Timeline mode for Genealogy
-mode, and Back SHALL return it to the timeline, at the scope and zoom it had.
+same tab, until a later change gives the person a place of its own: the tab leaves
+Timeline mode for Genealogy mode, and Back SHALL return it to the timeline, at the scope and zoom it had.
 Activating a mark SHALL show the lines of its event in the source: the tab
 leaves Timeline mode for Source mode with those lines selected and in view.
 Activating either SHALL open no other tab.
@@ -139,7 +139,11 @@ unlike the ring of the search's current match, SHALL stay while the pointer ligh
 other people and while the reader searches, and SHALL stay until another person is
 selected or the tab leaves Timeline mode. Where the person is not in the branch
 shown, the timeline SHALL show their branch, with the way back to the whole file.
-Selecting SHALL NOT open a page, change the mode or write to the file.
+The selection SHALL belong to the person, not to what is drawn: a row out of view,
+outside a branch the reader has narrowed, or absent from a text that has changed
+SHALL show the mark again when it is drawn. Searching, and changing the scope,
+SHALL NOT end it. Selecting SHALL NOT open a page, change the mode or write to
+the file.
 
 #### Scenario: Selecting Irène from the index
 - **WHEN** the tab is in Timeline mode and the reader activates Irène's row in the
@@ -153,8 +157,30 @@ Selecting SHALL NOT open a page, change the mode or write to the file.
 - **THEN** Irène's row still carries the selected mark, apart from Marie's light
   and from the ring of the current match
 
+#### Scenario: A row out of view and back
+- **WHEN** Irène is selected and the reader scrolls until her row is out of the
+  drawn rows, and then back
+- **THEN** her row carries the selected mark again
+
 #### Scenario: A person outside the branch
 - **WHEN** the timeline shows Marie's branch with zero generations of ancestors
   and zero of descendants and the reader activates Hélène's row in the index
 - **THEN** the timeline shows Hélène's branch, with her row selected
 
+### Requirement: The find key opens the timeline's search
+
+In Timeline mode the editor's find — the command **Find**, and the key Obsidian
+dispatches to the tab for it — SHALL open the search of the timeline: the icon
+floating over the board expands into the field, which takes the focus. Where
+the field is already open it SHALL only take the focus. It SHALL NOT open the
+editor's search panel or change the mode. Replace SHALL NOT be offered.
+
+#### Scenario: Find with the search closed
+- **WHEN** the tab of `curie.ged` is in Timeline mode with the search closed and the
+  reader presses the find key
+- **THEN** the icon is replaced by the field, and the field has the focus
+
+#### Scenario: Find with the search open
+- **WHEN** the search is open with `joliot` typed and the focus is elsewhere in
+  the timeline, and the reader runs **Find**
+- **THEN** the field keeps its text and takes the focus

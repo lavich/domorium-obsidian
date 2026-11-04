@@ -54,7 +54,7 @@ the Index as they are.
   pages.
 
 **Non-Goals:** as in `proposal.md`. In particular: no card in the sidebar, no
-click that selects (an Index row does), no shared scope, no Mod+F in the views, no
+click that selects (an Index row does), no shared scope, no
 conversion of old tabs.
 
 ## Decisions
@@ -149,10 +149,11 @@ interface FileViewsHost {
 class FileViews {
   constructor(parent: HTMLElement, host: FileViewsHost);
   show(kind: ViewKind, index: GenealogyIndex, memory: ViewMemory, around?: string): void;
-  select(kind: ViewKind, xref: string | null): boolean;  // false: not a person of the file
+  select(kind: ViewKind, xref: string | null): void;   // kept as pending until drawn
+  openSearch(kind: ViewKind): void;     // expand the floating search and focus it, or just focus it
   hide(): void;
-  resized(): void;
-  displayed(): boolean;                 // a view is shown and its root has a box
+  resized(): void;                      // only where a board exists
+  displayed(): boolean;                 // a board's root has a box: the keep-last-good-size case
   memory(): ViewMemory;
   reset(): void;                        // another file: drop boards and memory
   dispose(): void;                      // the tab closes
@@ -188,13 +189,31 @@ class FileViews {
   memory: `display: none` resets both, and `show` puts them back after the layout
   (design question settled: restored, not reworded). The graph needs no such
   thing, its position being the transform.
-- **Selecting.** `select(kind, xref)` makes the board mark the person as selected
+- **Selecting.** `select(kind, xref)` never fails and never needs a drawn board:
+  the tab's selection is a fact about the tab, and a tab that the Index follows is
+  often hidden, stale or never drawn. `FileViews` keeps it as pending until the
+  board exists, and `show` hands it to the board, which marks the person selected
   (a class of its own, `is-selected`, beside the hover light and the search's
-  `is-current`) and centre on them with the same glide the search uses: the graph
+  `is-current`) and centres on them with the same glide the search uses: the graph
   at a readable zoom, the timeline with the row in the middle and the lifeline in
   view. A person outside the board's branch changes its scope to theirs first (the
   same `focus`, the numbers kept), through the board's own scope change, which
-  reports it like any other.
+  reports it like any other. **The board keeps `selected` as the person's id**,
+  not as an element: searching (`setQuery`) and a scope change do not clear it; a
+  card or row not drawn at the moment — virtualised out of the window, outside a
+  scope narrowed by hand, absent from a new model after an edit — shows no mark and
+  shows it again when it is drawn; and in the graph every copy of the person
+  (`scene.copies`, a person drawn more than once) carries it. `select(kind, null)`
+  clears it. The tab clears it on **both** kinds whenever `selectionCleared`
+  comes back, because the boards are kept alive: Graph to Timeline to Graph must
+  not show a stale mark. The tab, not the board, ends a selection whose person is
+  gone: on a draw after a text change `TabModes` finds no such person in the new
+  index, drops the selection, and the Index and Evidence follow
+  (`genealogyChanged`).
+- **Finding.** `openSearch(kind)` is the search's own API
+  (`FloatingSearch.open()` and `focus()` in `floatingSearch.ts`): closed, it
+  expands the icon into the field and focuses it; open, it only focuses. It needs a
+  drawn board, so the tab draws first (`needsDraw`), and then calls it.
 - **Dispose.** `dispose()` is `hide()` plus dropping the boards; the tab's
   `onClose` calls it, as the overview view's `onClose` did (`cancelHover`).
 - The host methods are thin: `openRecord` is the tab's `openRecord` (below),
@@ -317,9 +336,12 @@ the mode, as before (a family *node* could be selected in the graph; not
 done — the Index lists families, and a node is a click away).
 
 The mark is the tab's, not a board's: `FileViews.select(kind, xref)` marks one
-person in the board shown. The tab holds `selected`, which ends — the boards
-cleared — whenever the mode changes, whatever the target, including from Graph
-to Timeline, and is not saved. A second selection replaces the first. Selecting
+person in the board shown. The tab holds `selectedPerson` (`GedcomView.selected` is the selected *fact*,
+which is a different thing), which ends — `selectionCleared` calls
+`FileViews.select(kind, null)` for both kinds — whenever the mode changes,
+whatever the target, including from Graph to Timeline, when the person's record
+is gone from the file, and when the interface is turned off (the mode then shows
+as Source, and `shownRecord()` is null); it is not saved. A second selection replaces the first. Selecting
 a person who is not in the branch shown changes the branch to theirs (mine; the
 alternatives were the whole file, which can be 10 000 people, and a notice).
 
@@ -363,16 +385,24 @@ read `shownRecord()` and `deskSelection()`. With a selection in the views
   cursor's.
 - `openFromIndex(tab, xref)` in `deskState.ts` takes three branches: Source goes
   to the line; Graph or Timeline calls the tab's `selectInView(xref)`, which
-  answers false for a record that is not a person of the file, and then opens the
-  page; Genealogy opens the page. `IndexTarget` gains `inView()` and
+  answers true whenever the tab is in a view mode and the record is a person of
+  the file — whether or not the view is drawn: it records the selection, applies
+  it when the board is drawn, and ends with `host.genealogyChanged(this)` so the
+  Index marks the row, Evidence shows the record and `placeEvidence` runs — and
+  false only for a record that is not a person, which then opens the page;
+  Genealogy opens the page. `IndexTarget` gains `inView()` and
   `selectInView(xref)`.
 - Editor commands: `inSource()` is the mode being Source, so they are offered in
-  Source only. `showSearch(replace)` — which Obsidian's own `editor:open-search`
-  dispatches to the active view by duck type — returns at once unless the tab is
-  in Source (mine; it opened the search panel in a hidden editor in Genealogy mode
-  before, which showed up later in Source; the alternative of switching to Source
-  is a mode change nobody asked for). Mod+F finding a person in a view stays a
-  non-goal.
+  Source only — except **Find**, which is offered in Source, Graph and Timeline
+  (`canFind()` on `CommandView`). `showSearch(replace)`, which Obsidian's own
+  `editor:open-search` dispatches to the active view by duck type, is routed by
+  the mode (the user, 2026-11-05: «Mod+F вне режима Source пусть открывает поиск в
+  том режиме, который включен»): Source opens the editor's panel as now; Graph and
+  Timeline call `FileViews.openSearch` — the field expanded and focused, or only
+  focused if already open; Genealogy has no search of its own and the call does
+  nothing (before, it opened the panel in a hidden editor, which showed up later in
+  Source). `showSearch(true)`, replace, is Source-only: it does nothing elsewhere,
+  and the Replace command is offered in Source only.
 - The status bar (version, problems) is the file's, not the mode's, and shows for
   any GEDCOM tab as it does in Genealogy mode; unchanged.
 
@@ -408,10 +438,11 @@ to draw. Those rules live in `src/desk/tabModes.ts`, no `obsidian` import, with
 
 ```ts
 class TabModes {
-  mode, lastMode, record, selected, stale, loaded;
+  mode, lastMode, record, selectedPerson, stale, loaded;
   setMode(next, { interfaceOn, cursorRecord }): { changed, moveCursor, selectionCleared };
   openRecord(xref): { mode: "genealogy", record, step };   // what the tab sets and whether history steps
-  select(xref, isPerson): boolean;
+  select(xref, isPerson): boolean;       // true in a view mode for a person, drawn or not
+  textChanged(index): { selectionCleared };  // marks stale; drops a selection whose person is gone
   fileChanged(): void;                                      // reset record, selection, lastMode
   textChanged(): void;                                      // mark the drawn views stale
   needsDraw(shown: boolean): boolean;                       // loaded, a view mode, and shown
@@ -432,8 +463,14 @@ Source; nothing is drawn before the file is loaded. `navigationStep`,
 
 Obsidian calls a view's `onResize` from a `ResizeObserver` and from a loop on
 window resize, hidden leaves included. `GedcomView.onResize` therefore returns
-unless `containerEl.isShown()` and `FileViews.displayed()` (a view's root has a
-box), and only then redraws what is stale and calls `resized()`. With
+unless `containerEl.isShown()` and the tab's `viewsEl` has a box (`showMode()`
+un-hides `viewsEl` in the view modes whether or not a board exists yet), and only
+then draws what `needsDraw` says — which makes the first board of a tab restored
+behind another tab, a view never drawn — and calls `FileViews.resized()` once a
+board exists. Guarding on a board's own root instead would never fire for a view
+that was never drawn: such a tab would stay blank when brought to the front.
+`displayed()` (a board's root has a box) is kept for the other case, where a board
+exists and a zero rect must not be taken as its size. With
 `GraphCanvas.resized` keeping the last good size and the memory written from
 callbacks only (above), a hidden tab that is resized to nothing and shown again
 comes back at the position it left.
@@ -442,9 +479,9 @@ comes back at the position it left.
 `applyWorkspaceEdit`, a CodeMirror transaction that is not `applyingData`; the
 update listener bumps `revision` and calls `announceEdit`, which today only tells
 the panels. In the debounced announce, a tab that is not in Source now also
-redraws its page or marks its views stale and draws them if shown — which also
-mends the page in Genealogy mode, which did not redraw after a followed media
-move either.
+marks its views stale and draws them if shown, and drops a selection whose person
+is gone. (The Genealogy page after such an edit is `A page follows the file`,
+which exists; no new requirement.)
 
 ### Old overview tabs
 
@@ -549,7 +586,9 @@ description: «How a GEDCOM file opens in a new tab: as a page, a graph, a
 timeline or the source. Each tab remembers the mode it was last in. Applies when
 the genealogy interface is on.» Options: *Genealogy*, *Graph*, *Timeline*,
 *Source* (sentence case); in Russian «Генеалогию», «Граф», «Хронологию»,
-«Исходник». The Russian for the timeline is *хронология*, as in 1.14.
+«Исходник». The Russian for the timeline is *хронология*, as in 1.14. `evidence.noTab`
+(«Open a GEDCOM file as genealogy to see what a fact rests on.») is unchanged; it is
+also what Evidence shows in a view with nobody selected, until step 2 reworks it.
 
 The README sections for the timeline and the graph are rewritten: they are modes
 chosen from the header control, a command or the tab's menu, not tabs.
@@ -633,8 +672,11 @@ board, a `ViewKind` and a memory key.
   other until saved, which is how the Genealogy mode already behaves and why
   `openTab` (`followedView` first) existed; nothing depends on it now.
 - **Downgrade.** An older plugin ignores the new keys and modes. Not supported.
-- **Mod+F in Graph or Timeline** does nothing (`showSearch` returns unless in
-  Source). Finding a person with it is a non-goal.
+- **Mod+F outside Source** is routed by mode, so a hidden editor's panel is never
+  opened: a view that is not drawn is drawn first, and Genealogy mode does nothing.
+- **A selection and a view that is not drawn.** The selection is kept by the tab and
+  by `FileViews` as pending, and applied when the board is made; no answer depends
+  on a board existing.
 - **A deleted file's tab.** `FileView.onDelete` steps the leaf back through its
   history; with the views in the tab that can land on a page or a graph state of
   another file. Checked by hand (7.1), not designed around.
@@ -667,10 +709,12 @@ Purpose alone.
    without opening the page or changing the mode; a click on a card or row in the
    view keeps opening the page until step 2, when it becomes what the Index row does.
 4. The order of the modes is Genealogy, Graph, Timeline, Source.
+5. Mod+F outside Source opens the search of the mode that is on: the view's
+   floating search, expanded and focused, in Graph and Timeline; nothing in
+   Genealogy; replace stays Source-only.
 
 ## Open Questions
 
 None for the user at the time of writing. Decided by me and open to a change:
-selecting a person outside the branch shown changes the branch to theirs; an Index
-row for a family, a source or a media record opens its page; `showSearch` does
-nothing outside Source.
+selecting a person outside the branch shown changes the branch to theirs, and an
+Index row for a family, a source or a media record opens its page.

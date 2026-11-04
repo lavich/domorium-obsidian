@@ -112,8 +112,8 @@ showed.
 
 ### Requirement: The graph leads to the pages
 
-Activating a person's card SHALL show that person's page in the same tab, as a
-row of the index does: the tab leaves Graph mode for Genealogy mode, and Back
+Activating a person's card SHALL show that person's page in the same tab, until
+a later change gives the card a place of its own: the tab leaves Graph mode for Genealogy mode, and Back
 SHALL return it to the graph, at the scope, position and zoom it had. Activating
 a family node SHALL show that family's page the same way. Activating either SHALL
 open no other tab.
@@ -206,7 +206,11 @@ pointing and unlike the ring of the search's current match, SHALL stay while the
 pointer lights other people and while the reader searches, and SHALL stay until
 another person is selected or the tab leaves Graph mode. Where the person is not
 in the branch shown, the graph SHALL show their branch, with the way back to the
-whole file. Selecting SHALL NOT open a page, change the mode or write to the file.
+whole file. The selection SHALL belong to the person, not to what is drawn: a card out of view,
+outside a scope the reader has narrowed, or absent from a text that has changed
+SHALL show the mark again when it is drawn, and every card of a person drawn more
+than once SHALL carry it. Searching, and changing the scope, SHALL NOT end it.
+Selecting SHALL NOT open a page, change the mode or write to the file.
 
 #### Scenario: Selecting Pierre from the index
 - **WHEN** the tab is in Graph mode and the reader activates Pierre Curie's row in
@@ -220,6 +224,11 @@ whole file. Selecting SHALL NOT open a page, change the mode or write to the fil
 - **THEN** Pierre Curie's card still carries the selected mark, apart from the
   light on Marie's and the ring on Frédéric's
 
+#### Scenario: A card out of view and back
+- **WHEN** Pierre Curie is selected and the reader moves the graph until his card
+  is out of the drawn window, and then back
+- **THEN** his card carries the selected mark again
+
 #### Scenario: Another selection
 - **WHEN** Pierre Curie is selected and the reader activates Irène's row
 - **THEN** only Irène's card is marked selected
@@ -229,3 +238,20 @@ whole file. Selecting SHALL NOT open a page, change the mode or write to the fil
   zero of descendants and the reader activates Hélène's row in the index
 - **THEN** the graph shows Hélène's branch, with her card selected
 
+### Requirement: The find key opens the graph's search
+
+In Graph mode the editor's find — the command **Find**, and the key Obsidian
+dispatches to the tab for it — SHALL open the search of the graph: the icon
+floating over the canvas expands into the field, which takes the focus. Where
+the field is already open it SHALL only take the focus. It SHALL NOT open the
+editor's search panel or change the mode. Replace SHALL NOT be offered.
+
+#### Scenario: Find with the search closed
+- **WHEN** the tab of `curie.ged` is in Graph mode with the search closed and the
+  reader presses the find key
+- **THEN** the icon is replaced by the field, and the field has the focus
+
+#### Scenario: Find with the search open
+- **WHEN** the search is open with `joliot` typed and the focus is elsewhere in
+  the graph, and the reader runs **Find**
+- **THEN** the field keeps its text and takes the focus

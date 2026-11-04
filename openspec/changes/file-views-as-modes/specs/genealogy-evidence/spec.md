@@ -21,8 +21,9 @@ selected in the view. Its heading SHALL name what it shows — the fact with its
 date and place, or *Whole record* with the person's or family's name — and
 SHALL offer *Whole record* when a fact is selected and Show in source always.
 
-Where no GEDCOM tab is in Genealogy mode, and none is in Graph or Timeline mode
-with a person selected, it SHALL say so. A tab in Source mode shows no selection.
+The panel follows the one GEDCOM tab most recently active. Where that tab shows
+nothing to select — it is in Source mode, or in Graph or Timeline mode with nobody
+selected — or no GEDCOM tab is open, it SHALL say so.
 
 #### Scenario: The first file shown as genealogy
 - **WHEN** the reader opens `curie.ged` as genealogy with no evidence view open
