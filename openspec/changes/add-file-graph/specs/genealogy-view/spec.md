@@ -61,9 +61,10 @@ parents and siblings SHALL tend to stand on that side. A person married more
 than once SHALL stand between their first two spouses with the first spouse to
 the left, so that each marriage's children sit beneath it.
 
-Each box SHALL be a card coloured by sex as the graph of the file colours it —
-pink for a woman, blue for a man, grey where no sex is stated, from the theme —
-showing a name and years. It SHALL mark the person in focus, mark a person
+Each box SHALL be a card drawn as the graph of the file draws it — coloured by
+sex, pink for a woman, blue for a man, grey where no sex is stated, from the
+theme; showing the person's portrait at its top where they have one, their given
+names, their surname and their years. It SHALL mark the person in focus, mark a person
 whose record cites no source at all, and mark a person with parents above, or
 children below, that the tree does not reach. Each couple SHALL be joined
 through a family node between them showing the year of the marriage, hollow
@@ -101,6 +102,16 @@ Activating a person SHALL make them the focus.
   colours; Pierre Curie stands to her left with a node showing `’95` between
   them; Jacques and Pierre's parents stand on his side, and her siblings' box
   and her parents on hers
+
+#### Scenario: Portraits and names in the tree
+- **WHEN** Marie's tree is shown
+- **THEN** her card shows her portrait over `Marie` over `Skłodowska-Curie`,
+  Pierre Curie's and Irène's show theirs, and Jacques's shows none
+
+#### Scenario: A person who stands twice
+- **WHEN** a person stands twice in a tree, as a cousin marriage makes, and the
+  reader points at one of them
+- **THEN** both are lit
 
 #### Scenario: A family node
 - **WHEN** the reader activates the node between Pierre Curie and Marie in her

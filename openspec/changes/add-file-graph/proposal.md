@@ -79,6 +79,14 @@ And Branch pressed again on the person whose branch is shown returns to the
 whole file, in the graph and in the timeline, by keyboard and touch too, shown
 as a toggle that reads pressed while that branch is shown.
 
+Cards, for the graph and the person page's tree (2026-11-04): «в карточках хочу
+запись имени и фамилии чтобы был перенос на разные строки и добавить аватарку,
+если она есть», «аватарка вверху карточки». From top to bottom a card shows the
+person's portrait where they have one, their given names, their surname and
+their years; with no portrait it begins with the name. The portrait is the one,
+and the crop, the person's page shows, a picture from the web only where *Load
+images from the web* allows.
+
 Proposed scope:
 
 - A new view, **Graph of the file**, opened in a tab of its own from a header

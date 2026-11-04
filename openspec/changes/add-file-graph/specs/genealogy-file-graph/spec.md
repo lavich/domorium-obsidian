@@ -57,17 +57,31 @@ Nothing in the graph SHALL write to the file.
 
 ### Requirement: A card is a person, coloured by sex
 
-Each person the file declares with an identifier SHALL have a card showing their
-name and their years of life, written as the timeline of the file writes them.
-A card SHALL be marked pink for a woman, blue for a man, and grey where the
-record states no sex, in colours taken from the theme. A name too long for its
-card SHALL be cut short, and given in full when the pointer rests on the card.
-The graph SHALL NOT label generations.
+Each person the file declares with an identifier SHALL have a card showing,
+from top to bottom, their portrait where they have one, their given names,
+their surname and their years of life, written as the timeline of the file
+writes them. The portrait SHALL be the picture, cut as its crop says, that the
+person's page shows; a picture from the web SHALL be shown only where the
+setting *Load images from the web*, or the reader's answer for this session,
+allows it, as on the page. A card without a portrait, or whose portrait cannot
+be shown, SHALL show none, and a name the record writes with no surname SHALL
+stand on one line. A card SHALL be marked pink for a woman, blue for a man, and
+grey where the record states no sex, in colours taken from the theme. A line
+too long for its card SHALL be cut short, and the name given in full when the
+pointer rests on the card. Far out, neither portraits nor text SHALL be drawn,
+and only cards in or near the view SHALL load their portraits. The graph SHALL
+NOT label generations.
 
 #### Scenario: Marie's card
 - **WHEN** the graph of `curie.ged` is shown
-- **THEN** Marie's card names her with `1867–1934` and is marked pink, and
-  Pierre Curie's is marked blue
+- **THEN** Marie's card shows her portrait at its top, then `Marie`, then
+  `Skłodowska-Curie`, then `1867–1934`, and is marked pink, and Pierre Curie's
+  is marked blue
+
+#### Scenario: A card without a portrait
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** Jacques's card has no portrait and begins with `Jacques` over
+  `Curie`, and stands in the same row as Pierre Curie's, which has one
 
 #### Scenario: No labels for generations
 - **WHEN** the graph of `curie.ged` is shown

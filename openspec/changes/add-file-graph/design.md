@@ -391,9 +391,45 @@ shown returns to the whole file through the same path as **Whole file**, so the
 view follows the rule for it: centred on the person just left. The Branch of
 that person carries `aria-pressed="true"` and stays shown — the graph's pill on
 the card, the timeline's button on the row — in the pressed look of the theme's
-accent; every other Branch carries `aria-pressed="false"`. On a phone the
-pressed pill is shown, so a touch on it acts at once rather than first lighting
-the card.
+accent; every other Branch carries `aria-pressed="false"`.
+
+### Portraits and names on the cards
+
+- **The name** is read into given names and surname from the first `NAME` line:
+  the surname is what stands between its slashes, the given names what stands
+  around them. `PersonRow` gains `given` and `surname`, set only where the line
+  has both; otherwise the card has one line, the whole name.
+- **Heights (mine).** A card is 58 pixels of text, three lines, and 50 more with
+  a portrait. Each row is as tall as its tallest card, and cards stand on the
+  row's bottom edge, so the text of every card in a row lines up, a family node
+  sits at the middle of the text, and a portrait rises above it. Rows are 84
+  pixels apart, edge to edge, whatever their height; the layout answers each
+  row's top and bottom, and every height in it (nodes, lanes, bends, the drop
+  out of a row) is read from them rather than from a fixed pitch.
+- **The picture** is drawn in an SVG `foreignObject` by the page's own
+  `drawPicture`, so the crop is the page's to the pixel. Which picture is asked
+  of the host as the card is drawn, so only cards near the view resolve and
+  load one: the tab of the file answers as its page does; a closed file is
+  answered from the language service of its last reading, which `OverviewReads`
+  now keeps beside the index, with the same vault and the same web setting. A
+  picture that fails to load is removed, and the card keeps its height.
+- **Far out** a card draws neither portrait nor text.
+
+### The tree after review
+
+- A person who stands twice lights every place they stand: the tree keeps each
+  person's cards, and pointing at one lights them all and the lines of each.
+- Siblings with no spouse in the drawing stand 16 pixels apart rather than 72,
+  in the tree and the file alike. A tree that opens at a readable size around
+  the focus with none of their children in view opens instead around the point
+  between the focus and the nearest child, zoomed out as far as 0.5 to show
+  both.
+- Activating a person keeps the zoom the tree had, and the keyboard focus moves
+  to the new focus's card where the activation came from the keyboard.
+- A touch on a pressed Branch lights its card first, as any other Branch does.
+- The tree's canvas is at most 60 % of the window's height, so the page can
+  scroll on to the legend, and a two-finger scroll that would take the tree past
+  its edge scrolls the page instead.
 
 ## Risks / Trade-offs
 
