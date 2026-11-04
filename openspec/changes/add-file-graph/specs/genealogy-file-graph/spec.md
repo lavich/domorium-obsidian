@@ -77,7 +77,8 @@ NOT label generations.
 - **WHEN** the graph of `curie.ged` is shown
 - **THEN** Marie's card shows her portrait at its top, then `Marie`, then
   `Skłodowska-Curie`, then `1867–1934`, and is marked pink, and Pierre Curie's
-  is marked blue
+  is marked blue; a line wider than the card is cut with an ellipsis, so in a
+  wide font her surname may be cut
 
 #### Scenario: A card without a portrait
 - **WHEN** the graph of `curie.ged` is shown

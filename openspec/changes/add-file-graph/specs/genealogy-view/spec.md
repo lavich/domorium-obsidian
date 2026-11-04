@@ -124,8 +124,10 @@ Activating a person SHALL make them the focus.
 
 #### Scenario: Portraits and names in the tree
 - **WHEN** Marie's tree is shown
-- **THEN** her card shows her portrait over `Marie` over `Skłodowska-Curie`,
-  Pierre Curie's and Irène's show theirs, and Jacques's shows none
+- **THEN** her card shows her portrait over `Marie` over `Skłodowska-Curie`
+  (a line wider than the card is cut with an ellipsis, so in a wide font her
+  surname may be cut), Pierre Curie's and Irène's show theirs, and Jacques's
+  shows none
 
 #### Scenario: A person who stands twice
 - **WHEN** a person stands twice in a tree, as a cousin marriage makes, and the

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import type { GraphOptions } from "../harness/fileGraph";
+import { expectNameLines } from "./cardText";
 import { generated, tangled } from "./generated";
 
 async function mountGraph(page: Page, options: GraphOptions = {}): Promise<number> {
@@ -32,7 +33,7 @@ test.describe("the graph of a file", () => {
   test("names Marie with her years on a card in the theme's colour for a woman", async ({ page }) => {
     await mountGraph(page);
 
-    await expect(card(page, "@I1@").locator(".gedcom-fg-card-name")).toHaveText(["Marie", "Skłodowska-Curie"]);
+    await expectNameLines(card(page, "@I1@"), "Marie", "Skłodowska");
     await expect(card(page, "@I1@").locator(".gedcom-fg-card-years")).toHaveText("1867–1934");
     const fill = (xref: string, part: string) =>
       person(page, xref).locator(part).evaluate((shape) => getComputedStyle(shape).fill);
@@ -51,8 +52,7 @@ test.describe("the graph of a file", () => {
     const picture = marie.locator(".gedcom-fg-avatar img");
     await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
     const [given, surname] = await marie.locator(".gedcom-fg-card-name").all();
-    await expect(given ?? marie).toHaveText("Marie");
-    await expect(surname ?? marie).toHaveText("Skłodowska-Curie");
+    await expectNameLines(marie, "Marie", "Skłodowska");
     const tops = await Promise.all(
       [picture, given, surname, marie.locator(".gedcom-fg-card-years")].map(async (part) => (await part?.boundingBox())?.y ?? NaN),
     );

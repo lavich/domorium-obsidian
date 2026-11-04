@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import type { DeskOptions } from "../harness/desk";
+import { expectNameLines } from "./cardText";
 
 async function mountDesk(page: Page, options: DeskOptions = {}): Promise<void> {
   await page.goto(pathToFileURL(resolve("harness/desk.html")).href);
@@ -277,7 +278,7 @@ test.describe("the tree", () => {
     await expect.poll(() =>
       marieCard.locator(".gedcom-fg-avatar img").evaluate((image: HTMLImageElement) => image.naturalWidth),
     ).toBeGreaterThan(0);
-    await expect(marieCard.locator(".gedcom-fg-card-name")).toHaveText(["Marie", "Skłodowska-Curie"]);
+    await expectNameLines(marieCard, "Marie", "Skłodowska");
     await expect(card(page, "Jacques Curie").locator(".gedcom-fg-avatar")).toHaveCount(0);
 
     await node.locator("circle").click();

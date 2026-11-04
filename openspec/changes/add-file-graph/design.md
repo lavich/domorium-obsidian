@@ -672,3 +672,7 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   requirements that speak of the **Genealogy interface** setting do so as of a
   name; they are left as they were, and the requirement that names the setting
   is restated.
+- **Fonts in browser specs.** The harness uses whatever fallback font the
+  machine has, wider on Linux CI than on a Mac, so `Skłodowska-Curie` can be cut
+  at 124 pixels. The specs assert the given name whole, the surname from its
+  start, and every line inside the card, and allow the ellipsis.
