@@ -107,7 +107,7 @@ describe("the gallery of a record", () => {
   it("leads to the media page, and from a missing file to its line", () => {
     renderGallery(container, MARIE, host);
     const links = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-link")];
-    links.find((link) => link.textContent === "Media page")?.click();
+    links.find((link) => link.textContent === "Media card")?.click();
     links.find((link) => link.textContent === "Show in source")?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith("@O1@");

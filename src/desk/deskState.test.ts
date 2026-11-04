@@ -11,12 +11,10 @@ import {
   effectiveMode,
   initialMode,
   modeButtons,
-  navigationStep,
   openFromIndex,
   openingMemory,
   pageKind,
   readDeskState,
-  recordToShow,
   RETIRED_VIEW_TYPES,
   routeLink,
   shownRange,
@@ -48,21 +46,26 @@ const index = (text = CURIE) =>
   buildIndex(new GedcomLanguageService(text));
 
 describe("what a tab keeps of the desk", () => {
-  it("reads a mode and a record it wrote", () => {
-    expect(readDeskState({ file: "a.ged", mode: "source", record: "@I2@" }))
-      .toEqual({ mode: "source", record: "@I2@" });
+  it("reads a mode and the selected record it wrote", () => {
+    expect(readDeskState({ file: "a.ged", mode: "source", selected: "@I2@" }))
+      .toEqual({ mode: "source", selected: "@I2@" });
+    expect(readDeskState({ selected: "" })).toEqual({});
+    expect(readDeskState({ selected: 7 })).toEqual({});
   });
 
-  it("reads the view of a person page it wrote", () => {
-    expect(readDeskState({ mode: "genealogy", record: "@I1@", view: "timeline" }))
-      .toEqual({ mode: "genealogy", record: "@I1@", view: "timeline" });
-    expect(readDeskState({ view: "map" })).toEqual({});
-  });
-
-  it("reads each of the four modes", () => {
+  it("reads each of the three modes", () => {
+    expect(DESK_MODES).toEqual(["graph", "timeline", "source"]);
     for (const mode of DESK_MODES) {
       expect(readDeskState({ mode })).toEqual({ mode });
     }
+  });
+
+  it("reads a saved genealogy mode as graph", () => {
+    expect(readDeskState({ mode: "genealogy" })).toEqual({ mode: "graph" });
+  });
+
+  it("ignores the record and the view of a person page an earlier version wrote", () => {
+    expect(readDeskState({ mode: "source", record: "@I1@", view: "timeline" })).toEqual({ mode: "source" });
   });
 
   it("reads the memory of the graph and the timeline, clamped, and drops what is malformed", () => {
@@ -90,30 +93,12 @@ describe("what a tab keeps of the desk", () => {
   });
 });
 
-describe("which record Genealogy mode shows", () => {
-  it("takes the first preferred record that has a page", () => {
-    expect(recordToShow(index(), ["@N1@", "@F1@", "@I1@"])).toBe("@F1@");
-  });
-
-  it("falls back to the first person the file declares", () => {
-    expect(recordToShow(index(), [undefined, "@X9@"])).toBe("@I1@");
-  });
-
-  it("shows a source when the file declares no person", () => {
-    const sourcesOnly = ["0 HEAD", "0 @S1@ SOUR", "1 TITL A", "0 TRLR", ""].join("\n");
-
-    expect(recordToShow(index(sourcesOnly), [])).toBe("@S1@");
-  });
-
-  it("has nothing to show for a file of neither", () => {
-    expect(recordToShow(index("0 HEAD\n0 TRLR\n"), [])).toBeNull();
-  });
-
-  it("gives a multimedia record a page", () => {
+describe("which records have a card", () => {
+  it("gives a multimedia record a card", () => {
     expect(pageKind(index(), "@O1@")).toBe("media");
   });
 
-  it("gives a person, a family and a source a page, and a note none", () => {
+  it("gives a person, a family and a source a card, and a note none", () => {
     expect(pageKind(index(), "@I1@")).toBe("person");
     expect(pageKind(index(), "@F1@")).toBe("family");
     expect(pageKind(index(), "@S1@")).toBe("source");
@@ -142,46 +127,11 @@ describe("where a link into a record lands", () => {
 });
 
 describe("a row of the index, activated", () => {
-  const tab = (where: "source" | "view" | "genealogy", selects = true) => ({
-    inSource: () => where === "source",
-    inView: () => where === "view",
-    goToXref: vi.fn(() => true),
-    openRecord: vi.fn(),
-    selectInView: vi.fn(() => selects),
-  });
+  it.each(["graph", "timeline", "source"] as const)("selects the record with the index as its origin in %s", () => {
+    const tab = { selectRecord: vi.fn(() => true) };
+    openFromIndex(tab, "@I2@");
 
-  it("opens the record's page from a tab in Genealogy mode", () => {
-    const genealogy = tab("genealogy");
-    openFromIndex(genealogy, "@I2@");
-
-    expect(genealogy.openRecord).toHaveBeenCalledWith("@I2@");
-    expect(genealogy.goToXref).not.toHaveBeenCalled();
-    expect(genealogy.selectInView).not.toHaveBeenCalled();
-  });
-
-  it("selects a person in a tab in Graph or Timeline, and opens nothing", () => {
-    const view = tab("view");
-    openFromIndex(view, "@I2@");
-
-    expect(view.selectInView).toHaveBeenCalledWith("@I2@");
-    expect(view.openRecord).not.toHaveBeenCalled();
-    expect(view.goToXref).not.toHaveBeenCalled();
-  });
-
-  it("opens the page of a record in a view that has nothing to select", () => {
-    const view = tab("view", false);
-    openFromIndex(view, "@F3@");
-
-    expect(view.openRecord).toHaveBeenCalledWith("@F3@");
-  });
-
-  it("goes to the record's line in a tab in Source mode", () => {
-    const source = tab("source");
-    openFromIndex(source, "@F3@");
-
-    expect(source.goToXref).toHaveBeenCalledWith("@F3@");
-    expect(source.openRecord).not.toHaveBeenCalled();
-    expect(source.selectInView).not.toHaveBeenCalled();
+    expect(tab.selectRecord).toHaveBeenCalledWith("@I2@", "index");
   });
 });
 
@@ -214,45 +164,41 @@ describe("where the source opens when the tab switches to it", () => {
 
 describe("the mode a tab shows while the genealogy interface is off", () => {
   it("is source whatever the tab last stored", () => {
-    expect(effectiveMode("genealogy", false)).toBe("source");
     expect(effectiveMode("graph", false)).toBe("source");
     expect(effectiveMode("timeline", false)).toBe("source");
   });
 
   it("is the stored mode while the interface is on", () => {
-    expect(effectiveMode("genealogy", true)).toBe("genealogy");
     expect(effectiveMode("source", true)).toBe("source");
     expect(effectiveMode("graph", true)).toBe("graph");
     expect(effectiveMode("timeline", true)).toBe("timeline");
   });
 
   it("starts a new tab in the mode the setting names while the interface is on", () => {
-    expect(initialMode(undefined, "genealogy", true)).toBe("genealogy");
     expect(initialMode(undefined, "source", true)).toBe("source");
     expect(initialMode(undefined, "graph", true)).toBe("graph");
     expect(initialMode(undefined, "timeline", true)).toBe("timeline");
   });
 
   it("stores source for a tab opened while the interface is off, so turning it on leaves the tab alone", () => {
-    const stored = initialMode(undefined, "genealogy", false);
+    const stored = initialMode(undefined, "graph", false);
 
     expect(effectiveMode(stored, true)).toBe("source");
   });
 
   it("keeps the mode a restored tab was in, off or on", () => {
-    expect(initialMode("genealogy", "source", false)).toBe("genealogy");
-    expect(initialMode("genealogy", "source", true)).toBe("genealogy");
-    expect(initialMode("source", "genealogy", false)).toBe("source");
+    expect(initialMode("timeline", "source", true)).toBe("timeline");
+    expect(initialMode("source", "graph", false)).toBe("source");
     expect(initialMode("graph", "source", false)).toBe("graph");
   });
 });
 
 describe("the modes a tab offers", () => {
-  it("lists Genealogy, Graph, Timeline and Source in that order, with the current one active", () => {
+  it("lists Graph, Timeline and Source in that order, with the current one active", () => {
     for (const current of DESK_MODES) {
       const choices = modeButtons(current);
 
-      expect(choices.map((choice) => choice.mode)).toEqual(["genealogy", "graph", "timeline", "source"]);
+      expect(choices.map((choice) => choice.mode)).toEqual(["graph", "timeline", "source"]);
       expect(choices.filter((choice) => choice.active).map((choice) => choice.mode)).toEqual([current]);
     }
   });
@@ -260,41 +206,25 @@ describe("the modes a tab offers", () => {
   it("gives each mode an icon and a title of its own", () => {
     const choices = modeButtons("graph");
 
-    expect(choices.map((choice) => choice.icon)).toEqual(["users", "network", "calendar-range", "code"]);
-    expect(new Set(choices.map((choice) => choice.title)).size).toBe(4);
+    expect(choices.map((choice) => choice.icon)).toEqual(["network", "calendar-range", "code"]);
+    expect(new Set(choices.map((choice) => choice.title)).size).toBe(3);
   });
 
-  it("toggles Source to the last other mode, Genealogy where there is none, and any other mode to Source", () => {
+  it("toggles Source to the last other mode, Graph where there is none, and any other mode to Source", () => {
     expect(toggleTarget("source", "timeline")).toBe("timeline");
-    expect(toggleTarget("source", undefined)).toBe("genealogy");
-    for (const current of ["genealogy", "graph", "timeline"] as const) {
+    expect(toggleTarget("source", "graph")).toBe("graph");
+    expect(toggleTarget("source", undefined)).toBe("graph");
+    for (const current of ["graph", "timeline"] as const) {
       expect(toggleTarget(current, "graph")).toBe("source");
       expect(toggleTarget(current, undefined)).toBe("source");
     }
   });
 
-  it("names the two overview tabs of an earlier version, which no view is registered under", () => {
-    expect(RETIRED_VIEW_TYPES).toEqual(["domorium-file-timeline", "domorium-file-graph"]);
-    for (const registered of ["domorium-gedcom", "domorium-index", "domorium-evidence"]) {
+  it("names the tabs and the panel of earlier versions, which no view is registered under", () => {
+    expect(RETIRED_VIEW_TYPES).toEqual(["domorium-file-timeline", "domorium-file-graph", "domorium-evidence"]);
+    for (const registered of ["domorium-gedcom", "domorium-index", "domorium-record"]) {
       expect(RETIRED_VIEW_TYPES).not.toContain(registered);
     }
-  });
-});
-
-describe("whether Back returns to what the tab showed", () => {
-  it("steps where the record changes", () => {
-    expect(navigationStep({ mode: "genealogy", record: "@I1@" }, { mode: "genealogy", record: "@I2@" })).toBe(true);
-  });
-
-  it("steps from a graph or a timeline to a page of the record the tab already holds", () => {
-    expect(navigationStep({ mode: "graph", record: "@I1@" }, { mode: "genealogy", record: "@I1@" })).toBe(true);
-    expect(navigationStep({ mode: "timeline", record: "@I1@" }, { mode: "genealogy", record: "@I1@" })).toBe(true);
-  });
-
-  it("does not step for a switch of mode alone, nor on the same record in Genealogy", () => {
-    expect(navigationStep({ mode: "genealogy", record: "@I1@" }, { mode: "graph" })).toBe(false);
-    expect(navigationStep({ mode: "graph", record: "@I1@" }, { mode: "genealogy" })).toBe(false);
-    expect(navigationStep({ mode: "genealogy", record: "@I1@" }, { mode: "genealogy", record: "@I1@" })).toBe(false);
   });
 });
 

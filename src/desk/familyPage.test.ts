@@ -17,7 +17,7 @@ function pageHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    openEvidence: vi.fn<PageHost["openEvidence"]>(),
+    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
@@ -37,7 +37,8 @@ function draw(
   if (!family) {
     throw new Error(`no family ${xref}`);
   }
-  renderFamilyPage(container, family, index, { selected, phone: false }, host);
+  container.empty();
+  renderFamilyPage(container, family, index, { selected }, host);
 }
 
 const texts = (selector: string): string[] =>
@@ -59,6 +60,12 @@ describe("the family page", () => {
     ]);
   });
 
+  it("has a Facts section and a Family section", () => {
+    draw("@F3@");
+
+    expect(texts("h3")).toEqual(["Facts", "Family"]);
+  });
+
   it("shows the spouses by their roles and the children", () => {
     draw("@F3@");
 
@@ -68,7 +75,7 @@ describe("the family page", () => {
     ]);
   });
 
-  it("opens a member's page", () => {
+  it("selects a member", () => {
     draw("@F3@");
     [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]
       .find((node) => node.textContent?.startsWith("Ève Curie"))

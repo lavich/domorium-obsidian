@@ -18,7 +18,7 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
-      openAs: "genealogy",
+      openAs: "graph",
       genealogyInterface: false,
     });
   });
@@ -60,30 +60,30 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
-      openAs: "genealogy",
+      openAs: "graph",
       genealogyInterface: false,
     });
   });
 
-  it("opens files as genealogy for a settings file written before the choice existed", () => {
+  it("opens files as a graph for a settings file written before the choice existed", () => {
     expect(
       parseSettings({ diagnostics: true, openAs: "reading" }).openAs,
-    ).toBe("genealogy");
+    ).toBe("graph");
   });
 
-  it("opens files as a graph or a timeline when the reader chose one, and reads the older two as before", () => {
+  it("opens files as a graph, a timeline or the source when the reader chose one, and a saved genealogy as a graph", () => {
     expect(parseSettings({ openAs: "graph" }).openAs).toBe("graph");
     expect(parseSettings({ openAs: "timeline" }).openAs).toBe("timeline");
-    expect(parseSettings({ openAs: "genealogy" }).openAs).toBe("genealogy");
+    expect(parseSettings({ openAs: "genealogy" }).openAs).toBe("graph");
     expect(parseSettings({ openAs: "source" }).openAs).toBe("source");
     expect(changedSetting("openAs", "graph")).toEqual({ openAs: "graph" });
   });
 
-  it("offers the four modes in order, in English and Russian", () => {
-    expect(Object.keys(openAsOptions())).toEqual(["genealogy", "graph", "timeline", "source"]);
-    expect(Object.values(openAsOptions())).toEqual(["Genealogy", "Graph", "Timeline", "Source"]);
+  it("offers the three modes in order, in English and Russian", () => {
+    expect(Object.keys(openAsOptions())).toEqual(["graph", "timeline", "source"]);
+    expect(Object.values(openAsOptions())).toEqual(["Graph", "Timeline", "Source"]);
     setLanguage("ru");
-    expect(Object.values(openAsOptions())).toEqual(["Генеалогию", "Граф", "Хронологию", "Исходник"]);
+    expect(Object.values(openAsOptions())).toEqual(["Граф", "Хронологию", "Исходник"]);
   });
 
   it("leaves the genealogy interface off for a settings file written before it existed", () => {
@@ -115,7 +115,7 @@ describe("GEDCOM settings", () => {
     expect(settingDefinitions()).toEqual([
       {
         name: "Genealogy interface (beta)",
-        desc: "Still in beta: it may change and have rough edges. Show genealogy mode, the Domorium index and evidence panel, the timeline and graph of the file and a family tree, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
+        desc: "Still in beta: it may change and have rough edges. Show the Domorium index, the record card, the timeline and the graph of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
         control: {
           type: "toggle",
           key: "genealogyInterface",
@@ -124,12 +124,12 @@ describe("GEDCOM settings", () => {
       },
       {
         name: "Open GEDCOM files as",
-        desc: "How a GEDCOM file opens in a new tab: as genealogy, a graph, a timeline or the source. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
+        desc: "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
         control: {
           type: "dropdown",
           key: "openAs",
           options: openAsOptions(),
-          defaultValue: "genealogy",
+          defaultValue: "graph",
         },
       },
       {

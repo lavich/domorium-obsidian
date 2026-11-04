@@ -21,7 +21,7 @@ const WHOLE = { top: 0, left: 0, width: 2000, height: 20 * ROW };
 
 let container: HTMLElement;
 let host: {
-  openPerson: ReturnType<typeof vi.fn<(xref: string) => void>>;
+  select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   showInSource: ReturnType<typeof vi.fn<(range: Range) => void>>;
   scopeChanged: ReturnType<typeof vi.fn<(scope: TimelineScope) => void>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
@@ -33,7 +33,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
   host = {
-    openPerson: vi.fn(),
+    select: vi.fn(),
     showInSource: vi.fn(),
     scopeChanged: vi.fn(),
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
@@ -388,12 +388,13 @@ describe("the timeline without a toolbar", () => {
 });
 
 describe("activating", () => {
-  it("opens a person from their name or their lifeline", () => {
+  it("selects a person from their name or their lifeline, and moves nothing", () => {
     board();
     nameRow("@I12@")?.click();
     of(".gedcom-ft-life", "@I1@")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
-    expect(host.openPerson.mock.calls).toEqual([["@I12@"], ["@I1@"]]);
+    expect(host.select.mock.calls).toEqual([["@I12@"], ["@I1@"]]);
+    expect(container.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollTop).toBe(0);
   });
 
   it("shows a mark's event in the source", () => {
@@ -411,11 +412,11 @@ describe("activating", () => {
     const life = of(".gedcom-ft-life", "@I1@")[0];
     const touch = () => tap(life);
     touch();
-    expect(host.openPerson).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
     expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(true);
 
     touch();
-    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("on a touch after a mark's, lights the person rather than opening them", () => {
@@ -423,9 +424,9 @@ describe("activating", () => {
     tap(container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]'));
     tap(of(".gedcom-ft-life", "@I1@")[0]);
 
-    expect(host.openPerson).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
     tap(of(".gedcom-ft-life", "@I1@")[0]);
-    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("on a touch of empty space, puts the light out", () => {
@@ -442,7 +443,7 @@ describe("activating", () => {
     tap(of(".gedcom-ft-life", "@I2@")[0]);
     openButton("@I1@")?.click();
 
-    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("on a touch, shows a mark's event with the way to its lines", () => {
@@ -534,7 +535,7 @@ describe("the keyboard", () => {
     expect(open?.querySelector("button")).toBeNull();
     expect(nameRow("@I1@")?.hasAttribute("role")).toBe(false);
     open?.click();
-    expect(host.openPerson).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("lights the person whose row takes the focus", () => {
@@ -632,34 +633,62 @@ describe("the selected row", () => {
 
   it("marks one person's row, lifeline and band, and no other", () => {
     const drawn = board();
-    drawn.select("@I12@");
+    drawn.select("@I12@", true);
 
     expect(selectedNames()).toEqual(["@I12@"]);
     expect(selectedLives()).toEqual(["@I12@"]);
     expect(bands()).toHaveLength(1);
   });
 
+  it("marks a row and leaves the scroll of the plot where it was when asked not to reveal", () => {
+    const drawn = board();
+    const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
+    drawn.setScroll({ top: 0, left: 0 });
+    drawn.select("@I12@", false);
+
+    expect(selectedNames()).toEqual(["@I12@"]);
+    expect(plot?.scrollTop).toBe(0);
+  });
+
+  it("brings the row into view when asked to reveal", () => {
+    const drawn = board();
+    const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
+    drawn.setScroll({ top: 0, left: 0 });
+    drawn.select("@I12@", true);
+
+    expect(plot?.scrollTop).toBeGreaterThan(0);
+  });
+
+  it("changes no scope for a person outside it when asked not to reveal", () => {
+    const drawn = board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 0, down: 0 });
+    host.scopeChanged.mockClear();
+
+    drawn.select("@I2@", false);
+
+    expect(host.scopeChanged).not.toHaveBeenCalled();
+  });
+
   it("survives the light of a hover and a search, and is replaced by the next selection", () => {
     const drawn = board();
-    drawn.select("@I12@");
+    drawn.select("@I12@", true);
     drawn.highlight("@I1@");
     drawn.setQuery("curie");
     drawn.stepMatch(1);
     expect(selectedNames()).toEqual(["@I12@"]);
 
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
     expect(selectedNames()).toEqual(["@I2@"]);
     expect(selectedLives()).toEqual(["@I2@"]);
     expect(bands()).toHaveLength(1);
 
-    drawn.select(null);
+    drawn.select(null, true);
     expect(selectedNames()).toEqual([]);
     expect(bands()).toHaveLength(0);
   });
 
   it("is on a row that leaves the drawn rows and comes back", () => {
     const drawn = board();
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
     drawn.draw({ top: 18 * ROW, left: 0, width: 2000, height: ROW });
     expect(nameRow("@I2@")).toBeNull();
 
@@ -669,7 +698,7 @@ describe("the selected row", () => {
 
   it("is on the row after a new reading of the file and after a scope narrowed and widened", () => {
     const drawn = board();
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
     drawn.show(fileTimelineOf(curieIndex()), SCOPE);
     drawn.draw(WHOLE);
     expect(selectedNames()).toEqual(["@I2@"]);
@@ -686,7 +715,7 @@ describe("the selected row", () => {
     const drawn = board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 0, down: 0 });
     expect(nameRow("@I2@")).toBeNull();
 
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
 
     expect(host.scopeChanged.mock.lastCall?.[0].focus).toBe("@I2@");
     expect(selectedNames()).toEqual(["@I2@"]);

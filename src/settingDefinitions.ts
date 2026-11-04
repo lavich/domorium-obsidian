@@ -22,7 +22,6 @@ export function recordPreviewOptions(): Record<string, string> {
 
 export function openAsOptions(): Record<string, string> {
   return {
-    genealogy: t("openAsOption.genealogy"),
     graph: t("openAsOption.graph"),
     timeline: t("openAsOption.timeline"),
     source: t("openAsOption.source"),

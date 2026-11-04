@@ -14,8 +14,6 @@ import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
 import type { PortraitContent } from "./graphCanvas";
-import { treeOf } from "./personTree";
-import { renderTree, type TreeMemory } from "./personTreeView";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
@@ -30,31 +28,20 @@ export interface Fact {
   spouse?: PersonRow;
 }
 
-export type PersonView = "card" | "tree" | "timeline" | "places";
-
-export const PERSON_VIEWS: PersonView[] = ["card", "tree", "timeline", "places"];
-
 export interface PageHost {
   openRecord(xref: string): void;
   select(key: FactKey | null): void;
   showInSource(range: Range): void;
-  openEvidence(): void;
+  scrollToEvidence(): void;
   openFile(path: string): void;
-  chooseView?(view: PersonView): void;
-  toggleSiblings?(xref: string): void;
   setIcon?(element: HTMLElement, icon: string): void;
   portrait?(xref: string): PortraitContent | null;
 }
 
 export interface PersonPageOptions {
   selected: FactKey | null;
-  phone: boolean;
   /** The files the record links, resolved by the host; none where omitted. */
   media?: MediaItem[];
-  view?: PersonView;
-  /** Whose siblings the tree shows one by one. */
-  expanded?: ReadonlySet<string>;
-  tree?: TreeMemory;
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -80,69 +67,22 @@ export function renderPersonPage(
   options: PersonPageOptions,
   host: PageHost,
 ): void {
-  container.empty();
-  const { top, page } = frame(container, options.phone);
-  renderHeading(top, person, options, host);
-  const view = options.view ?? "card";
-  renderTabs(top, view, host);
-  if (view === "tree") {
-    page.addClass("is-wide", "is-tree");
-    const tree = person.xref ? treeOf(index, person.xref, options.expanded) : null;
-    if (tree) {
-      renderTree(page, tree, host, options.tree);
-    }
-    return;
-  }
-  if (view === "timeline") {
-    renderTimeline(page, timelineOf(person, index), host);
-    return;
-  }
-  if (view === "places") {
-    renderPlaces(page, placesOf(timelineOf(person, index)));
-    return;
-  }
-  renderFacts(page, person, index, options, host);
+  renderHeading(container, person, options, host);
+  renderFactList(container, factsOf(person), index, options, host);
   if (person.otherNames.length > 0) {
-    page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.otherNames") });
-    const names = page.createDiv({ cls: "gedcom-desk-names" });
+    container.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.otherNames") });
+    const names = container.createDiv({ cls: "gedcom-desk-names" });
     for (const name of person.otherNames) {
       names.createDiv({ cls: "gedcom-desk-name", text: personName({ name }) });
     }
   }
-  renderFamily(page, person, host);
-  renderGallery(page, options.media ?? [], host);
-}
-
-/**
- * On a desktop the heading and tabs sit above a body of their own that scrolls
- * beneath them. A phone scrolls the whole page and keeps only the tabs, since
- * the heading would take a quarter of the screen.
- */
-function frame(container: HTMLElement, phone: boolean): { top: HTMLElement; page: HTMLElement } {
-  if (phone) {
-    const page = container.createDiv({ cls: ["gedcom-desk-page", "is-phone"] });
-    return { top: page, page };
-  }
-  const split = container.createDiv({ cls: "gedcom-desk-frame" });
-  const top = split.createDiv({ cls: "gedcom-desk-top" }).createDiv({ cls: "gedcom-desk-page" });
-  const page = split.createDiv({ cls: "gedcom-desk-body" }).createDiv({ cls: "gedcom-desk-page" });
-  return { top, page };
-}
-
-function renderTabs(page: HTMLElement, current: PersonView, host: PageHost): void {
-  const tabs = page.createDiv({ cls: "gedcom-desk-tabs" });
-  tabs.setAttribute("role", "tablist");
-  for (const view of PERSON_VIEWS) {
-    const tab = tabs.createEl("button", {
-      cls: "gedcom-desk-tab",
-      text: t(`desk.tab.${view}`),
-    });
-    tab.setAttribute("type", "button");
-    tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", String(view === current));
-    tab.toggleClass("is-active", view === current);
-    tab.addEventListener("click", () => host.chooseView?.(view));
-  }
+  renderFamily(container, person, host);
+  renderGallery(container, options.media ?? [], host);
+  const timeline = timelineOf(person, index);
+  container.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.timeline") });
+  renderTimeline(container, timeline, host);
+  container.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.places") });
+  renderPlaces(container, placesOf(timeline));
 }
 
 function renderHeading(
@@ -168,16 +108,6 @@ function renderHeading(
   });
 }
 
-function renderFacts(
-  page: HTMLElement,
-  person: Person,
-  index: GenealogyIndex,
-  options: PersonPageOptions,
-  host: PageHost,
-): void {
-  renderFactList(page, factsOf(person), index, options, host);
-}
-
 export function renderFactList(
   page: HTMLElement,
   facts: Fact[],
@@ -196,6 +126,7 @@ export function renderFactList(
     row.setAttribute("type", "button");
     row.setAttribute("aria-pressed", String(selected));
     row.toggleClass("is-selected", selected);
+    row.setAttribute("data-focus-key", fact.key);
     row.addEventListener("click", () => {
       host.select(selected ? null : fact.key);
     });
@@ -206,7 +137,7 @@ export function renderFactList(
       cls: ["gedcom-desk-chip", count > 0 ? "has-source" : "no-source"],
       text: count > 0 ? plural("desk.sources", count) : t("desk.noSource"),
     });
-    if (selected && options.phone) {
+    if (selected) {
       renderUnfold(list, fact, index, host);
     }
   }
@@ -242,7 +173,7 @@ function renderUnfold(
     unfold.createDiv({ cls: "gedcom-desk-unfold-source", text: title });
   }
   const actions = unfold.createDiv({ cls: "gedcom-desk-actions" });
-  linkButton(actions, t("desk.allEvidence"), () => host.openEvidence());
+  linkButton(actions, t("desk.allEvidence"), () => host.scrollToEvidence());
   linkButton(actions, t("desk.showInSource"), () => host.showInSource(fact.event.range));
 }
 
@@ -328,6 +259,7 @@ export function relative(
   }
   const xref = row.xref;
   if (xref) {
+    button.setAttribute("data-focus-key", xref);
     button.addEventListener("click", () => host.openRecord(xref));
   }
 }

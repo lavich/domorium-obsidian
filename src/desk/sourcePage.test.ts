@@ -6,7 +6,7 @@ import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import type { PageHost } from "./personPage";
-import { renderEmptyPage, renderSourcePage } from "./sourcePage";
+import { renderSourcePage } from "./sourcePage";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -16,7 +16,7 @@ function pageHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    openEvidence: vi.fn<PageHost["openEvidence"]>(),
+    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
@@ -79,7 +79,7 @@ describe("the source page", () => {
     expect(texts(".gedcom-desk-citer-where")).toEqual(["Birth — entry 88"]);
   });
 
-  it("opens a citing family's page", () => {
+  it("selects a citing family", () => {
     draw("@S1@", buildIndex(new GedcomLanguageService([
       "0 HEAD", "1 GEDC", "2 VERS 7.0",
       "0 @I1@ INDI", "1 NAME Anna /Nowak/",
@@ -95,11 +95,17 @@ describe("the source page", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@F1@");
   });
 
-  it("opens a citing person's page", () => {
+  it("selects a citing person", () => {
     draw("@S3@");
     container.querySelector<HTMLElement>(".gedcom-desk-person")?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("lists Marie and Pierre as the records citing the first source", () => {
+    draw("@S1@");
+
+    expect(texts(".gedcom-desk-person-name")).toEqual(["Marie Skłodowska-Curie", "Pierre Curie"]);
   });
 
   it("says when nothing cites it", () => {
@@ -108,16 +114,5 @@ describe("the source page", () => {
     ].join("\n"))));
 
     expect(texts(".gedcom-desk-cited-by .gedcom-desk-none")).toEqual(["No record cites it."]);
-  });
-});
-
-describe("a file with nothing to show", () => {
-  it("says it holds no people and offers the source", () => {
-    const openSource = vi.fn();
-    renderEmptyPage(container, openSource);
-    container.querySelector<HTMLElement>(".gedcom-desk-link")?.click();
-
-    expect(container.textContent).toContain("The file holds no people");
-    expect(openSource).toHaveBeenCalled();
   });
 });

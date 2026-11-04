@@ -2,37 +2,58 @@ import type { GenealogyIndex } from "../genealogy";
 import {
   effectiveMode,
   isViewMode,
-  navigationStep,
   pageKind,
   toggleTarget,
   type DeskMode,
   type DeskState,
+  type Origin,
 } from "./deskState";
+
+export type { Origin } from "./deskState";
 
 export interface ModeChange {
   changed: boolean;
-  /** Only Genealogy to Source: the cursor goes to the lines the page showed. */
+  /** To Source with a record selected: the cursor goes to the lines the card shows. */
   moveCursor: boolean;
-  recordChanged: boolean;
-  selectionCleared: boolean;
+  /** Leaving Source took the record under the cursor. */
+  selectionChanged: boolean;
 }
 
 export interface Leaving {
-  /** The record under the cursor, which is the record the tab holds once Source is left. */
+  /** The record under the cursor, which is the record the tab selects once Source is left. */
   cursorRecord: string | undefined;
   index(): GenealogyIndex;
 }
 
-const UNCHANGED: ModeChange = { changed: false, moveCursor: false, recordChanged: false, selectionCleared: false };
+export interface OriginRules {
+  cursorToRecord: boolean;
+  editorFocus: boolean;
+  revealsView: boolean;
+  addsStep: "visit" | "follow" | "none";
+  placesCard: boolean;
+  opensDrawer: boolean;
+}
 
-/** Which mode a tab is in, which record it holds, who is selected, and whether a view may be drawn. */
+export function originRules(origin: Origin, mobile: boolean): OriginRules {
+  return {
+    cursorToRecord: origin === "index" || origin === "card" || origin === "link",
+    editorFocus: origin === "index" || origin === "link",
+    revealsView: origin !== "view" && origin !== "cursor",
+    addsStep: origin === "cursor" ? "follow" : origin === "history" ? "none" : "visit",
+    placesCard: origin !== "cursor",
+    opensDrawer: mobile && (origin === "index" || origin === "view"),
+  };
+}
+
+const UNCHANGED: ModeChange = { changed: false, moveCursor: false, selectionChanged: false };
+
+/** Which mode a tab is in, which record is selected, and whether a view may be drawn. */
 export class TabModes {
   /** What the tab stored, which shows only while the interface is on. */
   mode: DeskMode;
   /** The last mode other than Source, which the toggle returns to. */
   lastMode: DeskMode | undefined;
-  record: string | null = null;
-  selectedPerson: string | null = null;
+  selected: string | null = null;
   loaded = false;
 
   constructor(
@@ -55,54 +76,45 @@ export class TabModes {
       return UNCHANGED;
     }
     const before = this.mode;
-    let recordChanged = false;
+    let selectionChanged = false;
     if (before === "source") {
       const atCursor = leaving.cursorRecord;
       if (atCursor && pageKind(leaving.index(), atCursor)) {
-        recordChanged = atCursor !== this.record;
-        this.record = atCursor;
+        selectionChanged = atCursor !== this.selected;
+        this.selected = atCursor;
       }
     } else {
       this.lastMode = before;
     }
-    const selectionCleared = this.endSelection();
     this.mode = next;
-    return { changed: true, moveCursor: before === "genealogy" && next === "source", recordChanged, selectionCleared };
+    return { changed: true, moveCursor: next === "source" && this.selected !== null, selectionChanged };
   }
 
-  /** What opening a record's page sets. */
-  openRecord(xref: string): { mode: "genealogy"; record: string } {
-    return { mode: "genealogy", record: xref };
-  }
-
-  /** The state a tab was handed: the step it is, and what it ended. */
-  applyState(desk: DeskState): { step: boolean; recordChanged: boolean; selectionCleared: boolean } {
-    const step = navigationStep({ mode: this.mode, record: this.record }, desk);
-    const recordChanged = desk.record !== undefined && desk.record !== this.record;
-    if (recordChanged) {
-      this.record = desk.record ?? null;
-    }
-    let selectionCleared = false;
+  /** The state a tab was handed: its mode, and the record it selects. */
+  applyState(desk: DeskState): { selectionChanged: boolean } {
     if (desk.mode !== undefined && desk.mode !== this.mode) {
       if (this.mode !== "source") {
         this.lastMode = this.mode;
       }
       this.mode = desk.mode;
-      selectionCleared = this.endSelection();
     }
-    return { step, recordChanged, selectionCleared };
+    if (this.interfaceOn && desk.selected !== undefined && desk.selected !== this.selected) {
+      this.selected = desk.selected;
+      return { selectionChanged: true };
+    }
+    return { selectionChanged: false };
   }
 
-  select(xref: string, isPerson: boolean): boolean {
-    if (!isPerson || !this.inView()) {
+  select(xref: string, index: GenealogyIndex): boolean {
+    if (!this.interfaceOn || !pageKind(index, xref)) {
       return false;
     }
-    this.selectedPerson = xref;
+    this.selected = xref;
     return true;
   }
 
   textChanged(index: GenealogyIndex): { selectionCleared: boolean } {
-    if (this.selectedPerson !== null && !index.person(this.selectedPerson)) {
+    if (this.selected !== null && !pageKind(index, this.selected)) {
       return { selectionCleared: this.endSelection() };
     }
     return { selectionCleared: false };
@@ -116,8 +128,7 @@ export class TabModes {
   fileChanged(mode: DeskMode): void {
     this.mode = mode;
     this.lastMode = undefined;
-    this.record = null;
-    this.selectedPerson = null;
+    this.selected = null;
     this.loaded = false;
   }
 
@@ -130,24 +141,17 @@ export class TabModes {
   }
 
   recordAtCursorFor(mode: DeskMode, cursorRecord: string | undefined): string | undefined {
-    if (mode === "genealogy") {
-      return this.record ?? undefined;
-    }
-    return isViewMode(mode) ? (this.selectedPerson ?? undefined) : cursorRecord;
+    return isViewMode(mode) ? (this.selected ?? undefined) : cursorRecord;
   }
 
-  /** The record the Index marks and Evidence shows: the page's, or the person selected in a view. */
+  /** The record the card shows and the Index marks. */
   shownRecord(): string | null {
-    const mode = this.shown;
-    if (mode === "genealogy") {
-      return this.record;
-    }
-    return isViewMode(mode) ? this.selectedPerson : null;
+    return this.interfaceOn ? this.selected : null;
   }
 
   private endSelection(): boolean {
-    const had = this.selectedPerson !== null;
-    this.selectedPerson = null;
+    const had = this.selected !== null;
+    this.selected = null;
     return had;
   }
 }

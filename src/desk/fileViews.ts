@@ -16,7 +16,7 @@ export interface ViewMemory {
 
 export interface FileViewsHost {
   /** A person or a family. */
-  openRecord(xref: string): void;
+  select(xref: string): void;
   showInSource(range: Range): void;
   portrait(xref: string): PortraitContent | null;
   /** The memory changed, so the layout wants saving. */
@@ -35,7 +35,7 @@ export class FileViews {
   private graph: FileGraphBoard | null = null;
   private timeline: FileTimelineBoard | null = null;
   private kept: ViewMemory = {};
-  private pending: Partial<Record<ViewKind, string>> = {};
+  private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean }>> = {};
   private parked: Record<ViewKind, boolean> = { graph: false, timeline: false };
   private shownKind: ViewKind | null = null;
 
@@ -63,26 +63,27 @@ export class FileViews {
     const wanted = this.pending[kind];
     if (wanted !== undefined && (restore || this.displayed())) {
       delete this.pending[kind];
-      this.boardOf(kind)?.select(wanted);
+      this.boardOf(kind)?.select(wanted.xref, wanted.reveal);
     }
     if (JSON.stringify(this.kept[kind]) !== before) {
       this.host.changed();
     }
   }
 
-  /** Never fails and never needs a board: kept until one is drawn and shown. */
-  select(kind: ViewKind, xref: string | null): void {
+  /** Never fails and never needs a board: kept until one is drawn and shown, and moving only where a gesture that asked for it set it. */
+  select(kind: ViewKind, xref: string | null, reveal: boolean): void {
     if (xref === null) {
       delete this.pending[kind];
-      this.boardOf(kind)?.select(null);
+      this.boardOf(kind)?.select(null, false);
       return;
     }
     if (this.shownKind === kind && this.displayed()) {
       delete this.pending[kind];
-      this.boardOf(kind)?.select(xref);
+      this.boardOf(kind)?.select(xref, reveal);
       return;
     }
-    this.pending[kind] = xref;
+    const held = this.pending[kind];
+    this.pending[kind] = { xref, reveal: reveal || (held?.xref === xref && held.reveal) };
   }
 
   /** Opens the search of a drawn board and focuses it, or only focuses it where it is open. */
@@ -198,7 +199,7 @@ export class FileViews {
 
   private makeGraph(): FileGraphBoard {
     return new FileGraphBoard(this.rootOf("graph"), {
-      openRecord: (xref) => this.host.openRecord(xref),
+      select: (xref) => this.host.select(xref),
       portrait: (xref) => this.host.portrait(xref),
       stateChanged: ({ scope, view }) => {
         const held = view ?? this.kept.graph?.view;
@@ -211,7 +212,7 @@ export class FileViews {
 
   private makeTimeline(): FileTimelineBoard {
     return new FileTimelineBoard(this.rootOf("timeline"), {
-      openPerson: (xref) => this.host.openRecord(xref),
+      select: (xref) => this.host.select(xref),
       showInSource: (range) => this.host.showInSource(range),
       scopeChanged: (scope) => {
         const scroll = this.kept.timeline?.scroll;
