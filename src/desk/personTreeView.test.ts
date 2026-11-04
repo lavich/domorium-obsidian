@@ -162,18 +162,6 @@ describe("the tree of a person on the graph's canvas", () => {
     expect(canvas.view()?.k).toBeGreaterThanOrEqual(0.5);
   });
 
-  it("lets a two-finger scroll past the tree's edge scroll the page", () => {
-    const canvas = draw("@I1@", { width: 1200, height: 600 });
-    const wheel = (deltaY: number) => {
-      const event = Object.assign(new WheelEvent("wheel", { bubbles: true, cancelable: true, deltaY }), { clientX: 100, clientY: 100 });
-      container.querySelector(".gedcom-fg-canvas")?.dispatchEvent(event);
-      return event;
-    };
-
-    expect(wheel(-10).defaultPrevented).toBe(false);
-    expect(canvas.view()).toBeDefined();
-  });
-
   it("moves the focus to a person, unfolds a run of siblings, and does nothing for the focus itself", () => {
     draw();
     click(card("Pierre Curie"));
@@ -214,12 +202,21 @@ describe("the tree of a person on the graph's canvas", () => {
     expect(y + boxOf("Marie Skłodowska-Curie").height).toBeLessThanOrEqual(view?.bottom ?? -Infinity);
   });
 
-  it("says what the colours, the dot and the triangles mean", () => {
-    draw();
-    const legend = container.querySelector(".gedcom-desk-legend")?.textContent ?? "";
+  it("opens fitted to its canvas, with every card in view, and has no legend", () => {
+    const canvas = draw("@I1@", { width: 1200, height: 700 });
+    const view = canvas.windowOf();
+    const outside = [...container.querySelectorAll<SVGElement>(".gedcom-fg-person")].filter((one) => {
+      const box = boxOf(one.querySelector("title")?.textContent ?? "");
+      return (
+        box.x < (view?.left ?? Infinity) ||
+        box.x + CARD.width > (view?.right ?? -Infinity) ||
+        box.y < (view?.top ?? Infinity) ||
+        box.y + box.height > (view?.bottom ?? -Infinity)
+      );
+    });
 
-    for (const text of ["Woman", "Man", "Family, with the year of the marriage", "No sources at all", "▲ ▼"]) {
-      expect(legend).toContain(text);
-    }
+    expect(outside).toEqual([]);
+    expect(container.querySelector(".gedcom-desk-legend")).toBeNull();
+    expect(container.querySelector(".gedcom-fg-canvas > .gedcom-fg-controls")).not.toBeNull();
   });
 });

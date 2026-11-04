@@ -1,6 +1,5 @@
-import { t } from "../i18n";
 import { layoutGraph } from "./fileGraph";
-import { GraphCanvas, relatedIn, type CanvasScene, type PortraitContent } from "./graphCanvas";
+import { GraphCanvas, relatedIn, ZOOM, type CanvasScene, type PortraitContent } from "./graphCanvas";
 import type { PersonTree } from "./personTree";
 
 export interface TreeHost {
@@ -19,7 +18,10 @@ export interface TreeMemory {
   keyboard?: boolean;
 }
 
-/** A person's tree on the graph's canvas, opening with the focus in view. */
+/** Below the scale at which cards lose their text, the tree opens around the focus instead of fitted. */
+const TREE_FITS = ZOOM.far;
+
+/** A person's tree on the graph's canvas, filling the tab and opening fitted to it. */
 export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost, memory: TreeMemory = {}): GraphCanvas {
   const wrap = parent.createDiv({ cls: "gedcom-desk-graph" });
   const layout = layoutGraph(tree.input);
@@ -42,21 +44,7 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
     viewChanged: (view) => {
       memory.k = view.k;
     },
-  }, { passEdges: true, ...(host.setIcon ? { setIcon: (element: HTMLElement, icon: string) => host.setIcon?.(element, icon) } : {}) });
-
-  const legend = wrap.createDiv({ cls: "gedcom-desk-legend" });
-  const entry = (cls: string, text: string) => {
-    const item = legend.createSpan({ cls: "gedcom-fg-legend-item" });
-    item.createSpan({ cls: `gedcom-fg-swatch ${cls}` });
-    item.appendText(text);
-  };
-  entry("is-f", t("overview.legend.woman"));
-  entry("is-m", t("overview.legend.man"));
-  entry("is-u", t("overview.legend.unknown"));
-  entry("is-family", t("fileGraph.legend.family"));
-  entry("is-undated", t("fileGraph.legend.undated"));
-  legend.createSpan({ cls: "gedcom-desk-legend-gap", text: t("tree.legendGap") });
-  legend.createSpan({ text: t("tree.legendMore") });
+  }, host.setIcon ? { setIcon: (element: HTMLElement, icon: string) => host.setIcon?.(element, icon) } : {});
 
   const related = relatedIn(layout, tree.families.values());
   const scene: CanvasScene = {
@@ -107,7 +95,10 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
   const children = [...tree.families.values()]
     .filter((family) => family.spouses.includes(tree.focus))
     .flatMap((family) => family.children);
-  canvas.show(scene, memory.k === undefined ? { open: tree.focus, near: children } : { centre: tree.focus, k: memory.k });
+  canvas.show(
+    scene,
+    memory.k === undefined ? { open: tree.focus, near: children, fits: TREE_FITS } : { centre: tree.focus, k: memory.k },
+  );
   if (memory.keyboard) {
     memory.keyboard = false;
     canvas.focusCard(tree.focus);

@@ -86,7 +86,7 @@ export function renderPersonPage(
   const view = options.view ?? "card";
   renderTabs(top, view, host);
   if (view === "tree") {
-    page.addClass("is-wide");
+    page.addClass("is-wide", "is-tree");
     const tree = person.xref ? treeOf(index, person.xref, options.expanded) : null;
     if (tree) {
       renderTree(page, tree, host, options.tree);

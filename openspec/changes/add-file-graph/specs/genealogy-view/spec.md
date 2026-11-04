@@ -71,8 +71,11 @@ through a family node between them showing the year of the marriage, hollow
 where no marriage is dated; activating the node SHALL show that family's page.
 Curved lines SHALL lead from each family node, or a single parent's card, to
 each child, turning only between rows. No two boxes SHALL overlap, however wide
-a family is; a tree larger than its view SHALL be moved and zoomed as the graph
-of the file is, and SHALL open with the person in focus in view.
+a family is. The tree SHALL fill the space under the page's heading and tabs,
+with nothing on the page to scroll to and no legend, and SHALL open fitted to
+that space; only where the whole tree would then be too small to read SHALL it
+open at a readable size with the person in focus in view. It SHALL be moved and
+zoomed as the graph of the file is, with the same buttons floating over it.
 
 Pointing at a person, or giving them the keyboard focus, SHALL light them and
 their parents, spouses and children in the tree, and the lines between them.
@@ -102,6 +105,16 @@ Activating a person SHALL make them the focus.
   colours; Pierre Curie stands to her left with a node showing `’95` between
   them; Jacques and Pierre's parents stand on his side, and her siblings' box
   and her parents on hers
+
+#### Scenario: Opening the Tree tab
+- **WHEN** the reader chooses the Tree tab on Marie's page at a desktop's width
+- **THEN** the page does not scroll, the tree fills the space under the tabs
+  with all of Marie's tree in view, and no legend is shown
+
+#### Scenario: Opening the Tree tab on a phone
+- **WHEN** the reader chooses the Tree tab on Marie's page on a phone
+- **THEN** the page does not scroll, and the tree fills the space under the
+  tabs with Marie's card in view and readable
 
 #### Scenario: Portraits and names in the tree
 - **WHEN** Marie's tree is shown

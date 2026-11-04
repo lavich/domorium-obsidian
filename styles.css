@@ -2106,14 +2106,36 @@ input.gedcom-fg-search {
 }
 
 .gedcom-desk-graph .gedcom-fg-canvas {
-  flex: none;
-  height: min(560px, 60vh);
+  flex: 1 1 auto;
+  min-height: 0;
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-m);
 }
 
-.is-phone .gedcom-desk-graph .gedcom-fg-canvas {
-  height: 60vh;
+.gedcom-desk:has(.gedcom-desk-page.is-tree) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.gedcom-desk-body:has(> .gedcom-desk-page.is-tree) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: var(--size-4-4);
+}
+
+.gedcom-desk-page.is-tree {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.gedcom-desk-page.is-tree > .gedcom-desk-graph {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .gedcom-fg-person.is-aside {

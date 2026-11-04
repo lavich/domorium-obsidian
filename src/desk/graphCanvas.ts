@@ -85,13 +85,14 @@ export interface GraphCanvasHost {
 /** How the view is first set once the canvas has a size: as saved, as a new view opens, or on a card. */
 export type Opening =
   | { saved: GraphView }
-  /** `near`: cards of which one, at least, the opening should bring into view with the card it opens on. */
-  | { open: string | undefined; near?: string[] }
+  /**
+   * `near`: cards of which one, at least, the opening should bring into view
+   * with the card it opens on. `fits`: the least scale at which it opens fitted.
+   */
+  | { open: string | undefined; near?: string[]; fits?: number }
   | { centre: string | undefined; k?: number };
 
 export interface GraphCanvasOptions {
-  /** A two-finger scroll that would take the drawing past its top or bottom scrolls the page instead. */
-  passEdges?: boolean;
   /** Obsidian's; where none is handed in, the buttons carry a sign. */
   setIcon?(element: HTMLElement, icon: string): void;
 }
@@ -582,7 +583,7 @@ export class GraphCanvas {
       }
       return;
     }
-    if (this.fitScale(layout) >= ZOOM.opens) {
+    if (this.fitScale(layout) >= (pending.fits ?? ZOOM.opens)) {
       this.fit();
       return;
     }
@@ -1053,9 +1054,9 @@ export class GraphCanvas {
     this.el.addEventListener(
       "wheel",
       (event) => {
+        event.preventDefault();
         const [x, y] = this.local(event);
         if (event.ctrlKey) {
-          event.preventDefault();
           this.zoomAt(Math.exp(-event.deltaY / 100), x, y);
           return;
         }
@@ -1065,15 +1066,9 @@ export class GraphCanvas {
           : (this.wheel?.pans ?? false);
         this.wheel = { at: event.timeStamp, pans };
         if (pans) {
-          const dy = this.options.passEdges ? this.within(-event.deltaY) : -event.deltaY;
-          if (dy === 0 && event.deltaX === 0) {
-            return;
-          }
-          event.preventDefault();
-          this.panBy(-event.deltaX, dy);
+          this.panBy(-event.deltaX, -event.deltaY);
           return;
         }
-        event.preventDefault();
         this.zoomAt(event.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP, x, y);
       },
       { passive: false },
@@ -1128,21 +1123,6 @@ export class GraphCanvas {
         this.closePop();
       }
     });
-  }
-
-  /** How far the drawing can move down (`dy` above zero) or up before its edge comes in further than the margin. */
-  private within(dy: number): number {
-    const at = this.transform;
-    const layout = this.layout;
-    if (!at || !layout) {
-      return 0;
-    }
-    const top = at.y;
-    const bottom = at.y + layout.height * at.k;
-    if (dy > 0) {
-      return Math.max(0, Math.min(dy, MARGIN - top));
-    }
-    return Math.min(0, Math.max(dy, this.size.height - MARGIN - bottom));
   }
 
   private pinchMoved(): void {

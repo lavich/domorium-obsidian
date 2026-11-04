@@ -752,6 +752,7 @@ export class GedcomView extends TextFileView {
       },
       chooseView: (view) => {
         this.personView = view;
+        delete this.treeMemory.k;
         this.drawDesk();
         this.app.workspace.requestSaveLayout();
       },

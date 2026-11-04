@@ -431,9 +431,8 @@ accent; every other Branch carries `aria-pressed="false"`.
 - Activating a person keeps the zoom the tree had, and the keyboard focus moves
   to the new focus's card where the activation came from the keyboard.
 - A touch on a pressed Branch lights its card first, as any other Branch does.
-- The tree's canvas is at most 60 % of the window's height, so the page can
-  scroll on to the legend, and a two-finger scroll that would take the tree past
-  its edge scrolls the page instead.
+- The tree's canvas fills the Tree tab (see below), which replaced a canvas of
+  at most 60 % of the window with the page scrolling on to a legend.
 
 ### Hover with a rest, eased light, and floating zoom buttons
 
@@ -459,6 +458,18 @@ From the user (2026-11-04): «надо добавить небольшую за�
   the canvas for the keyboard, before the cards, which can number in the
   hundreds. A press on them starts no drag. The timeline has a zoom slider and
   no −/+/Fit, so it keeps it.
+
+### The Tree tab fills the page
+
+The page on the Tree tab does not scroll: on a desktop the body under the
+heading and tabs, on a phone the page itself, becomes a column the canvas fills.
+Choosing the tab opens the tree fitted (mine: wherever Fit's scale is 0.5 or
+more, the scale below which cards are drawn without text; 0.35 was tried and
+fitted Marie's tree on a phone as blank boxes); below that, by the graph's
+opening rule around the focus. Moving the
+focus inside the tab keeps the zoom, as before; choosing the tab again opens it
+fitted. The legend is gone from the tab, and with no page to scroll past the
+tree, a scroll at its edge no longer passes to the page.
 
 ## Risks / Trade-offs
 
@@ -641,3 +652,11 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   `curieWithEvents()` 1 624 → 1 215 pixels, tangled(300) 49 833 → 37 372. The
   portrait takes no pointer events, so a press on it drags or opens as a press
   on the card does.
+- **Hover and easing.** No element is animated in as the view moves: a card
+  drawn into view gets its light in the same task as it is inserted, before
+  any style is computed, so nothing extra was needed. The timeline's light
+  went out only on leaving the board, so its rest applies to leaving it.
+- **The Tree tab** is fitted only where Fit's scale is at least 0.5, where
+  cards still carry their text; on a phone Marie's tree opens at 0.6 around
+  her. The floating buttons fall back to −, + and ⤢ where no icon setter is
+  handed in, as in the harness.

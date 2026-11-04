@@ -90,6 +90,11 @@ images from the web* allows. Then: «Почему карточки такие ш
 их просто убрать сейчас»: cards are narrowed, with their portrait and text
 centred, and the coloured stripe goes; sex is shown by the card's tint.
 
+The Tree tab (2026-11-04): «когда переключение на вкладку с деревом, то там не
+должно быть скролла — все должно вписаться. и убери оттуда легенду». The tree
+fills the space under the page's heading and tabs, opens fitted to it, and has
+no legend.
+
 Proposed scope:
 
 - A new view, **Graph of the file**, opened in a tab of its own from a header

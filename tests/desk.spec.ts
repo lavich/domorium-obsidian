@@ -284,6 +284,39 @@ test.describe("the tree", () => {
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie and Marie Skłodowska-Curie");
   });
 
+  for (const [width, height, phone] of [[1280, 800, false], [390, 760, true]] as const) {
+    test(`fills the Tree tab at ${width} pixels with nothing to scroll, fitted, and no legend`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await mountDesk(page, { phone });
+      await page.locator(".gedcom-desk-tab", { hasText: "Tree" }).click();
+      await page.waitForTimeout(100);
+
+      const scrolls = await page.evaluate(() =>
+        [document.documentElement, ...document.querySelectorAll(".gedcom-desk, .gedcom-desk-body")]
+          .filter((one) => one.scrollHeight > one.clientHeight + 1)
+          .map((one) => one.className),
+      );
+      expect(scrolls).toEqual([]);
+      await expect(page.locator(".gedcom-desk-legend")).toHaveCount(0);
+      const canvas = await page.locator(".gedcom-desk-graph .gedcom-fg-canvas").boundingBox();
+      expect((canvas?.y ?? 0) + (canvas?.height ?? 0)).toBeLessThanOrEqual(height);
+      expect(canvas?.height ?? 0).toBeGreaterThan(height / 3);
+      if (phone) {
+        await expect(page.locator(".gedcom-fg-person.is-focus .gedcom-fg-card-name").first()).toBeInViewport();
+      } else {
+        const cards = await page.locator(".gedcom-fg-card-bg").evaluateAll((all) =>
+          all.map((one) => one.getBoundingClientRect()).map((box) => ({ left: box.left, right: box.right, top: box.top, bottom: box.bottom })),
+        );
+        for (const box of cards) {
+          expect(box.left).toBeGreaterThanOrEqual(canvas?.x ?? Infinity);
+          expect(box.right).toBeLessThanOrEqual((canvas?.x ?? 0) + (canvas?.width ?? 0));
+          expect(box.top).toBeGreaterThanOrEqual(canvas?.y ?? Infinity);
+          expect(box.bottom).toBeLessThanOrEqual((canvas?.y ?? 0) + (canvas?.height ?? 0));
+        }
+      }
+    });
+  }
+
   test("opens on a phone with the focus in view, moved by dragging rather than by scrolling the page", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 760 });
     await mountDesk(page, { phone: true });

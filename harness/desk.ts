@@ -108,6 +108,7 @@ const host = {
   },
   chooseView: (chosen: PersonView): void => {
     view = chosen;
+    delete treeMemory.k;
     draw();
   },
   portrait: (xref: string): PortraitContent | null => {
