@@ -104,8 +104,11 @@ kept. It is the mockup's `layout()` and `scene()`, with these decisions:
 - **Blocks.** People joined by marriage within one row form a block, walked
   from an end of the chain, so someone married twice stands between two
   spouses; the block is reversed when that makes more neighbouring pairs read
-  husband on the left. Cards are 168 by 46 pixels, 36 apart within a block, 72
-  between blocks, rows 130 apart, as in the mockup.
+  husband on the left. Cards are 120 pixels wide — the narrowest that keeps
+  `Skłodowska-Curie` (108 pixels in 12-pixel semibold) on one line within 6
+  pixels of padding a side — 36 apart within a block, which holds the family
+  node and its year, 48 between blocks and 12 between siblings standing alone
+  (the mockup's 168, 36 and 72 left most of a card empty).
 - **Anchors.** A line leaves a block at the gap between two neighbouring
   spouses and meets a block at the child's own card centre. This is what puts
   a husband's parents to the left and a wife's to the right.
@@ -319,9 +322,10 @@ bundle, not on 1.8.7, the minimum; task 6.1 confirms them on 1.8.7.
 
 ### Colours (mine)
 
-- Card side bar: `--color-pink`, `--color-blue`, `--text-faint`, as the
-  timeline's lifelines. Card tint: `rgba(var(--color-pink-rgb), 0.14)`,
-  `rgba(var(--color-blue-rgb), 0.12)`, `rgba(var(--mono-rgb-100), 0.08)`. Card
+- Sex is the card's tint alone — there is no side bar (the user's decision,
+  2026-11-04): `rgba(var(--color-pink-rgb), 0.2)`,
+  `rgba(var(--color-blue-rgb), 0.18)`, `rgba(var(--mono-rgb-100), 0.1)`; the
+  legend's swatches are those of the timeline's lifelines. Card
   border `--background-modifier-border`, the person of a branch and a focused
   card `--interactive-accent`. Lines `--text-faint`; spouse lines and nodes
   `--interactive-accent`; the node's digits `--text-on-accent`; lit lines and

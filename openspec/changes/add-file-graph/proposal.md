@@ -85,7 +85,10 @@ Cards, for the graph and the person page's tree (2026-11-04): «в карточ�
 person's portrait where they have one, their given names, their surname and
 their years; with no portrait it begins with the name. The portrait is the one,
 and the crop, the person's page shows, a picture from the web only where *Load
-images from the web* allows.
+images from the web* allows. Then: «Почему карточки такие широкие и в них
+столько свободного места?» and «остались вертикальные цветные полоски — надо
+их просто убрать сейчас»: cards are narrowed, with their portrait and text
+centred, and the coloured stripe goes; sex is shown by the card's tint.
 
 Proposed scope:
 

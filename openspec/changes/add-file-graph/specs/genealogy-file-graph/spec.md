@@ -65,8 +65,9 @@ person's page shows; a picture from the web SHALL be shown only where the
 setting *Load images from the web*, or the reader's answer for this session,
 allows it, as on the page. A card without a portrait, or whose portrait cannot
 be shown, SHALL show none, and a name the record writes with no surname SHALL
-stand on one line. A card SHALL be marked pink for a woman, blue for a man, and
-grey where the record states no sex, in colours taken from the theme. A line
+stand on one line. A card's background SHALL be tinted pink for a woman, blue
+for a man, and grey where the record states no sex, in colours taken from the
+theme. A line
 too long for its card SHALL be cut short, and the name given in full when the
 pointer rests on the card. Far out, neither portraits nor text SHALL be drawn,
 and only cards in or near the view SHALL load their portraits. The graph SHALL
