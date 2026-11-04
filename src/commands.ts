@@ -25,8 +25,6 @@ export interface CommandView {
   showSearch(replace: boolean): void;
   /** Editor commands answer only here; no other mode has an editor to act on. */
   inSource(): boolean;
-  /** Find answers in Source, and in Graph and Timeline, which have a search of their own. */
-  canFind(): boolean;
   mode(): DeskMode;
   showMode(mode: DeskMode): void;
   toggleMode(): void;
@@ -67,7 +65,6 @@ export interface GedcomCommand {
 }
 
 const SHOW_NAMES: Record<DeskMode, MessageKey> = {
-  genealogy: "command.showGenealogy",
   graph: "command.showGraph",
   timeline: "command.showTimeline",
   source: "command.showSource",
@@ -220,7 +217,7 @@ export const COMMANDS: GedcomCommand[] = [
     name: "command.find",
     icon: "file-search",
     section: "find",
-    isAvailable: (view) => view.canFind(),
+    isAvailable: () => true,
     run: (_host, view) => {
       view.showSearch(false);
     },

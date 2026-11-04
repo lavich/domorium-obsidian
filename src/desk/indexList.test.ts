@@ -55,6 +55,29 @@ describe("the index of a file", () => {
     expect(texts(".gedcom-desk-row.is-current .gedcom-desk-row-name")).toEqual(["Pierre Curie"]);
   });
 
+  it("moves the current mark to another row without drawing the rows again, keeping the search", () => {
+    list.show(curie("@I1@"));
+    type("curie");
+    const rows = [...container.querySelectorAll(".gedcom-desk-row")];
+
+    list.setCurrent("@I2@");
+
+    expect([...container.querySelectorAll(".gedcom-desk-row")]).toEqual(rows);
+    expect(texts(".gedcom-desk-row.is-current .gedcom-desk-row-name")).toEqual(["Pierre Curie"]);
+    expect(container.querySelector<HTMLInputElement>(".gedcom-desk-search")?.value).toBe("curie");
+  });
+
+  it("marks no row for none, or for a record of another kind, and marks it once that kind is shown", () => {
+    list.show(curie("@I1@"));
+    list.setCurrent(null);
+    expect(container.querySelectorAll(".gedcom-desk-row.is-current")).toHaveLength(0);
+
+    list.setCurrent("@F3@");
+    expect(container.querySelectorAll(".gedcom-desk-row.is-current")).toHaveLength(0);
+    list.showKind("families");
+    expect(container.querySelectorAll(".gedcom-desk-row.is-current")).toHaveLength(1);
+  });
+
   it("marks and filters the people whose records cite nothing", () => {
     list.show(curie());
 

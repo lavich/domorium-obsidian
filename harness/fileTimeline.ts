@@ -65,7 +65,7 @@ function mount(options: TimelineOptions): number {
   }
   parent.empty();
   const board = new FileTimelineBoard(parent, {
-    openPerson: (xref) => {
+    select: (xref) => {
       calls.opened.push(xref);
     },
     showInSource: (range) => {

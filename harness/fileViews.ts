@@ -20,7 +20,7 @@ export interface TabOptions {
 }
 
 export interface TabCalls {
-  opened: string[];
+  selected: string[];
   shownInSource: Range[];
   changed: number;
 }
@@ -33,7 +33,7 @@ declare global {
       views: FileViews | null;
       mode(): Mode;
       showMode(mode: Mode): void;
-      select(xref: string | null): void;
+      select(xref: string | null, reveal: boolean): void;
       openSearch(): void;
       resized(): void;
       setHidden(hidden: boolean): void;
@@ -43,12 +43,13 @@ declare global {
 
 installObsidianDom();
 
-const calls: TabCalls = { opened: [], shownInSource: [], changed: 0 };
+const calls: TabCalls = { selected: [], shownInSource: [], changed: 0 };
 let views: FileViews | null = null;
 let memory: ViewMemory = {};
 let index = indexOf(CURIE);
 let mode: Mode = "source";
 let around: string | undefined;
+let selected: string | null = null;
 
 const element = (id: string): HTMLElement => {
   const found = document.getElementById(id);
@@ -78,11 +79,10 @@ function draw(): void {
 }
 
 function showMode(next: Mode): void {
-  if (next !== mode) {
-    views?.select("graph", null);
-    views?.select("timeline", null);
-  }
   mode = next;
+  if (mode !== "source") {
+    views?.select(mode, selected, false);
+  }
   draw();
 }
 
@@ -93,20 +93,21 @@ function mount(options: TabOptions): void {
   body.classList.toggle("theme-light", !(options.dark ?? false));
   body.classList.toggle("is-mobile", options.phone ?? false);
   body.classList.toggle("is-phone", options.phone ?? false);
-  calls.opened = [];
+  calls.selected = [];
   calls.shownInSource = [];
   calls.changed = 0;
   index = indexOf(options.doc ?? CURIE);
   memory = options.memory ?? {};
   around = options.around;
+  selected = null;
   mode = options.mode ?? "source";
   const parent = element("views");
   parent.empty();
   views?.dispose();
   element("leaf").toggle(!(options.hidden ?? false));
   views = new FileViews(parent, {
-    openRecord: (xref) => {
-      calls.opened.push(xref);
+    select: (xref) => {
+      calls.selected.push(xref);
     },
     showInSource: (range) => {
       calls.shownInSource.push(range);
@@ -128,8 +129,8 @@ const wire = (id: string, run: () => void): void => {
 wire("show-graph", () => showMode("graph"));
 wire("show-timeline", () => showMode("timeline"));
 wire("show-source", () => showMode("source"));
-wire("select-pierre", () => window.tab.select("@I2@"));
-wire("select-irene", () => window.tab.select("@I12@"));
+wire("select-pierre", () => window.tab.select("@I2@", true));
+wire("select-irene", () => window.tab.select("@I12@", true));
 wire("open-search", () => window.tab.openSearch());
 
 window.tab = {
@@ -138,10 +139,10 @@ window.tab = {
   views: null,
   mode: () => mode,
   showMode,
-  select: (xref) => {
-    if (mode !== "source" && views) {
-      views.select(mode, xref);
-    }
+  select: (xref, reveal) => {
+    selected = xref;
+    views?.select("graph", xref, reveal);
+    views?.select("timeline", xref, reveal);
   },
   openSearch: () => {
     if (mode !== "source") {

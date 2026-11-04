@@ -25,7 +25,8 @@ import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
-import { RETIRED_VIEW_TYPES } from "./desk/deskState";
+import { RETIRED_VIEW_TYPES, type Origin } from "./desk/deskState";
+import { originRules } from "./desk/tabModes";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -35,10 +36,10 @@ import {
 import { MoveFollower } from "./vault/movedFiles";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import {
-  EVIDENCE_VIEW_TYPE,
-  EvidenceView,
   INDEX_VIEW_TYPE,
   IndexView,
+  RECORD_VIEW_TYPE,
+  RecordCardView,
   type DeskViewsHost,
 } from "./desk/DeskViews";
 import type { AllowScope } from "./editor/mediaPreviewView";
@@ -84,8 +85,9 @@ export default class GedcomPlugin
   private statusBar: HTMLElement | undefined;
   private ribbonIcon: HTMLElement | undefined;
   private followedView: GedcomView | null = null;
-  /** Placed once a session, so a panel the reader closes stays closed. */
-  private evidencePlaced = false;
+  /** Placed once a session, so a card the reader closes stays closed. */
+  private cardPlaced = false;
+  private notesCache = new Map<string, Promise<NoteLinks[]>>();
   private readonly moves = new MoveFollower<TFile>(
     {
       files: () => this.app.vault.getFiles(),
@@ -116,7 +118,7 @@ export default class GedcomPlugin
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
     this.registerView(INDEX_VIEW_TYPE, (leaf) => new IndexView(leaf, this));
-    this.registerView(EVIDENCE_VIEW_TYPE, (leaf) => new EvidenceView(leaf, this));
+    this.registerView(RECORD_VIEW_TYPE, (leaf) => new RecordCardView(leaf, this));
     this.addCommand({
       id: "open-gedcom-index",
       name: t("command.openIndex"),
@@ -131,14 +133,14 @@ export default class GedcomPlugin
       },
     });
     this.addCommand({
-      id: "open-gedcom-evidence",
-      name: t("command.openEvidence"),
+      id: "open-gedcom-record-card",
+      name: t("command.openRecordCard"),
       checkCallback: (checking) => {
         if (!this.settings.genealogyInterface) {
           return false;
         }
         if (!checking) {
-          this.openEvidence();
+          void this.focusCard();
         }
         return true;
       },
@@ -219,8 +221,9 @@ export default class GedcomPlugin
     );
     this.registerEvent(
       this.app.metadataCache.on("changed", () => {
-        for (const leaf of this.app.workspace.getLeavesOfType(EVIDENCE_VIEW_TYPE)) {
-          if (leaf.view instanceof EvidenceView) {
+        this.notesCache.clear();
+        for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
+          if (leaf.view instanceof RecordCardView) {
             leaf.view.forgetNotes();
             leaf.view.redraw();
           }
@@ -232,6 +235,11 @@ export default class GedcomPlugin
         this.sweepRetiredViews();
         if (!this.settings.genealogyInterface) {
           this.syncInterface();
+        }
+        for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
+          if (leaf.view instanceof RecordCardView) {
+            leaf.view.onResize();
+          }
         }
         if (this.followedView && !this.isOpen(this.followedView)) {
           this.followedView = null;
@@ -297,12 +305,34 @@ export default class GedcomPlugin
       this.followedView = view;
       this.redrawDesk();
     }
-    if (view.shownRecord() !== null) {
-      void this.placeEvidence();
+  }
+
+  cardWanted(_view: GedcomView, origin: Origin): void {
+    if (!this.settings.genealogyInterface) {
+      return;
     }
+    if (originRules(origin, Platform.isMobile).opensDrawer) {
+      void this.revealCardDrawer();
+      return;
+    }
+    void this.placeCard();
   }
 
   async notesFor(path: string, xref: string): Promise<NoteHit[]> {
+    const { metadataCache } = this.app;
+    let asked = this.notesCache.get(path);
+    if (!asked) {
+      asked = this.noteLinksTo(path);
+      this.notesCache.set(path, asked);
+    }
+    return notesLinking(
+      await asked,
+      { path, xref },
+      (linkPath, from) => metadataCache.getFirstLinkpathDest(linkPath, from)?.path ?? null,
+    );
+  }
+
+  private async noteLinksTo(path: string): Promise<NoteLinks[]> {
     const { metadataCache, vault } = this.app;
     const notes: NoteLinks[] = [];
     for (const [source, targets] of Object.entries(metadataCache.resolvedLinks)) {
@@ -323,11 +353,7 @@ export default class GedcomPlugin
         notes.push({ path: source, name: file.basename, text: await vault.cachedRead(file), links });
       }
     }
-    return notesLinking(
-      notes,
-      { path, xref },
-      (linkPath, from) => metadataCache.getFirstLinkpathDest(linkPath, from)?.path ?? null,
-    );
+    return notes;
   }
 
   openNote(path: string, line: number): void {
@@ -348,10 +374,10 @@ export default class GedcomPlugin
     }
     this.ribbonIcon?.remove();
     this.ribbonIcon = undefined;
-    this.evidencePlaced = false;
+    this.cardPlaced = false;
     this.followedView = null;
     workspace.detachLeavesOfType(INDEX_VIEW_TYPE);
-    workspace.detachLeavesOfType(EVIDENCE_VIEW_TYPE);
+    workspace.detachLeavesOfType(RECORD_VIEW_TYPE);
   }
 
   /** Obsidian keeps a leaf of a view type nobody registers, as a pane that says it does not know what it is. */
@@ -361,20 +387,36 @@ export default class GedcomPlugin
     }
   }
 
-  private async placeEvidence(): Promise<void> {
-    if (!this.settings.genealogyInterface || this.evidencePlaced) {
+  private async placeCard(): Promise<void> {
+    if (!this.settings.genealogyInterface || this.cardPlaced) {
       return;
     }
-    this.evidencePlaced = true;
+    this.cardPlaced = true;
     const { workspace } = this.app;
-    if (workspace.getLeavesOfType(EVIDENCE_VIEW_TYPE).length > 0) {
+    if (workspace.getLeavesOfType(RECORD_VIEW_TYPE).length > 0) {
       return;
     }
-    await workspace.getRightLeaf(false)?.setViewState({ type: EVIDENCE_VIEW_TYPE, active: false });
+    await workspace.getRightLeaf(false)?.setViewState({ type: RECORD_VIEW_TYPE, active: false });
   }
 
-  openEvidence(): void {
-    void this.revealSidebarView(EVIDENCE_VIEW_TYPE, "right");
+  private async revealCardDrawer(): Promise<void> {
+    this.cardPlaced = true;
+    const leaf = await this.app.workspace.ensureSideLeaf(RECORD_VIEW_TYPE, "right", {
+      active: false,
+      reveal: true,
+    });
+    await leaf.loadIfDeferred();
+  }
+
+  private async focusCard(): Promise<void> {
+    if (!this.settings.genealogyInterface) {
+      return;
+    }
+    this.cardPlaced = true;
+    const { workspace } = this.app;
+    const leaf = await workspace.ensureSideLeaf(RECORD_VIEW_TYPE, "right", { active: true, reveal: true });
+    await leaf.loadIfDeferred();
+    workspace.setActiveLeaf(leaf, { focus: true });
   }
 
   private async openIndex(): Promise<void> {
@@ -404,8 +446,8 @@ export default class GedcomPlugin
         leaf.view.redraw();
       }
     }
-    for (const leaf of this.app.workspace.getLeavesOfType(EVIDENCE_VIEW_TYPE)) {
-      if (leaf.view instanceof EvidenceView) {
+    for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
+      if (leaf.view instanceof RecordCardView) {
         leaf.view.redraw();
       }
     }

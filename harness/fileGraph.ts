@@ -65,7 +65,7 @@ function mount(options: GraphOptions): number {
   }
   parent.empty();
   const board = new FileGraphBoard(parent, {
-    openRecord: (xref) => {
+    select: (xref) => {
       calls.opened.push(xref);
     },
     stateChanged: ({ scope, view }) => {
