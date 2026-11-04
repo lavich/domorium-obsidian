@@ -51,8 +51,8 @@
 - [x] 6.9 Read given names and surname into `PersonRow` (`src/genealogy/names.ts`, `src/genealogy/index.ts`); test in `src/genealogy/names.test.ts`.
 - [x] 6.10 Card heights in the layout: rows as tall as their tallest card, cards on the row's bottom edge, every height read from the rows; test in `src/desk/fileGraph.test.ts` (a row with and without a portrait, no overlap, lines from the text's middle).
 - [x] 6.11 Draw the portrait and the two name lines on the canvas, the picture asked of the host as a card is drawn, none far out, removed on failure; the host's answer for an open tab and for a closed file (`OverviewReads` keeping the service); tests in `src/desk/fileGraphView.test.ts`, `src/vault/overviewReads.test.ts`, `src/desk/personTreeView.test.ts`.
-- [ ] 6.12 The tree after review: every copy of a person lit; siblings closer; the opening that shows a child; zoom and keyboard focus kept after activating; a touch on a pressed Branch arms first; real spouses only in the order of the focus's row; the canvas capped and edge scrolls passed to the page; tests in `src/desk/personTree.test.ts`, `src/desk/personTreeView.test.ts`, `src/desk/fileGraphView.test.ts`, `src/desk/fileTimelineView.test.ts`.
-- [ ] 6.13 Browser specs: Marie's card and her tree with portrait and two name lines in `tests/fileGraph.spec.ts` and `tests/desk.spec.ts`.
+- [x] 6.12 The tree after review: every copy of a person lit; siblings closer; the opening that shows a child; zoom and keyboard focus kept after activating; a touch on a pressed Branch arms first; real spouses only in the order of the focus's row; the canvas capped and edge scrolls passed to the page; tests in `src/desk/personTree.test.ts`, `src/desk/personTreeView.test.ts`, `src/desk/fileGraphView.test.ts`, `src/desk/fileTimelineView.test.ts`.
+- [x] 6.13 Browser specs: Marie's card and her tree with portrait and two name lines in `tests/fileGraph.spec.ts` and `tests/desk.spec.ts`.
 
 ## 7. Verify
 

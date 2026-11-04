@@ -40,6 +40,8 @@ export interface TreeFamily extends GraphInputFamily {
 export interface PersonTree {
   input: GraphInput;
   cards: ReadonlyMap<string, TreeCard>;
+  /** Every card a person stands on, where one person stands more than once. */
+  copies: ReadonlyMap<string, string[]>;
   families: ReadonlyMap<string, TreeFamily>;
   focus: string;
 }
@@ -147,12 +149,14 @@ export function treeOf(
   };
 
   const spouses = focus.unions.map((union) => union.spouse);
-  const firstSpouse = read(spouses[0]);
+  const firstAt = spouses.findIndex((row) => row !== undefined);
+  const firstSpouse = read(spouses[firstAt]);
   const ownSiblings = siblingsOf(focus);
   const focusCard = card(focus, 0, { focus: true });
   const spouseCards = spouses.map((row) => (row ? card(row, 0) : undefined));
+  const realSpouses = spouseCards.filter((one): one is TreeCard => one !== undefined);
   const spouseSiblings = siblingsOf(firstSpouse);
-  const firstSpouseCard = spouseCards[0];
+  const firstSpouseCard = realSpouses[0];
 
   const parentsOf = (person: Person | undefined, children: TreeCard[], gen: number): TreeCard[] => {
     if (!person || person.parents.length === 0) {
@@ -176,10 +180,11 @@ export function treeOf(
     if (spouse.sex !== focusCard.sex && (spouse.sex === "F" || focusCard.sex === "M")) {
       return false;
     }
-    const record = focus.unions[0]?.family.xref ? index.family(focus.unions[0].family.xref) : undefined;
+    const union = focus.unions[firstAt];
+    const record = union?.family.xref ? index.family(union.family.xref) : undefined;
     return record?.spouses.find((one) => one.xref === spouse.xref)?.role === "HUSB";
   };
-  const spouseLeft = spouseCards.length >= 2 || husbandOfFocus();
+  const spouseLeft = realSpouses.length >= 2 || husbandOfFocus();
   const above = spouseLeft ? [...spouseParents, ...ownParents] : [...ownParents, ...spouseParents];
   for (const parent of above) {
     parentsOf(parent.xref ? index.person(parent.xref) : undefined, [parent], -2);
@@ -213,10 +218,10 @@ export function treeOf(
   const rowOrder = (gen: number): string[] => order.get(gen) ?? [];
   const ids = (list: (TreeCard | undefined)[]): string[] =>
     list.filter((one): one is TreeCard => one !== undefined).map((one) => one.id);
-  const [first, ...later] = spouseCards;
+  const [first, ...later] = realSpouses;
   const row0 = spouseLeft
     ? [...ids(spouseSiblings), ...ids([first]), focusCard.id, ...ids(later), ...ids(ownSiblings)]
-    : [...ids(ownSiblings), focusCard.id, ...ids(spouseCards), ...ids(spouseSiblings)];
+    : [...ids(ownSiblings), focusCard.id, ...ids(realSpouses), ...ids(spouseSiblings)];
   const all = [...rowOrder(-2), ...ids(above), ...row0, ...rowOrder(1), ...rowOrder(2)];
   return {
     input: {
@@ -228,7 +233,18 @@ export function treeOf(
       focus: focusCard.id,
     },
     cards,
+    copies: copiesOf(cards),
     families,
     focus: focusCard.id,
   };
+}
+
+function copiesOf(cards: ReadonlyMap<string, TreeCard>): Map<string, string[]> {
+  const found = new Map<string, string[]>();
+  for (const one of cards.values()) {
+    if (one.xref) {
+      found.set(one.xref, [...(found.get(one.xref) ?? []), one.id]);
+    }
+  }
+  return found;
 }

@@ -2100,7 +2100,7 @@ input.gedcom-fg-search {
 
 .gedcom-desk-graph .gedcom-fg-canvas {
   flex: none;
-  height: min(560px, 70vh);
+  height: min(560px, 60vh);
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-m);
 }

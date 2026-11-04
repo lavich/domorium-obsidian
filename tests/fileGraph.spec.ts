@@ -32,7 +32,7 @@ test.describe("the graph of a file", () => {
   test("names Marie with her years on a card in the theme's colour for a woman", async ({ page }) => {
     await mountGraph(page);
 
-    await expect(card(page, "@I1@").locator(".gedcom-fg-card-name")).toHaveText("Marie Skłodowska-Curie");
+    await expect(card(page, "@I1@").locator(".gedcom-fg-card-name")).toHaveText(["Marie", "Skłodowska-Curie"]);
     await expect(card(page, "@I1@").locator(".gedcom-fg-card-years")).toHaveText("1867–1934");
     const fill = (xref: string, part: string) =>
       person(page, xref).locator(part).evaluate((shape) => getComputedStyle(shape).fill);
@@ -40,9 +40,28 @@ test.describe("the graph of a file", () => {
     expect(await fill("@I1@", ".gedcom-fg-card-bg")).toBe("rgba(255, 0, 128, 0.14)");
     expect(await fill("@I2@", ".gedcom-fg-card-side")).toBe("rgb(0, 0, 255)");
     for (const xref of ["@I1@", "@I17@", "@I9@", "@I8@"]) {
-      await expect(card(page, xref).locator(".gedcom-fg-card-name")).toBeInViewport();
+      await expect(card(page, xref).locator(".gedcom-fg-card-name").first()).toBeInViewport();
     }
     await expect(page.locator(".gedcom-fg")).not.toContainText("Generation");
+  });
+
+  test("shows Marie's portrait over her given name, her surname and her years, and none for Jacques", async ({ page }) => {
+    await mountGraph(page);
+    const marie = card(page, "@I1@");
+    const picture = marie.locator(".gedcom-fg-avatar img");
+    await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    const [given, surname] = await marie.locator(".gedcom-fg-card-name").all();
+    await expect(given ?? marie).toHaveText("Marie");
+    await expect(surname ?? marie).toHaveText("Skłodowska-Curie");
+    const tops = await Promise.all(
+      [picture, given, surname, marie.locator(".gedcom-fg-card-years")].map(async (part) => (await part?.boundingBox())?.y ?? NaN),
+    );
+    expect([...tops].sort((a, b) => a - b)).toEqual(tops);
+    await expect(card(page, "@I11@").locator(".gedcom-fg-avatar")).toHaveCount(0);
+    const jacques = await card(page, "@I11@").locator(".gedcom-fg-card-bg").boundingBox();
+    const pierre = await card(page, "@I2@").locator(".gedcom-fg-card-bg").boundingBox();
+    expect((jacques?.y ?? 0) + (jacques?.height ?? 0)).toBeCloseTo((pierre?.y ?? 0) + (pierre?.height ?? 0), 0);
+    expect(jacques?.height ?? 0).toBeLessThan(pierre?.height ?? 0);
   });
 
   test("cuts a long name to the width of its card", async ({ page }) => {
@@ -50,12 +69,14 @@ test.describe("the graph of a file", () => {
     await mountGraph(page, {
       doc: ["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", `1 NAME ${name}`, "1 SEX F", "0 TRLR", ""].join("\n"),
     });
-    const text = page.locator('[data-card="@I1@"] .gedcom-fg-card-name');
+    const lines = page.locator('[data-card="@I1@"] .gedcom-fg-card-name');
 
-    await expect(text).toHaveText(/…$/);
+    await expect(lines).toHaveText([/^АЛЕКСАНДРА.*…$/, /^ЩЕРБАТСКАЯ.*…$/]);
     const card = await page.locator('[data-card="@I1@"] .gedcom-fg-card-bg').boundingBox();
-    const written = await text.boundingBox();
-    expect((written?.x ?? 0) + (written?.width ?? 0)).toBeLessThan((card?.x ?? 0) + (card?.width ?? 0) - 4);
+    for (const line of await lines.all()) {
+      const written = await line.boundingBox();
+      expect((written?.x ?? 0) + (written?.width ?? 0)).toBeLessThan((card?.x ?? 0) + (card?.width ?? 0) - 4);
+    }
   });
 
   test("takes its colours from a dark theme too", async ({ page }) => {
@@ -157,7 +178,7 @@ test.describe("the graph of a file", () => {
 
     await page.locator(".gedcom-fg-fit").click();
     expect(await zoom(page)).toBeCloseTo(fitted, 6);
-    await expect(page.locator(".gedcom-fg-card-name")).toHaveCount(17);
+    await expect(page.locator(".gedcom-fg-card-years")).toHaveCount(17);
   });
 
   test("moves with a drag begun on a card, and opens nothing", async ({ page }) => {

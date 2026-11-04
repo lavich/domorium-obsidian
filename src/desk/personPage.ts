@@ -15,7 +15,7 @@ import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
 import type { PortraitContent } from "./graphCanvas";
 import { treeOf } from "./personTree";
-import { renderTree } from "./personTreeView";
+import { renderTree, type TreeMemory } from "./personTreeView";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
@@ -54,6 +54,7 @@ export interface PersonPageOptions {
   view?: PersonView;
   /** Whose siblings the tree shows one by one. */
   expanded?: ReadonlySet<string>;
+  tree?: TreeMemory;
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -88,7 +89,7 @@ export function renderPersonPage(
     page.addClass("is-wide");
     const tree = person.xref ? treeOf(index, person.xref, options.expanded) : null;
     if (tree) {
-      renderTree(page, tree, host);
+      renderTree(page, tree, host, options.tree);
     }
     return;
   }

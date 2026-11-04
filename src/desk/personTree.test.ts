@@ -44,6 +44,20 @@ function overlaps({ layout }: Drawn): string[] {
   return found;
 }
 
+function cousins(): GenealogyIndex {
+  return index([
+    "0 @I1@ INDI", "1 NAME Grand /G/", "1 FAMS @F1@",
+    "0 @I2@ INDI", "1 NAME Son /G/", "1 FAMC @F1@", "1 FAMS @F2@",
+    "0 @I3@ INDI", "1 NAME Daughter /G/", "1 FAMC @F1@", "1 FAMS @F3@",
+    "0 @I4@ INDI", "1 NAME Cousin /G/", "1 FAMC @F2@", "1 FAMS @F4@",
+    "0 @I5@ INDI", "1 NAME Other /H/", "1 FAMC @F3@", "1 FAMS @F4@",
+    "0 @F1@ FAM", "1 HUSB @I1@", "1 CHIL @I2@", "1 CHIL @I3@",
+    "0 @F2@ FAM", "1 HUSB @I2@", "1 CHIL @I4@",
+    "0 @F3@ FAM", "1 WIFE @I3@", "1 CHIL @I5@",
+    "0 @F4@ FAM", "1 HUSB @I4@", "1 WIFE @I5@",
+  ]);
+}
+
 function index(lines: string[]): GenealogyIndex {
   return buildIndex(new GedcomLanguageService(["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n")));
 }
@@ -101,6 +115,27 @@ describe("Marie's tree", () => {
 });
 
 describe("relatives beyond the edge", () => {
+  it("marks a grandchild whose own children the tree does not reach", () => {
+    const drawn = tree("@I1@", index([
+      "0 @I1@ INDI", "1 NAME Anna /A/", "1 FAMS @F1@",
+      "0 @I2@ INDI", "1 NAME Bert /A/", "1 FAMC @F1@", "1 FAMS @F2@",
+      "0 @I3@ INDI", "1 NAME Carl /A/", "1 FAMC @F2@", "1 FAMS @F3@",
+      "0 @I4@ INDI", "1 NAME Dora /A/", "1 FAMC @F3@",
+      "0 @F1@ FAM", "1 WIFE @I1@", "1 CHIL @I2@",
+      "0 @F2@ FAM", "1 HUSB @I2@", "1 CHIL @I3@",
+      "0 @F3@ FAM", "1 HUSB @I3@", "1 CHIL @I4@",
+    ]));
+
+    expect(byLabel(drawn, "Carl A")?.down).toBe(true);
+    expect(byLabel(drawn, "Bert A")?.down).toBe(false);
+  });
+
+  it("keeps every card of a person who stands twice", () => {
+    const drawn = tree("@I5@", cousins());
+
+    expect(drawn.tree.copies.get("@I1@")).toHaveLength(2);
+  });
+
   it("marks a grandparent's parents above, and a grandchild's children below", () => {
     const helene = tree("@I16@");
 

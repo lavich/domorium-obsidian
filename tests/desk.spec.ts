@@ -272,6 +272,13 @@ test.describe("the tree", () => {
     expect(jacques?.x ?? Infinity).toBeLessThan(pierre?.x ?? 0);
     expect(sisters?.x ?? 0).toBeGreaterThan(marie?.x ?? Infinity);
 
+    const marieCard = card(page, "Marie Skłodowska-Curie");
+    await expect.poll(() =>
+      marieCard.locator(".gedcom-fg-avatar img").evaluate((image: HTMLImageElement) => image.naturalWidth),
+    ).toBeGreaterThan(0);
+    await expect(marieCard.locator(".gedcom-fg-card-name")).toHaveText(["Marie", "Skłodowska-Curie"]);
+    await expect(card(page, "Jacques Curie").locator(".gedcom-fg-avatar")).toHaveCount(0);
+
     await node.locator("circle").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie and Marie Skłodowska-Curie");
   });

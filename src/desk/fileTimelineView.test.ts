@@ -512,6 +512,8 @@ describe("the keyboard", () => {
     nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
     expect(names()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
+    const irene = fileTimelineOf(curieIndex()).rows.indexOf("@I12@");
+    expect(container.querySelector(".gedcom-ft-board")?.scrollTop).toBe(irene * ROW + ROW / 2);
   });
 
   it("names each stepper's buttons for what they widen or narrow", () => {

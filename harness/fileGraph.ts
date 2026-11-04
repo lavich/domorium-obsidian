@@ -75,6 +75,12 @@ function mount(options: GraphOptions): number {
       }
     },
     setIcon: stubSetIcon,
+    portrait: (xref) => {
+      const file = index.person(xref)?.portrait?.file;
+      return file && !file.startsWith("http")
+        ? { kind: "image", url: `../demo-vault/${file}`, name: file, title: file }
+        : null;
+    },
   });
   board.show(fileTimelineOf(index), options.doc === undefined ? "curie.ged" : "family.ged", {
     scope: { up: 2, down: 2, ...(focus === undefined ? {} : { focus }), ...options.scope },

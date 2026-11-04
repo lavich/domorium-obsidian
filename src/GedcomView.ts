@@ -102,6 +102,7 @@ import type { GedcomStatus } from "./editor/status";
 import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON, GEDCOM_ICON_ID } from "./icon";
 import type { OverviewKind } from "./commands";
 import type { PortraitContent } from "./desk/graphCanvas";
+import type { TreeMemory } from "./desk/personTreeView";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -134,6 +135,7 @@ export class GedcomView extends TextFileView {
   private selected: FactKey | null = null;
   private personView: PersonView = "card";
   private readonly expandedSiblings = new Set<string>();
+  private readonly treeMemory: TreeMemory = {};
   private revision = 0;
   private readonly genealogyCache = new IndexCache();
   private readonly editorEl: HTMLElement;
@@ -698,6 +700,7 @@ export class GedcomView extends TextFileView {
           media: this.mediaItems(person.media),
           view: this.personView,
           expanded: this.expandedSiblings,
+          tree: this.treeMemory,
         },
         this.pageHost(),
       );

@@ -69,19 +69,30 @@ export interface CanvasScene {
   family(id: string): CanvasFamily | undefined;
   /** The cards lit with this one. */
   related(id: string): Iterable<string>;
+  /** Every card its person stands on, this one among them. */
+  copies?(id: string): Iterable<string>;
   /** What a search reads of a card. */
   search?(id: string): string;
 }
 
 export interface GraphCanvasHost {
-  activateCard(id: string): void;
+  activateCard(id: string, keyboard: boolean): void;
   activateFamily(id: string): void;
   branch?(id: string): void;
   viewChanged(view: GraphView): void;
 }
 
 /** How the view is first set once the canvas has a size: as saved, as a new view opens, or on a card. */
-export type Opening = { saved: GraphView } | { open: string | undefined } | { centre: string | undefined };
+export type Opening =
+  | { saved: GraphView }
+  /** `near`: cards of which one, at least, the opening should bring into view with the card it opens on. */
+  | { open: string | undefined; near?: string[] }
+  | { centre: string | undefined; k?: number };
+
+export interface GraphCanvasOptions {
+  /** A two-finger scroll that would take the drawing past its top or bottom scrolls the page instead. */
+  passEdges?: boolean;
+}
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -242,6 +253,7 @@ export class GraphCanvas {
   private pinch: { distance: number; k: number; mid: Point; vx: number; vy: number } | null = null;
   private swallow = false;
   private refocusing = false;
+  private wantsFocus: string | null = null;
   private wheel: { at: number; pans: boolean } | null = null;
   private measureName: ((text: string) => number) | null = null;
 
@@ -249,6 +261,7 @@ export class GraphCanvas {
   constructor(
     private readonly root: HTMLElement,
     private readonly host: GraphCanvasHost,
+    private readonly options: GraphCanvasOptions = {},
   ) {
     this.doc = root.ownerDocument;
     this.el = root.createDiv({ cls: "gedcom-fg-canvas" });
@@ -371,6 +384,11 @@ export class GraphCanvas {
     if (focused) {
       this.refocus(this.drawn.get(focused), focusedPill);
     }
+    const wanted = this.wantsFocus === null ? undefined : this.cardOf.get(this.wantsFocus);
+    if (wanted) {
+      this.wantsFocus = null;
+      this.refocus(wanted, false);
+    }
   }
 
   private refocus(element: Element | undefined, pill: boolean): void {
@@ -407,15 +425,28 @@ export class GraphCanvas {
       }
       this.lit.push(element);
     };
-    for (const relative of scene.related(id)) {
-      const card = this.cardOf.get(relative);
-      if (card) {
-        light(card, relative === id);
+    const selves = new Set(scene.copies?.(id) ?? [id]);
+    for (const self of selves) {
+      for (const relative of scene.related(self)) {
+        const card = this.cardOf.get(relative);
+        if (card && !card.classList.contains("is-on")) {
+          light(card, selves.has(relative));
+        }
+      }
+      for (const element of this.reach.get(self) ?? []) {
+        light(element, true);
       }
     }
-    for (const element of this.reach.get(id) ?? []) {
-      light(element, true);
+  }
+
+  /** Gives a card the keyboard's focus without moving the view to it, now or once it is drawn. */
+  focusCard(id: string): void {
+    const card = this.cardOf.get(id);
+    if (card) {
+      this.refocus(card, false);
+      return;
     }
+    this.wantsFocus = id;
   }
 
   setQuery(query: string): void {
@@ -512,13 +543,16 @@ export class GraphCanvas {
       return;
     }
     if ("centre" in pending) {
-      if (!this.centreOn(pending.centre, ZOOM.readable) && !this.transform) {
+      if (!this.centreOn(pending.centre, pending.k ?? ZOOM.readable) && !this.transform) {
         this.fit();
       }
       return;
     }
     if (this.fitScale(layout) >= ZOOM.opens) {
       this.fit();
+      return;
+    }
+    if (pending.open !== undefined && pending.near && pending.near.length > 0 && this.openNear(pending.open, pending.near)) {
       return;
     }
     const first = layout.cards[0]?.id;
@@ -528,6 +562,48 @@ export class GraphCanvas {
       }
     }
     this.fit();
+  }
+
+  /** Centred on a card where one of `near` is then in view, else between it and the nearest, zoomed out as far as `far` to show both. */
+  private openNear(id: string, near: string[]): boolean {
+    const layout = this.layout;
+    const from = layout?.card.get(id);
+    if (!layout || !from) {
+      return false;
+    }
+    const centre = (card: GraphCard): Point => [card.x + CARD.width / 2, card.y + card.height / 2];
+    const [fx, fy] = centre(from);
+    const room = (k: number): [number, number] => [(this.size.width - 2 * MARGIN) / k, (this.size.height - 2 * MARGIN) / k];
+    const [w, h] = room(ZOOM.readable);
+    let nearest: GraphCard | undefined;
+    let distance = Infinity;
+    for (const other of near) {
+      const card = layout.card.get(other);
+      if (!card) {
+        continue;
+      }
+      const [x, y] = centre(card);
+      if (Math.abs(x - fx) + CARD.width / 2 <= w / 2 && Math.abs(y - fy) + card.height / 2 <= h / 2) {
+        return this.centreOn(id, ZOOM.readable);
+      }
+      const apart = Math.abs(x - fx);
+      if (apart < distance) {
+        distance = apart;
+        nearest = card;
+      }
+    }
+    if (!nearest) {
+      return false;
+    }
+    const [nx, ny] = centre(nearest);
+    const span = Math.abs(nx - fx) + CARD.width;
+    const tall = Math.abs(ny - fy) + (from.height + nearest.height) / 2;
+    const k = Math.max(
+      ZOOM.far,
+      Math.min(ZOOM.readable, (this.size.width - 2 * MARGIN) / span, (this.size.height - 2 * MARGIN) / tall),
+    );
+    this.apply({ x: this.size.width / 2 - ((fx + nx) / 2) * k, y: this.size.height / 2 - ((fy + ny) / 2) * k, k });
+    return true;
   }
 
   private apply(at: { x: number; y: number; k: number }): void {
@@ -942,9 +1018,9 @@ export class GraphCanvas {
     this.el.addEventListener(
       "wheel",
       (event) => {
-        event.preventDefault();
         const [x, y] = this.local(event);
         if (event.ctrlKey) {
+          event.preventDefault();
           this.zoomAt(Math.exp(-event.deltaY / 100), x, y);
           return;
         }
@@ -954,9 +1030,15 @@ export class GraphCanvas {
           : (this.wheel?.pans ?? false);
         this.wheel = { at: event.timeStamp, pans };
         if (pans) {
-          this.panBy(-event.deltaX, -event.deltaY);
+          const dy = this.options.passEdges ? this.within(-event.deltaY) : -event.deltaY;
+          if (dy === 0 && event.deltaX === 0) {
+            return;
+          }
+          event.preventDefault();
+          this.panBy(-event.deltaX, dy);
           return;
         }
+        event.preventDefault();
         this.zoomAt(event.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP, x, y);
       },
       { passive: false },
@@ -1009,6 +1091,21 @@ export class GraphCanvas {
     });
   }
 
+  /** How far the drawing can move down (`dy` above zero) or up before its edge comes in further than the margin. */
+  private within(dy: number): number {
+    const at = this.transform;
+    const layout = this.layout;
+    if (!at || !layout) {
+      return 0;
+    }
+    const top = at.y;
+    const bottom = at.y + layout.height * at.k;
+    if (dy > 0) {
+      return Math.max(0, Math.min(dy, MARGIN - top));
+    }
+    return Math.min(0, Math.max(dy, this.size.height - MARGIN - bottom));
+  }
+
   private pinchMoved(): void {
     const pinch = this.pinch;
     const [one, other] = [...this.down.values()];
@@ -1039,8 +1136,7 @@ export class GraphCanvas {
       : (event as PointerEvent).pointerType || ((event as MouseEvent).detail === 0 ? "keyboard" : this.pointer);
     const touch = kind === "touch";
     const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
-    const offered = branch ? this.armed === branch || this.scene?.card(branch)?.focus === true : false;
-    if (branch && (!touch || offered)) {
+    if (branch && (!touch || this.armed === branch)) {
       this.closePop();
       this.host.branch?.(branch);
       return;
@@ -1070,7 +1166,7 @@ export class GraphCanvas {
       return;
     }
     this.arm(null);
-    this.host.activateCard(id);
+    this.host.activateCard(id, kind === "keyboard");
   }
 
   private arm(id: string | null): void {

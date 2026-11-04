@@ -545,6 +545,9 @@ describe("activating", () => {
 
     click(pill("@I12@")?.querySelector("rect"));
     tap(pill("@I12@")?.querySelector("rect"));
+    expect(drawnPeople()).toHaveLength(10);
+    expect(person("@I12@")?.classList.contains("is-armed")).toBe(true);
+    tap(pill("@I12@")?.querySelector("rect"));
     expect(drawnPeople()).toHaveLength(17);
   });
 

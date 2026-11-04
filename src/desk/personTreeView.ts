@@ -12,16 +12,24 @@ export interface TreeHost {
   portrait?(xref: string): PortraitContent | null;
 }
 
+/** What a page keeps of its tree between drawings, as the focus moves. */
+export interface TreeMemory {
+  k?: number;
+  /** The focus was moved from the keyboard, which keeps the keyboard's focus on the new one. */
+  keyboard?: boolean;
+}
+
 const ZOOM_SIGNS: Record<string, string> = { minus: "−", plus: "+" };
 
 /** A person's tree on the graph's canvas, opening with the focus in view. */
-export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost): GraphCanvas {
+export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost, memory: TreeMemory = {}): GraphCanvas {
   const wrap = parent.createDiv({ cls: "gedcom-desk-graph" });
   const tools = wrap.createDiv({ cls: "gedcom-desk-graph-tools gedcom-fg-zoom" });
   const layout = layoutGraph(tree.input);
   const canvas = new GraphCanvas(wrap, {
-    activateCard: (id) => {
+    activateCard: (id, keyboard) => {
       const card = tree.cards.get(id);
+      memory.keyboard = keyboard;
       if (card?.expands) {
         host.toggleSiblings?.(card.expands);
       } else if (card?.xref && !card.focus) {
@@ -34,8 +42,10 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
         host.openRecord(xref);
       }
     },
-    viewChanged: () => undefined,
-  });
+    viewChanged: (view) => {
+      memory.k = view.k;
+    },
+  }, { passEdges: true });
   zoomButtons(tools, canvas, (element, icon) => {
     if (host.setIcon) {
       host.setIcon(element, icon);
@@ -89,9 +99,29 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
           }
         : undefined;
     },
-    related,
+    related: (id) => {
+      const lit = new Set<string>();
+      const xref = tree.cards.get(id)?.xref;
+      for (const copy of (xref ? tree.copies.get(xref) : undefined) ?? [id]) {
+        for (const one of related(copy)) {
+          lit.add(one);
+        }
+      }
+      return lit;
+    },
+    copies: (id) => {
+      const xref = tree.cards.get(id)?.xref;
+      return (xref ? tree.copies.get(xref) : undefined) ?? [id];
+    },
   };
-  canvas.show(scene, { open: tree.focus });
+  const children = [...tree.families.values()]
+    .filter((family) => family.spouses.includes(tree.focus))
+    .flatMap((family) => family.children);
+  canvas.show(scene, memory.k === undefined ? { open: tree.focus, near: children } : { centre: tree.focus, k: memory.k });
+  if (memory.keyboard) {
+    memory.keyboard = false;
+    canvas.focusCard(tree.focus);
+  }
   const measure = (): void => {
     if (canvas.el.isConnected) {
       canvas.resized();
