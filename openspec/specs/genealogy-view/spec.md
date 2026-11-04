@@ -452,6 +452,19 @@ activate them.
 
 Activating a person SHALL make them the focus.
 
+The tree SHALL offer the search of the graph of the file, floating over its
+canvas away from the zoom buttons: an icon that is replaced by a field when it is
+pressed, with a cross, a counter of the matches, previous and next buttons, and
+Enter and Shift+Enter to step. A search SHALL read the names of the people drawn,
+all the names of a person who stands twice lighting each of their cards, and the
+names of every sibling in a box of siblings, which a match SHALL light without
+opening it, stepping reaching the box like any card. Matching cards SHALL stay lit
+and the rest fade, the current match carries a ring and the view glides to it as it
+does in the graph of the file, and the buttons are at least 44 pixels square on a
+phone. The tree SHALL have no other toolbar. Its buttons SHALL show Obsidian's
+tooltip only, not the system's, placed so that it does not cover the buttons
+beside it.
+
 #### Scenario: Marie's tree
 - **WHEN** Marie's tree is shown
 - **THEN** her parents and Pierre's parents are above, four siblings are one
@@ -504,6 +517,21 @@ Activating a person SHALL make them the focus.
 - **WHEN** Anna married Bert and then Carl, with a child of each
 - **THEN** Bert stands to her left and Carl to her right, and each child stands
   beneath their own parents
+
+#### Scenario: Searching Marie's tree
+- **WHEN** the reader types `joliot` in the search of Marie's tree
+- **THEN** the counter reads `4 matches` and the cards of Frédéric, Irène, Hélène
+  and Pierre Joliot stand out while the others fade
+
+#### Scenario: Stepping through the tree
+- **WHEN** the reader presses the next button four times, and then once more
+- **THEN** the current card is Frédéric's, Irène's, Hélène's and Pierre's, each
+  ringed and glided to, and then Frédéric's again
+
+#### Scenario: A box of siblings
+- **WHEN** the reader types the name of one of Marie's sisters, who stands in the
+  box of siblings
+- **THEN** the box is lit and not opened, and the counter reads `1 match`
 
 ### Requirement: A year before the common era is shown as one
 
