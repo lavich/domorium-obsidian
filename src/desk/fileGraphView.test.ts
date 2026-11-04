@@ -242,15 +242,6 @@ describe("drawing the graph of a file", () => {
     expect(container.querySelector(".gedcom-fg-tools")).toBeNull();
   });
 
-  it("says when the file is gone", () => {
-    board().showGone("curie.ged");
-
-    expect(container.querySelector(".gedcom-fg-gone")?.textContent).toBe("curie.ged is no longer in the vault.");
-    expect(container.querySelector(".gedcom-fg")?.classList.contains("is-gone")).toBe(true);
-  });
-});
-
-describe("pointing at a person", () => {
   it("lights Marie, her parents, husband and daughters and the lines to them, replacing nothing", () => {
     const drawn = board();
     const before = all(".gedcom-fg-view *");
@@ -484,15 +475,13 @@ describe("the view", () => {
   });
 
   it("reads a saved state, keeping its scope and view within bounds", () => {
-    expect(readGraphState({ gedcom: "a.ged", focus: "@I1@", around: "@I2@", up: 12, down: -3, view: { x: 1, y: 2, k: 9 } })).toEqual({
-      gedcom: "a.ged",
+    expect(readGraphState({ focus: "@I1@", up: 12, down: -3, view: { x: 1, y: 2, k: 9 } })).toEqual({
       focus: "@I1@",
-      around: "@I2@",
       up: 9,
       down: 0,
       view: { x: 1, y: 2, k: ZOOM.max },
     });
-    expect(readGraphState({ gedcom: "", focus: "", view: { x: 1 } })).toEqual({ gedcom: null, up: 2, down: 2 });
+    expect(readGraphState({ focus: "", view: { x: 1 } })).toEqual({ up: 2, down: 2 });
   });
 });
 

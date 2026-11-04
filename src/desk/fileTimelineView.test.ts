@@ -459,31 +459,29 @@ describe("activating", () => {
 });
 
 describe("the state a timeline keeps", () => {
-  it("reads its file, scope and zoom, and keeps each within bounds", () => {
-    expect(readTimelineState({ gedcom: "curie.ged", focus: "@I12@", up: 3, down: 0, zoom: 12, others: false })).toEqual({
-      gedcom: "curie.ged",
+  it("reads its scope, zoom and scroll, and keeps each within bounds", () => {
+    expect(
+      readTimelineState({ focus: "@I12@", up: 3, down: 0, zoom: 12, others: false, scroll: { top: 40, left: 8 } }),
+    ).toEqual({
       focus: "@I12@",
       up: 3,
       down: 0,
       zoom: 12,
+      scroll: { top: 40, left: 8 },
     });
-    expect(readTimelineState({ up: 40, down: -2, zoom: 1, focus: 7 })).toEqual({
-      gedcom: null,
+    expect(readTimelineState({ up: 40, down: -2, zoom: 1, focus: 7, scroll: { top: -5, left: 3 } })).toEqual({
       up: 9,
       down: 0,
       zoom: ZOOM.min,
+      scroll: { top: 0, left: 3 },
     });
-    expect(readTimelineState(null)).toEqual({ gedcom: null, up: 2, down: 2, zoom: ZOOM.initial });
+    expect(readTimelineState(null)).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
   });
-});
 
-describe("a file that is gone", () => {
-  it("says so", () => {
-    const drawn = board();
-    drawn.showGone("curie.ged");
-
-    expect(container.querySelector(".gedcom-ft-gone")?.textContent).toContain("curie.ged");
-    expect(container.querySelector(".gedcom-ft")?.classList.contains("is-gone")).toBe(true);
+  it("drops a scroll that is not a pair of numbers", () => {
+    expect(readTimelineState({ scroll: { top: 4 } })).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
+    expect(readTimelineState({ scroll: { top: "a", left: Infinity } })).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
+    expect(readTimelineState({ scroll: 7 })).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
   });
 });
 

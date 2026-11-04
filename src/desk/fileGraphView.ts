@@ -1,4 +1,3 @@
-import { t } from "../i18n";
 import { searchOver, type FloatingSearch } from "./floatingSearch";
 import { BranchScopeBar, readBranchScope, sameBranch, type BranchScope } from "./branchScope";
 import { fileGraphOf } from "./fileGraph";
@@ -18,9 +17,6 @@ export { curve, fitText, ZOOM, type GraphView, type GraphWindow } from "./graphC
 
 
 export interface GraphState extends BranchScope {
-  gedcom: string | null;
-  /** The person of the tab the graph was opened from. */
-  around?: string;
   view?: GraphView;
 }
 
@@ -46,9 +42,7 @@ export function readGraphState(state: unknown): GraphState {
   const raw = typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
   const view = typeof raw.view === "object" && raw.view !== null ? (raw.view as Record<string, unknown>) : null;
   return {
-    gedcom: typeof raw.gedcom === "string" && raw.gedcom ? raw.gedcom : null,
     ...readBranchScope(raw),
-    ...(typeof raw.around === "string" && raw.around ? { around: raw.around } : {}),
     ...(view && finite(view.x) && finite(view.y) && finite(view.k)
       ? { view: { x: view.x, y: view.y, k: Math.min(ZOOM.max, Math.max(ZOOM.min, view.k)) } }
       : {}),
@@ -61,7 +55,6 @@ export class FileGraphBoard {
   private readonly find: FloatingSearch;
   private readonly scopeBar: BranchScopeBar;
   private readonly canvas: GraphCanvas;
-  private readonly goneEl: HTMLElement;
   private model: FileTimeline | null = null;
   private scope: BranchScope = readBranchScope(null);
   private shown: unknown = null;
@@ -83,13 +76,9 @@ export class FileGraphBoard {
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
     }, { setIcon: (element, icon) => this.host.setIcon(element, icon) });
     this.find = searchOver(this.canvas, (element, icon) => this.host.setIcon(element, icon));
-    this.goneEl = this.root.createDiv({ cls: "gedcom-fg-gone" });
-    this.goneEl.toggle(false);
   }
 
   show(model: FileTimeline, settings: GraphSettings): void {
-    this.goneEl.toggle(false);
-    this.root.removeClass("is-gone");
     const scope = scopeOf(settings.scope);
     const first = this.model === null;
     const scoped = !sameBranch(scope, this.scope);
@@ -107,13 +96,6 @@ export class FileGraphBoard {
     this.scope = scope;
     this.relayout(opening);
     this.find.refresh();
-  }
-
-  /** Where the file is gone, the last reading stays out of sight rather than passing for the file. */
-  showGone(path: string): void {
-    this.root.addClass("is-gone");
-    this.goneEl.toggle(true);
-    this.goneEl.setText(t("overview.gone", { path }));
   }
 
   resized(size?: { width: number; height: number }): void {

@@ -24,8 +24,13 @@ export interface TimelineScope extends BranchScope {
   zoom: number;
 }
 
+export interface TimelineScroll {
+  top: number;
+  left: number;
+}
+
 export interface TimelineState extends TimelineScope {
-  gedcom: string | null;
+  scroll?: TimelineScroll;
 }
 
 /** The part of the board in view: scroll offsets, and the size of the plot beside the names. */
@@ -50,10 +55,15 @@ const clampZoom = (value: unknown): number =>
 
 export function readTimelineState(state: unknown): TimelineState {
   const raw = typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
+  const scroll = typeof raw.scroll === "object" && raw.scroll !== null ? (raw.scroll as Record<string, unknown>) : null;
+  const offset = (value: unknown): number | null =>
+    typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : null;
+  const top = offset(scroll?.top);
+  const left = offset(scroll?.left);
   return {
-    gedcom: typeof raw.gedcom === "string" && raw.gedcom ? raw.gedcom : null,
     ...readBranchScope(raw),
     zoom: clampZoom(raw.zoom),
+    ...(top !== null && left !== null ? { scroll: { top, left } } : {}),
   };
 }
 
@@ -137,7 +147,6 @@ export class FileTimelineBoard {
   private readonly cursor: SVGSVGElement;
   private readonly tip: HTMLElement;
   private readonly pop: HTMLElement;
-  private readonly goneEl: HTMLElement;
 
   private model: FileTimeline | null = null;
   private scope: TimelineScope = readTimelineState(null);
@@ -203,16 +212,12 @@ export class FileTimelineBoard {
 
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
-    this.goneEl = this.root.createDiv({ cls: "gedcom-ft-gone" });
-    this.goneEl.toggle(false);
     this.resting = new HoverDelay(this.doc.defaultView ?? window, (xref) => this.highlight(xref));
     this.listen();
   }
 
   /** Laid out again only where the model or the scope is not the one shown. */
   show(model: FileTimeline, scope: TimelineScope): void {
-    this.goneEl.toggle(false);
-    this.root.removeClass("is-gone");
     const changed = model !== this.model || !sameScope(scope, this.scope);
     this.model = model;
     if (!changed && this.layout) {
@@ -226,13 +231,6 @@ export class FileTimelineBoard {
       ]),
     );
     this.relayout();
-  }
-
-  /** Where the file is gone, the last reading stays out of sight rather than passing for the file. */
-  showGone(path: string): void {
-    this.root.addClass("is-gone");
-    this.goneEl.toggle(true);
-    this.goneEl.setText(t("overview.gone", { path }));
   }
 
   draw(view: TimelineWindow): void {

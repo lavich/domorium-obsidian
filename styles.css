@@ -1660,19 +1660,6 @@ button.gedcom-fg-pop-open {
   cursor: pointer;
 }
 
-.gedcom-ft.is-gone > :not(.gedcom-ft-gone),
-.gedcom-fg.is-gone > :not(.gedcom-fg-gone) {
-  display: none;
-}
-
-.gedcom-ft-gone,
-.gedcom-fg-gone {
-  margin: auto;
-  padding: var(--size-4-8);
-  color: var(--text-muted);
-  text-align: center;
-}
-
 .workspace-leaf-content[data-type="domorium-file-graph"] .view-content {
   padding: 0;
   overflow: hidden;
