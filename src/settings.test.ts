@@ -71,6 +71,21 @@ describe("GEDCOM settings", () => {
     ).toBe("genealogy");
   });
 
+  it("opens files as a graph or a timeline when the reader chose one, and reads the older two as before", () => {
+    expect(parseSettings({ openAs: "graph" }).openAs).toBe("graph");
+    expect(parseSettings({ openAs: "timeline" }).openAs).toBe("timeline");
+    expect(parseSettings({ openAs: "genealogy" }).openAs).toBe("genealogy");
+    expect(parseSettings({ openAs: "source" }).openAs).toBe("source");
+    expect(changedSetting("openAs", "graph")).toEqual({ openAs: "graph" });
+  });
+
+  it("offers the four modes in order, in English and Russian", () => {
+    expect(Object.keys(openAsOptions())).toEqual(["genealogy", "graph", "timeline", "source"]);
+    expect(Object.values(openAsOptions())).toEqual(["Genealogy", "Graph", "Timeline", "Source"]);
+    setLanguage("ru");
+    expect(Object.values(openAsOptions())).toEqual(["Генеалогию", "Граф", "Хронологию", "Исходник"]);
+  });
+
   it("leaves the genealogy interface off for a settings file written before it existed", () => {
     expect(
       parseSettings({ diagnostics: true, openAs: "genealogy" })
@@ -109,7 +124,7 @@ describe("GEDCOM settings", () => {
       },
       {
         name: "Open GEDCOM files as",
-        desc: "How a GEDCOM file opens in a new tab. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
+        desc: "How a GEDCOM file opens in a new tab: as genealogy, a graph, a timeline or the source. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
         control: {
           type: "dropdown",
           key: "openAs",

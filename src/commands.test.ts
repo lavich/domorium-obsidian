@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { COMMANDS, type CommandHost, type CommandView } from "./commands";
 import type { GedcomRecord } from "./editor/records";
+import type { DeskMode } from "./desk/deskState";
 import { resetLanguage, setLanguage, t } from "./i18n";
 
 afterEach(resetLanguage);
@@ -30,6 +31,9 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     toggleProblemsPanel: vi.fn(),
     showSearch: vi.fn<(replace: boolean) => void>(),
     inSource: () => true,
+    canFind: () => true,
+    mode: () => "source",
+    showMode: vi.fn(),
     toggleMode: vi.fn(),
     genealogyInterface: () => true,
     ...overrides,
@@ -50,7 +54,6 @@ function host(overrides: Partial<CommandHost> = {}) {
       copy,
       chooseRecord: vi.fn(),
       askForName: vi.fn(),
-      openOverview: vi.fn(),
       ...overrides,
     } satisfies CommandHost,
   };
@@ -138,7 +141,12 @@ describe("what a command offers itself for", () => {
 });
 
 describe("what a command offers in Genealogy mode", () => {
-  const genealogy = view({ inSource: () => false, problemCount: () => 2 });
+  const genealogy = view({
+    inSource: () => false,
+    canFind: () => false,
+    mode: () => "genealogy",
+    problemCount: () => 2,
+  });
 
   it("offers nothing that acts on the editor", () => {
     for (const id of [
@@ -181,58 +189,78 @@ describe("what a command offers in Genealogy mode", () => {
   });
 });
 
-describe("the timeline of the file", () => {
-  const open = command("open-gedcom-file-timeline");
+describe("showing the file in a mode", () => {
+  const MODES: [DeskMode, string][] = [
+    ["genealogy", "users"],
+    ["graph", "network"],
+    ["timeline", "calendar-range"],
+    ["source", "code"],
+  ];
 
-  it("is offered for a file while the genealogy interface is on, in either mode", () => {
-    expect(open.isAvailable(view())).toBe(true);
-    expect(open.isAvailable(view({ inSource: () => false }))).toBe(true);
+  it("has a command for each mode, with its icon and no key", () => {
+    for (const [mode, icon] of MODES) {
+      const show = command(`show-gedcom-as-${mode}`);
+
+      expect(show.icon).toBe(icon);
+      expect(show.hotkeys).toBeUndefined();
+    }
+  });
+
+  it("is offered while the genealogy interface is on, for every mode but the one the tab is in", () => {
+    for (const [mode] of MODES) {
+      for (const [current] of MODES) {
+        expect(
+          command(`show-gedcom-as-${mode}`).isAvailable(view({ mode: () => current })),
+          `${mode} from ${current}`,
+        ).toBe(mode !== current);
+      }
+    }
   });
 
   it("is not offered while the genealogy interface is off", () => {
-    expect(open.isAvailable(view({ genealogyInterface: () => false }))).toBe(false);
+    for (const [mode] of MODES) {
+      expect(command(`show-gedcom-as-${mode}`).isAvailable(view({ genealogyInterface: () => false, mode: () => "source" }))).toBe(false);
+    }
   });
 
-  it("is not offered without a file", () => {
-    expect(open.isAvailable(view({ file: null }))).toBe(false);
+  it("shows the tab in the mode it names", () => {
+    for (const [mode] of MODES) {
+      const showMode = vi.fn();
+      command(`show-gedcom-as-${mode}`).run(host().host, view({ showMode, mode: () => "genealogy" }));
+
+      expect(showMode).toHaveBeenCalledWith(mode);
+    }
   });
 
-  it("opens the timeline of the file around the person at the cursor", () => {
-    const openOverview = vi.fn<CommandHost["openOverview"]>();
+  it("opens no overview tab of its own, as the two commands of an earlier version did", () => {
+    expect(COMMANDS.map((entry) => entry.id)).not.toContain("open-gedcom-file-timeline");
+    expect(COMMANDS.map((entry) => entry.id)).not.toContain("open-gedcom-file-graph");
+  });
 
-    open.run(host({ openOverview }).host, view());
-    open.run(host({ openOverview }).host, view({ recordAtCursor: () => undefined }));
+  it("keeps the toggle out of the tab's menu, where the four modes are", () => {
+    expect(command("toggle-gedcom-mode").menu).toBe(false);
+    expect(command("show-gedcom-as-graph").menu).toBeUndefined();
+  });
 
-    expect(openOverview.mock.calls).toEqual([
-      ["timeline", "tree.ged", "@I1@"],
-      ["timeline", "tree.ged", undefined],
-    ]);
+  it("is named in the palette, in English and in Russian", () => {
+    expect(t(command("show-gedcom-as-timeline").name)).toBe("Show as timeline");
+    setLanguage("ru");
+    expect(t(command("show-gedcom-as-graph").name)).toBe("Показать как граф");
   });
 });
 
-describe("the graph of the file", () => {
-  const open = command("open-gedcom-file-graph");
+describe("what a command offers in Graph and Timeline", () => {
+  const timeline = view({ inSource: () => false, canFind: () => true, mode: () => "timeline" });
 
-  it("is offered for a file while the genealogy interface is on, in either mode", () => {
-    expect(open.isAvailable(view())).toBe(true);
-    expect(open.isAvailable(view({ inSource: () => false }))).toBe(true);
+  it("offers find, and not replace nor anything that acts on the editor", () => {
+    expect(command("search-in-gedcom-file").isAvailable(timeline)).toBe(true);
+    expect(command("replace-in-gedcom-file").isAvailable(timeline)).toBe(false);
+    expect(command("rename-gedcom-reference").isAvailable(timeline)).toBe(false);
   });
 
-  it("is not offered while the genealogy interface is off", () => {
-    expect(open.isAvailable(view({ genealogyInterface: () => false }))).toBe(false);
-  });
-
-  it("is not offered without a file", () => {
-    expect(open.isAvailable(view({ file: null }))).toBe(false);
-  });
-
-  it("opens the graph of the file around the person at the cursor", () => {
-    const openOverview = vi.fn<CommandHost["openOverview"]>();
-
-    open.run(host({ openOverview }).host, view());
-
-    expect(openOverview.mock.calls).toEqual([["graph", "tree.ged", "@I1@"]]);
-    expect(open.icon).toBe("network");
+  it("offers a link to the person selected, and none with nobody selected", () => {
+    expect(command("copy-gedcom-record-link").isAvailable(timeline)).toBe(true);
+    expect(command("copy-gedcom-record-link").isAvailable(view({ ...timeline, recordAtCursor: () => undefined }))).toBe(false);
   });
 });
 

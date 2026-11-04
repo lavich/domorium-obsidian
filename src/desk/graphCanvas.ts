@@ -250,6 +250,8 @@ export class GraphCanvas {
   private matches: string[] = [];
   private match = -1;
   private current: string | null = null;
+  private selected: string | null = null;
+  private selectedIds = new Set<string>();
   private size = { width: 0, height: 0 };
   private transform: { x: number; y: number; k: number } | null = null;
   private glideTimer: number | null = null;
@@ -309,6 +311,7 @@ export class GraphCanvas {
       : null;
     this.scene = scene;
     this.layout = scene.layout;
+    this.markSelectedIds();
     this.arm(null);
     this.buildItems(scene);
     for (const element of this.drawn.values()) {
@@ -328,10 +331,11 @@ export class GraphCanvas {
   }
 
   resized(size?: { width: number; height: number }): void {
-    this.size = size ?? { width: this.el.clientWidth, height: this.el.clientHeight };
-    if (this.size.width <= 0 || this.size.height <= 0) {
+    const next = size ?? { width: this.el.clientWidth, height: this.el.clientHeight };
+    if (next.width <= 0 || next.height <= 0) {
       return;
     }
+    this.size = next;
     this.settle();
     this.redrawIfNeeded();
   }
@@ -467,6 +471,34 @@ export class GraphCanvas {
         light(element, true);
       }
     }
+  }
+
+  hasCard(id: string): boolean {
+    return this.layout?.card.has(id) ?? false;
+  }
+
+  /** Marks the person's cards as selected until another is, and centres on them; a card not drawn shows the mark once it is. */
+  select(id: string | null): void {
+    this.selected = id;
+    this.markSelectedIds();
+    for (const [one, element] of this.cardOf) {
+      element.classList.toggle("is-selected", this.selectedIds.has(one));
+    }
+    if (id === null) {
+      return;
+    }
+    const k = this.transform && this.transform.k >= ZOOM.far ? this.transform.k : ZOOM.readable;
+    if (this.transform && this.size.width > 0) {
+      this.centreOn(id, k, true);
+    } else {
+      this.pending = { centre: id, k };
+    }
+  }
+
+  private markSelectedIds(): void {
+    this.selectedIds = new Set(
+      this.selected === null ? [] : (this.scene?.copies?.(this.selected) ?? [this.selected]),
+    );
   }
 
   /** Gives a card the keyboard's focus without moving the view to it, now or once it is drawn. */
@@ -862,6 +894,7 @@ export class GraphCanvas {
     group.classList.toggle("is-dim", this.misses(id));
     group.classList.toggle("is-armed", id === this.armed);
     group.classList.toggle("is-current", id === this.current);
+    group.classList.toggle("is-selected", this.selectedIds.has(id));
     const card = svg(this.doc, "g", "gedcom-fg-card", {
       tabindex: 0,
       role: "button",

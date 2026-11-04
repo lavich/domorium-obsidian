@@ -104,6 +104,11 @@ export class FloatingSearch {
     this.input.focus();
   }
 
+  /** Keeps what is typed and takes the keyboard back. */
+  focus(): void {
+    this.input.focus();
+  }
+
   close(): void {
     this.el.removeClass("is-open");
     this.toggle.setAttribute("aria-expanded", "false");

@@ -8,6 +8,7 @@ import { HOVER_DELAY } from "./dom";
 import type { BranchScope } from "./branchScope";
 import { CARD, fileGraphOf } from "./fileGraph";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
+import { GraphCanvas, type CanvasScene } from "./graphCanvas";
 import {
   FileGraphBoard,
   fitText,
@@ -242,15 +243,6 @@ describe("drawing the graph of a file", () => {
     expect(container.querySelector(".gedcom-fg-tools")).toBeNull();
   });
 
-  it("says when the file is gone", () => {
-    board().showGone("curie.ged");
-
-    expect(container.querySelector(".gedcom-fg-gone")?.textContent).toBe("curie.ged is no longer in the vault.");
-    expect(container.querySelector(".gedcom-fg")?.classList.contains("is-gone")).toBe(true);
-  });
-});
-
-describe("pointing at a person", () => {
   it("lights Marie, her parents, husband and daughters and the lines to them, replacing nothing", () => {
     const drawn = board();
     const before = all(".gedcom-fg-view *");
@@ -484,15 +476,13 @@ describe("the view", () => {
   });
 
   it("reads a saved state, keeping its scope and view within bounds", () => {
-    expect(readGraphState({ gedcom: "a.ged", focus: "@I1@", around: "@I2@", up: 12, down: -3, view: { x: 1, y: 2, k: 9 } })).toEqual({
-      gedcom: "a.ged",
+    expect(readGraphState({ focus: "@I1@", up: 12, down: -3, view: { x: 1, y: 2, k: 9 } })).toEqual({
       focus: "@I1@",
-      around: "@I2@",
       up: 9,
       down: 0,
       view: { x: 1, y: 2, k: ZOOM.max },
     });
-    expect(readGraphState({ gedcom: "", focus: "", view: { x: 1 } })).toEqual({ gedcom: null, up: 2, down: 2 });
+    expect(readGraphState({ focus: "", view: { x: 1 } })).toEqual({ up: 2, down: 2 });
   });
 });
 
@@ -946,5 +936,164 @@ describe("the graph in Russian", () => {
     expect(scopeText()).toContain("10 из 17 человек");
     pointer("pointermove", node("@F3@")?.querySelector("circle"));
     expect(container.querySelector(".gedcom-fg-tip")?.textContent).toContain("2 ребёнка");
+  });
+});
+
+describe("the selected card", () => {
+  const selected = () => all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p"));
+
+  it("marks one person's card and no other, and centres on it", () => {
+    const model = curie();
+    const drawn = board(model);
+    drawn.select("@I2@");
+
+    expect(selected()).toEqual(["@I2@"]);
+    expectCentredOn(drawn.view(), centreOf(model, "@I2@"));
+  });
+
+  it("is a mark of its own, kept through pointing at another and through a search, beside the search's ring", async () => {
+    const drawn = board();
+    drawn.select("@I2@");
+    drawn.highlight("@I1@");
+    expect(selected()).toEqual(["@I2@"]);
+    expect(person("@I2@")?.classList.contains("is-hl")).toBe(false);
+
+    container.querySelector<HTMLElement>(".gedcom-fg-find-toggle")?.click();
+    const search = container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+    if (search) {
+      search.value = "pierre";
+      search.dispatchEvent(new Event("input"));
+    }
+    key(search, "Enter");
+    await frame();
+
+    expect(person("@I2@")?.classList.contains("is-current")).toBe(true);
+    expect(selected()).toEqual(["@I2@"]);
+  });
+
+  it("is replaced by the next person selected, and ended by null", () => {
+    const drawn = board();
+    drawn.select("@I2@");
+    drawn.select("@I12@");
+    expect(selected()).toEqual(["@I12@"]);
+
+    drawn.select(null);
+    expect(selected()).toEqual([]);
+  });
+
+  it("is on a card that goes out of the drawn window and comes back", () => {
+    const drawn = board(curie(), { view: { x: 0, y: 0, k: 2 } }, { width: 200, height: 150 });
+    drawn.select("@I2@");
+    drawn.panBy(100_000, 0);
+    drawn.draw(drawn.windowOf() ?? { left: 0, top: 0, right: 1, bottom: 1 });
+    expect(person("@I2@")).toBeNull();
+
+    drawn.panBy(-100_000, 0);
+    drawn.draw(drawn.windowOf() ?? { left: 0, top: 0, right: 1, bottom: 1 });
+    expect(selected()).toEqual(["@I2@"]);
+  });
+
+  it("is on the card after a new reading of the file, and nowhere where the person is gone from it", () => {
+    const drawn = board();
+    drawn.select("@I2@");
+    drawn.show(fileTimelineOf(curieIndex()), { scope: WHOLE });
+    expect(selected()).toEqual(["@I2@"]);
+
+    const small = fileTimelineOf(indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n0 TRLR\n"));
+    expect(() => drawn.show(small, { scope: WHOLE })).not.toThrow();
+    expect(selected()).toEqual([]);
+  });
+
+  it("is on the card again once a scope narrowed by hand is widened", () => {
+    const model = curie();
+    const drawn = board(model);
+    const narrow = { focus: "@I12@", up: 0, down: 0 };
+    expect(fileGraphOf(model, narrow).card.has("@I2@")).toBe(false);
+    drawn.select("@I2@");
+
+    drawn.show(model, { scope: narrow });
+    expect(selected()).toEqual([]);
+    drawn.show(model, { scope: WHOLE });
+    expect(selected()).toEqual(["@I2@"]);
+  });
+
+  it("changes the scope to the person's own branch where the branch shown does not hold them", () => {
+    const model = curie();
+    const narrow = { focus: "@I12@", up: 0, down: 0 };
+    const drawn = board(model, { scope: narrow });
+    expect(person("@I2@")).toBeNull();
+
+    drawn.select("@I2@");
+
+    expect(host.stateChanged.mock.lastCall?.[0].scope.focus).toBe("@I2@");
+    expect(selected()).toEqual(["@I2@"]);
+    expect(scopeText()).toContain("Branch of Pierre Curie");
+  });
+
+  it("keeps the view as it was where the canvas is told it has no size", () => {
+    const drawn = board();
+    const before = drawn.view();
+    drawn.resized({ width: 0, height: 0 });
+
+    expect(drawn.view()).toEqual(before);
+  });
+
+  describe("on the canvas", () => {
+    function scene(): CanvasScene {
+      const layout = fileGraphOf(curie(), WHOLE);
+      return {
+        layout,
+        card: (id) => ({ name: id, years: "", sex: "M" }),
+        family: () => undefined,
+        related: () => [],
+        copies: (id) => (id === "@I2@" ? ["@I2@", "@I1@"] : [id]),
+      };
+    }
+
+    it("marks every copy of a person drawn more than once", () => {
+      const canvas = new GraphCanvas(container, { activateCard: vi.fn(), activateFamily: vi.fn(), viewChanged: vi.fn() });
+      canvas.show(scene(), { open: undefined });
+      canvas.resized(WIDE);
+      canvas.select("@I2@");
+
+      expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p")).sort()).toEqual(["@I1@", "@I2@"]);
+    });
+
+    it("centres on the person once the canvas has a size, when selected before it had one", () => {
+      const canvas = new GraphCanvas(container, { activateCard: vi.fn(), activateFamily: vi.fn(), viewChanged: vi.fn() });
+      canvas.show(scene(), { open: undefined });
+      canvas.select("@I2@");
+      canvas.resized(WIDE);
+
+      const [x, y] = centreOf(curie(), "@I2@");
+      expect(canvas.view()?.x).toBeCloseTo(x, 3);
+      expect(canvas.view()?.y).toBeCloseTo(y, 3);
+      expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p")).sort()).toEqual(["@I1@", "@I2@"]);
+    });
+  });
+});
+
+describe("the search of the graph, opened from outside", () => {
+  it("replaces the icon with a focused field", () => {
+    const drawn = board();
+    drawn.openSearch();
+
+    expect(container.querySelector(".gedcom-fg-find")?.classList.contains("is-open")).toBe(true);
+    expect(document.activeElement).toBe(container.querySelector(".gedcom-fg-search"));
+  });
+
+  it("keeps what is typed and takes the focus back, where it is open already", () => {
+    const drawn = board();
+    drawn.openSearch();
+    const field = container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+    if (field) {
+      field.value = "joliot";
+      field.dispatchEvent(new Event("input"));
+    }
+    (document.activeElement as HTMLElement | null)?.blur();
+    drawn.openSearch();
+
+    expect(field?.value).toBe("joliot");
+    expect(document.activeElement).toBe(field);
   });
 });

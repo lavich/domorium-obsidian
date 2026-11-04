@@ -9,8 +9,16 @@
 /* ── The view and its chrome ─────────────────────────────────────────────
    */
 
-.gedcom-gedcom-view {
+.workspace-leaf-content[data-type="domorium-gedcom"] .view-action.is-active {
+  color: var(--interactive-accent);
+}
+
+.gedcom-gedcom-view,
+.gedcom-gedcom-views,
+.gedcom-views-root {
   height: 100%;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* Obsidian pads a view and lets it scroll, and iOS reports the keyboard's height
@@ -1122,11 +1130,6 @@ button.gedcom-desk-moment-what:disabled {
 /* ── The timeline of a file ──────────────────────────────────────────────
    */
 
-.workspace-leaf-content[data-type="domorium-file-timeline"] .view-content {
-  padding: 0;
-  overflow: hidden;
-}
-
 .gedcom-ft {
   --gedcom-ft-names: 210px;
   --gedcom-ft-axis: 26px;
@@ -1660,24 +1663,6 @@ button.gedcom-fg-pop-open {
   cursor: pointer;
 }
 
-.gedcom-ft.is-gone > :not(.gedcom-ft-gone),
-.gedcom-fg.is-gone > :not(.gedcom-fg-gone) {
-  display: none;
-}
-
-.gedcom-ft-gone,
-.gedcom-fg-gone {
-  margin: auto;
-  padding: var(--size-4-8);
-  color: var(--text-muted);
-  text-align: center;
-}
-
-.workspace-leaf-content[data-type="domorium-file-graph"] .view-content {
-  padding: 0;
-  overflow: hidden;
-}
-
 .gedcom-fg {
   position: relative;
   display: flex;
@@ -1830,6 +1815,36 @@ button.gedcom-fg-pop-open {
   stroke-width: 2.5;
 }
 
+.gedcom-ft-name.is-selected {
+  background: var(--background-modifier-active-hover);
+  box-shadow: inset 0 0 0 1.5px var(--text-normal);
+}
+
+.gedcom-ft-name.is-selected.is-current {
+  box-shadow:
+    inset 0 0 0 1.5px var(--text-normal),
+    inset 3px 0 0 var(--interactive-accent);
+}
+
+.gedcom-ft-row-selected {
+  fill: var(--background-modifier-active-hover);
+  pointer-events: none;
+}
+
+.gedcom-ft-life.is-selected {
+  stroke: var(--text-normal);
+  stroke-width: 2;
+}
+
+.gedcom-ft-board:not(.has-hl) .gedcom-ft-items > .is-selected:not(.is-dim) {
+  opacity: 0.85;
+}
+
+.gedcom-ft-life.is-selected.is-current {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
 .gedcom-fg-find,
 .gedcom-ft-find {
   --gedcom-find-size: 28px;
@@ -1907,7 +1922,6 @@ button.gedcom-fg-pop-open {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  border-top: 1px solid var(--background-modifier-border);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -2052,6 +2066,19 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-person.is-hl .gedcom-fg-card-bg {
   stroke: var(--text-accent);
   stroke-width: 2;
+}
+
+.gedcom-fg-person.is-selected .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 3;
+}
+
+.gedcom-fg-person.is-selected.is-current .gedcom-fg-card-bg,
+.gedcom-fg-person.is-selected.is-current.is-hl .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 3;
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
 }
 
 .gedcom-fg-person .gedcom-fg-card:focus-visible .gedcom-fg-card-bg,
