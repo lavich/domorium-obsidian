@@ -128,6 +128,15 @@ year rather than a guessed one. The payload SHALL always be reported as the file
 wrote it, so a view can show the full date whether or not a year could be read
 from it.
 
+A date stating two dates — `BET … AND …`, `FROM … TO …` — SHALL also report the
+year of the second, read by the same rules; where the second yields no year, as
+one in another calendar does, or where the first yields none, no second year
+SHALL be reported, and the first is read as before. The two years SHALL be reported in the order the file writes
+them, even where the second is the earlier. The model SHALL tell a date that
+states a stretch of time, `FROM` and `TO` with or without the other, from one
+that states an uncertain moment, `BET`, `BEF` and `AFT`, so that a view can draw
+the first as a period and the second as a guess.
+
 #### Scenario: A plain date
 - **WHEN** the payload reads `7 NOV 1867`
 - **THEN** the year is 1867, reported as exact, and the payload is reported
@@ -196,6 +205,33 @@ from it.
 - **WHEN** a document declares `2 VERS 4.0`, and a person's birth reads
   `7 NOV 1867`
 - **THEN** the year 1867 is reported for the birth, as exact
+
+#### Scenario: A period
+- **WHEN** the payload reads `FROM 1891 TO 1894`
+- **THEN** the year is 1891, the second year is 1894, and the date is reported
+  as a period
+
+#### Scenario: An uncertain moment between two years
+- **WHEN** the payload reads `BET 1867 AND 1870`
+- **THEN** the second year is 1870, and the date is reported as uncertain, not as
+  a period
+
+#### Scenario: A period with one end
+- **WHEN** the payload reads `FROM 1891`
+- **THEN** the year is 1891, no second year is reported, and the date is reported
+  as a period
+
+#### Scenario: A second date in another calendar
+- **WHEN** the payload reads `BET 1867 AND HEBREW 5628` in a 7.0 document
+- **THEN** the year is 1867 and no second year is reported
+
+#### Scenario: A dual year in the second date
+- **WHEN** the payload reads `FROM 1700 TO 1750/51` in a 5.5.1 document
+- **THEN** the year is 1700 and the second year 1751
+
+#### Scenario: A second date before the first
+- **WHEN** the payload reads `FROM 1894 TO 1891`
+- **THEN** the year is 1894 and the second year 1891
 
 ### Requirement: Relatives are resolved through families, by the roles GEDCOM defines
 

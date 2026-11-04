@@ -481,7 +481,8 @@ The plugin SHALL have a setting, **Genealogy interface**, that SHALL be off by
 default for every reader, including one whose settings were saved before the
 setting existed. It SHALL be changed only in the plugin settings. While it is
 off, the plugin SHALL NOT offer Genealogy mode, the Index, the Evidence panel,
-the ribbon icon or the commands that open them.
+the timeline of the file, the ribbon icon, the header action that opens the
+timeline, or the commands that open any of them.
 
 Turning the setting on or off SHALL take effect in every open tab and sidebar
 without restarting Obsidian. A mode a tab was last in, and the *Open GEDCOM files
@@ -491,8 +492,8 @@ say that it applies only while the interface is on.
 
 #### Scenario: A reader who never touched the setting
 - **WHEN** the plugin is installed or updated and the setting is not changed
-- **THEN** no ribbon icon, no Index or Evidence command and no mode switch is
-  offered
+- **THEN** no ribbon icon, no Index, Evidence or timeline command, and no mode
+  switch or timeline action in a tab header is offered
 
 #### Scenario: A reader who used Genealogy mode before
 - **WHEN** the plugin updates and their saved settings name Genealogy in *Open
@@ -506,10 +507,10 @@ say that it applies only while the interface is on.
   and the tab stays in Source mode
 
 #### Scenario: Turning it off with panels open
-- **WHEN** a tab is in Genealogy mode, the Index and Evidence panels are open,
-  and the reader turns the setting off
-- **THEN** the panels close, the tab shows the source, and the mode switch and
-  ribbon icon are gone
+- **WHEN** a tab is in Genealogy mode, the Index and Evidence panels and the
+  timeline of the file are open, and the reader turns the setting off
+- **THEN** the panels and the timeline close, the tab shows the source, and the
+  mode switch, the timeline action and the ribbon icon are gone
 
 #### Scenario: Turning it on again
 - **WHEN** a tab was in Genealogy mode, the setting was turned off and then on
