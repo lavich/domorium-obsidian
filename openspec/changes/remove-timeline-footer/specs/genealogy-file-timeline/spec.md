@@ -62,8 +62,14 @@ timeline.
 
 ### Requirement: Finding a person and zooming
 
-The timeline SHALL offer a search by name that fades the rows that do not match,
-and a zoom that widens or narrows the axis of years. The zoom SHALL be a group
+The timeline SHALL offer a search by name that fades the rows that do not match.
+The search SHALL be an icon floating over the board, under the axis and away from
+the zoom buttons, that opens into a field when it is pressed and takes the focus.
+The field SHALL have a cross that erases the text and leaves the field open;
+Escape, and the cross of an empty field, SHALL close it back to the icon, as SHALL
+leaving it empty, while a field with text SHALL stay open and keep its matches
+faded. The timeline SHALL also offer a zoom that widens or narrows the axis of
+years. The zoom SHALL be a group
 of buttons — zoom out, zoom in and Fit — floating over a corner of the board and
 staying there while the rows and years scroll beneath it, not a slider in the
 toolbar; each press of zoom in or zoom out SHALL change the width of a year by a
@@ -75,6 +81,12 @@ while the rows and years scroll beneath and beside them.
 - **WHEN** the reader types `joliot`
 - **THEN** the rows of Frédéric, Irène, Hélène and Pierre Joliot stand out and the
   others fade
+
+#### Scenario: Opening, clearing and closing the search
+- **WHEN** the reader presses the search icon, types `joliot`, presses the cross,
+  and then presses Escape
+- **THEN** the icon opens into a field with the focus, the text is erased with
+  the field still open and no row faded, and the field closes back to the icon
 
 #### Scenario: Zooming with the buttons
 - **WHEN** the reader presses zoom in, and then zoom out twice

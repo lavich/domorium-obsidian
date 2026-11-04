@@ -172,6 +172,41 @@ test.describe("the timeline of a file", () => {
   });
 });
 
+for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 }]) {
+  test.describe(`the search over the timeline at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    test("floats inside the board under the axis, away from the zoom buttons, and keeps a query open", async ({ page }) => {
+      const phone = viewport.width < 600;
+      await mountTimeline(page, { phone });
+      const box = (selector: string) => page.locator(selector).boundingBox();
+
+      await expect(page.locator(".gedcom-ft-tools .gedcom-ft-search")).toHaveCount(0);
+      await expect(page.locator(".gedcom-ft-head, .gedcom-ft-title")).toHaveCount(0);
+      const board = await box(".gedcom-ft-board");
+      const axis = await box(".gedcom-ft-axis-band");
+      const closed = await box(".gedcom-ft-find");
+      const zoomGroup = await box(".gedcom-ft-controls");
+      expect(closed?.y ?? 0).toBeGreaterThanOrEqual((axis?.y ?? 0) + (axis?.height ?? 0));
+      expect((closed?.x ?? 0) + (closed?.width ?? 0)).toBeLessThanOrEqual((board?.x ?? 0) + (board?.width ?? 0));
+      expect((closed?.y ?? 0) + (closed?.height ?? 0)).toBeLessThan(zoomGroup?.y ?? 0);
+      expect(closed?.height ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 0);
+
+      await page.locator(".gedcom-ft-find-toggle").click();
+      await expect(page.locator(".gedcom-ft-search")).toBeFocused();
+      await page.locator(".gedcom-ft-search").fill("joliot");
+      await expect(page.locator(".gedcom-ft-name:not(.is-dim)")).toHaveCount(4);
+      await page.locator("body").click({ position: { x: 5, y: 5 } });
+      await expect(page.locator(".gedcom-ft-find")).toHaveClass(/is-open/);
+      await expect.poll(async () => (await box(".gedcom-ft-search"))?.width ?? 0).toBeGreaterThan(100);
+      await page.locator(".gedcom-ft-find-clear").click();
+      await expect(page.locator(".gedcom-ft-name.is-dim")).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      await expect(page.locator(".gedcom-ft-find")).not.toHaveClass(/is-open/);
+    });
+  });
+}
+
 test.describe("the zoom buttons of the timeline", () => {
   test("float in the corner of the board while the rows scroll, and widen and narrow the years", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 400 });

@@ -197,7 +197,7 @@ export abstract class FileOverviewView extends ItemView {
 
   protected abstract createBoard(parent: HTMLElement): OverviewBoard;
 
-  protected abstract present(index: GenealogyIndex, name: string): void;
+  protected abstract present(index: GenealogyIndex): void;
 
   async setState(state: unknown, result: ViewStateResult): Promise<void> {
     const before = this.gedcom();
@@ -268,7 +268,7 @@ export abstract class FileOverviewView extends ItemView {
       board.showGone(path);
       return;
     }
-    this.present(index, fileName(path));
+    this.present(index);
   }
 }
 
@@ -320,8 +320,8 @@ export class FileTimelineView extends FileOverviewView {
     return this.timeline;
   }
 
-  protected present(index: GenealogyIndex, name: string): void {
-    this.timeline?.show(fileTimelineOf(index), name, this.state);
+  protected present(index: GenealogyIndex): void {
+    this.timeline?.show(fileTimelineOf(index), this.state);
   }
 }
 
@@ -369,13 +369,13 @@ export class FileGraphView extends FileOverviewView {
     return this.graph;
   }
 
-  protected present(index: GenealogyIndex, name: string): void {
+  protected present(index: GenealogyIndex): void {
     const board = this.graph;
     if (!board) {
       return;
     }
     const { focus, up, down, around, view } = this.state;
-    board.show(fileTimelineOf(index), name, {
+    board.show(fileTimelineOf(index), {
       scope: { ...(focus === undefined ? {} : { focus }), up, down },
       ...(around === undefined ? {} : { around }),
       ...(view === undefined ? {} : { view }),

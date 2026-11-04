@@ -291,6 +291,7 @@
   "fileTimeline.title": "Хронология файла {name}",
   "fileTimeline.others": "Другие события",
   "overview.search": "Найти человека…",
+  "overview.clearSearch": "Очистить поиск",
   "fileTimeline.alive": {
     "one": "В {year} году жив {count} человек",
     "few": "В {year} году живы {count} человека",
@@ -304,18 +305,6 @@
     "other": "В {year} году в этой ветке живы {count} человека"
   },
   "overview.wholeFile": "Весь файл",
-  "overview.people": {
-    "one": "{count} человек",
-    "few": "{count} человека",
-    "many": "{count} человек",
-    "other": "{count} человека"
-  },
-  "overview.families": {
-    "one": "{count} семья",
-    "few": "{count} семьи",
-    "many": "{count} семей",
-    "other": "{count} семьи"
-  },
   "overview.branchOf": {
     "one": "Ветка: {name} · {shown} из {count} человека",
     "few": "Ветка: {name} · {shown} из {count} человек",

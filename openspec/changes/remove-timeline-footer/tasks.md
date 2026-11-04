@@ -12,6 +12,11 @@
 - [x] 2.1 Move the −, + and Fit group of `src/desk/graphCanvas.ts` to `zoomControls` in `src/desk/dom.ts`, with its three strings as `overview.*` keys; the graph passes `src/desk/fileGraphView.test.ts` unchanged, `src/i18n/i18n.test.ts` checks parity.
 - [x] 2.2 In `src/desk/fileTimelineView.ts` remove the slider and its label, put the group over a stage around the board, step the zoom by 1.2 within 2–16 and let Fit fit the span of years to the board; style it with the graph's rules in `styles.css`. Test in `src/desk/fileTimelineView.test.ts`: no slider, zoom in then out reaches the range's ends and `scopeChanged` carries the zoom, Fit makes the chart as wide as the board; in `tests/fileTimeline.spec.ts` the group is inside the board's box and does not move while the rows scroll, and the buttons widen and narrow the axis.
 
-## 3. Verify
+## 3. The title and the search
 
-- [x] 3.1 `npm run check`, `npm run test:browser` and `npm run openspec:validate` pass.
+- [x] 3.1 Remove the title and summary block of the graph and the title block of the timeline, with their styles, and the graph's toolbar; `show` no longer takes the file's name. Test in `src/desk/fileGraphView.test.ts`: no head, title, summary or toolbar in the graph.
+- [x] 3.2 Create `src/desk/floatingSearch.ts`: a search icon that opens into a field, a cross that clears it or closes an empty field, Escape, closing on leaving an empty field, Enter and Shift+Enter; use it in the graph (`stepMatch` in `src/desk/graphCanvas.ts`, which also keeps the pointer away from it) and in the timeline; style it with the zoom group's rules in `styles.css`, 44 px on a phone, no animation under reduced motion. Test in `src/desk/fileGraphView.test.ts` (open, clear and stay open, Escape twice, a query kept open, Shift+Enter) and `src/desk/fileTimelineView.test.ts`; in `tests/fileGraph.spec.ts` and `tests/fileTimeline.spec.ts` at 1400 and 390 px the box floats inside the canvas or board away from the zoom group and the graph has no band above its canvas.
+
+## 4. Verify
+
+- [x] 4.1 `npm run check`, `npm run test:browser` and `npm run openspec:validate` pass.

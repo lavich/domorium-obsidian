@@ -9,6 +9,7 @@ import {
   type TimelineMark,
   type TimelinePerson,
 } from "./fileTimeline";
+import { FloatingSearch } from "./floatingSearch";
 import { HoverDelay, placeInside, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
@@ -122,10 +123,9 @@ export class FileTimelineBoard {
   private readonly doc: Document;
   private readonly id = (boards += 1);
   private readonly root: HTMLElement;
-  private readonly title: HTMLElement;
   private readonly othersChip: HTMLButtonElement;
   private readonly othersCount: HTMLElement;
-  private readonly searchInput: HTMLInputElement;
+  private readonly find: FloatingSearch;
   private readonly aliveEl: HTMLElement;
   private readonly scopeBar: BranchScopeBar;
   private readonly board: HTMLElement;
@@ -168,9 +168,6 @@ export class FileTimelineBoard {
   ) {
     this.doc = parent.ownerDocument;
     this.root = parent.createDiv({ cls: "gedcom-ft" });
-    const head = this.root.createDiv({ cls: "gedcom-ft-head" });
-    this.title = head.createDiv({ cls: "gedcom-ft-title" });
-
     const tools = this.root.createDiv({ cls: "gedcom-ft-tools" });
     this.othersChip = tools.createEl("button", {
       cls: "gedcom-ft-chip",
@@ -178,12 +175,6 @@ export class FileTimelineBoard {
       attr: { type: "button" },
     });
     this.othersCount = this.othersChip.createSpan({ cls: "gedcom-ft-chip-count" });
-    this.searchInput = tools.createEl("input", {
-      cls: "gedcom-ft-search",
-      type: "search",
-      placeholder: t("overview.search"),
-      attr: { "aria-label": t("overview.search") },
-    });
     this.aliveEl = tools.createSpan({ cls: "gedcom-ft-alive" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-ft",
@@ -192,6 +183,11 @@ export class FileTimelineBoard {
     });
 
     this.stage = this.root.createDiv({ cls: "gedcom-ft-stage" });
+    this.find = new FloatingSearch(this.stage, {
+      prefix: "gedcom-ft",
+      setIcon: (element, icon) => this.host.setIcon(element, icon),
+      change: (query) => this.setQuery(query),
+    });
     zoomControls(this.stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
       out: () => this.zoomBy(1 / ZOOM.step),
       in: () => this.zoomBy(ZOOM.step),
@@ -222,12 +218,11 @@ export class FileTimelineBoard {
   }
 
   /** Laid out again only where the model or the scope is not the one shown. */
-  show(model: FileTimeline, fileName: string, scope: TimelineScope): void {
+  show(model: FileTimeline, scope: TimelineScope): void {
     this.goneEl.toggle(false);
     this.root.removeClass("is-gone");
     const changed = model !== this.model || !sameScope(scope, this.scope);
     this.model = model;
-    this.title.setText(t("fileTimeline.title", { name: fileName }));
     if (!changed && this.layout) {
       return;
     }
@@ -856,7 +851,6 @@ export class FileTimelineBoard {
 
   private listen(): void {
     this.othersChip.addEventListener("click", () => this.setScope({ others: !this.scope.others }));
-    this.searchInput.addEventListener("input", () => this.setQuery(this.searchInput.value));
 
     this.board.addEventListener("pointerdown", (event) => {
       this.pointer = event.pointerType || "mouse";

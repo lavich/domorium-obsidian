@@ -82,7 +82,7 @@ function mount(options: GraphOptions): number {
         : null;
     },
   });
-  board.show(fileTimelineOf(index), options.doc === undefined ? "curie.ged" : "family.ged", {
+  board.show(fileTimelineOf(index), {
     scope: { up: 2, down: 2, ...(focus === undefined ? {} : { focus }), ...options.scope },
     ...(options.around === undefined ? {} : { around: options.around }),
     ...(options.view === undefined ? {} : { view: options.view }),

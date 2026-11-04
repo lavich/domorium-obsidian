@@ -120,6 +120,7 @@ test.describe("the graph of a file", () => {
 
   test("fades who does not match a search, and goes to each match on Enter", async ({ page }) => {
     await mountGraph(page);
+    await page.locator(".gedcom-fg-find-toggle").click();
     await page.locator(".gedcom-fg-search").fill("joliot");
 
     await expect(page.locator(".gedcom-fg-person:not(.is-dim)")).toHaveCount(4);
@@ -254,6 +255,39 @@ test.describe("the graph of a file", () => {
   });
 });
 
+for (const viewport of [{ width: 1400, height: 900 }, { width: 390, height: 844 }]) {
+  test.describe(`the search over the graph at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    test("floats inside the canvas away from the zoom buttons, with no toolbar band above it", async ({ page }) => {
+      const phone = viewport.width < 600;
+      await mountGraph(page, { phone });
+      const box = (selector: string) => page.locator(selector).boundingBox();
+
+      const canvas = await box(".gedcom-fg-canvas");
+      const root = await box(".gedcom-fg");
+      expect(Math.abs((canvas?.y ?? 0) - (root?.y ?? 0))).toBeLessThan(2);
+      const closed = await box(".gedcom-fg-find");
+      const zoomGroup = await box(".gedcom-fg-controls");
+      expect(closed?.x ?? 0).toBeGreaterThanOrEqual(canvas?.x ?? 0);
+      expect((closed?.y ?? 0) + (closed?.height ?? 0)).toBeLessThan(zoomGroup?.y ?? 0);
+      expect(closed?.height ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 0);
+
+      await page.locator(".gedcom-fg-find-toggle").click();
+      await expect(page.locator(".gedcom-fg-search")).toBeFocused();
+      await expect.poll(async () => (await box(".gedcom-fg-search"))?.width ?? 0).toBeGreaterThan(100);
+      const open = await box(".gedcom-fg-find");
+      expect((open?.x ?? 0) + (open?.width ?? 0)).toBeLessThanOrEqual((canvas?.x ?? 0) + (canvas?.width ?? 0));
+      expect(open?.x ?? 0).toBeGreaterThanOrEqual(canvas?.x ?? 0);
+      await page.locator(".gedcom-fg-search").fill("joliot");
+      await page.locator(".gedcom-fg-find-clear").click();
+      await expect(page.locator(".gedcom-fg-find")).toHaveClass(/is-open/);
+      await page.keyboard.press("Escape");
+      await expect(page.locator(".gedcom-fg-find")).not.toHaveClass(/is-open/);
+    });
+  });
+}
+
 test.describe("the graph of a file on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -263,7 +297,7 @@ test.describe("the graph of a file on a phone", () => {
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
     ).toBe(true);
-    await expect(page.locator(".gedcom-fg-title")).toBeHidden();
+    await expect(page.locator(".gedcom-fg-head, .gedcom-fg-title, .gedcom-fg-tools")).toHaveCount(0);
     await expect(page.locator('[class*="legend"]')).toHaveCount(0);
     expect(await page.locator(".gedcom-fg-canvas").evaluate((canvas) => getComputedStyle(canvas).touchAction)).toBe(
       "none",
@@ -339,7 +373,6 @@ test.describe("the graph of a file of 10 000 people", () => {
 
       expect(took).toBeLessThan(3_000);
       await expect(page.locator(".gedcom-fg-scope")).toBeHidden();
-      await expect(page.locator(".gedcom-fg-summary")).toContainText("10000 people");
       expect(await page.locator(".gedcom-fg-person").count()).toBeLessThan(300);
       const outside = await page.evaluate(() => {
         const window_ = window.graph.board?.windowOf();

@@ -479,11 +479,19 @@ export class GraphCanvas {
     }
   }
 
+  private onControls(target: EventTarget | null): boolean {
+    return target instanceof Element && target.closest(".gedcom-fg-controls, .gedcom-fg-find") !== null;
+  }
+
   nextMatch(): string | null {
+    return this.stepMatch(1);
+  }
+
+  stepMatch(by: 1 | -1): string | null {
     if (this.matches.length === 0) {
       return null;
     }
-    this.match = (this.match + 1) % this.matches.length;
+    this.match = (this.match + by + this.matches.length) % this.matches.length;
     const id = this.matches[this.match] ?? null;
     if (id !== null) {
       const k = this.transform && this.transform.k >= ZOOM.far ? this.transform.k : ZOOM.readable;
@@ -959,7 +967,7 @@ export class GraphCanvas {
       }
     };
     this.el.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0 || (event.target instanceof Node && this.controls.contains(event.target))) {
+      if (event.button !== 0 || this.onControls(event.target)) {
         return;
       }
       this.pointer = event.pointerType || "mouse";
@@ -1057,7 +1065,7 @@ export class GraphCanvas {
       { passive: false },
     );
     this.el.addEventListener("click", (event) => {
-      if (!(event.target instanceof Node && this.controls.contains(event.target))) {
+      if (!this.onControls(event.target)) {
         this.activate(event, false);
       }
     });

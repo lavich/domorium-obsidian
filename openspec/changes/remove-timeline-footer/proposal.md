@@ -32,6 +32,21 @@ Proposed scope, taken from that:
 - «в таймлайне есть скроллбары — они не должны заходить на шапку и на имена» —
   only the rows and years scroll with bars of their own; the axis and the names
   follow them (`design.md`).
+- On the graph's header, «Graph of curie.ged / 17 people · 5 families»: «убери
+  эти записи» — the title and the summary above the canvas go; the title of the
+  tab in the leaf header stays. The timeline's own title above the board goes
+  with them, so that neither view keeps such a block.
+- «А поиск можно тоже плавающим над канвасом сделать? и крестик для быстрого
+  стирания добавить. А ещё лучше чтобы это была иконка поиска, которая
+  разворачивается в строку при клике по ней» — for the graph and, for
+  consistency, the timeline: the toolbar field gives way to a search icon
+  floating over the canvas or board that opens into a field, with a cross that
+  clears it. It sits at the top right (the zoom buttons are at the bottom right;
+  in the timeline it sits under the axis), comes first in the keyboard order
+  after the toolbar and before the zoom buttons, is 44 px on a phone, and opens
+  without animation under reduced motion. The graph keeps Enter for the next
+  match and gains Shift+Enter for the previous. The graph's toolbar is then
+  empty and is removed; the timeline's keeps its Other-events switch.
 - On a phone the board takes the height the removed lines and subtitle
   freed, with nothing below it and no empty band above it.
 - A person with no dated event still has a row, and no lifeline; the timeline
@@ -54,7 +69,8 @@ Nothing is needed from `@domorium/*`.
 
 - Capability `genealogy-file-timeline`: three requirements are modified — «A row
   is a person, and their lifeline is coloured by sex», «A person's events are
-  drawn on their lifeline» and «Finding a person and zooming».
+  drawn on their lifeline» and «Finding a person and zooming». In
+  `genealogy-file-graph`, «Finding a person» and «The graph on a phone».
 - Code: `src/desk/fileTimelineView.ts`, `src/desk/fileTimeline.ts`,
-  `src/desk/dom.ts`, `src/desk/graphCanvas.ts`, `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`.
+  `src/desk/floatingSearch.ts`, `src/desk/fileGraphView.ts`, `src/desk/dom.ts`, `src/desk/graphCanvas.ts`, `styles.css`, `src/i18n/en.json`, `src/i18n/ru.json`.
 - No setting, no `minAppVersion` change, no dependency.

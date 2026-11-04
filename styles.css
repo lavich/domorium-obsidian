@@ -1145,24 +1145,7 @@ button.gedcom-desk-moment-what:disabled {
   padding-bottom: var(--navbar-height, 0px);
 }
 
-.gedcom-ft-head,
-.gedcom-fg-head {
-  padding: var(--size-4-3) var(--size-4-4) 0;
-}
-
-.gedcom-ft-title,
-.gedcom-fg-title {
-  font-size: var(--font-ui-medium);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-fg-summary {
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-.gedcom-ft-tools,
-.gedcom-fg-tools {
+.gedcom-ft-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1191,11 +1174,6 @@ button.gedcom-ft-chip[aria-pressed="true"] {
 .gedcom-ft-chip-count {
   margin-inline-start: var(--size-2-2);
   opacity: 0.65;
-}
-
-input.gedcom-ft-search {
-  flex: 0 1 220px;
-  min-width: 0;
 }
 
 .gedcom-ft-alive {
@@ -1669,12 +1647,6 @@ button.gedcom-ft-branch[aria-pressed="true"] {
   font-weight: var(--font-semibold);
 }
 
-.is-phone .gedcom-ft-head,
-.is-phone .gedcom-ft-title,
-.is-phone .gedcom-fg-title {
-  display: none;
-}
-
 .gedcom-ft-tip,
 .gedcom-ft-pop,
 .gedcom-fg-tip,
@@ -1764,13 +1736,10 @@ button.gedcom-fg-pop-open {
   padding-bottom: var(--navbar-height, 0px);
 }
 
-input.gedcom-fg-search {
-  flex: 0 1 220px;
-  min-width: 0;
-}
-
 .gedcom-fg-controls,
-.gedcom-ft-controls {
+.gedcom-ft-controls,
+.gedcom-fg-find,
+.gedcom-ft-find {
   position: absolute;
   z-index: 1;
   inset-inline-end: var(--size-4-2);
@@ -1786,7 +1755,9 @@ input.gedcom-fg-search {
 }
 
 .gedcom-fg-controls button,
-.gedcom-ft-controls button {
+.gedcom-ft-controls button,
+.gedcom-fg-find button,
+.gedcom-ft-find button {
   height: auto;
   padding: var(--size-2-2) var(--size-2-3);
   border: 0;
@@ -1799,15 +1770,89 @@ input.gedcom-fg-search {
 }
 
 .gedcom-fg-controls button:hover,
-.gedcom-ft-controls button:hover {
+.gedcom-ft-controls button:hover,
+.gedcom-fg-find button:hover,
+.gedcom-ft-find button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
 .gedcom-fg-controls .svg-icon,
-.gedcom-ft-controls .svg-icon {
+.gedcom-ft-controls .svg-icon,
+.gedcom-fg-find .svg-icon,
+.gedcom-ft-find .svg-icon {
   width: 16px;
   height: 16px;
+}
+
+.gedcom-fg-find,
+.gedcom-ft-find {
+  top: var(--size-4-2);
+  bottom: auto;
+  align-items: center;
+}
+
+.gedcom-ft-stage > .gedcom-ft-find {
+  top: calc(var(--gedcom-ft-axis) + var(--size-4-2));
+  inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
+}
+
+.gedcom-fg-find input.gedcom-fg-search,
+.gedcom-ft-find input.gedcom-ft-search {
+  width: 0;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    width 180ms ease-out,
+    opacity 180ms ease-out,
+    visibility 0s linear 180ms;
+}
+
+.gedcom-fg-find.is-open input.gedcom-fg-search,
+.gedcom-ft-find.is-open input.gedcom-ft-search {
+  width: min(220px, 50vw);
+  padding: 0 var(--size-2-3);
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+
+.gedcom-fg-search::-webkit-search-cancel-button,
+.gedcom-ft-search::-webkit-search-cancel-button {
+  display: none;
+  appearance: none;
+}
+
+.gedcom-fg-find:not(.is-open) .gedcom-fg-find-clear,
+.gedcom-ft-find:not(.is-open) .gedcom-ft-find-clear {
+  display: none;
+}
+
+.gedcom-fg-find:not(.is-open),
+.gedcom-ft-find:not(.is-open) {
+  gap: 0;
+}
+
+.is-phone .gedcom-fg-find button,
+.is-phone .gedcom-ft-find button {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gedcom-fg-find input.gedcom-fg-search,
+  .gedcom-ft-find input.gedcom-ft-search {
+    transition: none;
+  }
 }
 
 .gedcom-fg-canvas {

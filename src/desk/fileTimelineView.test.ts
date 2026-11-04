@@ -44,7 +44,7 @@ beforeEach(() => {
 
 function board(model: FileTimeline = fileTimelineOf(curieIndex()), scope: Partial<TimelineScope> = {}) {
   const drawn = new FileTimelineBoard(container, host satisfies FileTimelineHost);
-  drawn.show(model, "curie.ged", { ...SCOPE, ...scope });
+  drawn.show(model, { ...SCOPE, ...scope });
   drawn.draw(WHOLE);
   return drawn;
 }
@@ -273,6 +273,28 @@ describe("the toolbar", () => {
 
     const width = Number(container.querySelector(".gedcom-ft-chart")?.getAttribute("width"));
     expect(Math.abs(width - 1600)).toBeLessThan(2);
+  });
+
+  it("opens the search from an icon over the board and keeps a query open", () => {
+    board();
+    const find = container.querySelector<HTMLElement>(".gedcom-ft-find");
+    const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
+
+    expect(find?.parentElement?.classList.contains("gedcom-ft-stage")).toBe(true);
+    expect(container.querySelector(".gedcom-ft-tools .gedcom-ft-search")).toBeNull();
+    expect(find?.classList.contains("is-open")).toBe(false);
+    container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
+    expect(find?.classList.contains("is-open")).toBe(true);
+    if (input) {
+      input.value = "joliot";
+      input.dispatchEvent(new Event("input"));
+    }
+    container.querySelector<HTMLElement>(".gedcom-ft-find-clear")?.click();
+    expect(input?.value).toBe("");
+    expect(find?.classList.contains("is-open")).toBe(true);
+    expect(all(".gedcom-ft-name.is-dim")).toHaveLength(0);
+    input?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
+    expect(find?.classList.contains("is-open")).toBe(false);
   });
 
   it("fades the rows that do not match a search", () => {

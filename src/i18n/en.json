@@ -275,6 +275,7 @@
   "fileTimeline.title": "Timeline of {name}",
   "fileTimeline.others": "Other events",
   "overview.search": "Find a person…",
+  "overview.clearSearch": "Clear the search",
   "fileTimeline.alive": {
     "one": "In {year}: {count} person alive",
     "other": "In {year}: {count} people alive"
@@ -284,14 +285,6 @@
     "other": "In {year}: {count} people alive in this branch"
   },
   "overview.wholeFile": "Whole file",
-  "overview.people": {
-    "one": "{count} person",
-    "other": "{count} people"
-  },
-  "overview.families": {
-    "one": "{count} family",
-    "other": "{count} families"
-  },
   "overview.branchOf": {
     "one": "Branch of {name} · {shown} of {count} person",
     "other": "Branch of {name} · {shown} of {count} people"
