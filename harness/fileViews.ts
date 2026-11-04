@@ -1,7 +1,7 @@
 import type { Range } from "@domorium/language-service";
 
 import type { ViewKind } from "../src/desk/deskState";
-import { FileViews, type ViewMemory } from "../src/desk/fileViews";
+import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { setLanguage } from "../src/i18n";
 import { CURIE, indexOf } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
@@ -11,7 +11,6 @@ type Mode = ViewKind | "source";
 
 export interface TabOptions {
   doc?: string;
-  /** The tab starts out behind another one, as a tab restored with the workspace does. */
   hidden?: boolean;
   mode?: Mode;
   memory?: ViewMemory;
@@ -36,7 +35,6 @@ declare global {
       showMode(mode: Mode): void;
       select(xref: string | null): void;
       openSearch(): void;
-      /** What the tab does when Obsidian tells it that it was resized or brought forward. */
       resized(): void;
       setHidden(hidden: boolean): void;
     };
@@ -66,14 +64,16 @@ function hasBox(target: HTMLElement): boolean {
 
 function draw(): void {
   const open = mode !== "source";
+  if (!open) {
+    views?.hide();
+  }
   element("views").toggle(open);
   element("source").toggle(!open);
   if (mode === "source" || views === null) {
-    views?.hide();
     return;
   }
   if (hasBox(element("leaf")) && hasBox(element("views"))) {
-    views.show(mode, index, { ...memory, ...views.memory() }, around);
+    views.show(mode, index, memoryToShow(views.memory(), memory), around);
   }
 }
 

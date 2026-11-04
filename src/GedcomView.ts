@@ -80,7 +80,7 @@ import {
   routeLink,
   type DeskMode,
 } from "./desk/deskState";
-import { FileViews, type ViewMemory } from "./desk/fileViews";
+import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { TabModes } from "./desk/tabModes";
 import { renderFamilyPage } from "./desk/familyPage";
 import type { MediaItem } from "./desk/media";
@@ -241,6 +241,7 @@ export class GedcomView extends TextFileView {
 
   clear(): void {
     this.revision += 1;
+    this.modes.loaded = false;
     this.record = null;
     this.selected = null;
     this.hidePreviews();
@@ -745,6 +746,9 @@ export class GedcomView extends TextFileView {
     this.modeAction.toggle(this.settings.genealogyInterface);
     setIcon(this.modeAction, icon);
     this.modeAction.setAttribute("aria-label", t("mode.control", { mode: t(title) }));
+    if (!isViewMode(mode)) {
+      this.views.hide();
+    }
     this.editorEl.toggle(mode === "source");
     this.deskEl.toggle(mode === "genealogy");
     this.viewsEl.toggle(isViewMode(mode));
@@ -756,8 +760,6 @@ export class GedcomView extends TextFileView {
     }
     if (isViewMode(mode)) {
       this.drawViews();
-    } else {
-      this.views.hide();
     }
   }
 
@@ -766,13 +768,11 @@ export class GedcomView extends TextFileView {
     if (!isViewMode(mode) || !this.modes.needsDraw(this.containerEl.isShown() && this.viewsEl.isShown())) {
       return;
     }
-    this.views.show(mode, this.genealogy(), { ...this.views.memory(), ...this.memory }, this.record ?? undefined);
+    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), this.record ?? undefined);
   }
 
   onResize(): void {
-    if (this.containerEl.isShown() && this.viewsEl.isShown()) {
-      this.drawViews();
-    }
+    this.drawViews();
   }
 
   private clearViewSelections(): void {

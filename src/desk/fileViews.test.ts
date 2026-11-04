@@ -10,7 +10,7 @@ import { HOVER_DELAY } from "./dom";
 import { FileViews, type FileViewsHost } from "./fileViews";
 
 const SIZE = { width: 1000, height: 600 };
-const LAYOUT_KEYS = ["clientWidth", "offsetWidth", "clientHeight", "offsetHeight"] as const;
+const LAYOUT_KEYS = ["clientWidth", "offsetWidth", "clientHeight", "offsetHeight", "getClientRects"] as const;
 
 function boxed(element: HTMLElement): boolean {
   for (let node: HTMLElement | null = element; node; node = node.parentElement) {
@@ -33,12 +33,23 @@ let host: {
 beforeAll(() => {
   installObsidianDom();
   for (const key of LAYOUT_KEYS) {
-    Object.defineProperty(HTMLElement.prototype, key, {
-      configurable: true,
-      get(this: HTMLElement) {
-        return boxed(this) ? (key.endsWith("Width") ? SIZE.width : SIZE.height) : 0;
-      },
-    });
+    Object.defineProperty(
+      HTMLElement.prototype,
+      key,
+      key === "getClientRects"
+        ? {
+            configurable: true,
+            value(this: HTMLElement) {
+              return boxed(this) ? [{}] : [];
+            },
+          }
+        : {
+            configurable: true,
+            get(this: HTMLElement) {
+              return boxed(this) ? (key.endsWith("Width") ? SIZE.width : SIZE.height) : 0;
+            },
+          },
+    );
   }
 });
 afterAll(() => {
@@ -217,6 +228,38 @@ describe("the views of a tab", () => {
     tab.show("timeline", index, tab.memory());
     expect(plot.scrollTop).toBe(120);
     expect(plot.scrollLeft).toBe(45);
+  });
+
+  it("records the scroll when the tab's content is hidden before the views are", () => {
+    const tab = views();
+    tab.show("timeline", index, {});
+    const plot = parent.querySelector<HTMLElement>(".gedcom-ft-plot");
+    if (!plot) {
+      throw new Error("no plot");
+    }
+    plot.scrollTop = 500;
+
+    parent.toggle(false);
+    tab.hide();
+    parent.toggle(true);
+
+    expect(tab.memory().timeline?.scroll?.top).toBe(500);
+  });
+
+  it("keeps the last scroll it saw in sight for a tab that goes behind another with no hide", () => {
+    const tab = views();
+    tab.show("timeline", index, { timeline: { up: 2, down: 2, zoom: 6, scroll: { top: 100, left: 0 } } });
+    const plot = parent.querySelector<HTMLElement>(".gedcom-ft-plot");
+    if (!plot) {
+      throw new Error("no plot");
+    }
+    plot.scrollTop = 500;
+    expect(tab.memory().timeline?.scroll?.top).toBe(500);
+
+    parent.toggle(false);
+    plot.scrollTop = 0;
+
+    expect(tab.memory().timeline?.scroll?.top).toBe(500);
   });
 
   it("takes the scroll a restored tab saved, at its first show of the timeline", () => {

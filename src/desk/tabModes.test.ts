@@ -140,15 +140,15 @@ describe("opening a record's page", () => {
     const modes = tab("graph");
     modes.record = "@I1@";
 
-    expect(modes.openRecord("@I1@")).toEqual({ mode: "genealogy", record: "@I1@", step: true });
+    expect(modes.applyState(modes.openRecord("@I1@")).step).toBe(true);
   });
 
   it("is not a step from Genealogy on the same record, and is on another", () => {
     const modes = tab("genealogy");
     modes.record = "@I1@";
 
-    expect(modes.openRecord("@I1@").step).toBe(false);
-    expect(modes.openRecord("@I2@").step).toBe(true);
+    expect(modes.applyState(modes.openRecord("@I1@")).step).toBe(false);
+    expect(modes.applyState(modes.openRecord("@I2@")).step).toBe(true);
   });
 
   it("takes the mode and the record of a state it is handed, and ends a selection with the mode", () => {

@@ -24,6 +24,9 @@ export interface FileViewsHost {
   setIcon(element: HTMLElement, icon: string): void;
 }
 
+/** What a view is shown with: the tab's own memory over what the boards last reported. */
+export const memoryToShow = (reported: ViewMemory, tab: ViewMemory): ViewMemory => ({ ...reported, ...tab });
+
 const KINDS: readonly ViewKind[] = ["graph", "timeline"];
 
 /** The graph and the timeline of a file, each made on its first show in a root of its own and kept, so a switch loses neither's view. */
@@ -105,21 +108,14 @@ export class FileViews {
     return root !== undefined && (root.offsetWidth > 0 || root.offsetHeight > 0 || root.getClientRects().length > 0);
   }
 
-  /** What the boards reported, and the timeline's scroll while it is in sight; never a view asked of a board. */
+  /** What the boards reported, and the timeline's scroll as last seen in sight; never a view asked of a board. */
   memory(): ViewMemory {
-    const timeline = this.kept.timeline;
+    if (this.timeline && this.kept.timeline && this.shownKind === "timeline" && this.displayed()) {
+      this.kept.timeline = { ...this.kept.timeline, scroll: this.timeline.scroll() };
+    }
     return {
       ...(this.kept.graph ? { graph: { ...this.kept.graph } } : {}),
-      ...(timeline
-        ? {
-            timeline: {
-              ...timeline,
-              ...(this.timeline && this.shownKind === "timeline" && this.displayed()
-                ? { scroll: this.timeline.scroll() }
-                : {}),
-            },
-          }
-        : {}),
+      ...(this.kept.timeline ? { timeline: { ...this.kept.timeline } } : {}),
     };
   }
 
@@ -182,7 +178,7 @@ export class FileViews {
         continue;
       }
       board.cancelHover();
-      if (kind === "timeline" && this.timeline && this.kept.timeline && this.shownKind === kind && this.displayed()) {
+      if (kind === "timeline" && this.timeline && this.kept.timeline && this.shownKind === kind) {
         this.kept.timeline = { ...this.kept.timeline, scroll: this.timeline.scroll() };
       }
       if (this.shownKind === kind) {

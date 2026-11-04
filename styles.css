@@ -1816,6 +1816,12 @@ button.gedcom-fg-pop-open {
   box-shadow: inset 0 0 0 1.5px var(--text-normal);
 }
 
+.gedcom-ft-name.is-selected.is-current {
+  box-shadow:
+    inset 0 0 0 1.5px var(--text-normal),
+    inset 3px 0 0 var(--interactive-accent);
+}
+
 .gedcom-ft-row-selected {
   fill: var(--background-modifier-active-hover);
   pointer-events: none;
@@ -1824,7 +1830,15 @@ button.gedcom-fg-pop-open {
 .gedcom-ft-life.is-selected {
   stroke: var(--text-normal);
   stroke-width: 2;
+}
+
+.gedcom-ft-board:not(.has-hl) .gedcom-ft-items > .is-selected:not(.is-dim) {
   opacity: 0.85;
+}
+
+.gedcom-ft-life.is-selected.is-current {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
 }
 
 .gedcom-fg-find,
@@ -2054,6 +2068,14 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-person.is-selected .gedcom-fg-card-bg {
   stroke: var(--text-normal);
   stroke-width: 3;
+}
+
+.gedcom-fg-person.is-selected.is-current .gedcom-fg-card-bg,
+.gedcom-fg-person.is-selected.is-current.is-hl .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 3;
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
 }
 
 .gedcom-fg-person .gedcom-fg-card:focus-visible .gedcom-fg-card-bg,

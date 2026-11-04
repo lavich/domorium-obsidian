@@ -771,3 +771,27 @@ What differs from the plan above, or was settled while building it.
   under a `display: none` ancestor.
 - **Strings.** `mode.toGenealogy` and `mode.toSource` went with the old header
   action; the description of *Genealogy interface (beta)* is as it was.
+
+### After review
+
+- **The scroll of the timeline** is recorded by `hide()` without asking whether
+  the root still has a box, and `renderMode` calls `views.hide()` before it hides
+  `viewsEl`, so a mode switch no longer reads a scroll of nothing. `memory()` keeps
+  the last scroll it saw while in sight in `kept`, so a tab that goes behind
+  another with no `hide()` still saves it. The tests hide the parent before the
+  views, with `getClientRects` empty under `display: none`.
+- **Selected beside the other marks.** A selected lifeline no longer sets its own
+  opacity over the search's dimming (it is `0.85` only when not dimmed and nothing
+  is lit), and a person who is both selected and the search's current match keeps
+  both: the selection's stroke in the text colour, the match as an accent outline
+  on a card or lifeline and an accent bar on a name.
+- **Smaller.** `clear()` marks the file not loaded; `onResize` only calls
+  `drawViews`, which checks both boxes; `TabModes.openRecord` returns the patch
+  without a step (`applyState` decides it); the tab and the harness stand-in share
+  `memoryToShow`; the description of *Open GEDCOM files as* says "as genealogy" and
+  the toggle's Russian name says «последний режим». The harness has no Genealogy
+  button: the mode menu is covered by unit tests of `modeChoices` only.
+- **Not verified, for the manual check:** whether `getLeavesOfType` returns the
+  leaves of a retired view type nobody registers, and whether `result.history =
+  true` while Obsidian itself navigates Back or Forward truncates the forward
+  history.

@@ -189,5 +189,63 @@ for (const viewport of [
       await expect(page.locator(".gedcom-views-root.is-timeline")).toBeHidden();
       await expect(page.locator("#source")).toBeVisible();
     });
+
+    test("keeps both marks where the selected person is also the search's current match, and fades a selected non-match", async ({
+      page,
+    }) => {
+      await mountTab(page, { mode: "graph" });
+      const colours = await page.evaluate(() => {
+        const probe = (name: string): string => {
+          const holder = document.createElement("i");
+          holder.style.color = `var(${name})`;
+          document.getElementById("views")?.append(holder);
+          const colour = getComputedStyle(holder).color;
+          holder.remove();
+          return colour;
+        };
+        return { text: probe("--text-normal"), accent: probe("--interactive-accent") };
+      });
+      await page.click("#select-pierre");
+      await page.click("#open-search");
+      await page.locator(".gedcom-fg-search").fill("pierre");
+      await page.locator(".gedcom-fg-search").press("Enter");
+      const bg = page.locator('.gedcom-fg-person[data-p="@I2@"] .gedcom-fg-card-bg');
+      await expect(page.locator('.gedcom-fg-person[data-p="@I2@"]')).toHaveClass(/is-current/);
+      const card = await bg.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { stroke: style.stroke, outline: style.outlineColor, width: style.outlineWidth };
+      });
+      expect(card.stroke).toBe(colours.text);
+      expect(card.outline).toBe(colours.accent);
+      expect(card.width).not.toBe("0px");
+
+      await page.click("#show-timeline");
+      await page.click("#select-pierre");
+      await page.click("#open-search");
+      await page.locator(".gedcom-ft-search").fill("pierre");
+      await page.locator(".gedcom-ft-search").press("Enter");
+      const life = page.locator('.gedcom-ft-life[data-p="@I2@"]');
+      await expect(life).toHaveClass(/is-current/);
+      const line = await life.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return { stroke: style.stroke, outline: style.outlineColor };
+      });
+      expect(line).toEqual({ stroke: colours.text, outline: colours.accent });
+      const row = await page
+        .locator('.gedcom-ft-name[data-p="@I2@"]')
+        .evaluate((element) => getComputedStyle(element).boxShadow);
+      expect(row).toContain(colours.text);
+      expect(row).toContain(colours.accent);
+
+      await page.locator(".gedcom-ft-search").fill("joliot");
+      const opacity = (xref: string) =>
+        page
+          .locator(`.gedcom-ft-life[data-p="${xref}"]`)
+          .first()
+          .evaluate((element) => Number(getComputedStyle(element).opacity));
+      await expect(page.locator('.gedcom-ft-life.is-selected[data-p="@I2@"]')).toHaveClass(/is-dim/);
+      expect(await opacity("@I2@")).toBeLessThan(0.3);
+      expect(await opacity("@I2@")).toBe(await opacity("@I1@"));
+    });
   });
 }

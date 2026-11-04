@@ -70,10 +70,9 @@ export class TabModes {
     return { changed: true, moveCursor: before === "genealogy" && next === "source", recordChanged, selectionCleared };
   }
 
-  /** What opening a record's page sets, and whether Back should return from it. */
-  openRecord(xref: string): { mode: "genealogy"; record: string; step: boolean } {
-    const next = { mode: "genealogy" as const, record: xref };
-    return { ...next, step: navigationStep({ mode: this.mode, record: this.record }, next) };
+  /** What opening a record's page sets. */
+  openRecord(xref: string): { mode: "genealogy"; record: string } {
+    return { mode: "genealogy", record: xref };
   }
 
   /** The state a tab was handed: the step it is, and what it ended. */
