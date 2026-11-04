@@ -212,12 +212,14 @@ out. **Fit** SHALL show the whole scope where the zoom range allows, and
 otherwise as much of it as the farthest zoom shows, centred on it. Zoomed out
 beyond the point where names can be read, cards SHALL be drawn without text.
 
-A graph SHALL first be shown fitted to its view where it can then be read, and
-otherwise at a readable size around the person of the tab it was opened from
-where that person is shown, else around the first card of the top row; a graph
-restored with the workspace SHALL be shown as it was left. An edit of the file
-SHALL leave the view where it is. Changing the scope SHALL show the new scope as
-a graph is first shown, around the person whose branch it is.
+A graph restored with the workspace SHALL first be shown as it was left. Any
+other graph SHALL first be shown fitted to its view where it can then be read,
+and otherwise at a readable size around the first of these that is shown: the
+person of the tab it was opened from, the person whose branch it shows, the
+first card of the top row. An edit of the file SHALL leave the view where it
+is. Changing the scope SHALL show the new scope at a readable size around the
+person whose branch it now shows, or, on returning to the whole file, around
+the person whose branch it showed.
 
 #### Scenario: Opening on a small file
 - **WHEN** the graph of `curie.ged` is opened in a tab 1 400 pixels wide
@@ -230,6 +232,11 @@ a graph is first shown, around the person whose branch it is.
 #### Scenario: A drag that begins on a card
 - **WHEN** the reader presses on Marie's card, moves the pointer and releases it
 - **THEN** the graph has moved, and Marie's page is not opened
+
+#### Scenario: Choosing a branch
+- **WHEN** the graph of `curie.ged` was opened from Marie's page and the reader
+  chooses Irène's branch, and then returns to the whole file
+- **THEN** the view is centred on Irène's card both times, at a readable size
 
 #### Scenario: An edit keeps the view
 - **WHEN** the reader has moved and zoomed the graph and then corrects a date in

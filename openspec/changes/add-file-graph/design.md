@@ -60,7 +60,10 @@ of lanes is not in these figures.
 
 **Non-Goals:**
 - Changing the timeline's behaviour. Its code moves onto shared pieces; its
-  spec is untouched, and its tests change only where task 1.3 lists.
+  spec is untouched, and its tests change only where task 1.3 lists: the
+  lifeline-years tests in `src/desk/fileTimeline.test.ts`, the scope bar's in
+  `src/desk/fileTimelineView.test.ts`, `src/commands.test.ts` and
+  `tests/fileTimeline.spec.ts`.
 - A Web Worker. The layout is a few hundred milliseconds at the worst measured
   and runs once per reading and scope; a worker would mean bundling a second
   entry and copying the model across.
@@ -159,19 +162,21 @@ new index and so a new model.
   canvas and `k` **(mine: a centre, not an offset, so a tab of another size
   shows the same place)**, in the state with the scope and `around`.
 - **When the view is set.**
-  - *First show*: a saved view if the state has one; otherwise the opening view
-    — fitted when Fit's scale is at least 0.55, else 0.6 centred on the card of
-    `around` where it is shown, else on the focus of a branch, else on the first
-    card of the top row **(mine; the mockup went to the top left)**. It is
-    computed only once the canvas has a non-zero size: a graph opened in a
-    background tab waits for `onResize`.
+  - *First show*: the saved view if the state has one; otherwise the opening
+    view — fitted when Fit's scale is at least 0.55, else 0.6 centred on the
+    first of these that is shown: the card of `around`, the card of the
+    branch's person, the first card of the top row **(mine; the mockup went to
+    the top left)**. It is computed only once the canvas has a non-zero size: a
+    graph opened in a background tab waits for `onResize`.
   - *A new model with the same scope* (an edit, a rename): the view is kept.
-  - *A change of scope* (Branch, the steppers, Whole file): the opening view of
-    the new scope, centred on the person whose branch it is.
+  - *A change of scope* (Branch, the steppers, Whole file): 0.6 centred on the
+    card of the new focus; on **Whole file**, on the card of the focus just
+    left. `around` plays no part, and there is no fitting.
   - *Revealing an open graph*: nothing changes.
 - **`around` is in the state.** The opener always passes the person of the tab
   it was opened from, whatever the size of the file, so the opening view can
-  centre on them; `initialFocus` still decides whether there is a branch.
+  centre on them on first show; `initialFocus` still decides whether there is
+  a branch.
 - **Drawing.** `draw(window)` takes the window in graph coordinates as an
   argument rather than measuring the DOM, so a happy-dom test can drive it. It
   draws the items meeting the window extended by one window on each side, or a
@@ -216,9 +221,14 @@ new index and so a new model.
   the group has the focus (`:focus-within`) or the card is armed. Each family
   node is focusable too, labelled with the spouses and the marriage year,
   since it now opens the family's page. They sit in the DOM in row order, left
-  to right, node between its spouses, so Tab walks a row. Enter or Space
-  activates; focus lights as hover does; a focused element partly out of view
-  pans the view to show it. **+**, **−** and **Fit** are buttons.
+  to right, so Tab walks a row; each family node comes right after its left
+  spouse, or its upper spouse where the two stand in different rows, which also
+  places the node of a third marriage and of a marriage across rows. An SVG
+  element with `role="button"` gets no click from the keyboard, so a `keydown`
+  handler on the board activates the focused card, pill or node on Enter or
+  Space, calling `preventDefault` so Space does not scroll; focus lights as
+  hover does; a focused element partly out of view pans the view to show it.
+  **+**, **−** and **Fit** are buttons.
 - **Icons** are handed in as a function, as in the timeline.
 
 ### Shared with the timeline
@@ -304,7 +314,8 @@ The user chose `network` (2026-11-04). What the installed app holds, read from
   defined in both bundles.
 
 The icon is one constant, `FILE_GRAPH_ICON`, used by the view, the command and
-the header action.
+the header action. The icons and colour variables were checked on the 1.8.9
+bundle, not on 1.8.7, the minimum; task 6.1 confirms them on 1.8.7.
 
 ### Colours (mine)
 
@@ -314,8 +325,9 @@ the header action.
   border `--background-modifier-border`, the person of a branch and a focused
   card `--interactive-accent`. Lines `--text-faint`; spouse lines and nodes
   `--interactive-accent`; the node's digits `--text-on-accent`; lit lines and
-  borders `--text-accent`. All are in the 1.8.9 bundle; the `-rgb` forms are
-  already how `styles.css` tints.
+  borders `--text-accent`. All are in the 1.8.9 bundle. `styles.css` already
+  tints with `rgba(var(--color-orange-rgb), 0.12)`; the pink, blue and mono
+  `-rgb` variables are new to it.
 
 ### What the header shows (mine)
 
