@@ -390,8 +390,37 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   is pulled to stand beside their neighbour in the row; left where the row was
   first packed, they ended 2 400 pixels to the right of everyone else as the
   joined blocks moved.
-- **A node across rows** drops the lanes above it, so a line from it does not
-  climb back to a lane in a row the node is already below.
+- **A node across rows** sits midway on the curve only where the spouses are
+  one row apart; further apart, the midpoint would land on a card of the row
+  between, so the node sits in the gap under the upper spouse and joins the
+  lower one from there. Lines from it drop the lanes above it.
+- **Lanes are bounded** (review): the lines of one family share one lane per
+  row, and lanes stop at four per person shown, past which a line is drawn
+  without them. A deep line of descent with 500 sons marrying near its bottom
+  made 125 000 lanes before; it now makes 250 and lays out well under the
+  test's two seconds. A child who stands no lower than a parent, as a loop in
+  the file makes, gets no line.
+- **The clock** (review) is read before the first transpose, before each row
+  inside a sweep, and before each pulling pass: the ordering stops at 250 ms
+  and the pulling at 500 ms from the start, keeping the best order and valid
+  positions wherever it stops. A sweep cut short still counts as one.
+- **Narrowing** (review). Capping the gap between neighbours within each row
+  was tried and rejected: at a cap of two cards it took tangled(300) from
+  87 814 to 53 230 pixels but its median line from 757 to 12 096, since rows
+  lost their alignment with each other. Instead every stretch of x empty in
+  all rows is shortened to two cards, the same for every row. tangled(300):
+  87 814 → 49 893 pixels wide, its widest row packed being 50 160, median line
+  712 → 757; tangled(2000): 249 312 → 228 479 (228 960 packed), median 8 102 →
+  7 496. Both are now about as narrow as their widest row allows, so Fit still
+  stops at the floor for 300 such people: 150 cards in one generation need a
+  scale of 0.035 to fit 1 400 pixels.
+- **Bends** (review). Where the long lines of two or more families cross one
+  gap, each family's cross at a height of its own, ranked by where the family
+  stands, four pixels apart; past twelve families the heights repeat, never for
+  neighbours. A gap with one family's long lines keeps the plain curve.
+- **Who stands left** where neither spouse states a sex is read from the
+  family: its first spouse, the HUSB, stands left.
+- **The layouts held** are the four last asked for, not the four last made.
 - **The view base class** is not generic: `FileTimelineView` and
   `FileGraphView` each keep their own board, which `instanceof` on a generic
   class could not type without `any`.
@@ -413,8 +442,26 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   screenshots could use a deeper 150-person file than forty couples give; the
   unit test of the ordering imports it from `tests/generated.ts`.
 - **Labels.** A card's label is the name and the years joined by a comma, with
-  no message of its own; a node's label gives the year, its tooltip the date as
-  the file writes it.
+  no message of its own; a node's label gives the year ("married in 1895",
+  «брак — 1895»), its tooltip the date as the file writes it.
+- **Names** (review) are cut by their measured width on a canvas, by code
+  point, in a 12-pixel semibold rather than the mockup's 12.5, so "Marie
+  Skłodowska-Curie" (145 pixels) fits the 146 a card leaves; where no canvas can
+  measure, as in a unit test, by a count of code points.
+- **Pointer and focus** (review): the light goes out as the pointer moves off a
+  card within the canvas and as the focus leaves the cards; a drag ends on a
+  move with no button down, as when the button is let go outside; only the
+  primary button drags; the hidden Branch pill takes no pointer until shown,
+  and a touch on it before its card is lit lights the card; wheel events less
+  than 150 ms apart are one gesture and keep the mode — zoom or pan — of its
+  first; a change of scope before the canvas has a size is saved without a
+  view; Branch-armed state is cleared through one place.
+- **Opening** (review): an opening of an overview of a path already on its way
+  is the same opening, for the timeline too, so two quick activations open one
+  tab.
+- **Far out** starts below 0.5 rather than 0.35. Tooltips and popovers are
+  placed by their own width, in both views. The keyboard's focus ring is a
+  dashed outline in the text colour, apart from hover and the branch's person.
 - **Seen in the screenshots, not changed:** the opening view of a file too wide
   to fit, with no person of the tab, centres the first card of the top row, which
   leaves the upper half of the canvas empty, as specified. Lines of a tangled
