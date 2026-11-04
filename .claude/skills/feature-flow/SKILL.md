@@ -23,10 +23,10 @@ Invoking this flow is permission to push its feature branches and open their PRs
 nothing beyond that: merging, filing upstream issues and tagging each need their
 own permission.
 
-One change keeps one worktree from plan to merge: the plan, the implementation and
-the fixes after review are commits on one branch. A second worktree from `main` is
-for work that starts from what `main` holds — the archive, or an implementation
-whose plan has already landed there.
+One change keeps one worktree and one branch from plan to merge: the plan, the
+implementation and the fixes after review are commits on that branch and go to
+`main` in one PR. The plan never lands on its own. A second worktree from `main`
+is only for the archive.
 
 Report to the user briefly, in their language. Decisions that change what a reader
 sees in Obsidian — a page, a panel, a setting, a command, how a value reads — are
@@ -81,8 +81,6 @@ the user's.
   scenario and a fix.
 - Verify the most surprising findings yourself. Take contested decisions to the
   user, fix the rest; review again if the fixes are large.
-- The plan may land on `main` as its own PR (only `openspec/changes/<name>`), and
-  only with the user's permission.
 
 ## 4. Implementation
 
