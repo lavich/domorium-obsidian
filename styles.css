@@ -1801,7 +1801,7 @@ button.gedcom-fg-pop-open {
 .gedcom-ft-find input.gedcom-ft-search {
   width: 0;
   min-width: 0;
-  height: 28px;
+  height: var(--gedcom-find-size);
   padding: 0;
   border: 0;
   background: transparent;
@@ -1834,23 +1834,55 @@ button.gedcom-fg-pop-open {
   display: none;
 }
 
-.gedcom-fg-find:not(.is-open),
-.gedcom-ft-find:not(.is-open) {
+.gedcom-fg-find,
+.gedcom-ft-find {
+  --gedcom-find-size: 28px;
   gap: 0;
 }
 
-.is-phone .gedcom-fg-find button,
-.is-phone .gedcom-ft-find button {
-  min-width: 44px;
-  min-height: 44px;
+.is-phone .gedcom-fg-find,
+.is-phone .gedcom-ft-find {
+  --gedcom-find-size: 44px;
+}
+
+.gedcom-fg-find button,
+.gedcom-ft-find button {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  width: var(--gedcom-find-size);
+  min-width: var(--gedcom-find-size);
+  height: var(--gedcom-find-size);
+  min-height: var(--gedcom-find-size);
+}
+
+.gedcom-fg-find .gedcom-fg-find-toggle,
+.gedcom-ft-find .gedcom-ft-find-toggle {
+  overflow: hidden;
+  transition:
+    width 180ms ease-out,
+    min-width 180ms ease-out,
+    padding 180ms ease-out,
+    opacity 120ms ease-out,
+    visibility 0s linear 0s;
+}
+
+.gedcom-fg-find.is-open .gedcom-fg-find-toggle,
+.gedcom-ft-find.is-open .gedcom-ft-find-toggle {
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition-delay: 0s, 0s, 0s, 0s, 180ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .gedcom-fg-find input.gedcom-fg-search,
-  .gedcom-ft-find input.gedcom-ft-search {
+  .gedcom-ft-find input.gedcom-ft-search,
+  .gedcom-fg-find .gedcom-fg-find-toggle,
+  .gedcom-ft-find .gedcom-ft-find-toggle {
     transition: none;
   }
 }

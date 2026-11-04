@@ -31,7 +31,7 @@ export class FloatingSearch {
     this.clear = this.button("clickable-icon", `${prefix}-find-clear`, "x", t("overview.clearSearch"));
     this.clear.tabIndex = -1;
 
-    this.toggle.addEventListener("click", () => (this.isOpen() ? this.input.focus() : this.open()));
+    this.toggle.addEventListener("click", () => this.open());
     this.clear.addEventListener("click", () => {
       if (this.input.value === "") {
         this.close();
@@ -74,6 +74,7 @@ export class FloatingSearch {
   open(): void {
     this.el.addClass("is-open");
     this.toggle.setAttribute("aria-expanded", "true");
+    this.toggle.tabIndex = -1;
     this.input.tabIndex = 0;
     this.clear.tabIndex = 0;
     this.input.focus();
@@ -82,6 +83,7 @@ export class FloatingSearch {
   close(): void {
     this.el.removeClass("is-open");
     this.toggle.setAttribute("aria-expanded", "false");
+    this.toggle.tabIndex = 0;
     this.input.tabIndex = -1;
     this.clear.tabIndex = -1;
   }

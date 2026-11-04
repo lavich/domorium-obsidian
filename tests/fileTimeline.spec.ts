@@ -192,8 +192,11 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
       expect((closed?.y ?? 0) + (closed?.height ?? 0)).toBeLessThan(zoomGroup?.y ?? 0);
       expect(closed?.height ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 0);
 
+      await expect(page.locator(".gedcom-ft-find-toggle")).toBeVisible();
+      await expect(page.locator(".gedcom-ft-search")).toBeHidden();
       await page.locator(".gedcom-ft-find-toggle").click();
       await expect(page.locator(".gedcom-ft-search")).toBeFocused();
+      await expect(page.locator(".gedcom-ft-find-toggle")).toBeHidden();
       await page.locator(".gedcom-ft-search").fill("joliot");
       await expect(page.locator(".gedcom-ft-name:not(.is-dim)")).toHaveCount(4);
       await page.locator("body").click({ position: { x: 5, y: 5 } });
@@ -203,6 +206,9 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
       await expect(page.locator(".gedcom-ft-name.is-dim")).toHaveCount(0);
       await page.keyboard.press("Escape");
       await expect(page.locator(".gedcom-ft-find")).not.toHaveClass(/is-open/);
+      await expect(page.locator(".gedcom-ft-find-toggle")).toBeVisible();
+      await expect(page.locator(".gedcom-ft-find-toggle")).toBeFocused();
+      await expect(page.locator(".gedcom-ft-search")).toBeHidden();
     });
   });
 }

@@ -273,8 +273,12 @@ for (const viewport of [{ width: 1400, height: 900 }, { width: 390, height: 844 
       expect((closed?.y ?? 0) + (closed?.height ?? 0)).toBeLessThan(zoomGroup?.y ?? 0);
       expect(closed?.height ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 0);
 
+      await expect(page.locator(".gedcom-fg-find-toggle")).toBeVisible();
+      await expect(page.locator(".gedcom-fg-search")).toBeHidden();
       await page.locator(".gedcom-fg-find-toggle").click();
       await expect(page.locator(".gedcom-fg-search")).toBeFocused();
+      await expect(page.locator(".gedcom-fg-find-toggle")).toBeHidden();
+      await expect(page.locator(".gedcom-fg-find-clear")).toBeVisible();
       await expect.poll(async () => (await box(".gedcom-fg-search"))?.width ?? 0).toBeGreaterThan(100);
       const open = await box(".gedcom-fg-find");
       expect((open?.x ?? 0) + (open?.width ?? 0)).toBeLessThanOrEqual((canvas?.x ?? 0) + (canvas?.width ?? 0));
@@ -284,6 +288,9 @@ for (const viewport of [{ width: 1400, height: 900 }, { width: 390, height: 844 
       await expect(page.locator(".gedcom-fg-find")).toHaveClass(/is-open/);
       await page.keyboard.press("Escape");
       await expect(page.locator(".gedcom-fg-find")).not.toHaveClass(/is-open/);
+      await expect(page.locator(".gedcom-fg-find-toggle")).toBeVisible();
+      await expect(page.locator(".gedcom-fg-find-toggle")).toBeFocused();
+      await expect(page.locator(".gedcom-fg-search")).toBeHidden();
     });
   });
 }

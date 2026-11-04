@@ -64,7 +64,8 @@ timeline.
 
 The timeline SHALL offer a search by name that fades the rows that do not match.
 The search SHALL be an icon floating over the board, under the axis and away from
-the zoom buttons, that opens into a field when it is pressed and takes the focus.
+the zoom buttons, that is replaced by a field when it is pressed, the icon fading away as the
+field grows and taking no place beside it, and the field SHALL take the focus.
 The field SHALL have a cross that erases the text and leaves the field open;
 Escape, and the cross of an empty field, SHALL close it back to the icon, as SHALL
 leaving it empty, while a field with text SHALL stay open and keep its matches
@@ -85,8 +86,9 @@ while the rows and years scroll beneath and beside them.
 #### Scenario: Opening, clearing and closing the search
 - **WHEN** the reader presses the search icon, types `joliot`, presses the cross,
   and then presses Escape
-- **THEN** the icon opens into a field with the focus, the text is erased with
-  the field still open and no row faded, and the field closes back to the icon
+- **THEN** the icon is replaced by a field with the focus and no icon beside it,
+  the text is erased with the field still open and no row faded, and the field
+  closes back to the icon, which has the focus
 
 #### Scenario: Zooming with the buttons
 - **WHEN** the reader presses zoom in, and then zoom out twice

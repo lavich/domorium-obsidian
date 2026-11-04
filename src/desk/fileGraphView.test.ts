@@ -544,8 +544,14 @@ describe("the search", () => {
       click(".gedcom-fg-find-toggle");
       expect(find()?.classList.contains("is-open")).toBe(true);
       expect(input()?.tabIndex).toBe(0);
-      expect(container.querySelector(".gedcom-fg-find-toggle")?.getAttribute("aria-expanded")).toBe("true");
+      const toggle = container.querySelector<HTMLElement>(".gedcom-fg-find-toggle");
+      expect(toggle?.getAttribute("aria-expanded")).toBe("true");
+      expect(toggle?.tabIndex).toBe(-1);
       expect(document.activeElement).toBe(input());
+      key(input(), "Escape");
+      expect(toggle?.getAttribute("aria-expanded")).toBe("false");
+      expect(toggle?.tabIndex).toBe(0);
+      expect(document.activeElement).toBe(toggle);
     });
 
     it("clears with the cross and stays open, then closes on the cross of an empty field", () => {

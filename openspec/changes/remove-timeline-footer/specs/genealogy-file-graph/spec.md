@@ -4,7 +4,8 @@
 
 The graph SHALL offer a search by name that fades the cards that do not match.
 The search SHALL be an icon floating over the canvas, away from the zoom
-buttons, that opens into a field when it is pressed and takes the focus; the
+buttons, that is replaced by a field when it is pressed, the icon fading away as the
+field grows and taking no place beside it, and the field SHALL take the focus; the
 graph SHALL NOT have a toolbar for it. The field SHALL have a cross that
 erases the text and leaves the field open. Escape, and the cross of an empty
 field, SHALL close the field back to the icon, as SHALL leaving it empty; a
@@ -25,8 +26,8 @@ move to the previous.
 
 #### Scenario: Opening the search
 - **WHEN** the reader presses the search icon in the graph of `curie.ged`
-- **THEN** the icon opens into a field that has the focus, and the toolbar band
-  above the canvas does not exist
+- **THEN** the icon is replaced by a field that has the focus, no search icon
+  is left beside it, and the toolbar band above the canvas does not exist
 
 #### Scenario: Clearing the search
 - **WHEN** the reader has typed `joliot` and presses the cross
@@ -34,7 +35,7 @@ move to the previous.
 
 #### Scenario: Closing the search
 - **WHEN** the field is empty and the reader presses Escape
-- **THEN** the field closes back to the icon
+- **THEN** the field closes back to the icon, which has the focus
 
 ### Requirement: The graph on a phone
 
