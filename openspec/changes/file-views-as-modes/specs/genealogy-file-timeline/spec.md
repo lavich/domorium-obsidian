@@ -92,8 +92,8 @@ Entering it SHALL NOT open another tab.
 The timeline SHALL show the file as the tab holds it, including text typed in the
 tab and not yet saved, and SHALL show every later change to it: at once while the
 tab is in view, and the next time it is brought into view otherwise. It SHALL keep
-its scope and zoom across leaving the mode and coming back and across closing and
-reopening the workspace, and SHALL stay on the file when it is renamed or moved,
+its scope, zoom and scroll position across leaving the mode and coming back and
+across closing and reopening the workspace, and SHALL stay on the file when it is renamed or moved,
 as the tab does.
 
 Like the rest of the plugin's genealogy modes, nothing in the timeline SHALL
@@ -111,9 +111,11 @@ write to the file.
 - **THEN** her lifeline in the timeline ends at the new year
 
 #### Scenario: Leaving the mode and coming back
-- **WHEN** the tab is in Timeline mode, zoomed in, on Irène's branch, and the
-  reader switches to Source mode and then to Timeline mode again
-- **THEN** the timeline shows Irène's branch at the same zoom
+- **WHEN** the tab is in Timeline mode, zoomed in, on Irène's branch, scrolled
+  down and to the right, and the reader switches to Source mode and then to
+  Timeline mode again
+- **THEN** the timeline shows Irène's branch at the same zoom, scrolled to the
+  same place
 
 #### Scenario: The file is renamed
 - **WHEN** the tab of `curie.ged` is in Timeline mode and the file is renamed to
@@ -124,3 +126,35 @@ write to the file.
 - **WHEN** a tab of `curie.ged` is in Timeline mode, zoomed in, on Irène's branch,
   and Obsidian is restarted
 - **THEN** the tab shows the timeline of Irène's branch at the same zoom
+
+### Requirement: A selected row
+
+The timeline SHALL mark one person's row as **selected** when the GEDCOM tab is
+told to select them, as an index row does in Timeline mode. The row SHALL be
+brought to the middle of the board's height, and its lifeline into view sideways
+where it is out of it, smoothly unless the reader has asked for reduced motion or
+the row is further away than a smooth scroll can show without leaving rows blank,
+as stepping to a match does. The mark SHALL be unlike the light of pointing and
+unlike the ring of the search's current match, SHALL stay while the pointer lights
+other people and while the reader searches, and SHALL stay until another person is
+selected or the tab leaves Timeline mode. Where the person is not in the branch
+shown, the timeline SHALL show their branch, with the way back to the whole file.
+Selecting SHALL NOT open a page, change the mode or write to the file.
+
+#### Scenario: Selecting Irène from the index
+- **WHEN** the tab is in Timeline mode and the reader activates Irène's row in the
+  index
+- **THEN** Irène's row is marked selected and scrolled to the middle, the tab is
+  still in Timeline mode, and no page is open
+
+#### Scenario: The mark outlasts hover and search
+- **WHEN** Irène is selected, the pointer rests on Marie's name and the reader
+  types `joliot` and steps to the first match
+- **THEN** Irène's row still carries the selected mark, apart from Marie's light
+  and from the ring of the current match
+
+#### Scenario: A person outside the branch
+- **WHEN** the timeline shows Marie's branch with zero generations of ancestors
+  and zero of descendants and the reader activates Hélène's row in the index
+- **THEN** the timeline shows Hélène's branch, with her row selected
+

@@ -143,9 +143,15 @@ read the file from the vault themselves. A mode not in view SHALL NOT be drawn: 
 tab whose file changes while it is behind another, or while it is in another mode,
 SHALL draw it when it is next in view. Switching between modes SHALL NOT lay the
 graph or the timeline out again where the text and the scope are the same, and
-SHALL leave each at the scope, position and zoom it was left at. Graph and
+SHALL leave each at the scope, position, zoom and scroll position it was left at. Graph and
 Timeline SHALL each keep a scope of their own: choosing a branch in one SHALL NOT
-change the other. A tab SHALL NOT draw either mode before it has read its file.
+change the other. A tab SHALL NOT draw either mode before it has read its file. A change of the
+tab's size SHALL NOT disturb either mode: a tab that is not displayed, or whose
+size is momentarily nothing, SHALL keep the position and zoom it had. Where the
+text changes by any route — typed, changed on disk, or rewritten by the plugin
+as a renamed file is followed — the mode shown SHALL show it. A tab that is
+navigated to another file SHALL NOT carry the scope, position, zoom, selection or
+drawn views of the first into the second.
 
 #### Scenario: A restored tab
 - **WHEN** a tab of `curie.ged` in Graph mode, zoomed in and moved, is restored
@@ -157,6 +163,23 @@ change the other. A tab SHALL NOT draw either mode before it has read its file.
 - **WHEN** the reader chooses Irène's branch in Graph mode and switches to
   Timeline mode
 - **THEN** the timeline shows all 17 people
+
+#### Scenario: A tab resized while it is hidden
+- **WHEN** a tab in Graph mode, zoomed in and moved, is behind another tab, the
+  window is resized, and the reader brings the tab to the front
+- **THEN** the graph is at the same position and zoom as before
+
+#### Scenario: Rewritten by the plugin
+- **WHEN** the tab is in Graph mode and the plugin rewrites a `FILE` path in the
+  text because the media file was renamed
+- **THEN** the graph is drawn from the new text, and a card whose portrait it
+  names shows the portrait at the new path
+
+#### Scenario: Navigated to another file
+- **WHEN** a tab of `curie.ged` is in Graph mode on Irène's branch, zoomed in, and
+  the same tab is navigated to another GEDCOM file
+- **THEN** the tab shows the other file's graph, opened by the rule for a view
+  never shown, and not Irène's branch or zoom
 
 #### Scenario: A tab that is not in view
 - **WHEN** a tab of `curie.ged` in Timeline mode is behind another tab, and
@@ -197,8 +220,8 @@ an action that switches the tab to Source mode.
 
 ### Requirement: Moving between records
 
-Opening a record from a page, the index, the evidence panel, a link, or a person
-or family of the graph or the timeline SHALL show it in the same tab, and SHALL
+Opening a record from a page, the index in Genealogy mode, the evidence panel, a
+link, or a person or family of the graph or the timeline SHALL show it in the same tab, and SHALL
 be a step the reader can go back from and forward to again with Obsidian's own
 back and forward, on desktop and on a phone. Opening a record from Graph or
 Timeline mode SHALL leave that mode for Genealogy mode, and going back from it
@@ -228,7 +251,10 @@ source's page, leaving Graph or Timeline mode for Genealogy mode. A link naming 
 record of another kind — a note, a multimedia record, a repository — SHALL switch
 that tab to Source mode at the record, as following such a link does today. A
 link naming a record the file does not declare SHALL leave the page as it was and
-give the notice it gives today.
+give the notice it gives today. The same SHALL hold for choosing a record in the
+command **Go to record**: a record with an identifier that has a page shows the
+page, in Genealogy mode, and any other record, the header for one, switches the
+tab to Source mode at it, never moving a cursor in an editor that is not shown.
 
 In Source mode a link SHALL behave as it does today.
 
@@ -250,16 +276,28 @@ In Source mode a link SHALL behave as it does today.
 #### Scenario: A link to a person in a tab in Graph mode
 - **WHEN** the tab of `curie.ged` is in Graph mode and the reader follows
   `[[curie.ged#@I1@]]`
+- **THEN** the tab is in Genealogy mode showing Marie Skłodowska-Curie's page, and
+  back returns it to Graph mode
+
+#### Scenario: A link into a file that opens as a graph
+- **WHEN** *Open GEDCOM files as* names Graph and the reader follows
+  `[[curie.ged#@I1@]]` to a file not open
 - **THEN** the tab is in Genealogy mode showing Marie Skłodowska-Curie's page
+
+#### Scenario: Go to record in the graph
+- **WHEN** the tab is in Graph mode and the reader runs **Go to record** and
+  chooses the header record
+- **THEN** the tab is in Source mode with the cursor on `0 HEAD`
 
 ### Requirement: Commands follow the mode
 
 Commands that act on the editor — go to definition, find references, rename,
 the problems commands, search and replace — SHALL be offered only when the
-active GEDCOM tab is in Source mode. Copying a link to a record SHALL be offered
-in Source and Genealogy modes; in Genealogy mode it SHALL copy the link to the
-record the page shows. In Graph and Timeline modes no record is shown, and it
-SHALL NOT be offered.
+active GEDCOM tab is in Source mode, and the editor's find, which Obsidian
+dispatches to the tab, SHALL do nothing in any other mode. Copying a link to a
+record SHALL be offered in Source and Genealogy modes; in Genealogy mode it SHALL
+copy the link to the record the page shows. In Graph and Timeline modes it SHALL
+be offered while a person is selected, and copy the link to them.
 
 #### Scenario: The palette in Genealogy mode
 - **WHEN** the active tab is in Genealogy mode and the reader opens the palette
@@ -267,8 +305,18 @@ SHALL NOT be offered.
   is
 
 #### Scenario: The palette in Graph mode
-- **WHEN** the active tab is in Graph mode and the reader opens the palette
+- **WHEN** the active tab is in Graph mode with nobody selected and the reader
+  opens the palette
 - **THEN** neither search in the file nor copying a link to a record is offered
+
+#### Scenario: A person selected in the graph
+- **WHEN** Pierre Curie is selected in Graph mode and the reader opens the palette
+- **THEN** copying a link to the record is offered, and copies the link to
+  `@I2@`
+
+#### Scenario: Find in the graph
+- **WHEN** the tab is in Graph mode and the reader presses the editor's find key
+- **THEN** nothing opens and the tab stays in Graph mode
 
 ### Requirement: Nothing in Genealogy mode writes to the file
 
@@ -358,6 +406,48 @@ interface is on.
 - **THEN** the tab is still in Source mode
 
 ## ADDED Requirements
+
+### Requirement: An index row selects a person in Graph and Timeline
+
+While a tab is in Graph or Timeline mode, activating a person's row in the index
+SHALL select that person in the view, without opening their page and without
+changing the mode. The tab SHALL keep at most one selected person; selecting
+another replaces them. The selection SHALL end when the tab leaves the mode,
+including for the other of the two views, and SHALL NOT be saved with the
+workspace. While a person is selected, the index SHALL mark their row as the
+current one, the Evidence panel SHALL show their whole record, and the command
+that copies a link to a record SHALL copy a link to them. Activating the row of a
+family, a source or a media record in these modes SHALL show its page, as it does
+in Genealogy mode. Activating a card or a row in the view itself SHALL show the
+person's page, as the requirements of the two views say.
+
+#### Scenario: Selecting from the index
+- **WHEN** the tab is in Timeline mode and the reader activates Marie's row in the
+  index
+- **THEN** the tab stays in Timeline mode with her row selected, the index marks
+  her row, and the Evidence panel shows her whole record
+
+#### Scenario: Leaving the mode ends the selection
+- **WHEN** Marie is selected in Graph mode and the reader switches to Timeline mode
+- **THEN** nobody is selected, and no row of the index is marked
+
+#### Scenario: Not kept by the workspace
+- **WHEN** Marie is selected in Graph mode and Obsidian is restarted
+- **THEN** the tab is in Graph mode with nobody selected
+
+### Requirement: A tab navigated to another file starts afresh
+
+When a tab that was showing one GEDCOM file is navigated to another, the Graph and
+Timeline of the first — the scope, position, zoom and scroll position, the drawn
+boards and the selection — SHALL NOT be shown for the second. The second file's
+views SHALL be opened as for a view never shown, or from the state saved for the
+second file where the navigation brings it.
+
+#### Scenario: From one file to another
+- **WHEN** a tab in Graph mode on a branch of one file is navigated to another
+  file
+- **THEN** the graph of the other file is opened by the rule for a first opening,
+  with that file's own people
 
 ### Requirement: A workspace saved with the file's overview in a tab of its own opens without it
 

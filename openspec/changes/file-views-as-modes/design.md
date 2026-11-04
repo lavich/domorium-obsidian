@@ -54,7 +54,7 @@ the Index as they are.
   pages.
 
 **Non-Goals:** as in `proposal.md`. In particular: no card in the sidebar, no
-selected person in Graph or Timeline, no shared scope, no Mod+F in the views, no
+click that selects (an Index row does), no shared scope, no Mod+F in the views, no
 conversion of old tabs.
 
 ## Decisions
@@ -62,11 +62,10 @@ conversion of old tabs.
 ### Four modes in the order the user named them
 
 `DESK_MODES = ["genealogy", "graph", "timeline", "source"]` in
-`src/desk/deskState.ts`, in that order everywhere: the menu, the setting's
-dropdown, the command list. (Mine: the user listed Source first — «gedcom, граф
-и таймлайн» — but the views are what a reader chooses among and the raw file is
-the last resort, as in Obsidian's own reading/editing menu. Reorder freely; it
-is one array.) `OpenAsMode` is the same four. `readDeskState` accepts the four
+`src/settingsData.ts` — it replaces `OPEN_AS_MODES` there, and `deskState.ts`
+imports it, since `settingsData.ts` imports nothing and the other direction would
+be a cycle — in that order everywhere: the menu, the setting's
+dropdown, the command list. (The user confirmed this order on 2026-11-05. It is one array.) `OpenAsMode` is the same four. `readDeskState` accepts the four
 values; any other is ignored, so the setting decides, as now. `effectiveMode`
 and `initialMode` are unchanged apart from the type: off means Source, a tab
 opened while off stores Source.
@@ -150,39 +149,54 @@ interface FileViewsHost {
 class FileViews {
   constructor(parent: HTMLElement, host: FileViewsHost);
   show(kind: ViewKind, index: GenealogyIndex, memory: ViewMemory, around?: string): void;
+  select(kind: ViewKind, xref: string | null): boolean;  // false: not a person of the file
   hide(): void;
   resized(): void;
+  displayed(): boolean;                 // a view is shown and its root has a box
   memory(): ViewMemory;
+  reset(): void;                        // another file: drop boards and memory
+  dispose(): void;                      // the tab closes
 }
 ```
 
 - **One element per view, made on first use and kept.** `GedcomView` already has
   `editorEl` and `deskEl`; `FileViews` adds `viewsEl`, in which `FileGraphBoard`
   and `FileTimelineBoard` are created the first time they are shown, each in its
-  own root, toggled by `show` and `hide`. A board kept alive is what keeps the
-  position, zoom, search text and hover state between mode switches, with no
-  rebuild; the model is `fileTimelineOf(index)`, held per index, so switching
-  back to the same text lays nothing out again — the boards already return early
-  on the same model and scope.
+  own root. A board kept alive is what keeps the zoom, search text and hover
+  state between mode switches, with no rebuild; the model is
+  `fileTimelineOf(index)`, held per index, so switching back to the same text
+  lays nothing out again — the boards already return early on the same model and
+  scope.
+- **`show` order.** The root is un-hidden *before* `board.show`, and `resized()`
+  is called by `show` itself: a switch of mode inside the tab does not resize the
+  leaf, so nothing else would tell the board that it has a box now (a board
+  shown while its root is `display: none` measures nothing).
 - **No board before the file is read.** `GedcomView` constructs and runs
   `showMode()` before Obsidian has loaded the file, and a graph shown on an empty
   index is not harmless: `FileGraphBoard.show` treats the first model it gets as
-  the opening, and would spend the saved view on nothing. `GedcomView` therefore
-  keeps `loaded` (set in `setViewData`, cleared by `clear`) and draws a view only
-  when it is true; `setViewData` draws the mode the tab is in, so a restored tab
-  draws once, with the file. (The same race, seen from the other end, is what the
-  `asked` counter in `FileOverviewView` guarded; here nothing is asynchronous.)
-- **No drawing out of sight.** A tab in Graph mode that is behind another tab
-  must not lay out 10 000 people on every `setViewData`. `drawDesk` for these two
-  modes asks `containerEl.isShown()`; if false it sets `viewsStale` and returns.
-  `onResize()` — which Obsidian calls as a tab is shown — redraws when stale and
-  tells the board its size (`resized()`); this is the same device as the
-  overview views' `refreshIfStale` on `onResize`, minus the plugin-wide loop
-  that called it from `active-leaf-change` and `layout-change` (the tab is its
-  own owner now).
-- **Hide stops the board.** `hide()` toggles the roots off and calls
-  `cancelHover()` on each board, so a hover timer cannot light a hidden card.
-  The boards' own pointer listeners need nothing more.
+  the opening, and would spend the saved view on nothing. The tab therefore draws
+  a view only when its file is loaded (set in `setViewData`, **not** cleared by
+  `clear()`: Obsidian calls `setViewData(data, true)` after `setState` for a
+  restored tab, so clearing there would undo what `setState` had just read).
+- **No drawing out of sight.** A tab in Graph mode behind another tab must not
+  lay out 10 000 people on every `setViewData`. Drawing asks
+  `containerEl.isShown()`; if false it marks the views stale and returns, and a
+  resize that finds the tab shown draws them.
+- **Hiding.** `hide()` toggles the roots off and calls `cancelHover()` on each
+  board, so a hover timer cannot light a hidden card. Before it hides, it
+  records the timeline's plot scroll (`scrollTop` and `scrollLeft`) into the
+  memory: `display: none` resets both, and `show` puts them back after the layout
+  (design question settled: restored, not reworded). The graph needs no such
+  thing, its position being the transform.
+- **Selecting.** `select(kind, xref)` makes the board mark the person as selected
+  (a class of its own, `is-selected`, beside the hover light and the search's
+  `is-current`) and centre on them with the same glide the search uses: the graph
+  at a readable zoom, the timeline with the row in the middle and the lifeline in
+  view. A person outside the board's branch changes its scope to theirs first (the
+  same `focus`, the numbers kept), through the board's own scope change, which
+  reports it like any other.
+- **Dispose.** `dispose()` is `hide()` plus dropping the boards; the tab's
+  `onClose` calls it, as the overview view's `onClose` did (`cancelHover`).
 - The host methods are thin: `openRecord` is the tab's `openRecord` (below),
   `showInSource` its `showInSource`, `portrait` its `portraitOf` — the picture
   the person's page shows, from the tab's own language service, so the closed-file
@@ -195,16 +209,18 @@ class FileViews {
 ```json
 { "mode": "graph", "record": "@I1@",
   "graph":    { "focus": "@I12@", "up": 2, "down": 2, "view": { "x": 0, "y": 0, "k": 0.6 } },
-  "timeline": { "focus": "@I12@", "up": 2, "down": 2, "zoom": 8 } }
+  "timeline": { "focus": "@I12@", "up": 2, "down": 2, "zoom": 8, "scroll": { "top": 0, "left": 0 } } }
 ```
 
 `graph` and `timeline` are present once that view has been shown, and not
-before, so an untouched tab's state is what it was. They are the shapes the
-overview tabs saved, less `gedcom` and `around`: `readGraphState` and
+before; the timeline's also carries `scroll: { top, left }`, so an untouched tab's state is what it was. They are the shapes the
+overview tabs saved, less `gedcom` and the state's `around`, plus the timeline's
+scroll: `readGraphState` and
 `readTimelineState` stay, read the nested object, and clamp as they did (0–9
 generations, zoom ranges, a missing or empty focus dropped, a malformed view
-dropped); `GraphState.gedcom`, `GraphState.around` and `TimelineState.gedcom`
-go. Nested rather than flat because Graph and Timeline each have a `focus`, `up`
+dropped; a scroll is clamped to a non-negative finite number); `GraphState.gedcom`,
+`GraphState.around` and `TimelineState.gedcom` go. `GraphSettings.around` stays: it
+is how the first opening is told whom to centre on, and is no longer saved. Nested rather than flat because Graph and Timeline each have a `focus`, `up`
 and `down`, and because it keeps `view` (the graph's position) apart from the
 person page's `view` key.
 
@@ -213,8 +229,8 @@ so that choosing Irène's branch in the timeline is still Irène's branch when t
 tab is switched to the graph, is a better feel and a worse contract: the two
 views already differ in what they save (zoom against position), their first
 opening differs (the graph centres a person, the timeline scrolls), and the
-requirements that exist say "keep its scope". Sharing is one more key and one
-changed scenario; it is an open question for the user.
+requirements that exist say "keep its scope". The user confirmed one scope
+each (2026-11-05).
 
 **The opening rule** reads the tab, not a path. A view with no memory is opened
 with `scope = { focus: initialFocus(index, around), up: 2, down: 2 }`, where
@@ -235,6 +251,19 @@ switch. This is why the graph's first opening takes `memory.graph?.view`: it is
 `{ saved }` for a restored tab and `{ open: around }` for a new one, as
 `GraphSettings` already has it.
 
+**The memory is written from callbacks only.** The boards report their scope and
+view through `scopeChanged` and `stateChanged`, and `FileViews` keeps what they
+report; `memory()` returns that, and never asks a live board for `view()`. A
+board that has just been shown, or hidden, or resized to nothing, would otherwise
+hand back a view computed from a zero size, and the tab would save it. (The
+timeline's scroll is the exception: read in `hide()`, while the plot is still
+displayed, and in `memory()` only while `displayed()`.)
+
+**`GraphCanvas.resized` keeps the last good size.** Today it assigns the size
+before its zero check (`graphCanvas.ts:331-333`), so a zero rect leaves the canvas
+with no size and the next draw lays out for a window of nothing. The size is
+assigned only after the check.
+
 **What `setState` does with them.** History navigation (Back to the graph)
 arrives as `setState` with the state `getState()` produced earlier. The tab takes
 `graph` and `timeline` from it into its memory; `FileViews.show` applies a scope
@@ -242,6 +271,15 @@ that differs from the board's (the board's own change handling), and does *not*
 move a view already on screen, since only a first show takes a saved view — so
 Back to a graph the board still holds shows it as it stands, which is where the
 reader left it. A restored tab has no board yet, and takes the saved view.
+
+**Another file.** `setState` with a file other than the tab's own — the tab was
+navigated — resets in its `!sameFile` branch, where the mode, record and selection
+are already reset today: `FileViews.reset()`, an empty memory, then the incoming
+state's `graph` and `timeline` are read *after* the reset and *before*
+`super.setState`. Not in `clear()` or in `setViewData(…, true)`: a restored tab
+receives `clear = true` after its `setState`, which would drop the state just
+read. Without the reset the second file would draw with the first's focus, view
+and board.
 
 ### Clicks in the views, until step 2
 
@@ -266,6 +304,25 @@ the views, `FileViews`, its host and the boards do not change. Had the views
 learned about pages or an "Open page" button, step 2 would have to take that out
 of them too.
 
+**An Index row is not a click.** The user's decision (2026-11-05): while the tab
+is in Graph or Timeline, an Index row for a *person* **selects** them — the view
+glides to the card or row and marks it selected — without opening the page and
+without changing the mode. This is new behaviour of the two views and the one
+step 2 wants for a click: when the card has its own place, a click on a card or a
+row will do exactly what the Index row does now, and `openRecord` from the views
+will mean "select, and show the card in the right panel". Until then the two
+differ, and the difference is stated, not hidden. A row for a family, a source or
+a media record has nothing to select in either view and opens its page, leaving
+the mode, as before (a family *node* could be selected in the graph; not
+done — the Index lists families, and a node is a click away).
+
+The mark is the tab's, not a board's: `FileViews.select(kind, xref)` marks one
+person in the board shown. The tab holds `selected`, which ends — the boards
+cleared — whenever the mode changes, whatever the target, including from Graph
+to Timeline, and is not saved. A second selection replaces the first. Selecting
+a person who is not in the branch shown changes the branch to theirs (mine; the
+alternatives were the whole file, which can be 10 000 people, and a notice).
+
 Marks go to `showInSource(range)`: Source mode, the lines selected and in view,
 as the page's *Show in source* does; this survives step 2 as it is.
 
@@ -289,39 +346,105 @@ one for records and is checked by hand in the task list.
 ### Panels while the tab is in Graph or Timeline
 
 The Index and Evidence follow `followed()`, the tab most recently active, and
-read `shownRecord()` and `deskSelection()`:
+read `shownRecord()` and `deskSelection()`. With a selection in the views
+(above), the choice of 2026-11-05 is that both are cheap and both are used:
 
-- `shownRecord()` and `deskSelection()` stay `null` outside Genealogy mode (as
-  they already are for Source). In Graph and Timeline the view has no selected
-  person to give them (mine: step 2 will add one, and the card in the sidebar is
-  what shows it), so the Index marks no row and Evidence says to open the file as
-  genealogy. The alternative — answering the tab's last `record` — would highlight
-  a row that the view on screen does not show.
-- `recordAtCursor()` is `undefined` outside Source and Genealogy, so the copy-link
-  commands are not offered in Graph and Timeline (`identifiedRecord`).
-- An Index row, `openFromIndex`: Source goes to the line, everything else opens
-  the page. So in Graph or Timeline a row opens its page and leaves the view, like
-  a card does. Step 2 turns this into "show the card".
-- `goToXref` (a followed link, `goToRecord`): the route for a page is taken in
-  any mode but Source — `showsPages()` replaces `shownMode === "genealogy"` in
-  the three places — so a link followed into a tab in Graph shows the page in
-  Genealogy mode, instead of moving a cursor in an editor that is hidden.
-- `placeEvidence` keeps its condition, `shownRecord() !== null`: the panel is put
-  on first sight of a page.
+- `shownRecord()` is the page's record in Genealogy mode, the **selected person**
+  in Graph and Timeline (null when nobody is selected), and null in Source. The
+  Index therefore marks the selected row, as the requirement says.
+- `deskSelection()` is `{ index, record, fact: null }` for that selected person,
+  so Evidence shows their whole record, and says to open the file as genealogy
+  when nothing is selected. `placeEvidence` keeps its condition,
+  `shownRecord() !== null`, so the panel is also placed on the first selection in
+  a view.
+- `recordAtCursor()` is the selected person's record in Graph and Timeline, so the
+  copy-link commands are offered while somebody is selected and not otherwise
+  (`identifiedRecord`); in Genealogy it is the page's record, in Source the
+  cursor's.
+- `openFromIndex(tab, xref)` in `deskState.ts` takes three branches: Source goes
+  to the line; Graph or Timeline calls the tab's `selectInView(xref)`, which
+  answers false for a record that is not a person of the file, and then opens the
+  page; Genealogy opens the page. `IndexTarget` gains `inView()` and
+  `selectInView(xref)`.
+- Editor commands: `inSource()` is the mode being Source, so they are offered in
+  Source only. `showSearch(replace)` — which Obsidian's own `editor:open-search`
+  dispatches to the active view by duck type — returns at once unless the tab is
+  in Source (mine; it opened the search panel in a hidden editor in Genealogy mode
+  before, which showed up later in Source; the alternative of switching to Source
+  is a mode change nobody asked for). Mod+F finding a person in a view stays a
+  non-goal.
 - The status bar (version, problems) is the file's, not the mode's, and shows for
   any GEDCOM tab as it does in Genealogy mode; unchanged.
-- Editor commands: `inSource()` is `shownMode === "source"`, so they are offered
-  in Source only, as for Genealogy now.
 
 ### Leaving Source, and the cursor
 
 `toggleMode` today sets the record from the cursor when going Source →
 Genealogy, and moves the cursor to the page's lines going back. The first half
-becomes "on leaving Source for any mode" (`setMode` does it) so that the 500-person
-rule and a later switch to Genealogy see the cursor's record. The second half
-stays Genealogy → Source only; from Graph or Timeline the cursor is left where it
-was, since those modes have no "what is shown" to move it to, and the `record`
-the tab holds may be older than the cursor (a requirement and a scenario say so).
+becomes "on leaving Source for any mode" so that the 500-person rule and a later
+switch to Genealogy see the cursor's record. The second half stays Genealogy →
+Source only; from Graph or Timeline the cursor is left where it was, since those
+modes have no "what is shown" to move it to, and the `record` the tab holds may be
+older than the cursor.
+
+### Routes into a page
+
+`goToXref` (a followed link, an `obsidian://` link, `openGedcomLink` on a file that
+opens as a graph, **Go to record**) takes its page route today without changing
+the mode, which is right only in Genealogy. Now: in Genealogy the route is as
+before (`record` set, the page redrawn, no history step); in Graph or Timeline it
+is `openRecord(xref)` — Genealogy mode, a history step by `navigationStep`, and the
+layout saved — so Back returns to the view. A record with no page that has an
+identifier switches to Source and goes to it, as now. `goToRecord` for a record
+with no identifier (the header, the trailer) switches to Source first and then
+moves the cursor: in any mode but Source it would otherwise dispatch into an
+editor that is not shown. The scenarios are in `genealogy-view`.
+
+### The mode state machine is a pure class
+
+`GedcomView` is untestable in Vitest (`obsidian` is types only), and almost
+everything this change decides is a rule about which mode, which record and what
+to draw. Those rules live in `src/desk/tabModes.ts`, no `obsidian` import, with
+`src/desk/tabModes.test.ts`:
+
+```ts
+class TabModes {
+  mode, lastMode, record, selected, stale, loaded;
+  setMode(next, { interfaceOn, cursorRecord }): { changed, moveCursor, selectionCleared };
+  openRecord(xref): { mode: "genealogy", record, step };   // what the tab sets and whether history steps
+  select(xref, isPerson): boolean;
+  fileChanged(): void;                                      // reset record, selection, lastMode
+  textChanged(): void;                                      // mark the drawn views stale
+  needsDraw(shown: boolean): boolean;                       // loaded, a view mode, and shown
+  toggleTarget(): DeskMode;
+}
+```
+
+`GedcomView` applies its results (moves the cursor, calls `FileViews`, saves the
+layout); it does not decide. The rules carried here: leaving Source records the
+cursor's record when it has a page; the last mode other than Source; mode change
+clears the selection; `openRecord` from Graph or Timeline is a history step on the
+same record; a file change resets everything; a mode while the interface is off is
+Source; nothing is drawn before the file is loaded. `navigationStep`,
+`modeChoices` and `openingMemory` stay as free functions in `deskState.ts`, which
+`TabModes` uses.
+
+### Resizes and the edges of the view
+
+Obsidian calls a view's `onResize` from a `ResizeObserver` and from a loop on
+window resize, hidden leaves included. `GedcomView.onResize` therefore returns
+unless `containerEl.isShown()` and `FileViews.displayed()` (a view's root has a
+box), and only then redraws what is stale and calls `resized()`. With
+`GraphCanvas.resized` keeping the last good size and the memory written from
+callbacks only (above), a hidden tab that is resized to nothing and shown again
+comes back at the position it left.
+
+**Text changed by the plugin.** `MoveFollower.followMove` reaches the tab through
+`applyWorkspaceEdit`, a CodeMirror transaction that is not `applyingData`; the
+update listener bumps `revision` and calls `announceEdit`, which today only tells
+the panels. In the debounced announce, a tab that is not in Source now also
+redraws its page or marks its views stale and draws them if shown — which also
+mends the page in Genealogy mode, which did not redraw after a followed media
+move either.
 
 ### Old overview tabs
 
@@ -344,8 +467,12 @@ bundle (installer 1.8.9, `app.asar`):
 So without handling, every reader with an old overview tab would meet an unknown
 pane at each start. Options:
 
-1. **Detach them on layout-ready** (chosen, mine): `detachLeavesOfType` for the
-   two retired ids, in the `onLayoutReady` callback beside `syncInterface`. No
+1. **Detach them on layout-ready** (chosen, mine; confirmed 2026-11-05): a
+   `sweepRetiredViews()` doing `detachLeavesOfType` for the two retired ids, in the
+   `onLayoutReady` callback and also in the `layout-change` handler, which
+   already runs `syncInterface` while the interface is off — so a leaf that a
+   late restore or a pasted layout brings back is swept too, whether the interface
+   is on or off. No
    registered view, no code that needs `obsidian` types beyond what exists, idempotent,
    silent. Loses nothing the reader has not got in the file's tab: the graph's
    scope and zoom, which were view state, not data.
@@ -366,8 +493,14 @@ interface is on or off.
 
 - `src/desk/DeskViews.ts`: `FileOverviewView`, `FileTimelineView`,
   `FileGraphView`, `FileOverviewHost`, `OverviewBoard`, `FILE_TIMELINE_VIEW_TYPE`,
-  `FILE_GRAPH_VIEW_TYPE`, `OVERVIEW_VIEW_TYPES`, `fileName`, and the imports of the
-  boards. `IndexView` and `EvidenceView` and their host stay.
+  `FILE_GRAPH_VIEW_TYPE`, `OVERVIEW_VIEW_TYPES`, `fileName`, and the imports they
+  alone used: `Range`, `Platform`, `setIcon`, `GenealogyIndex`, `FILE_GRAPH_ICON`,
+  `FILE_TIMELINE_ICON`, `fileTimelineOf`, `FileGraphBoard`, `readGraphState`,
+  `GraphState`, `PortraitContent`, `FileTimelineBoard`, `readTimelineState`,
+  `TimelineScope`, `TimelineState`, `ViewStateResult` if nothing else uses it —
+  `Platform` and `setIcon` stay if `IndexView` still uses them (it uses
+  `Platform`). `IndexView` and `EvidenceView` and their host stay; `Index`'s
+  `open` goes through `openFromIndex` as before.
 - `src/vault/overviewReads.ts` and `overviewReads.test.ts`.
 - `src/main.ts`: the registrations; `overviewsOpening`; `reads`; `openOverview`,
   `openOverviewOf`, `openOrReveal`, `overviewIndex`, `portraitIn`,
@@ -376,17 +509,27 @@ interface is on or off.
   `markOverviewsStale`, `followOverviews`; the `modify` handler; the `delete` and
   `create` handlers (they exist for readings of closed files); the overview lines
   in `active-leaf-change`, `layout-change`, `genealogyChanged` and `syncInterface`;
-  `FileOverviewHost` from the `implements`, `OverviewKind` and `leafShowingFile`
-  imports it no longer needs; `descendantPaths` stays (the `MoveFollower` uses it).
-  The `rename` handler stays, minus `followOverviews`.
+  `FileOverviewHost` from the `implements`; the imports that become unused:
+  `Range`, `TAbstractFile`, `MediaVault`, `mediaPreviewContent`, `PortraitContent`,
+  `initialFocus`, `openFromIndex`, `GenealogyIndex`, `OverviewKind`,
+  `leafShowingFile`, `OverviewReads`, and the view classes and types of
+  `DeskViews` (`tsc` and `eslint` find the rest); `descendantPaths` stays (the
+  `MoveFollower` uses it). The `rename` handler stays, minus `followOverviews`.
 - `GedcomViewHost.openOverview`; `CommandHost.openOverview`; `OverviewKind`.
 - The boards: `showGone`, the gone element and its class, `overview.gone`, and
-  their tests; `GraphState.gedcom`/`around`, `TimelineState.gedcom`.
+  their tests; `GraphState.gedcom` and the state's `around`, `TimelineState.gedcom`
+  (`GraphSettings.around` stays).
 - `src/vault/openTabs.test.ts`: the two tests that a timeline or graph leaf is not
   taken for a tab of its file. `openTabs.ts` itself stays: it reads
   `state.file` only. The `gedcom` key existed so that an overview leaf was not
   matched as a tab of the file by `leafShowingFile` and `MoveFollower.openView`;
   with no such leaf there is nothing to keep apart.
+- `styles.css`: the rules `.workspace-leaf-content[data-type="domorium-file-timeline"] .view-content`
+  (near line 1125) and `…-graph"` (near 1676), dead with the views; their `padding:
+  0` and `overflow: hidden` go to the tab's content (`.gedcom-gedcom-view`). The
+  harness pages `harness/fileGraph.html` and `harness/fileTimeline.html` lose the
+  `data-type` attribute of the removed types and wrap their board in an element
+  with the tab's class, so the specs see the same CSS the tab gives.
 - Strings: `command.openFileTimeline`, `command.openFileGraph`,
   `fileTimeline.title`, `fileTimeline.name`, `fileGraph.name`, `fileGraph.title`,
   `overview.gone`, `mode.toGenealogy`, `mode.toSource`.
@@ -414,9 +557,13 @@ chosen from the header control, a command or the tab's menu, not tabs.
 ### Tests
 
 - Unit (Vitest, `node`): `deskState.test.ts` — `readDeskState` with the four modes
-  and the two memories; `modeChoices`; `navigationStep`; the toggle target;
-  `RETIRED_VIEW_TYPES`; the opening scope (`openingMemory`) for a small and a
-  large file. `settings.test.ts` — the four `openAs` values. `commands.test.ts`
+  and the two memories; `modeChoices`; `navigationStep`; `RETIRED_VIEW_TYPES`; the
+  opening scope (`openingMemory`) for a small and a large file; `openFromIndex`
+  in the three modes. `tabModes.test.ts` — the state machine of the section
+  above: the record from the cursor on leaving Source, the toggle's last mode, a
+  selection ended by a mode change, `openRecord` as a step from a view, a file
+  change resetting, nothing drawn before the file is loaded, a hidden tab marked
+  stale, `recordAtCursor`'s rule for each mode. `settings.test.ts` — the four `openAs` values. `commands.test.ts`
   — the four commands and their availability, the toggle, no overview commands.
 - Unit (happy-dom): a new `fileViews.test.ts` — no board before the first `show`;
   `show("graph")` then `show("timeline")` toggles roots and leaves each board's
@@ -424,16 +571,19 @@ chosen from the header control, a command or the tab's menu, not tabs.
   view is spent by the first show only; the opening scope on a 2 000-person file;
   the memory after a scope change and after the first show; `hide()` cancels the
   hover; a click on a card calls the host's `openRecord`, a mark `showInSource`.
-  `fileGraphView.test.ts` and `fileTimelineView.test.ts` lose `gedcom`, `around`
-  and `showGone` tests and keep the rest unchanged — which is the check that the
-  views are not altered.
+  `fileGraphView.test.ts` and `fileTimelineView.test.ts` lose `gedcom`, the state's
+  `around` and `showGone` tests — `GraphSettings.around` and its tests stay — and
+  gain tests of the selected mark, of a zero-size `resized` keeping the last good
+  size, and of the timeline's scroll read and restored; the rest passes unchanged,
+  which is the check that the views are not altered.
 - Browser: `harness/fileViews.ts` (+ `.html`, one line in `build.mjs`) mounts a
   `FileViews` in a stand-in tab with buttons for the modes; `tests/fileViews.spec.ts`
   checks in a real browser what happens when a board is unhidden — a canvas that
   was hidden has a size and draws, the position survives a round trip, the
   timeline's sticky names and axis still follow the plot after it, a phone width.
   The existing `fileGraph` and `fileTimeline` specs mount the boards directly and
-  do not change (their `around` option goes with the state field).
+  do not change, their `around` option included (it feeds `GraphSettings.around`);
+  the harness pages only lose their `data-type`.
 - By hand in Obsidian (the first task of the last group): what no test reaches —
   the header control and its menu on desktop and phone, Back from a page to a
   graph and Forward again, a restored tab in each mode, the old overview tabs
@@ -444,9 +594,9 @@ chosen from the header control, a command or the tab's menu, not tabs.
 Step 2 (its own change): the record card in the right sidebar; Evidence's
 content merged into the card, below it; the person page's Timeline and Places
 as sections; removing Genealogy mode and the page's Tree tab; `openRecord`
-becoming "select and show the card"; a selected person in Graph and Timeline,
-which gives the Index a current row and Evidence something to show there;
-`shownRecord()`/`deskSelection()` answering for every mode; the *Open GEDCOM
+becoming "select and show the card", which is what an Index row already does in
+Graph and Timeline after this change, so a click on a card or row then does what
+the row does now; `shownRecord()`/`deskSelection()` answering for every mode, Genealogy gone; the *Open GEDCOM
 files as* option *Genealogy* going (a saved `genealogy` read as Graph or
 Source — that is step 2's decision). What this change leaves for it, on purpose:
 Genealogy mode and its four-tab person page untouched; the Index and Evidence
@@ -483,8 +633,11 @@ board, a `ViewKind` and a memory key.
   other until saved, which is how the Genealogy mode already behaves and why
   `openTab` (`followedView` first) existed; nothing depends on it now.
 - **Downgrade.** An older plugin ignores the new keys and modes. Not supported.
-- **Mod+F in Graph or Timeline** does nothing visible: the editor's search opens
-  in a hidden editor, as in Genealogy mode today. Not changed (Non-goals).
+- **Mod+F in Graph or Timeline** does nothing (`showSearch` returns unless in
+  Source). Finding a person with it is a non-goal.
+- **A deleted file's tab.** `FileView.onDelete` steps the leaf back through its
+  history; with the views in the tab that can land on a page or a graph state of
+  another file. Checked by hand (7.1), not designed around.
 - **Lessons from the overview views carried over:** a restored tab may be
   deferred, so state is read in `setState` and the file is waited for; a view
   shown while hidden is read stale, so it draws on `onResize`; focus is not moved
@@ -506,16 +659,18 @@ tab of its own beside the person pages") and of `genealogy-view` ("the Genealogy
 Source modes") is edited by hand in the archive PR, as `openspec archive` leaves
 Purpose alone.
 
+## Decisions of the user (2026-11-05)
+
+1. Graph and Timeline each keep their own branch scope.
+2. An old overview tab is closed silently.
+3. An Index row in Graph or Timeline selects the person and centres the view,
+   without opening the page or changing the mode; a click on a card or row in the
+   view keeps opening the page until step 2, when it becomes what the Index row does.
+4. The order of the modes is Genealogy, Graph, Timeline, Source.
+
 ## Open Questions
 
-For the user:
-
-1. Should Graph and Timeline share one scope (Irène's branch in both), as against
-   one each?
-2. Is closing an old overview tab, silently, right, or should it become a GEDCOM
-   tab in the matching mode with its scope?
-3. In Graph and Timeline, should an Index row **centre the view on that person**
-   rather than open the page, until step 2? (Not done here; it is a new behaviour
-   in two drawings.)
-4. The order of the modes in the menu and the setting: Genealogy, Graph,
-   Timeline, Source, or Source first?
+None for the user at the time of writing. Decided by me and open to a change:
+selecting a person outside the branch shown changes the branch to theirs; an Index
+row for a family, a source or a media record opens its page; `showSearch` does
+nothing outside Source.

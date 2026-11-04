@@ -194,3 +194,38 @@ Nothing in the graph SHALL write to the file.
 - **WHEN** a tab of `curie.ged` is in Graph mode on Irène's branch, zoomed in and
   moved, and Obsidian is restarted
 - **THEN** the tab shows the graph of Irène's branch at the same zoom and position
+
+### Requirement: A selected card
+
+The graph SHALL mark one person's card as **selected** when the GEDCOM tab is told
+to select them, as an index row does in Graph mode. The view SHALL centre on the
+card at a readable zoom, gliding there rather than jumping unless the reader has
+asked for reduced motion or the card is further away than a glide can show without
+a streak, as stepping to a match does. The mark SHALL be unlike the light of
+pointing and unlike the ring of the search's current match, SHALL stay while the
+pointer lights other people and while the reader searches, and SHALL stay until
+another person is selected or the tab leaves Graph mode. Where the person is not
+in the branch shown, the graph SHALL show their branch, with the way back to the
+whole file. Selecting SHALL NOT open a page, change the mode or write to the file.
+
+#### Scenario: Selecting Pierre from the index
+- **WHEN** the tab is in Graph mode and the reader activates Pierre Curie's row in
+  the index
+- **THEN** his card is marked selected and centred, the tab is still in Graph
+  mode, and no page is open
+
+#### Scenario: The mark outlasts hover and search
+- **WHEN** Pierre Curie is selected, the pointer rests on Marie's card and the
+  reader types `joliot` and presses Enter
+- **THEN** Pierre Curie's card still carries the selected mark, apart from the
+  light on Marie's and the ring on Frédéric's
+
+#### Scenario: Another selection
+- **WHEN** Pierre Curie is selected and the reader activates Irène's row
+- **THEN** only Irène's card is marked selected
+
+#### Scenario: A person outside the branch
+- **WHEN** the graph shows Marie's branch with zero generations of ancestors and
+  zero of descendants and the reader activates Hélène's row in the index
+- **THEN** the graph shows Hélène's branch, with her card selected
+

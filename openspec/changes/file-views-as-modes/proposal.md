@@ -49,8 +49,16 @@ Proposed scope, taken from that:
 - **Clicks.** Until step 2 gives the card a place of its own, activating a
   person or a family in Graph or Timeline shows their page in the same tab,
   which leaves Graph or Timeline for Genealogy and which Back returns from
-  (mine). A mark shows its lines in the source (Source mode). An Index row in
-  Graph or Timeline does the same as a card.
+  (mine). A mark shows its lines in the source (Source mode). Step 2 will make
+  that click select the person and show the card in the right panel.
+- **An Index row in Graph or Timeline selects** (the user, 2026-11-05): the view
+  centres on that person, gliding to the card or row, and marks them as
+  *selected* — without opening the page and without changing the mode. The mark
+  is its own, unlike the hover light and the search's current-match ring, and
+  stays until another selection or leaving the mode. The Index marks the row and
+  Evidence shows the record while it stands. In Source an Index row puts the
+  cursor on the record, and in Genealogy it opens the page, as now. This is
+  the behaviour a click on a card gets in step 2.
 - **Removed:** the overview tabs (`domorium-file-timeline`,
   `domorium-file-graph` and their view classes), `src/vault/overviewReads.ts`
   with its tests, everything in `src/main.ts` that opened, revealed, refreshed,
@@ -92,8 +100,9 @@ None. The modes are the tab's, so their requirements are added to
   becomes "a mode of the file's tab" (renamed, restated whole); where the large
   file opens; what activating a person, a family or a mark does; for the graph,
   where it first opens.
-- `genealogy-index`: opening a row from a tab in Graph or Timeline.
-- `genealogy-evidence`: the panel for a tab that is in Graph or Timeline.
+- `genealogy-index`: a row selects the person in a tab in Graph or Timeline, and
+  the selected row is marked.
+- `genealogy-evidence`: the panel for a tab in Graph or Timeline with a selection.
 
 ## Non-goals
 
@@ -102,9 +111,10 @@ None. The modes are the tab's, so their requirements are added to
   Timeline and Places as sections: **step 2**. This change leaves the person
   page, its four tabs, the Evidence panel and the Index as they are.
 - A map: **step 3**.
-- Following a person across modes: a click on a card shows their page, it does
-  not yet select them in the view, and Graph and Timeline have no selected
-  person, so the Index marks no row and Evidence shows nothing in those modes.
+- A click on a card or row selecting rather than opening the page: that is step 2.
+  A selection follows no one across modes; it ends with the mode.
+- Selecting a family, a source or a media record in Graph or Timeline: such an
+  Index row still opens its page.
 - A scope shared between Graph and Timeline. Each keeps its own (mine); whether
   to share it is a question for the user.
 - Making Mod+F find a person in Graph or Timeline. The editor's find stays a
@@ -117,7 +127,8 @@ None. The modes are the tab's, so their requirements are added to
 ## Impact
 
 - Code: `src/GedcomView.ts`, `src/main.ts`, `src/commands.ts`,
-  `src/desk/deskState.ts`, a new `src/desk/fileViews.ts`,
+  `src/desk/deskState.ts`, new `src/desk/tabModes.ts` and `src/desk/fileViews.ts`,
+  `src/desk/graphCanvas.ts`,
   `src/desk/DeskViews.ts` (the overview classes and the host go),
   `src/desk/fileGraphView.ts`, `src/desk/fileTimelineView.ts`,
   `src/settingsData.ts`, `src/settingDefinitions.ts`, `src/vault/openTabs.ts`
