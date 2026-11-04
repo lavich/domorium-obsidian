@@ -11,7 +11,7 @@ import {
   layoutFileGraph,
   layoutGraph,
   marriageDigits,
-  ROW_PITCH,
+  ROW_GAP,
   SWEEPS,
   type FileGraphLayout,
   type GraphCard,
@@ -98,7 +98,10 @@ describe("the layout of curie.ged", () => {
   it("has a card for each of 17 people in four rows, none overlapping", () => {
     expect(layout.cards).toHaveLength(17);
     expect(layout.rows).toBe(4);
-    expect(new Set(layout.cards.map((card) => card.y))).toEqual(new Set([0, 1, 2, 3].map((row) => row * ROW_PITCH)));
+    layout.bands.slice(1).forEach((band, at) => expect(band.top - (layout.bands[at]?.bottom ?? 0)).toBe(ROW_GAP));
+    expect(layout.cards.every((card) => card.y + card.height === layout.bands[card.row]?.bottom)).toBe(true);
+    expect(["@I1@", "@I2@", "@I12@"].map((xref) => at(layout, xref).height)).toEqual([1, 1, 1].map(() => CARD.height + CARD.portrait));
+    expect(at(layout, "@I11@").height).toBe(CARD.height);
     expect(overlapping(layout)).toEqual([]);
   });
 
@@ -131,7 +134,7 @@ describe("the layout of curie.ged", () => {
     const curies = layout.node.get("@F3@");
     expect(curies?.x).toBeGreaterThan(at(layout, "@I2@").x + CARD.width);
     expect(curies?.x).toBeLessThan(at(layout, "@I1@").x);
-    expect(curies?.y).toBe(at(layout, "@I1@").y + CARD.height / 2);
+    expect(curies?.y).toBe(at(layout, "@I1@").y + at(layout, "@I1@").height - CARD.height / 2);
   });
 
   it("runs eleven lines from the families to the children's cards, none crossing", () => {
@@ -197,7 +200,7 @@ describe("the families the Curies do not have", () => {
     expect(wife.row - man.row).toBeGreaterThan(1);
     expect(node?.x).toBe(man.x + CARD.width / 2);
     expect(node?.y).toBeGreaterThan(man.y + CARD.height);
-    expect(node?.y).toBeLessThan(man.y + ROW_PITCH);
+    expect(node?.y).toBeLessThan(man.y + man.height + ROW_GAP);
     expect(node?.joins.at(-1)?.at(-1)).toEqual([wife.x + CARD.width / 2, wife.y]);
     expect(layout.lines.find((line) => line.family === "@F3@")?.points[0]).toEqual([node?.x, node?.y]);
     expect(overlapping(layout)).toEqual([]);
@@ -257,6 +260,44 @@ describe("the families the Curies do not have", () => {
 
     expect(layout.cards.filter((card) => card.row === 0).map((card) => card.id)).toEqual(["@V@", "@M@", "@W@"]);
     expect(leftOf(layout, "@A@", "@B@")).toBe(true);
+  });
+
+  it("makes a row as tall as its tallest card, its cards on its bottom edge, its nodes at the text's middle", () => {
+    const layout = layoutGraph({
+      cards: [
+        { id: "h", row: 0, sex: "M", portrait: true },
+        { id: "w", row: 0, sex: "F" },
+        { id: "c", row: 1, sex: "F" },
+      ],
+      families: [{ id: "f", spouses: ["h", "w"], children: ["c"], year: 1900 }],
+      focus: null,
+    });
+    const [husband, wife, child] = ["h", "w", "c"].map((id) => layout.card.get(id));
+
+    expect(layout.bands[0]).toEqual({ top: 0, bottom: CARD.height + CARD.portrait });
+    expect(husband).toMatchObject({ y: 0, height: CARD.height + CARD.portrait });
+    expect(wife).toMatchObject({ y: CARD.portrait, height: CARD.height });
+    expect(child?.y).toBe(CARD.height + CARD.portrait + ROW_GAP);
+    expect(layout.node.get("f")?.y).toBe(CARD.portrait + CARD.height / 2);
+    expect(layout.lines[0]?.points.at(-1)).toEqual([(child?.x ?? 0) + CARD.width / 2, child?.y]);
+    expect(layout.height).toBe(2 * CARD.height + CARD.portrait + ROW_GAP);
+  });
+
+  it("stands siblings with no spouse closer to each other than to anyone else", () => {
+    const layout = layoutGraph({
+      cards: [
+        { id: "p", row: 0, sex: "M" },
+        { id: "a", row: 1, sex: "M" },
+        { id: "b", row: 1, sex: "F" },
+        { id: "c", row: 1, sex: "F" },
+      ],
+      families: [{ id: "f", spouses: ["p"], children: ["a", "b", "c"], year: null }],
+      focus: null,
+    });
+    const xs = ["a", "b", "c"].map((id) => layout.card.get(id)?.x ?? NaN);
+
+    expect(xs[1] - xs[0]).toBe(CARD.width + 16);
+    expect(xs[2] - xs[1]).toBe(CARD.width + 16);
   });
 
   it("lays out an input of its own, with cards that are not people", () => {
@@ -393,8 +434,8 @@ describe("the order of the rows", () => {
     for (const line of layout.lines) {
       line.points.forEach((point, at) => {
         const next = line.points[at + 1];
-        if (next && next[1] - point[1] === 16 && Math.abs(next[0] - point[0]) > ROW_PITCH) {
-          const gap = Math.floor(point[1] / ROW_PITCH);
+        if (next && next[1] - point[1] === 16 && Math.abs(next[0] - point[0]) > CARD.height + ROW_GAP) {
+          const gap = layout.bands.findIndex((band) => band.bottom < point[1] && point[1] < band.bottom + ROW_GAP);
           heights.set(`${gap}|${line.family}`, (heights.get(`${gap}|${line.family}`) ?? new Set()).add(point[1]));
         }
       });

@@ -1,12 +1,15 @@
 import type { BranchScope } from "./branchScope";
 import { least, most, type FileTimeline, type Sex } from "./fileTimeline";
 
-export const CARD = { width: 168, height: 46 } as const;
+/** `height` is a card's text; a card with a portrait is `portrait` taller. */
+export const CARD = { width: 168, height: 58, portrait: 50 } as const;
 const SPOUSE_GAP = 36;
 const BLOCK_GAP = 72;
-export const ROW_PITCH = 130;
+/** Between one row's bottom edge and the next row's top. */
+export const ROW_GAP = 84;
 export const LANE = 10;
 const LANE_GAP = 20;
+const SIBLING_GAP = 16;
 const BELOW = 16;
 const CLEAR = 10;
 /** The widest stretch of x left with no unit in any row. */
@@ -16,7 +19,7 @@ const LANES_PER_PERSON = 4;
 const BEND = 8;
 /** The least distance between two bent lines in one gap; past as many families as fit, heights repeat. */
 const BEND_STEP = 4;
-const LONG = ROW_PITCH;
+const LONG = CARD.height + ROW_GAP;
 const PULLS = 40;
 const TRANSPOSE_ROUNDS = 4;
 
@@ -28,9 +31,10 @@ export type Point = [number, number];
 /** A card to lay out: a person in the graph of a file, a box of its own in a person's tree. */
 export interface GraphInputCard {
   id: string;
-  /** Rows without a card are dropped. */
+  /** Any number, a generation or a step from a focus: rows are ordered by it, and a number no card has makes no row. */
   row: number;
   sex: Sex;
+  portrait?: boolean;
 }
 
 export interface GraphInputFamily {
@@ -38,7 +42,6 @@ export interface GraphInputFamily {
   /** Card ids; the first is the husband where the family names one. */
   spouses: string[];
   children: string[];
-  /** Null where the marriage is undated. */
   year: number | null;
 }
 
@@ -55,6 +58,13 @@ export interface GraphCard {
   row: number;
   x: number;
   y: number;
+  height: number;
+}
+
+/** A row's top and bottom edge; cards stand on the bottom one. */
+export interface GraphBand {
+  top: number;
+  bottom: number;
 }
 
 /**
@@ -69,7 +79,6 @@ export interface GraphNode {
   kind: NodeKind;
   x: number;
   y: number;
-  /** Null where the marriage is undated. */
   year: number | null;
   /** The left spouse first, or the upper one where they stand in different rows. */
   spouses: [string, string];
@@ -102,6 +111,7 @@ export interface FileGraphLayout {
   width: number;
   height: number;
   rows: number;
+  bands: GraphBand[];
   crossings: number;
   crossingsAtStart: number;
   sweeps: number;
@@ -123,6 +133,8 @@ interface Unit {
   down: Link[];
   key: number;
   lane: boolean;
+  /** For a person standing alone: the family they are a child of, beside whose other children they stand closer. */
+  family?: string;
   cx: number;
 }
 
@@ -168,7 +180,8 @@ export function countCrossings(segments: readonly (readonly [number, number])[])
 
 const pitch = CARD.width + SPOUSE_GAP;
 const leftOf = (unit: Unit): number => unit.cx - unit.width / 2;
-const gapBetween = (a: Unit, b: Unit): number => (a.lane || b.lane ? LANE_GAP : BLOCK_GAP);
+const gapBetween = (a: Unit, b: Unit): number =>
+  a.lane || b.lane ? LANE_GAP : a.family !== undefined && a.family === b.family ? SIBLING_GAP : BLOCK_GAP;
 
 /** Where a family's lines leave a block: between neighbouring spouses, midway between others, else at its parent's card. */
 function familyAnchor(place: ReadonlyMap<string, number>, parents: string[]): number {
@@ -346,13 +359,24 @@ function transpose(layer: Unit[]): void {
  * family's cross at a height of their own, ranked by where the family stands,
  * so a bundle of them can be told apart; neighbours never share a height.
  */
-function bendApart(lines: GraphLine[]): void {
+/** The band a height falls in, or the last whose bottom it is below. */
+function bandAt(bands: readonly GraphBand[], y: number): number {
+  let found = 0;
+  bands.forEach((band, at) => {
+    if (band.top <= y) {
+      found = at;
+    }
+  });
+  return found;
+}
+
+function bendApart(lines: GraphLine[], bands: readonly GraphBand[]): void {
   const crossings = new Map<number, { line: GraphLine; at: number }[]>();
   for (const line of lines) {
     line.points.forEach((point, at) => {
       const next = line.points[at + 1];
       if (next && Math.abs(next[0] - point[0]) > LONG && next[1] > point[1]) {
-        const gap = Math.floor(point[1] / ROW_PITCH);
+        const gap = bandAt(bands, point[1]);
         crossings.set(gap, [...(crossings.get(gap) ?? []), { line, at }]);
       }
     });
@@ -365,8 +389,8 @@ function bendApart(lines: GraphLine[]): void {
     const startOf = new Map(found.map((one) => [one.line.family, one.line.points[one.at]?.[0] ?? 0]));
     families.sort((a, b) => (startOf.get(a) ?? 0) - (startOf.get(b) ?? 0));
     const rank = new Map(families.map((family, at) => [family, at]));
-    const top = gap * ROW_PITCH + CARD.height + CLEAR + BEND;
-    const bottom = (gap + 1) * ROW_PITCH - CLEAR - BEND;
+    const top = (bands[gap]?.bottom ?? 0) + CLEAR + BEND;
+    const bottom = (bands[gap + 1]?.top ?? top) - CLEAR - BEND;
     const replaced = new Map<GraphLine, Map<number, Point[]>>();
     for (const { line, at } of found) {
       const [x0 = 0, y0 = 0] = line.points[at] ?? [];
@@ -437,6 +461,7 @@ export function layoutFileGraph(
         id: xref,
         row: model.generations.get(xref) ?? 0,
         sex: model.people.get(xref)?.sex ?? "U",
+        portrait: model.people.get(xref)?.portrait !== undefined,
       })),
       families: [...model.families.values()].map((family) => ({
         id: family.xref,
@@ -483,6 +508,15 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
   });
 
   const sexOf = (id: string) => sexes.get(id) ?? "U";
+  const childOf = new Map<string, string>();
+  for (const family of input.families) {
+    for (const child of family.children) {
+      if (!childOf.has(child)) {
+        childOf.set(child, family.id);
+      }
+    }
+  }
+  const portraits = new Set(input.cards.filter((one) => one.portrait).map((one) => one.id));
   const husbandLeft = (order: string[]): [number, number] => {
     let bySex = 0;
     let byRole = 0;
@@ -524,8 +558,10 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     if (readsBetter(reversed, members)) {
       members = reversed;
     }
+    const [only] = members;
     const unit: Unit = {
       members,
+      ...(members.length === 1 && only !== undefined && childOf.has(only) ? { family: childOf.get(only) } : {}),
       layer: layerOf(xref),
       width: members.length * CARD.width + (members.length - 1) * SPOUSE_GAP,
       up: [],
@@ -687,13 +723,21 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
   squeeze(units, MOST_GAP);
 
   const minX = units.length > 0 ? least(units.map(leftOf)) : 0;
+  const bands: GraphBand[] = [];
+  layers.forEach((layer, at) => {
+    const top = at === 0 ? 0 : (bands[at - 1]?.bottom ?? 0) + ROW_GAP;
+    const tall = layer.some((unit) => unit.members.some((id) => portraits.has(id)));
+    bands.push({ top, bottom: top + CARD.height + (tall ? CARD.portrait : 0) });
+  });
   const cards: GraphCard[] = [];
   const card = new Map<string, GraphCard>();
-  layers.forEach((layer) => {
+  layers.forEach((layer, row) => {
+    const band = bands[row] ?? { top: 0, bottom: CARD.height };
     for (const unit of layer) {
       unit.cx -= minX;
       unit.members.forEach((id, at) => {
-        const placed = { id, row: unit.layer, x: leftOf(unit) + at * pitch, y: unit.layer * ROW_PITCH };
+        const height = CARD.height + (portraits.has(id) ? CARD.portrait : 0);
+        const placed = { id, row: unit.layer, x: leftOf(unit) + at * pitch, y: band.bottom - height, height };
         cards.push(placed);
         card.set(id, placed);
       });
@@ -711,13 +755,13 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       continue;
     }
     const { year } = family;
-    const bottom = (at: GraphCard): Point => [at.x + CARD.width / 2, at.y + CARD.height];
+    const bottom = (at: GraphCard): Point => [at.x + CARD.width / 2, at.y + at.height];
     let made: GraphNode;
     if (one.row === other.row) {
       const [a, b] = one.x <= other.x ? [one, other] : [other, one];
       const neighbours = Math.abs(b.x - a.x - pitch) < 0.5;
       if (neighbours) {
-        const y = a.y + CARD.height / 2;
+        const y = a.y + a.height - CARD.height / 2;
         made = {
           family: family.id,
           kind: "pair",
@@ -729,7 +773,7 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
         };
       } else {
         const x = (a.x + b.x + CARD.width) / 2;
-        const y = a.y + CARD.height + BELOW;
+        const y = a.y + a.height + BELOW;
         made = {
           family: family.id,
           kind: "below",
@@ -768,7 +812,9 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     if (!child || !parent) {
       continue;
     }
-    const start: Point = familyNode ? [familyNode.x, familyNode.y] : [parent.x + CARD.width / 2, parent.y + CARD.height];
+    const start: Point = familyNode
+      ? [familyNode.x, familyNode.y]
+      : [parent.x + CARD.width / 2, parent.y + parent.height];
     const end: Point = [child.x + CARD.width / 2, child.y];
     const points: Point[] = [start];
     let y = start[1];
@@ -778,11 +824,14 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
         y = bottom;
       }
     };
-    step([start[0], Math.floor(y / ROW_PITCH) * ROW_PITCH + CARD.height + CLEAR]);
-    const lanes = edge.lanes.filter((lane) => lane.layer * ROW_PITCH - CLEAR > y);
+    const own = bands[bandAt(bands, y)];
+    if (own && y <= own.bottom) {
+      step([start[0], own.bottom + CLEAR]);
+    }
+    const lanes = edge.lanes.filter((lane) => (bands[lane.layer]?.top ?? 0) - CLEAR > y);
     for (const lane of lanes) {
-      const top = lane.layer * ROW_PITCH - CLEAR;
-      const bottom = top + CARD.height + 2 * CLEAR;
+      const top = (bands[lane.layer]?.top ?? 0) - CLEAR;
+      const bottom = (bands[lane.layer]?.bottom ?? 0) + CLEAR;
       step([lane.cx, top]);
       step([lane.cx, bottom]);
     }
@@ -797,7 +846,7 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     });
   }
 
-  bendApart(lines);
+  bendApart(lines, bands);
 
   const rights = units.map((unit) => unit.cx + unit.width / 2);
   return {
@@ -808,7 +857,8 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     lines,
     focus,
     width: rights.length > 0 ? most(rights) : 0,
-    height: generations.length > 0 ? (generations.length - 1) * ROW_PITCH + CARD.height : 0,
+    height: bands.at(-1)?.bottom ?? 0,
+    bands,
     rows: generations.length,
     crossings: best,
     crossingsAtStart,

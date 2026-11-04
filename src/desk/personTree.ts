@@ -23,6 +23,9 @@ export interface TreeCard {
   down: boolean;
   /** For a run of siblings: whose siblings, to show them one by one. */
   expands?: string;
+  portrait: boolean;
+  given?: string;
+  surname?: string;
 }
 
 export interface TreeFamily extends GraphInputFamily {
@@ -77,6 +80,8 @@ export function treeOf(
       gap: row.xref ? index.citesBy(row.xref).length === 0 : false,
       up: false,
       down: false,
+      portrait: row.xref ? index.person(row.xref)?.portrait !== undefined : false,
+      ...(row.given && row.surname ? { given: row.given, surname: row.surname } : {}),
       ...extra,
     };
     cards.set(made.id, made);
@@ -217,7 +222,7 @@ export function treeOf(
     input: {
       cards: all.map((id) => {
         const one = cards.get(id);
-        return { id, row: one?.row ?? 0, sex: one?.sex ?? "U" };
+        return { id, row: one?.row ?? 0, sex: one?.sex ?? "U", portrait: one?.portrait ?? false };
       }),
       families: [...families.values()],
       focus: focusCard.id,

@@ -1,8 +1,10 @@
 import { plural, t } from "../i18n";
+import type { MediaPreviewContent } from "../editor/media";
 import { placeInside } from "./dom";
-import { CARD, marriageDigits, type FileGraphLayout, type GraphNode, type Point } from "./fileGraph";
+import { CARD, marriageDigits, type FileGraphLayout, type GraphCard, type GraphNode, type Point } from "./fileGraph";
 import { least, most, type Sex } from "./fileTimeline";
 import { yearText } from "./labels";
+import { drawPicture } from "./media";
 
 export const ZOOM = { min: 0.05, max: 3, fit: 1.4, readable: 0.6, opens: 0.55, far: 0.5 } as const;
 const MARGIN = 20;
@@ -13,6 +15,8 @@ const TRACKPAD_DELTA = 40;
 const GESTURE_GAP = 150;
 const NAME_ROOM = 22;
 const NAME_WIDTH = CARD.width - 16 - 6;
+const AVATAR = { width: 36, height: 44 } as const;
+const BUTTON_STEP = 1.2;
 
 /** Where the view looks: the graph point at the centre of the canvas, and the scale. */
 export interface GraphView {
@@ -41,9 +45,15 @@ export interface CanvasCard {
   /** Has parents, or children, the drawing does not reach. */
   up?: boolean;
   down?: boolean;
-  /** Offers its Branch. */
   branch?: boolean;
+  /** Set where the name has both, each then on its own line. */
+  given?: string;
+  surname?: string;
+  /** Asked as the card is drawn, so only cards near the view load a picture. */
+  portrait?(): PortraitContent | null;
 }
+
+export type PortraitContent = Extract<MediaPreviewContent, { kind: "image" }>;
 
 export interface CanvasFamily {
   couple: string;
@@ -179,7 +189,7 @@ type ItemKind = "card" | "node" | "line";
 interface Item {
   kind: ItemKind;
   /** The card's id, or the family's of a node or a line. */
-  xref: string;
+  id: string;
   left: number;
   top: number;
   right: number;
@@ -261,7 +271,7 @@ export class GraphCanvas {
     }
     const active = this.doc.activeElement;
     const kept = active && this.el.contains(active)
-      ? { xref: this.personAt(active), pill: active.hasAttribute("data-branch") }
+      ? { id: this.personAt(active), pill: active.hasAttribute("data-branch") }
       : null;
     this.scene = scene;
     this.layout = scene.layout;
@@ -278,8 +288,8 @@ export class GraphCanvas {
     this.setQuery(this.query);
     this.settle();
     this.redrawIfNeeded();
-    if (kept?.xref) {
-      this.refocus(this.cardOf.get(kept.xref), kept.pill);
+    if (kept?.id) {
+      this.refocus(this.cardOf.get(kept.id), kept.pill);
     }
   }
 
@@ -375,19 +385,19 @@ export class GraphCanvas {
     }
   }
 
-  highlight(xref: string | null, force = false): void {
-    if (xref === this.highlighted && !force) {
+  highlight(id: string | null, force = false): void {
+    if (id === this.highlighted && !force) {
       return;
     }
-    this.highlighted = xref;
+    this.highlighted = id;
     for (const element of this.lit) {
       element.classList.remove("is-on", "is-hl");
     }
     this.lit = [];
     const scene = this.scene;
-    const shown = xref !== null && scene !== null && scene.layout.card.has(xref);
+    const shown = id !== null && scene !== null && scene.layout.card.has(id);
     this.svgEl.classList.toggle("has-hl", shown);
-    if (!shown || xref === null || !scene) {
+    if (!shown || id === null || !scene) {
       return;
     }
     const light = (element: Element, self: boolean): void => {
@@ -397,13 +407,13 @@ export class GraphCanvas {
       }
       this.lit.push(element);
     };
-    for (const relative of scene.related(xref)) {
+    for (const relative of scene.related(id)) {
       const card = this.cardOf.get(relative);
       if (card) {
-        light(card, relative === xref);
+        light(card, relative === id);
       }
     }
-    for (const element of this.reach.get(xref) ?? []) {
+    for (const element of this.reach.get(id) ?? []) {
       light(element, true);
     }
   }
@@ -414,9 +424,9 @@ export class GraphCanvas {
     this.matches =
       this.query === "" || !this.layout
         ? []
-        : this.layout.cards.map((card) => card.id).filter((xref) => !this.misses(xref));
-    for (const [xref, element] of this.cardOf) {
-      element.classList.toggle("is-dim", this.misses(xref));
+        : this.layout.cards.map((card) => card.id).filter((id) => !this.misses(id));
+    for (const [id, element] of this.cardOf) {
+      element.classList.toggle("is-dim", this.misses(id));
     }
   }
 
@@ -425,13 +435,13 @@ export class GraphCanvas {
       return null;
     }
     this.match = (this.match + 1) % this.matches.length;
-    const xref = this.matches[this.match] ?? null;
-    if (xref !== null) {
+    const id = this.matches[this.match] ?? null;
+    if (id !== null) {
       const k = this.transform && this.transform.k >= ZOOM.far ? this.transform.k : ZOOM.readable;
-      this.centreOn(xref, k);
-      this.highlight(xref);
+      this.centreOn(id, k);
+      this.highlight(id);
     }
-    return xref;
+    return id;
   }
 
   zoomAt(factor: number, cx: number, cy: number): void {
@@ -476,14 +486,14 @@ export class GraphCanvas {
     return Math.max(ZOOM.min, k);
   }
 
-  private centreOn(xref: string | undefined, k: number): boolean {
-    const card = xref === undefined ? undefined : this.layout?.card.get(xref);
+  private centreOn(id: string | undefined, k: number): boolean {
+    const card = id === undefined ? undefined : this.layout?.card.get(id);
     if (!card) {
       return false;
     }
     this.apply({
       x: this.size.width / 2 - (card.x + CARD.width / 2) * k,
-      y: this.size.height / 2 - (card.y + CARD.height / 2) * k,
+      y: this.size.height / 2 - (card.y + card.height / 2) * k,
       k,
     });
     return true;
@@ -512,8 +522,8 @@ export class GraphCanvas {
       return;
     }
     const first = layout.cards[0]?.id;
-    for (const xref of [pending.open, layout.focus ?? undefined, first]) {
-      if (this.centreOn(xref, ZOOM.readable)) {
+    for (const id of [pending.open, layout.focus ?? undefined, first]) {
+      if (this.centreOn(id, ZOOM.readable)) {
         return;
       }
     }
@@ -573,13 +583,13 @@ export class GraphCanvas {
       }
       placed.push({
         kind: "card",
-        xref: card.id,
+        id: card.id,
         left: card.x,
         top: card.y - (shown.up ? 14 : 0),
         right: card.x + CARD.width,
-        bottom: card.y + CARD.height + (shown.down ? 14 : 0),
+        bottom: card.y + card.height + (shown.down ? 14 : 0),
         people: [card.id],
-        make: (far) => this.cardShape(card.id, card.x, card.y, shown, far),
+        make: (far) => this.cardShape(card, shown, far),
       });
       for (const node of nodesAfter.get(card.id) ?? []) {
         const family = scene.family(node.family);
@@ -590,7 +600,7 @@ export class GraphCanvas {
         const ys = [node.y, ...node.joins.flat().map((point) => point[1])];
         placed.push({
           kind: "node",
-          xref: node.family,
+          id: node.family,
           left: least(xs) - 11,
           top: least(ys) - 11,
           right: most(xs) + 11,
@@ -606,7 +616,7 @@ export class GraphCanvas {
       const ys = line.points.map((point) => point[1]);
       return {
         kind: "line" as const,
-        xref: line.family,
+        id: line.family,
         left: least(xs),
         top: least(ys),
         right: most(xs),
@@ -622,28 +632,30 @@ export class GraphCanvas {
     });
   }
 
-  private cardShape(xref: string, x: number, y: number, shown: CanvasCard, far: boolean): SVGElement {
+  private cardShape(placed: GraphCard, shown: CanvasCard, far: boolean): SVGElement {
+    const { id, x, y, height } = placed;
     const { name, years } = shown;
+    const text = height - CARD.height;
     const group = svg(this.doc, "g", `gedcom-fg-person is-${shown.sex.toLowerCase()}`, {
-      "data-p": xref,
+      "data-p": id,
       transform: `translate(${x},${y})`,
     });
     group.classList.toggle("is-focus", shown.focus === true);
     group.classList.toggle("is-aside", shown.aside === true);
-    group.classList.toggle("is-dim", this.misses(xref));
-    group.classList.toggle("is-armed", xref === this.armed);
+    group.classList.toggle("is-dim", this.misses(id));
+    group.classList.toggle("is-armed", id === this.armed);
     const card = svg(this.doc, "g", "gedcom-fg-card", {
       tabindex: 0,
       role: "button",
-      "data-card": xref,
+      "data-card": id,
       "aria-label": years ? `${name}, ${years}` : name,
     });
     const title = svg(this.doc, "title", null);
     title.textContent = name;
     card.append(
       title,
-      svg(this.doc, "rect", "gedcom-fg-card-bg", { width: CARD.width, height: CARD.height, rx: 7 }),
-      svg(this.doc, "rect", "gedcom-fg-card-side", { x: 5, y: 6, width: 4, height: CARD.height - 12, rx: 2 }),
+      svg(this.doc, "rect", "gedcom-fg-card-bg", { width: CARD.width, height, rx: 7 }),
+      svg(this.doc, "rect", "gedcom-fg-card-side", { x: 5, y: 6, width: 4, height: height - 12, rx: 2 }),
     );
     if (shown.gap) {
       card.append(svg(this.doc, "circle", "gedcom-fg-card-gap", { cx: CARD.width - 9, cy: 9, r: 3 }));
@@ -652,7 +664,7 @@ export class GraphCanvas {
     const more = (up: boolean): void => {
       const mark = svg(this.doc, "text", `gedcom-fg-card-more ${up ? "is-up" : "is-down"}`, {
         x: CARD.width / 2,
-        y: up ? -4 : CARD.height + 11,
+        y: up ? -4 : height + 11,
         "text-anchor": "middle",
         "aria-label": t(up ? "tree.moreUp" : "tree.moreDown"),
       });
@@ -668,33 +680,64 @@ export class GraphCanvas {
     if (far) {
       return group;
     }
-    const named = svg(this.doc, "text", "gedcom-fg-card-name", { x: 16, y: 19 });
+    if (text > 0) {
+      this.avatar(card, shown);
+    }
     this.measureName ??= nameMeasure(this.root);
-    named.textContent = fitText(name, NAME_WIDTH, this.measureName);
-    const lived = svg(this.doc, "text", "gedcom-fg-card-years", { x: 16, y: 35 });
-    lived.textContent = years;
-    card.append(named, lived);
+    const line = (cls: string, at: number, content: string): void => {
+      const written = svg(this.doc, "text", cls, { x: 16, y: text + at });
+      written.textContent = fitText(content, NAME_WIDTH, this.measureName ?? ((one) => one.length));
+      card.append(written);
+    };
+    if (shown.given && shown.surname) {
+      line("gedcom-fg-card-name is-given", 18, shown.given);
+      line("gedcom-fg-card-name is-surname", 33, shown.surname);
+      line("gedcom-fg-card-years", 49, years);
+    } else {
+      line("gedcom-fg-card-name", 25, name);
+      line("gedcom-fg-card-years", 41, years);
+    }
     if (!shown.branch) {
       return group;
     }
     const pill = svg(this.doc, "g", "gedcom-fg-pill", {
       tabindex: 0,
       role: "button",
-      "data-branch": xref,
+      "data-branch": id,
       "aria-pressed": String(shown.focus === true),
       "aria-label": t("fileGraph.branchOf", { name }),
     });
     const hint = svg(this.doc, "title", null);
     hint.textContent = t("overview.branchHint");
-    const label = svg(this.doc, "text", null, { x: CARD.width - 29, y: CARD.height - 9, "text-anchor": "middle" });
+    const label = svg(this.doc, "text", null, { x: CARD.width - 29, y: height - 9, "text-anchor": "middle" });
     label.textContent = t("overview.branch");
     pill.append(
       hint,
-      svg(this.doc, "rect", null, { x: CARD.width - 54, y: CARD.height - 20, width: 50, height: 15, rx: 7.5 }),
+      svg(this.doc, "rect", null, { x: CARD.width - 54, y: height - 20, width: 50, height: 15, rx: 7.5 }),
       label,
     );
     group.append(pill);
     return group;
+  }
+
+  /** The picture the card's person has, from the host, in the space above the name; none where it fails. */
+  private avatar(card: SVGGElement, shown: CanvasCard): void {
+    const content = shown.portrait?.() ?? null;
+    if (!content) {
+      return;
+    }
+    const holder = svg(this.doc, "foreignObject", "gedcom-fg-avatar-holder", {
+      x: (CARD.width - AVATAR.width) / 2,
+      y: 6,
+      width: AVATAR.width,
+      height: AVATAR.height,
+    });
+    const frame = this.doc.createElementNS("http://www.w3.org/1999/xhtml", "div") as HTMLDivElement;
+    frame.className = "gedcom-desk-portrait gedcom-fg-avatar";
+    holder.append(frame);
+    const picture = drawPicture(frame, content, AVATAR.width, AVATAR.height);
+    picture.querySelector("img")?.addEventListener("error", () => holder.remove());
+    card.append(holder);
   }
 
   private nodeShape(node: GraphNode, family: CanvasFamily, far: boolean): SVGElement {
@@ -759,13 +802,13 @@ export class GraphCanvas {
     this.reach = new Map();
     for (const [item, element] of this.drawn) {
       if (item.kind === "card") {
-        this.cardOf.set(item.xref, element);
+        this.cardOf.set(item.id, element);
         continue;
       }
-      for (const xref of item.people) {
-        const held = this.reach.get(xref) ?? [];
+      for (const id of item.people) {
+        const held = this.reach.get(id) ?? [];
         held.push(element);
-        this.reach.set(xref, held);
+        this.reach.set(id, held);
       }
     }
   }
@@ -787,8 +830,8 @@ export class GraphCanvas {
     return element?.querySelector<SVGElement>("[data-card], [data-node]") ?? null;
   }
 
-  private misses(xref: string): boolean {
-    return this.query !== "" && !(this.scene?.search?.(xref) ?? "").includes(this.query);
+  private misses(id: string): boolean {
+    return this.query !== "" && !(this.scene?.search?.(id) ?? "").includes(this.query);
   }
 
   private personAt(target: EventTarget | null): string | null {
@@ -938,9 +981,9 @@ export class GraphCanvas {
       if (!this.refocusing) {
         this.bringIntoView(target);
       }
-      const xref = this.personAt(target);
-      if (xref !== null) {
-        this.highlight(xref);
+      const id = this.personAt(target);
+      if (id !== null) {
+        this.highlight(id);
       }
       const family = this.nodeAt(target);
       if (family !== null) {
@@ -1013,30 +1056,30 @@ export class GraphCanvas {
       return;
     }
     this.closePop();
-    const xref = this.personAt(target);
-    if (xref === null) {
+    const id = this.personAt(target);
+    if (id === null) {
       if (touch) {
         this.arm(null);
         this.highlight(null);
       }
       return;
     }
-    if (touch && this.armed !== xref) {
-      this.arm(xref);
-      this.highlight(xref);
+    if (touch && this.armed !== id) {
+      this.arm(id);
+      this.highlight(id);
       return;
     }
     this.arm(null);
-    this.host.activateCard(xref);
+    this.host.activateCard(id);
   }
 
-  private arm(xref: string | null): void {
+  private arm(id: string | null): void {
     if (this.armed !== null) {
       this.cardOf.get(this.armed)?.classList.remove("is-armed");
     }
-    this.armed = xref;
-    if (xref !== null) {
-      this.cardOf.get(xref)?.classList.add("is-armed");
+    this.armed = id;
+    if (id !== null) {
+      this.cardOf.get(id)?.classList.add("is-armed");
     }
   }
 
@@ -1065,8 +1108,8 @@ export class GraphCanvas {
     }
   }
 
-  private describe(parent: HTMLElement, xref: string): void {
-    const family = this.scene?.family(xref);
+  private describe(parent: HTMLElement, id: string): void {
+    const family = this.scene?.family(id);
     if (!family) {
       return;
     }
@@ -1081,9 +1124,9 @@ export class GraphCanvas {
     parent.createDiv({ cls: "gedcom-fg-tip-where", text: plural("fileGraph.children", family.children) });
   }
 
-  private showTip(xref: string, point: { clientX: number; clientY: number }): void {
+  private showTip(id: string, point: { clientX: number; clientY: number }): void {
     this.tip.empty();
-    this.describe(this.tip, xref);
+    this.describe(this.tip, id);
     this.tip.addClass("is-shown");
     placeInside(this.root, this.tip, point);
   }
@@ -1092,15 +1135,15 @@ export class GraphCanvas {
     this.tip.removeClass("is-shown");
   }
 
-  private openPop(xref: string, event: MouseEvent): void {
+  private openPop(id: string, event: MouseEvent): void {
     this.hideTip();
     this.pop.empty();
-    this.describe(this.pop, xref);
+    this.describe(this.pop, id);
     this.pop
       .createEl("button", { cls: "gedcom-fg-pop-open", text: t("fileGraph.openFamily"), attr: { type: "button" } })
       .addEventListener("click", () => {
         this.closePop();
-        this.host.activateFamily(xref);
+        this.host.activateFamily(id);
       });
     this.pop.addClass("is-shown");
     placeInside(this.root, this.pop, event);
@@ -1111,3 +1154,27 @@ export class GraphCanvas {
   }
 }
 
+
+/** The zoom buttons of a canvas: −, + and Fit. */
+export function zoomButtons(
+  parent: HTMLElement,
+  canvas: GraphCanvas,
+  setIcon: (element: HTMLElement, icon: string) => void,
+): void {
+  const button = (cls: string, label: string, icon: string | null): HTMLButtonElement => {
+    const made = parent.createEl("button", { cls, attr: { type: "button", "aria-label": label } });
+    if (icon) {
+      setIcon(made, icon);
+    } else {
+      made.setText(label);
+    }
+    return made;
+  };
+  button("gedcom-fg-zoom-out", t("fileGraph.zoomOut"), "minus").addEventListener("click", () =>
+    canvas.zoomBy(1 / BUTTON_STEP),
+  );
+  button("gedcom-fg-zoom-in", t("fileGraph.zoomIn"), "plus").addEventListener("click", () =>
+    canvas.zoomBy(BUTTON_STEP),
+  );
+  button("gedcom-fg-fit", t("fileGraph.fit"), null).addEventListener("click", () => canvas.fit());
+}

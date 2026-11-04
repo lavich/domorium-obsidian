@@ -20,7 +20,9 @@ import {
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
 import { COMMANDS, type CommandHost, type OverviewKind } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
+import { mediaPreviewContent, type MediaVault } from "./editor/media";
 import { formatStatus } from "./editor/status";
+import type { PortraitContent } from "./desk/graphCanvas";
 import { setLanguage, t } from "./i18n";
 import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
@@ -472,6 +474,34 @@ export default class GedcomPlugin
       return tab.genealogy();
     }
     return this.reads.read(path, () => this.app.vault.cachedRead(file));
+  }
+
+  portraitIn(path: string, xref: string): PortraitContent | null {
+    const tab = this.openTab(path);
+    if (tab) {
+      return tab.portraitOf(xref);
+    }
+    const held = this.reads.held(path);
+    const person = held?.index.person(xref);
+    if (!held || !person) {
+      return null;
+    }
+    const vault: MediaVault = {
+      documentPath: path,
+      dialect: held.service.getDocument().getDialect(),
+      resolve: (target) => {
+        const file = this.app.vault.getAbstractFileByPath(normalizePath(target));
+        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
+      },
+    };
+    for (const media of person.media) {
+      const reference = held.service.getMediaAt(media.at);
+      const content = reference ? mediaPreviewContent(reference, vault, this.remoteImages()) : null;
+      if (content?.kind === "image") {
+        return content;
+      }
+    }
+    return null;
   }
 
   overviewClosed(path: string, view: FileOverviewView): void {

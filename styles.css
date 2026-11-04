@@ -2121,3 +2121,14 @@ input.gedcom-fg-search {
   fill: var(--text-faint);
   font-size: 9px;
 }
+
+.gedcom-fg-avatar.gedcom-desk-portrait {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.gedcom-fg-avatar .gedcom-desk-picture:not(.is-cropped) {
+  width: 100%;
+  height: 100%;
+}

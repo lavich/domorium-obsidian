@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { UNNAMED, readName } from "./names";
+import { UNNAMED, readName, readNameParts } from "./names";
 
 describe("reading a personal name as GEDCOM writes it", () => {
   it("removes the slashes that mark a surname", () => {
@@ -33,5 +33,19 @@ describe("reading a personal name as GEDCOM writes it", () => {
 
   it("is not a reader-facing string of its own", () => {
     expect(UNNAMED.startsWith("@")).toBe(true);
+  });
+});
+
+describe("the parts of a name", () => {
+  it("takes the surname from between the slashes and the given names from around them", () => {
+    expect(readNameParts("Marie /Skłodowska-Curie/")).toEqual({ given: "Marie", surname: "Skłodowska-Curie" });
+    expect(readNameParts("Henry Richardson /Labouisse/")).toEqual({ given: "Henry Richardson", surname: "Labouisse" });
+    expect(readNameParts("/Curie/ Marie")).toEqual({ given: "Marie", surname: "Curie" });
+  });
+
+  it("has no parts where the line writes no surname, or nothing else", () => {
+    expect(readNameParts("John")).toBeUndefined();
+    expect(readNameParts("/Curie/")).toBeUndefined();
+    expect(readNameParts(undefined)).toBeUndefined();
   });
 });

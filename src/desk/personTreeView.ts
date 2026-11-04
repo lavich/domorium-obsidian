@@ -1,7 +1,6 @@
 import { t } from "../i18n";
 import { layoutGraph } from "./fileGraph";
-import { zoomButtons } from "./fileGraphView";
-import { GraphCanvas, relatedIn, type CanvasScene } from "./graphCanvas";
+import { GraphCanvas, relatedIn, zoomButtons, type CanvasScene, type PortraitContent } from "./graphCanvas";
 import type { PersonTree } from "./personTree";
 
 export interface TreeHost {
@@ -9,6 +8,8 @@ export interface TreeHost {
   openRecord(xref: string): void;
   toggleSiblings?(xref: string): void;
   setIcon?(element: HTMLElement, icon: string): void;
+  /** The picture the person's page shows, where it can be shown. */
+  portrait?(xref: string): PortraitContent | null;
 }
 
 const ZOOM_SIGNS: Record<string, string> = { minus: "−", plus: "+" };
@@ -72,6 +73,8 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
             gap: card.gap,
             up: card.up,
             down: card.down,
+            ...(card.given && card.surname ? { given: card.given, surname: card.surname } : {}),
+            portrait: () => (card.xref ? (host.portrait?.(card.xref) ?? null) : null),
           }
         : undefined;
     },

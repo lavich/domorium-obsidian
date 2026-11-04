@@ -23,6 +23,7 @@ const WHOLE: BranchScope = { up: 2, down: 2 };
 
 let container: HTMLElement;
 let host: {
+  portrait?: FileGraphHost["portrait"];
   openRecord: ReturnType<typeof vi.fn<(xref: string) => void>>;
   stateChanged: ReturnType<typeof vi.fn<FileGraphHost["stateChanged"]>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
@@ -67,7 +68,7 @@ const scopeText = () => container.querySelector(".gedcom-fg-scope")?.textContent
 
 function centreOf(model: FileTimeline, xref: string, scope: BranchScope = WHOLE): [number, number] {
   const placed = fileGraphOf(model, scope).card.get(xref);
-  return [(placed?.x ?? NaN) + CARD.width / 2, (placed?.y ?? NaN) + CARD.height / 2];
+  return [(placed?.x ?? NaN) + CARD.width / 2, (placed?.y ?? NaN) + (placed?.height ?? NaN) / 2];
 }
 
 function expectCentredOn(view: GraphView | null, at: [number, number], k?: number): void {
@@ -107,11 +108,46 @@ describe("drawing the graph of a file", () => {
     expect(drawnPeople()).toHaveLength(17);
     expect(person("@I1@")?.getAttribute("class")).toContain("is-f");
     expect(person("@I2@")?.getAttribute("class")).toContain("is-m");
-    expect(card("@I1@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Marie Skłodowska-Curie");
+    expect([...(card("@I1@")?.querySelectorAll(".gedcom-fg-card-name") ?? [])].map((line) => line.textContent)).toEqual([
+      "Marie",
+      "Skłodowska-Curie",
+    ]);
     expect(card("@I1@")?.querySelector(".gedcom-fg-card-years")?.textContent).toBe("1867–1934");
-    expect(card("@I15@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Henry Richardson Labo…");
+    expect(card("@I15@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Henry Richardson");
     expect(card("@I15@")?.querySelector("title")?.textContent).toBe("Henry Richardson Labouisse");
     expect(container.querySelector(".gedcom-fg-summary")?.textContent).toBe("17 people · 5 families");
+  });
+
+  it("draws a portrait at the top of a card whose person has one, and none for the others or far out", () => {
+    const asked: string[] = [];
+    host.portrait = (xref) => {
+      asked.push(xref);
+      return xref === "@I2@" ? null : { kind: "image", url: `media/${xref}.svg`, name: xref, title: xref };
+    };
+    board();
+
+    expect(card("@I1@")?.querySelector(".gedcom-fg-avatar img")?.getAttribute("src")).toBe("media/@I1@.svg");
+    expect(card("@I11@")?.querySelector(".gedcom-fg-avatar")).toBeNull();
+    expect(card("@I2@")?.querySelector(".gedcom-fg-avatar")).toBeNull();
+    expect(asked.sort()).toEqual(["@I1@", "@I12@", "@I2@"].sort());
+    expect(Number(card("@I1@")?.querySelector(".gedcom-fg-card-bg")?.getAttribute("height"))).toBe(CARD.height + CARD.portrait);
+
+    card("@I1@")?.querySelector(".gedcom-fg-avatar img")?.dispatchEvent(new Event("error"));
+    expect(card("@I1@")?.querySelector(".gedcom-fg-avatar")).toBeNull();
+
+    container.replaceChildren();
+    asked.length = 0;
+    board(curie(), { view: { x: 900, y: 200, k: 0.2 } });
+    expect(container.querySelector(".gedcom-fg-avatar")).toBeNull();
+    expect(asked).toEqual([]);
+  });
+
+  it("writes a name with no surname on one line", () => {
+    board(fileTimelineOf(indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 NAME John", "0 TRLR", ""].join("\n"))));
+
+    expect([...(card("@I1@")?.querySelectorAll(".gedcom-fg-card-name") ?? [])].map((line) => line.textContent)).toEqual([
+      "John",
+    ]);
   });
 
   it("builds the drawing as elements, with no markup handed in", () => {

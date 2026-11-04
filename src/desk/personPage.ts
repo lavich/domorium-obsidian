@@ -13,6 +13,7 @@ import { linkButton } from "./dom";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
+import type { PortraitContent } from "./graphCanvas";
 import { treeOf } from "./personTree";
 import { renderTree } from "./personTreeView";
 
@@ -42,6 +43,7 @@ export interface PageHost {
   chooseView?(view: PersonView): void;
   toggleSiblings?(xref: string): void;
   setIcon?(element: HTMLElement, icon: string): void;
+  portrait?(xref: string): PortraitContent | null;
 }
 
 export interface PersonPageOptions {

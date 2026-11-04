@@ -23,6 +23,7 @@ export class OverviewReads {
   /** Never reset, so a revision taken before a path was forgotten cannot match one after. */
   private counter = 0;
   private readonly openings = new Map<string, number>();
+  private readonly services = new Map<string, GedcomLanguageService>();
 
   constructor(private readonly overviews: () => ShownOverview[]) {}
 
@@ -68,7 +69,18 @@ export class OverviewReads {
       return buildIndex(new GedcomLanguageService(source));
     }
     this.readAt.set(path, revision);
-    return this.reads.at(document, String(revision), () => new GedcomLanguageService(source));
+    return this.reads.at(document, String(revision), () => {
+      const service = new GedcomLanguageService(source);
+      this.services.set(path, service);
+      return service;
+    });
+  }
+
+  /** The language service and index of the reading held for a path, which media are resolved against. */
+  held(path: string): { service: GedcomLanguageService; index: GenealogyIndex } | null {
+    const service = this.services.get(path);
+    const index = this.reads.held(documentRef(path));
+    return service && index ? { service, index } : null;
   }
 
   /** Whether anything shows the path, and so whether its overviews need reading again. */
@@ -113,5 +125,6 @@ export class OverviewReads {
     this.reads.forget(documentRef(path));
     this.readAt.delete(path);
     this.revisions.delete(path);
+    this.services.delete(path);
   }
 }

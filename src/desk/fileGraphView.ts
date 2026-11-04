@@ -4,17 +4,18 @@ import { fileGraphOf } from "./fileGraph";
 import type { FileTimeline } from "./fileTimeline";
 import {
   GraphCanvas,
+  zoomButtons,
   ZOOM,
   type CanvasScene,
   type GraphView,
   type GraphWindow,
   type Opening,
+  type PortraitContent,
 } from "./graphCanvas";
 import { familyTitle, lifelineYears, personName } from "./labels";
 
 export { curve, fitText, ZOOM, type GraphView, type GraphWindow } from "./graphCanvas";
 
-export const BUTTON_STEP = 1.2;
 
 export interface GraphState extends BranchScope {
   gedcom: string | null;
@@ -35,6 +36,8 @@ export interface FileGraphHost {
   /** `view` is absent until the canvas has had a size. */
   stateChanged(settings: { scope: BranchScope; view?: GraphView }): void;
   setIcon(element: HTMLElement, icon: string): void;
+  /** The picture the person's page shows, where it can be shown. */
+  portrait?(xref: string): PortraitContent | null;
 }
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -218,7 +221,7 @@ export class FileGraphBoard {
       return;
     }
     this.shown = layout;
-    this.canvas.show(sceneOf(model, layout, this.scope), opening);
+    this.canvas.show(sceneOf(model, layout, this.scope, (xref) => this.host.portrait?.(xref) ?? null), opening);
   }
 
   private legend(parent: HTMLElement): void {
@@ -246,31 +249,12 @@ export class FileGraphBoard {
 
 }
 
-/** The zoom buttons of a canvas: −, + and Fit. */
-export function zoomButtons(
-  parent: HTMLElement,
-  canvas: GraphCanvas,
-  setIcon: (element: HTMLElement, icon: string) => void,
-): void {
-  const button = (cls: string, label: string, icon: string | null): HTMLButtonElement => {
-    const made = parent.createEl("button", { cls, attr: { type: "button", "aria-label": label } });
-    if (icon) {
-      setIcon(made, icon);
-    } else {
-      made.setText(label);
-    }
-    return made;
-  };
-  button("gedcom-fg-zoom-out", t("fileGraph.zoomOut"), "minus").addEventListener("click", () =>
-    canvas.zoomBy(1 / BUTTON_STEP),
-  );
-  button("gedcom-fg-zoom-in", t("fileGraph.zoomIn"), "plus").addEventListener("click", () =>
-    canvas.zoomBy(BUTTON_STEP),
-  );
-  button("gedcom-fg-fit", t("fileGraph.fit"), null).addEventListener("click", () => canvas.fit());
-}
-
-function sceneOf(model: FileTimeline, layout: CanvasScene["layout"], scope: BranchScope): CanvasScene {
+function sceneOf(
+  model: FileTimeline,
+  layout: CanvasScene["layout"],
+  scope: BranchScope,
+  portrait: (xref: string) => PortraitContent | null,
+): CanvasScene {
   const search = new Map(
     [...model.people.values()].map((person) => [
       person.xref,
@@ -288,6 +272,8 @@ function sceneOf(model: FileTimeline, layout: CanvasScene["layout"], scope: Bran
             sex: person.sex,
             focus: xref === scope.focus,
             branch: true,
+            ...(person.row.given && person.row.surname ? { given: person.row.given, surname: person.row.surname } : {}),
+            portrait: () => portrait(xref),
           }
         : undefined;
     },

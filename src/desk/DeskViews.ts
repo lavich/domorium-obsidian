@@ -9,6 +9,7 @@ import { openFromIndex } from "./deskState";
 import { renderEvidence } from "./evidence";
 import { fileTimelineOf } from "./fileTimeline";
 import { FileGraphBoard, readGraphState, type GraphState } from "./fileGraphView";
+import type { PortraitContent } from "./graphCanvas";
 import { FileTimelineBoard, readTimelineState, type TimelineScope, type TimelineState } from "./fileTimelineView";
 import { INDEX_KINDS, IndexList, type IndexKind } from "./indexList";
 import type { NoteHit } from "./noteLinks";
@@ -160,6 +161,8 @@ export interface FileOverviewHost {
   openRecordIn(path: string, xref: string): Promise<void>;
   showSourceIn(path: string, range: Range): Promise<void>;
   overviewClosed(path: string, view: FileOverviewView): void;
+  /** The picture a person's page in the file shows, where it can be shown. */
+  portraitIn(path: string, xref: string): PortraitContent | null;
 }
 
 interface OverviewBoard {
@@ -352,6 +355,7 @@ export class FileGraphView extends FileOverviewView {
   protected createBoard(parent: HTMLElement): FileGraphBoard {
     this.graph = new FileGraphBoard(parent, {
       openRecord: (xref) => this.openRecord(xref),
+      portrait: (xref) => (this.state.gedcom ? this.host.portraitIn(this.state.gedcom, xref) : null),
       stateChanged: ({ scope, view }) => {
         const { gedcom, around } = this.state;
         const kept = view ?? this.state.view;

@@ -35,6 +35,18 @@ describe("reading a closed file for its overviews", () => {
     expect(await overviews.read("tree.ged", text)).not.toBe(first);
   });
 
+  it("holds the language service of a reading beside its index, and forgets both together", async () => {
+    const { overviews, show, close } = reads();
+    const graph = show("domorium-file-graph", "tree.ged");
+    expect(overviews.held("tree.ged")).toBeNull();
+    const index = await overviews.read("tree.ged", text);
+
+    expect(overviews.held("tree.ged")?.index).toBe(index);
+    expect(overviews.held("tree.ged")?.service.getDocument()).toBeDefined();
+    close(graph);
+    expect(overviews.held("tree.ged")).toBeNull();
+  });
+
   it("holds a path for two openings until both end", async () => {
     const { overviews } = reads();
     const one = overviews.opening("tree.ged");

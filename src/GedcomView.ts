@@ -101,6 +101,7 @@ import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
 import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON, GEDCOM_ICON_ID } from "./icon";
 import type { OverviewKind } from "./commands";
+import type { PortraitContent } from "./desk/graphCanvas";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -739,6 +740,7 @@ export class GedcomView extends TextFileView {
       openEvidence: () => this.host.openEvidence(),
       openFile: (path) => this.openVaultFile(path),
       setIcon: (element, icon) => setIcon(element, icon),
+      portrait: (xref) => this.portraitOf(xref),
       toggleSiblings: (xref) => {
         if (!this.expandedSiblings.delete(xref)) {
           this.expandedSiblings.add(xref);
@@ -751,6 +753,13 @@ export class GedcomView extends TextFileView {
         this.app.workspace.requestSaveLayout();
       },
     };
+  }
+
+  /** The picture a person's page shows, for a card: the first of their media that can be drawn. */
+  portraitOf(xref: string): PortraitContent | null {
+    const person = this.genealogy().person(xref);
+    const found = person ? this.mediaItems(person.media).find((item) => item.content.kind === "image") : undefined;
+    return found?.content.kind === "image" ? found.content : null;
   }
 
   private mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
