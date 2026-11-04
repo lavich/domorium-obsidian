@@ -74,6 +74,12 @@ const ICONS: Record<string, Shape[]> = {
   ],
   "chevron-right": [{ tag: "path", attrs: { d: "m9 18 6-6-6-6" } }],
   minus: [{ tag: "path", attrs: { d: "M5 12h14" } }],
+  maximize: [
+    { tag: "path", attrs: { d: "M8 3H5a2 2 0 0 0-2 2v3" } },
+    { tag: "path", attrs: { d: "M21 8V5a2 2 0 0 0-2-2h-3" } },
+    { tag: "path", attrs: { d: "M3 16v3a2 2 0 0 0 2 2h3" } },
+    { tag: "path", attrs: { d: "M16 21h3a2 2 0 0 0 2-2v-3" } },
+  ],
   plus: [
     { tag: "path", attrs: { d: "M5 12h14" } },
     { tag: "path", attrs: { d: "M12 5v14" } },

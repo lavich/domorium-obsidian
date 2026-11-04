@@ -435,6 +435,31 @@ accent; every other Branch carries `aria-pressed="false"`.
   scroll on to the legend, and a two-finger scroll that would take the tree past
   its edge scrolls the page instead.
 
+### Hover with a rest, eased light, and floating zoom buttons
+
+From the user (2026-11-04): «надо добавить небольшую задержку перед
+срабатыванием и плавность анимации изменения цвета» and «кнопки изменения
+размера и Fit надо сделать плавающими над самим канвасом».
+
+- **The rest (mine: 130 ms)**, one `HOVER_DELAY` in `src/desk/dom.ts` for the
+  canvas and the timeline. A pointer move to another person restarts it; leaving
+  waits as long, so a pointer coming to rest on another person in time never
+  puts the light out between. Focus, touch, redraws and every other call to
+  light someone cancel a pending rest; closing a view cancels it too.
+- **Easing (mine: 150 ms ease-out)** on opacity, fill, stroke, stroke-width
+  and background of cards, lines, family nodes and the timeline's bars, marks,
+  names, ages and captions; none under `prefers-reduced-motion: reduce`. An
+  element drawn as the view moves is created with its classes in the same task
+  as it is inserted, before any style is computed, so it does not ease in from
+  faded.
+- **Zoom buttons (mine)** are a small group in the canvas's bottom corner — the
+  theme's background, border and small shadow, icon buttons (`minus`, `plus`,
+  `maximize`) with labels and tooltips — above the drawing and below tooltips
+  and popovers, lifted by the bottom safe area on a phone. They come first in
+  the canvas for the keyboard, before the cards, which can number in the
+  hundreds. A press on them starts no drag. The timeline has a zoom slider and
+  no −/+/Fit, so it keeps it.
+
 ## Risks / Trade-offs
 
 - **Layout time on a phone.** A phone is several times slower than the

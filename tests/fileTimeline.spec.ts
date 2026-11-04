@@ -59,7 +59,7 @@ test.describe("the timeline of a file", () => {
 
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
     expect(await page.locator('.gedcom-ft-kin[data-from="@I2@"]').count()).toBe(0);
-    expect(await name(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.18");
+    await expect.poll(() => name(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.18");
     expect(await name(page, "@I2@").evaluate((node) => getComputedStyle(node).opacity)).toBe("1");
   });
 
@@ -146,7 +146,16 @@ test.describe("the timeline of a file", () => {
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
   });
 
-  test("keeps the names and the years in place while the board scrolls", async ({ page }) => {
+  test("fades and lights smoothly, and at once where the reader asks for less motion", async ({ page }) => {
+    await mountTimeline(page);
+    const transition = () => life(page, "@I1@").evaluate((bar) => getComputedStyle(bar).transitionProperty);
+
+    expect(await transition()).toContain("opacity");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await transition()).toBe("none");
+  });
+
+    test("keeps the names and the years in place while the board scrolls", async ({ page }) => {
     await page.setViewportSize({ width: 900, height: 500 });
     await mountTimeline(page);
     const before = await page.locator(".gedcom-ft-axis").boundingBox();

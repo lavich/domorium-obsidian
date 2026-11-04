@@ -1,3 +1,40 @@
+/** How long the pointer rests on a person before their family is lit, so a sweep across cards does not flicker. */
+export const HOVER_DELAY = 130;
+
+/** Lights `target` after the pointer has rested, restarting as it moves to another, and cancelled by `cancel`. */
+export class HoverDelay<T> {
+  private timer: number | null = null;
+  private waiting: T | null = null;
+
+  constructor(
+    private readonly win: Window,
+    private readonly light: (target: T | null) => void,
+  ) {}
+
+  rest(target: T | null, shown: T | null): void {
+    if (this.timer !== null && this.waiting === target) {
+      return;
+    }
+    this.cancel();
+    if (target === shown) {
+      return;
+    }
+    this.waiting = target;
+    this.timer = this.win.setTimeout(() => {
+      this.timer = null;
+      this.light(target);
+    }, HOVER_DELAY);
+  }
+
+  cancel(): void {
+    if (this.timer !== null) {
+      this.win.clearTimeout(this.timer);
+      this.timer = null;
+    }
+    this.waiting = null;
+  }
+}
+
 export function linkButton(
   parent: HTMLElement,
   text: string,

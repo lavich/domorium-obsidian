@@ -150,8 +150,12 @@ and the room between cards allow. No two cards SHALL overlap.
 Pointing at a person's card, or giving it the keyboard focus, SHALL light that
 card, the cards of their parents, spouses and children, the lines between them
 and those people, and the family nodes they belong to, and SHALL fade everything
-else, until the pointer or the focus leaves. Lighting SHALL NOT lay the graph
-out or draw it again.
+else, until the pointer or the focus leaves. The pointer SHALL light a person
+only once it has rested on them a moment, and put the light out only once it
+has rested off them as long, so that a sweep across cards does not flicker; the
+keyboard's focus and a touch SHALL light at once. Lighting and fading SHALL be
+eased in over a moment, except where the reader's system asks for reduced
+motion. Lighting SHALL NOT lay the graph out or draw it again.
 
 Pointing at a family node, or giving it the keyboard focus, SHALL show its
 spouses, the date of the marriage as the file writes it and its place, or that
@@ -230,7 +234,8 @@ declares where neither names one. A smaller file SHALL open on all of it.
 The reader SHALL be able to move the graph by dragging it from anywhere, a card
 included; a press that moves before it is released SHALL NOT activate what it
 began on. A mouse wheel SHALL zoom around the pointer; a trackpad's two-finger
-scroll SHALL move the graph and its pinch SHALL zoom; buttons SHALL zoom in and
+scroll SHALL move the graph and its pinch SHALL zoom; buttons floating over a
+corner of the graph, which stay where they are as it moves, SHALL zoom in and
 out. **Fit** SHALL show the whole scope where the zoom range allows, and
 otherwise as much of it as the farthest zoom shows, centred on it. Zoomed out
 beyond the point where names can be read, cards SHALL be drawn without text.

@@ -1,6 +1,6 @@
 import { t } from "../i18n";
 import { layoutGraph } from "./fileGraph";
-import { GraphCanvas, relatedIn, zoomButtons, type CanvasScene, type PortraitContent } from "./graphCanvas";
+import { GraphCanvas, relatedIn, type CanvasScene, type PortraitContent } from "./graphCanvas";
 import type { PersonTree } from "./personTree";
 
 export interface TreeHost {
@@ -19,12 +19,9 @@ export interface TreeMemory {
   keyboard?: boolean;
 }
 
-const ZOOM_SIGNS: Record<string, string> = { minus: "−", plus: "+" };
-
 /** A person's tree on the graph's canvas, opening with the focus in view. */
 export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost, memory: TreeMemory = {}): GraphCanvas {
   const wrap = parent.createDiv({ cls: "gedcom-desk-graph" });
-  const tools = wrap.createDiv({ cls: "gedcom-desk-graph-tools gedcom-fg-zoom" });
   const layout = layoutGraph(tree.input);
   const canvas = new GraphCanvas(wrap, {
     activateCard: (id, keyboard) => {
@@ -45,14 +42,7 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
     viewChanged: (view) => {
       memory.k = view.k;
     },
-  }, { passEdges: true });
-  zoomButtons(tools, canvas, (element, icon) => {
-    if (host.setIcon) {
-      host.setIcon(element, icon);
-    } else {
-      element.setText(ZOOM_SIGNS[icon] ?? icon);
-    }
-  });
+  }, { passEdges: true, ...(host.setIcon ? { setIcon: (element: HTMLElement, icon: string) => host.setIcon?.(element, icon) } : {}) });
 
   const legend = wrap.createDiv({ cls: "gedcom-desk-legend" });
   const entry = (cls: string, text: string) => {

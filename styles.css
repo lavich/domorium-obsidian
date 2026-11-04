@@ -1887,22 +1887,41 @@ input.gedcom-fg-search {
   min-width: 0;
 }
 
-.gedcom-fg-zoom {
-  display: inline-flex;
-  gap: var(--size-2-2);
-  margin-inline-start: auto;
+.gedcom-fg-controls {
+  position: absolute;
+  z-index: 1;
+  inset-inline-end: var(--size-4-2);
+  bottom: calc(var(--size-4-2) + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: var(--size-2-1);
+  padding: var(--size-2-1);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+  cursor: default;
 }
 
-.gedcom-fg-zoom button {
+.gedcom-fg-controls button {
   height: auto;
-  padding: 2px var(--size-4-2);
-  font-size: var(--font-ui-smaller);
+  padding: var(--size-2-2) var(--size-2-3);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--icon-color, var(--text-muted));
+  font-size: var(--font-ui-small);
+  line-height: 1;
   cursor: pointer;
 }
 
-.gedcom-fg-zoom .svg-icon {
-  width: 14px;
-  height: 14px;
+.gedcom-fg-controls button:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.gedcom-fg-controls .svg-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .gedcom-fg-canvas {
@@ -2123,4 +2142,43 @@ input.gedcom-fg-search {
 
 .gedcom-fg-avatar-holder {
   pointer-events: none;
+}
+
+.gedcom-fg-person,
+.gedcom-fg-line,
+.gedcom-fg-family,
+.gedcom-fg-card-bg,
+.gedcom-fg-join,
+.gedcom-fg-node circle,
+.gedcom-ft-life,
+.gedcom-ft-span,
+.gedcom-ft-mark,
+.gedcom-ft-marriage,
+.gedcom-ft-name,
+.gedcom-ft-age,
+.gedcom-ft-caption {
+  transition:
+    opacity 150ms ease-out,
+    fill 150ms ease-out,
+    stroke 150ms ease-out,
+    stroke-width 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gedcom-fg-person,
+  .gedcom-fg-line,
+  .gedcom-fg-family,
+  .gedcom-fg-card-bg,
+  .gedcom-fg-join,
+  .gedcom-fg-node circle,
+  .gedcom-ft-life,
+  .gedcom-ft-span,
+  .gedcom-ft-mark,
+  .gedcom-ft-marriage,
+  .gedcom-ft-name,
+  .gedcom-ft-age,
+  .gedcom-ft-caption {
+    transition: none;
+  }
 }

@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { CARD } from "./fileGraph";
 import type { GraphCanvas } from "./graphCanvas";
+import { HOVER_DELAY } from "./dom";
 import { treeOf } from "./personTree";
 import { renderTree, type TreeHost, type TreeMemory } from "./personTreeView";
 
@@ -15,7 +16,11 @@ let host: {
 };
 
 beforeAll(installObsidianDom);
+afterEach(() => {
+  vi.useRealTimers();
+});
 beforeEach(() => {
+  vi.useFakeTimers();
   container = document.createElement("div");
   document.body.replaceChildren(container);
   host = { openRecord: vi.fn<TreeHost["openRecord"]>(), toggleSiblings: vi.fn<(xref: string) => void>() };
@@ -107,6 +112,7 @@ describe("the tree of a person on the graph's canvas", () => {
       (one) => one.querySelector("title")?.textContent === "Grand G",
     );
     grands[0]?.querySelector("[data-card]")?.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }));
+    vi.advanceTimersByTime(HOVER_DELAY);
 
     expect(grands).toHaveLength(2);
     expect(grands.map((one) => one.classList.contains("is-hl"))).toEqual([true, true]);
@@ -181,6 +187,7 @@ describe("the tree of a person on the graph's canvas", () => {
   it("lights Marie's husband, parents and children when the pointer is on her", () => {
     draw();
     card("Marie Skłodowska-Curie")?.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }));
+    vi.advanceTimersByTime(HOVER_DELAY);
 
     const lit = [...container.querySelectorAll(".gedcom-fg-person.is-on")].map((one) => one.querySelector("title")?.textContent);
     expect(lit.sort()).toEqual(

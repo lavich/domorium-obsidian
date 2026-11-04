@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
+import { HOVER_DELAY } from "./dom";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
 import {
   FileTimelineBoard,
@@ -170,11 +171,29 @@ describe("pointing at a person", () => {
     expect(container.querySelector(".gedcom-ft-row-hl")).toBeNull();
   });
 
-  it("lights a person under the pointer as it moves", () => {
-    board();
-    nameRow("@I2@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+  it("lights a person once the pointer has rested on them, and only the last of a sweep", () => {
+    vi.useFakeTimers();
+    try {
+      board();
+      nameRow("@I1@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+      vi.advanceTimersByTime(HOVER_DELAY / 2);
+      nameRow("@I2@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+      vi.advanceTimersByTime(HOVER_DELAY - 1);
+      expect(container.querySelectorAll(".is-hl")).toHaveLength(0);
 
-    expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+      expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(false);
+      container.querySelector(".gedcom-ft-board")?.dispatchEvent(new MouseEvent("pointerleave"));
+      expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
+      vi.advanceTimersByTime(HOVER_DELAY);
+      expect(container.querySelectorAll(".is-hl")).toHaveLength(0);
+
+      nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-name-open")?.focus();
+      expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

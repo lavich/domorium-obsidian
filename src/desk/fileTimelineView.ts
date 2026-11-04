@@ -9,7 +9,7 @@ import {
   type TimelineMark,
   type TimelinePerson,
 } from "./fileTimeline";
-import { placeInside } from "./dom";
+import { HoverDelay, placeInside } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
@@ -173,6 +173,7 @@ export class FileTimelineBoard {
   /** The person a first touch lit, whom a second touch opens. */
   private armed: string | null = null;
   private pending = false;
+  private readonly resting: HoverDelay<string>;
 
   constructor(
     parent: HTMLElement,
@@ -228,6 +229,7 @@ export class FileTimelineBoard {
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
     this.goneEl = this.root.createDiv({ cls: "gedcom-ft-gone" });
     this.goneEl.toggle(false);
+    this.resting = new HoverDelay(this.doc.defaultView ?? window, (xref) => this.highlight(xref));
     this.listen();
   }
 
@@ -331,7 +333,13 @@ export class FileTimelineBoard {
     }
   }
 
+  /** Stops a light the pointer has asked for and not yet waited out, as a view closes. */
+  cancelHover(): void {
+    this.resting.cancel();
+  }
+
   highlight(xref: string | null, force = false): void {
+    this.resting.cancel();
     if (xref === this.highlighted && !force) {
       return;
     }
@@ -923,7 +931,7 @@ export class FileTimelineBoard {
       this.pointer = event.pointerType || "mouse";
       const xref = this.personAt(event.target);
       if (xref !== null) {
-        this.highlight(xref);
+        this.resting.rest(xref, this.highlighted);
       }
       this.showTip(this.markAt(event.target), event);
       const onPlot = event.target instanceof Node && this.plot.contains(event.target);
@@ -933,7 +941,7 @@ export class FileTimelineBoard {
       if (event.pointerType === "touch") {
         return;
       }
-      this.highlight(null);
+      this.resting.rest(null, this.highlighted);
       this.setYear(null);
       this.showTip(null, event);
     });

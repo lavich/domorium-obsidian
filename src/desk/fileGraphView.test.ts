@@ -4,6 +4,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
+import { HOVER_DELAY } from "./dom";
 import type { BranchScope } from "./branchScope";
 import { CARD, fileGraphOf } from "./fileGraph";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
@@ -142,6 +143,26 @@ describe("drawing the graph of a file", () => {
     expect(asked).toEqual([]);
   });
 
+  it("floats −, + and Fit over the canvas, first for the keyboard, without starting a drag or a touch", () => {
+    const drawn = board();
+    const controls = container.querySelector(".gedcom-fg-canvas > .gedcom-fg-controls");
+    const k = drawn.view()?.k ?? 1;
+
+    expect(container.querySelector(".gedcom-fg-canvas")?.firstElementChild).toBe(controls);
+    expect([...(controls?.querySelectorAll("button") ?? [])].map((one) => one.getAttribute("aria-label"))).toEqual([
+      "Zoom out",
+      "Zoom in",
+      "Fit",
+    ]);
+    const zoomIn = controls?.querySelector<HTMLElement>(".gedcom-fg-zoom-in");
+    pointer("pointerdown", zoomIn, { clientX: 10, clientY: 10 });
+    pointer("pointermove", zoomIn, { buttons: 1, clientX: 60, clientY: 60 });
+    pointer("pointerup", zoomIn);
+    zoomIn?.click();
+    expect(drawn.view()?.k).toBeCloseTo(k * 1.2, 6);
+    expect(host.openRecord).not.toHaveBeenCalled();
+  });
+
   it("tints a card by sex with no stripe, its lines centred", () => {
     board();
 
@@ -241,13 +262,29 @@ describe("pointing at a person", () => {
     expect(all(".gedcom-fg-view *")).toEqual(before);
   });
 
-  it("lights a person under the pointer, and puts the light out as it leaves", () => {
-    board();
-    pointer("pointermove", card("@I2@"));
+  it("lights a person once the pointer has rested, only the last of a sweep, and puts the light out after the same rest", () => {
+    vi.useFakeTimers();
+    try {
+      board();
+      pointer("pointermove", card("@I1@"));
+      vi.advanceTimersByTime(HOVER_DELAY / 2);
+      pointer("pointermove", card("@I2@"));
+      vi.advanceTimersByTime(HOVER_DELAY - 1);
+      expect(all(".is-on")).toHaveLength(0);
 
-    expect(person("@I2@")?.classList.contains("is-hl")).toBe(true);
-    pointer("pointerleave", container.querySelector(".gedcom-fg-canvas"));
-    expect(all(".is-on")).toHaveLength(0);
+      vi.advanceTimersByTime(1);
+      expect(person("@I2@")?.classList.contains("is-hl")).toBe(true);
+      expect(person("@I1@")?.classList.contains("is-hl")).toBe(false);
+      pointer("pointerleave", container.querySelector(".gedcom-fg-canvas"));
+      expect(person("@I2@")?.classList.contains("is-hl")).toBe(true);
+      vi.advanceTimersByTime(HOVER_DELAY);
+      expect(all(".is-on")).toHaveLength(0);
+
+      card("@I12@")?.focus();
+      expect(person("@I12@")?.classList.contains("is-hl")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("puts the light out as the pointer moves off a card within the canvas, or the focus leaves the cards", () => {

@@ -32,3 +32,26 @@ declares where neither names one. A smaller file SHALL open on all of it.
   its timeline
 - **THEN** the timeline shows that person's branch, with the way back to the
   whole file
+
+### Requirement: The person under the pointer and their family stand out
+
+While the pointer is on a person's name or lifeline, the timeline SHALL
+highlight that person's row and lifeline, their parents, spouses and children,
+and fade everyone else, and SHALL draw an arrow from each parent's row to that
+person's birth and from that person's row to each child's birth. No arrows SHALL
+be drawn for anyone else. The pointer SHALL light a person only once it has
+rested on them a moment, and put the light out only once it has left the
+timeline as long, so that a sweep across rows does not flicker; the keyboard's
+focus and a touch SHALL light at once. Lighting and fading SHALL be eased in
+over a moment, except where the reader's system asks for reduced motion.
+
+#### Scenario: Pointing at Marie
+- **WHEN** the pointer is on Marie's name
+- **THEN** her parents, Pierre, Irène and Ève stand out, the others fade, and
+  arrows join each of her parents' rows to Marie's birth and Marie's row to each
+  daughter's birth, and no arrow leaves Pierre's row
+
+#### Scenario: A sweep across the rows
+- **WHEN** the pointer passes quickly over several names and comes to rest on
+  Irène's
+- **THEN** only Irène and her family stand out, once the pointer has rested

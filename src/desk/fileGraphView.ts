@@ -4,7 +4,6 @@ import { fileGraphOf } from "./fileGraph";
 import type { FileTimeline } from "./fileTimeline";
 import {
   GraphCanvas,
-  zoomButtons,
   ZOOM,
   type CanvasScene,
   type GraphView,
@@ -84,7 +83,6 @@ export class FileGraphBoard {
       placeholder: t("overview.search"),
       attr: { "aria-label": t("overview.search") },
     });
-    const zoom = tools.createDiv({ cls: "gedcom-fg-zoom" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-fg",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
@@ -95,8 +93,7 @@ export class FileGraphBoard {
       activateFamily: (xref) => this.host.openRecord(xref),
       branch: (xref) => this.setScope({ focus: xref === this.scope.focus ? undefined : xref }),
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
-    });
-    zoomButtons(zoom, this.canvas, (element, icon) => this.host.setIcon(element, icon));
+    }, { setIcon: (element, icon) => this.host.setIcon(element, icon) });
     this.legend(this.root.createDiv({ cls: "gedcom-fg-legend" }));
     this.goneEl = this.root.createDiv({ cls: "gedcom-fg-gone" });
     this.goneEl.toggle(false);
@@ -144,6 +141,10 @@ export class FileGraphBoard {
 
   resized(size?: { width: number; height: number }): void {
     this.canvas.resized(size);
+  }
+
+  cancelHover(): void {
+    this.canvas.cancelHover();
   }
 
   view(): GraphView | null {

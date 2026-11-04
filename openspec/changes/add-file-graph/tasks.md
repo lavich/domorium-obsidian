@@ -56,6 +56,8 @@
 
 - [x] 6.14 Remove the cards' stripe, tint by sex alone, and narrow the cards to 124 pixels with portrait and text centred and the gaps retuned; tests in `src/desk/fileGraph.test.ts`, `src/desk/fileGraphView.test.ts`, `tests/fileGraph.spec.ts` and `tests/desk.spec.ts`.
 
+- [x] 6.15 Light after a rest of the pointer (`HOVER_DELAY`) in the canvas and the timeline, at once for focus and touch; ease the light in, none under reduced motion; float −, + and Fit over the canvas; tests in `src/desk/fileGraphView.test.ts`, `src/desk/fileTimelineView.test.ts`, `src/desk/personTreeView.test.ts`, `tests/fileGraph.spec.ts`, `tests/fileTimeline.spec.ts`.
+
 ## 7. Verify
 
 - [ ] 7.1 In Obsidian on the demo vault, and on a phone: the header action and command open the graph and reveal it the second time, also after a restart; it follows an unsaved edit, a rename and a moved folder, and says so when the file is deleted; a person brings the file's tab forward on their page and a family node on the family's; it is restored with its scope, position and zoom; a mouse wheel zooms and a trackpad scrolls; it closes when the interface is turned off; the `network` icon draws, on 1.8.7 as well as the current app; the timeline still does all of this; the person page's tree pans, zooms, opens a family from its node and moves the focus, on a phone too.

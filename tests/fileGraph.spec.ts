@@ -110,7 +110,7 @@ test.describe("the graph of a file", () => {
 
     await expect(person(page, "@I1@")).toHaveClass(/is-hl/);
     await expect(page.locator(".gedcom-fg-person.is-on")).toHaveCount(6);
-    expect(await person(page, "@I11@").evaluate((group) => getComputedStyle(group).opacity)).toBe("0.18");
+    await expect.poll(() => person(page, "@I11@").evaluate((group) => getComputedStyle(group).opacity)).toBe("0.18");
     expect(await person(page, "@I2@").evaluate((group) => getComputedStyle(group).opacity)).toBe("1");
 
     await node(page, "@F3@").hover();
@@ -179,6 +179,42 @@ test.describe("the graph of a file", () => {
     await page.locator(".gedcom-fg-fit").click();
     expect(await zoom(page)).toBeCloseTo(fitted, 6);
     await expect(page.locator(".gedcom-fg-card-years")).toHaveCount(17);
+  });
+
+  test("fades and lights smoothly, and at once where the reader asks for less motion", async ({ page }) => {
+    await mountGraph(page);
+    const transition = () =>
+      person(page, "@I1@").evaluate((group) => {
+        const style = getComputedStyle(group);
+        return { property: style.transitionProperty, duration: style.transitionDuration };
+      });
+
+    expect(await transition()).toEqual({
+      property: "opacity, fill, stroke, stroke-width, background-color",
+      duration: "0.15s, 0.15s, 0.15s, 0.15s, 0.15s",
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect((await transition()).property).toBe("none");
+  });
+
+  test("floats the zoom buttons in the canvas's corner, where they stay as the graph moves", async ({ page }) => {
+    await mountGraph(page);
+    const controls = page.locator(".gedcom-fg-controls");
+    const canvas = await page.locator(".gedcom-fg-canvas").boundingBox();
+    const before = await controls.boundingBox();
+
+    expect(before?.x ?? 0).toBeGreaterThan(canvas?.x ?? Infinity);
+    expect((before?.x ?? 0) + (before?.width ?? 0)).toBeLessThanOrEqual((canvas?.x ?? 0) + (canvas?.width ?? 0));
+    expect((before?.y ?? 0) + (before?.height ?? 0)).toBeLessThanOrEqual((canvas?.y ?? 0) + (canvas?.height ?? 0));
+    expect(before?.y ?? 0).toBeGreaterThan((canvas?.y ?? 0) + (canvas?.height ?? 0) / 2);
+    await page.mouse.move((canvas?.x ?? 0) + 300, (canvas?.y ?? 0) + 300);
+    await page.mouse.down();
+    await page.mouse.move((canvas?.x ?? 0) + 200, (canvas?.y ?? 0) + 150, { steps: 4 });
+    await page.mouse.up();
+    expect(await controls.boundingBox()).toEqual(before);
+    const k = await zoom(page);
+    await controls.locator(".gedcom-fg-zoom-in").click();
+    expect(await zoom(page)).toBeCloseTo(k * 1.2, 6);
   });
 
   test("moves with a drag begun on a card, and opens nothing", async ({ page }) => {

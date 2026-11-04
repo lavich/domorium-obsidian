@@ -168,6 +168,7 @@ export interface FileOverviewHost {
 interface OverviewBoard {
   showGone(path: string): void;
   resized(): void;
+  cancelHover(): void;
 }
 
 const fileName = (path: string): string => path.split("/").pop() ?? path;
@@ -217,6 +218,7 @@ export abstract class FileOverviewView extends ItemView {
 
   onClose(): Promise<void> {
     this.asked += 1;
+    this.board?.cancelHover();
     this.board = null;
     const path = this.gedcom();
     if (path) {

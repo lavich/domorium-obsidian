@@ -1,6 +1,6 @@
 import { plural, t } from "../i18n";
 import type { MediaPreviewContent } from "../editor/media";
-import { placeInside } from "./dom";
+import { HoverDelay, placeInside } from "./dom";
 import { CARD, marriageDigits, type FileGraphLayout, type GraphCard, type GraphNode, type Point } from "./fileGraph";
 import { least, most, type Sex } from "./fileTimeline";
 import { yearText } from "./labels";
@@ -92,7 +92,11 @@ export type Opening =
 export interface GraphCanvasOptions {
   /** A two-finger scroll that would take the drawing past its top or bottom scrolls the page instead. */
   passEdges?: boolean;
+  /** Obsidian's; where none is handed in, the buttons carry a sign. */
+  setIcon?(element: HTMLElement, icon: string): void;
 }
+
+const SIGNS: Record<string, string> = { minus: "−", plus: "+", maximize: "⤢" };
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -254,6 +258,8 @@ export class GraphCanvas {
   private swallow = false;
   private refocusing = false;
   private wantsFocus: string | null = null;
+  private readonly hover: HoverDelay<string>;
+  private readonly controls: HTMLElement;
   private wheel: { at: number; pans: boolean } | null = null;
   private measureName: ((text: string) => number) | null = null;
 
@@ -265,6 +271,8 @@ export class GraphCanvas {
   ) {
     this.doc = root.ownerDocument;
     this.el = root.createDiv({ cls: "gedcom-fg-canvas" });
+    this.controls = this.el.createDiv({ cls: "gedcom-fg-controls" });
+    this.zoomButtons();
     this.svgEl = svg(this.doc, "svg", "gedcom-fg-svg");
     this.viewEl = svg(this.doc, "g", "gedcom-fg-view");
     this.linesEl = svg(this.doc, "g", "gedcom-fg-lines");
@@ -274,6 +282,7 @@ export class GraphCanvas {
     this.el.append(this.svgEl);
     this.tip = root.createDiv({ cls: "gedcom-fg-tip", attr: { role: "tooltip", id: `gedcom-fg-tip-${this.id}` } });
     this.pop = root.createDiv({ cls: "gedcom-fg-pop" });
+    this.hover = new HoverDelay(this.doc.defaultView ?? window, (id) => this.highlight(id));
     this.listen();
   }
 
@@ -403,7 +412,32 @@ export class GraphCanvas {
     }
   }
 
+  /** −, + and Fit, floating over the canvas and first in its order for the keyboard. */
+  private zoomButtons(): void {
+    const button = (cls: string, label: string, icon: string, run: () => void): void => {
+      const made = this.controls.createEl("button", {
+        cls: ["clickable-icon", cls],
+        attr: { type: "button", "aria-label": label, title: label },
+      });
+      if (this.options.setIcon) {
+        this.options.setIcon(made, icon);
+      } else {
+        made.setText(SIGNS[icon] ?? icon);
+      }
+      made.addEventListener("click", run);
+    };
+    button("gedcom-fg-zoom-out", t("fileGraph.zoomOut"), "minus", () => this.zoomBy(1 / BUTTON_STEP));
+    button("gedcom-fg-zoom-in", t("fileGraph.zoomIn"), "plus", () => this.zoomBy(BUTTON_STEP));
+    button("gedcom-fg-fit", t("fileGraph.fit"), "maximize", () => this.fit());
+  }
+
+  /** Stops a light the pointer has asked for and not yet waited out, as a view closes. */
+  cancelHover(): void {
+    this.hover.cancel();
+  }
+
   highlight(id: string | null, force = false): void {
+    this.hover.cancel();
     if (id === this.highlighted && !force) {
       return;
     }
@@ -941,7 +975,7 @@ export class GraphCanvas {
       }
     };
     this.el.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) {
+      if (event.button !== 0 || (event.target instanceof Node && this.controls.contains(event.target))) {
         return;
       }
       this.pointer = event.pointerType || "mouse";
@@ -999,7 +1033,7 @@ export class GraphCanvas {
         return;
       }
       this.pointer = event.pointerType || "mouse";
-      this.highlight(this.personAt(event.target));
+      this.hover.rest(this.personAt(event.target), this.highlighted);
       const family = this.nodeAt(event.target);
       if (family !== null) {
         this.showTip(family, event);
@@ -1013,7 +1047,7 @@ export class GraphCanvas {
       if (event.pointerType === "touch" || this.drag) {
         return;
       }
-      this.highlight(null);
+      this.hover.rest(null, this.highlighted);
       this.hideTip();
     });
     this.el.addEventListener(
@@ -1044,7 +1078,11 @@ export class GraphCanvas {
       },
       { passive: false },
     );
-    this.el.addEventListener("click", (event) => this.activate(event, false));
+    this.el.addEventListener("click", (event) => {
+      if (!(event.target instanceof Node && this.controls.contains(event.target))) {
+        this.activate(event, false);
+      }
+    });
     this.el.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") {
         return;
@@ -1249,29 +1287,4 @@ export class GraphCanvas {
   private closePop(): void {
     this.pop.removeClass("is-shown");
   }
-}
-
-
-/** The zoom buttons of a canvas: −, + and Fit. */
-export function zoomButtons(
-  parent: HTMLElement,
-  canvas: GraphCanvas,
-  setIcon: (element: HTMLElement, icon: string) => void,
-): void {
-  const button = (cls: string, label: string, icon: string | null): HTMLButtonElement => {
-    const made = parent.createEl("button", { cls, attr: { type: "button", "aria-label": label } });
-    if (icon) {
-      setIcon(made, icon);
-    } else {
-      made.setText(label);
-    }
-    return made;
-  };
-  button("gedcom-fg-zoom-out", t("fileGraph.zoomOut"), "minus").addEventListener("click", () =>
-    canvas.zoomBy(1 / BUTTON_STEP),
-  );
-  button("gedcom-fg-zoom-in", t("fileGraph.zoomIn"), "plus").addEventListener("click", () =>
-    canvas.zoomBy(BUTTON_STEP),
-  );
-  button("gedcom-fg-fit", t("fileGraph.fit"), null).addEventListener("click", () => canvas.fit());
 }
