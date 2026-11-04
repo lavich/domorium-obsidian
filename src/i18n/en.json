@@ -276,6 +276,14 @@
   "fileTimeline.others": "Other events",
   "overview.search": "Find a person…",
   "overview.clearSearch": "Clear the search",
+  "overview.matches": {
+    "one": "{count} match",
+    "other": "{count} matches"
+  },
+  "overview.noMatches": "No results",
+  "overview.matchOf": "{current} / {total}",
+  "overview.previousMatch": "Previous match",
+  "overview.nextMatch": "Next match",
   "fileTimeline.alive": {
     "one": "In {year}: {count} person alive",
     "other": "In {year}: {count} people alive"

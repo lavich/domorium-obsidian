@@ -292,6 +292,16 @@
   "fileTimeline.others": "Другие события",
   "overview.search": "Найти человека…",
   "overview.clearSearch": "Очистить поиск",
+  "overview.matches": {
+    "one": "{count} совпадение",
+    "few": "{count} совпадения",
+    "many": "{count} совпадений",
+    "other": "{count} совпадения"
+  },
+  "overview.noMatches": "Нет результатов",
+  "overview.matchOf": "{current} / {total}",
+  "overview.previousMatch": "Предыдущее совпадение",
+  "overview.nextMatch": "Следующее совпадение",
   "fileTimeline.alive": {
     "one": "В {year} году жив {count} человек",
     "few": "В {year} году живы {count} человека",

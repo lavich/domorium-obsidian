@@ -69,7 +69,20 @@ field grows and taking no place beside it, and the field SHALL take the focus.
 The field SHALL have a cross that erases the text and leaves the field open;
 Escape, and the cross of an empty field, SHALL close it back to the icon, as SHALL
 leaving it empty, while a field with text SHALL stay open and keep its matches
-faded. The timeline SHALL also offer a zoom that widens or narrows the axis of
+lit and the other rows faded.
+
+The open field SHALL show how many rows match — «4 matches», or «No results»
+where none does — and, once the reader has stepped, which match the view is on,
+as «3 / 4». Two buttons beside it, previous and next, and Enter and Shift+Enter
+in the field, SHALL move to the previous and the next match, in the order of the
+rows: the first step forward goes to the first match and the first step back to
+the last, and each step past either end comes round to the other. The board
+SHALL scroll to bring that row to the middle of its height, and to bring its
+lifeline into view sideways where it is out of it, and the row SHALL be marked as
+the current match. The buttons SHALL be disabled where nothing matches, and
+pressing one with a mouse or a key SHALL leave the focus in the field.
+
+The timeline SHALL also offer a zoom that widens or narrows the axis of
 years. The zoom SHALL be a group
 of buttons — zoom out, zoom in and Fit — floating over a corner of the board and
 staying there while the rows and years scroll beneath it, not a slider in the
@@ -89,6 +102,26 @@ while the rows and years scroll beneath and beside them.
 - **THEN** the icon is replaced by a field with the focus and no icon beside it,
   the text is erased with the field still open and no row faded, and the field
   closes back to the icon, which has the focus
+
+#### Scenario: Stepping through the matches
+- **WHEN** the reader types `joliot` and presses the next button four times
+- **THEN** the counter reads `4 matches`, and then `1 / 4` to `4 / 4` as the
+  current row moves from Irène's to Frédéric's, Hélène's and Pierre's, each
+  scrolled into view
+
+#### Scenario: Coming round
+- **WHEN** the view is on the last of the four matches and the reader presses
+  Enter
+- **THEN** the current row is Irène's and the counter reads `1 / 4`
+
+#### Scenario: Going back from the first
+- **WHEN** the reader has typed `joliot` and presses Shift+Enter
+- **THEN** the current row is Pierre's and the counter reads `4 / 4`
+
+#### Scenario: No results
+- **WHEN** the reader types `zzz`
+- **THEN** the counter reads `No results`, both buttons are disabled and no row is
+  marked
 
 #### Scenario: Zooming with the buttons
 - **WHEN** the reader presses zoom in, and then zoom out twice

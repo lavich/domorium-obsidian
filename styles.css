@@ -1816,7 +1816,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find.is-open input.gedcom-fg-search,
 .gedcom-ft-find.is-open input.gedcom-ft-search {
-  width: min(220px, 50vw);
+  width: 220px;
+  flex: 0 1 220px;
   padding: 0 var(--size-2-3);
   opacity: 1;
   visibility: visible;
@@ -1829,9 +1830,50 @@ button.gedcom-fg-pop-open {
   appearance: none;
 }
 
-.gedcom-fg-find:not(.is-open) .gedcom-fg-find-clear,
-.gedcom-ft-find:not(.is-open) .gedcom-ft-find-clear {
+.gedcom-fg-find:not(.is-open) :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
+.gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count) {
   display: none;
+}
+
+.gedcom-fg-find,
+.gedcom-ft-find {
+  max-width: calc(100% - 2 * var(--size-4-2));
+}
+
+.gedcom-ft-stage > .gedcom-ft-find {
+  max-width: calc(100% - 2 * var(--size-4-2) - var(--gedcom-ft-vbar, 0px));
+}
+
+.gedcom-fg-find-count,
+.gedcom-ft-find-count {
+  flex: none;
+  padding: 0 var(--size-2-3);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.gedcom-fg-find button:disabled,
+.gedcom-ft-find button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.gedcom-fg-person.is-current .gedcom-fg-card-bg,
+.gedcom-fg-person.is-current.is-hl .gedcom-fg-card-bg {
+  stroke: var(--interactive-accent);
+  stroke-width: 3.5;
+}
+
+.gedcom-ft-name.is-current {
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-ft-life.is-current {
+  stroke: var(--interactive-accent);
+  stroke-width: 2.5;
 }
 
 .gedcom-fg-find,
@@ -1855,6 +1897,7 @@ button.gedcom-fg-pop-open {
   min-width: var(--gedcom-find-size);
   height: var(--gedcom-find-size);
   min-height: var(--gedcom-find-size);
+  flex: none;
 }
 
 .gedcom-fg-find .gedcom-fg-find-toggle,

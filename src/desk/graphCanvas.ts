@@ -247,6 +247,7 @@ export class GraphCanvas {
   private query = "";
   private matches: string[] = [];
   private match = -1;
+  private current: string | null = null;
   private size = { width: 0, height: 0 };
   private transform: { x: number; y: number; k: number } | null = null;
   private pending: Opening | null = null;
@@ -470,29 +471,36 @@ export class GraphCanvas {
   setQuery(query: string): void {
     this.query = query.trim().toLowerCase();
     this.match = -1;
+    this.current = null;
     this.matches =
       this.query === "" || !this.layout
         ? []
         : this.layout.cards.map((card) => card.id).filter((id) => !this.misses(id));
     for (const [id, element] of this.cardOf) {
       element.classList.toggle("is-dim", this.misses(id));
+      element.classList.remove("is-current");
     }
+  }
+
+  matchInfo(): { index: number; total: number } {
+    return { index: this.match, total: this.matches.length };
   }
 
   private onControls(target: EventTarget | null): boolean {
     return target instanceof Element && target.closest(".gedcom-fg-controls, .gedcom-fg-find") !== null;
   }
 
-  nextMatch(): string | null {
-    return this.stepMatch(1);
-  }
-
   stepMatch(by: 1 | -1): string | null {
     if (this.matches.length === 0) {
       return null;
     }
-    this.match = (this.match + by + this.matches.length) % this.matches.length;
+    const total = this.matches.length;
+    this.match = this.match < 0 ? (by > 0 ? 0 : total - 1) : (this.match + by + total) % total;
     const id = this.matches[this.match] ?? null;
+    this.current = id;
+    for (const [one, element] of this.cardOf) {
+      element.classList.toggle("is-current", one === id);
+    }
     if (id !== null) {
       const k = this.transform && this.transform.k >= ZOOM.far ? this.transform.k : ZOOM.readable;
       this.centreOn(id, k);
@@ -746,6 +754,7 @@ export class GraphCanvas {
     group.classList.toggle("is-aside", shown.aside === true);
     group.classList.toggle("is-dim", this.misses(id));
     group.classList.toggle("is-armed", id === this.armed);
+    group.classList.toggle("is-current", id === this.current);
     const card = svg(this.doc, "g", "gedcom-fg-card", {
       tabindex: 0,
       role: "button",

@@ -147,6 +147,7 @@ export class FileTimelineBoard {
   private scope: TimelineScope = readTimelineState(null);
   private layout: Layout | null = null;
   private query = "";
+  private current: string | null = null;
   private searchText = new Map<string, string>();
   private drawn: Span = { top: 0, bottom: 0, left: 0, right: 0 };
   private readonly elements = new Map<Element, string[]>();
@@ -187,6 +188,8 @@ export class FileTimelineBoard {
       prefix: "gedcom-ft",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (query) => this.setQuery(query),
+      step: (by) => this.stepMatch(by),
+      info: () => this.matchInfo(),
     });
     zoomControls(this.stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
       out: () => this.zoomBy(1 / ZOOM.step),
@@ -267,6 +270,7 @@ export class FileTimelineBoard {
       }
       const shape = item.make();
       shape.classList.toggle("is-dim", this.misses(item.ids));
+      shape.classList.toggle("is-current", this.current !== null && item.ids[0] === this.current && shape.classList.contains("gedcom-ft-life"));
       this.items.append(shape);
       this.elements.set(shape, item.ids);
       if (item.placed) {
@@ -377,8 +381,56 @@ export class FileTimelineBoard {
     this.drawCursor();
   }
 
+  private matchIds(): string[] {
+    const layout = this.layout;
+    return this.query === "" || !layout ? [] : layout.shown.filter((xref) => !this.misses([xref]));
+  }
+
+  matchInfo(): { index: number; total: number } {
+    const ids = this.matchIds();
+    return { index: this.current === null ? -1 : ids.indexOf(this.current), total: ids.length };
+  }
+
+  stepMatch(by: 1 | -1): string | null {
+    const layout = this.layout;
+    const ids = this.matchIds();
+    if (!layout || ids.length === 0) {
+      return null;
+    }
+    const at = this.current === null ? -1 : ids.indexOf(this.current);
+    const id = ids[at < 0 ? (by > 0 ? 0 : ids.length - 1) : (at + by + ids.length) % ids.length] ?? null;
+    if (id === null) {
+      return null;
+    }
+    this.current = id;
+    this.markCurrent();
+    const cy = layout.y.get(id) ?? 0;
+    this.plot.scrollTop = Math.max(0, cy - this.plot.clientHeight / 2);
+    const line = this.model?.people.get(id)?.lifeline;
+    if (line) {
+      const view = this.measure();
+      const from = layout.x(line.start);
+      const to = layout.x(line.end);
+      if (to < view.left || from > view.left + view.width) {
+        this.plot.scrollLeft = Math.max(0, from - 40);
+      }
+    }
+    return id;
+  }
+
+  private markCurrent(): void {
+    for (const [element, ids] of this.elements) {
+      element.classList.toggle("is-current", this.current !== null && ids[0] === this.current && element.classList.contains("gedcom-ft-life"));
+    }
+    for (const [xref, name] of this.byName) {
+      name.toggleClass("is-current", xref === this.current);
+    }
+  }
+
   setQuery(query: string): void {
     this.query = query.trim().toLowerCase();
+    this.current = null;
+    this.markCurrent();
     for (const [element, ids] of this.elements) {
       element.classList.toggle("is-dim", this.misses(ids));
     }
@@ -448,6 +500,9 @@ export class FileTimelineBoard {
     }
     this.layout = this.layoutOf(model);
     const layout = this.layout;
+    if (this.current !== null && !layout.shownSet.has(this.current)) {
+      this.current = null;
+    }
     this.othersChip.setAttribute("aria-pressed", String(this.scope.others));
     const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
     this.scopeBar.draw(this.scope, {
@@ -474,6 +529,7 @@ export class FileTimelineBoard {
       this.year = Math.max(layout.lo, Math.min(layout.hi, this.year));
     }
     this.draw(this.measure());
+    this.find.refresh();
   }
 
   private layoutOf(model: FileTimeline): Layout {
@@ -763,6 +819,7 @@ export class FileTimelineBoard {
       const row = this.names.createDiv({ cls: "gedcom-ft-name", attr: { "data-p": xref } });
       row.toggleClass("is-focus", xref === this.scope.focus);
       row.toggleClass("is-dim", this.misses([xref]));
+      row.toggleClass("is-current", xref === this.current);
       const open = row.createEl("button", {
         cls: "gedcom-ft-name-open",
         attr: { type: "button", title: name },

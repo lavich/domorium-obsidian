@@ -590,6 +590,37 @@ describe("the search", () => {
       expect(find()?.classList.contains("is-open")).toBe(false);
     });
 
+    it("counts the matches, steps with the arrows in the cards' order, wraps, and says when there are none", () => {
+      board();
+      const count = () => container.querySelector(".gedcom-fg-find-count")?.textContent;
+      const next = container.querySelector<HTMLButtonElement>(".gedcom-fg-find-next");
+      const previous = container.querySelector<HTMLButtonElement>(".gedcom-fg-find-prev");
+      click(".gedcom-fg-find-toggle");
+      expect(next?.disabled).toBe(true);
+
+      type("joliot");
+      expect(count()).toBe("4 matches");
+      expect(next?.disabled).toBe(false);
+      next?.click();
+      expect(count()).toBe("1 / 4");
+      expect(person("@I14@")?.classList.contains("is-current")).toBe(true);
+      previous?.click();
+      expect(count()).toBe("4 / 4");
+      expect(person("@I17@")?.classList.contains("is-current")).toBe(true);
+      expect(person("@I14@")?.classList.contains("is-current")).toBe(false);
+      next?.click();
+      expect(count()).toBe("1 / 4");
+      expect(all(".gedcom-fg-person.is-current")).toHaveLength(1);
+      expect(all(".gedcom-fg-person:not(.is-dim)")).toHaveLength(4);
+
+      type("zzz");
+      expect(count()).toBe("No results");
+      expect(next?.disabled).toBe(true);
+      expect(previous?.disabled).toBe(true);
+      type("");
+      expect(count()).toBe("");
+    });
+
     it("goes back to the previous match on Shift+Enter", async () => {
       const model = curie();
       board(model, { view: { x: 0, y: 0, k: 2 } }, { width: 200, height: 150 });

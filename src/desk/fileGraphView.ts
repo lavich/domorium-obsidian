@@ -86,7 +86,8 @@ export class FileGraphBoard {
       prefix: "gedcom-fg",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (query) => this.canvas.setQuery(query),
-      step: (backwards) => this.canvas.stepMatch(backwards ? -1 : 1),
+      step: (by) => this.canvas.stepMatch(by),
+      info: () => this.canvas.matchInfo(),
     });
     this.canvas.el.prepend(this.find.el);
     this.goneEl = this.root.createDiv({ cls: "gedcom-fg-gone" });
@@ -112,6 +113,7 @@ export class FileGraphBoard {
     this.model = model;
     this.scope = scope;
     this.relayout(opening);
+    this.find.refresh();
   }
 
   /** Where the file is gone, the last reading stays out of sight rather than passing for the file. */
@@ -151,10 +153,6 @@ export class FileGraphBoard {
 
   setQuery(query: string): void {
     this.canvas.setQuery(query);
-  }
-
-  nextMatch(): string | null {
-    return this.canvas.nextMatch();
   }
 
   zoomAt(factor: number, cx: number, cy: number): void {

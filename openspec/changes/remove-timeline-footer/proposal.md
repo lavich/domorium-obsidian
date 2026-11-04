@@ -44,8 +44,12 @@ Proposed scope, taken from that:
   clears it. It sits at the top right (the zoom buttons are at the bottom right;
   in the timeline it sits under the axis), comes first in the keyboard order
   after the toolbar and before the zoom buttons, is 44 px on a phone, and opens
-  without animation under reduced motion. The graph keeps Enter for the next
-  match and gains Shift+Enter for the previous. The graph's toolbar is then
+  without animation under reduced motion. The open box has no icon left in it (the icon fades as the field grows), and
+  carries, like a browser's find bar, a counter («4 matches», «3 / 4», «No
+  results») and previous and next arrows; Enter and Shift+Enter step too, and
+  both views now step, the timeline by scrolling the row to the middle and
+  marking it. Pressing an arrow with a mouse or a key leaves the focus in the
+  field, a touch leaves the keyboard alone. The graph's toolbar is then
   empty and is removed; the timeline's keeps its Other-events switch.
 - On a phone the board takes the height the removed lines and subtitle
   freed, with nothing below it and no empty band above it.

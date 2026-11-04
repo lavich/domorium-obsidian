@@ -297,6 +297,42 @@ describe("the toolbar", () => {
     expect(find?.classList.contains("is-open")).toBe(false);
   });
 
+  it("steps through the matches in row order with the arrows, marks the current row and wraps", () => {
+    board();
+    const count = () => container.querySelector(".gedcom-ft-find-count")?.textContent;
+    const current = () => all(".gedcom-ft-name.is-current").map((row) => row.getAttribute("data-p"));
+    container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
+    const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
+    if (input) {
+      input.value = "joliot";
+      input.dispatchEvent(new Event("input"));
+    }
+    expect(count()).toBe("4 matches");
+
+    const next = container.querySelector<HTMLElement>(".gedcom-ft-find-next");
+    const previous = container.querySelector<HTMLElement>(".gedcom-ft-find-prev");
+    const seen: (string | null)[] = [];
+    for (let step = 0; step < 4; step += 1) {
+      next?.click();
+      seen.push(...current());
+    }
+    expect(seen).toEqual(["@I12@", "@I14@", "@I16@", "@I17@"]);
+    expect(count()).toBe("4 / 4");
+    next?.click();
+    expect(current()).toEqual(["@I12@"]);
+    expect(count()).toBe("1 / 4");
+    previous?.click();
+    expect(current()).toEqual(["@I17@"]);
+    expect(of(".gedcom-ft-life.is-current", "@I17@")).toHaveLength(1);
+    expect(all(".gedcom-ft-name:not(.is-dim)")).toHaveLength(4);
+    if (input) {
+      input.value = "zzz";
+      input.dispatchEvent(new Event("input"));
+    }
+    expect(count()).toBe("No results");
+    expect(current()).toEqual([]);
+  });
+
   it("fades the rows that do not match a search", () => {
     board();
     const search = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
