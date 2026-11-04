@@ -122,9 +122,7 @@ middle of the board's height, and its lifeline into view sideways where it is ou
 it, smoothly unless the reader has asked for reduced motion or the row is further
 away than a smooth scroll can show without leaving rows blank, as stepping to a
 match does; where it came from activating a name or a lifeline of the timeline, the
-timeline SHALL NOT move. Switching to Timeline mode with a person selected, and a
-timeline restored with the workspace, SHALL mark the row without moving a view that
-has a position. The mark SHALL be unlike the light of pointing and unlike the ring
+timeline SHALL NOT move. A selection made from outside the timeline while the tab was behind another tab, in another mode or not yet drawn SHALL, when the timeline is shown, scroll to the row; one that was only kept while the reader switched modes, or restored with the workspace, SHALL mark the row without moving a view that has a position. The mark SHALL be unlike the light of pointing and unlike the ring
 of the search's current match, SHALL stay while the pointer lights other people and
 while the reader searches, and SHALL stay until another record is selected or the
 selection ends. Where the person is not in the branch shown and the view is asked
@@ -161,6 +159,17 @@ to the file.
 - **WHEN** the timeline shows Marie's branch with zero generations of ancestors
   and zero of descendants and the reader activates Hélène's row in the index
 - **THEN** the timeline shows Hélène's branch, with her row selected
+
+#### Scenario: Selected while the tab is behind another
+- **WHEN** a tab in Timeline mode is behind another tab and the reader activates
+  Irène's row in the index, and then brings the tab to the front
+- **THEN** Irène's row is marked selected and scrolled to the middle, and no page was
+  opened
+
+#### Scenario: Selected in Source and then shown
+- **WHEN** the reader activates Irène's row while the tab is in Source mode, and then
+  switches to Timeline mode
+- **THEN** her row is marked selected and the timeline is not scrolled to it
 
 #### Scenario: Switching to Timeline mode with a selection
 - **WHEN** Irène is selected, the timeline was scrolled, the reader switched to

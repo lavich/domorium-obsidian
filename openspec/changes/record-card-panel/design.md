@@ -24,7 +24,7 @@ user's target («при клике по пользователю или стро
 - Step 1 left the seams this change uses: the views call one method to choose a
   record (`FileViewsHost.openRecord`, `fileViews.ts:15`), the tab's modes are a
   pure class (`TabModes`), and an Index row in Graph or Timeline already selects
-  (`selectInView`, `deskState.ts:96`) — which step 1 said is «the behaviour a click
+  (`selectInView`, called from `openFromIndex`, `deskState.ts:96`) — which step 1 said is «the behaviour a click
   gets in step 2».
 
 The renderers a card needs all exist and are pure DOM builders with a host
@@ -70,15 +70,33 @@ class TabModes {
   selected: string | null;
   loaded: boolean;
   setMode(next, leaving): ModeChange;   // { changed, moveCursor, selectionChanged }
-  select(xref, index): boolean;         // true for a record that has a card
-  textChanged(index): { selectionCleared };   // the record is gone
+  applyState(desk): { selectionCleared }; // mode and selected, from a saved or incoming state
+  select(xref, index): boolean;         // true for a record that has a card; false, and nothing kept, while the interface is off
+  textChanged(index): { selectionCleared };   // the record is gone, also a restored one the file never had
   interfaceChanged(on): { selectionCleared };
   fileChanged(mode): void;
   needsDraw(shown): boolean;
   shownRecord(): string | null;         // the selected record, null while the interface is off
   recordAtCursorFor(mode, cursorRecord): string | undefined;
 }
+
+type Origin = "view" | "index" | "card" | "link" | "history" | "cursor";
+function originRules(origin: Origin, mobile: boolean): {
+  cursorToRecord: boolean;   // Source: put the cursor at the first line
+  editorFocus: boolean;      // ...and let the editor take the focus
+  revealsView: boolean;      // Graph, Timeline: glide or scroll to it
+  addsStep: "visit" | "follow" | "none";
+  placesCard: boolean;       // the once-a-session placement
+  opensDrawer: boolean;      // mobile only
+}
 ```
+
+`originRules` is pure and lives in `tabModes.ts` (mine, from the plan review), so the
+table below is a unit test and not a convention: `cursor` and `history` never move
+the cursor, never take the focus and never dispatch into the editor (a cursor-follow
+that moved the cursor would fight the reader's typing, and Back in Source would drag
+the caret), and only `index`, `link` and `card` put it on a record's first line, the
+editor taking the focus for `index` and `link` only.
 
 `openRecord`, `applyState`'s `step` and `recordChanged`, and the Genealogy branches
 of `setMode`, `recordAtCursorFor` and `shownRecord` go. `select` no longer needs
@@ -94,14 +112,23 @@ came from, because the same selection asks different things of the view:
 | `index` — a row | marks, **glides** | cursor to the first line, scroll, editor takes the focus | shows it; a phone closes the left drawer and opens the right |
 | `card` — a relative, a citation, a person or family or media tile | marks, glides | cursor to the first line, scroll, **focus stays in the card** | shows it |
 | `link` — a wikilink, `obsidian://`, *Go to record* | marks, glides | as `index` | shows it |
-| `history` — the card's Back and Forward | marks, glides | as `card` | shows it, no new step |
-| `cursor` — the cursor rested in a record in Source | — | — (it is already there) | shows it, replaces the current step |
+| `history` — the card's Back and Forward | marks, glides | **nothing: cursor and focus stay** | shows it, no new step |
+| `cursor` — the cursor rested in a record in Source | — | **nothing: never dispatches into the editor** | shows it, replaces the current step |
 
 The glide rule — a click inside a view does not move the view — is mine. The card
 is on the right, the reader is already looking at the card or row, and a view that
 re-centred on every click would make the second click land on a moving target. The
 Index row, a link and the card's own relatives are the cases where the person may
 be out of sight, and those glide, as step 1 specified for the Index.
+
+**While the interface is off** (mine) the Source cursor listener, `select`, the
+history and `cardWanted` do nothing, `selected` stays `null` and nothing of it is
+written to the saved state; `goToXref` and `goToRecord` still move the cursor in
+Source, as before the interface existed (a scenario pins it). `selectRecord` ends with
+`requestSaveLayout()`, since `selected` is part of the state. A restored `selected`
+that the file does not declare shows the empty state and is dropped by
+`TabModes.textChanged` once the file is loaded. `RecordHistory` is seeded from a
+restored `selected` with `visit`, so Back has a base.
 
 The mark is kept for persons only. `FileViews.select(kind, xref)` is called with the
 person's xref, or `null` for a family, a source or a media record, so that the
@@ -133,7 +160,13 @@ GraphCanvas.select(id, reveal)
 ```
 
 With `reveal: false` the board marks (`is-selected`) and does nothing else; with
-`true` it behaves as step 1's `select`, scope change included. A restore, a mode
+`true` it behaves as step 1's `select`, scope change included. A pending selection
+keeps `reveal: true` if any revealing origin set it (Index row, link, card relative,
+Back or Forward — even while the tab is in Source or behind another tab), and
+`renderMode`'s hand-over with `reveal: false` never overwrites it: step 1's scenario
+"selected while the tab is behind another, then brought forward: centred" survives,
+and a selection that was only kept across a mode switch is not centred. Both have a
+scenario in the two views' specs and a unit test in `fileViews.test.ts`. A restore, a mode
 switch with a selection, and a `view` origin pass `false`; the rest pass `true`.
 `TabModes.setMode` passes nothing to the boards: `renderMode` hands the current
 selection to the view it shows with `reveal: false`, so a Graph → Timeline → Graph
@@ -203,12 +236,27 @@ Evidence; it is skipped and draws itself in `onOpen`, which already calls
 `redraw()`. `revealLeaf` on a deferred leaf loads it (`loadIfDeferred`, 1.7.2); the
 card command and the phone path `await leaf.loadIfDeferred()` first.
 
-**Scroll and focus.** A redraw rebuilds the DOM, which loses the scroll position and
+**Cost** (mine). The Index's current row changes on every cursor-follow, so
+`IndexList` gets `setCurrent(xref)`, which moves the `is-current` class and nothing
+else, instead of the full `show()`; the full refresh stays for a changed file.
+`DeskViewsHost.notesFor` is cached per file and invalidated by the metadata cache's
+`changed` for a note that links the file, so a change of record asks the vault once per
+file, not once per record. A card whose leaf is hidden or in a collapsed sidebar
+neither draws nor asks for notes; it draws from `onOpen`, from `onResize` when shown,
+and when `followed()` changes. The 250 ms debounce of the cursor-follow stays.
+
+**Scroll, focus and the announcement.** A redraw rebuilds the DOM, which loses the scroll position and
 the keyboard focus. Selecting a fact must not throw the reader to the top of a long
 card, and a keyboard user must stay on the fact. The view keeps the body's
 `scrollTop` per record (not across records: another record scrolls to the top) and
 sets it back after the draw; a focusable row carries `data-focus-key` (the fact key,
-or the xref of a relative) and the view focuses the same key after the draw. Typed
+or the xref of a relative) and the view focuses the same key after the draw **only if the focus was inside the
+card before it**: a redraw caused by typing in Source must not pull the focus out of
+the editor. A visually hidden polite live region (`aria-live="polite"`) holds the
+shown record's name and is rewritten when the record changes (`card.announce`,
+«Shown: {name}» / «Показано: {name}»). Selecting a fact in the Timeline section
+selects it and unfolds its sources under the fact in the Facts list; it does not
+scroll the card, and only *All evidence* scrolls to the Evidence section. Typed
 text redraws on the debounced announce, as it does for the Index, so a keystroke
 does not.
 
@@ -219,6 +267,17 @@ the tab). That is what is wanted: the reader keeps the focus in the view, and
 no `GedcomView` and leaves `followedView` alone (`main.ts:213`). The consequence,
 accepted: while the card has the focus no GEDCOM command is available
 (`getActiveViewOfType(GedcomView)` is null), so *Copy link* is run from the tab.
+
+**Revealing and the focus** (mine, from the plan review). On a desktop a selection
+gesture never calls `revealLeaf` or expands a sidebar (the spec says it shall not).
+Where the right split is a drawer — `Platform.isMobile`, not `isPhone`, since a
+tablet's drawer is the same — a second touch and an Index row call
+`workspace.ensureSideLeaf(RECORD_VIEW_TYPE, "right", { active: false, reveal: true })`
+(1.7.2): it creates the leaf if there is none and reveals it, ignoring `cardPlaced`,
+so a card the reader closed is back on the touch that asked for it. The command *Show
+the record card* uses the same call with `active: true` and then
+`setActiveLeaf(leaf, { focus: true })`, so it expands a collapsed sidebar and the card
+has the focus.
 
 **Placement.** `placeEvidence` becomes `placeCard`: once per session, the first time
 a record is selected by a gesture of the reader, `getRightLeaf(false).setViewState(
@@ -231,7 +290,7 @@ a panel they did not ask for. A closed card stays closed for the session
 collapsed sidebar collapsed is Obsidian's, and is in the manual check.
 
 **On a phone** the right sidebar is a drawer. A second touch on a card, node or
-row, and an Index row, `revealLeaf` the card (which opens the drawer); a relative
+row, and an Index row, open the drawer on the card as above; a relative
 inside the card does not (it is already open). First touch lights, second touch
 selects and opens, as the graph and timeline already have it, so the step-1 gesture
 rule is kept. An Index row on a phone used to close the left drawer and show a page
@@ -349,12 +408,13 @@ showed and Back means the one before.
 
 **Controls.** Two icon buttons at the left of the card's sticky header
 (`chevron-left`, `chevron-right`; `aria-label` *Back* and *Forward*; disabled where
-there is nowhere to go), and `mouseup` with `button === 3 | 4` over the card (the
-mouse's back and forward) calls the same. Keyboard: none added. Obsidian already
-binds Back and Forward to its own hotkeys for the tab history, and a second pair
-inside one view would collide or confuse; the buttons are reachable with Tab, which
-is what "if cheap" allows. The harness spec checks the mouse buttons through
-`page.mouse` events dispatched as `auxclick`/`mouseup`.
+there is nowhere to go), .
+Mouse buttons 3 and 4 are **not** handled (mine, from the plan review): Obsidian's
+window-level capture `mousedown` handler for those buttons already navigates the
+tab's own history, so a handler in the card would race it and the tab would step back
+from under the reader. No key either: Obsidian binds Back and Forward to its own
+hotkeys, and a second pair in one view would collide. The buttons are reachable with
+Tab.
 
 ### In Source the card follows the cursor, debounced
 
@@ -481,6 +541,13 @@ requirements REMOVED and ADDED as above; the selected card and row, phone, mode,
 branch scope and moving about MODIFIED, each restated with all its scenarios.
 `plugin-language`: its first requirement lists what follows the language, restated.
 
+Also restated for wording: `genealogy-index`'s "People, families and sources" ("as the
+person page shows them", "as the family page names it") and `genealogy-file-graph`'s
+"A card is a person, coloured by sex" ("the person's page shows", "as on the page").
+One old title is kept on purpose: the scenario "A person page in Russian" of
+`plugin-language`, because a MODIFIED requirement must keep every scenario name of the
+one it replaces; its content says "card".
+
 Left, on purpose: `document-links`, which says "a picture on a desk page" and "a desk
 tile" — "desk" there is the plugin's name for the reading surface and now reads as
 the card; changing a whole requirement for one noun is not worth a MODIFIED. The
@@ -537,9 +604,9 @@ slot in the sidebar. It is a few lines and kind to the reader, but then the card
 appears without a gesture, against the placement rule; declined. A Genealogy tab is
 read as Graph by `readDeskState`; no leaf is closed.
 
-`getLeavesOfType` returning leaves of an unregistered type was *not* verified in
-step 1 and still is not (it is on the manual check); step 1's reading of the bundle
-says an unknown pane's `getViewType()` is the saved type.
+That `getLeavesOfType` returns leaves of an unregistered type was verified against
+Obsidian 1.15 (an unknown pane's `getViewType()` is the saved type); the floor is
+1.8.7, so task 7.1 re-checks it there.
 
 ### Settings and copy
 
@@ -556,7 +623,10 @@ Source («Граф», «Хронологию», «Исходник» — accusat
 («Back» / «Forward», «Назад» / «Вперёд»), `card.noTab` («Open a GEDCOM file to see
 its records.»), `card.nothing` («Select a record in the graph, the timeline or the
 index.»), `card.empty` («The file holds nothing to show.»), `desk.timeline`,
-`desk.places` (section headings, replacing `desk.tab.*`). Sentence case; the
+`desk.places` (section headings, replacing `desk.tab.*`), `card.announce`. Leftover
+wording is fixed with them: `desk.familyPage` («Family page») and `desk.mediaPage`
+(«Media page») become «Family card» and «Media card» (and in Russian), and
+`desk.openSource` is deleted when `renderEmptyPage` goes, if nothing else reads it. Sentence case; the
 existing plurals are unchanged and none of the new strings has a count.
 
 ### Tests
@@ -584,8 +654,7 @@ existing plurals are unchanged and none of the new strings has a count.
   Marie's sections in order at 320, 360 and 420 px and at 390 as a phone with no
   horizontal overflow, the header staying while the body scrolls, a fact's unfold and
   "All evidence" bringing the section into view, selecting a fact not scrolling the
-  card, another record scrolling it to the top, Back and Forward and the mouse's
-  buttons, a relative selecting, the family, source and media cards, the notes list,
+  card, another record scrolling it to the top, Back and Forward, a relative selecting, the family, source and media cards, the notes list,
   no tabs and no tree; `tests/theme.spec.ts`'s desk colours test follows the class
   names; `tests/fileViews.spec.ts` gains: a card activated records `select(…, false)`
   and does not move the view, a selection with `reveal: true` does. CI is a slower Linux
@@ -593,7 +662,7 @@ existing plurals are unchanged and none of the new strings has a count.
   a pixel width of text or a position that depends on the font; layouts are asserted by
   relations (inside the pane, no overflow, below, in order).
 - By hand in Obsidian (the manual task): placement, revealing, deferred leaves, the
-  phone drawer, focus, the mouse's buttons, the saved Evidence leaf, `getRightLeaf`
+  phone drawer, focus, the saved Evidence leaf, `getRightLeaf`
   with a collapsed sidebar.
 
 ### Relation to step 1, and what step 3 gets
@@ -662,7 +731,7 @@ extended by one id).
 
 ## Open Questions
 
-For the user (they change what a reader sees):
+None left. The user delegated the decisions on 2026-11-05 and the seven below were settled as proposed (the earlier wording is kept for the reasons):
 
 1. **Phone and the Index.** An Index row now closes the left drawer and opens the right
    one on the card. The alternative is to close the drawer and leave the view, with the
@@ -680,7 +749,7 @@ For the user (they change what a reader sees):
    before Evidence?
 7. **A family node is selectable but not marked** in the graph. Keep, or mark it?
 
-Decided by me and open to a change: the card's back and forward are buttons and the
-mouse's buttons, with no key; placing the card does not reveal it; the old `record`
+Decided by me and open to a change: the card's back and forward are buttons only,
+with no key and no mouse buttons; placing the card does not reveal it; the old `record`
 key is ignored rather than read as the selection; the Evidence leaf is closed rather
 than converted.

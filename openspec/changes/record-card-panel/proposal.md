@@ -61,8 +61,8 @@ Proposed scope, taken from that (decisions that are mine are marked):
   it is the right drawer: a tap that selects from a view opens it, and so does an
   Index row (mine; first touch lights, second selects, as the graph has it).
 - **History inside the card** (mine): back and forward between the records the
-  tab's card has shown, with two buttons and the mouse's back and forward
-  buttons. Record steps are no longer steps of the tab's own history: the tab's
+  tab's card has shown, with two buttons (not the mouse's buttons, which Obsidian
+  already routes to the tab's own history). Record steps are no longer steps of the tab's own history: the tab's
   Back and Forward carry nothing but files, and the step logic of step 1
   (`navigationStep`, `result.history`) is deleted.
 - **Modes become three**: Graph, Timeline, Source. **Genealogy mode is removed**
@@ -131,7 +131,7 @@ older; `loadIfDeferred` is 1.7.2). No row is added to the table in `CLAUDE.md`.
   goes to Source, as before.
 - Marking a family node as selected in the graph. A family can be selected and is
   shown in the card; the nodes keep their light of pointing only (mine; see
-  open questions in `design.md`).
+  the design's decisions).
 - Copying a link, or any other action, from the card itself. The commands act on
   the active GEDCOM tab, as they do; the card never becomes that tab.
 - Saving the card's history across a restart. The selected record is saved; the

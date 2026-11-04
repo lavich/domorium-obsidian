@@ -6,6 +6,40 @@
 **Migration**: "A card or a node selects a record" below, and `genealogy-record-card`, "A tab has one selected record".
 
 ## MODIFIED Requirements
+
+### Requirement: A card is a person, coloured by sex
+
+Each person the file declares with an identifier SHALL have a card showing,
+from top to bottom, their portrait where they have one, their given names,
+their surname and their years of life, written as the timeline of the file
+writes them. The portrait SHALL be the picture, cut as its crop says, that the
+person's card shows; a picture from the web SHALL be shown only where the
+setting *Load images from the web*, or the reader's answer for this session,
+allows it, as on the card. A card without a portrait, or whose portrait cannot
+be shown, SHALL show none, and a name the record writes with no surname SHALL
+stand on one line. A card's background SHALL be tinted pink for a woman, blue
+for a man, and grey where the record states no sex, in colours taken from the
+theme. A line
+too long for its card SHALL be cut short, and the name given in full when the
+pointer rests on the card. Far out, neither portraits nor text SHALL be drawn,
+and only cards in or near the view SHALL load their portraits. The graph SHALL
+NOT label generations.
+
+#### Scenario: Marie's card
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** Marie's card shows her portrait at its top, then `Marie`, then
+  `Skłodowska-Curie`, then `1867–1934`, and is marked pink, and Pierre Curie's
+  is marked blue; a line wider than the card is cut with an ellipsis, so in a
+  wide font her surname may be cut
+
+#### Scenario: A card without a portrait
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** Jacques's card has no portrait and begins with `Jacques` over
+  `Curie`, and stands in the same row as Pierre Curie's, which has one
+
+#### Scenario: No labels for generations
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** no generation is named or numbered anywhere in it
 ### Requirement: A branch scope shows one person's ancestors and descendants
 
 The reader SHALL be able to choose, from a person's card, to show only that
@@ -188,9 +222,7 @@ the selection came from outside the graph, the view SHALL centre on the card at 
 readable zoom, gliding there rather than jumping unless the reader has asked for
 reduced motion or the card is further away than a glide can show without a streak,
 as stepping to a match does; where it came from activating a card of the graph, the
-view SHALL NOT move. Switching to Graph mode with a person selected, and a graph
-restored with the workspace, SHALL mark the card without moving a view that has a
-position. The mark SHALL be unlike the light of pointing and unlike the ring of the
+view SHALL NOT move. A selection made from outside the graph while the tab was behind another tab, in another mode or not yet drawn SHALL, when the graph is shown, centre on the card; one that was only kept while the reader switched modes, or restored with the workspace, SHALL mark the card without moving a view that has a position. The mark SHALL be unlike the light of pointing and unlike the ring of the
 search's current match, SHALL stay while the pointer lights other people and while
 the reader searches, and SHALL stay until another record is selected or the
 selection ends. Where the person is not in the branch shown and the view is asked
@@ -231,6 +263,16 @@ Selecting SHALL NOT open a page, change the mode or write to the file.
 - **WHEN** the graph shows Marie's branch with zero generations of ancestors and
   zero of descendants and the reader activates Hélène's row in the index
 - **THEN** the graph shows Hélène's branch, with her card selected
+
+#### Scenario: Selected while the tab is behind another
+- **WHEN** a tab in Graph mode is behind another tab and the reader activates Pierre
+  Curie's row in the index, and then brings the tab to the front
+- **THEN** the graph shows his card selected and centred, and no page was opened
+
+#### Scenario: Selected in Source and then shown
+- **WHEN** the reader activates Pierre Curie's row while the tab is in Source mode,
+  and then switches to Graph mode
+- **THEN** his card is marked selected and the graph is not moved to it
 
 #### Scenario: Switching to Graph mode with a selection
 - **WHEN** Marie is selected, the graph was zoomed in and moved, the reader

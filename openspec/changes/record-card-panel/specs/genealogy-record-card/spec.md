@@ -7,13 +7,7 @@ named **Record**, the record card, in the right sidebar. It SHALL be placed ther
 without taking the focus, the first time in a session a record is selected in a
 GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row,
 an index row, a link, *Go to record* — and no card is open; a reader who then
-closes it SHALL not have it put back until the plugin loads again. It SHALL open
-from the command **Show the record card**, which SHALL bring it into view. Once
-the card has been placed, selecting a record SHALL NOT move, switch or expand the
-sidebar on a desktop. On a phone the card SHALL be reached as Obsidian's other
-sidebar views are, from the right drawer, and selecting a record by a second
-touch on a card, a node or a row of Graph or Timeline, and activating a row of the
-index, SHALL open that drawer on the card. While the setting is off, the plugin
+closes it SHALL not have it put back until the plugin loads again. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and activating a row of the index, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the setting is off, the plugin
 SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
 is open.
 
@@ -21,8 +15,7 @@ The card SHALL show the selected record of the GEDCOM tab most recently active,
 and SHALL follow that tab as the reader moves between tabs, whatever the mode of
 the tab. Where no GEDCOM tab is open it SHALL say so. Where the tab has nothing
 selected it SHALL say to select a record in the graph, the timeline or the index;
-where the file declares no person, family or source it SHALL say that the file
-holds nothing to show.
+where the file declares no person, family or source it SHALL say that the file holds nothing to show. When the record it shows changes, the card SHALL announce the record's name in a polite live region, in the reader's language.
 
 #### Scenario: The first selection
 - **WHEN** the Genealogy interface is on, no card is open, and the reader opens
@@ -77,6 +70,20 @@ holds nothing to show.
   touches it again
 - **THEN** the right drawer opens on Marie's card
 
+#### Scenario: On a phone after the card was closed
+- **WHEN** the card was placed and closed in this session, and the reader touches
+  Marie's card in the graph on a phone twice
+- **THEN** the right drawer opens on Marie's card
+
+#### Scenario: A collapsed sidebar on a desktop
+- **WHEN** the card is open, the right sidebar is collapsed, and the reader activates
+  Marie's card in the graph
+- **THEN** the sidebar stays collapsed, and the card shows Marie when it is opened
+
+#### Scenario: The announcement
+- **WHEN** the reader selects Pierre Curie
+- **THEN** a polite live region of the card reads `Pierre Curie`
+
 ### Requirement: A tab has one selected record
 
 A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
@@ -94,8 +101,7 @@ The selection SHALL belong to the tab and to the record, not to what is drawn. I
 SHALL be kept when the tab changes mode, and when the workspace is closed and
 reopened. It SHALL end when the record no longer exists in the file, when the
 Genealogy interface is turned off, and when the tab is navigated to another file.
-A record of another kind — a note, a repository, a submitter, the header —
-SHALL NOT be selected, and SHALL leave the selection as it was.
+A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected, remembered or saved. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
 
 While a record is selected the index SHALL mark its row as the current one. A
 fact of a person or a family SHALL be selectable on its card, which makes it the
@@ -169,6 +175,12 @@ card or row to mark, and while one is selected nobody is marked.
   GEDCOM file
 - **THEN** nothing is selected in the tab
 
+#### Scenario: A saved record the file no longer has
+- **WHEN** a tab was saved with `@I99@` selected, which the file does not declare,
+  and Obsidian is restarted
+- **THEN** nothing is selected, the card says to select a record, and no row of the
+  index is marked
+
 #### Scenario: Selecting a fact and going back
 - **WHEN** the reader selects Marie's birth on her card and then chooses Whole
   record
@@ -177,10 +189,7 @@ card or row to mark, and while one is selected nobody is marked.
 
 ### Requirement: In Source mode the cursor and the selection go together
 
-In Source mode, selecting a record from the index, a link, *Go to record* or the
-card SHALL put the cursor at the record's first line and scroll it into view; the
-editor SHALL take the focus when the selection came from the index, a link or *Go
-to record*, and SHALL NOT when it came from the card. Moving the cursor into a
+In Source mode, selecting a record from the index, a link, *Go to record* or by activating something in the card SHALL put the cursor at the record's first line and scroll it into view; the editor SHALL take the focus when the selection came from the index, a link or *Go to record*, and SHALL NOT when it came from the card. A selection that came from the cursor itself, and one that came from the card's Back and Forward, SHALL NOT move the cursor or take the focus. While the Genealogy interface is off, following a link or choosing *Go to record* in Source mode SHALL still put the cursor at the record, and nothing SHALL be selected. Moving the cursor into a
 record that has a card SHALL, once the cursor has rested, select that record
 without moving the cursor; a cursor in a record with no card, or between records,
 SHALL leave the selection as it is.
@@ -207,6 +216,16 @@ select the record under the cursor where it has a card.
   Marie's relatives in the card
 - **THEN** the cursor is on `0 @I2@ INDI`, in view, the card shows Pierre Curie,
   and the focus is still in the card
+
+#### Scenario: Back in the source
+- **WHEN** the tab is in Source mode, the reader selected Marie and then Pierre from the
+  index, the cursor is on `0 @I2@ INDI`, and the reader presses Back in the card
+- **THEN** the card shows Marie, and the cursor and the focus have not moved
+
+#### Scenario: The interface is off
+- **WHEN** the Genealogy interface is off and the reader follows `[[curie.ged#@I1@]]`
+- **THEN** the tab is in Source mode with the cursor on `0 @I1@ INDI`, and nothing is
+  selected
 
 #### Scenario: The cursor moves into a record
 - **WHEN** the tab is in Source mode and the reader moves the cursor into Marie's
@@ -236,15 +255,11 @@ select the record under the cursor where it has a card.
 ### Requirement: Moving between records in the card
 
 The card SHALL keep, for its tab, the history of the records it has shown, and SHALL
-offer **Back** and **Forward** between them: two buttons in its header, disabled
-where there is nowhere to go, and the mouse's back and forward buttons over the
-card. Selecting a record from anywhere but the card's own Back and Forward SHALL add
+offer **Back** and **Forward** between them: two buttons in its header, disabled where there is nowhere to go. Selecting a record from anywhere but the card's own Back and Forward SHALL add
 a step after the current one and drop the steps that were forward of it. A record
 shown only because the cursor passed through it in Source mode SHALL NOT leave a
 step: moving the cursor on to the next record SHALL replace it. Going back or
-forward SHALL select that record as any selection does — marking it in a view,
-bringing it into view in the view, moving the cursor in Source mode — and SHALL
-skip a record that is no longer in the file.
+forward SHALL select that record as any selection does — marking it in a view and bringing it into view in the view, but not moving the cursor in Source mode — and SHALL skip a record that is no longer in the file.
 
 The tab's own Back and Forward SHALL NOT step between records: selecting a record,
 following a link and switching mode are not steps of the tab. The history belongs
@@ -269,11 +284,6 @@ to the tab and lasts while it is open; the workspace does not save it.
 - **WHEN** the tab is in Graph mode, the reader selected Marie and then Irène, and
   presses Back in the card
 - **THEN** Marie's card in the graph is marked selected and the graph glides to it
-
-#### Scenario: The mouse's back button
-- **WHEN** the card has shown Marie and then Pierre and the reader presses the
-  mouse's back button over it
-- **THEN** the card shows Marie
 
 #### Scenario: A record the cursor passed
 - **WHEN** the tab is in Source mode, the reader selected Marie from the index, and
@@ -547,8 +557,7 @@ card. The card as a whole SHALL scroll beneath a header carrying Back and Forwar
 which stays at the top. Selecting a fact SHALL unfold beneath it the titles of the
 sources the fact cites, or that it cites none, with an action that takes the reader
 to the Evidence section. Redrawing the card for the same record — selecting a fact,
-or the file changing — SHALL NOT scroll it back to the top, and SHALL keep the
-keyboard focus on the same fact; selecting another record SHALL scroll the card to
+or the file changing — SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record SHALL scroll the card to
 the top.
 
 #### Scenario: A person card at a sidebar's width

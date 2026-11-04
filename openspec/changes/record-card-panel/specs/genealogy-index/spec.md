@@ -5,6 +5,36 @@
 
 **Migration**: "Selecting a record from the index" below, and `genealogy-record-card`, "A tab has one selected record".
 
+## MODIFIED Requirements
+
+### Requirement: People, families and sources
+
+The index SHALL list the file's people, its families or its sources, switched
+at its top. The list chosen SHALL be kept when the workspace is restored. People SHALL be listed in the order the file declares them, each with their
+name, their years as the person card shows them, and the place of birth, or of
+death where no birth place is stated. Families SHALL be listed in the order the
+file declares them, each named by its spouses as the family card names it, with
+the year and place of the marriage where the record states them. Sources SHALL be listed in the order the
+file declares them, each with its title, its author where stated, and how many
+records cite it.
+
+A record the file declares without an identifier SHALL NOT be listed, since it
+cannot be opened.
+
+#### Scenario: A person row
+- **WHEN** the index lists the people of `curie.ged`
+- **THEN** Marie's row reads her name, `1867–1934` and
+  `Warsaw, Congress Poland`
+
+#### Scenario: A family row
+- **WHEN** the index lists the families of `curie.ged`
+- **THEN** the Curies' row reads Pierre Curie and Marie Skłodowska-Curie,
+  `1895` and `Sceaux, France`
+
+#### Scenario: A source row
+- **WHEN** the index lists the sources of `curie.ged`
+- **THEN** `Parish registers of Warsaw` shows that two records cite it
+
 ## ADDED Requirements
 ### Requirement: Selecting a record from the index
 

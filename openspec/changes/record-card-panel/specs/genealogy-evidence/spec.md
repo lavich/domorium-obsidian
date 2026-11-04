@@ -43,8 +43,8 @@ citations as its own; the whole record SHALL remain the person's.
 
 ### Requirement: What a citation shows
 
-Each citation SHALL show the title of the source it names, which opens that
-source's page; the page or entry the citation states; the quality of evidence
+Each citation SHALL show the title of the source it names, which selects that
+source; the page or entry the citation states; the quality of evidence
 it states, in words; and the author and publication the source states.
 
 A citation of a source the file does not declare SHALL say so and offer Show in
