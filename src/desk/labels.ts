@@ -1,6 +1,7 @@
 import type { DateReading, PersonEvent, PersonRow } from "../genealogy";
 import { UNNAMED, UNTITLED } from "../genealogy";
 import { t, type MessageKey } from "../i18n";
+import type { Lifeline } from "./fileTimeline";
 
 /** Beyond this a person with no death is not taken to be living. */
 const LIVING_SPAN = 110;
@@ -30,6 +31,14 @@ export function familyTitle(spouseNames: string[]): string {
 
 export function yearText(year: number): string {
   return year > 0 ? String(year) : t("desk.yearBce", { year: 1 - year });
+}
+
+export function lifelineYears(line: Lifeline | null): string {
+  if (!line) {
+    return "";
+  }
+  const mark = (uncertain: boolean, at: number) => `${uncertain ? "≈" : ""}${yearText(at)}`;
+  return `${mark(line.startUncertain, line.start)}–${line.open ? "" : mark(line.endUncertain, line.end)}`;
 }
 
 export function year(date: DateReading | undefined): string | undefined {

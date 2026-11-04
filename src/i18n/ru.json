@@ -293,7 +293,7 @@
   "fileTimeline.title": "Хронология файла {name}",
   "fileTimeline.others": "Другие события",
   "fileTimeline.zoom": "Масштаб",
-  "fileTimeline.search": "Найти человека…",
+  "overview.search": "Найти человека…",
   "fileTimeline.alive": {
     "one": "В {year} году жив {count} человек",
     "few": "В {year} году живы {count} человека",
@@ -306,14 +306,14 @@
     "many": "В {year} году в этой ветке живы {count} человек",
     "other": "В {year} году в этой ветке живы {count} человека"
   },
-  "fileTimeline.wholeFile": "Весь файл",
-  "fileTimeline.people": {
+  "overview.wholeFile": "Весь файл",
+  "overview.people": {
     "one": "{count} человек",
     "few": "{count} человека",
     "many": "{count} человек",
     "other": "{count} человека"
   },
-  "fileTimeline.families": {
+  "overview.families": {
     "one": "{count} семья",
     "few": "{count} семьи",
     "many": "{count} семей",
@@ -326,26 +326,26 @@
     "other": "{count} события с датой"
   },
   "fileTimeline.branchHelp": "Выберите ветку в строке человека, чтобы видеть только его предков и потомков.",
-  "fileTimeline.branchOf": {
+  "overview.branchOf": {
     "one": "Ветка: {name} · {shown} из {count} человека",
     "few": "Ветка: {name} · {shown} из {count} человек",
     "many": "Ветка: {name} · {shown} из {count} человек",
     "other": "Ветка: {name} · {shown} из {count} человека"
   },
-  "fileTimeline.branch": "Ветка",
-  "fileTimeline.branchHint": "Показать только предков и потомков этого человека",
-  "fileTimeline.ancestors": "Предки",
-  "fileTimeline.descendants": "Потомки",
+  "overview.branch": "Ветка",
+  "overview.branchHint": "Показать только предков и потомков этого человека",
+  "overview.ancestors": "Предки",
+  "overview.descendants": "Потомки",
   "fileTimeline.undated": {
     "one": "У {count} человека нет ни одной даты",
     "few": "У {count} человек нет ни одной даты",
     "many": "У {count} человек нет ни одной даты",
     "other": "У {count} человека нет ни одной даты"
   },
-  "fileTimeline.gone": "Файла {path} больше нет в хранилище.",
-  "fileTimeline.legend.woman": "Женщина",
-  "fileTimeline.legend.man": "Мужчина",
-  "fileTimeline.legend.unknown": "Пол не указан",
+  "overview.gone": "Файла {path} больше нет в хранилище.",
+  "overview.legend.woman": "Женщина",
+  "overview.legend.man": "Мужчина",
+  "overview.legend.unknown": "Пол не указан",
   "fileTimeline.legend.birth": "Рождение или крещение",
   "fileTimeline.legend.marriage": "Брак",
   "fileTimeline.legend.death": "Смерть или погребение",
@@ -354,11 +354,11 @@
   "fileTimeline.legend.uncertain": "Около, до, после, между",
   "fileTimeline.legend.arrows": "Стрелки ведут от родителя к ребёнку — для человека под указателем",
   "fileTimeline.name": "Хронология файла",
-  "fileTimeline.legend": "Условные обозначения",
-  "fileTimeline.fewerAncestors": "На поколение предков меньше",
-  "fileTimeline.moreAncestors": "На поколение предков больше",
-  "fileTimeline.fewerDescendants": "На поколение потомков меньше",
-  "fileTimeline.moreDescendants": "На поколение потомков больше",
+  "overview.legend": "Условные обозначения",
+  "overview.fewerAncestors": "На поколение предков меньше",
+  "overview.moreAncestors": "На поколение предков больше",
+  "overview.fewerDescendants": "На поколение потомков меньше",
+  "overview.moreDescendants": "На поколение потомков больше",
   "fileTimeline.undatedFacts": {
     "one": "{count} факт без года не отмечен на линии: {kinds}.",
     "few": "{count} факта без года не отмечены на линии: {kinds}.",

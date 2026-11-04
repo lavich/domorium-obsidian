@@ -484,6 +484,24 @@ describe("the keyboard", () => {
     expect(document.activeElement?.getAttribute("data-step")).toBe("up:1");
   });
 
+  it("says whether it shows the whole file or a branch, and stops each stepper at zero and nine", () => {
+    board();
+    expect(scopeText()).toBe(
+      "Whole file · 17 people. Choose the branch on a person's row to see only their ancestors and descendants.",
+    );
+
+    container.replaceChildren();
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 9, down: 0 });
+    const disabled = (which: string) => container.querySelector(`[data-step="${which}"]`)?.hasAttribute("disabled");
+    expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 8 of 17 people");
+    expect([disabled("up:1"), disabled("up:-1"), disabled("down:-1"), disabled("down:1")]).toEqual([
+      true,
+      false,
+      true,
+      false,
+    ]);
+  });
+
   it("names each stepper's buttons for what they widen or narrow", () => {
     board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
     const labels = all("[data-step]").map((button) => button.getAttribute("aria-label"));
