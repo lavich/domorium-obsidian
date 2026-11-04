@@ -1,4 +1,6 @@
 import { plural, t } from "../i18n";
+import { putIcon, tipPlace, type IconSetter } from "./dom";
+import type { GraphCanvas } from "./graphCanvas";
 
 export interface MatchInfo {
   /** The match the view stands on, or -1 before any step. */
@@ -8,7 +10,7 @@ export interface MatchInfo {
 
 export interface FloatingSearchOptions {
   prefix: string;
-  setIcon: (element: HTMLElement, icon: string) => void;
+  setIcon?: IconSetter;
   change: (query: string) => void;
   step: (by: 1 | -1) => void;
   info: () => MatchInfo;
@@ -76,11 +78,14 @@ export class FloatingSearch {
         }
       }
     });
-    this.el.addEventListener("focusout", (event) => {
-      const next = event.relatedTarget;
-      if (this.input.value === "" && !(next instanceof Node && this.el.contains(next))) {
-        this.close();
-      }
+    this.el.addEventListener("focusout", () => {
+      const win = this.el.ownerDocument.defaultView ?? window;
+      win.setTimeout(() => {
+        const active = this.el.ownerDocument.activeElement;
+        if (this.isOpen() && this.input.value === "" && !(active && this.el.contains(active))) {
+          this.close();
+        }
+      }, 0);
     });
     this.refresh();
   }
@@ -142,9 +147,23 @@ export class FloatingSearch {
   private button(cls: string, icon: string, label: string): HTMLButtonElement {
     const made = this.el.createEl("button", {
       cls: ["clickable-icon", cls],
-      attr: { type: "button", "aria-label": label, title: label },
+      attr: { type: "button", "aria-label": label },
     });
-    this.options.setIcon(made, icon);
+    tipPlace(made, "bottom");
+    putIcon(made, icon, this.options.setIcon);
     return made;
   }
+}
+
+/** The search over a graph canvas, first in its order: a query lights the matching cards and a step glides to the next. */
+export function searchOver(canvas: GraphCanvas, setIcon?: IconSetter): FloatingSearch {
+  const find = new FloatingSearch(canvas.el, {
+    prefix: "gedcom-fg",
+    ...(setIcon ? { setIcon } : {}),
+    change: (query) => canvas.setQuery(query),
+    step: (by) => canvas.stepMatch(by),
+    info: () => canvas.matchInfo(),
+  });
+  canvas.el.prepend(find.el);
+  return find;
 }

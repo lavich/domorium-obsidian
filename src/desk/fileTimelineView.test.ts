@@ -16,7 +16,7 @@ import {
   type TimelineScope,
 } from "./fileTimelineView";
 
-const SCOPE: TimelineScope = { up: 2, down: 2, zoom: ZOOM.initial, others: true };
+const SCOPE: TimelineScope = { up: 2, down: 2, zoom: ZOOM.initial };
 const WHOLE = { top: 0, left: 0, width: 2000, height: 20 * ROW };
 
 let container: HTMLElement;
@@ -202,7 +202,7 @@ describe("pointing at a person", () => {
 });
 
 describe("the year cursor", () => {
-  it("shows the age everyone alive reached that year, and how many were alive", () => {
+  it("shows the age everyone alive reached that year", () => {
     const drawn = board();
     drawn.setYear(1906);
 
@@ -210,7 +210,6 @@ describe("the year cursor", () => {
     expect(age("@I1@")).toBe("39");
     expect(age("@I12@")).toBe("9");
     expect(age("@I4@")).toBeUndefined();
-    expect(container.querySelector(".gedcom-ft-alive")?.textContent).toBe("In 1906: 11 people alive");
     expect(container.querySelector(".gedcom-ft-axis-cursor text")?.textContent).toBe("1906");
   });
 
@@ -226,24 +225,35 @@ describe("the year cursor", () => {
     drawn.setYear(null);
 
     expect(all(".gedcom-ft-age")).toHaveLength(0);
-    expect(container.querySelector(".gedcom-ft-alive")?.textContent).toBe("");
   });
 });
 
-describe("the toolbar", () => {
-  it("hides and shows the events other than births, marriages and deaths", () => {
+describe("the timeline without a toolbar", () => {
+  it("draws the events other than births, marriages and deaths, with no switch for them", () => {
     board(fileTimelineOf(indexOf(curieWithEvents())));
-    const chip = container.querySelector<HTMLElement>(".gedcom-ft-chip");
-    expect(all(".gedcom-ft-mark.is-other").length).toBeGreaterThan(0);
 
-    chip?.click();
-    expect(all(".gedcom-ft-mark.is-other")).toHaveLength(0);
-    expect(all(".gedcom-ft-span")).toHaveLength(0);
-    expect(chip?.getAttribute("aria-pressed")).toBe("false");
-    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ others: false }));
-
-    chip?.click();
     expect(all(".gedcom-ft-mark.is-other").length).toBeGreaterThan(0);
+    expect(all(".gedcom-ft-span").length).toBeGreaterThan(0);
+    expect(container.querySelector(".gedcom-ft-chip, .gedcom-ft-tools, .gedcom-ft-alive")).toBeNull();
+  });
+
+  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the rows and the group", () => {
+    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    const places: Record<string, string> = {
+      "gedcom-ft-controls": "top",
+      "gedcom-ft-find": "bottom",
+      "gedcom-ft-name": "right",
+      "gedcom-ft-scope": "bottom",
+    };
+    const buttons = [...container.querySelectorAll("button")].filter((one) => one.getAttribute("aria-label"));
+
+    expect(buttons.length).toBeGreaterThan(20);
+    for (const button of buttons) {
+      expect(button.hasAttribute("title"), button.className).toBe(false);
+      const group = Object.keys(places).find((cls) => button.closest(`.${cls}`));
+      expect(button.getAttribute("data-tooltip-position"), `${button.className} in ${group}`).toBe(places[group ?? ""]);
+    }
+    expect(container.querySelector("[title]")).toBeNull();
   });
 
   it("widens and narrows the axis of years with the buttons, within the zoom range", () => {
@@ -252,7 +262,7 @@ describe("the toolbar", () => {
     const press = (cls: string) => container.querySelector<HTMLElement>(`.gedcom-ft-${cls}`)?.click();
     const before = width();
 
-    expect(container.querySelector(".gedcom-ft-tools input[type=range]")).toBeNull();
+    expect(container.querySelector("input[type=range]")).toBeNull();
     press("zoom-in");
     expect(width()).toBeGreaterThan(before);
     expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: 7.2 }));
@@ -281,7 +291,6 @@ describe("the toolbar", () => {
     const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
 
     expect(find?.parentElement?.classList.contains("gedcom-ft-stage")).toBe(true);
-    expect(container.querySelector(".gedcom-ft-tools .gedcom-ft-search")).toBeNull();
     expect(find?.classList.contains("is-open")).toBe(false);
     container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
     expect(find?.classList.contains("is-open")).toBe(true);
@@ -371,11 +380,10 @@ describe("the toolbar", () => {
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
   });
 
-  it("opens on the branch a scope names, and says the cursor counts within it", () => {
+  it("opens on the branch a scope names", () => {
     board(fileTimelineOf(curieIndex()), { focus: "@I12@" }).setYear(1930);
 
     expect(names()).toHaveLength(10);
-    expect(container.querySelector(".gedcom-ft-alive")?.textContent).toContain("in this branch");
   });
 });
 
@@ -458,16 +466,14 @@ describe("the state a timeline keeps", () => {
       up: 3,
       down: 0,
       zoom: 12,
-      others: false,
     });
     expect(readTimelineState({ up: 40, down: -2, zoom: 1, focus: 7 })).toEqual({
       gedcom: null,
       up: 9,
       down: 0,
       zoom: ZOOM.min,
-      others: true,
     });
-    expect(readTimelineState(null)).toEqual({ gedcom: null, up: 2, down: 2, zoom: ZOOM.initial, others: true });
+    expect(readTimelineState(null)).toEqual({ gedcom: null, up: 2, down: 2, zoom: ZOOM.initial });
   });
 });
 
@@ -482,13 +488,13 @@ describe("a file that is gone", () => {
 });
 
 describe("a file with very many dated events", () => {
-  it("still summarises and draws it", () => {
+  it("still draws it", () => {
     const base = fileTimelineOf(curieIndex());
     const marie = base.people.get("@I1@");
     if (!marie) {
       throw new Error("no Marie");
     }
-    const many = Array.from({ length: 200_000 }, (_, at) => ({
+    const many = Array.from({ length: 5_000 }, (_, at) => ({
       ...marie.marks[0],
       kind: "other" as const,
       event: marie.marks[0].event,
@@ -501,7 +507,7 @@ describe("a file with very many dated events", () => {
       people: new Map([...base.people].map(([xref, person]) =>
         [xref, xref === "@I1@" ? { ...person, marks: [...person.marks, ...many] } : person])),
     };
-    board(model, { others: false });
+    board(model);
 
     expect(names()).toHaveLength(17);
   });

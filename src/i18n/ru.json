@@ -289,7 +289,6 @@
   "tree.moreDown": "Дети за краем",
   "command.openFileTimeline": "Открыть хронологию файла",
   "fileTimeline.title": "Хронология файла {name}",
-  "fileTimeline.others": "Другие события",
   "overview.search": "Найти человека…",
   "overview.clearSearch": "Очистить поиск",
   "overview.matches": {
@@ -302,18 +301,6 @@
   "overview.matchOf": "{current} / {total}",
   "overview.previousMatch": "Предыдущее совпадение",
   "overview.nextMatch": "Следующее совпадение",
-  "fileTimeline.alive": {
-    "one": "В {year} году жив {count} человек",
-    "few": "В {year} году живы {count} человека",
-    "many": "В {year} году живы {count} человек",
-    "other": "В {year} году живы {count} человека"
-  },
-  "fileTimeline.aliveInBranch": {
-    "one": "В {year} году в этой ветке жив {count} человек",
-    "few": "В {year} году в этой ветке живы {count} человека",
-    "many": "В {year} году в этой ветке живы {count} человек",
-    "other": "В {year} году в этой ветке живы {count} человека"
-  },
   "overview.wholeFile": "Весь файл",
   "overview.branchOf": {
     "one": "Ветка: {name} · {shown} из {count} человека",
@@ -322,7 +309,6 @@
     "other": "Ветка: {name} · {shown} из {count} человека"
   },
   "overview.branch": "Ветка",
-  "overview.branchHint": "Показать только предков и потомков этого человека",
   "overview.ancestors": "Предки",
   "overview.descendants": "Потомки",
   "overview.gone": "Файла {path} больше нет в хранилище.",

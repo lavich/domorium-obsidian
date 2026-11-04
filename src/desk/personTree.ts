@@ -24,6 +24,8 @@ export interface TreeCard {
   /** For a run of siblings: whose siblings, to show them one by one. */
   expands?: string;
   portrait: boolean;
+  /** What a search reads: the names of the person, or of every one of a run of siblings. */
+  search: string;
   given?: string;
   surname?: string;
 }
@@ -83,6 +85,7 @@ export function treeOf(
       up: false,
       down: false,
       portrait: row.xref ? index.person(row.xref)?.portrait !== undefined : false,
+      search: [personName(row), ...row.otherNames].join(" ").toLowerCase(),
       ...(row.given && row.surname ? { given: row.given, surname: row.surname } : {}),
       ...extra,
     };
@@ -144,6 +147,10 @@ export function treeOf(
         dim: true,
         gap: person.siblings.some((row) => !row.xref || index.citesBy(row.xref).length === 0),
         expands: person.xref,
+        search: person.siblings
+          .map((row) => [personName(row), ...row.otherNames].join(" "))
+          .join(" ")
+          .toLowerCase(),
       }),
     ];
   };

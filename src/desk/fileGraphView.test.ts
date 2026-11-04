@@ -115,7 +115,8 @@ describe("drawing the graph of a file", () => {
     ]);
     expect(card("@I1@")?.querySelector(".gedcom-fg-card-years")?.textContent).toBe("1867–1934");
     expect(card("@I15@")?.querySelector(".gedcom-fg-card-name")?.textContent).toBe("Henry Richardson");
-    expect(card("@I15@")?.querySelector("title")?.textContent).toBe("Henry Richardson Labouisse");
+    expect(card("@I15@")?.getAttribute("aria-label")).toBe("Henry Richardson Labouisse, 1904–1987");
+    expect(container.querySelector("title")).toBeNull();
     expect(container.querySelector(".gedcom-fg-title, .gedcom-fg-summary, .gedcom-fg-head")).toBeNull();
   });
 
@@ -522,6 +523,67 @@ describe("the search", () => {
     }
   });
 
+  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the group", () => {
+    board();
+    const buttons = [...container.querySelectorAll(".gedcom-fg-controls button, .gedcom-fg-find button, .gedcom-fg-pill, [data-step]")];
+
+    expect(buttons.length).toBeGreaterThanOrEqual(7);
+    for (const button of buttons.filter((one) => one.tagName === "BUTTON")) {
+      expect(button.hasAttribute("title"), button.className).toBe(false);
+      expect(button.getAttribute("aria-label"), button.className).toBeTruthy();
+      expect(button.getAttribute("data-tooltip-position"), button.className).toBe(
+        button.closest(".gedcom-fg-controls") ? "top" : "bottom",
+      );
+    }
+    expect(container.querySelector("title, [title]")).toBeNull();
+  });
+
+  describe("gliding to a match", () => {
+    const view = () => container.querySelector<SVGElement>(".gedcom-fg-view");
+    const gliding = () => view()?.classList.contains("is-gliding");
+    const search = (text: string) => {
+      container.querySelector<HTMLElement>(".gedcom-fg-find-toggle")?.click();
+      const field = container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+      if (field) {
+        field.value = text;
+        field.dispatchEvent(new Event("input"));
+      }
+    };
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it("moves by a transition for a step to a match, and stops where it is when a drag begins", () => {
+      board(curie(), { view: { x: 0, y: 0, k: 0.6 } });
+      expect(gliding()).toBe(false);
+      search("joliot");
+      container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+
+      expect(gliding()).toBe(true);
+      expect(view()?.style.transform).toMatch(/^translate\(.+\) scale\(.+\)$/);
+      pointer("pointerdown", container.querySelector(".gedcom-fg-canvas"), { clientX: 10, clientY: 10 });
+      expect(gliding()).toBe(false);
+    });
+
+    it("jumps for a move too long to show, and for a drag, the wheel and a first view", () => {
+      board(curie(), { view: { x: 0, y: 0, k: 0.6 } }, { width: 60, height: 40 });
+      expect(gliding()).toBe(false);
+      search("joliot");
+      container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+      expect(gliding()).toBe(false);
+    });
+
+    it("does not glide when the reader asks for reduced motion", () => {
+      vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+      board(curie(), { view: { x: 0, y: 0, k: 0.6 } });
+      search("joliot");
+      container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+
+      expect(gliding()).toBe(false);
+    });
+  });
+
   describe("the search over the canvas", () => {
     const find = () => container.querySelector<HTMLElement>(".gedcom-fg-find");
     const input = () => container.querySelector<HTMLInputElement>(".gedcom-fg-search");
@@ -569,7 +631,7 @@ describe("the search", () => {
       expect(find()?.classList.contains("is-open")).toBe(false);
     });
 
-    it("clears on Escape, then closes on Escape of an empty field, and keeps a query open when focus leaves", () => {
+    it("clears on Escape, then closes on Escape of an empty field, and keeps a query open when focus leaves", async () => {
       board();
       click(".gedcom-fg-find-toggle");
       type("joliot");
@@ -582,11 +644,13 @@ describe("the search", () => {
       click(".gedcom-fg-find-toggle");
       type("joliot");
       input()?.blur();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
       expect(find()?.classList.contains("is-open")).toBe(true);
       expect(all(".gedcom-fg-person:not(.is-dim)")).toHaveLength(4);
       type("");
       input()?.focus();
       input()?.blur();
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
       expect(find()?.classList.contains("is-open")).toBe(false);
     });
 

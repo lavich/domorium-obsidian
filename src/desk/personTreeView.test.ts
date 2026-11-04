@@ -48,9 +48,12 @@ const boxOf = (name: string): { x: number; y: number; height: number } => {
   return { x, y, height: Number(group?.querySelector(".gedcom-fg-card-bg")?.getAttribute("height")) };
 };
 
+const nameOf = (one: Element | null | undefined): string =>
+  (one?.querySelector("[data-card]")?.getAttribute("aria-label") ?? "").replace(/, (?:b\. )?[\d≈][^,]*$/, "");
+
 const person = (name: string): SVGElement | undefined =>
   [...container.querySelectorAll<SVGElement>(".gedcom-fg-person")].find(
-    (one) => one.querySelector("title")?.textContent === name,
+    (one) => nameOf(one) === name,
   );
 const card = (name: string) => person(name)?.querySelector<SVGElement>("[data-card]");
 const click = (target: Element | null | undefined) =>
@@ -84,7 +87,7 @@ describe("the tree of a person on the graph's canvas", () => {
     const start = `M${circle?.getAttribute("cx")} ${circle?.getAttribute("cy")}`;
     const lines = [...container.querySelectorAll(`.gedcom-fg-line[data-f="${family}"]`)];
     const children = lines.map((line) =>
-      container.querySelector(`.gedcom-fg-person[data-p="${line.getAttribute("data-child")}"] title`)?.textContent,
+      nameOf(container.querySelector(`.gedcom-fg-person[data-p="${line.getAttribute("data-child")}"]`)),
     );
 
     expect(children.sort()).toEqual(["Irène Joliot-Curie", "Ève Curie"]);
@@ -109,7 +112,7 @@ describe("the tree of a person on the graph's canvas", () => {
     ].join("\n");
     draw("@I5@", { width: 1600, height: 900 }, indexOf(text));
     const grands = [...container.querySelectorAll<SVGElement>(".gedcom-fg-person")].filter(
-      (one) => one.querySelector("title")?.textContent === "Grand G",
+      (one) => nameOf(one) === "Grand G",
     );
     grands[0]?.querySelector("[data-card]")?.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }));
     vi.advanceTimersByTime(HOVER_DELAY);
@@ -131,7 +134,7 @@ describe("the tree of a person on the graph's canvas", () => {
 
     const again = draw("@I2@", { width: 1200, height: 600 }, curieIndex(), memory);
     expect(again.view()?.k).toBeCloseTo(k ?? NaN, 6);
-    expect(document.activeElement?.closest(".gedcom-fg-person")?.querySelector("title")?.textContent).toBe("Pierre Curie");
+    expect(nameOf(document.activeElement?.closest(".gedcom-fg-person"))).toBe("Pierre Curie");
   });
 
   it("opens a wide family where a child of the focus is in view", () => {
@@ -153,7 +156,7 @@ describe("the tree of a person on the graph's canvas", () => {
     const canvas = draw("@I1@", { width: 1200, height: 600 }, indexOf([...lines, ...families, "0 TRLR", ""].join("\n")));
     const view = canvas.windowOf();
     const visible = [...container.querySelectorAll<SVGElement>(".gedcom-fg-person")].filter((one) => {
-      const name = one.querySelector("title")?.textContent ?? "";
+      const name = nameOf(one);
       const box = boxOf(name);
       return name.startsWith("Child") && box.x >= (view?.left ?? Infinity) && box.x + CARD.width <= (view?.right ?? -Infinity);
     });
@@ -177,7 +180,7 @@ describe("the tree of a person on the graph's canvas", () => {
     card("Marie Skłodowska-Curie")?.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }));
     vi.advanceTimersByTime(HOVER_DELAY);
 
-    const lit = [...container.querySelectorAll(".gedcom-fg-person.is-on")].map((one) => one.querySelector("title")?.textContent);
+    const lit = [...container.querySelectorAll(".gedcom-fg-person.is-on")].map((one) => nameOf(one));
     expect(lit.sort()).toEqual(
       [
         "Bronisława Boguska",
@@ -206,7 +209,7 @@ describe("the tree of a person on the graph's canvas", () => {
     const canvas = draw("@I1@", { width: 1200, height: 700 });
     const view = canvas.windowOf();
     const outside = [...container.querySelectorAll<SVGElement>(".gedcom-fg-person")].filter((one) => {
-      const box = boxOf(one.querySelector("title")?.textContent ?? "");
+      const box = boxOf(nameOf(one));
       return (
         box.x < (view?.left ?? Infinity) ||
         box.x + CARD.width > (view?.right ?? -Infinity) ||
@@ -218,5 +221,80 @@ describe("the tree of a person on the graph's canvas", () => {
     expect(outside).toEqual([]);
     expect(container.querySelector(".gedcom-desk-legend")).toBeNull();
     expect(container.querySelector(".gedcom-fg-canvas > .gedcom-fg-controls")).not.toBeNull();
+  });
+});
+
+describe("the search over a person's tree", () => {
+  const field = () => container.querySelector<HTMLInputElement>(".gedcom-fg-search");
+  const count = () => container.querySelector(".gedcom-fg-find-count")?.textContent;
+  const type = (text: string) => {
+    container.querySelector<HTMLElement>(".gedcom-fg-find-toggle")?.click();
+    const input = field();
+    if (input) {
+      input.value = text;
+      input.dispatchEvent(new Event("input"));
+    }
+  };
+  const lit = () =>
+    [...container.querySelectorAll(".gedcom-fg-person:not(.is-dim)")].map((one) => nameOf(one)).sort();
+
+  it("floats first in the canvas, lights the people who match, and fades the rest", () => {
+    draw("@I1@");
+    expect(container.querySelector(".gedcom-fg-canvas")?.firstElementChild?.classList.contains("gedcom-fg-find")).toBe(true);
+
+    type("joliot");
+    expect(lit()).toEqual(["Frédéric Joliot", "Hélène Langevin-Joliot", "Irène Joliot-Curie", "Pierre Joliot"]);
+    expect(count()).toBe("4 matches");
+  });
+
+  it("steps from match to match, ringing the current card, and wraps", () => {
+    draw("@I1@");
+    type("joliot");
+    const ringed = () => [...container.querySelectorAll(".gedcom-fg-person.is-current")].map((one) => nameOf(one));
+    const next = container.querySelector<HTMLElement>(".gedcom-fg-find-next");
+    const previous = container.querySelector<HTMLElement>(".gedcom-fg-find-prev");
+
+    const order: string[][] = [];
+    for (let step = 0; step < 4; step += 1) {
+      next?.click();
+      order.push(ringed());
+    }
+    expect(order).toEqual([["Frédéric Joliot"], ["Irène Joliot-Curie"], ["Hélène Langevin-Joliot"], ["Pierre Joliot"]]);
+    expect(count()).toBe("4 / 4");
+    next?.click();
+    expect(ringed()).toEqual(order[0]);
+    expect(count()).toBe("1 / 4");
+    previous?.click();
+    expect(ringed()).toEqual(order[3]);
+  });
+
+  it("lights a box of siblings by the names of its members without opening it, and says when nothing matches", () => {
+    draw("@I1@");
+    type("zofia");
+
+    expect(lit()).toEqual(["4 siblings"]);
+    expect(count()).toBe("1 match");
+    expect(host.toggleSiblings).not.toHaveBeenCalled();
+    container.querySelector<HTMLElement>(".gedcom-fg-find-next")?.click();
+    expect(container.querySelector(".gedcom-fg-person.is-current [data-card]")?.getAttribute("aria-label")).toContain("4 siblings");
+
+    type("zzz");
+    expect(count()).toBe("No results");
+    expect(container.querySelectorAll(".gedcom-fg-person:not(.is-dim)")).toHaveLength(0);
+  });
+
+  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the group", () => {
+    draw("@I1@");
+    const buttons = [...container.querySelectorAll(".gedcom-fg-controls button, .gedcom-fg-find button")];
+
+    expect(buttons.length).toBeGreaterThanOrEqual(7);
+    for (const button of buttons) {
+      expect(button.hasAttribute("title"), button.className).toBe(false);
+      expect(button.getAttribute("aria-label"), button.className).toBeTruthy();
+      expect(button.getAttribute("data-tooltip-position"), button.className).toBe(
+        button.closest(".gedcom-fg-controls") ? "top" : "bottom",
+      );
+    }
+    expect(container.querySelector("title")).toBeNull();
   });
 });

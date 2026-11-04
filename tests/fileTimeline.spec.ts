@@ -86,7 +86,6 @@ test.describe("the timeline of a file", () => {
     await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText("1906");
     await expect(page.locator('.gedcom-ft-age[data-p="@I1@"]')).toHaveText("39");
     await expect(page.locator('.gedcom-ft-age[data-p="@I12@"]')).toHaveText("9");
-    await expect(page.locator(".gedcom-ft-alive")).toHaveText("In 1906: 11 people alive");
   });
 
   test("colours each kind of mark from the theme", async ({ page }) => {
@@ -181,7 +180,7 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
       await mountTimeline(page, { phone });
       const box = (selector: string) => page.locator(selector).boundingBox();
 
-      await expect(page.locator(".gedcom-ft-tools .gedcom-ft-search")).toHaveCount(0);
+      await expect(page.locator(".gedcom-ft-tools, .gedcom-ft-chip, .gedcom-ft-alive")).toHaveCount(0);
       await expect(page.locator(".gedcom-ft-head, .gedcom-ft-title")).toHaveCount(0);
       const board = await box(".gedcom-ft-board");
       const axis = await box(".gedcom-ft-axis-band");
@@ -238,12 +237,69 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
   });
 }
 
+test.describe("the glide of the timeline to a match", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 300 });
+  });
+
+  async function step(page: Page): Promise<{ tops: number[]; blank: number }> {
+    await mountTimeline(page);
+    await page.locator(".gedcom-ft-find-toggle").click();
+    await page.locator(".gedcom-ft-search").fill("joliot");
+    const sampling = page.evaluate(
+      () =>
+        new Promise<{ tops: number[]; blank: number }>((done) => {
+          const plot = document.querySelector<HTMLElement>(".gedcom-ft-plot");
+          const tops: number[] = [];
+          let blank = 0;
+          const started = performance.now();
+          const tick = () => {
+            const box = plot?.getBoundingClientRect();
+            tops.push(plot?.scrollTop ?? 0);
+            const drawn = [...document.querySelectorAll(".gedcom-ft-life")].filter((one) => {
+              const rect = one.getBoundingClientRect();
+              return rect.bottom > (box?.top ?? 0) && rect.top < (box?.bottom ?? 0);
+            });
+            blank += drawn.length === 0 ? 1 : 0;
+            if (performance.now() - started < 1100) {
+              window.requestAnimationFrame(tick);
+            } else {
+              done({ tops, blank });
+            }
+          };
+          tick();
+        }),
+    );
+    await page.locator(".gedcom-ft-find-prev").click();
+    return sampling;
+  }
+
+  test("scrolls through intermediate positions to the current row, with no blank frame on the way", async ({ page }) => {
+    const { tops, blank } = await step(page);
+
+    const final = tops[tops.length - 1] ?? 0;
+    expect(final).toBeGreaterThan(0);
+    expect(tops.filter((top) => top > 0 && top < final).length).toBeGreaterThanOrEqual(2);
+    expect(blank).toBe(0);
+    await expect(name(page, "@I17@")).toHaveClass(/is-current/);
+  });
+
+  test("jumps when the reader asks for reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const { tops } = await step(page);
+
+    const final = tops[tops.length - 1] ?? 0;
+    expect(final).toBeGreaterThan(0);
+    expect(tops.filter((top) => top > 0 && top < final)).toHaveLength(0);
+  });
+});
+
 test.describe("the zoom buttons of the timeline", () => {
   test("float in the corner of the board while the rows scroll, and widen and narrow the years", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 400 });
     await mountTimeline(page);
 
-    await expect(page.locator(".gedcom-ft-tools input[type=range]")).toHaveCount(0);
+    await expect(page.locator("input[type=range]")).toHaveCount(0);
     const group = page.locator(".gedcom-ft-controls");
     const inside = async () => {
       const box = await group.boundingBox();
@@ -348,22 +404,19 @@ test.describe("the timeline of a file on a phone", () => {
     expect(page_.names).toBe(120);
   });
 
-  test("gives the board all the height under the compact toolbar, with nothing below it", async ({ page }) => {
+  test("gives the board the whole height, from the top, with nothing above or below it", async ({ page }) => {
     await mountTimeline(page, { phone: true });
 
     const box = await page.evaluate(() => {
       const rect = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
       const root = rect(".gedcom-ft");
       const board = rect(".gedcom-ft-board");
-      const tools = rect(".gedcom-ft-tools");
       const below = [...document.querySelectorAll(".gedcom-ft > *")]
         .filter((node) => getComputedStyle(node).position !== "absolute" && !node.classList.contains("gedcom-ft-stage"))
         .map((node) => node.getBoundingClientRect())
         .filter((rectangle) => rectangle.height > 0 && rectangle.top >= (board?.bottom ?? 0));
       return {
         top: root?.top ?? 0,
-        toolsHeight: tools?.height ?? 0,
-        toolsTop: tools?.top ?? 0,
         boardTop: board?.top ?? 0,
         boardBottom: board?.bottom ?? 0,
         below: below.length,
@@ -373,9 +426,7 @@ test.describe("the timeline of a file on a phone", () => {
     expect(box.below).toBe(0);
     expect(box.pageScrolls).toBe(false);
     expect(box.boardBottom).toBeCloseTo(844, 0);
-    expect(box.toolsTop - box.top).toBeLessThan(2);
-    expect(box.boardTop - box.toolsTop - box.toolsHeight).toBeLessThan(2);
-    expect(box.toolsHeight).toBeLessThan(110);
+    expect(box.boardTop - box.top).toBeLessThan(2);
   });
 
   test("lights Marie's family and places the cursor on the first touch, and opens her on the second", async ({ page }) => {
@@ -487,7 +538,6 @@ test.describe("the timeline of a file of 10 000 people", () => {
       }
       return worst;
     });
-    await expect(page.locator(".gedcom-ft-alive")).toContainText("people alive");
     expect(slowest).toBeLessThan(50);
   });
 });

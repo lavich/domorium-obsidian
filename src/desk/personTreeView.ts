@@ -1,4 +1,5 @@
 import { layoutGraph } from "./fileGraph";
+import { searchOver } from "./floatingSearch";
 import { GraphCanvas, relatedIn, ZOOM, type CanvasScene, type PortraitContent } from "./graphCanvas";
 import type { PersonTree } from "./personTree";
 
@@ -46,6 +47,8 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
     },
   }, host.setIcon ? { setIcon: (element: HTMLElement, icon: string) => host.setIcon?.(element, icon) } : {});
 
+  searchOver(canvas, host.setIcon ? (element, icon) => host.setIcon?.(element, icon) : undefined);
+
   const related = relatedIn(layout, tree.families.values());
   const scene: CanvasScene = {
     layout,
@@ -87,6 +90,7 @@ export function renderTree(parent: HTMLElement, tree: PersonTree, host: TreeHost
       }
       return lit;
     },
+    search: (id) => tree.cards.get(id)?.search ?? "",
     copies: (id) => {
       const xref = tree.cards.get(id)?.xref;
       return (xref ? tree.copies.get(xref) : undefined) ?? [id];

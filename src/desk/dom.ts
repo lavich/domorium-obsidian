@@ -62,7 +62,33 @@ export function placeInside(
   element.setCssProps({ left: `${left}px`, top: `${top}px` });
 }
 
-const SIGNS: Record<string, string> = { minus: "−", plus: "+", maximize: "⤢" };
+const SIGNS: Record<string, string> = {
+  minus: "−",
+  plus: "+",
+  maximize: "⤢",
+  search: "⌕",
+  x: "×",
+  "chevron-up": "▲",
+  "chevron-down": "▼",
+};
+
+export type TipPlace = "top" | "bottom" | "left" | "right";
+
+/** Obsidian's own tooltip shows an element's `aria-label`; where it stands is asked by this attribute. */
+export function tipPlace(element: Element, place: TipPlace): void {
+  element.setAttribute("data-tooltip-position", place);
+}
+
+export type IconSetter = (element: HTMLElement, icon: string) => void;
+
+/** An icon from Obsidian where there is one to ask, else a sign for it. */
+export function putIcon(element: HTMLElement, icon: string, setIcon?: IconSetter): void {
+  if (setIcon) {
+    setIcon(element, icon);
+  } else {
+    element.setText(SIGNS[icon] ?? icon);
+  }
+}
 
 export interface ZoomActions {
   out: () => void;
@@ -81,17 +107,18 @@ export function zoomControls(
   const button = (cls: string, label: string, icon: string, run: () => void): void => {
     const made = controls.createEl("button", {
       cls: ["clickable-icon", `${prefix}-${cls}`],
-      attr: { type: "button", "aria-label": label, title: label },
+      attr: { type: "button", "aria-label": label },
     });
-    if (setIcon) {
-      setIcon(made, icon);
-    } else {
-      made.setText(SIGNS[icon] ?? icon);
-    }
+    tipPlace(made, "top");
+    putIcon(made, icon, setIcon);
     made.addEventListener("click", run);
   };
   button("zoom-out", t("overview.zoomOut"), "minus", actions.out);
   button("zoom-in", t("overview.zoomIn"), "plus", actions.in);
   button("fit", t("overview.fit"), "maximize", actions.fit);
   return controls;
+}
+
+export function prefersReducedMotion(doc: Document): boolean {
+  return doc.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }

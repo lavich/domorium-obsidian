@@ -1,6 +1,6 @@
 import type { Range } from "@domorium/language-service";
 
-import { plural, t } from "../i18n";
+import { t } from "../i18n";
 import { BranchScopeBar, readBranchScope, type BranchScope } from "./branchScope";
 import {
   least,
@@ -10,18 +10,18 @@ import {
   type TimelinePerson,
 } from "./fileTimeline";
 import { FloatingSearch } from "./floatingSearch";
-import { HoverDelay, placeInside, zoomControls } from "./dom";
+import { HoverDelay, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
 const AXIS = 26;
+const GLIDE_REACH = 1.5;
 const PAD = 12;
 
 export const ZOOM = { min: 2, max: 16, initial: 6, step: 1.2 } as const;
 
 export interface TimelineScope extends BranchScope {
   zoom: number;
-  others: boolean;
 }
 
 export interface TimelineState extends TimelineScope {
@@ -54,7 +54,6 @@ export function readTimelineState(state: unknown): TimelineState {
     gedcom: typeof raw.gedcom === "string" && raw.gedcom ? raw.gedcom : null,
     ...readBranchScope(raw),
     zoom: clampZoom(raw.zoom),
-    others: raw.others !== false,
   };
 }
 
@@ -123,10 +122,7 @@ export class FileTimelineBoard {
   private readonly doc: Document;
   private readonly id = (boards += 1);
   private readonly root: HTMLElement;
-  private readonly othersChip: HTMLButtonElement;
-  private readonly othersCount: HTMLElement;
   private readonly find: FloatingSearch;
-  private readonly aliveEl: HTMLElement;
   private readonly scopeBar: BranchScopeBar;
   private readonly board: HTMLElement;
   private readonly names: HTMLElement;
@@ -148,6 +144,7 @@ export class FileTimelineBoard {
   private layout: Layout | null = null;
   private query = "";
   private current: string | null = null;
+  private readonly echo = new WeakMap<HTMLElement, number>();
   private searchText = new Map<string, string>();
   private drawn: Span = { top: 0, bottom: 0, left: 0, right: 0 };
   private readonly elements = new Map<Element, string[]>();
@@ -169,14 +166,6 @@ export class FileTimelineBoard {
   ) {
     this.doc = parent.ownerDocument;
     this.root = parent.createDiv({ cls: "gedcom-ft" });
-    const tools = this.root.createDiv({ cls: "gedcom-ft-tools" });
-    this.othersChip = tools.createEl("button", {
-      cls: "gedcom-ft-chip",
-      text: t("fileTimeline.others"),
-      attr: { type: "button" },
-    });
-    this.othersCount = this.othersChip.createSpan({ cls: "gedcom-ft-chip-count" });
-    this.aliveEl = tools.createSpan({ cls: "gedcom-ft-alive" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-ft",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
@@ -236,7 +225,6 @@ export class FileTimelineBoard {
         [personName(person.row), ...person.row.otherNames].join(" ").toLowerCase(),
       ]),
     );
-    this.countOthers(model);
     this.relayout();
   }
 
@@ -405,17 +393,39 @@ export class FileTimelineBoard {
     this.current = id;
     this.markCurrent();
     const cy = layout.y.get(id) ?? 0;
-    this.plot.scrollTop = Math.max(0, cy - this.plot.clientHeight / 2);
+    let left: number | undefined;
     const line = this.model?.people.get(id)?.lifeline;
     if (line) {
       const view = this.measure();
       const from = layout.x(line.start);
       const to = layout.x(line.end);
       if (to < view.left || from > view.left + view.width) {
-        this.plot.scrollLeft = Math.max(0, from - 40);
+        left = Math.max(0, from - 40);
       }
     }
+    this.glideTo(Math.max(0, cy - this.plot.clientHeight / 2), left);
     return id;
+  }
+
+  /**
+   * The plot scrolls smoothly to a place the reader did not scroll to, unless they ask for reduced
+   * motion or it is further than a smooth scroll can show without leaving blank rows, which jumps.
+   */
+  private glideTo(top: number, left?: number): void {
+    const plot = this.plot;
+    const room = plot.scrollHeight - plot.clientHeight;
+    top = room > 0 ? Math.min(Math.max(0, top), room) : Math.max(0, top);
+    const far =
+      Math.abs(top - plot.scrollTop) > GLIDE_REACH * plot.clientHeight ||
+      (left !== undefined && Math.abs(left - plot.scrollLeft) > GLIDE_REACH * plot.clientWidth);
+    if (far || prefersReducedMotion(this.doc) || typeof plot.scrollTo !== "function") {
+      plot.scrollTop = top;
+      if (left !== undefined) {
+        plot.scrollLeft = left;
+      }
+      return;
+    }
+    plot.scrollTo({ top, ...(left === undefined ? {} : { left }), behavior: "smooth" });
   }
 
   private markCurrent(): void {
@@ -446,6 +456,15 @@ export class FileTimelineBoard {
   private follow(to: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
     if (to[axis] !== from[axis]) {
       to[axis] = from[axis];
+    }
+    this.echo.set(to, to[axis]);
+  }
+
+  /** What the names or the axis scroll by themselves moves the plot too, but not their echo of the plot, which would cut a smooth scroll short. */
+  private pull(plot: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
+    const echo = this.echo.get(from);
+    if (echo === undefined || Math.abs(from[axis] - echo) >= 1.5) {
+      this.follow(plot, from, axis);
     }
   }
 
@@ -503,7 +522,6 @@ export class FileTimelineBoard {
     if (this.current !== null && !layout.shownSet.has(this.current)) {
       this.current = null;
     }
-    this.othersChip.setAttribute("aria-pressed", String(this.scope.others));
     const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
     this.scopeBar.draw(this.scope, {
       total: model.rows.length,
@@ -518,7 +536,7 @@ export class FileTimelineBoard {
     this.fitGutters();
     this.drawGrid(layout);
     if (typeof keep === "object" && keep !== null) {
-      this.plot.scrollTop = Math.max(0, (layout.y.get(keep.person) ?? 0) - this.plot.clientHeight / 2);
+      this.glideTo(Math.max(0, (layout.y.get(keep.person) ?? 0) - this.plot.clientHeight / 2));
     } else if (typeof keep === "number") {
       this.plot.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
     }
@@ -582,7 +600,6 @@ export class FileTimelineBoard {
     const lines: Item[] = [];
     const marks: Item[] = [];
     const row = (cy: number) => ({ top: cy - ROW / 2, bottom: cy + ROW / 2 });
-    const showsMark = (mark: TimelineMark) => mark.kind !== "other" || this.scope.others;
     for (const xref of layout.shown) {
       const person = model.people.get(xref);
       const cy = y.get(xref) ?? 0;
@@ -615,7 +632,7 @@ export class FileTimelineBoard {
         });
       }
       for (const mark of person.marks) {
-        if (mark.until !== undefined && showsMark(mark)) {
+        if (mark.until !== undefined) {
           const left = x(mark.year);
           const right = x(mark.until);
           lines.push({
@@ -636,9 +653,6 @@ export class FileTimelineBoard {
         }
       }
       for (const mark of person.marks) {
-        if (!showsMark(mark)) {
-          continue;
-        }
         const at = x(mark.year);
         marks.push({
           ...row(cy),
@@ -737,7 +751,6 @@ export class FileTimelineBoard {
     this.cursor.replaceChildren();
     this.axis.querySelector(".gedcom-ft-axis-cursor")?.remove();
     if (!layout || !model || this.year === null) {
-      this.aliveEl.setText("");
       return;
     }
     const year = this.year;
@@ -767,11 +780,6 @@ export class FileTimelineBoard {
     label.textContent = yearText(year);
     flag.append(label);
     this.axis.append(flag);
-    this.aliveEl.setText(
-      plural(layout.branch ? "fileTimeline.aliveInBranch" : "fileTimeline.alive", alive.length, {
-        year: yearText(year),
-      }),
-    );
   }
 
   private drawGrid(layout: Layout): void {
@@ -820,22 +828,25 @@ export class FileTimelineBoard {
       row.toggleClass("is-focus", xref === this.scope.focus);
       row.toggleClass("is-dim", this.misses([xref]));
       row.toggleClass("is-current", xref === this.current);
+      const years = lifelineYears(person.lifeline);
       const open = row.createEl("button", {
         cls: "gedcom-ft-name-open",
-        attr: { type: "button", title: name },
+        attr: { type: "button", "aria-label": years ? `${name}, ${years}` : name },
       });
+      tipPlace(open, "right");
       open.createSpan({ cls: "gedcom-ft-name-text", text: name });
-      open.createSpan({ cls: "gedcom-ft-name-years", text: lifelineYears(person.lifeline) });
-      row.createEl("button", {
+      open.createSpan({ cls: "gedcom-ft-name-years", text: years });
+      const branch = row.createEl("button", {
         cls: "gedcom-ft-branch",
         text: t("overview.branch"),
         attr: {
           type: "button",
           "data-branch": xref,
           "aria-pressed": String(xref === this.scope.focus),
-          title: t("overview.branchHint"),
+          "aria-label": t("fileGraph.branchOf", { name }),
         },
       });
+      tipPlace(branch, "right");
       this.byName.set(xref, row);
     }
     this.names
@@ -843,18 +854,6 @@ export class FileTimelineBoard {
       .setCssProps({ height: `${(layout.shown.length - last) * ROW}px` });
     this.follow(this.names, this.plot, "scrollTop");
     return focused;
-  }
-
-  private countOthers(model: FileTimeline): void {
-    const dated = new Set<TimelineMark>();
-    for (const person of model.people.values()) {
-      person.marks.forEach((mark) => dated.add(mark));
-    }
-    let others = 0;
-    for (const mark of dated) {
-      others += mark.kind === "other" ? 1 : 0;
-    }
-    this.othersCount.setText(String(others));
   }
 
   private definitions(): SVGDefsElement {
@@ -907,7 +906,6 @@ export class FileTimelineBoard {
   }
 
   private listen(): void {
-    this.othersChip.addEventListener("click", () => this.setScope({ others: !this.scope.others }));
 
     this.board.addEventListener("pointerdown", (event) => {
       this.pointer = event.pointerType || "mouse";
@@ -948,8 +946,8 @@ export class FileTimelineBoard {
         }
       });
     });
-    this.names.addEventListener("scroll", () => this.follow(this.plot, this.names, "scrollTop"));
-    this.axisClip.addEventListener("scroll", () => this.follow(this.plot, this.axisClip, "scrollLeft"));
+    this.names.addEventListener("scroll", () => this.pull(this.plot, this.names, "scrollTop"));
+    this.axisClip.addEventListener("scroll", () => this.pull(this.plot, this.axisClip, "scrollLeft"));
     this.board.addEventListener("click", (event) => this.activate(event));
     this.names.addEventListener("focusin", (event) => {
       const xref = this.personAt(event.target);
@@ -1050,10 +1048,10 @@ export class FileTimelineBoard {
   }
 }
 
-function scopeOf({ focus, up, down, zoom, others }: TimelineScope): TimelineScope {
-  return { ...(focus === undefined ? {} : { focus }), up, down, zoom, others };
+function scopeOf({ focus, up, down, zoom }: TimelineScope): TimelineScope {
+  return { ...(focus === undefined ? {} : { focus }), up, down, zoom };
 }
 
 function sameScope(a: TimelineScope, b: TimelineScope): boolean {
-  return a.focus === b.focus && a.up === b.up && a.down === b.down && a.zoom === b.zoom && a.others === b.others;
+  return a.focus === b.focus && a.up === b.up && a.down === b.down && a.zoom === b.zoom;
 }

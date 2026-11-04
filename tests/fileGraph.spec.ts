@@ -128,9 +128,12 @@ test.describe("the graph of a file", () => {
     for (const xref of ["@I14@", "@I12@", "@I16@"]) {
       await page.locator(".gedcom-fg-search").press("Enter");
       await expect(person(page, xref)).toHaveClass(/is-hl/);
-      const at = await centreOf(page, `[data-card="${xref}"] .gedcom-fg-card-bg`);
-      expect(Math.abs(at.x - canvas.x)).toBeLessThan(2);
-      expect(Math.abs(at.y - canvas.y)).toBeLessThan(2);
+      await expect
+        .poll(async () => {
+          const at = await centreOf(page, `[data-card="${xref}"] .gedcom-fg-card-bg`);
+          return Math.max(Math.abs(at.x - canvas.x), Math.abs(at.y - canvas.y));
+        })
+        .toBeLessThan(2);
     }
   });
 
@@ -143,9 +146,13 @@ test.describe("the graph of a file", () => {
     await expect(page.locator(".gedcom-fg-person")).toHaveCount(10);
     await page.locator(".gedcom-fg-whole").click();
     await expect(page.locator(".gedcom-fg-person")).toHaveCount(17);
-    const canvas = await centreOf(page, ".gedcom-fg-canvas");
-    const irene = await centreOf(page, '[data-card="@I12@"] .gedcom-fg-card-bg');
-    expect(Math.abs(irene.x - canvas.x)).toBeLessThan(2);
+    await expect
+      .poll(async () => {
+        const canvas = await centreOf(page, ".gedcom-fg-canvas");
+        const irene = await centreOf(page, '[data-card="@I12@"] .gedcom-fg-card-bg');
+        return Math.abs(irene.x - canvas.x);
+      })
+      .toBeLessThan(2);
   });
 
   test("returns to the whole file on Branch again, which reads pressed while the branch is shown", async ({ page }) => {
@@ -252,6 +259,95 @@ test.describe("the graph of a file", () => {
     await page.keyboard.press("Enter");
     await expect(page.locator(".gedcom-fg-person")).toHaveCount(10);
     await expect(page.locator('[data-branch="@I12@"]')).toBeFocused();
+  });
+});
+
+test.describe("the glide of the graph to a match", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+  });
+
+  const sample = (page: Page) =>
+    page.evaluate(
+      () =>
+        new Promise<string[]>((done) => {
+          const view = document.querySelector(".gedcom-fg-view");
+          const seen: string[] = [];
+          const started = performance.now();
+          const tick = () => {
+            seen.push(view ? getComputedStyle(view).transform : "");
+            if (performance.now() - started < 900) {
+              window.requestAnimationFrame(tick);
+            } else {
+              done(seen);
+            }
+          };
+          tick();
+        }),
+    );
+
+  async function step(page: Page): Promise<string[]> {
+    await mountGraph(page);
+    await page.locator(".gedcom-fg-find-toggle").click();
+    await page.locator(".gedcom-fg-search").fill("joliot");
+    const sampling = sample(page);
+    await page.locator(".gedcom-fg-find-next").click();
+    return sampling;
+  }
+
+  test("passes through intermediate views on the way to the card, and ends with it centred", async ({ page }) => {
+    const seen = await step(page);
+
+    const distinct = [...new Set(seen)];
+    expect(distinct.length).toBeGreaterThanOrEqual(4);
+    const [first, last] = [distinct[0], distinct[distinct.length - 1]];
+    expect(distinct.slice(1, -1).filter((one) => one !== first && one !== last).length).toBeGreaterThanOrEqual(2);
+    await expect(page.locator(".gedcom-fg-view")).not.toHaveClass(/is-gliding/);
+    const canvas = await centreOf(page, ".gedcom-fg-canvas");
+    const at = await centreOf(page, '[data-card="@I14@"] .gedcom-fg-card-bg');
+    expect(Math.abs(at.x - canvas.x)).toBeLessThan(2);
+  });
+
+  test("shows every card of the glide from the first frame, so none appears in the middle of it", async ({ page }) => {
+    await mountGraph(page);
+    await page.locator(".gedcom-fg-find-toggle").click();
+    await page.locator(".gedcom-fg-search").fill("joliot");
+    const before = await page.locator(".gedcom-fg-person").count();
+    await page.locator(".gedcom-fg-find-next").click();
+
+    await expect(page.locator(".gedcom-fg-view")).toHaveClass(/is-gliding/);
+    expect(await page.locator(".gedcom-fg-person").count()).toBeGreaterThanOrEqual(before);
+    expect(await page.locator('.gedcom-fg-person[data-p="@I14@"]').count()).toBe(1);
+  });
+
+  test("stops where it is when the reader drags, without a jump", async ({ page }) => {
+    await mountGraph(page);
+    await page.locator(".gedcom-fg-find-toggle").click();
+    await page.locator(".gedcom-fg-search").fill("joliot");
+    await page.locator(".gedcom-fg-find-next").click();
+    await expect(page.locator(".gedcom-fg-view")).toHaveClass(/is-gliding/);
+    await page.waitForTimeout(120);
+    const mid = await page.locator(".gedcom-fg-view").evaluate((view) => getComputedStyle(view).transform);
+    await page.mouse.move(700, 450);
+    await page.mouse.down();
+
+    await expect(page.locator(".gedcom-fg-view")).not.toHaveClass(/is-gliding/);
+    const held = await page.locator(".gedcom-fg-view").evaluate((view) => getComputedStyle(view).transform);
+    await page.waitForTimeout(500);
+    expect(await page.locator(".gedcom-fg-view").evaluate((view) => getComputedStyle(view).transform)).toBe(held);
+    expect(mid).not.toBe("none");
+    await page.mouse.up();
+  });
+
+  test("jumps when the reader asks for reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const seen = await step(page);
+
+    expect(new Set(seen).size).toBeLessThanOrEqual(2);
+    await expect(page.locator(".gedcom-fg-view")).not.toHaveClass(/is-gliding/);
+    const canvas = await centreOf(page, ".gedcom-fg-canvas");
+    const at = await centreOf(page, '[data-card="@I14@"] .gedcom-fg-card-bg');
+    expect(Math.abs(at.x - canvas.x)).toBeLessThan(2);
   });
 });
 

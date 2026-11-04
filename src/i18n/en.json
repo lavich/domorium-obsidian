@@ -273,7 +273,6 @@
   "tree.moreDown": "Children beyond the edge",
   "command.openFileTimeline": "Open the timeline of the file",
   "fileTimeline.title": "Timeline of {name}",
-  "fileTimeline.others": "Other events",
   "overview.search": "Find a person…",
   "overview.clearSearch": "Clear the search",
   "overview.matches": {
@@ -284,21 +283,12 @@
   "overview.matchOf": "{current} / {total}",
   "overview.previousMatch": "Previous match",
   "overview.nextMatch": "Next match",
-  "fileTimeline.alive": {
-    "one": "In {year}: {count} person alive",
-    "other": "In {year}: {count} people alive"
-  },
-  "fileTimeline.aliveInBranch": {
-    "one": "In {year}: {count} person alive in this branch",
-    "other": "In {year}: {count} people alive in this branch"
-  },
   "overview.wholeFile": "Whole file",
   "overview.branchOf": {
     "one": "Branch of {name} · {shown} of {count} person",
     "other": "Branch of {name} · {shown} of {count} people"
   },
   "overview.branch": "Branch",
-  "overview.branchHint": "Show only this person's ancestors and descendants",
   "overview.ancestors": "Ancestors",
   "overview.descendants": "Descendants",
   "overview.gone": "{path} is no longer in the vault.",

@@ -1,5 +1,5 @@
 import { t } from "../i18n";
-import { FloatingSearch } from "./floatingSearch";
+import { searchOver, type FloatingSearch } from "./floatingSearch";
 import { BranchScopeBar, readBranchScope, sameBranch, type BranchScope } from "./branchScope";
 import { fileGraphOf } from "./fileGraph";
 import type { FileTimeline } from "./fileTimeline";
@@ -82,14 +82,7 @@ export class FileGraphBoard {
       branch: (xref) => this.setScope({ focus: xref === this.scope.focus ? undefined : xref }),
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
     }, { setIcon: (element, icon) => this.host.setIcon(element, icon) });
-    this.find = new FloatingSearch(this.canvas.el, {
-      prefix: "gedcom-fg",
-      setIcon: (element, icon) => this.host.setIcon(element, icon),
-      change: (query) => this.canvas.setQuery(query),
-      step: (by) => this.canvas.stepMatch(by),
-      info: () => this.canvas.matchInfo(),
-    });
-    this.canvas.el.prepend(this.find.el);
+    this.find = searchOver(this.canvas, (element, icon) => this.host.setIcon(element, icon));
     this.goneEl = this.root.createDiv({ cls: "gedcom-fg-gone" });
     this.goneEl.toggle(false);
   }
