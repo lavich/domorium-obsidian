@@ -363,7 +363,7 @@ describe("the families the Curies do not have", () => {
     expect(new Set(layout.lines.filter((line) => line.family === "@TOP@").flatMap((line) => line.lanes.map((lane) => lane.row))).size).toBe(
       layout.lines.find((line) => line.family === "@TOP@")?.lanes.length,
     );
-    expect(took).toBeLessThan(2_000);
+    expect(took).toBeLessThan(5_000);
   });
 
   it("lays out five thousand people married in a chain without running out of stack", () => {

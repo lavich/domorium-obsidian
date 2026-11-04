@@ -676,3 +676,11 @@ after a rollback is dropped by Obsidian. The renamed string keys are internal.
   machine has, wider on Linux CI than on a Mac, so `Skłodowska-Curie` can be cut
   at 124 pixels. The specs assert the given name whole, the surname from its
   start, and every line inside the card, and allow the ellipsis.
+- **Timing in specs.** The layout's own budgets are 250 ms for ordering and
+  500 ms for the whole, measured from its start; a slow machine finishes a
+  little over. A shared CI runner is two to three times slower than a laptop
+  (a tangled 10 000-person file took 1 026 ms there against 270 ms here), so
+  the browser spec bounds the whole layout at 3 000 ms and the deep-line unit
+  test at 5 000, enough to catch a layout that no longer stops, while the unit
+  test with an injected clock proves the budgets are honoured exactly. The
+  requirement promises the budget and that the layout finishes, not a wall time.

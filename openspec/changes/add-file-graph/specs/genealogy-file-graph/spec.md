@@ -131,7 +131,7 @@ generation below SHALL pass through the rows between in a lane of its own,
 where no card stands.
 
 The order of the cards in each row SHALL be chosen to cross as few lines as the
-graph can find within the time the requirement on size allows, and the cards
+graph can find within the time budget the requirement on size gives it, and the cards
 then placed as close above their children and below their parents as that order
 and the room between cards allow. No two cards SHALL overlap.
 
@@ -302,15 +302,18 @@ given the focus SHALL be brought into view.
 
 ### Requirement: The graph holds up at size
 
-The graph of a file of 10 000 people shown whole SHALL be laid out in under a
-second on a desktop, once for each reading of the file and scope: pointing,
-dragging, zooming and searching SHALL NOT lay it out again. The graph SHALL draw
+The graph of a file of any size shown whole SHALL be laid out within a time
+budget — the ordering of the cards stops improving after a quarter of a second
+and the placing after half a second, keeping the best found — and SHALL always
+finish, however tangled the file, once for each reading of the file and scope:
+pointing, dragging, zooming and searching SHALL NOT lay it out again. The graph SHALL draw
 only the shapes in view and near it, and SHALL keep up with the pointer.
 
 #### Scenario: A file of 10 000 people
 - **WHEN** a file of 10 000 people is shown whole in a view of 1 400 by 900
   pixels, and the reader drags, zooms and points at people
-- **THEN** it was laid out in under a second, the highlight follows the pointer
+- **THEN** its layout stopped improving within its time budget and finished, the
+  highlight follows the pointer
   without a visible delay, the graph holds no more than a few hundred cards at
   its opening size, and no more than a few thousand shapes after **Fit**
 
