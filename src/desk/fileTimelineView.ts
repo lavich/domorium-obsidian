@@ -153,6 +153,7 @@ export class FileTimelineBoard {
   private layout: Layout | null = null;
   private query = "";
   private current: string | null = null;
+  private selected: string | null = null;
   private readonly echo = new WeakMap<HTMLElement, number>();
   private searchText = new Map<string, string>();
   private drawn: Span = { top: 0, bottom: 0, left: 0, right: 0 };
@@ -257,6 +258,7 @@ export class FileTimelineBoard {
       const shape = item.make();
       shape.classList.toggle("is-dim", this.misses(item.ids));
       shape.classList.toggle("is-current", this.current !== null && item.ids[0] === this.current && shape.classList.contains("gedcom-ft-life"));
+      shape.classList.toggle("is-selected", this.selected !== null && item.ids[0] === this.selected && shape.classList.contains("gedcom-ft-life"));
       this.items.append(shape);
       this.elements.set(shape, item.ids);
       if (item.placed) {
@@ -269,6 +271,7 @@ export class FileTimelineBoard {
       }
     }
     const focused = this.drawNames(layout);
+    this.drawSelectedBand(layout);
     this.lit = [];
     this.highlight(this.highlighted, true);
     this.drawCursor();
@@ -390,6 +393,16 @@ export class FileTimelineBoard {
     }
     this.current = id;
     this.markCurrent();
+    this.reveal(id);
+    return id;
+  }
+
+  /** The row to the middle, and the lifeline into view where it lies out of it. */
+  private reveal(id: string): void {
+    const layout = this.layout;
+    if (!layout) {
+      return;
+    }
     const cy = layout.y.get(id) ?? 0;
     let left: number | undefined;
     const line = this.model?.people.get(id)?.lifeline;
@@ -402,7 +415,6 @@ export class FileTimelineBoard {
       }
     }
     this.glideTo(Math.max(0, cy - this.plot.clientHeight / 2), left);
-    return id;
   }
 
   /**
@@ -424,6 +436,66 @@ export class FileTimelineBoard {
       return;
     }
     plot.scrollTo({ top, ...(left === undefined ? {} : { left }), behavior: "smooth" });
+  }
+
+  /** Marks a person selected and brings their row into view, in their own branch where this one does not hold them; `null` ends it. */
+  select(xref: string | null): void {
+    this.selected = xref;
+    const layout = this.layout;
+    if (xref !== null && layout && this.model?.people.has(xref)) {
+      if (layout.shownSet.has(xref)) {
+        this.reveal(xref);
+      } else {
+        this.setScope({ focus: xref });
+      }
+    }
+    this.markSelected();
+  }
+
+  scroll(): TimelineScroll {
+    return { top: this.plot.scrollTop, left: this.plot.scrollLeft };
+  }
+
+  setScroll({ top, left }: TimelineScroll): void {
+    this.plot.scrollTop = top;
+    this.plot.scrollLeft = left;
+    this.follow(this.names, this.plot, "scrollTop");
+    this.follow(this.axisClip, this.plot, "scrollLeft");
+    if (this.layout && this.needsDraw(this.measure())) {
+      this.draw(this.measure());
+    }
+  }
+
+  openSearch(): void {
+    if (this.find.isOpen()) {
+      this.find.focus();
+    } else {
+      this.find.open();
+    }
+  }
+
+  private markSelected(): void {
+    for (const [element, ids] of this.elements) {
+      element.classList.toggle("is-selected", this.selected !== null && ids[0] === this.selected && element.classList.contains("gedcom-ft-life"));
+    }
+    for (const [xref, name] of this.byName) {
+      name.toggleClass("is-selected", xref === this.selected);
+    }
+    if (this.layout) {
+      this.drawSelectedBand(this.layout);
+    }
+  }
+
+  private drawSelectedBand(layout: Layout): void {
+    this.chart.querySelector(".gedcom-ft-row-selected")?.remove();
+    const cy = this.selected === null ? undefined : layout.y.get(this.selected);
+    if (cy === undefined) {
+      return;
+    }
+    this.chart.insertBefore(
+      svg(this.doc, "rect", "gedcom-ft-row-selected", { x: 0, y: cy - ROW / 2, width: layout.width, height: ROW }),
+      this.items,
+    );
   }
 
   private markCurrent(): void {
@@ -826,6 +898,7 @@ export class FileTimelineBoard {
       row.toggleClass("is-focus", xref === this.scope.focus);
       row.toggleClass("is-dim", this.misses([xref]));
       row.toggleClass("is-current", xref === this.current);
+      row.toggleClass("is-selected", xref === this.selected);
       const years = lifelineYears(person.lifeline);
       const open = row.createEl("button", {
         cls: "gedcom-ft-name-open",

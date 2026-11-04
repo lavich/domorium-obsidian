@@ -1817,6 +1817,22 @@ button.gedcom-fg-pop-open {
   stroke-width: 2.5;
 }
 
+.gedcom-ft-name.is-selected {
+  background: var(--background-modifier-active-hover);
+  box-shadow: inset 0 0 0 1.5px var(--text-normal);
+}
+
+.gedcom-ft-row-selected {
+  fill: var(--background-modifier-active-hover);
+  pointer-events: none;
+}
+
+.gedcom-ft-life.is-selected {
+  stroke: var(--text-normal);
+  stroke-width: 2;
+  opacity: 1;
+}
+
 .gedcom-fg-find,
 .gedcom-ft-find {
   --gedcom-find-size: 28px;
@@ -2039,6 +2055,12 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-person.is-hl .gedcom-fg-card-bg {
   stroke: var(--text-accent);
   stroke-width: 2;
+}
+
+.gedcom-fg-person.is-selected .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 5px var(--interactive-accent));
 }
 
 .gedcom-fg-person .gedcom-fg-card:focus-visible .gedcom-fg-card-bg,

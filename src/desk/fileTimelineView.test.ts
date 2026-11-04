@@ -624,3 +624,106 @@ describe("the ages under the cursor and a search", () => {
     expect(container.querySelector('.gedcom-ft-age[data-p="@I12@"]')?.classList.contains("is-dim")).toBe(false);
   });
 });
+
+describe("the selected row", () => {
+  const selectedNames = () => all(".gedcom-ft-name.is-selected").map((row) => row.getAttribute("data-p"));
+  const selectedLives = () => all(".gedcom-ft-life.is-selected").map((life) => life.getAttribute("data-p"));
+  const bands = () => all(".gedcom-ft-row-selected");
+
+  it("marks one person's row, lifeline and band, and no other", () => {
+    const drawn = board();
+    drawn.select("@I12@");
+
+    expect(selectedNames()).toEqual(["@I12@"]);
+    expect(selectedLives()).toEqual(["@I12@"]);
+    expect(bands()).toHaveLength(1);
+  });
+
+  it("survives the light of a hover and a search, and is replaced by the next selection", () => {
+    const drawn = board();
+    drawn.select("@I12@");
+    drawn.highlight("@I1@");
+    drawn.setQuery("curie");
+    drawn.stepMatch(1);
+    expect(selectedNames()).toEqual(["@I12@"]);
+
+    drawn.select("@I2@");
+    expect(selectedNames()).toEqual(["@I2@"]);
+    expect(selectedLives()).toEqual(["@I2@"]);
+    expect(bands()).toHaveLength(1);
+
+    drawn.select(null);
+    expect(selectedNames()).toEqual([]);
+    expect(bands()).toHaveLength(0);
+  });
+
+  it("is on a row that leaves the drawn rows and comes back", () => {
+    const drawn = board();
+    drawn.select("@I2@");
+    drawn.draw({ top: 18 * ROW, left: 0, width: 2000, height: ROW });
+    expect(nameRow("@I2@")).toBeNull();
+
+    drawn.draw(WHOLE);
+    expect(selectedNames()).toEqual(["@I2@"]);
+  });
+
+  it("is on the row after a new reading of the file and after a scope narrowed and widened", () => {
+    const drawn = board();
+    drawn.select("@I2@");
+    drawn.show(fileTimelineOf(curieIndex()), SCOPE);
+    drawn.draw(WHOLE);
+    expect(selectedNames()).toEqual(["@I2@"]);
+
+    drawn.show(fileTimelineOf(curieIndex()), { ...SCOPE, focus: "@I12@", up: 0, down: 0 });
+    drawn.draw(WHOLE);
+    expect(selectedNames()).toEqual([]);
+    drawn.show(fileTimelineOf(curieIndex()), SCOPE);
+    drawn.draw(WHOLE);
+    expect(selectedNames()).toEqual(["@I2@"]);
+  });
+
+  it("changes the scope to the person's own branch where the branch shown does not hold them", () => {
+    const drawn = board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 0, down: 0 });
+    expect(nameRow("@I2@")).toBeNull();
+
+    drawn.select("@I2@");
+
+    expect(host.scopeChanged.mock.lastCall?.[0].focus).toBe("@I2@");
+    expect(selectedNames()).toEqual(["@I2@"]);
+  });
+
+  it("reads the scroll of the plot and puts it back", () => {
+    const drawn = board();
+    drawn.setScroll({ top: 120, left: 45 });
+    expect(drawn.scroll()).toEqual({ top: 120, left: 45 });
+
+    const other = board();
+    other.setScroll(drawn.scroll());
+    expect(other.scroll()).toEqual({ top: 120, left: 45 });
+  });
+});
+
+describe("the search of the timeline, opened from outside", () => {
+  it("replaces the icon with a focused field", () => {
+    const drawn = board();
+    drawn.openSearch();
+
+    expect(container.querySelector(".gedcom-ft-find")?.classList.contains("is-open")).toBe(true);
+    expect(document.activeElement).toBe(container.querySelector(".gedcom-ft-search"));
+  });
+
+  it("keeps what is typed and takes the focus back, where it is open already", () => {
+    const drawn = board();
+    drawn.openSearch();
+    const field = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
+    if (field) {
+      field.value = "joliot";
+      field.dispatchEvent(new Event("input"));
+    }
+    (document.activeElement as HTMLElement | null)?.blur();
+    drawn.openSearch();
+
+    expect(field?.value).toBe("joliot");
+    expect(document.activeElement).toBe(field);
+  });
+});

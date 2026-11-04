@@ -106,6 +106,22 @@ export class FileGraphBoard {
     this.canvas.cancelHover();
   }
 
+  /** Marks a person selected and centres on them, in their own branch where this one does not hold them; `null` ends it. */
+  select(xref: string | null): void {
+    if (xref !== null && this.model?.people.has(xref) && !this.canvas.hasCard(xref)) {
+      this.setScope({ focus: xref });
+    }
+    this.canvas.select(xref);
+  }
+
+  openSearch(): void {
+    if (this.find.isOpen()) {
+      this.find.focus();
+    } else {
+      this.find.open();
+    }
+  }
+
   view(): GraphView | null {
     return this.canvas.view();
   }
