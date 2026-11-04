@@ -8,6 +8,7 @@ export const ROW_PITCH = 130;
 export const LANE = 10;
 const LANE_GAP = 20;
 const BELOW = 16;
+const CLEAR = 10;
 const PULLS = 40;
 const TRANSPOSE_ROUNDS = 4;
 
@@ -46,7 +47,13 @@ export interface GraphLine {
   family: string;
   child: string;
   parents: string[];
-  /** From the family's node, or its one parent's card, through a lane in each row between, to the child's card. */
+  /** The rows between the family and the child, and where in each the line passes. */
+  lanes: { row: number; x: number }[];
+  /**
+   * From the family's node, or its one parent's card, to the child's card:
+   * straight down out of the parents' row, through each lane, and into the
+   * child's row, so that it turns only between rows and never across a card.
+   */
   points: Point[];
 }
 
@@ -178,6 +185,35 @@ function crossingsOf(layers: Unit[][]): number {
     found += countCrossings(segments);
   }
   return found;
+}
+
+/**
+ * Where each unit of a row would stand on its own: under or over what it is
+ * joined to, and a unit joined to nothing beside its neighbour, so it is not
+ * left behind as the rest of the row moves.
+ */
+function wantsOf(layer: Unit[]): number[] {
+  const want = layer.map((unit) => {
+    const links = [...unit.up, ...unit.down];
+    return links.length > 0 ? wish(unit, links) : NaN;
+  });
+  const beside = (from: number, to: number): void => {
+    const unit = layer[to];
+    const other = layer[from];
+    const at = want[from];
+    if (!unit || !other || at === undefined || Number.isNaN(at) || !Number.isNaN(want[to] ?? 0)) {
+      return;
+    }
+    const gap = (other.width + unit.width) / 2 + gapBetween(other, unit);
+    want[to] = from < to ? at + gap : at - gap;
+  };
+  for (let at = 1; at < layer.length; at += 1) {
+    beside(at - 1, at);
+  }
+  for (let at = layer.length - 2; at >= 0; at -= 1) {
+    beside(at + 1, at);
+  }
+  return want.map((value, at) => (Number.isNaN(value) ? (layer[at]?.cx ?? 0) : value));
 }
 
 /** Crossings between the lines of a unit and of the unit to its right, toward one neighbouring row. */
@@ -424,10 +460,7 @@ export function layoutFileGraph(
       if (layer.length === 0) {
         continue;
       }
-      const want = layer.map((unit) => {
-        const links = [...unit.up, ...unit.down];
-        return links.length > 0 ? wish(unit, links) : unit.cx;
-      });
+      const want = wantsOf(layer);
       const fromLeft: number[] = [];
       const fromRight: number[] = [];
       layer.forEach((unit, at) => {
@@ -541,17 +574,31 @@ export function layoutFileGraph(
       continue;
     }
     const start: Point = familyNode ? [familyNode.x, familyNode.y] : [parent.x + CARD.width / 2, parent.y + CARD.height];
+    const end: Point = [child.x + CARD.width / 2, child.y];
+    const points: Point[] = [start];
+    let y = start[1];
+    const step = (point: Point, bottom = point[1]): void => {
+      if (point[1] > y && point[1] < end[1]) {
+        points.push(point);
+        y = bottom;
+      }
+    };
+    step([start[0], Math.floor(y / ROW_PITCH) * ROW_PITCH + CARD.height + CLEAR]);
+    const lanes = edge.lanes.filter((lane) => lane.layer * ROW_PITCH - CLEAR > y);
+    for (const lane of lanes) {
+      const top = lane.layer * ROW_PITCH - CLEAR;
+      const bottom = top + CARD.height + 2 * CLEAR;
+      step([lane.cx, top]);
+      step([lane.cx, bottom]);
+    }
+    step([end[0], end[1] - CLEAR]);
+    points.push(end);
     lines.push({
       family: edge.family,
       child: edge.child,
       parents: edge.parents,
-      points: [
-        start,
-        ...edge.lanes
-          .map((lane): Point => [lane.cx, lane.layer * ROW_PITCH + CARD.height / 2])
-          .filter((point) => point[1] > start[1]),
-        [child.x + CARD.width / 2, child.y],
-      ],
+      lanes: lanes.map((lane) => ({ row: lane.layer, x: lane.cx })),
+      points,
     });
   }
 

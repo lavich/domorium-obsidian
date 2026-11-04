@@ -48,7 +48,10 @@ body.theme-light {
   --nav-item-background-selected: rgb(215, 195, 240);
   --nav-item-color-selected: rgb(40, 0, 80);
   --color-pink: rgb(255, 0, 128);
+  --color-pink-rgb: 255, 0, 128;
   --color-blue: rgb(0, 0, 255);
+  --color-blue-rgb: 0, 0, 255;
+  --mono-rgb-100: 0, 0, 0;
   --color-green: rgb(0, 160, 0);
   --color-orange: rgb(255, 128, 0);
   --interactive-accent: rgb(128, 64, 0);
@@ -80,7 +83,10 @@ body.theme-dark {
   --nav-item-background-selected: rgb(70, 50, 100);
   --nav-item-color-selected: rgb(230, 220, 255);
   --color-pink: rgb(255, 100, 180);
+  --color-pink-rgb: 255, 100, 180;
   --color-blue: rgb(80, 160, 255);
+  --color-blue-rgb: 80, 160, 255;
+  --mono-rgb-100: 255, 255, 255;
   --color-green: rgb(80, 220, 80);
   --color-orange: rgb(255, 170, 40);
   --interactive-accent: rgb(200, 140, 60);
@@ -149,7 +155,10 @@ body.realistic.theme-light {
   --text-accent: #705dcf;
   --text-highlight-bg: rgba(255, 208, 0, 0.4);
   --color-pink: #d53984;
+  --color-pink-rgb: 213, 57, 132;
   --color-blue: #086ddd;
+  --color-blue-rgb: 8, 109, 221;
+  --mono-rgb-100: 0, 0, 0;
   --color-green: #08b94e;
   --color-orange: #ec7500;
   --interactive-accent: #8a5cf5;
@@ -172,7 +181,10 @@ body.realistic.theme-dark {
   --text-accent: #a882ff;
   --text-highlight-bg: rgba(255, 208, 0, 0.4);
   --color-pink: #fa99cd;
+  --color-pink-rgb: 250, 153, 205;
   --color-blue: #027aff;
+  --color-blue-rgb: 2, 122, 255;
+  --mono-rgb-100: 255, 255, 255;
   --color-green: #44cf6e;
   --color-orange: #e9973f;
   --interactive-accent: #7f6df2;

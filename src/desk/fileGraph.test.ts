@@ -139,6 +139,8 @@ describe("the layout of curie.ged", () => {
     const toIrene = layout.lines.find((line) => line.child === "@I12@");
     expect(toIrene?.points[0]).toEqual([layout.node.get("@F3@")?.x, layout.node.get("@F3@")?.y]);
     expect(toIrene?.points.at(-1)).toEqual([at(layout, "@I12@").x + CARD.width / 2, at(layout, "@I12@").y]);
+    expect(toIrene?.points[1]?.[0]).toBe(layout.node.get("@F3@")?.x);
+    expect(toIrene?.points[1]?.[1]).toBeGreaterThan(at(layout, "@I1@").y + CARD.height);
   });
 });
 
@@ -219,12 +221,13 @@ describe("the families the Curies do not have", () => {
     );
     const sister = at(layout, "@S@");
     const line = layout.lines.find((one) => one.child === "@M@");
-    const lanes = line?.points.slice(1, -1) ?? [];
+    const laneX = line?.lanes[0]?.x ?? NaN;
 
     expect(at(layout, "@M@").row).toBe(sister.row + 1);
-    expect(lanes).toHaveLength(1);
-    const [laneX = 0, laneY = 0] = lanes[0] ?? [];
-    expect(laneY).toBe(sister.y + CARD.height / 2);
+    expect(line?.lanes).toEqual([{ row: sister.row, x: laneX }]);
+    const through = line?.points.filter((point) => point[1] >= sister.y && point[1] <= sister.y + CARD.height) ?? [];
+    expect(through).toEqual([]);
+    expect(line?.points.filter((point) => point[0] === laneX)).toHaveLength(2);
     const inRow = layout.cards.filter((card) => card.row === sister.row);
     expect(inRow.filter((card) => card.x < laneX + LANE / 2 && card.x + CARD.width > laneX - LANE / 2)).toEqual([]);
   });

@@ -104,7 +104,7 @@ function seeded(seed: number): () => number {
  * child of another family, sometimes of an older generation, so that lines
  * need lanes, and some are married a second time.
  */
-export function tangled(count: number, seed = 7): string {
+export function tangled(count: number, { seed = 7, founders = 40 }: { seed?: number; founders?: number } = {}): string {
   const random = seeded(seed);
   const made = new Generator();
   const waiting: Record<"M" | "F", Person[]> = { M: [], F: [] };
@@ -115,7 +115,7 @@ export function tangled(count: number, seed = 7): string {
     queue.push(family);
     return family;
   };
-  for (let at = 0; at < 40; at += 1) {
+  for (let at = 0; at < founders; at += 1) {
     marry(made.person("M", 1700 + at), made.person("F", 1702 + at));
   }
   for (let next = queue.shift(); next && made.people.length < count; next = queue.shift()) {
