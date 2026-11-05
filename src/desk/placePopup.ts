@@ -1,5 +1,5 @@
 import { t } from "../i18n";
-import { placeInside } from "./dom";
+import { nameBy, placeInside } from "./dom";
 import type { MapEvent } from "./fileMap";
 import { eventName, yearText } from "./labels";
 
@@ -51,7 +51,7 @@ export class PlacePopup {
   open(title: string, groups: readonly PopupGroup[], at: { clientX: number; clientY: number }, opener?: HTMLElement): void {
     this.opener = opener ?? null;
     this.el.empty();
-    this.el.setAttribute("aria-label", t("map.popup.label", { name: title }));
+    nameBy(this.el, this.el, t("map.popup.label", { name: title }));
     this.el.toggle(true);
     const list = this.el.createEl("ul", { cls: "gedcom-map-popup-list" });
     for (const group of groups) {

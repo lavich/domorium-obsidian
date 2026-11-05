@@ -2,7 +2,7 @@ import type { GenealogyIndex } from "../genealogy";
 import { currentLanguage, plural, t } from "../i18n";
 import { readBranchScope, sameBranch, type BranchScope } from "./branchScope";
 import { defaultEnv, type FileMapHost, type MapEnv, type MapState, type TableState } from "./mapBoardTypes";
-import { zoomControls } from "./dom";
+import { nameBy, zoomControls } from "./dom";
 import {
   fileMapOf,
   mapSelection,
@@ -68,6 +68,7 @@ function svg<K extends keyof SVGElementTagNameMap>(tag: K, parent: Element, cls?
 export class MapBoard {
   private readonly env: MapEnv;
   private readonly plot: HTMLElement;
+  private readonly plotName: HTMLElement;
   private readonly baseEl: SVGGElement;
   private readonly scopeRow: MapScopeRow;
   private readonly tip: HTMLElement;
@@ -128,6 +129,7 @@ export class MapBoard {
 
     const stage = root.createDiv({ cls: "gedcom-map-stage" });
     this.plot = stage.createDiv({ cls: "gedcom-map-plot", attr: { tabindex: "0", role: "group" } });
+    this.plotName = nameBy(this.plot, this.plot, "");
     const tileLayer = this.plot.createDiv({ cls: "gedcom-map-tiles" });
     const canvas = svg("svg", this.plot, "gedcom-map-svg");
     this.baseEl = svg("g", canvas, "gedcom-map-base");
@@ -445,7 +447,7 @@ export class MapBoard {
       return;
     }
     this.scopeRow.draw({ index: this.index, scope: this.scope, selected: this.selected, mapped: this.mapped, unmapped: this.unmapped });
-    this.plot.setAttribute("aria-label", plural("map.label", this.mapped.length));
+    this.plotName.setText(plural("map.label", this.mapped.length));
   }
 
   private drawStatus(): void {

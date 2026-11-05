@@ -307,7 +307,9 @@ describe("the keyboard and the search", () => {
   it("names the plot as one stop with the number of places", () => {
     board();
 
-    expect(root.querySelector(".gedcom-map-plot")?.getAttribute("aria-label")).toBe("Map of places, 5 places");
+    const plot = root.querySelector(".gedcom-map-plot");
+    expect(plot?.hasAttribute("aria-label")).toBe(false);
+    expect(root.querySelector(`#${plot?.getAttribute("aria-labelledby")}`)?.textContent).toBe("Map of places, 5 places");
     expect(root.querySelector(".gedcom-map-plot")?.getAttribute("tabindex")).toBe("0");
   });
 

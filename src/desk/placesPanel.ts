@@ -1,6 +1,8 @@
 import { plural, t } from "../i18n";
 import { rowWindow } from "./listRows";
 
+let panels = 0;
+
 export const ROW_HEIGHT = 44;
 
 export interface PanelRow {
@@ -37,10 +39,12 @@ export class PlacesPanel {
   private drawn: { first: number; last: number } | null = null;
 
   constructor(parent: HTMLElement, private readonly host: PlacesPanelHost) {
-    this.el = parent.createDiv({ cls: "gedcom-map-panel", attr: { role: "region", "aria-label": t("map.panel.title") } });
+    this.el = parent.createDiv({ cls: "gedcom-map-panel", attr: { role: "region" } });
     this.el.toggle(false);
     const head = this.el.createDiv({ cls: "gedcom-map-panel-head" });
-    head.createSpan({ cls: "gedcom-map-panel-title", text: t("map.panel.title") });
+    const title = head.createSpan({ cls: "gedcom-map-panel-title", text: t("map.panel.title") });
+    title.id = `gedcom-map-panel-title-${(panels += 1)}`;
+    this.el.setAttribute("aria-labelledby", title.id);
     head.createEl("button", { cls: "clickable-icon gedcom-map-panel-close", text: "×", attr: { type: "button", "aria-label": t("map.panel.close") } }).addEventListener("click", () => this.close());
     this.list = this.el.createDiv({ cls: "gedcom-map-panel-list" });
     this.spacer = this.list.createDiv({ cls: "gedcom-map-panel-spacer" });

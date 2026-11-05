@@ -179,7 +179,8 @@ for (const viewport of [
 
       await expect(page.locator(".gedcom-map-live")).toHaveText(/^Paris, France, \d+ events?, \d{4} to \d{4}$/u);
       await expect(mark(page, "paris, france")).toHaveClass(/is-focused/u);
-      expect(await page.locator(".gedcom-map-plot").getAttribute("aria-label")).toBe("Map of places, 4 places");
+      await expect(page.locator(".gedcom-map-plot")).not.toHaveAttribute("aria-label", /.*/u);
+      await expect(page.locator(".gedcom-map-plot")).toHaveAccessibleName("Map of places, 4 places");
     });
 
     test("opens the list of places by the counter, reaches every place by keyboard and selects by Enter", async ({ page }) => {
