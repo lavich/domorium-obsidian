@@ -80,6 +80,8 @@ export function installObsidianDom(): void {
     tag: string,
     options?: DomOptions | string,
   ) => create(window.document, tag, options);
+  (window as unknown as Record<string, unknown>).createDiv = (options?: DomOptions | string) =>
+    create(window.document, "div", options);
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
   proto.createEl = function (tag: string, options?: DomOptions) {
     return build(this as unknown as HTMLElement, tag, options);

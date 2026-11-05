@@ -14,6 +14,25 @@ function tab(mode: DeskMode, interfaceOn = true): TabModes {
   return modes;
 }
 
+describe("a tab in List mode", () => {
+  it("records List as the mode to come back to, and the toggle goes to Source and back", () => {
+    const modes = tab("source");
+    modes.setMode("list", at());
+    expect(modes.toggleTarget()).toBe("source");
+    modes.setMode("source", at());
+    expect(modes.lastMode).toBe("list");
+    expect(modes.toggleTarget()).toBe("list");
+  });
+
+  it("is a view, whose record is the selected one and not the cursor's", () => {
+    const modes = tab("list");
+    modes.select("@I9@", index);
+
+    expect(modes.inView()).toBe(true);
+    expect(modes.recordAtCursorFor("list", "@I1@")).toBe("@I9@");
+  });
+});
+
 describe("the record a tab selects on leaving Source", () => {
   it("is the record under the cursor, going to Graph, and again going on to Timeline", () => {
     const modes = tab("source");
@@ -141,7 +160,7 @@ describe("the selected record", () => {
     expect(modes.shownRecord()).toBe("@I2@");
   });
 
-  it("is what the Index marks while it stands", () => {
+  it("is what the views mark while it stands", () => {
     const modes = tab("timeline");
     expect(modes.shownRecord()).toBeNull();
     modes.select("@I2@", index);
@@ -242,14 +261,24 @@ describe("the record the commands and the copy links act on", () => {
 describe("what each origin of a selection asks for", () => {
   const rules = (origin: Origin, mobile = false) => originRules(origin, mobile);
 
+  it("treats a click on a row of the list as a click in a view: no cursor, no editor focus, no reveal, a card, the drawer on a phone", () => {
+    expect(rules("view")).toMatchObject({
+      cursorToRecord: false,
+      editorFocus: false,
+      revealsView: false,
+      placesCard: true,
+      opensDrawer: false,
+    });
+    expect(rules("view", true).opensDrawer).toBe(true);
+  });
+
   it("never moves the cursor or takes the focus for the cursor and for history", () => {
     for (const origin of ["cursor", "history"] as const) {
       expect(rules(origin)).toMatchObject({ cursorToRecord: false, editorFocus: false });
     }
   });
 
-  it("puts the cursor on the record for the index, the card and a link, and gives the editor the focus for the index and a link", () => {
-    expect(rules("index")).toMatchObject({ cursorToRecord: true, editorFocus: true });
+  it("puts the cursor on the record for the card and a link, and gives the editor the focus for a link", () => {
     expect(rules("link")).toMatchObject({ cursorToRecord: true, editorFocus: true });
     expect(rules("card")).toMatchObject({ cursorToRecord: true, editorFocus: false });
     expect(rules("view")).toMatchObject({ cursorToRecord: false, editorFocus: false });
@@ -257,7 +286,7 @@ describe("what each origin of a selection asks for", () => {
 
   it("moves a view for every origin but a click in it", () => {
     expect(rules("view").revealsView).toBe(false);
-    for (const origin of ["index", "card", "link", "history"] as const) {
+    for (const origin of ["card", "link", "history"] as const) {
       expect(rules(origin).revealsView).toBe(true);
     }
   });
@@ -265,21 +294,20 @@ describe("what each origin of a selection asks for", () => {
   it("adds a follow step for the cursor, none for history and a visit for the rest", () => {
     expect(rules("cursor").addsStep).toBe("follow");
     expect(rules("history").addsStep).toBe("none");
-    for (const origin of ["view", "index", "card", "link"] as const) {
+    for (const origin of ["view", "card", "link"] as const) {
       expect(rules(origin).addsStep).toBe("visit");
     }
   });
 
   it("places the card for every origin but the cursor", () => {
     expect(rules("cursor").placesCard).toBe(false);
-    for (const origin of ["view", "index", "card", "link", "history"] as const) {
+    for (const origin of ["view", "card", "link", "history"] as const) {
       expect(rules(origin).placesCard).toBe(true);
     }
   });
 
-  it("opens the drawer only for a view or the index, and only on mobile", () => {
+  it("opens the drawer only for a view, and only on mobile", () => {
     expect(rules("view", true).opensDrawer).toBe(true);
-    expect(rules("index", true).opensDrawer).toBe(true);
     expect(rules("view", false).opensDrawer).toBe(false);
     for (const origin of ["card", "link", "history", "cursor"] as const) {
       expect(rules(origin, true).opensDrawer).toBe(false);

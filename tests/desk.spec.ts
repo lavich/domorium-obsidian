@@ -157,7 +157,6 @@ test.describe("Obsidian's own button styling", () => {
       ".gedcom-desk-person",
       ".gedcom-desk-link",
       ".gedcom-desk-fact:not(.is-selected)",
-      ".gedcom-desk-row:not(.is-current)",
       ".gedcom-desk-cite",
     ]) {
       expect(await look(selector), selector).toEqual({
@@ -193,7 +192,7 @@ test.describe("the empty states", () => {
     await mountDesk(page, { record: "" });
 
     await expect(page.locator(".gedcom-card-state")).toHaveText(
-      "Select a record in the graph, the timeline or the index.",
+      "Select a record in the graph, the timeline or the list.",
     );
   });
 
@@ -215,22 +214,11 @@ test.describe("the family card", () => {
       "Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie",
     ]);
     await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toHaveText("Evidence");
-    await expect(page.locator(".gedcom-desk-row.is-current")).toHaveCount(0);
     await factNamed(page, "Marriage").click();
     await expect(page.locator(".gedcom-desk-evidence-context div").first()).toHaveText("Marriage");
 
     await page.locator(".gedcom-desk-person", { hasText: "Ève Curie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
-  });
-
-  test("lists families in the index and selects one", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 800 });
-    await mountDesk(page);
-    await page.locator(".gedcom-desk-seg-button", { hasText: "Families" }).click();
-    await page.locator(".gedcom-desk-row", { hasText: "Frédéric Joliot and Irène" }).click();
-
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Frédéric Joliot and Irène Joliot-Curie");
-    await expect(page.locator(".gedcom-desk-row.is-current")).toHaveCount(1);
   });
 });
 
@@ -310,88 +298,5 @@ test.describe("media", () => {
     expect(await page.evaluate(() => window.desk.calls.notesOpened)).toEqual([
       { path: "Notes/Radium.md", line: 6 },
     ]);
-  });
-});
-
-test("rounds the index tabs inside their bar by the bar's radius less its inset", async ({ page }) => {
-  await mountDesk(page);
-  const radii = await page.evaluate(() => {
-    const bar = document.querySelector(".gedcom-desk-seg");
-    const tab = document.querySelector(".gedcom-desk-seg-button");
-    const px = (value: string | undefined) => Number.parseFloat(value ?? "");
-    return {
-      bar: px(bar ? getComputedStyle(bar).borderTopLeftRadius : undefined),
-      inset: px(bar ? getComputedStyle(bar).paddingTop : undefined),
-      tab: px(tab ? getComputedStyle(tab).borderTopLeftRadius : undefined),
-    };
-  });
-
-  expect(radii.tab).toBe(radii.bar - radii.inset);
-});
-
-test.describe("the index in a narrow sidebar", () => {
-  for (const width of [260, 200]) {
-    test(`keeps its three tabs inside the bar at ${width}px`, async ({ page }) => {
-      await page.setViewportSize({ width: 1400, height: 800 });
-      await mountDesk(page);
-      await page.evaluate((pane) => {
-        document.getElementById("index-pane")?.style.setProperty("width", `${pane}px`);
-      }, width);
-      await page.locator(".gedcom-desk-seg-button", { hasText: "Sources" }).click();
-      const fit = await page.evaluate(() => {
-        const bar = document.querySelector(".gedcom-desk-seg")?.getBoundingClientRect();
-        return {
-          inside: [...document.querySelectorAll(".gedcom-desk-seg-button")].every((tab) => {
-            const box = tab.getBoundingClientRect();
-            return bar !== undefined && box.left >= bar.left - 0.5 && box.right <= bar.right + 0.5;
-          }),
-        };
-      });
-
-      expect(fit).toEqual({ inside: true });
-    });
-  }
-});
-
-test.describe("the index of a large file", () => {
-  const people = 20_000;
-  const big = (() => {
-    const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
-    for (let at = 1; at <= people; at += 1) {
-      lines.push(`0 @I${at}@ INDI`, `1 NAME Person${at} /Family${at % 97}/`, "1 BIRT", `2 DATE ${1700 + (at % 300)}`);
-    }
-    lines.push("0 TRLR", "");
-    return lines.join("\n");
-  })();
-
-  test("scrolls through twenty thousand people drawing only a window of them", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await mountDesk(page, { doc: big });
-    const list = page.locator(".gedcom-desk-index-list");
-
-    expect(await page.locator(".gedcom-desk-row").count()).toBeLessThan(100);
-    await list.evaluate((node) => {
-      node.scrollTop = 44 * 10_000;
-    });
-    await expect(page.locator(".gedcom-desk-row-name", { hasText: /^Person10001 / })).toBeVisible();
-    expect(await page.locator(".gedcom-desk-row").count()).toBeLessThan(100);
-  });
-
-  test("draws only a window of rows after each keystroke in the search field", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await mountDesk(page, { doc: big });
-    const field = page.locator(".gedcom-desk-search");
-
-    const drawn = await field.evaluate((input: HTMLInputElement) => {
-      const counts: number[] = [];
-      for (const query of ["P", "Pe", "Per", "Pers", "Person1234"]) {
-        input.value = query;
-        input.dispatchEvent(new Event("input"));
-        counts.push(document.querySelectorAll(".gedcom-desk-row").length);
-      }
-      return counts;
-    });
-    expect(Math.max(...drawn)).toBeLessThan(100);
-    await expect(page.locator(".gedcom-desk-row-name").first()).toHaveText(/^Person1234 /);
   });
 });

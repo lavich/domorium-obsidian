@@ -30,18 +30,24 @@
   </head>
   <body class="theme-light">
     <div id="bar">
-      <button id="show-graph" type="button">Graph</button>
-      <button id="show-timeline" type="button">Timeline</button>
-      <button id="show-source" type="button">Source</button>
+      <div class="view-actions">
+        <button id="show-graph" class="clickable-icon view-action gedcom-mode-action" type="button" aria-label="Graph"><svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg></button>
+        <button id="show-timeline" class="clickable-icon view-action gedcom-mode-action" type="button" aria-label="Timeline"><svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg></button>
+        <button id="show-list" class="clickable-icon view-action gedcom-mode-action" type="button" aria-label="List"><svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg></button>
+        <button id="show-source" class="clickable-icon view-action gedcom-mode-action" type="button" aria-label="Source"><svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg></button>
+        <button id="more" class="clickable-icon view-action" type="button" aria-label="More options"><svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg></button>
+      </div>
       <button id="select-pierre" type="button">Select Pierre</button>
       <button id="select-irene" type="button">Select Irène</button>
       <button id="open-search" type="button">Find</button>
     </div>
+    <div class="workspace-leaf mod-active">
     <div id="leaf" class="workspace-leaf-content" data-type="domorium-gedcom">
       <div class="view-content gedcom-gedcom-view">
         <div id="source" class="gedcom-gedcom-editor">Source</div>
         <div id="views" class="gedcom-gedcom-views"></div>
       </div>
+    </div>
     </div>
     <script src="dist/fileViews.js"></script>
   </body>

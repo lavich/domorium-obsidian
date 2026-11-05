@@ -1,5 +1,5 @@
 import { plural, t } from "../i18n";
-import { putIcon, tipPlace, type IconSetter } from "./dom";
+import { nameBy, putIcon, tipPlace, type IconSetter } from "./dom";
 import type { GraphCanvas } from "./graphCanvas";
 
 export interface MatchInfo {
@@ -14,6 +14,8 @@ export interface FloatingSearchOptions {
   change: (query: string) => void;
   step: (by: 1 | -1) => void;
   info: () => MatchInfo;
+  /** A list narrows rather than steps: no arrows, a counter of its own, and Enter hands the keyboard on. */
+  narrowing?: { count: () => string; enter: () => void };
 }
 
 /** A search icon over a canvas that gives way to a field with a match counter and arrows, and comes back while the field is empty. */
@@ -22,9 +24,11 @@ export class FloatingSearch {
   private readonly toggle: HTMLButtonElement;
   private readonly input: HTMLInputElement;
   private readonly count: HTMLElement;
-  private readonly previous: HTMLButtonElement;
-  private readonly next: HTMLButtonElement;
+  private readonly previous: HTMLButtonElement | null;
+  private readonly next: HTMLButtonElement | null;
   private readonly clear: HTMLButtonElement;
+  private readonly label: HTMLElement;
+  private readonly inner: HTMLButtonElement[];
 
   constructor(
     parent: HTMLElement,
@@ -38,19 +42,22 @@ export class FloatingSearch {
       cls: `${prefix}-search`,
       type: "search",
       placeholder: t("overview.search"),
-      attr: { "aria-label": t("overview.search"), tabindex: "-1" },
+      attr: { tabindex: "-1" },
     });
+    this.label = nameBy(this.input, this.el, t("overview.search"));
     this.count = this.el.createSpan({ cls: `${prefix}-find-count`, attr: { "aria-live": "polite" } });
-    this.previous = this.button(`${prefix}-find-prev`, "chevron-up", t("overview.previousMatch"));
-    this.next = this.button(`${prefix}-find-next`, "chevron-down", t("overview.nextMatch"));
+    const stepping = options.narrowing === undefined;
+    this.previous = stepping ? this.button(`${prefix}-find-prev`, "chevron-up", t("overview.previousMatch")) : null;
+    this.next = stepping ? this.button(`${prefix}-find-next`, "chevron-down", t("overview.nextMatch")) : null;
     this.clear = this.button(`${prefix}-find-clear`, "x", t("overview.clearSearch"));
-    for (const inside of [this.previous, this.next, this.clear]) {
+    this.inner = [this.previous, this.next, this.clear].filter((one): one is HTMLButtonElement => one !== null);
+    for (const inside of this.inner) {
       inside.tabIndex = -1;
     }
 
     this.toggle.addEventListener("click", () => this.open());
-    this.previous.addEventListener("click", (event) => this.go(-1, event));
-    this.next.addEventListener("click", (event) => this.go(1, event));
+    this.previous?.addEventListener("click", (event) => this.go(-1, event));
+    this.next?.addEventListener("click", (event) => this.go(1, event));
     this.clear.addEventListener("click", () => {
       if (this.input.value === "") {
         this.close();
@@ -65,7 +72,11 @@ export class FloatingSearch {
     this.input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
-        this.go(event.shiftKey ? -1 : 1, event);
+        if (this.options.narrowing) {
+          this.options.narrowing.enter();
+        } else {
+          this.go(event.shiftKey ? -1 : 1, event);
+        }
       } else if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
@@ -98,22 +109,38 @@ export class FloatingSearch {
     this.el.addClass("is-open");
     this.toggle.setAttribute("aria-expanded", "true");
     this.toggle.tabIndex = -1;
-    for (const inside of [this.input, this.previous, this.next, this.clear]) {
+    this.input.tabIndex = 0;
+    for (const inside of this.inner) {
       inside.tabIndex = 0;
     }
     this.input.focus();
   }
 
   /** Keeps what is typed and takes the keyboard back. */
-  focus(): void {
+  focus(select = false): void {
     this.input.focus();
+    if (select) {
+      this.input.select();
+    }
+  }
+
+  /** Empties the field without closing it, as a list does when it clears a query that hides a row. */
+  reset(): void {
+    this.input.value = "";
+    this.refresh();
+  }
+
+  describe(text: string): void {
+    this.input.placeholder = text;
+    this.label.setText(text);
   }
 
   close(): void {
     this.el.removeClass("is-open");
     this.toggle.setAttribute("aria-expanded", "false");
     this.toggle.tabIndex = 0;
-    for (const inside of [this.input, this.previous, this.next, this.clear]) {
+    this.input.tabIndex = -1;
+    for (const inside of this.inner) {
       inside.tabIndex = -1;
     }
   }
@@ -122,6 +149,10 @@ export class FloatingSearch {
   refresh(): void {
     const { index, total } = this.options.info();
     const querying = this.input.value.trim() !== "";
+    if (this.options.narrowing) {
+      this.count.setText(querying ? this.options.narrowing.count() : "");
+      return;
+    }
     this.count.setText(
       !querying
         ? ""
@@ -131,8 +162,10 @@ export class FloatingSearch {
             ? plural("overview.matches", total)
             : t("overview.matchOf", { current: index + 1, total }),
     );
-    this.previous.disabled = !querying || total === 0;
-    this.next.disabled = !querying || total === 0;
+    if (this.previous && this.next) {
+      this.previous.disabled = !querying || total === 0;
+      this.next.disabled = !querying || total === 0;
+    }
   }
 
   /** A press of an arrow with a mouse or a key leaves the focus in the field, so Enter and typing go on; a touch leaves the keyboard alone. */

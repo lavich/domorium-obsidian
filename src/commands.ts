@@ -67,6 +67,7 @@ export interface GedcomCommand {
 const SHOW_NAMES: Record<DeskMode, MessageKey> = {
   graph: "command.showGraph",
   timeline: "command.showTimeline",
+  list: "command.showList",
   source: "command.showSource",
 };
 

@@ -47,6 +47,11 @@ body.theme-light {
   --nav-item-background-hover: rgb(235, 225, 245);
   --nav-item-background-selected: rgb(215, 195, 240);
   --nav-item-color-selected: rgb(40, 0, 80);
+  --nav-item-background-active: rgb(205, 225, 245);
+  --nav-item-color-active: rgb(0, 40, 90);
+  --nav-item-color-hover: rgb(60, 0, 90);
+  --nav-item-weight-active: inherit;
+  --background-modifier-border-focus: rgb(120, 160, 255);
   --color-pink: rgb(255, 0, 128);
   --color-pink-rgb: 255, 0, 128;
   --color-blue: rgb(0, 0, 255);
@@ -82,6 +87,11 @@ body.theme-dark {
   --nav-item-background-hover: rgb(45, 35, 60);
   --nav-item-background-selected: rgb(70, 50, 100);
   --nav-item-color-selected: rgb(230, 220, 255);
+  --nav-item-background-active: rgb(50, 70, 100);
+  --nav-item-color-active: rgb(200, 225, 255);
+  --nav-item-color-hover: rgb(240, 220, 255);
+  --nav-item-weight-active: inherit;
+  --background-modifier-border-focus: rgb(90, 120, 200);
   --color-pink: rgb(255, 100, 180);
   --color-pink-rgb: 255, 100, 180;
   --color-blue: rgb(80, 160, 255);
@@ -210,6 +220,9 @@ body {
   --link-external-color-hover: var(--text-accent-hover);
   --link-external-decoration-hover: underline;
   --radius-m: 8px;
+  --nav-item-size: var(--font-ui-small);
+  --line-height-tight: 1.3;
+  --nav-item-radius: var(--radius-m);
   --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.15);
   --popover-width: 450px;
   --popover-max-height: 95vh;
@@ -292,11 +305,15 @@ input[type="search"] {
   align-items: center;
   justify-content: center;
   padding: var(--size-2-2) var(--size-2-3);
-  border: none;
   border-radius: var(--clickable-icon-radius);
   color: var(--icon-color);
-  opacity: var(--icon-opacity);
   height: auto;
+}
+
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
 
 .clickable-icon .svg-icon {
@@ -305,15 +322,32 @@ input[type="search"] {
   stroke-width: var(--icon-stroke);
 }
 
+.clickable-icon svg {
+  opacity: var(--icon-opacity);
+}
+
 .clickable-icon:hover {
+  box-shadow: none;
+  color: var(--icon-color-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.clickable-icon:hover svg {
   opacity: var(--icon-opacity-hover);
+}
+
+.clickable-icon:active {
+  color: var(--icon-color-focused);
   background-color: var(--background-modifier-hover);
 }
 
 .clickable-icon.is-active {
-  opacity: var(--icon-opacity-hover);
   color: var(--icon-color-active);
   background-color: var(--background-modifier-active-hover);
+}
+
+.clickable-icon.is-active svg {
+  opacity: var(--icon-opacity-hover);
 }
 
 .document-search-container {

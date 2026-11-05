@@ -19,8 +19,8 @@ adapted per editor.
 ## Features
 
 - An optional genealogy interface, off until you turn it on: a graph and a
-  timeline of the whole file, an index of everyone in it, and a record card in
-  the right sidebar that shows the selected person, family, source or media
+  timeline of the whole file, a sortable list of its people, families and
+  sources, and a record card in the right sidebar that shows the selected person, family, source or media
   record with their facts, names, family, timeline, places and what each fact
   rests on
 - Context-aware GEDCOM tag autocomplete
@@ -51,37 +51,54 @@ to a remote service.
 3. To read the file as people and sources, turn on **Genealogy interface (beta)**
    in the plugin settings; it is still a beta and may change. Files then open in
    **Graph** mode, and the mode buttons in the view header, with the commands
-   **Show as graph**, **Show as timeline** and **Show as source**, go between
-   its three modes.
+   **Show as graph**, **Show as timeline**, **Show as list** and **Show as
+   source**, go between its four modes.
 
-The next paragraphs — the modes of a tab, the record card and the index — are
+The next paragraphs — the modes of a tab and the record card — are
 part of the genealogy interface and appear only while it is on; turning it off
 hides it again and closes its panels without losing the mode a tab was in. The
 editor features after them need no setting.
 
-A GEDCOM tab shows its file in three modes — **Graph**, **Timeline** and
-**Source** — which the three buttons in the tab's header choose, the current
-mode's in the accent colour. The commands **Show as graph**, **Show as
-timeline** and **Show as source**, from the command palette or the tab's menu,
-do the same, and **Switch between source and the last view** goes back and forth
-between Source and the mode before it. The graph and the timeline read the tab's
-own text, so what is typed and not yet saved is already in them. **Find**, and
-its key, opens the search of the mode the tab is in: the editor's panel in
-Source, the search over the board in Graph and Timeline; **Replace** stays in
-Source.
+A GEDCOM tab shows its file in four modes — **Graph**, **Timeline**, **List**
+and **Source** — which the four buttons in the tab's header choose, left to
+right in that order, the current mode's in the accent colour. The commands
+**Show as graph**, **Show as timeline**, **Show as list** and **Show as
+source**, from the command palette or the tab's menu, do the same, and **Switch
+between source and the last view** goes back and forth between Source and the
+mode before it. The graph, the timeline and the list read the tab's own text, so
+what is typed and not yet saved is already in them. **Find**, and its key, opens
+the search of the mode the tab is in: the editor's panel in Source, the search
+over the board in Graph and Timeline, and the filter field in List;
+**Replace** stays in Source.
+
+In **List** mode the tab shows the file's people, families or sources as a
+table, switched by the buttons at its top. People show name, years, place and
+how many sources the record cites, with a mark where it cites none; families
+show the spouses, the year and place of the marriage and the number of
+children; sources show the title, author, repository and how many records cite
+them. A click on a column header sorts by it, a second click reverses the order
+and a third restores the file's; a filter field narrows the rows by name, year
+and place. Sorting people by Sources puts those whose records cite no source
+first. A count says how many rows are shown. Clicking a row, or pressing Enter
+or Space on it, selects that record; the row of the selected record is marked
+and brought into view when it was selected elsewhere. The arrow keys, Home,
+End and the page keys move through the rows. A file of twenty thousand people
+draws only the rows in view. On a phone, and in a tab narrower than
+640 pixels, each row takes two lines and a selector with a direction button
+replaces the column headers.
 
 A tab selects one record at a time, and the **record card** in the right sidebar
-shows it, whatever the mode. While **Open the side panels when selecting** is on, which it is by default,
-clicking a card, a node, a row or a link opens the index in the left sidebar and
-the card in the right one, putting each there if it is closed and expanding a
-collapsed sidebar, and the view you clicked in keeps the focus; a panel already
-open is left alone, and one you collapse or close comes back with the next click.
-Following the cursor in Source and moving inside the card open nothing. With it
-off, the first selection in a session puts the card in the right sidebar without
-expanding it. **Show the record
+shows it, whatever the mode. While **Open the record card when selecting** is on, which it is by default,
+clicking a card, a node, a row or a link opens the card in the right sidebar,
+putting it there if it is closed and expanding a collapsed sidebar, and the view
+you clicked in keeps the focus; a card already open is left alone, and one you
+collapse or close comes back with the next click. The left sidebar is never
+opened. Following the cursor in Source and moving inside the card open
+nothing. With it off, the first selection in a session puts the card in the
+right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
-phone it is in the right drawer, which a second touch on a card, or a row of the
-index, opens. A person's card lists their facts in the order the record states
+phone it is in the right drawer, which a second touch on a card, or a tap on a
+row of the list, opens. A person's card lists their facts in the order the record states
 them, each marked with how many sources it cites itself, or that it cites none;
 their other names; their parents, siblings, spouses and children, each of whom
 selects that person; their media; a **timeline** of their events and their close
@@ -97,17 +114,17 @@ correction is made.
 
 What selects a record: a click or tap on a card or a node in Graph, or a name or
 a lifeline in Timeline, marks the person and shows the card without moving the
-view; a row of the index, a link to a record and **Go to record** also glide to
-the person; a relative, a citation or a tile in the card selects that record. In
-Source a row of the index, a link or the card puts the cursor on the record's
+view, and a click on a row in List marks the row; a link to a record and **Go to
+record** also glide to the person or bring the row into view; a relative, a
+citation or a tile in the card selects that record. In
+Source a link or the card puts the cursor on the record's
 first line, and the cursor, once it rests in a record that has a card, selects
 it — a note or a repository at the cursor leaves the selection alone. The
 selection is kept when the tab changes mode and across a restart.
 
-The ribbon icon, or **Open Domorium**, puts an index of the file's
-people, families and sources in the left sidebar: search by name, year or
-place, and a filter for the people whose records cite no source at all. The row
-of the selected record is marked.
+The command **Open the list of the GEDCOM file** brings the GEDCOM tab
+you used last to the front as a list, wherever it is; with no GEDCOM tab open it
+says so.
 
 In **Timeline** mode the tab shows one row per person, ordered by generation and
 family, and a lifeline from birth to death — pink for a woman, blue for a man,
