@@ -41,6 +41,7 @@ import {
 } from "./mapProjection";
 import { TileLayer } from "./mapTileLayer";
 import { PlacePopup } from "./placePopup";
+import { NO_TABLE } from "./placesTable";
 import { PlacesPanel, type PanelRow } from "./placesPanel";
 import { YearChip } from "./yearChip";
 import { least, most } from "./fileTimeline";
@@ -237,7 +238,7 @@ export class MapBoard {
     if (this.scope.focus !== undefined && !index.person(this.scope.focus)) {
       delete this.scope.focus;
     }
-    this.model = fileMapOf(index, table.status === "read" ? table.table : { rows: new Map() });
+    this.model = fileMapOf(index, table.status === "read" ? table.table : NO_TABLE);
     this.recompute();
     if (wasEmpty && state.view !== undefined && this.size.width > 0) {
       this.view = clampView(viewOf(state.view, this.size), this.size, this.limits());

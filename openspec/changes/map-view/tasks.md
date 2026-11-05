@@ -8,7 +8,7 @@ Run `npm run test` before touching anything: 1084 tests in 64 files pass on `mai
 
 ## 0. Preflight
 
-- [ ] 0.1 `rm -rf node_modules && npm ci`; `git rebase origin/main` if `main` has moved; `npm run test` is green before anything is edited. No code. Test: none.
+- [x] 0.1 `rm -rf node_modules && npm ci`; `git rebase origin/main` if `main` has moved; `npm run test` is green before anything is edited. No code. Test: none.
 
 ## 1. Strings
 
@@ -80,5 +80,5 @@ Each module is a small DOM unit over the pure layer; none holds more than one co
 
 ## 10. Verify
 
-- [ ] 10.1 `npm run check`, `npm run test:browser` (three runs) and `npm run openspec:validate` pass; `npm ls @domorium/codemirror @domorium/language-service @domorium/validator` shows one copy each; `npm run build` and the size of `dist/main.js` against `main`.
+- [x] 10.1 `npm run check`, `npm run test:browser` (three runs) and `npm run openspec:validate` pass; `npm ls @domorium/codemirror @domorium/language-service @domorium/validator` shows one copy each; `npm run build` and the size of `dist/main.js` against `main`.
 - [ ] 10.2 By hand in Obsidian on `demo-vault/`, desktop and phone (leave unticked until someone has done it): the five header buttons in order on 1.8.7 and the current app; **Show as map** from the palette and the tab's menu; the map opening fitted on the demo file; the outline at world, country and city zoom in light, dark and a themed vault; Marie from the card, a link and Back moving the map and drawing her line; a click selecting and the card opening by the setting; a popup; the chip; the search by `paris` and an accent; **Branch of**; an empty map and **Create the places table**, editing the note and the map following, the button with the note existing, **Add the N places that have no row**, renaming `curie.ged` and its folder and the table following; **Load map tiles from the web** off (no request in the network panel), on with the reader's own server (the tiles under the outline, attribution, `referrerpolicy="no-referrer"` against a public server), a failing server, an invalid and a half-typed address, toggled off; the legacy settings `display()` on an app below 1.13 with the text rows; a file of many places; pan, pinch, wheel; edge-swipe of Obsidian's drawers against map panning on a phone; 44 px targets, the sheet and the bottom navigation, a large system font, a tab narrower than 640 px; the keyboard stop and a screen reader; reduced motion; two tabs of one file; a restart in Map mode; the interface off and on; the Russian text.
