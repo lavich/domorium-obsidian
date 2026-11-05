@@ -1,23 +1,20 @@
 import { t } from "../i18n";
 
-export type EmptyState =
-  | { show: false }
-  | { show: true; cause: "none" | "no-places"; button: "create" | "open" | null };
+export type EmptyState = { show: false } | { show: true; cause: "none" | "no-places" };
 
-export function emptyStateOf(args: { read: boolean; places: number; mapped: number; tableExists: boolean }): EmptyState {
+export function emptyStateOf(args: { read: boolean; places: number; mapped: number }): EmptyState {
   if (!args.read || args.mapped > 0) {
     return { show: false };
   }
-  if (args.places === 0) {
-    return { show: true, cause: "no-places", button: null };
-  }
-  return { show: true, cause: "none", button: args.tableExists ? "open" : "create" };
+  return { show: true, cause: args.places === 0 ? "no-places" : "none" };
 }
+
+const EXAMPLE = ["2 PLAC Paris, France", "3 MAP", "4 LATI N48.8566", "4 LONG E2.3522"].join("\n");
 
 export class MapEmpty {
   readonly el: HTMLElement;
 
-  constructor(parent: HTMLElement, private readonly act: () => void) {
+  constructor(parent: HTMLElement) {
     this.el = parent.createDiv({ cls: "gedcom-map-empty" });
     this.el.toggle(false);
   }
@@ -30,9 +27,8 @@ export class MapEmpty {
     }
     this.el.createEl("h3", { text: t("map.empty.title") });
     this.el.createEl("p", { text: t(state.cause === "none" ? "map.empty.noMap" : "map.empty.noPlaces") });
-    if (state.button !== null) {
-      const button = this.el.createEl("button", { cls: "mod-cta", text: t(state.button === "open" ? "map.empty.open" : "map.empty.create"), attr: { type: "button" } });
-      button.addEventListener("click", () => this.act());
+    if (state.cause === "none") {
+      this.el.createEl("pre", { cls: "gedcom-map-empty-example", text: EXAMPLE });
     }
   }
 }

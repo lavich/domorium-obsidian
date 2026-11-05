@@ -5,11 +5,10 @@ import { curieWithMap, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { fileMapOf, groupByPlace, type PlaceGroup } from "./fileMap";
 import { MapFind } from "./mapFind";
-import { NO_TABLE } from "./placesTable";
 
 beforeAll(installObsidianDom);
 
-const model = fileMapOf(indexOf(curieWithMap()), NO_TABLE);
+const model = fileMapOf(indexOf(curieWithMap()));
 const groups = groupByPlace(model, model.events);
 
 let find: MapFind;

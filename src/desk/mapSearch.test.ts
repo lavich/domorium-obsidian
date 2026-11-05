@@ -3,10 +3,9 @@ import { describe, expect, it } from "vitest";
 import { curieWithMap, indexOf } from "../testing/curie";
 import { fileMapOf, groupByPlace } from "./fileMap";
 import { foldText, matchPlaces } from "./mapSearch";
-import { NO_TABLE } from "./placesTable";
 
 const index = indexOf(curieWithMap());
-const groups = groupByPlace(fileMapOf(index, NO_TABLE), fileMapOf(index, NO_TABLE).events);
+const groups = groupByPlace(fileMapOf(index), fileMapOf(index).events);
 const collator = new Intl.Collator("en");
 const names = (query: string) => matchPlaces(groups, query, collator).drawn.map((group) => group.place.name);
 

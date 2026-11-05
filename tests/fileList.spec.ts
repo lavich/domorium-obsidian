@@ -652,7 +652,6 @@ for (const viewport of [WIDE, PHONE]) {
     const mountPlaces = (page: Page, options: TabOptions = {}) =>
       mountList(page, { fixture: "map", phone, touch: phone, memory: { list: { kind: "places" } }, ...options });
     const place = (page: Page, key: string) => page.locator(`.gedcom-list-row[data-key="${key}"]`);
-    const actions = (page: Page) => page.locator(".gedcom-list-action").allInnerTexts();
 
     test("lists every place alphabetically with the events, the years and the coordinates", async ({ page }) => {
       await mountPlaces(page);
@@ -740,38 +739,23 @@ for (const viewport of [WIDE, PHONE]) {
       expect(await selected(page)).toEqual([]);
     });
 
-    test("offers the places table actions only on the places, in the row of the kinds", async ({ page }) => {
-      await mountPlaces(page, { placesText: "| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |" });
+    test("has no button in the row of the kinds but the kinds", async ({ page }) => {
+      await mountPlaces(page);
 
-      expect(await actions(page)).toEqual(["Open the places table", "Add the 5 places that have no row"]);
-      const bar = (await page.locator(".gedcom-list-bar").boundingBox())?.y ?? 0;
-      const first = (await page.locator(".gedcom-list-action").first().boundingBox())?.y ?? 0;
-      expect(first).toBeGreaterThanOrEqual(bar);
-      await seg(page, "People").click();
+      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(4);
       await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
     });
 
-    test("calls the host for the table and for the missing rows", async ({ page }) => {
-      await mountPlaces(page, { placesText: null });
-
-      expect(await actions(page)).toEqual(["Create the places table"]);
-      await page.locator(".gedcom-list-action").click();
-      expect(await page.evaluate(() => window.tab.calls.tableActions)).toBe(1);
-    });
-
-    test("gives its action buttons targets a finger finds", async ({ page }) => {
+    test("gives its rows the height a finger finds", async ({ page }) => {
       test.skip(!phone, "a pointer needs no more than the default");
-      await mountPlaces(page, { placesText: "| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |" });
+      await mountPlaces(page);
 
-      for (const box of await page.locator(".gedcom-list-action").evaluateAll((all) => all.map((one) => one.getBoundingClientRect().height))) {
-        expect(box).toBeGreaterThanOrEqual(44);
-      }
       const rowHeight = (await rows(page).first().boundingBox())?.height ?? 0;
       expect(rowHeight).toBeGreaterThanOrEqual(44);
     });
 
     test("does not overflow sideways", async ({ page }) => {
-      await mountPlaces(page, { placesText: "| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |" });
+      await mountPlaces(page);
 
       expect(await sidewaysOverflow(page)).toBe(false);
     });

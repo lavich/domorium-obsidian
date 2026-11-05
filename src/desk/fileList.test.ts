@@ -3,10 +3,9 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { generated } from "../../tests/generated";
 import { resetLanguage } from "../i18n";
-import { curieIndex, curieWithMap, indexOf } from "../testing/curie";
+import { curieIndex, curieWithMap, indexOf, SCEAUX_MAP } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
-import { parsePlacesTable } from "./placesTable";
 
 const box = { width: 1000, height: 600, wide: 36, compact: 56 };
 
@@ -46,9 +45,6 @@ let host: {
   scrolled: ReturnType<typeof vi.fn<ListHost["scrolled"]>>;
   setIcon: ReturnType<typeof vi.fn<ListHost["setIcon"]>>;
   coarsePointer: () => boolean;
-  places: ReturnType<typeof vi.fn<ListHost["places"]>>;
-  placesAction: ReturnType<typeof vi.fn<ListHost["placesAction"]>>;
-  addMissing: ReturnType<typeof vi.fn<ListHost["addMissing"]>>;
 };
 
 beforeEach(() => {
@@ -63,9 +59,6 @@ beforeEach(() => {
     scrolled: vi.fn(),
     setIcon: vi.fn(),
     coarsePointer: () => coarse,
-    places: vi.fn(() => ({ status: "read" as const, table: { rows: new Map() } })),
-    placesAction: vi.fn(),
-    addMissing: vi.fn(),
   };
 });
 
@@ -780,12 +773,10 @@ describe("the scroll the board reports", () => {
 
 describe("the places", () => {
   const mapped = indexOf(curieWithMap());
+  const withSceaux = indexOf(curieWithMap(SCEAUX_MAP));
   const place = (key: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === key);
   const marks = (): (string | null)[] =>
     rows().map((one) => one.querySelector(".gedcom-list-gap")?.getAttribute("aria-label") ?? null);
-  const actions = (): string[] => all(".gedcom-list-action").map((one) => one.textContent ?? "");
-  const tableOf = (...lines: string[]) =>
-    ({ status: "read" as const, table: parsePlacesTable(["| P | a | b |", "| - | - | - |", ...lines].join("\n")) });
   const open = (state = {}) => board({ kind: "places", ...state }, mapped);
 
   it("is the fourth kind, after the sources", () => {
@@ -814,26 +805,11 @@ describe("the places", () => {
     expect(marks().filter((mark) => mark !== null)).toHaveLength(6);
   });
 
-  it("counts the coordinates a places table gives", () => {
-    host.places.mockReturnValue(tableOf("| Sceaux, France | 48.7766 | 2.2917 |"));
-    open();
+  it("takes the coordinates of a place from its MAP in the file", () => {
+    board({ kind: "places" }, withSceaux);
 
     expect(cell(place("sceaux, france"), 3)).toBe("48.7766, 2.2917");
     expect(marks().filter((mark) => mark !== null)).toHaveLength(5);
-  });
-
-  it("draws no mark and no action while the places table is not read, and the marks once it is", () => {
-    host.places.mockReturnValue({ status: "unread" });
-    const made = open();
-
-    expect(marks().filter((mark) => mark !== null)).toHaveLength(0);
-    expect(actions()).toEqual([]);
-
-    host.places.mockReturnValue({ status: "absent" });
-    made.placesChanged();
-
-    expect(marks().filter((mark) => mark !== null)).toHaveLength(6);
-    expect(actions()).toEqual(["Create the places table"]);
   });
 
   it("keeps the order a column gives and cycles it in three presses", () => {
@@ -923,56 +899,11 @@ describe("the places", () => {
     expect(row("@I2@")?.getAttribute("aria-selected")).toBe("true");
   });
 
-  it("shows the actions of the places table only in the places kind", () => {
-    host.places.mockReturnValue(tableOf());
-    board({}, mapped);
-
-    expect(actions()).toEqual([]);
-    click(button(".gedcom-list-seg-button", "Places"));
-    expect(actions()[0]).toBe("Open the places table");
-    click(button(".gedcom-list-seg-button", "Families"));
-    expect(actions()).toEqual([]);
-  });
-
-  it("offers to create the table when there is none, and runs the action", () => {
-    host.places.mockReturnValue({ status: "absent" });
+  it("has no button but the kinds on the places", () => {
     open();
 
-    expect(actions()).toEqual(["Create the places table"]);
-    click(query(".gedcom-list-action"));
-    expect(host.placesAction).toHaveBeenCalledOnce();
-  });
-
-  it("offers the places that have no row, and only when there are some", () => {
-    host.places.mockReturnValue(tableOf("| Mulhouse, France |  |  |"));
-    open();
-
-    expect(actions()).toEqual(["Open the places table", "Add the 5 places that have no row"]);
-    click(button(".gedcom-list-action", "Add"));
-    expect(host.addMissing).toHaveBeenCalledOnce();
-    expect(host.addMissing.mock.calls[0]?.[0]).toHaveLength(5);
-    expect(host.addMissing.mock.calls[0]?.[0]).not.toContain("Mulhouse, France");
-  });
-
-  it("offers no addition once every unmapped place has a row", () => {
-    const lines = ["Mulhouse, France", "Sceaux, France", "Montpellier, France", "New York, New York, United States", "United States", "New Orleans, Louisiana, United States"].map(
-      (name) => `| ${name} |  |  |`,
-    );
-    host.places.mockReturnValue(tableOf(...lines));
-    open();
-
-    expect(actions()).toEqual(["Open the places table"]);
-  });
-
-  it("redraws the actions after the table changed", () => {
-    host.places.mockReturnValue(tableOf());
-    const made = open();
-    expect(actions()).toHaveLength(2);
-
-    host.places.mockReturnValue(tableOf(...["Mulhouse, France", "Sceaux, France", "Montpellier, France", "New York, New York, United States", "United States", "New Orleans, Louisiana, United States"].map((name) => `| ${name} |  |  |`)));
-    made.placesChanged();
-
-    expect(actions()).toEqual(["Open the places table"]);
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
   it("shows the coordinates of a compact row with the mark spelled out", () => {

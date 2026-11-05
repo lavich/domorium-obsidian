@@ -88,16 +88,21 @@ export function curieWithEvents(): string {
   return out.join("\n");
 }
 
-const MAPPED: Record<string, [string, string]> = {
+type MapLines = Record<string, [string, string]>;
+
+export const SCEAUX_MAP: MapLines = { "Sceaux, France": ["N48.7766", "E2.2917"] };
+
+const MAPPED: MapLines = {
   "Stockholm, Sweden": ["N59.3293", "E18.0686"],
 };
 
-export function curieWithMap(): string {
+export function curieWithMap(more: MapLines = {}): string {
+  const mapped = { ...MAPPED, ...more };
   return curieWithEvents()
     .split("\n")
     .flatMap((line) => {
       const place = /^2 PLAC (.+)$/u.exec(line)?.[1];
-      const at = place === undefined ? undefined : MAPPED[place];
+      const at = place === undefined ? undefined : mapped[place];
       return at === undefined ? [line] : [line, "3 MAP", `4 LATI ${at[0]}`, `4 LONG ${at[1]}`];
     })
     .join("\n");

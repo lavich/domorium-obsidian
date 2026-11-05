@@ -381,7 +381,7 @@ test.describe("the map in the Obsidian theme", () => {
       await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
       await page.evaluate(
         (isDark) => {
-          window.tab.mount({ mode: "map", fixture: "map", dark: isDark, placesText: "" });
+          window.tab.mount({ mode: "map", fixture: "map", dark: isDark });
           window.tab.select("@I1@", false);
         },
         dark,

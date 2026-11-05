@@ -3,13 +3,10 @@ import { type IconSetter, prefersReducedMotion } from "./dom";
 import { decodeOutline, outlinePath } from "./mapOutline";
 import { MAP_OUTLINE } from "./mapOutlineData";
 import { readMapView, type SavedView } from "./mapProjection";
-import type { PlacesTable } from "./placesTable";
 
 export interface MapState extends BranchScope {
   view?: SavedView;
 }
-
-export type TableState = { status: "unread" } | { status: "absent" } | { status: "read"; table: PlacesTable };
 
 export interface TileSettings {
   enabled: boolean;
@@ -23,7 +20,6 @@ export interface FileMapHost {
   setIcon: IconSetter;
   coarsePointer(): boolean;
   stateChanged(state: MapState): void;
-  tableAction(): void;
   showPlaces(): void;
   tiles(): TileSettings;
 }

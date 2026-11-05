@@ -404,12 +404,6 @@
     "other": "{count} ребёнка"
   },
   "list.compact.citedBy": "Цитируют: {count}",
-  "list.places.addMissing": {
-    "one": "Добавить место без строки",
-    "few": "Добавить {count} места без строки",
-    "many": "Добавить {count} мест без строк",
-    "other": "Добавить {count} места без строки"
-  },
   "mode.map": "Карта",
   "command.showMap": "Показать как карту",
   "map.label": {
@@ -464,12 +458,8 @@
   "map.kind.marriage": "Брак",
   "map.kind.other": "Событие",
   "map.empty.title": "Ни у одного места пока нет координат",
-  "map.empty.noMap": "Ни у одного места в файле нет координат, и ни одна строка таблицы мест их не задаёт.",
+  "map.empty.noMap": "Место получает положение из MAP с LATI и LONG под его PLAC в файле.",
   "map.empty.noPlaces": "В файле нет ни одного места.",
-  "map.empty.create": "Создать таблицу мест",
-  "map.empty.open": "Открыть таблицу мест",
-  "map.table.note": "Координаты мест из {file}. Координаты в файле важнее строки здесь.",
-  "map.table.followed": "Таблица мест переименована: {path}",
   "map.tiles.invalid": "Адрес сервера плиток недействителен",
   "map.tiles.failed": "Плитки не удалось загрузить",
   "map.status.noSelectionPlaces": "Ни одно место выбранной записи не на карте",

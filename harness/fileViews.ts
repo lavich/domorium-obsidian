@@ -2,12 +2,11 @@ import type { Range } from "@domorium/language-service";
 
 import type { ViewKind } from "../src/desk/deskState";
 import { mapSelection } from "../src/desk/fileMap";
-import type { TableState, TileSettings } from "../src/desk/fileMapView";
+import type { TileSettings } from "../src/desk/fileMapView";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
-import { parsePlacesTable } from "../src/desk/placesTable";
-import { CURIE, curieWithMap, indexOf } from "../src/testing/curie";
+import { CURIE, curieWithMap, indexOf, SCEAUX_MAP } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
 import { stubSetIcon } from "./icons";
 
@@ -23,8 +22,7 @@ export interface TabOptions {
   phone?: boolean;
   touch?: boolean;
   language?: string;
-  fixture?: "map";
-  placesText?: string | null;
+  fixture?: "map" | "mapWithSceaux";
   tiles?: TileSettings;
 }
 
@@ -32,9 +30,7 @@ export interface TabCalls {
   selected: string[];
   shownInSource: Range[];
   changed: number;
-  tableActions: number;
   shownPlaces: number;
-  addedPlaces: string[][];
 }
 
 declare global {
@@ -55,9 +51,8 @@ declare global {
 
 installObsidianDom();
 
-const calls: TabCalls = { selected: [], shownInSource: [], changed: 0, tableActions: 0, shownPlaces: 0, addedPlaces: [] };
+const calls: TabCalls = { selected: [], shownInSource: [], changed: 0, shownPlaces: 0 };
 const NO_TILES: TileSettings = { enabled: false, template: null, invalid: false, attribution: "" };
-let places: TableState = { status: "read", table: { rows: new Map() } };
 let tiles: TileSettings = NO_TILES;
 let views: FileViews | null = null;
 let memory: ViewMemory = {};
@@ -129,15 +124,12 @@ function mount(options: TabOptions): void {
   calls.selected = [];
   calls.shownInSource = [];
   calls.changed = 0;
-  calls.tableActions = 0;
   calls.shownPlaces = 0;
-  calls.addedPlaces = [];
-  places =
-    options.placesText === null
-      ? { status: "absent" }
-      : { status: "read", table: parsePlacesTable(options.placesText ?? "") };
   tiles = options.tiles ?? NO_TILES;
-  index = indexOf(options.doc ?? (options.fixture === "map" ? curieWithMap() : CURIE));
+  index = indexOf(
+    options.doc ??
+      (options.fixture === "map" ? curieWithMap() : options.fixture === "mapWithSceaux" ? curieWithMap(SCEAUX_MAP) : CURIE),
+  );
   memory = options.memory ?? {};
   around = options.around;
   selected = null;
@@ -163,13 +155,6 @@ function mount(options: TabOptions): void {
     },
     setIcon: stubSetIcon,
     coarsePointer: () => touch,
-    places: () => places,
-    placesAction: () => {
-      calls.tableActions += 1;
-    },
-    addMissingPlaces: (names) => {
-      calls.addedPlaces.push(names);
-    },
     showPlaces: () => {
       calls.shownPlaces += 1;
       memory = { ...memory, list: views?.placesList() ?? {} };

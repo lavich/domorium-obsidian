@@ -12,7 +12,7 @@ import {
   type PlaceGroup,
   type Route,
 } from "./fileMap";
-import { placeKey } from "./placesTable";
+import { placeKey } from "./fileMap";
 import { boundsOf, keeps, type YearRange } from "./yearRange";
 
 export interface ScopeSlice {

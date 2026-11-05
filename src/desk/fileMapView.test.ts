@@ -2,19 +2,16 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
-import { CURIE as CURIE_TEXT, curieWithMap, indexOf } from "../testing/curie";
+import { CURIE as CURIE_TEXT, curieWithMap, indexOf, SCEAUX_MAP } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
-import { type FileMapHost, MapBoard, type MapEnv, type MapState, type TableState, type TileSettings } from "./fileMapView";
-import { parsePlacesTable } from "./placesTable";
+import { type FileMapHost, MapBoard, type MapEnv, type MapState, type TileSettings } from "./fileMapView";
 
 beforeAll(installObsidianDom);
 afterEach(resetLanguage);
 
 const WIDE = { width: 1400, height: 900 };
-const SCEAUX = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Sceaux, France | 48.7766 | 2.2917 |");
-const READ: TableState = { status: "read", table: SCEAUX };
-const BARE: TableState = { status: "read", table: parsePlacesTable("") };
-const index = indexOf(curieWithMap());
+const index = indexOf(curieWithMap(SCEAUX_MAP));
+const bare = indexOf(curieWithMap());
 
 let root: HTMLElement;
 let clock: number;
@@ -25,7 +22,6 @@ let host: FileMapHost;
 let mocks: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   stateChanged: ReturnType<typeof vi.fn<(state: MapState) => void>>;
-  tableAction: ReturnType<typeof vi.fn<() => void>>;
   showPlaces: ReturnType<typeof vi.fn<() => void>>;
 };
 let tiles: TileSettings;
@@ -47,11 +43,11 @@ function advance(ms: number): void {
   }
 }
 
-function board(state: MapState = { up: 2, down: 2 }, table: TableState = READ, doc = index, size = WIDE): MapBoard {
+function board(state: MapState = { up: 2, down: 2 }, doc = index, size = WIDE): MapBoard {
   root = document.createElement("div");
   document.body.replaceChildren(root);
   const made = new MapBoard(root, host, env());
-  made.show(doc, table, state);
+  made.show(doc, state);
   made.resized(size);
   return made;
 }
@@ -62,7 +58,7 @@ beforeEach(() => {
   timers = [];
   reduced = true;
   tiles = { enabled: false, template: null, invalid: false, attribution: "" };
-  mocks = { select: vi.fn(), stateChanged: vi.fn(), tableAction: vi.fn(), showPlaces: vi.fn() };
+  mocks = { select: vi.fn(), stateChanged: vi.fn(), showPlaces: vi.fn() };
   host = { ...mocks, setIcon: () => undefined, coarsePointer: () => false, tiles: () => tiles };
 });
 
@@ -84,7 +80,7 @@ const pressKey = (key: string): void => {
 
 describe("the places of the map", () => {
   it("draws one point per mapped place and none for a place without coordinates", () => {
-    board(undefined, BARE);
+    board(undefined, bare);
     const keys = marks().map((one) => one.getAttribute("data-key"));
 
     expect(keys.sort()).toEqual(["paris, france", "passy, haute-savoie, france", "stockholm, sweden", "warsaw, congress poland"]);
@@ -92,18 +88,18 @@ describe("the places of the map", () => {
   });
 
   it("says what it draws and what it cannot, in English and in Russian", () => {
-    board(undefined, BARE);
+    board(undefined, bare);
     expect(text(".gedcom-map-counts")).toMatch(/^4 places · \d+ events$/u);
     expect(text(".gedcom-map-counter")).toBe("6 places have no coordinates");
     setLanguage("ru");
-    board(undefined, BARE);
+    board(undefined, bare);
 
     expect(text(".gedcom-map-counts")).toMatch(/^4 места · \d+ событи/u);
     expect(text(".gedcom-map-counter")).toBe("У 6 мест нет координат");
   });
 
   it("sends the reader to the places of the list from the counter, and draws no panel of its own", () => {
-    board(undefined, BARE);
+    board(undefined, bare);
     root.querySelector<HTMLElement>(".gedcom-map-counter")?.click();
 
     expect(mocks.showPlaces).toHaveBeenCalledOnce();
@@ -111,7 +107,7 @@ describe("the places of the map", () => {
   });
 
   it("sizes a point by its events and colours it by their kind, grey with the number where kinds differ", () => {
-    board(undefined, BARE);
+    board(undefined, bare);
 
     expect(mark("passy, haute-savoie, france").getAttribute("class")).toContain("is-death");
     expect(mark("paris, france").getAttribute("class")).toContain("is-mixed");
@@ -123,7 +119,7 @@ describe("the places of the map", () => {
   it("draws nothing again for the same inputs", () => {
     const made = board();
     const before = marks()[0];
-    made.show(index, READ, { up: 2, down: 2 });
+    made.show(index, { up: 2, down: 2 });
 
     expect(marks()[0]).toBe(before);
   });
@@ -190,7 +186,7 @@ describe("selecting by a point", () => {
   });
 
   it("selects nothing and moves nothing for a hover", () => {
-    board(undefined, BARE);
+    board(undefined, bare);
     const [x, y] = at("paris, france");
     root.querySelector(".gedcom-map-plot")?.dispatchEvent(new PointerEvent("pointermove", { clientX: x, clientY: y, pointerType: "mouse", bubbles: true }));
 
@@ -210,7 +206,7 @@ describe("a selected record", () => {
   });
 
   it("dims the points of other records", () => {
-    const made = board(undefined, BARE);
+    const made = board(undefined, bare);
     made.select("@I2@", false);
 
     expect(mark("paris, france").getAttribute("class")).toContain("is-highlighted");
@@ -235,7 +231,7 @@ describe("a selected record", () => {
   });
 
   it("says that none of a person's places is on the map where none is", () => {
-    const made = board(undefined, { status: "read", table: parsePlacesTable("") }, indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 BIRT\n2 PLAC Nowhere\n0 TRLR\n"));
+    const made = board(undefined, indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 BIRT\n2 PLAC Nowhere\n0 TRLR\n"));
     made.select("@I1@", false);
 
     expect(text(".gedcom-map-status")).toBe("None of the selected record's places is on the map");
@@ -261,7 +257,7 @@ describe("a selected record", () => {
 
 describe("the years range", () => {
   it("narrows points and counts and leaves the selection and the view alone", () => {
-    const made = board(undefined, BARE);
+    const made = board(undefined, bare);
     made.select("@I1@", false);
     const view = made.state();
     const before = text(".gedcom-map-counts");
@@ -303,7 +299,7 @@ describe("the scope", () => {
 
 describe("the keyboard and the search", () => {
   it("steps through places and names each in the live region", () => {
-    board(undefined, BARE);
+    board(undefined, bare);
     pressKey("ArrowRight");
 
     expect(text(".gedcom-map-live")).toMatch(/^Paris, France, \d+ events?, \d{4} to \d{4}$/u);
@@ -322,7 +318,7 @@ describe("the keyboard and the search", () => {
   });
 
   it("dims places that do not match and rings the one stepped to", () => {
-    const made = board(undefined, BARE);
+    const made = board(undefined, bare);
     made.openSearch();
     const input = root.querySelector<HTMLInputElement>("input[type=search]")!;
     input.value = "WARSAW";
@@ -338,26 +334,15 @@ describe("the keyboard and the search", () => {
 describe("a map with no place to draw", () => {
   const plain = indexOf(CURIE_TEXT.replace(/^[34] (?:MAP|LATI|LONG).*\n/gmu, ""));
 
-  it("says why and offers to create the table, which calls its host once", () => {
-    board(undefined, { status: "absent" }, plain);
+  it("says why and shows the MAP lines, with no button", () => {
+    board(undefined, plain);
     const empty = root.querySelector<HTMLElement>(".gedcom-map-empty")!;
 
     expect(empty.style.display).not.toBe("none");
     expect(empty.querySelector("h3")?.textContent).toBe("No place has coordinates yet");
-    empty.querySelector("button")?.click();
-    expect(mocks.tableAction).toHaveBeenCalledOnce();
-  });
-
-  it("is not shown before the table has been read", () => {
-    board(undefined, { status: "unread" }, plain);
-
-    expect(root.querySelector<HTMLElement>(".gedcom-map-empty")?.style.display).toBe("none");
-  });
-
-  it("reads Open the places table where a table with no coordinates exists", () => {
-    board(undefined, { status: "read", table: parsePlacesTable("") }, plain);
-
-    expect(root.querySelector(".gedcom-map-empty button")?.textContent).toBe("Open the places table");
+    expect(empty.querySelector("p")?.textContent).toBe("A place gets a position from a MAP with LATI and LONG under its PLAC in the file.");
+    expect(empty.querySelector("pre")?.textContent).toContain("3 MAP");
+    expect(empty.querySelector("button")).toBeNull();
   });
 
   it("is not shown where one place has coordinates", () => {
@@ -396,7 +381,7 @@ describe("a file of five thousand places", () => {
       lines.push(`0 @I${i}@ INDI`, "1 NAME A /B/", "1 BIRT", `2 PLAC P${i}`, "3 MAP", `4 LATI ${lat < 0 ? "S" : "N"}${Math.abs(lat).toFixed(3)}`, `4 LONG ${lon < 0 ? "W" : "E"}${Math.abs(lon).toFixed(3)}`);
     }
     lines.push("0 TRLR");
-    return board(undefined, { status: "absent" }, indexOf(lines.join("\n")));
+    return board(undefined, indexOf(lines.join("\n")));
   }
 
   it("holds under 600 marks for places gathered round cities, at the world zoom and after a pan", () => {

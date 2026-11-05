@@ -364,10 +364,6 @@
     "other": "{count} children"
   },
   "list.compact.citedBy": "Cited by {count}",
-  "list.places.addMissing": {
-    "one": "Add the place that has no row",
-    "other": "Add the {count} places that have no row"
-  },
   "mode.map": "Map",
   "command.showMap": "Show as map",
   "map.label": {
@@ -412,12 +408,8 @@
   "map.kind.marriage": "Marriage",
   "map.kind.other": "Event",
   "map.empty.title": "No place has coordinates yet",
-  "map.empty.noMap": "No place in the file has coordinates, and no row of the places table gives any.",
+  "map.empty.noMap": "A place gets a position from a MAP with LATI and LONG under its PLAC in the file.",
   "map.empty.noPlaces": "The file names no place.",
-  "map.empty.create": "Create the places table",
-  "map.empty.open": "Open the places table",
-  "map.table.note": "Coordinates for the places of {file}. Coordinates in the file win over a row here.",
-  "map.table.followed": "The places table was renamed to {path}",
   "map.tiles.invalid": "The tile server address is not valid",
   "map.tiles.failed": "Tiles could not be loaded",
   "map.status.noSelectionPlaces": "None of the selected record's places is on the map",

@@ -6,7 +6,7 @@ import { fileTimelineOf } from "./fileTimeline";
 import { FileGraphBoard, type GraphState } from "./fileGraphView";
 import { FileTimelineBoard, type TimelineState } from "./fileTimelineView";
 import { ListBoard } from "./fileList";
-import { MapBoard, type MapState, type TableState, type TileSettings } from "./fileMapView";
+import { MapBoard, type MapState, type TileSettings } from "./fileMapView";
 import type { ListState } from "./listRows";
 import type { PortraitContent } from "./graphCanvas";
 
@@ -28,9 +28,6 @@ export interface FileViewsHost {
   changed(): void;
   setIcon(element: HTMLElement, icon: string): void;
   coarsePointer(): boolean;
-  places(): TableState;
-  placesAction(): void;
-  addMissingPlaces(names: string[]): void;
   /** The map's counter of places with no coordinates: the tab goes to its list, on the places. */
   showPlaces(): void;
   tiles(): TileSettings;
@@ -203,16 +200,8 @@ export class FileViews {
   private showMap(index: GenealogyIndex, saved: MapState | undefined): void {
     const board = (this.map ??= this.makeMap());
     this.mapIndex = index;
-    board.show(index, this.host.places(), openingMemory("map", saved ?? this.kept.map, index, undefined));
+    board.show(index, openingMemory("map", saved ?? this.kept.map, index, undefined));
     this.kept.map = board.state();
-  }
-
-  refreshPlaces(): void {
-    if (this.shownKind === "map" && this.map && this.mapIndex && this.displayed()) {
-      this.map.show(this.mapIndex, this.host.places(), this.map.state());
-    } else if (this.shownKind === "list" && this.displayed()) {
-      this.list?.placesChanged();
-    }
   }
 
   /** The list's memory with the places kind chosen and its search cleared, for the tab to show next. */
@@ -309,7 +298,6 @@ export class FileViews {
         this.kept.map = state;
         this.host.changed();
       },
-      tableAction: () => this.host.placesAction(),
       showPlaces: () => this.host.showPlaces(),
       tiles: () => this.host.tiles(),
     });
@@ -327,9 +315,6 @@ export class FileViews {
       },
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       coarsePointer: () => this.host.coarsePointer(),
-      places: () => this.host.places(),
-      placesAction: () => this.host.placesAction(),
-      addMissing: (names) => this.host.addMissingPlaces(names),
     });
   }
 }

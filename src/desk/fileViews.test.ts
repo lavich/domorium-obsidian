@@ -29,9 +29,6 @@ let host: {
   changed: ReturnType<typeof vi.fn<() => void>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
   coarsePointer: ReturnType<typeof vi.fn<() => boolean>>;
-  places: ReturnType<typeof vi.fn<FileViewsHost["places"]>>;
-  placesAction: ReturnType<typeof vi.fn<() => void>>;
-  addMissingPlaces: ReturnType<typeof vi.fn<(names: string[]) => void>>;
   showPlaces: ReturnType<typeof vi.fn<() => void>>;
   tiles: ReturnType<typeof vi.fn<FileViewsHost["tiles"]>>;
 };
@@ -82,9 +79,6 @@ beforeEach(() => {
       element.setAttribute("data-icon", icon);
     }),
     coarsePointer: vi.fn(() => false),
-    places: vi.fn(() => ({ status: "read" as const, table: { rows: new Map() } })),
-    placesAction: vi.fn(),
-    addMissingPlaces: vi.fn(),
     showPlaces: vi.fn(),
     tiles: vi.fn(() => ({ enabled: false, template: null, invalid: false, attribution: "" })),
   };
@@ -346,19 +340,6 @@ describe("the map among the views", () => {
 
     expect(tab.memory()).toEqual({});
     expect(parent.children).toHaveLength(0);
-  });
-
-  it("draws from the places table handed over, and only a map in view draws again for a change", () => {
-    host.places.mockReturnValue({ status: "read", table: { rows: new Map([["sceaux, france", { latitude: 48.7766, longitude: 2.2917 }]]) } });
-    const tab = views();
-    tab.show("map", mapped, { map: { up: 2, down: 2, view: { lat: 48.8, lon: 2.3, zoom: 9 } } });
-    expect(marks().some((mark) => mark.getAttribute("data-key") === "sceaux, france")).toBe(true);
-    host.places.mockReturnValue({ status: "read", table: { rows: new Map() } });
-    tab.show("graph", mapped, {});
-    tab.refreshPlaces();
-    tab.show("map", mapped, tab.memory());
-
-    expect(marks().some((mark) => mark.getAttribute("data-key") === "sceaux, france")).toBe(false);
   });
 
   it("opens the search of the map", () => {
@@ -817,18 +798,6 @@ describe("the places of the list of a tab", () => {
 
     expect(keys()).toHaveLength(10);
     expect(tab.memory().list).toEqual({ kind: "places" });
-  });
-
-  it("draws the marks of a places table that was read after the list was shown", () => {
-    host.places.mockReturnValue({ status: "unread" });
-    const tab = views();
-    tab.show("list", mapped, { list: { kind: "places" } });
-    expect(parent.querySelectorAll(".gedcom-list-gap")).toHaveLength(0);
-
-    host.places.mockReturnValue({ status: "absent" });
-    tab.refreshPlaces();
-
-    expect(parent.querySelectorAll(".gedcom-list-gap")).toHaveLength(6);
   });
 
   it("stays on the places when the tab hands over a record selection", () => {

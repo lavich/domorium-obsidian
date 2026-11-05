@@ -5,7 +5,7 @@ import { yearText } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
 import type { ListSort } from "./listRows";
 import { foldText } from "./mapSearch";
-import { placeKey } from "./placesTable";
+import { placeKey } from "./fileMap";
 
 export interface PlaceRow {
   xref?: undefined;

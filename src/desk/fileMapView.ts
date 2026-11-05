@@ -1,7 +1,7 @@
 import type { GenealogyIndex } from "../genealogy";
 import { currentLanguage, plural, t } from "../i18n";
 import { readBranchScope, sameBranch, type BranchScope } from "./branchScope";
-import { defaultEnv, type FileMapHost, type MapEnv, type MapState, type TableState } from "./mapBoardTypes";
+import { defaultEnv, type FileMapHost, type MapEnv, type MapState } from "./mapBoardTypes";
 import { nameBy, zoomControls } from "./dom";
 import {
   fileMapOf,
@@ -39,12 +39,11 @@ import {
 } from "./mapProjection";
 import { TileLayer } from "./mapTileLayer";
 import { PlacePopup } from "./placePopup";
-import { NO_TABLE } from "./placesTable";
 import { YearChip } from "./yearChip";
 import { least, most } from "./fileTimeline";
 import { type YearRange } from "./yearRange";
 
-export type { FileMapHost, MapEnv, MapState, TableState, TileSettings } from "./mapBoardTypes";
+export type { FileMapHost, MapEnv, MapState, TileSettings } from "./mapBoardTypes";
 export { readMapState } from "./mapBoardTypes";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -84,7 +83,6 @@ export class MapBoard {
   private readonly actions: ActionHost;
 
   private index: GenealogyIndex | null = null;
-  private tableState: TableState = { status: "unread" };
   private model: FileMap | null = null;
   private scope: BranchScope = { up: 2, down: 2 };
   private range: YearRange | null = null;
@@ -160,7 +158,7 @@ export class MapBoard {
     this.tip.toggle(false);
     this.live = new LiveRegion(this.plot);
     this.popup = new PlacePopup(this.plot, { select: (xref) => this.host.select(xref), closed: () => undefined });
-    this.empty = new MapEmpty(this.plot, () => this.host.tableAction());
+    this.empty = new MapEmpty(this.plot);
     this.tiles = new TileLayer(tileLayer, this.credit, { status: (failed) => this.tileStatus(failed) }, {
       set: (callback, ms) => this.env.set(callback, ms),
       clear: (id) => this.env.clear(id),
@@ -210,23 +208,21 @@ export class MapBoard {
     this.drawScopeRow();
   }
 
-  show(index: GenealogyIndex, table: TableState, state: MapState): void {
+  show(index: GenealogyIndex, state: MapState): void {
     const sameIndex = this.index === index;
-    const inputs = JSON.stringify([table.status, state.focus, state.up, state.down]);
-    const tableChanged = JSON.stringify(this.tableState) !== JSON.stringify(table) || (table.status === "read" && this.tableState.status === "read" && table.table !== this.tableState.table);
-    if (sameIndex && !tableChanged && inputs === this.lastInputs) {
+    const inputs = JSON.stringify([state.focus, state.up, state.down]);
+    if (sameIndex && inputs === this.lastInputs) {
       this.resized();
       return;
     }
     this.lastInputs = inputs;
     this.index = index;
-    this.tableState = table;
     const wasEmpty = this.model === null;
     this.scope = { ...readBranchScope(state) };
     if (this.scope.focus !== undefined && !index.person(this.scope.focus)) {
       delete this.scope.focus;
     }
-    this.model = fileMapOf(index, table.status === "read" ? table.table : NO_TABLE);
+    this.model = fileMapOf(index);
     this.recompute();
     if (wasEmpty && state.view !== undefined && this.size.width > 0) {
       this.view = clampView(viewOf(state.view, this.size), this.size, this.limits());
@@ -455,14 +451,7 @@ export class MapBoard {
   }
 
   private drawEmpty(): void {
-    this.empty.show(
-      emptyStateOf({
-        read: this.tableState.status !== "unread",
-        places: this.model?.places.size ?? 0,
-        mapped: this.mapped.length,
-        tableExists: this.tableState.status === "read",
-      }),
-    );
+    this.empty.show(emptyStateOf({ read: this.model !== null, places: this.model?.places.size ?? 0, mapped: this.mapped.length }));
   }
 
   private measure = (text: string): number => {

@@ -137,7 +137,6 @@ describe("spelling a count", () => {
       "1 place has no coordinates",
       "3 places have no coordinates",
     ]);
-    expect(plural("list.places.addMissing", 2)).toBe("Add the 2 places that have no row");
     setLanguage("ru");
     expect([1, 2, 5, 21].map((count) => plural("map.places", count))).toEqual([
       "1 место",
@@ -193,8 +192,8 @@ describe("the two sides of the catalogue", () => {
     const options = {
       acronyms: ["GEDCOM", "LDS", "URL"],
       brands: ["Domorium", "Obsidian"],
-      // A GEDCOM tag, and two modifier keys.
-      ignoreWords: ["FILE", "Ctrl", "Cmd"],
+      // GEDCOM tags, and two modifier keys.
+      ignoreWords: ["FILE", "MAP", "LATI", "LONG", "PLAC", "Ctrl", "Cmd"],
       // A status-bar fragment, and three phrases CodeMirror looks up as it
       // spells them.
       ignoreRegex: ["^no problems$", "^close$", "^folded code$", "^unfold$"],

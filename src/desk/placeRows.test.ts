@@ -5,18 +5,17 @@ import { curieWithMap, indexOf } from "../testing/curie";
 import { fileMapOf } from "./fileMap";
 import { cellsOf, collatorFor, columnsOf, listRows, nextSort, readListState, type ListSort } from "./listRows";
 import { coordinatesText, placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
-import { NO_TABLE, parsePlacesTable } from "./placesTable";
 
 afterEach(resetLanguage);
 
 const index = indexOf(curieWithMap());
-const map = fileMapOf(index, NO_TABLE);
+const map = fileMapOf(index);
 const collator = collatorFor("en");
 const names = (query = "", sort?: ListSort, source = map): string[] => placeRows(source, { query, sort }, collator).map((row) => row.name);
 const flags = (count: number, value: boolean): boolean[] => Array.from({ length: count }, () => value);
 const row = (name: string): PlaceRow => placesOf(map).find((one) => one.name === name) as PlaceRow;
 const doc = (...places: string[]) =>
-  fileMapOf(indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", ...places.flatMap((place) => ["1 BIRT", `2 PLAC ${place}`]), "0 TRLR"].join("\n")), NO_TABLE);
+  fileMapOf(indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", ...places.flatMap((place) => ["1 BIRT", `2 PLAC ${place}`]), "0 TRLR"].join("\n")));
 
 describe("the rows of the places kind", () => {
   it("holds every place of the file, mapped or not, once", () => {
@@ -36,11 +35,7 @@ describe("the rows of the places kind", () => {
     expect(names("", undefined, spellings)).toEqual(["paris, France"]);
   });
 
-  it("takes the coordinates of the places table into account", () => {
-    const table = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Sceaux, France | 48.7766 | 2.2917 |");
-    const read = placesOf(fileMapOf(index, table)).find((one) => one.name === "Sceaux, France");
-
-    expect(coordinatesText(read as PlaceRow)).toBe("48.7766, 2.2917");
+  it("shows no coordinates for a place with no MAP", () => {
     expect(coordinatesText(row("Sceaux, France"))).toBe("");
   });
 

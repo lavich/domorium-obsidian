@@ -7,7 +7,6 @@ import { expect, test, type Page } from "@playwright/test";
 import type { TabOptions } from "../harness/fileViews";
 import { placesFile } from "./generated";
 
-const SCEAUX = "| Place | Latitude | Longitude |\n| --- | --- | --- |\n| Sceaux, France | 48.7766 | 2.2917 |";
 const PLAIN = ["0 HEAD", "0 @I1@ INDI", "1 NAME Marie /Curie/", "1 BIRT", "2 PLAC Warsaw, Congress Poland", "0 TRLR", ""].join("\n");
 const TILES = "https://tiles.example/{z}/{x}/{y}.png";
 
@@ -115,7 +114,7 @@ for (const viewport of [
     });
 
     test("draws Marie's line with an arrow on each segment and the numbers 1 to 5, dims nothing for nothing selected", async ({ page }) => {
-      await mountMap(page, { placesText: SCEAUX });
+      await mountMap(page, { fixture: "mapWithSceaux" });
       await expect(page.locator(".gedcom-map-arrow")).toHaveCount(0);
       await page.evaluate(() => window.tab.select("@I1@", false));
 
@@ -207,12 +206,13 @@ for (const viewport of [
       await expect(page.locator(".gedcom-list-row")).toHaveCount(10);
     });
 
-    test("says why there is no place to draw and calls its host once from the button", async ({ page }) => {
-      await mountMap(page, { fixture: undefined, doc: PLAIN, placesText: null, phone, touch: phone });
+    test("says why there is no place to draw, shows the MAP lines and offers no button", async ({ page }) => {
+      await mountMap(page, { fixture: undefined, doc: PLAIN, phone, touch: phone });
 
       await expect(page.locator(".gedcom-map-empty h3")).toHaveText("No place has coordinates yet");
-      await page.locator(".gedcom-map-empty button").click();
-      expect(await page.evaluate(() => window.tab.calls.tableActions)).toBe(1);
+      await expect(page.locator(".gedcom-map-empty p")).toHaveText("A place gets a position from a MAP with LATI and LONG under its PLAC in the file.");
+      await expect(page.locator(".gedcom-map-empty pre")).toContainText("4 LATI N48.8566");
+      await expect(page.locator(".gedcom-map-empty button")).toHaveCount(0);
     });
 
     test("offers Branch of a selected person and shows the branch", async ({ page }) => {

@@ -1,10 +1,8 @@
 import type { GenealogyIndex } from "../genealogy";
 import { nameBy } from "./dom";
-import { fileMapOf, placesWithoutRow, type FileMap } from "./fileMap";
-import type { TableState } from "./mapBoardTypes";
+import { fileMapOf, type FileMap } from "./fileMap";
 import { FloatingSearch } from "./floatingSearch";
 import { currentLanguage, plural, t, type MessageKey } from "../i18n";
-import { NO_TABLE, type PlacesTable } from "./placesTable";
 import {
   cellsOf,
   collatorFor,
@@ -28,9 +26,6 @@ export interface ListHost {
   scrolled(top: number): void;
   setIcon(element: HTMLElement, icon: string): void;
   coarsePointer(): boolean;
-  places(): TableState;
-  placesAction(): void;
-  addMissing(names: string[]): void;
 }
 
 const COMPACT_BELOW = 640;
@@ -86,7 +81,6 @@ export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
   private readonly segEl: HTMLElement;
-  private readonly actionsEl: HTMLElement;
   private readonly find: FloatingSearch;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
@@ -132,7 +126,6 @@ export class ListBoard {
       button.dataset.kind = kind;
       button.addEventListener("click", () => this.showKind(kind));
     }
-    this.actionsEl = bar.createDiv({ cls: "gedcom-list-actions" });
     this.find = new FloatingSearch(bar, {
       prefix: "gedcom-list",
       setIcon: (element, icon) => host.setIcon(element, icon),
@@ -221,12 +214,6 @@ export class ListBoard {
     this.markedPlace = kind === "places" ? (state.place ?? null) : null;
     this.sorts = { ...state.sort };
     this.refresh(true);
-  }
-
-  placesChanged(): void {
-    if (this.kind === "places") {
-      this.refresh(true);
-    }
   }
 
   clearSearch(): void {
@@ -415,7 +402,7 @@ export class ListBoard {
       return;
     }
     const focused = this.active >= 0 && this.rows[this.active] !== undefined ? keyOf(this.rows[this.active]) : undefined;
-    this.placeMap = this.kind === "places" ? fileMapOf(index, this.table() ?? NO_TABLE) : null;
+    this.placeMap = this.kind === "places" ? fileMapOf(index) : null;
     this.rows = listRows(
       index,
       { kind: this.kind, query: this.query, sort: this.sorts[this.kind], ...(this.placeMap ? { places: this.placeMap } : {}) },
@@ -444,7 +431,6 @@ export class ListBoard {
     }
     this.find.describe(t(SEARCH_HINT[this.kind]));
     this.find.refresh();
-    this.drawActions();
     const total = this.totalOfKind();
     this.countEl.setText(
       this.rows.length === total
@@ -575,7 +561,7 @@ export class ListBoard {
         if (this.compact) {
           cell.appendText(` ${this.countLabel(column.key, 0)}`);
         }
-      } else if (this.kind === "places" && column.key === "coordinates" && gap && this.table() !== null) {
+      } else if (this.kind === "places" && column.key === "coordinates" && gap) {
         const mark = cell.createSpan({ cls: "gedcom-list-gap" });
         mark.setAttribute("role", "img");
         mark.setAttribute("aria-label", t("list.noCoordinatesMark"));
@@ -598,34 +584,6 @@ export class ListBoard {
 
   private markedKey(): string | null {
     return this.kind === "places" ? this.markedPlace : this.marked;
-  }
-
-  private table(): PlacesTable | null {
-    const state = this.host.places();
-    return state.status === "read" ? state.table : state.status === "absent" ? NO_TABLE : null;
-  }
-
-  private drawActions(): void {
-    const table = this.host.places();
-    const held = this.actionsEl.contains(this.root.ownerDocument.activeElement);
-    this.actionsEl.empty();
-    const shown = this.kind === "places" && table.status !== "unread";
-    this.actionsEl.toggle(shown);
-    if (!shown) {
-      return;
-    }
-    const button = (text: string, run: () => void): void => {
-      const made = this.actionsEl.createEl("button", { cls: "gedcom-list-action", text, attr: { type: "button" } });
-      made.addEventListener("click", run);
-    };
-    button(t(table.status === "read" ? "map.empty.open" : "map.empty.create"), () => this.host.placesAction());
-    const missing = table.status === "read" && this.placeMap ? placesWithoutRow(this.placeMap.places.values(), table.table) : [];
-    if (missing.length > 0) {
-      button(plural("list.places.addMissing", missing.length), () => this.host.addMissing(missing));
-    }
-    if (held && !this.actionsEl.contains(this.root.ownerDocument.activeElement)) {
-      this.scrollEl.focus({ preventScroll: true });
-    }
   }
 
   private rowId(at: number): string {

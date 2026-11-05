@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { curieWithMap, indexOf } from "../testing/curie";
+import { curieWithMap, indexOf, SCEAUX_MAP } from "../testing/curie";
 import { fileMapOf, groupByPlace, type MapEvent, type PlaceGroup, routeOf } from "./fileMap";
 import { MapMarks, type MarksInput } from "./mapMarks";
 import { type MapView, viewOf, type Size } from "./mapProjection";
-import { parsePlacesTable } from "./placesTable";
 
 const SVG = "http://www.w3.org/2000/svg";
 const size: Size = { width: 1400, height: 900 };
@@ -175,9 +174,8 @@ describe("the marks of places", () => {
 
 describe("the route of a record", () => {
   it("draws Marie's line with an arrow on each segment and numbers on the stops", () => {
-    const index = indexOf(curieWithMap());
-    const table = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Sceaux, France | 48.7766 | 2.2917 |");
-    const map = fileMapOf(index, table);
+    const index = indexOf(curieWithMap(SCEAUX_MAP));
+    const map = fileMapOf(index);
     const groups = groupByPlace(map, map.events).filter((one) => one.place.coordinates !== undefined);
     marks.draw(input(groups, at(48, 12, 4), { route: routeOf(map, index, "@I1@"), selected: true }));
 

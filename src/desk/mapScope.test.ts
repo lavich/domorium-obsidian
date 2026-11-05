@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { curieWithMap, indexOf } from "../testing/curie";
+import { curieWithMap, indexOf, SCEAUX_MAP } from "../testing/curie";
 import { fileMapOf } from "./fileMap";
 import { markSelection, sliceRange, sliceScope } from "./mapScope";
-import { NO_TABLE, parsePlacesTable } from "./placesTable";
 
-const index = indexOf(curieWithMap());
-const table = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Sceaux, France | 48.7766 | 2.2917 |");
-const model = fileMapOf(index, table);
+const index = indexOf(curieWithMap(SCEAUX_MAP));
+const model = fileMapOf(index);
 const whole = { up: 2, down: 2 };
 
 describe("the slices of a file the map draws", () => {
@@ -47,7 +45,7 @@ describe("the slices of a file the map draws", () => {
     expect(marked.highlighted.size).toBe(5);
     expect(marked.route.stops).toHaveLength(5);
     expect(markSelection(index, model, null, null).highlighted.size).toBe(0);
-    expect(markSelection(index, fileMapOf(index, NO_TABLE), "@I1@", null).route.stops).toHaveLength(4);
+    expect(markSelection(index, fileMapOf(indexOf(curieWithMap())), "@I1@", null).route.stops).toHaveLength(4);
   });
 
   it("marks only what the range keeps", () => {

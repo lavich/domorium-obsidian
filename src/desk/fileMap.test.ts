@@ -1,21 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { curieWithMap, indexOf } from "../testing/curie";
+import { curieWithMap, indexOf, SCEAUX_MAP } from "../testing/curie";
 import {
   fileMapOf,
   groupByPlace,
   mapSelection,
   orderedPlaces,
+  placeKey,
   placeLabel,
-  placesWithoutRow,
   routeOf,
   scopeEvents,
 } from "./fileMap";
-import { NO_TABLE, parsePlacesTable, placeKey } from "./placesTable";
 
-const index = indexOf(curieWithMap());
-const SCEAUX = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Sceaux, France | 48.7766 | 2.2917 |");
-const map = fileMapOf(index, SCEAUX);
+const index = indexOf(curieWithMap(SCEAUX_MAP));
+const map = fileMapOf(index);
 const names = (route: ReturnType<typeof routeOf>): (string | undefined)[] =>
   route.stops.map((stop) => map.places.get(stop.key)?.name);
 
@@ -27,36 +25,45 @@ describe("the places of a file", () => {
     expect(map.places.get(placeKey("Warsaw, Congress Poland"))?.coordinates).toEqual({ latitude: 52.2297, longitude: 21.0122 });
   });
 
-  it("leaves a place with neither a MAP nor a row without coordinates", () => {
+  it("leaves a place with no MAP without coordinates", () => {
     expect(map.places.get(placeKey("Mulhouse, France"))?.coordinates).toBeUndefined();
-  });
-
-  it("lets the table fill in a place but never override the file", () => {
-    const table = parsePlacesTable(
-      ["| P | La | Lo |", "| - | - | - |", "| Sceaux, France | 48.7766 | 2.2917 |", "| Paris, France | 1 | 1 |"].join("\n"),
-    );
-    const mapped = fileMapOf(index, table);
-
-    expect(mapped.places.get(placeKey("Sceaux, France"))?.coordinates).toEqual({ latitude: 48.7766, longitude: 2.2917 });
-    expect(mapped.places.get(placeKey("Paris, France"))?.coordinates?.latitude).toBe(48.8566);
   });
 
   it("merges two spellings, named as first written, with the coordinates of whichever has the MAP", () => {
     const text = doc(
       ...person("@I1@", "1 BIRT", "2 PLAC Paris, France", "1 DEAT", "2 PLAC paris,  france", "3 MAP", "4 LATI N48.8", "4 LONG E2.3"),
     );
-    const places = [...fileMapOf(text, NO_TABLE).places.values()];
+    const places = [...fileMapOf(text).places.values()];
 
     expect(places).toHaveLength(1);
     expect(places[0]?.name).toBe("Paris, France");
     expect(places[0]?.coordinates).toEqual({ latitude: 48.8, longitude: 2.3 });
   });
 
-  it("falls through a half-stated MAP to the table", () => {
-    const text = doc(...person("@I1@", "1 BIRT", "2 PLAC X", "3 MAP", "4 LATI N10"));
-    const table = parsePlacesTable("| P | a | b |\n| - | - | - |\n| X | 5 | 6 |");
+  it("takes the first valid MAP in the order of the file where spellings of one place each have one", () => {
+    const text = doc(
+      ...person(
+        "@I1@",
+        "1 BIRT", "2 PLAC Paris, France", "3 MAP", "4 LATI N48.8566", "4 LONG E2.3522",
+        "1 DEAT", "2 PLAC paris, france", "3 MAP", "4 LATI N48.0", "4 LONG E2.0",
+      ),
+    );
 
-    expect(fileMapOf(text, table).places.get("x")?.coordinates).toEqual({ latitude: 5, longitude: 6 });
+    expect(fileMapOf(text).places.get("paris, france")?.coordinates).toEqual({ latitude: 48.8566, longitude: 2.3522 });
+  });
+
+  it("falls through a half-stated MAP to a later one", () => {
+    const text = doc(
+      ...person("@I1@", "1 BIRT", "2 PLAC X", "3 MAP", "4 LATI N10", "1 DEAT", "2 PLAC X", "3 MAP", "4 LATI N5", "4 LONG E6"),
+    );
+
+    expect(fileMapOf(text).places.get("x")?.coordinates).toEqual({ latitude: 5, longitude: 6 });
+  });
+
+  it("leaves a place whose only MAP is half-stated without coordinates", () => {
+    const text = doc(...person("@I1@", "1 BIRT", "2 PLAC X", "3 MAP", "4 LATI N10"));
+
+    expect(fileMapOf(text).places.get("x")?.coordinates).toBeUndefined();
   });
 
   it("counts a marriage once however many spouses are in scope", () => {
@@ -66,9 +73,9 @@ describe("the places of a file", () => {
     expect(marriages.filter((event) => event.record === "@F3@")).toHaveLength(1);
   });
 
-  it("is the same object for the same index and table", () => {
-    expect(fileMapOf(index, SCEAUX)).toBe(map);
-    expect(fileMapOf(index, parsePlacesTable(""))).not.toBe(map);
+  it("is the same object for the same index", () => {
+    expect(fileMapOf(index)).toBe(map);
+    expect(fileMapOf(indexOf(curieWithMap(SCEAUX_MAP)))).not.toBe(map);
   });
 });
 
@@ -90,7 +97,7 @@ describe("the moves of a record", () => {
     const text = doc(
       ...person("@I1@", "1 BIRT", "2 DATE 1900", "2 PLAC A", "3 MAP", "4 LATI N1", "4 LONG E1", "1 RESI", "2 DATE 1910", "2 PLAC B", "3 MAP", "4 LATI N2", "4 LONG E2", "1 DEAT", "2 DATE 1920", "2 PLAC A"),
     );
-    const mapped = fileMapOf(text, NO_TABLE);
+    const mapped = fileMapOf(text);
 
     expect(routeOf(mapped, text, "@I1@").numbers.get("a")).toEqual([1, 3]);
   });
@@ -115,7 +122,7 @@ describe("the moves of a record", () => {
       "4 LATI N2",
       "4 LONG E2",
     );
-    const mapped = fileMapOf(text, NO_TABLE);
+    const mapped = fileMapOf(text);
 
     expect(routeOf(mapped, text, "@I1@").stops.map((stop) => stop.key)).toEqual(["later", "earlier"]);
   });
@@ -129,7 +136,7 @@ describe("the moves of a record", () => {
   it("leaves undated events and unmapped places off the route", () => {
     const text = doc(...person("@I1@", "1 BIRT", "2 PLAC A", "3 MAP", "4 LATI N1", "4 LONG E1", "1 DEAT", "2 DATE 1900", "2 PLAC Nowhere"));
 
-    expect(routeOf(fileMapOf(text, NO_TABLE), text, "@I1@").stops).toEqual([]);
+    expect(routeOf(fileMapOf(text), text, "@I1@").stops).toEqual([]);
   });
 
   it("applies the range the caller keeps", () => {
@@ -158,14 +165,6 @@ describe("the scope of the map", () => {
 
     expect(unmapped).toContain("Mulhouse, France");
     expect(groups.find((group) => group.place.key === "paris, france")?.events.length).toBeGreaterThan(2);
-  });
-
-  it("names the places with neither coordinates nor a row", () => {
-    const table = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |");
-    const missing = placesWithoutRow(fileMapOf(index, table).places.values(), table);
-
-    expect(missing).not.toContain("Mulhouse, France");
-    expect(missing).toContain("Montpellier, France");
   });
 
   it("orders places by the collator", () => {

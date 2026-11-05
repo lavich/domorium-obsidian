@@ -2,7 +2,6 @@ import type { GenealogyIndex, PersonEvent } from "../genealogy";
 import type { Coordinates } from "../genealogy/types";
 import { fileTimelineOf, kindOf, least, type MarkKind, most } from "./fileTimeline";
 import { shortPlace, yearText } from "./labels";
-import { placeKey, type PlacesTable } from "./placesTable";
 
 export interface MapEvent {
   record: string;
@@ -47,6 +46,10 @@ export const NO_ROUTE: Route = { stops: [], numbers: new Map() };
 
 const LINE_WIDTH = 100_000;
 
+export function placeKey(text: string): string {
+  return text.trim().replace(/\s+/gu, " ").normalize("NFC").toLowerCase();
+}
+
 function eventOf(event: PersonEvent, record: string, family: boolean): MapEvent | null {
   const place = event.place?.trim().replace(/\s+/gu, " ");
   if (place === undefined || place === "") {
@@ -73,7 +76,7 @@ function coordinatesOf(event: PersonEvent): Coordinates | undefined {
   return event.place === undefined ? undefined : event.coordinates;
 }
 
-export function buildFileMap(index: GenealogyIndex, table: PlacesTable): FileMap {
+export function buildFileMap(index: GenealogyIndex): FileMap {
   const events: MapEvent[] = [];
   const fromFile = new Map<string, { order: number; coordinates: Coordinates }>();
   const names = new Map<string, { order: number; name: string }>();
@@ -111,7 +114,7 @@ export function buildFileMap(index: GenealogyIndex, table: PlacesTable): FileMap
   events.sort((a, b) => a.order - b.order);
   const places = new Map<string, MapPlace>();
   for (const [key, { name }] of names) {
-    const coordinates = fromFile.get(key)?.coordinates ?? table.rows.get(key) ?? undefined;
+    const coordinates = fromFile.get(key)?.coordinates;
     places.set(key, { key, name, ...(coordinates === undefined ? {} : { coordinates }) });
   }
   const byRecord = new Map<string, MapEvent[]>();
@@ -126,18 +129,13 @@ export function buildFileMap(index: GenealogyIndex, table: PlacesTable): FileMap
   return { places, events, byRecord };
 }
 
-const held = new WeakMap<GenealogyIndex, WeakMap<PlacesTable, FileMap>>();
+const held = new WeakMap<GenealogyIndex, FileMap>();
 
-export function fileMapOf(index: GenealogyIndex, table: PlacesTable): FileMap {
-  let tables = held.get(index);
-  if (tables === undefined) {
-    tables = new WeakMap();
-    held.set(index, tables);
-  }
-  let built = tables.get(table);
+export function fileMapOf(index: GenealogyIndex): FileMap {
+  let built = held.get(index);
   if (built === undefined) {
-    built = buildFileMap(index, table);
-    tables.set(table, built);
+    built = buildFileMap(index);
+    held.set(index, built);
   }
   return built;
 }
@@ -234,8 +232,4 @@ export function placeLabel(place: MapPlace, events: readonly MapEvent[]): string
 
 export function orderedPlaces<T extends { place: MapPlace }>(groups: readonly T[], collator: Intl.Collator): T[] {
   return [...groups].sort((a, b) => collator.compare(a.place.name, b.place.name) || (a.place.key < b.place.key ? -1 : 1));
-}
-
-export function placesWithoutRow(places: Iterable<MapPlace>, table: PlacesTable): string[] {
-  return [...places].filter((place) => place.coordinates === undefined && !table.rows.has(place.key)).map((place) => place.name);
 }
