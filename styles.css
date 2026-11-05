@@ -865,7 +865,7 @@ button.gedcom-list-sort:hover {
   font-weight: var(--nav-item-weight-active, inherit);
 }
 
-body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-row.is-focused {
+body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible .gedcom-list-row.is-focused {
   box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
 }
 
