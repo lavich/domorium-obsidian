@@ -11,7 +11,7 @@ import {
   type TimelinePerson,
 } from "./fileTimeline";
 import { FloatingSearch } from "./floatingSearch";
-import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
+import { nameBy, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 27;
@@ -923,11 +923,8 @@ export class FileTimelineBoard {
       row.toggleClass("is-current", xref === this.current);
       row.toggleClass("is-selected", xref === this.selected);
       const years = lifelineYears(person.lifeline);
-      const open = row.createEl("button", {
-        cls: "gedcom-ft-name-open",
-        attr: { type: "button", "aria-label": years ? `${name}, ${years}` : name },
-      });
-      tipPlace(open, "right");
+      const open = row.createEl("button", { cls: "gedcom-ft-name-open", attr: { type: "button" } });
+      nameBy(open, row, years ? `${name}, ${years}` : name);
       open.createSpan({ cls: "gedcom-ft-name-text", text: name });
       open.createSpan({ cls: "gedcom-ft-name-years", text: years });
       const branch = row.createEl("button", {

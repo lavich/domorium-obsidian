@@ -75,6 +75,14 @@ test.describe("the timeline of a file", () => {
     expect(await place()).toEqual(before);
   });
 
+  test("names a row's button for a reader without a tooltip over it", async ({ page }) => {
+    await mountTimeline(page);
+
+    const open = name(page, "@I1@").locator(".gedcom-ft-name-open");
+    await expect(open).not.toHaveAttribute("aria-label", /.*/);
+    await expect(open).toHaveAccessibleName("Marie Skłodowska-Curie, 1867–1934");
+  });
+
   test("fades no one when the pointer is on Marie, and moves over the rows", async ({ page }) => {
     await mountTimeline(page);
     const opacity = (xref: string) => name(page, xref).evaluate((node) => getComputedStyle(node).opacity);
