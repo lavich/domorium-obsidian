@@ -33,7 +33,6 @@ export const memoryToShow = (reported: ViewMemory, tab: ViewMemory): ViewMemory 
 
 const KINDS: readonly ViewKind[] = ["graph", "timeline", "list"];
 
-/** The graph, the timeline and the list of a file, each made on its first show in a root of its own and kept, so a switch loses neither's view. */
 export class FileViews {
   private readonly roots: Partial<Record<ViewKind, HTMLElement>> = {};
   private graph: FileGraphBoard | null = null;
@@ -65,7 +64,7 @@ export class FileViews {
     } else if (kind === "timeline") {
       this.showTimeline(index, memory.timeline, around, restore);
     } else {
-      this.showList(index, memory.list, restore);
+      this.showList(index, memory.list);
     }
     this.boardOf(kind)?.resized();
     const wanted = this.pending[kind];
@@ -185,11 +184,11 @@ export class FileViews {
     }
   }
 
-  private showList(index: GenealogyIndex, saved: ListState | undefined, restore: boolean): void {
+  private showList(index: GenealogyIndex, saved: ListState | undefined): void {
     const board = (this.list ??= this.makeList());
     board.show(index, saved ?? this.kept.list ?? {});
     this.kept.list = board.state();
-    if (restore && this.listScroll !== undefined) {
+    if (this.listScroll !== undefined && board.scroll() !== this.listScroll) {
       board.setScroll(this.listScroll);
     }
   }
@@ -212,7 +211,7 @@ export class FileViews {
       if (kind === "timeline" && this.timeline && this.kept.timeline && this.shownKind === kind) {
         this.kept.timeline = { ...this.kept.timeline, scroll: this.timeline.scroll() };
       }
-      if (kind === "list" && this.list && this.shownKind === kind) {
+      if (kind === "list" && this.list && this.shownKind === kind && this.displayed()) {
         this.listScroll = this.list.scroll();
       }
       if (this.shownKind === kind) {
@@ -262,6 +261,9 @@ export class FileViews {
       changed: (state) => {
         this.kept.list = state;
         this.host.changed();
+      },
+      scrolled: (top) => {
+        this.listScroll = top;
       },
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       coarsePointer: () => this.host.coarsePointer(),

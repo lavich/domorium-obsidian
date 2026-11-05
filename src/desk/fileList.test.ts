@@ -26,7 +26,8 @@ beforeAll(() => {
   });
   proto.getBoundingClientRect = function (this: HTMLElement) {
     const compact = this.closest(".gedcom-list")?.classList.contains("is-compact") ?? false;
-    const height = this.classList.contains("gedcom-list-row") ? (compact ? box.compact : box.wide) : 0;
+    const sized = this.classList.contains("gedcom-list-row") || this.classList.contains("gedcom-list-probe");
+    const height = sized ? (compact ? box.compact : box.wide) : 0;
     return { height } as DOMRect;
   };
 });
@@ -41,6 +42,7 @@ let coarse = false;
 let host: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   changed: ReturnType<typeof vi.fn<ListHost["changed"]>>;
+  scrolled: ReturnType<typeof vi.fn<ListHost["scrolled"]>>;
   setIcon: ReturnType<typeof vi.fn<ListHost["setIcon"]>>;
   coarsePointer: () => boolean;
 };
@@ -54,6 +56,7 @@ beforeEach(() => {
   host = {
     select: vi.fn(),
     changed: vi.fn(),
+    scrolled: vi.fn(),
     setIcon: vi.fn(),
     coarsePointer: () => coarse,
   };
@@ -129,7 +132,7 @@ describe("the kinds", () => {
     expect(rows().find((one) => one.dataset.xref === "@F3@")?.textContent).toContain("Pierre Curie and Marie Skłodowska-Curie");
     expect([1, 2, 3].map((at) => cell(row("@F3@"), at))).toEqual(["1895", "Sceaux, France", "2"]);
     expect(text(".gedcom-list-count")).toBe("5 families");
-    expect(all(".gedcom-list-chip")).toHaveLength(0);
+    expect(query(".gedcom-list-chips").style.display).toBe("none");
 
     click(button(".gedcom-list-seg-button", "Sources"));
     expect(names()).toEqual([
@@ -490,13 +493,16 @@ describe("the keyboard", () => {
   it("has the roles of a grid", () => {
     board();
 
-    expect(query(".gedcom-list-grid").getAttribute("role")).toBe("grid");
-    expect(query(".gedcom-list-grid").getAttribute("aria-rowcount")).toBe("18");
+    expect(scroller().getAttribute("role")).toBe("grid");
+    expect(scroller().getAttribute("aria-rowcount")).toBe("18");
+    expect(query(".gedcom-list-head").getAttribute("aria-rowindex")).toBe("1");
+    expect(query(".gedcom-list-spacer").getAttribute("role")).toBe("rowgroup");
     expect(all("[role=columnheader]")).toHaveLength(4);
     expect(rows()[0]?.getAttribute("role")).toBe("row");
     expect(rows()[0]?.getAttribute("aria-rowindex")).toBe("2");
     expect(rows()[0]?.querySelector("[role=gridcell]")).not.toBeNull();
     expect(scroller().getAttribute("tabindex")).toBe("0");
+    expect(query(".gedcom-list-sort-mark").getAttribute("aria-hidden")).toBe("true");
   });
 
   it("gives two boards on one file no row id in common", () => {
@@ -628,3 +634,114 @@ describe("a file of twenty thousand people", () => {
     expect(names()[0]).toBe("Person97 Family0");
   });
 });
+
+describe("a change of the selection that the tab must hear of", () => {
+  it("reports a kind switched by a selection from outside", () => {
+    const made = board();
+    host.changed.mockClear();
+
+    made.select("@F3@", true);
+
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "families" });
+  });
+
+  it("reports a chip cleared by a selection from outside", () => {
+    const made = board({ noSources: true });
+    host.changed.mockClear();
+
+    made.select("@I1@", true);
+
+    expect(host.changed).toHaveBeenLastCalledWith({});
+  });
+
+  it("reports nothing for a selection that changes no state", () => {
+    const made = board();
+    host.changed.mockClear();
+
+    made.select("@I2@", true);
+    made.select("@I3@", false);
+
+    expect(host.changed).not.toHaveBeenCalled();
+  });
+});
+
+describe("the keyboard focus on the controls", () => {
+  it("stays on a header button and a chip through a sort and a toggle", () => {
+    board();
+    const header = button(".gedcom-list-sort", "Name") as HTMLElement;
+    header.focus();
+    click(header);
+    expect(document.activeElement).toBe(header);
+    click(header);
+    expect(document.activeElement).toBe(header);
+    expect(header.parentElement?.getAttribute("aria-sort")).toBe("descending");
+    click(header);
+    expect(header.parentElement?.getAttribute("aria-sort")).toBe("none");
+
+    const chip = button(".gedcom-list-chip", "No sources") as HTMLElement;
+    chip.focus();
+    click(chip);
+    expect(document.activeElement).toBe(chip);
+    expect(chip.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("leaves Enter and Space on a header button to the button", () => {
+    board();
+    const header = button(".gedcom-list-sort", "Name") as HTMLElement;
+
+    expect(press("Enter", header).defaultPrevented).toBe(false);
+    expect(press(" ", header).defaultPrevented).toBe(false);
+    expect(host.select).not.toHaveBeenCalled();
+  });
+
+  it("keeps the same header buttons when the kind changes", () => {
+    board();
+    const before = all(".gedcom-list-sort");
+
+    click(button(".gedcom-list-seg-button", "Families"));
+
+    expect(all(".gedcom-list-sort")).toEqual(before);
+    expect(all(".gedcom-list-sort-label").map((one) => one.textContent)).toEqual(["Spouses", "Marriage", "Place", "Children"]);
+  });
+});
+
+describe("what the row height follows", () => {
+  it("is read again from the style on a resize, and the rows move with it", () => {
+    const made = board();
+    box.wide = 50;
+
+    made.resized();
+
+    expect(query(".gedcom-list-spacer").style.getPropertyValue("height")).toBe(`${17 * 50}px`);
+    expect(rows()[1]?.style.getPropertyValue("top")).toBe("50px");
+  });
+
+  it("labels the counts of a compact row so they are not read as part of the years", () => {
+    box.width = 500;
+    const made = board();
+    made.resized();
+
+    expect(cell(row("@I1@"), 3)).toBe("2 sources");
+    expect(row("@I5@")?.querySelector(".gedcom-list-gap")?.getAttribute("title")).toBe("No sources at all");
+    expect(cell(row("@I5@"), 3)).toBe(" 0 sources");
+    click(button(".gedcom-list-seg-button", "Families"));
+    expect(cell(row("@F3@"), 3)).toBe("2 children");
+    click(button(".gedcom-list-seg-button", "Sources"));
+    expect(cell(row("@S2@"), 3)).toBe("Cited by 2");
+  });
+});
+
+describe("the scroll the board reports", () => {
+  it("tells the host of a scroll the reader made and of one the board made", () => {
+    const made = board({}, indexOf(generated(500)));
+    host.scrolled.mockClear();
+
+    scroller().scrollTop = 90;
+    scroller().dispatchEvent(new Event("scroll"));
+    expect(host.scrolled).toHaveBeenLastCalledWith(90);
+
+    made.select("@I400@", true);
+    expect(host.scrolled.mock.lastCall?.[0]).toBeGreaterThan(90);
+  });
+});
+

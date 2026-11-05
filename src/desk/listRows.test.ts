@@ -8,6 +8,7 @@ import {
   collatorFor,
   columnsOf,
   listRows,
+  listSelection,
   nextSort,
   peopleShown,
   readListState,
@@ -232,5 +233,12 @@ describe("reading a saved list state", () => {
     for (const value of [undefined, null, "list", ["people"], 3]) {
       expect(readListState(value)).toEqual({});
     }
+  });
+});
+
+describe("which selection the list can show", () => {
+  it("is a person, a family or a source, and nothing for a media record, a note or nobody", () => {
+    expect(["@I1@", "@F3@", "@S2@"].map((xref) => listSelection(index, xref))).toEqual(["@I1@", "@F3@", "@S2@"]);
+    expect(["@O5@", "@N1@", null].map((xref) => listSelection(index, xref))).toEqual([null, null, null]);
   });
 });

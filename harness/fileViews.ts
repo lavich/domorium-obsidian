@@ -2,6 +2,7 @@ import type { Range } from "@domorium/language-service";
 
 import type { ViewKind } from "../src/desk/deskState";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
+import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
 import { CURIE, indexOf } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
@@ -56,10 +57,9 @@ let touch = false;
 
 function hand(xref: string | null, reveal: boolean): void {
   const person = xref !== null && index.person(xref) ? xref : null;
-  const listed = xref !== null && (index.person(xref) || index.family(xref) || index.source(xref)) ? xref : null;
-  views?.select("graph", person, reveal);
+    views?.select("graph", person, reveal);
   views?.select("timeline", person, reveal);
-  views?.select("list", listed, reveal);
+  views?.select("list", listSelection(index, xref), reveal);
 }
 
 const element = (id: string): HTMLElement => {

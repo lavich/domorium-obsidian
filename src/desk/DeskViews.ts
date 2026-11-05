@@ -7,7 +7,6 @@ import { renderRecordCard } from "./recordCard";
 
 export const RECORD_VIEW_TYPE = "domorium-record";
 
-/** The GEDCOM tab the card follows: the one most recently active. */
 export interface DeskViewsHost {
   followed(): GedcomView | null;
   notesFor(path: string, xref: string): Promise<NoteHit[]>;

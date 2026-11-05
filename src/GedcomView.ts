@@ -84,6 +84,7 @@ import {
   type Origin,
   type ViewKind,
 } from "./desk/deskState";
+import { listSelection } from "./desk/listRows";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
@@ -564,12 +565,7 @@ export class GedcomView extends TextFileView implements CardTab {
     const person = selected !== null && this.genealogy().person(selected) ? selected : null;
     this.views.select("graph", person, reveal);
     this.views.select("timeline", person, reveal);
-    this.views.select("list", this.listRecord(selected), reveal);
-  }
-
-  private listRecord(selected: string | null): string | null {
-    const kind = selected === null ? null : pageKind(this.genealogy(), selected);
-    return kind === "person" || kind === "family" || kind === "source" ? selected : null;
+    this.views.select("list", listSelection(this.genealogy(), selected), reveal);
   }
 
   followMove(move: Move, documentPath: string): Outcome {
@@ -788,7 +784,7 @@ export class GedcomView extends TextFileView implements CardTab {
     const selected = this.modes.shownRecord();
     const xref =
       mode === "list"
-        ? this.listRecord(selected)
+        ? listSelection(this.genealogy(), selected)
         : selected !== null && this.genealogy().person(selected)
           ? selected
           : null;

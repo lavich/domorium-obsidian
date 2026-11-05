@@ -17,10 +17,9 @@ import {
 } from "./listRows";
 
 export interface ListHost {
-  /** A person, a family or a source. */
   select(xref: string): void;
-  /** What the reader changed: the kind, the sort or the chip. */
   changed(state: ListState): void;
+  scrolled(top: number): void;
   setIcon(element: HTMLElement, icon: string): void;
   coarsePointer(): boolean;
 }
@@ -67,7 +66,6 @@ let boards = 0;
 const canonical = (state: ListState): string =>
   JSON.stringify([state.kind ?? "people", state.noSources === true, LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
 
-/** The people, families or sources of a file as a table whose rows are windowed, sorted and filtered here and selected through the host. */
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
@@ -78,11 +76,14 @@ export class ListBoard {
   private readonly sortBarEl: HTMLElement;
   private readonly sortSelect: HTMLSelectElement;
   private readonly directionEl: HTMLButtonElement;
-  private readonly gridEl: HTMLElement;
   private readonly headEl: HTMLElement;
   private readonly scrollEl: HTMLElement;
   private readonly spacerEl: HTMLElement;
   private readonly noneEl: HTMLElement;
+  private readonly probeEl: HTMLElement;
+  private readonly headCells: { cell: HTMLElement; label: HTMLElement; mark: HTMLElement }[] = [];
+  private readonly chips: { el: HTMLElement; noSources: boolean }[] = [];
+  private builtKind: ListKind | null = null;
   private readonly observer: ResizeObserver | null = null;
 
   private index: GenealogyIndex | null = null;
@@ -120,6 +121,16 @@ export class ListBoard {
     this.filterEl.addEventListener("input", () => this.setQuery(this.filterEl.value));
     this.filterEl.addEventListener("keydown", (event) => this.filterKey(event));
     this.chipsEl = bar.createDiv({ cls: "gedcom-list-chips" });
+    for (const noSources of [false, true]) {
+      const el = this.chipsEl.createEl("button", { cls: "gedcom-list-chip" });
+      el.setAttribute("type", "button");
+      el.addEventListener("click", () => {
+        this.noSources = noSources;
+        this.refresh(false);
+        this.host.changed(this.state());
+      });
+      this.chips.push({ el, noSources });
+    }
     this.countEl = this.root.createDiv({ cls: "gedcom-list-count" });
     this.countEl.setAttribute("aria-live", "polite");
 
@@ -131,17 +142,37 @@ export class ListBoard {
     this.directionEl.setAttribute("type", "button");
     this.directionEl.addEventListener("click", () => this.turnDirection());
 
-    this.gridEl = this.root.createDiv({ cls: "gedcom-list-grid" });
-    this.gridEl.setAttribute("role", "grid");
-    this.gridEl.setAttribute("aria-label", t("list.label"));
-    this.headEl = this.gridEl.createDiv({ cls: "gedcom-list-head" });
-    this.headEl.setAttribute("role", "row");
-    this.scrollEl = this.gridEl.createDiv({ cls: "gedcom-list-scroll" });
-    this.scrollEl.setAttribute("role", "rowgroup");
+    this.scrollEl = this.root.createDiv({ cls: "gedcom-list-scroll" });
+    this.scrollEl.setAttribute("role", "grid");
+    this.scrollEl.setAttribute("aria-label", t("list.label"));
     this.scrollEl.setAttribute("tabindex", "0");
+    this.headEl = this.scrollEl.createDiv({ cls: "gedcom-list-head" });
+    this.headEl.setAttribute("role", "row");
+    this.headEl.setAttribute("aria-rowindex", "1");
+    columnsOf("people").forEach((_, position) => {
+      const cell = this.headEl.createDiv({ cls: "gedcom-list-headcell" });
+      cell.setAttribute("role", "columnheader");
+      const button = cell.createEl("button", { cls: "gedcom-list-sort" });
+      button.setAttribute("type", "button");
+      const label = button.createSpan({ cls: "gedcom-list-sort-label" });
+      const mark = button.createSpan({ cls: "gedcom-list-sort-mark" });
+      mark.setAttribute("aria-hidden", "true");
+      button.addEventListener("click", () => this.sortHeader(columnsOf(this.kind)[position].key));
+      this.headCells.push({ cell, label, mark });
+    });
     this.spacerEl = this.scrollEl.createDiv({ cls: "gedcom-list-spacer" });
+    this.spacerEl.setAttribute("role", "rowgroup");
     this.noneEl = this.scrollEl.createDiv({ cls: "gedcom-list-none" });
-    this.scrollEl.addEventListener("scroll", () => this.drawWindow(), { passive: true });
+    this.probeEl = this.root.createDiv({ cls: "gedcom-list-probe" });
+    this.probeEl.setAttribute("aria-hidden", "true");
+    this.scrollEl.addEventListener(
+      "scroll",
+      () => {
+        this.host.scrolled(this.scrollEl.scrollTop);
+        this.drawWindow();
+      },
+      { passive: true },
+    );
     this.scrollEl.addEventListener("keydown", (event) => this.rowKey(event));
     this.scrollEl.addEventListener("focus", () => this.focusEntered());
     this.spacerEl.addEventListener("click", (event) => this.rowClicked(event));
@@ -150,10 +181,10 @@ export class ListBoard {
     if (typeof ResizeObserver !== "undefined") {
       this.observer = new ResizeObserver(() => this.resized());
       this.observer.observe(this.root);
+      this.observer.observe(this.probeEl);
     }
   }
 
-  /** The kind, the chip and each kind's sort: what the tab saves. */
   state(): ListState {
     const sort = Object.fromEntries(LIST_KINDS.flatMap((kind) => (this.sorts[kind] ? [[kind, this.sorts[kind]]] : [])));
     return {
@@ -163,7 +194,6 @@ export class ListBoard {
     };
   }
 
-  /** A no-op for the same file reading and the same state, so a resize never sorts again. */
   show(index: GenealogyIndex, state: ListState): void {
     if (index === this.index && canonical(state) === canonical(this.state())) {
       return;
@@ -185,6 +215,14 @@ export class ListBoard {
   }
 
   select(xref: string | null, reveal: boolean): void {
+    const before = canonical(this.state());
+    this.place(xref, reveal);
+    if (canonical(this.state()) !== before) {
+      this.host.changed(this.state());
+    }
+  }
+
+  private place(xref: string | null, reveal: boolean): void {
     const index = this.index;
     const kind = index !== null && xref !== null ? recordKind(index, xref) : null;
     if (xref === null || kind === null) {
@@ -207,7 +245,6 @@ export class ListBoard {
         this.filterEl.value = "";
         this.noSources = false;
         this.refresh(true);
-        this.host.changed(this.state());
       }
     }
     const at = this.positions.get(xref);
@@ -231,11 +268,10 @@ export class ListBoard {
   }
 
   setScroll(top: number): void {
-    this.scrollEl.scrollTop = top;
+    this.scrollTo(top);
     this.drawWindow();
   }
 
-  /** Measures its own width, flips between the wide and the compact layout, and draws the rows in view. */
   resized(): void {
     const width = this.root.clientWidth;
     if (width > 0) {
@@ -244,8 +280,8 @@ export class ListBoard {
         this.flip(compact);
         return;
       }
-      this.setGutter();
     }
+    this.remeasure();
     this.drawWindow();
   }
 
@@ -254,26 +290,50 @@ export class ListBoard {
   }
 
   private flip(compact: boolean): void {
-    const anchor = this.rowHeight > 0 ? Math.floor(this.scrollEl.scrollTop / this.rowHeight) : 0;
+    const anchor = this.firstVisible();
     this.compact = compact;
     this.applyLayout();
-    this.rowHeight = 0;
-    this.measureFirst();
+    this.rowHeight = this.readRow();
     this.spacerEl.setCssProps({ height: `${this.rows.length * this.rowHeight}px` });
-    this.scrollEl.scrollTop = anchor * this.rowHeight;
-    this.setGutter();
+    this.scrollTo(anchor * this.rowHeight);
     this.drawWindow(true);
+  }
+
+  private remeasure(): void {
+    const next = this.readRow();
+    if (next === this.rowHeight) {
+      return;
+    }
+    const anchor = this.firstVisible();
+    this.rowHeight = next;
+    this.spacerEl.setCssProps({ height: `${this.rows.length * next}px` });
+    this.scrollTo(anchor * next);
+    this.drawWindow(true);
+  }
+
+  private firstVisible(): number {
+    return this.rowHeight > 0 ? Math.floor(this.scrollEl.scrollTop / this.rowHeight) : 0;
+  }
+
+  private readRow(): number {
+    const height = this.probeEl.getBoundingClientRect().height;
+    return height > 0 ? height : FALLBACK_ROW[this.compact ? "compact" : "wide"];
+  }
+
+  private scrollTo(top: number): void {
+    this.scrollEl.scrollTop = top;
+    this.host.scrolled(this.scrollEl.scrollTop);
+  }
+
+  private visibleHeight(): number {
+    const height = this.scrollEl.clientHeight;
+    return height > 0 ? Math.max(this.rowHeight, height - (this.compact ? 0 : this.headEl.offsetHeight)) : 0;
   }
 
   private applyLayout(): void {
     this.root.toggleClass("is-compact", this.compact);
     this.headEl.toggle(!this.compact);
     this.sortBarEl.toggle(this.compact);
-  }
-
-  private setGutter(): void {
-    const gutter = Math.max(0, this.scrollEl.offsetWidth - this.scrollEl.clientWidth);
-    this.root.setCssProps({ "--gedcom-list-gutter": `${gutter}px` });
   }
 
   private showKind(kind: ListKind): void {
@@ -348,11 +408,10 @@ export class ListBoard {
     const kept = focused === undefined ? undefined : this.positions.get(focused);
     this.active = kept ?? (this.active < 0 || this.rows.length === 0 ? -1 : Math.min(this.active, this.rows.length - 1));
     this.drawChrome();
-    this.rowHeight = 0;
-    this.measureFirst();
+    this.rowHeight = this.readRow();
     this.spacerEl.setCssProps({ height: `${this.rows.length * this.rowHeight}px` });
     if (!keepScroll) {
-      this.scrollEl.scrollTop = 0;
+      this.scrollTo(0);
     }
     this.drawWindow(true);
   }
@@ -365,11 +424,12 @@ export class ListBoard {
     }
     this.filterEl.placeholder = t(SEARCH_HINT[this.kind]);
     this.filterEl.setAttribute("aria-label", t(SEARCH_HINT[this.kind]));
-    this.chipsEl.empty();
     this.chipsEl.toggle(this.kind === "people");
-    if (this.kind === "people") {
-      this.chip(plural("list.all", this.totals.people), !this.noSources, false);
-      this.chip(plural("list.noSources", this.totals.gaps), this.noSources, true);
+    for (const { el, noSources } of this.chips) {
+      const on = this.noSources === noSources;
+      el.setText(noSources ? plural("list.noSources", this.totals.gaps) : plural("list.all", this.totals.people));
+      el.setAttribute("aria-pressed", String(on));
+      el.toggleClass("is-active", on);
     }
     const total = this.totalOfKind();
     this.countEl.setText(
@@ -392,37 +452,25 @@ export class ListBoard {
     return all.filter((row) => row.xref !== undefined).length;
   }
 
-  private chip(text: string, active: boolean, noSources: boolean): void {
-    const chip = this.chipsEl.createEl("button", { cls: "gedcom-list-chip", text });
-    chip.setAttribute("type", "button");
-    chip.setAttribute("aria-pressed", String(active));
-    chip.toggleClass("is-active", active);
-    chip.addEventListener("click", () => {
-      this.noSources = noSources;
-      this.refresh(false);
-      this.host.changed(this.state());
-    });
-  }
-
   private drawHeaders(): void {
     const sort = this.sorts[this.kind];
     const columns = columnsOf(this.kind);
-    this.headEl.empty();
     this.headEl.className = `gedcom-list-head is-${this.kind}`;
-    for (const column of columns) {
-      const cell = this.headEl.createDiv({ cls: `gedcom-list-headcell is-${column.key}` });
-      cell.setAttribute("role", "columnheader");
+    this.headCells.forEach(({ cell, label, mark }, position) => {
+      const column = columns[position];
       const direction = sort?.by === column.key ? sort.dir : null;
+      cell.className = `gedcom-list-headcell is-${column.key}${column.numeric ? " is-numeric" : ""}`;
       cell.setAttribute("aria-sort", direction === "asc" ? "ascending" : direction === "desc" ? "descending" : "none");
-      cell.toggleClass("is-numeric", column.numeric);
-      const button = cell.createEl("button", { cls: "gedcom-list-sort", text: t(column.label) });
-      button.setAttribute("type", "button");
-      button.addEventListener("click", () => this.sortHeader(column.key));
-    }
-    this.sortSelect.empty();
-    this.sortSelect.createEl("option", { text: t("list.fileOrder"), attr: { value: "" } });
-    for (const column of columns) {
-      this.sortSelect.createEl("option", { text: t(column.label), attr: { value: column.key } });
+      label.setText(t(column.label));
+      mark.setText(direction === "asc" ? "↑" : direction === "desc" ? "↓" : "");
+    });
+    if (this.builtKind !== this.kind) {
+      this.builtKind = this.kind;
+      this.sortSelect.empty();
+      this.sortSelect.createEl("option", { text: t("list.fileOrder"), attr: { value: "" } });
+      for (const column of columns) {
+        this.sortSelect.createEl("option", { text: t(column.label), attr: { value: column.key } });
+      }
     }
     this.sortSelect.value = sort?.by ?? "";
     this.directionEl.empty();
@@ -431,21 +479,7 @@ export class ListBoard {
     this.directionEl.setAttribute("aria-label", label);
     this.directionEl.setAttribute("title", label);
     this.directionEl.disabled = sort === undefined;
-    this.gridEl.setAttribute("aria-rowcount", String(this.rows.length + 1));
-  }
-
-  /** Draws one row to read the height the style gives it, since it follows the font size. */
-  private measureFirst(): void {
-    const fallback = FALLBACK_ROW[this.compact ? "compact" : "wide"];
-    this.rowHeight = fallback;
-    if (this.rows.length === 0) {
-      return;
-    }
-    const probe = this.makeRow(0);
-    this.spacerEl.append(probe);
-    const height = probe.getBoundingClientRect().height;
-    probe.remove();
-    this.rowHeight = height > 0 ? height : fallback;
+    this.scrollEl.setAttribute("aria-rowcount", String(this.rows.length + 1));
   }
 
   private drawWindow(force = false): void {
@@ -461,9 +495,9 @@ export class ListBoard {
       return;
     }
     if (this.rowHeight === 0) {
-      this.measureFirst();
+      this.rowHeight = this.readRow();
     }
-    const height = this.scrollEl.clientHeight;
+    const height = this.visibleHeight();
     const first = Math.max(0, Math.floor(this.scrollEl.scrollTop / this.rowHeight) - MARGIN);
     const count = height > 0 ? Math.ceil(height / this.rowHeight) + 2 * MARGIN : FIRST_WINDOW;
     const last = Math.min(total - 1, first + count);
@@ -512,15 +546,24 @@ export class ListBoard {
       const cell = el.createDiv({ cls: `gedcom-list-cell is-${column.key}` });
       cell.setAttribute("role", "gridcell");
       cell.toggleClass("is-numeric", column.numeric);
+      const text = texts[position] ?? "";
       if (this.kind === "people" && column.key === "sources" && gap) {
         const mark = cell.createSpan({ cls: "gedcom-list-gap" });
         mark.setAttribute("role", "img");
         mark.setAttribute("aria-label", t("list.gapMark"));
+        mark.setAttribute("title", t("list.gapMark"));
+        if (this.compact) {
+          cell.appendText(` ${this.countLabel(column.key, 0)}`);
+        }
       } else {
-        cell.setText(texts[position] ?? "");
+        cell.setText(this.compact && column.numeric ? this.countLabel(column.key, Number(text)) : text);
       }
     });
     return el;
+  }
+
+  private countLabel(key: SortKey, count: number): string {
+    return key === "citedBy" ? t("list.compact.citedBy", { count }) : plural(key === "children" ? "list.compact.children" : "list.compact.sources", count);
   }
 
   private rowId(at: number): string {
@@ -558,23 +601,22 @@ export class ListBoard {
 
   private wholeRowShown(at: number): boolean {
     const top = at * this.rowHeight;
-    const height = this.scrollEl.clientHeight;
+    const height = this.visibleHeight();
     return height > 0 && top >= this.scrollEl.scrollTop && top + this.rowHeight <= this.scrollEl.scrollTop + height;
   }
 
   private centre(at: number): void {
-    const height = this.scrollEl.clientHeight;
-    const top = at * this.rowHeight - (height - this.rowHeight) / 2;
-    this.scrollEl.scrollTop = Math.max(0, top);
+    const top = at * this.rowHeight - (this.visibleHeight() - this.rowHeight) / 2;
+    this.scrollTo(Math.max(0, top));
   }
 
   private keepInView(at: number): void {
     const top = at * this.rowHeight;
-    const height = this.scrollEl.clientHeight;
+    const height = this.visibleHeight();
     if (top < this.scrollEl.scrollTop) {
-      this.scrollEl.scrollTop = top;
+      this.scrollTo(top);
     } else if (height > 0 && top + this.rowHeight > this.scrollEl.scrollTop + height) {
-      this.scrollEl.scrollTop = top + this.rowHeight - height;
+      this.scrollTo(top + this.rowHeight - height);
     }
   }
 
@@ -603,8 +645,11 @@ export class ListBoard {
   }
 
   private rowKey(event: KeyboardEvent): void {
+    if (event.target !== this.scrollEl) {
+      return;
+    }
     const last = this.rows.length - 1;
-    const page = Math.max(1, Math.floor(this.scrollEl.clientHeight / (this.rowHeight || 1)) - 1);
+    const page = Math.max(1, Math.floor(this.visibleHeight() / (this.rowHeight || 1)) - 1);
     const from = this.active;
     let to: number;
     switch (event.key) {

@@ -589,8 +589,8 @@ button.gedcom-desk-person:hover {
 .gedcom-list {
   --gedcom-list-inset: 2px;
   --gedcom-list-pad: var(--size-4-3);
-  --gedcom-list-gutter: 0px;
   --gedcom-list-row: 2.2em;
+  position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -712,11 +712,14 @@ button.gedcom-list-direction:disabled {
   opacity: 0.4;
 }
 
-.gedcom-list-grid {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+.gedcom-list-probe {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 1px;
+  height: var(--gedcom-list-row);
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .gedcom-list-head,
@@ -728,8 +731,10 @@ button.gedcom-list-direction:disabled {
 }
 
 .gedcom-list-head {
-  flex: none;
-  padding-inline-end: calc(var(--gedcom-list-pad) + var(--gedcom-list-gutter));
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--background-primary);
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
@@ -762,7 +767,8 @@ button.gedcom-list-direction:disabled {
 }
 
 button.gedcom-list-sort {
-  display: block;
+  display: flex;
+  gap: var(--size-2-2);
   box-sizing: border-box;
   max-width: 100%;
   height: auto;
@@ -776,19 +782,25 @@ button.gedcom-list-sort {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   font-weight: var(--font-medium);
-  text-align: inherit;
+  text-align: start;
+}
+
+.gedcom-list-headcell.is-numeric button.gedcom-list-sort {
+  margin-inline-start: auto;
+}
+
+.gedcom-list-sort-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gedcom-list-sort-mark {
+  flex: none;
 }
 
 button.gedcom-list-sort:hover {
   color: var(--text-normal);
-}
-
-.gedcom-list-headcell[aria-sort="ascending"] button.gedcom-list-sort::after {
-  content: " \2191";
-}
-
-.gedcom-list-headcell[aria-sort="descending"] button.gedcom-list-sort::after {
-  content: " \2193";
 }
 
 .gedcom-list-headcell:not([aria-sort="none"]) button.gedcom-list-sort {
@@ -826,6 +838,7 @@ button.gedcom-list-sort:hover {
 
 .gedcom-list-row.is-selected {
   background: var(--background-modifier-active-hover);
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
 }
 
 .gedcom-list-scroll:focus-visible .gedcom-list-row.is-focused {
@@ -843,11 +856,12 @@ button.gedcom-list-sort:hover {
 
 .gedcom-list-gap {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
   vertical-align: middle;
+  border: 2px solid var(--text-warning);
   border-radius: 50%;
-  background: var(--text-warning);
 }
 
 .gedcom-list-none {
@@ -863,12 +877,6 @@ button.gedcom-list-sort:hover {
     "c3 c4";
   align-content: center;
   column-gap: var(--size-4-3);
-}
-
-.gedcom-list.is-compact .gedcom-list-row.is-sources {
-  grid-template-areas:
-    "c1 c4"
-    "c2 c3";
 }
 
 .gedcom-list.is-compact .gedcom-list-cell:nth-child(1) {
@@ -890,6 +898,10 @@ button.gedcom-list-sort:hover {
 .gedcom-list.is-compact .gedcom-list-cell:nth-child(n + 2) {
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
+}
+
+.gedcom-list.is-compact .gedcom-list-count {
+  padding-inline: 0;
 }
 
 .gedcom-list.is-touch .gedcom-list-filter,

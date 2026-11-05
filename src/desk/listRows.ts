@@ -100,7 +100,6 @@ function countsOf(index: GenealogyIndex): { cited: Map<string, number>; citing: 
   return held;
 }
 
-/** Distinct sources a record cites; each inline source is its own. */
 export function sourcesCited(index: GenealogyIndex, xref: string): number {
   const { cited } = countsOf(index);
   let count = cited.get(xref);
@@ -120,7 +119,6 @@ export function sourcesCited(index: GenealogyIndex, xref: string): number {
   return count;
 }
 
-/** Distinct records that cite a source. */
 export function citingRecords(index: GenealogyIndex, xref: string): number {
   const { citing } = countsOf(index);
   let count = citing.get(xref);
@@ -133,7 +131,6 @@ export function citingRecords(index: GenealogyIndex, xref: string): number {
 
 export interface Cells {
   texts: string[];
-  /** A person who cites no source: the Sources cell shows the mark instead of a count. */
   gap: boolean;
 }
 
@@ -279,7 +276,6 @@ export function listRows(index: GenealogyIndex, { kind, query, noSources, sort }
   return sort ? sorted(kind, rows, sort, index, collator) : rows;
 }
 
-/** Ascending, then descending, then the file's order. */
 export function nextSort(current: ListSort | undefined, by: SortKey): ListSort | undefined {
   if (current?.by !== by) {
     return { by, dir: "asc" };
@@ -323,3 +319,6 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   }
   return index.source(xref) ? "sources" : null;
 }
+
+export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>
+  xref !== null && recordKind(index, xref) !== null ? xref : null;

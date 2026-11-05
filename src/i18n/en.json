@@ -41,13 +41,8 @@
   },
   "setting.genealogyInterface.name": "Genealogy interface (beta)",
   "setting.genealogyInterface.desc": "Still in beta: it may change and have rough edges. Show the record card and the graph, the timeline and the list of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
-  "setting.openAs.name": "Open GEDCOM files as",
-  "setting.openAs.desc": "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source; the record card appears beside the graph or the timeline. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
   "setting.openPanelsOnSelect.name": "Open the record card when selecting",
   "setting.openPanelsOnSelect.desc": "Selecting a record in a graph, a timeline or a list shows the record card on the right, opening a collapsed sidebar without moving the focus. Applies when the genealogy interface is on; on a phone the right drawer opens as before.",
-  "openAsOption.graph": "Graph",
-  "openAsOption.timeline": "Timeline",
-  "openAsOption.source": "Source",
   "setting.diagnostics.name": "Diagnostics",
   "setting.diagnostics.desc": "Underline GEDCOM errors and warnings in the editor.",
   "setting.indentationHints.name": "Indentation hints",
@@ -351,5 +346,14 @@
   "list.sortDescending": "Descending",
   "list.fileOrder": "File order",
   "list.gapMark": "No sources at all",
-  "list.label": "Records of the file"
+  "list.label": "Records of the file",
+  "list.compact.sources": {
+    "one": "{count} source",
+    "other": "{count} sources"
+  },
+  "list.compact.children": {
+    "one": "{count} child",
+    "other": "{count} children"
+  },
+  "list.compact.citedBy": "Cited by {count}"
 }

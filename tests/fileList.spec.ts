@@ -190,6 +190,105 @@ test.describe("the list on a wide tab", () => {
     await expect(page.locator('.gedcom-list-headcell[aria-sort="ascending"]')).toHaveText(/Children/);
   });
 
+  test("keeps the family a selection from outside chose when the tab goes to the graph and back", async ({ page }) => {
+    await mountList(page);
+
+    await page.evaluate(() => window.tab.select("@F3@", true));
+    await page.click("#show-graph");
+    await page.click("#show-list");
+
+    await expect(seg(page, "Families")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".gedcom-list-row.is-selected")).toHaveCount(1);
+    await expect(rowOf(page, "@F3@")).toHaveClass(/is-selected/);
+  });
+
+  test("keeps the keyboard focus on a header button and on a chip, and sorts ascending, descending, then in file order", async ({ page }) => {
+    await mountList(page);
+    const name = header(page, "Name");
+    await name.focus();
+
+    await page.keyboard.press("Enter");
+    await expect(name.locator("xpath=..")).toHaveAttribute("aria-sort", "ascending");
+    await expect(name).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(name.locator("xpath=..")).toHaveAttribute("aria-sort", "descending");
+    await expect(name).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(name.locator("xpath=..")).toHaveAttribute("aria-sort", "none");
+    await expect(name).toBeFocused();
+
+    const chip = page.locator(".gedcom-list-chip", { hasText: "No sources" });
+    await chip.focus();
+    await page.keyboard.press("Enter");
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(chip).toBeFocused();
+  });
+
+  test("clears the filter on the first Escape and gives the focus to the rows on the second", async ({ page }) => {
+    await mountList(page);
+    await page.locator(".gedcom-list-filter").fill("joliot");
+
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".gedcom-list-filter")).toHaveValue("");
+    await expect(page.locator(".gedcom-list-filter")).toBeFocused();
+    await page.keyboard.press("Escape");
+
+    await expect(page.locator(".gedcom-list-scroll")).toBeFocused();
+  });
+
+  test("says what matches nothing and what an empty kind holds", async ({ page }) => {
+    await mountList(page);
+    await page.locator(".gedcom-list-filter").fill("zzz");
+    await expect(page.locator(".gedcom-list-none")).toHaveText("Nothing matches “zzz”. Search covers names, years and places.");
+
+    await mountList(page, { doc: "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n1 NAME A /B/\n0 TRLR\n" });
+    await seg(page, "Sources").click();
+    await expect(page.locator(".gedcom-list-none")).toHaveText("The file holds no sources.");
+  });
+
+  test("flips to the compact layout below 640 pixels and back only from 680", async ({ page }) => {
+    await mountList(page);
+    const compact = async (width: number) => {
+      await page.evaluate((to) => {
+        document.getElementById("leaf")?.style.setProperty("width", `${to}px`);
+        window.tab.resized();
+      }, width);
+      return page.locator(".gedcom-list").evaluate((node) => node.classList.contains("is-compact"));
+    };
+
+    expect(await compact(660)).toBe(false);
+    expect(await compact(620)).toBe(true);
+    expect(await compact(660)).toBe(true);
+    expect(await compact(700)).toBe(false);
+  });
+
+  test("follows the font size: the rows are as tall as the style says and sit at that pitch", async ({ page }) => {
+    await mountList(page);
+    const pitch = () =>
+      page.evaluate(() => {
+        const [one, two] = [...document.querySelectorAll<HTMLElement>(".gedcom-list-row")];
+        return { height: one?.getBoundingClientRect().height ?? 0, step: (two?.getBoundingClientRect().top ?? 0) - (one?.getBoundingClientRect().top ?? 0) };
+      });
+    const before = await pitch();
+
+    await page.evaluate((size) => document.body.style.setProperty("--font-ui-small", size), "20px");
+
+    await expect.poll(async () => (await pitch()).height).toBeGreaterThan(before.height + 5);
+    await expect.poll(async () => {
+      const now = await pitch();
+      return Math.abs(now.step - now.height);
+    }).toBeLessThan(1);
+  });
+
+  test("shows the mark of a person with no source as a shape with a title", async ({ page }) => {
+    await mountList(page);
+
+    const mark = rowOf(page, "@I5@").locator(".gedcom-list-gap");
+    await expect(mark).toHaveAttribute("title", "No sources at all");
+    const box = await mark.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(10);
+  });
+
   test("lists the header buttons of the stand-in tab as Graph, Timeline, List, Source", async ({ page }) => {
     await mountList(page);
 

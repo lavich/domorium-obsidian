@@ -7,7 +7,7 @@ import { resetLanguage } from "../i18n";
 import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { HOVER_DELAY } from "./dom";
-import { FileViews, type FileViewsHost } from "./fileViews";
+import { FileViews, type FileViewsHost, type ViewMemory } from "./fileViews";
 
 const SIZE = { width: 1000, height: 600 };
 const LAYOUT_KEYS = ["clientWidth", "offsetWidth", "clientHeight", "offsetHeight", "getClientRects"] as const;
@@ -47,6 +47,9 @@ beforeAll(() => {
         : {
             configurable: true,
             get(this: HTMLElement) {
+              if (this.classList.contains("gedcom-list-head")) {
+                return 0;
+              }
               return boxed(this) ? (key.endsWith("Width") ? SIZE.width : SIZE.height) : 0;
             },
           },
@@ -628,6 +631,65 @@ describe("the list of a tab", () => {
 
     expect(host.select).toHaveBeenNthCalledWith(1, "@F3@");
     expect(host.select).toHaveBeenNthCalledWith(2, "@S2@");
+  });
+
+  it("keeps the kind a selection from outside switched through a later show with the memory the tab holds", () => {
+    let memory: ViewMemory = {};
+    const tab = views();
+    host.changed.mockImplementation(() => {
+      memory = { ...memory, ...tab.memory() };
+    });
+    tab.show("list", index, memory);
+    type("joliot");
+
+    tab.select("list", "@F3@", true);
+    tab.show("list", index, memory);
+
+    expect(parent.querySelector(".gedcom-list-seg-button.is-active")?.textContent).toBe("Families");
+    expect(row("@F3@")?.classList.contains("is-selected")).toBe(true);
+    expect(memory.list).toEqual({ kind: "families" });
+  });
+
+  it("clears a typed filter only for a new selection that it hides", () => {
+    const tab = views();
+    tab.show("list", index, {});
+    type("joliot");
+
+    tab.select("list", "@I14@", true);
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-filter")?.value).toBe("joliot");
+    tab.select("list", "@I1@", true);
+
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-filter")?.value).toBe("");
+    expect(row("@I1@")?.classList.contains("is-selected")).toBe(true);
+  });
+
+  it("puts back the scroll of a list whose tab went behind another with no hide", () => {
+    const tab = views();
+    tab.show("list", large, {});
+    scroller().scrollTop = 72;
+    scroller().dispatchEvent(new Event("scroll"));
+
+    parent.toggle(false);
+    scroller().scrollTop = 0;
+    parent.toggle(true);
+    tab.show("list", large, tab.memory());
+
+    expect(scroller().scrollTop).toBe(72);
+  });
+
+  it("puts back the scroll of a list hidden with the tab before the views are", () => {
+    const tab = views();
+    tab.show("list", large, {});
+    scroller().scrollTop = 72;
+    scroller().dispatchEvent(new Event("scroll"));
+
+    parent.toggle(false);
+    scroller().scrollTop = 0;
+    tab.hide();
+    parent.toggle(true);
+    tab.show("list", large, tab.memory());
+
+    expect(scroller().scrollTop).toBe(72);
   });
 });
 

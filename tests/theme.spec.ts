@@ -360,7 +360,9 @@ test.describe("the list in the Obsidian theme", () => {
 
       expect(await style('.gedcom-list-row[data-xref="@I2@"]', "background-color")).toBe(theme.selected);
       expect(await style(".gedcom-list-row.is-focused", "outline-color")).toBe(theme.accent);
-      expect(await style(".gedcom-list-gap", "background-color")).toBe(theme.warning);
+      expect(await style(".gedcom-list-gap", "border-top-color")).toBe(theme.warning);
+      expect(await style('.gedcom-list-row[data-xref="@I2@"]', "box-shadow")).toContain(theme.accent);
+      expect(await style('.gedcom-list-row:not(.is-selected)', "box-shadow")).toBe("none");
     });
   }
 });
