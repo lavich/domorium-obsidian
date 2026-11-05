@@ -19,8 +19,8 @@ adapted per editor.
 ## Features
 
 - An optional genealogy interface, off until you turn it on: a graph and a
-  timeline of the whole file, a sortable list of its people, families and
-  sources, a map of its places, and a record card in the right sidebar that shows the selected person, family, source or media
+  timeline of the whole file, a sortable list of its people, families,
+  sources and places, a map of its places, and a record card in the right sidebar that shows the selected person, family, source or media
   record with their facts, names, family, timeline, places and what each fact
   rests on
 - Context-aware GEDCOM tag autocomplete
@@ -80,8 +80,9 @@ records in a popup. Select a person or a family and a numbered line runs through
 places in the order of their years, and the rest dims. A chip at the bottom left,
 **Years: all**, expands into a range that filters the points and never touches the
 selection. **Branch of** narrows the map to a person's relatives, the search finds a
-place by name, and the list of places beside the map names every place, those with no
-coordinates too, for keyboard and screen reader. The map opens fitted to its places;
+place by name, and the count of places with no coordinates opens them in the **Places** of
+the list. The map steps through its places with the arrow keys, for keyboard and screen
+reader. The map opens fitted to its places;
 **Fit** and the key `0` do it again. A tab remembers where it was across a restart, and
 the map is not remembered as the mode another file opens in.
 
@@ -91,8 +92,8 @@ row of the **places table**, a note beside the file named like it, `curie.places
 `curie.ged`, holding a table of `Place | Latitude | Longitude`. The first table of the note
 is read, its header is skipped whatever it says, and the file wins over a row. When no place
 has coordinates the map offers **Create the places table**, which writes that note with a row
-for each place the file gives none, and the list of places can append the places that have no
-row yet. Nothing looks a place up by its name. The table is a note you own: the plugin
+for each place the file gives none, and the **Places** of the list can append the places that
+have no row yet. Nothing looks a place up by its name. The table is a note you own: the plugin
 writes it only when you press a button, and renames it with the file when you rename the
 file.
 
@@ -101,12 +102,17 @@ template such as `https://tiles.example/{z}/{x}/{y}.png`; the plugin ships no se
 the **Tile attribution** you give in the corner. The address is saved as typed, with any key
 it holds, in the plugin's data.
 
-In **List** mode the tab shows the file's people, families or sources as a
+In **List** mode the tab shows the file's people, families, sources or places as a
 table, switched by the buttons at its top. People show name, years, place and
 how many sources the record cites, with a mark where it cites none; families
 show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
-them. A click on a column header sorts by it, a second click reverses the order
+them; places show every place of the file, mapped or not, with the number of events there,
+their years and the coordinates, or a mark with the label *No coordinates* where it has
+none, and **Open the places table** or **Create the places table** and **Add the places that
+have no row** sit at the end of the row of the kinds. Places are in alphabetical order until
+a column is chosen, and a click on a place only marks its row: no record is selected and the
+map does not move. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter

@@ -16,6 +16,7 @@ Recorded as given; they are not open.
 6. Reuse: the model of a file, the Branch scope bar ("Branch of <name>", 7 places · 18 events), floating search over places with counter and arrows, zoom buttons, selection marks, glide. Search over places: specify what it matches (place names) and how the view glides to a place.
 7. Mobile: desktop and mobile; pan and pinch, 44 px touch targets, no Node built-ins in src/, no innerHTML; reduced motion respected.
 8. Empty state when no place has coordinates: "No place has coordinates yet" explaining that none has MAP in the file or a row in the places table, with a button "Create the places table" (creates the file next to the .ged pre-filled with the file's distinct place names and empty coordinates; decide the exact behaviour and what happens if the file exists).
+10. (2026-11-05, after the first implementation) The places list belongs in the List view, as the kind **Places**: a click on a Places row only marks the row — it does not switch to the map, move it or select a record — and the places panel is removed from the map entirely; everything about the list of places lives in the List.
 9. Out of scope: editing places/coordinates in the UI, routing/distances, any online service by default (geocoder included), historical borders and names.
 
 ## What Changes
@@ -29,7 +30,7 @@ Recorded as given; they are not open.
 - **Time.** A collapsed chip, **Years: all**, expands into a two-handle range that filters points and lines and never touches the selection.
 - **Reused parts.** The branch scope bar, the floating search (over place names, with a counter and arrows, gliding to the place), zoom buttons, the glide and reduced-motion rule, the pinch and wheel input, the selection hand-over and the record card.
 - **Empty state.** *No place has coordinates yet*, with **Create the places table**.
-- **A list alternative.** A places panel on the map lists every place, mapped or not, as keyboard-reachable rows; the map itself steps through places with the arrow keys.
+- **A list alternative in the List.** The *List* mode gains a fourth kind, **Places**, which lists every place of the file, mapped or not, as keyboard-reachable rows with its events, years and coordinates, and holds the actions of the places table; the map's counter of places with no coordinates opens it, and the map itself steps through places with the arrow keys. The map has no panel of places.
 - **Privacy and README.** The README Privacy section names tiles as the second thing a reader can ask for; the record-card sentence "No map SHALL be drawn and nothing SHALL be fetched" is reworded to point to the map.
 
 Repository or upstream: **this repository only.** Parsing and the language service are not touched; what 2.3.1 and 2.2.1 answer is enough (see `design.md`, *Upstream*). The existing draft `docs/design/upstream-issue-drafts.md:150` (`readPlace`) would later replace the local coordinate reader and is not a precondition.
@@ -42,6 +43,7 @@ Repository or upstream: **this repository only.** Parsing and the language servi
 
 ### Modified Capabilities
 
+- `genealogy-list`: a fourth kind, **Places** — its rows, its mark for a place with no coordinates, its marked row, its search and sorts, the actions of the places table at the end of the row of the kinds — and the map's counter that opens it; the requirements that name three kinds, the kept state, the search, the sort, the selected row and the keyboard are restated with it.
 - `genealogy-view`: five modes instead of four; the mode control, the **Show as map** command, the last-mode rule, the commands that follow the mode, the shared reading of the file, the genealogy interface being off, links into a record, and the selection opening the record card all name Map.
 - `genealogy-record-card`: the card opens on a selection made in Map as in the other views, the empty card names the map, and the places section no longer says that no map is drawn.
 - `genealogy-read-model`: an event's place carries the coordinates its `MAP` states.

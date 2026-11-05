@@ -34,7 +34,7 @@ A year of the common era SHALL be shown bare, as before.
 
 When a tab that was showing one GEDCOM file is navigated to another, the Graph,
 Timeline, List and Map of the first — the scope, position, zoom and scroll position, the
-kind, sort, filter and scroll position, the map's years range, search and places panel, the drawn boards and the selection — SHALL NOT be shown for
+kind, sort, selected place, filter and scroll position, the map's years range and search, the drawn boards and the selection — SHALL NOT be shown for
 the second. The second file's
 views SHALL be opened as for a view never shown, or from the state saved for the
 second file where the navigation brings it.
