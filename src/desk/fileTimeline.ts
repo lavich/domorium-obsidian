@@ -114,7 +114,7 @@ export function most(values: Iterable<number>): number {
   return found;
 }
 
-function kindOf(tag: string): MarkKind {
+export function kindOf(tag: string): MarkKind {
   if (BIRTH_TAGS.has(tag)) {
     return "birth";
   }
