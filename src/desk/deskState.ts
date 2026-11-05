@@ -3,12 +3,12 @@ import type { Position, Range } from "@domorium/language-service";
 import type { GenealogyIndex } from "../genealogy";
 import type { MessageKey } from "../i18n";
 import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON } from "../icon";
-import { DESK_MODES, type OpenAsMode } from "../settingsData";
+import { DESK_MODES, readOpenAs, type OpenAsMode } from "../settingsData";
 import { BRANCH_STEPS, initialFocus } from "./fileTimeline";
 import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
 import { familyFactByKey } from "./familyPage";
-import { factByKey, PERSON_VIEWS, type FactKey, type PersonView } from "./personPage";
+import { factByKey, type FactKey } from "./personPage";
 
 export type DeskMode = OpenAsMode;
 
@@ -18,13 +18,12 @@ export type ViewKind = "graph" | "timeline";
 
 export interface DeskState {
   mode?: DeskMode;
-  record?: string;
-  view?: PersonView;
+  selected?: string;
   graph?: GraphState;
   timeline?: TimelineState;
 }
 
-export const RETIRED_VIEW_TYPES = ["domorium-file-timeline", "domorium-file-graph"] as const;
+export const RETIRED_VIEW_TYPES = ["domorium-file-timeline", "domorium-file-graph", "domorium-evidence"] as const;
 
 const isObject = (value: unknown): boolean => typeof value === "object" && value !== null;
 
@@ -32,11 +31,11 @@ export function readDeskState(state: unknown): DeskState {
   if (typeof state !== "object" || state === null) {
     return {};
   }
-  const { mode, record, view, graph, timeline } = state as Record<string, unknown>;
+  const { mode, selected, graph, timeline } = state as Record<string, unknown>;
+  const read = readOpenAs(mode);
   return {
-    ...(DESK_MODES.includes(mode as DeskMode) ? { mode: mode as DeskMode } : {}),
-    ...(typeof record === "string" && record ? { record } : {}),
-    ...(PERSON_VIEWS.includes(view as PersonView) ? { view: view as PersonView } : {}),
+    ...(read === undefined ? {} : { mode: read }),
+    ...(typeof selected === "string" && selected ? { selected } : {}),
     ...(isObject(graph) ? { graph: readGraphState(graph) } : {}),
     ...(isObject(timeline) ? { timeline: readTimelineState(timeline) } : {}),
   };
@@ -68,37 +67,14 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   return index.media(xref) ? "media" : null;
 }
 
-export function recordToShow(
-  index: GenealogyIndex,
-  preferred: (string | undefined)[],
-): string | null {
-  for (const xref of preferred) {
-    if (xref && pageKind(index, xref)) {
-      return xref;
-    }
-  }
-  return (
-    index.people.find((row) => row.xref)?.xref ??
-    index.sources.find((row) => row.xref)?.xref ??
-    null
-  );
-}
+export type Origin = "view" | "index" | "card" | "link" | "history" | "cursor";
 
 export interface IndexTarget {
-  inSource(): boolean;
-  inView(): boolean;
-  goToXref(xref: string): boolean;
-  openRecord(xref: string): void;
-  /** False where the record is not a person, which has nothing to select. */
-  selectInView(xref: string): boolean;
+  selectRecord(xref: string, origin: Origin): boolean;
 }
 
 export function openFromIndex(tab: IndexTarget, xref: string): void {
-  if (tab.inSource()) {
-    tab.goToXref(xref);
-  } else if (!tab.inView() || !tab.selectInView(xref)) {
-    tab.openRecord(xref);
-  }
+  tab.selectRecord(xref, "index");
 }
 
 export interface ModeButton {
@@ -109,7 +85,6 @@ export interface ModeButton {
 }
 
 const MODE_LOOKS: Record<DeskMode, { title: MessageKey; icon: string }> = {
-  genealogy: { title: "mode.genealogy", icon: "users" },
   graph: { title: "mode.graph", icon: FILE_GRAPH_ICON },
   timeline: { title: "mode.timeline", icon: FILE_TIMELINE_ICON },
   source: { title: "mode.source", icon: "code" },
@@ -121,23 +96,12 @@ export function modeButtons(current: DeskMode): ModeButton[] {
   return DESK_MODES.map((mode) => ({ mode, ...MODE_LOOKS[mode], active: mode === current }));
 }
 
-/** From Source to the mode before it, Genealogy where this session has none; from anywhere else to Source. */
+/** From Source to the mode before it, Graph where this session has none; from anywhere else to Source. */
 export function toggleTarget(current: DeskMode, last: DeskMode | undefined): DeskMode {
-  return current === "source" ? (last ?? "genealogy") : "source";
+  return current === "source" ? (last ?? "graph") : "source";
 }
 
 export const isViewMode = (mode: DeskMode): mode is ViewKind => mode === "graph" || mode === "timeline";
-
-/** Whether Back should return to what the tab showed: a record changes, or a view gives way to its page. */
-export function navigationStep(
-  current: { mode: DeskMode; record: string | null },
-  next: { mode?: DeskMode; record?: string },
-): boolean {
-  if (next.record !== undefined && next.record !== current.record) {
-    return true;
-  }
-  return next.record !== undefined && next.mode === "genealogy" && isViewMode(current.mode);
-}
 
 export function openingMemory(
   kind: "graph",

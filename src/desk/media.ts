@@ -88,7 +88,7 @@ export function renderGallery(
   if (items.length === 0) {
     return;
   }
-  parent.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.media") });
+  parent.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.media") });
   const gallery = parent.createDiv({ cls: "gedcom-desk-gallery" });
   for (const item of items) {
     renderTile(gallery, item, host);

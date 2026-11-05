@@ -26,7 +26,7 @@ const WHOLE: BranchScope = { up: 2, down: 2 };
 let container: HTMLElement;
 let host: {
   portrait?: FileGraphHost["portrait"];
-  openRecord: ReturnType<typeof vi.fn<(xref: string) => void>>;
+  select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   stateChanged: ReturnType<typeof vi.fn<FileGraphHost["stateChanged"]>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
 };
@@ -37,7 +37,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
   host = {
-    openRecord: vi.fn(),
+    select: vi.fn(),
     stateChanged: vi.fn(),
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
       element.setAttribute("data-icon", icon);
@@ -163,7 +163,7 @@ describe("drawing the graph of a file", () => {
     pointer("pointerup", zoomIn);
     zoomIn?.click();
     expect(drawn.view()?.k).toBeCloseTo(k * 1.2, 6);
-    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
   });
 
   it("tints a card by sex with no stripe, its lines centred", () => {
@@ -471,7 +471,7 @@ describe("the view", () => {
     pointer("pointerup", target, { pointerId: 2, pointerType: "touch" });
     pointer("pointerup", target, { pointerId: 1, pointerType: "touch" });
     click(target);
-    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
     expect(person("@I1@")?.classList.contains("is-armed")).toBe(false);
   });
 
@@ -701,7 +701,7 @@ describe("activating", () => {
     click(card("@I12@")?.querySelector(".gedcom-fg-card-bg"));
     click(node("@F3@")?.querySelector("circle"));
 
-    expect(host.openRecord.mock.calls).toEqual([["@I12@"], ["@F3@"]]);
+    expect(host.select.mock.calls).toEqual([["@I12@"], ["@F3@"]]);
     click(pill("@I12@")?.querySelector("rect"));
     expect(scopeText()).toContain("Branch of Irène Joliot-Curie");
     expect(drawnPeople()).toHaveLength(10);
@@ -719,13 +719,13 @@ describe("activating", () => {
     click(target);
 
     expect(drawn.view()?.x).toBeCloseTo((before?.x ?? 0) - 30 / (before?.k ?? 1), 6);
-    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
 
     pointer("pointerdown", target, { clientX: 100, clientY: 100 });
     pointer("pointermove", target, { buttons: 1, clientX: 102, clientY: 101 });
     pointer("pointerup", target, { clientX: 102, clientY: 101 });
     click(target);
-    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("on a touch, lights the person and offers the branch first, and opens them on the second", () => {
@@ -734,9 +734,9 @@ describe("activating", () => {
 
     expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
     expect(person("@I1@")?.classList.contains("is-armed")).toBe(true);
-    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
     tap(card("@I1@"));
-    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("returns to the whole file on Branch again, centred on the person, by mouse, keyboard and touch", () => {
@@ -792,9 +792,9 @@ describe("activating", () => {
 
     expect(pop?.classList.contains("is-shown")).toBe(true);
     expect(pop?.textContent).toContain("Married 26 JUL 1895");
-    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
     container.querySelector<HTMLElement>(".gedcom-fg-pop-open")?.click();
-    expect(host.openRecord).toHaveBeenCalledWith("@F3@");
+    expect(host.select).toHaveBeenCalledWith("@F3@");
   });
 
   it("on a touch of empty space, puts the light out", () => {
@@ -804,7 +804,7 @@ describe("activating", () => {
 
     expect(all(".is-on")).toHaveLength(0);
     tap(card("@I1@"));
-    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(host.select).not.toHaveBeenCalled();
   });
 
   it("opens a person from a keyboard's click even after a touch", () => {
@@ -812,7 +812,7 @@ describe("activating", () => {
     tap(card("@I2@"));
     click(card("@I1@"), 0);
 
-    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
+    expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 });
 
@@ -896,7 +896,7 @@ describe("the keyboard", () => {
     expect(key(card("@I1@"), "Enter").defaultPrevented).toBe(true);
     expect(key(node("@F3@"), " ").defaultPrevented).toBe(true);
 
-    expect(host.openRecord.mock.calls).toEqual([["@I1@"], ["@F3@"]]);
+    expect(host.select.mock.calls).toEqual([["@I1@"], ["@F3@"]]);
     pill("@I12@")?.focus();
     key(pill("@I12@"), " ");
     expect(drawnPeople()).toHaveLength(10);
@@ -945,15 +945,61 @@ describe("the selected card", () => {
   it("marks one person's card and no other, and centres on it", () => {
     const model = curie();
     const drawn = board(model);
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
 
     expect(selected()).toEqual(["@I2@"]);
     expectCentredOn(drawn.view(), centreOf(model, "@I2@"));
   });
 
+  it("marks a card and leaves the view where it was when asked not to reveal, also after a resize", () => {
+    const drawn = board();
+    const before = drawn.view();
+    drawn.select("@I2@", false);
+
+    expect(selected()).toEqual(["@I2@"]);
+    expect(drawn.view()).toEqual(before);
+    const untouched = board();
+    drawn.resized({ width: 1000, height: 700 });
+    untouched.resized({ width: 1000, height: 700 });
+    expect(drawn.view()).toEqual(untouched.view());
+  });
+
+  it("glides as before when asked to reveal", () => {
+    const model = curie();
+    const drawn = board(model);
+    drawn.select("@I1@", false);
+    drawn.select("@I2@", true);
+
+    expectCentredOn(drawn.view(), centreOf(model, "@I2@"));
+  });
+
+  it("leaves a saved view alone when marked before the first draw without a reveal, and marks the card once drawn", () => {
+    const saved = { x: 10, y: 20, k: 1 };
+    const drawn = board(curie(), { view: saved }, null);
+    drawn.select("@I2@", false);
+    drawn.resized(WIDE);
+
+    expect(drawn.view()).toEqual(saved);
+    expect(selected()).toEqual(["@I2@"]);
+  });
+
+  it("changes no scope for a person outside the scope selected without a reveal, and marks nothing until the card is drawn", () => {
+    const model = curie();
+    const narrow = { focus: "@I12@", up: 0, down: 0 };
+    const drawn = board(model, { scope: narrow });
+    host.stateChanged.mockClear();
+
+    drawn.select("@I2@", false);
+
+    expect(host.stateChanged).not.toHaveBeenCalled();
+    expect(selected()).toEqual([]);
+    drawn.show(model, { scope: WHOLE });
+    expect(selected()).toEqual(["@I2@"]);
+  });
+
   it("is a mark of its own, kept through pointing at another and through a search, beside the search's ring", async () => {
     const drawn = board();
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
     drawn.highlight("@I1@");
     expect(selected()).toEqual(["@I2@"]);
     expect(person("@I2@")?.classList.contains("is-hl")).toBe(false);
@@ -973,17 +1019,17 @@ describe("the selected card", () => {
 
   it("is replaced by the next person selected, and ended by null", () => {
     const drawn = board();
-    drawn.select("@I2@");
-    drawn.select("@I12@");
+    drawn.select("@I2@", true);
+    drawn.select("@I12@", true);
     expect(selected()).toEqual(["@I12@"]);
 
-    drawn.select(null);
+    drawn.select(null, true);
     expect(selected()).toEqual([]);
   });
 
   it("is on a card that goes out of the drawn window and comes back", () => {
     const drawn = board(curie(), { view: { x: 0, y: 0, k: 2 } }, { width: 200, height: 150 });
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
     drawn.panBy(100_000, 0);
     drawn.draw(drawn.windowOf() ?? { left: 0, top: 0, right: 1, bottom: 1 });
     expect(person("@I2@")).toBeNull();
@@ -995,7 +1041,7 @@ describe("the selected card", () => {
 
   it("is on the card after a new reading of the file, and nowhere where the person is gone from it", () => {
     const drawn = board();
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
     drawn.show(fileTimelineOf(curieIndex()), { scope: WHOLE });
     expect(selected()).toEqual(["@I2@"]);
 
@@ -1009,7 +1055,7 @@ describe("the selected card", () => {
     const drawn = board(model);
     const narrow = { focus: "@I12@", up: 0, down: 0 };
     expect(fileGraphOf(model, narrow).card.has("@I2@")).toBe(false);
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
 
     drawn.show(model, { scope: narrow });
     expect(selected()).toEqual([]);
@@ -1023,7 +1069,7 @@ describe("the selected card", () => {
     const drawn = board(model, { scope: narrow });
     expect(person("@I2@")).toBeNull();
 
-    drawn.select("@I2@");
+    drawn.select("@I2@", true);
 
     expect(host.stateChanged.mock.lastCall?.[0].scope.focus).toBe("@I2@");
     expect(selected()).toEqual(["@I2@"]);
@@ -1054,7 +1100,7 @@ describe("the selected card", () => {
       const canvas = new GraphCanvas(container, { activateCard: vi.fn(), activateFamily: vi.fn(), viewChanged: vi.fn() });
       canvas.show(scene(), { open: undefined });
       canvas.resized(WIDE);
-      canvas.select("@I2@");
+      canvas.select("@I2@", true);
 
       expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p")).sort()).toEqual(["@I1@", "@I2@"]);
     });
@@ -1062,7 +1108,7 @@ describe("the selected card", () => {
     it("centres on the person once the canvas has a size, when selected before it had one", () => {
       const canvas = new GraphCanvas(container, { activateCard: vi.fn(), activateFamily: vi.fn(), viewChanged: vi.fn() });
       canvas.show(scene(), { open: undefined });
-      canvas.select("@I2@");
+      canvas.select("@I2@", true);
       canvas.resized(WIDE);
 
       const [x, y] = centreOf(curie(), "@I2@");

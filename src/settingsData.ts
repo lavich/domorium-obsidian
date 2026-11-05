@@ -2,7 +2,7 @@ export const RECORD_PREVIEW_TRIGGERS = ["modifier", "hover", "off"] as const;
 
 export type RecordPreviewTrigger = (typeof RECORD_PREVIEW_TRIGGERS)[number];
 
-export const DESK_MODES = ["genealogy", "graph", "timeline", "source"] as const;
+export const DESK_MODES = ["graph", "timeline", "source"] as const;
 
 export type OpenAsMode = (typeof DESK_MODES)[number];
 
@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // Reaching a stranger's host is a statement about a family, not about a
   // plugin, so it waits to be asked.
   remoteImages: false,
-  openAs: "genealogy",
+  openAs: "graph",
   // The pages and panels are the plugin's largest surface; a reader who came
   // for the editor has not asked for them.
   genealogyInterface: false,
@@ -34,6 +34,13 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
 
 function isOpenAsMode(value: unknown): value is OpenAsMode {
   return DESK_MODES.includes(value as OpenAsMode);
+}
+
+export function readOpenAs(value: unknown): OpenAsMode | undefined {
+  if (value === "genealogy") {
+    return "graph";
+  }
+  return isOpenAsMode(value) ? value : undefined;
 }
 
 function isRecordPreviewTrigger(value: unknown): value is RecordPreviewTrigger {
@@ -77,7 +84,7 @@ export function parseSettings(data: unknown): GedcomSettings {
       typeof settings.remoteImages === "boolean"
         ? settings.remoteImages
         : DEFAULT_SETTINGS.remoteImages,
-    openAs: isOpenAsMode(settings.openAs) ? settings.openAs : DEFAULT_SETTINGS.openAs,
+    openAs: readOpenAs(settings.openAs) ?? DEFAULT_SETTINGS.openAs,
     genealogyInterface:
       typeof settings.genealogyInterface === "boolean"
         ? settings.genealogyInterface

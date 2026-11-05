@@ -7,7 +7,6 @@ import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { factsOf, renderPersonPage, type FactKey, type PageHost } from "./personPage";
-import { renderGonePage } from "./sourcePage";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -17,7 +16,7 @@ function pageHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    openEvidence: vi.fn<PageHost["openEvidence"]>(),
+    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
@@ -31,14 +30,15 @@ afterEach(resetLanguage);
 
 function draw(
   xref: string,
-  { selected = null, phone = false, index = curieIndex() }:
-    { selected?: FactKey | null; phone?: boolean; index?: GenealogyIndex } = {},
+  { selected = null, index = curieIndex() }:
+    { selected?: FactKey | null; index?: GenealogyIndex } = {},
 ): void {
   const person = index.person(xref);
   if (!person) {
     throw new Error(`no person ${xref}`);
   }
-  renderPersonPage(container, person, index, { selected, phone }, host);
+  container.empty();
+  renderPersonPage(container, person, index, { selected }, host);
 }
 
 const bornIn = (date: string): GenealogyIndex =>
@@ -56,7 +56,7 @@ const facts = (): string[][] =>
     [...row.children].map((part) => part.textContent ?? ""),
   );
 
-describe("the person page", () => {
+describe("the person card", () => {
   it("heads the page with the name, the years and the places", () => {
     draw("@I1@");
 
@@ -127,16 +127,16 @@ describe("the person page", () => {
     expect(texts(".gedcom-desk-person-note")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
-  it("leads from a marriage to the family's page", () => {
+  it("leads from a marriage to the family's card", () => {
     draw("@I1@");
     [...container.querySelectorAll<HTMLElement>(".gedcom-desk-link")]
-      .find((node) => node.textContent === "Family page")
+      .find((node) => node.textContent === "Family card")
       ?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith("@F3@");
   });
 
-  it("opens a relative's page", () => {
+  it("selects a relative", () => {
     draw("@I1@");
     const pierre = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]
       .find((node) => node.textContent?.startsWith("Pierre Curie"));
@@ -168,15 +168,16 @@ describe("the person page", () => {
     expect(host.showInSource).toHaveBeenLastCalledWith(marie?.events[0]?.range);
   });
 
-  it("unfolds a tapped fact on a phone, and only there", () => {
-    draw("@I1@", { selected: "p:0" });
+  it("unfolds the selected fact's sources beneath it, and its All evidence scrolls to the section", () => {
+    draw("@I1@");
     expect(container.querySelector(".gedcom-desk-unfold")).toBeNull();
 
-    draw("@I1@", { selected: "p:0", phone: true });
-    expect(texts(".gedcom-desk-unfold-none")).toEqual(["No source of its own"]);
+    draw("@I1@", { selected: "p:0" });
+    expect(container.querySelector(".gedcom-desk-unfold")).not.toBeNull();
+    expect(container.textContent).not.toContain("No source of its own");
     const [allEvidence] = container.querySelectorAll<HTMLElement>(".gedcom-desk-unfold .gedcom-desk-link");
     allEvidence?.click();
-    expect(host.openEvidence).toHaveBeenCalled();
+    expect(host.scrollToEvidence).toHaveBeenCalled();
   });
 
   it("shows a parent the file does not declare, with the way to its line", () => {
@@ -213,30 +214,57 @@ describe("the person page", () => {
   });
 });
 
-describe("a page whose record has gone", () => {
-  it("says so and offers the first person and the source", () => {
-    const showFirst = vi.fn();
-    const openSource = vi.fn();
-    renderGonePage(container, { showFirst, openSource });
-
-    expect(container.textContent).toContain("This record is no longer in the file");
-    const [first, source] = container.querySelectorAll<HTMLElement>(".gedcom-desk-link");
-    first?.click();
-    source?.click();
-    expect(showFirst).toHaveBeenCalled();
-    expect(openSource).toHaveBeenCalled();
-  });
-});
-
-describe("the Tree tab", () => {
-  it("gives the page to the tree, which fills it, with no legend", () => {
+describe("the sections of a person card", () => {
+  it("run Facts, Other names, Family, Media, Timeline and Places, with no tab bar and no tree", () => {
     const person = curieIndex().person("@I1@");
     if (!person) {
       throw new Error("no Marie");
     }
-    renderPersonPage(container, person, curieIndex(), { selected: null, phone: false, view: "tree" }, host);
+    renderPersonPage(
+      container,
+      person,
+      curieIndex(),
+      { selected: null, media: [{ content: { kind: "missing", target: "marie.jpg" }, at: { line: 1, character: 0 } }] },
+      host,
+    );
 
-    expect(container.querySelector(".gedcom-desk-page.is-tree > .gedcom-desk-graph > .gedcom-fg-canvas")).not.toBeNull();
-    expect(container.querySelector(".gedcom-desk-legend")).toBeNull();
+    expect(texts("h2")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline", "Places"]);
+    expect(container.querySelector(".gedcom-fg-canvas")).toBeNull();
+  });
+
+  it("lists seventeen dated entries from 1860 to 1934 and the undated Occupation in the timeline", () => {
+    draw("@I1@");
+    const dated = [...container.querySelectorAll(".gedcom-desk-timeline")][0];
+    const years = [...(dated?.querySelectorAll(".gedcom-desk-moment-year") ?? [])].map((node) => node.textContent);
+
+    expect(years).toHaveLength(17);
+    expect(years[0]).toBe("1860");
+    expect(years.at(-1)).toBe("1934");
+    expect(texts("h3")).toEqual(["Undated"]);
+    const undated = [...container.querySelectorAll(".gedcom-desk-timeline")][1];
+    expect([...(undated?.querySelectorAll(".gedcom-desk-moment-what") ?? [])].map((node) => node.textContent)).toEqual([
+      "Occupation",
+    ]);
+  });
+
+  it("lists the four places in order", () => {
+    draw("@I1@");
+
+    expect(texts(".gedcom-desk-place-name")).toEqual([
+      "Warsaw, Congress Poland",
+      "Sceaux, France",
+      "Paris, France",
+      "Passy, Haute-Savoie, France",
+    ]);
+  });
+
+  it("selects a fact from the timeline, and a relative's entry opens the relative", () => {
+    draw("@I1@");
+    const entries = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
+    entries.find((node) => node.textContent === "Birth")?.click();
+    entries.find((node) => node.textContent === "Death of husband Pierre Curie")?.click();
+
+    expect(host.select).toHaveBeenCalledWith("p:0");
+    expect(host.openRecord).toHaveBeenCalledWith("@I2@");
   });
 });

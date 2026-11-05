@@ -28,7 +28,7 @@ export interface GraphSettings {
 
 export interface FileGraphHost {
   /** A person or a family. */
-  openRecord(xref: string): void;
+  select(xref: string): void;
   /** `view` is absent until the canvas has had a size. */
   stateChanged(settings: { scope: BranchScope; view?: GraphView }): void;
   setIcon(element: HTMLElement, icon: string): void;
@@ -70,8 +70,8 @@ export class FileGraphBoard {
       change: (next) => this.setScope(next),
     });
     this.canvas = new GraphCanvas(this.root, {
-      activateCard: (xref) => this.host.openRecord(xref),
-      activateFamily: (xref) => this.host.openRecord(xref),
+      activateCard: (xref) => this.host.select(xref),
+      activateFamily: (xref) => this.host.select(xref),
       branch: (xref) => this.setScope({ focus: xref === this.scope.focus ? undefined : xref }),
       viewChanged: (view) => this.host.stateChanged({ scope: scopeOf(this.scope), view }),
     }, { setIcon: (element, icon) => this.host.setIcon(element, icon) });
@@ -106,12 +106,12 @@ export class FileGraphBoard {
     this.canvas.cancelHover();
   }
 
-  /** Marks a person selected and centres on them, in their own branch where this one does not hold them; `null` ends it. */
-  select(xref: string | null): void {
-    if (xref !== null && this.model?.people.has(xref) && !this.canvas.hasCard(xref)) {
+  /** Marks a person selected, and with `reveal` centres on them, in their own branch where this one does not hold them; `null` ends it. */
+  select(xref: string | null, reveal: boolean): void {
+    if (reveal && xref !== null && this.model?.people.has(xref) && !this.canvas.hasCard(xref)) {
       this.setScope({ focus: xref });
     }
-    this.canvas.select(xref);
+    this.canvas.select(xref, reveal);
   }
 
   openSearch(): void {

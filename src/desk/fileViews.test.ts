@@ -23,7 +23,7 @@ function boxed(element: HTMLElement): boolean {
 
 let parent: HTMLElement;
 let host: {
-  openRecord: ReturnType<typeof vi.fn<(xref: string) => void>>;
+  select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   showInSource: ReturnType<typeof vi.fn<(range: Range) => void>>;
   portrait: ReturnType<typeof vi.fn<FileViewsHost["portrait"]>>;
   changed: ReturnType<typeof vi.fn<() => void>>;
@@ -65,7 +65,7 @@ beforeEach(() => {
   parent = document.createElement("div");
   document.body.replaceChildren(parent);
   host = {
-    openRecord: vi.fn(),
+    select: vi.fn(),
     showInSource: vi.fn(),
     portrait: vi.fn(() => null),
     changed: vi.fn(),
@@ -317,7 +317,7 @@ describe("hovering while the views come and go", () => {
 describe("selecting in a view", () => {
   it("is on the card when the graph is first drawn, for a selection made before any show", () => {
     const tab = views();
-    tab.select("graph", "@I2@");
+    tab.select("graph", "@I2@", true);
     expect(parent.children).toHaveLength(0);
 
     tab.show("graph", index, {});
@@ -329,7 +329,7 @@ describe("selecting in a view", () => {
     const tab = views();
     tab.show("graph", index, {});
     tab.hide();
-    tab.select("graph", "@I12@");
+    tab.select("graph", "@I12@", true);
     expect(selectedMarks()).toHaveLength(0);
 
     tab.show("graph", index, tab.memory());
@@ -340,8 +340,8 @@ describe("selecting in a view", () => {
   it("marks that card and not another, at once where the view is in sight", () => {
     const tab = views();
     tab.show("graph", index, {});
-    tab.select("graph", "@I2@");
-    tab.select("graph", "@I12@");
+    tab.select("graph", "@I2@", true);
+    tab.select("graph", "@I12@", true);
 
     expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I12@"]);
   });
@@ -349,21 +349,68 @@ describe("selecting in a view", () => {
   it("leaves no mark anywhere once both views are told nobody is selected, whichever were drawn", () => {
     const tab = views();
     tab.show("graph", index, {});
-    tab.select("graph", "@I2@");
+    tab.select("graph", "@I2@", true);
     tab.show("timeline", index, {});
-    tab.select("timeline", "@I12@");
+    tab.select("timeline", "@I12@", true);
     tab.show("graph", index, tab.memory());
     expect(selectedMarks().length).toBeGreaterThan(0);
 
-    tab.select("graph", null);
-    tab.select("timeline", null);
+    tab.select("graph", null, true);
+    tab.select("timeline", null, true);
 
     expect(selectedMarks()).toHaveLength(0);
   });
 
+  describe("moving to the selection", () => {
+    function viewAfter(run: (tab: FileViews) => void): unknown {
+      parent = document.createElement("div");
+      document.body.replaceChildren(parent);
+      const tab = views();
+      tab.show("graph", index, {});
+      tab.hide();
+      run(tab);
+      tab.show("graph", index, tab.memory());
+      return tab.memory().graph?.view;
+    }
+
+    it("centres on a person selected with a reveal while the views were hidden", () => {
+      const resting = viewAfter(() => undefined);
+
+      expect(viewAfter((tab) => tab.select("graph", "@I2@", true))).not.toEqual(resting);
+    });
+
+    it("keeps the reveal through a later hand-over of the same person without one", () => {
+      const revealed = viewAfter((tab) => tab.select("graph", "@I2@", true));
+
+      expect(
+        viewAfter((tab) => {
+          tab.select("graph", "@I2@", true);
+          tab.select("graph", "@I2@", false);
+        }),
+      ).toEqual(revealed);
+    });
+
+    it("does not centre on a person only ever selected without a reveal, and marks the card", () => {
+      const resting = viewAfter(() => undefined);
+
+      expect(viewAfter((tab) => tab.select("graph", "@I2@", false))).toEqual(resting);
+      expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I2@"]);
+    });
+
+    it("takes the saved view at the first show for a selection without a reveal, and marks the card", () => {
+      const tab = views();
+      tab.select("graph", "@I2@", false);
+
+      tab.show("graph", index, { graph: { up: 2, down: 2, view: { x: 500, y: 200, k: 0.8 } } });
+
+      expect(tab.memory().graph?.view).toEqual({ x: 500, y: 200, k: 0.8 });
+      expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I2@"]);
+    });
+  });
+
   it("is on the timeline's row too", () => {
     const tab = views();
-    tab.select("timeline", "@I2@");
+    tab.select("timeline", "@I2@", true);
     tab.show("timeline", index, {});
 
     expect(all(".gedcom-ft-name.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I2@"]);
@@ -392,15 +439,15 @@ describe("finding in a view", () => {
 });
 
 describe("what a click in a view asks of the tab", () => {
-  it("opens the record of a card and of a family node", () => {
+  it("selects the record of a card and of a family node", () => {
     const tab = views();
     tab.show("graph", index, {});
     click(parent.querySelector('[data-card="@I12@"]'));
     const family = parent.querySelector<SVGElement>("[data-node]");
     click(family);
 
-    expect(host.openRecord).toHaveBeenNthCalledWith(1, "@I12@");
-    expect(host.openRecord).toHaveBeenNthCalledWith(2, family?.getAttribute("data-node"));
+    expect(host.select).toHaveBeenNthCalledWith(1, "@I12@");
+    expect(host.select).toHaveBeenNthCalledWith(2, family?.getAttribute("data-node"));
   });
 
   it("shows the lines of a mark in the source", () => {
@@ -412,12 +459,12 @@ describe("what a click in a view asks of the tab", () => {
     expect([range?.start.line, range?.end.line]).toEqual([21, 23]);
   });
 
-  it("opens the person of a timeline row", () => {
+  it("selects the person of a timeline row", () => {
     const tab = views();
     tab.show("timeline", index, {});
     click(parent.querySelector('.gedcom-ft-name[data-p="@I12@"] .gedcom-ft-name-open'));
 
-    expect(host.openRecord).toHaveBeenCalledWith("@I12@");
+    expect(host.select).toHaveBeenCalledWith("@I12@");
   });
 
   it("asks for the layout to be saved as a view reports a change", () => {

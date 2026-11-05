@@ -19,23 +19,28 @@
         color: inherit;
       }
       #desk-layout {
-        flex: 1;
-        min-height: 0;
-        display: grid;
-        grid-template-columns: 260px 1fr 300px;
-      }
-      #desk-layout.is-phone {
-        grid-template-columns: 1fr;
+        display: flex;
+        height: 100vh;
       }
       #desk-layout.is-phone #index-pane,
-      #desk-layout.is-phone #evidence-pane {
+      #desk-layout.is-phone #tab-placeholder {
         display: none;
       }
-      #index-pane,
-      #evidence-pane {
+      #index-pane {
+        flex: none;
+        width: 260px;
         min-height: 0;
         overflow: auto;
         padding: 12px;
+        background: var(--background-secondary);
+      }
+      #tab-placeholder {
+        flex: 1;
+        min-width: 0;
+      }
+      #card-pane {
+        flex: none;
+        min-height: 0;
         background: var(--background-secondary);
       }
     </style>
@@ -43,12 +48,10 @@
   <body class="theme-light">
     <div id="desk-layout">
       <div id="index-pane"></div>
-      <div class="workspace-leaf-content" data-type="domorium-gedcom">
-        <div class="view-content gedcom-gedcom-view">
-          <div id="page" class="gedcom-desk"></div>
-        </div>
+      <div id="tab-placeholder"></div>
+      <div id="card-pane" class="workspace-leaf-content" data-type="domorium-record">
+        <div id="card" class="view-content gedcom-record-view"></div>
       </div>
-      <div id="evidence-pane"></div>
     </div>
     <script src="dist/desk.js"></script>
   </body>

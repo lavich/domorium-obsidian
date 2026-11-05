@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { curieIndex, indexOf } from "../testing/curie";
-import type { DeskMode } from "./deskState";
-import { TabModes } from "./tabModes";
+import type { DeskMode, Origin } from "./deskState";
+import { originRules, TabModes } from "./tabModes";
 
 const index = curieIndex();
 
@@ -14,34 +14,36 @@ function tab(mode: DeskMode, interfaceOn = true): TabModes {
   return modes;
 }
 
-describe("the record a tab holds on leaving Source", () => {
-  it("is the record under the cursor, going to Graph, and again going on to Genealogy", () => {
+describe("the record a tab selects on leaving Source", () => {
+  it("is the record under the cursor, going to Graph, and again going on to Timeline", () => {
     const modes = tab("source");
 
     const toGraph = modes.setMode("graph", at("@I2@"));
-    expect(toGraph).toMatchObject({ changed: true, recordChanged: true, moveCursor: false });
-    expect(modes.record).toBe("@I2@");
+    expect(toGraph).toMatchObject({ changed: true, selectionChanged: true, moveCursor: false });
+    expect(modes.selected).toBe("@I2@");
 
     modes.setMode("source", at());
-    modes.setMode("genealogy", at("@I3@"));
-    expect(modes.record).toBe("@I3@");
+    expect(modes.setMode("timeline", at("@I3@")).selectionChanged).toBe(true);
+    expect(modes.selected).toBe("@I3@");
   });
 
-  it("leaves the record alone for a record that has no page", () => {
+  it("leaves the selection alone for a record that has no card", () => {
     const modes = tab("source");
-    modes.record = "@I1@";
+    modes.select("@I1@", index);
 
-    modes.setMode("graph", at("@N1@"));
+    const change = modes.setMode("graph", at("@N1@"));
 
-    expect(modes.record).toBe("@I1@");
+    expect(modes.selected).toBe("@I1@");
+    expect(change.selectionChanged).toBe(false);
   });
 
-  it("moves the cursor only from Genealogy to Source", () => {
-    const modes = tab("genealogy");
+  it("asks to move the cursor going to Source with a record selected, and not without one", () => {
+    const withSelection = tab("graph");
+    withSelection.select("@I2@", index);
+    expect(withSelection.setMode("source", at()).moveCursor).toBe(true);
 
-    expect(modes.setMode("graph", at()).moveCursor).toBe(false);
-    modes.setMode("genealogy", at());
-    expect(modes.setMode("source", at()).moveCursor).toBe(true);
+    const without = tab("graph");
+    expect(without.setMode("source", at()).moveCursor).toBe(false);
   });
 
   it("changes nothing while the interface is off", () => {
@@ -49,7 +51,7 @@ describe("the record a tab holds on leaving Source", () => {
 
     expect(modes.setMode("graph", at("@I2@"))).toMatchObject({ changed: false });
     expect(modes.mode).toBe("source");
-    expect(modes.record).toBeNull();
+    expect(modes.selected).toBeNull();
   });
 
   it("shows Source whatever it stored while the interface is off", () => {
@@ -64,7 +66,7 @@ describe("the record a tab holds on leaving Source", () => {
 
 describe("the toggle", () => {
   it("goes to the last mode other than Source, and back", () => {
-    const modes = tab("genealogy");
+    const modes = tab("graph");
     modes.setMode("timeline", at());
     expect(modes.toggleTarget()).toBe("source");
 
@@ -72,8 +74,8 @@ describe("the toggle", () => {
     expect(modes.toggleTarget()).toBe("timeline");
   });
 
-  it("goes to Genealogy from a Source this session has not left", () => {
-    expect(tab("source").toggleTarget()).toBe("genealogy");
+  it("goes to Graph from a Source this session has not left", () => {
+    expect(tab("source").toggleTarget()).toBe("graph");
   });
 
   it("is forgotten when the tab moves to another file", () => {
@@ -81,109 +83,120 @@ describe("the toggle", () => {
     modes.setMode("source", at());
     modes.fileChanged("source");
 
-    expect(modes.toggleTarget()).toBe("genealogy");
+    expect(modes.toggleTarget()).toBe("graph");
   });
 });
 
-describe("what is selected in a view", () => {
-  it("is recorded for a person before anything was drawn, and refused for a family and in Source", () => {
-    const graph = tab("graph");
+describe("the selected record", () => {
+  it("is a person, a family, a source or a multimedia record, and not a note", () => {
+    for (const xref of ["@I2@", "@F3@", "@S3@", "@O5@"]) {
+      const modes = tab("graph");
 
-    expect(graph.select("@I2@", true)).toBe(true);
-    expect(graph.selectedPerson).toBe("@I2@");
-    expect(graph.select("@F3@", false)).toBe(false);
-    expect(graph.selectedPerson).toBe("@I2@");
-    expect(tab("source").select("@I2@", true)).toBe(false);
-    expect(tab("genealogy").select("@I2@", true)).toBe(false);
+      expect(modes.select(xref, index)).toBe(true);
+      expect(modes.selected).toBe(xref);
+    }
+    const modes = tab("graph");
+    expect(modes.select("@N1@", index)).toBe(false);
+    expect(modes.selected).toBeNull();
   });
 
-  it("ends with a change of mode, including Graph to Timeline", () => {
+  it("survives Graph to Timeline to Source and back", () => {
     const modes = tab("graph");
-    modes.select("@I2@", true);
+    modes.select("@I2@", index);
 
-    expect(modes.setMode("timeline", at()).selectionCleared).toBe(true);
-    expect(modes.selectedPerson).toBeNull();
-    expect(modes.setMode("graph", at()).selectionCleared).toBe(false);
+    expect(modes.setMode("timeline", at())).toMatchObject({ selectionChanged: false });
+    modes.setMode("source", at("@I2@"));
+    modes.setMode("graph", at("@I2@"));
+    expect(modes.selected).toBe("@I2@");
   });
 
-  it("ends when the interface is turned off", () => {
-    const modes = tab("graph");
-    modes.select("@I2@", true);
+  it("is refused while the interface is off, and keeps nothing", () => {
+    const modes = tab("source", false);
 
-    expect(modes.interfaceChanged(false).selectionCleared).toBe(true);
-    expect(modes.selectedPerson).toBeNull();
+    expect(modes.select("@I2@", index)).toBe(false);
+    expect(modes.selected).toBeNull();
     expect(modes.shownRecord()).toBeNull();
   });
 
-  it("ends when a text change leaves its person undeclared, and is reported", () => {
+  it("ends when a text change leaves its record undeclared, and is reported", () => {
     const modes = tab("graph");
-    modes.select("@I1@", true);
+    modes.select("@I1@", index);
     const without = indexOf("0 HEAD\n0 @I2@ INDI\n1 NAME Pierre /Curie/\n0 TRLR\n");
 
     expect(modes.textChanged(index).selectionCleared).toBe(false);
-    expect(modes.selectedPerson).toBe("@I1@");
+    expect(modes.selected).toBe("@I1@");
     expect(modes.textChanged(without).selectionCleared).toBe(true);
-    expect(modes.selectedPerson).toBeNull();
+    expect(modes.selected).toBeNull();
   });
 
-  it("is the record the Index marks while it stands", () => {
+  it("is shown no more, and the tab shows as Source, when the interface is turned off, and is back when it is turned on", () => {
+    const modes = tab("graph");
+    modes.select("@I2@", index);
+
+    expect(modes.interfaceChanged(false).selectionCleared).toBe(true);
+    expect(modes.selected).toBe("@I2@");
+    expect(modes.shownRecord()).toBeNull();
+    expect(modes.shown).toBe("source");
+    modes.interfaceChanged(true);
+    expect(modes.shownRecord()).toBe("@I2@");
+  });
+
+  it("is what the Index marks while it stands", () => {
     const modes = tab("timeline");
     expect(modes.shownRecord()).toBeNull();
-    modes.select("@I2@", true);
+    modes.select("@I2@", index);
 
     expect(modes.shownRecord()).toBe("@I2@");
   });
-});
 
-describe("opening a record's page", () => {
-  it("is a step from Graph, even on the record the tab already holds", () => {
+  it("is taken from a state a tab is handed, with its mode", () => {
     const modes = tab("graph");
-    modes.record = "@I1@";
 
-    expect(modes.applyState(modes.openRecord("@I1@")).step).toBe(true);
-  });
-
-  it("is not a step from Genealogy on the same record, and is on another", () => {
-    const modes = tab("genealogy");
-    modes.record = "@I1@";
-
-    expect(modes.applyState(modes.openRecord("@I1@")).step).toBe(false);
-    expect(modes.applyState(modes.openRecord("@I2@")).step).toBe(true);
-  });
-
-  it("takes the mode and the record of a state it is handed, and ends a selection with the mode", () => {
-    const modes = tab("graph");
-    modes.select("@I2@", true);
-
-    expect(modes.applyState({ mode: "genealogy", record: "@I2@" })).toEqual({
-      step: true,
-      recordChanged: true,
-      selectionCleared: true,
-    });
-    expect(modes.mode).toBe("genealogy");
-    expect(modes.record).toBe("@I2@");
+    expect(modes.applyState({ mode: "timeline", selected: "@I2@" })).toEqual({ selectionChanged: true });
+    expect(modes.mode).toBe("timeline");
+    expect(modes.selected).toBe("@I2@");
     expect(modes.lastMode).toBe("graph");
+    expect(modes.applyState({ mode: "timeline" })).toEqual({ selectionChanged: false });
+    expect(modes.selected).toBe("@I2@");
   });
 
-  it("is no step for a state that names only a mode", () => {
-    const modes = tab("genealogy");
+  it("is kept from a state while the interface is off, and not shown", () => {
+    const modes = tab("source", false);
 
-    expect(modes.applyState({ mode: "graph" })).toMatchObject({ step: false, recordChanged: false });
+    expect(modes.applyState({ selected: "@I2@" })).toEqual({ selectionChanged: true });
+    expect(modes.selected).toBe("@I2@");
+    expect(modes.shownRecord()).toBeNull();
+  });
+
+  it("is left alone by a state of the same file that names none, and replaced by one that names another", () => {
+    const modes = tab("graph");
+    modes.select("@I2@", index);
+
+    expect(modes.applyState({ mode: "graph" })).toEqual({ selectionChanged: false });
+    expect(modes.selected).toBe("@I2@");
+    expect(modes.applyState({ selected: "@I12@" })).toEqual({ selectionChanged: true });
+    expect(modes.selected).toBe("@I12@");
+  });
+
+  it("is dropped by the first reading of a file that does not declare a restored one", () => {
+    const modes = tab("graph");
+    modes.applyState({ selected: "@I99@" });
+
+    expect(modes.textChanged(index).selectionCleared).toBe(true);
+    expect(modes.selected).toBeNull();
   });
 });
 
 describe("a tab moved to another file", () => {
-  it("forgets the record, the selection, the last mode and that the file was read", () => {
+  it("forgets the selection, the last mode and that the file was read", () => {
     const modes = tab("graph");
-    modes.record = "@I1@";
-    modes.select("@I2@", true);
+    modes.select("@I2@", index);
     modes.setMode("source", at());
-    modes.fileChanged("genealogy");
+    modes.fileChanged("graph");
 
     expect(modes).toMatchObject({
-      mode: "genealogy",
-      record: null,
-      selectedPerson: null,
+      mode: "graph",
+      selected: null,
       lastMode: undefined,
       loaded: false,
     });
@@ -202,7 +215,6 @@ describe("when a view is drawn", () => {
   it("not while the tab is hidden, and not in a mode that is no view", () => {
     expect(tab("graph").needsDraw(false)).toBe(false);
     expect(tab("source").needsDraw(true)).toBe(false);
-    expect(tab("genealogy").needsDraw(true)).toBe(false);
     expect(tab("graph", false).needsDraw(true)).toBe(false);
   });
 
@@ -216,17 +228,61 @@ describe("when a view is drawn", () => {
 });
 
 describe("the record the commands and the copy links act on", () => {
-  it("is the page's in Genealogy, the selected person in a view, the cursor's in Source", () => {
-    const modes = tab("genealogy");
-    modes.record = "@I1@";
-    modes.select("@I2@", true);
+  it("is the cursor's in Source and the selected one in a view, of any kind", () => {
+    const modes = tab("graph");
 
-    expect(modes.recordAtCursorFor("genealogy", "@I3@")).toBe("@I1@");
-    expect(modes.recordAtCursorFor("source", "@I3@")).toBe("@I3@");
     expect(modes.recordAtCursorFor("graph", "@I3@")).toBeUndefined();
-    modes.setMode("graph", at());
-    modes.select("@I2@", true);
-    expect(modes.recordAtCursorFor("graph", "@I3@")).toBe("@I2@");
-    expect(modes.recordAtCursorFor("timeline", "@I3@")).toBe("@I2@");
+    modes.select("@F3@", index);
+    expect(modes.recordAtCursorFor("source", "@I3@")).toBe("@I3@");
+    expect(modes.recordAtCursorFor("graph", "@I3@")).toBe("@F3@");
+    expect(modes.recordAtCursorFor("timeline", "@I3@")).toBe("@F3@");
+  });
+});
+
+describe("what each origin of a selection asks for", () => {
+  const rules = (origin: Origin, mobile = false) => originRules(origin, mobile);
+
+  it("never moves the cursor or takes the focus for the cursor and for history", () => {
+    for (const origin of ["cursor", "history"] as const) {
+      expect(rules(origin)).toMatchObject({ cursorToRecord: false, editorFocus: false });
+    }
+  });
+
+  it("puts the cursor on the record for the index, the card and a link, and gives the editor the focus for the index and a link", () => {
+    expect(rules("index")).toMatchObject({ cursorToRecord: true, editorFocus: true });
+    expect(rules("link")).toMatchObject({ cursorToRecord: true, editorFocus: true });
+    expect(rules("card")).toMatchObject({ cursorToRecord: true, editorFocus: false });
+    expect(rules("view")).toMatchObject({ cursorToRecord: false, editorFocus: false });
+  });
+
+  it("moves a view for every origin but a click in it", () => {
+    expect(rules("view").revealsView).toBe(false);
+    for (const origin of ["index", "card", "link", "history"] as const) {
+      expect(rules(origin).revealsView).toBe(true);
+    }
+  });
+
+  it("adds a follow step for the cursor, none for history and a visit for the rest", () => {
+    expect(rules("cursor").addsStep).toBe("follow");
+    expect(rules("history").addsStep).toBe("none");
+    for (const origin of ["view", "index", "card", "link"] as const) {
+      expect(rules(origin).addsStep).toBe("visit");
+    }
+  });
+
+  it("places the card for every origin but the cursor", () => {
+    expect(rules("cursor").placesCard).toBe(false);
+    for (const origin of ["view", "index", "card", "link", "history"] as const) {
+      expect(rules(origin).placesCard).toBe(true);
+    }
+  });
+
+  it("opens the drawer only for a view or the index, and only on mobile", () => {
+    expect(rules("view", true).opensDrawer).toBe(true);
+    expect(rules("index", true).opensDrawer).toBe(true);
+    expect(rules("view", false).opensDrawer).toBe(false);
+    for (const origin of ["card", "link", "history", "cursor"] as const) {
+      expect(rules(origin, true).opensDrawer).toBe(false);
+    }
   });
 });

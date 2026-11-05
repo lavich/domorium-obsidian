@@ -29,8 +29,7 @@ export function renderFamilyPage(
   options: PersonPageOptions,
   host: PageHost,
 ): void {
-  container.empty();
-  const page = container.createDiv({ cls: "gedcom-desk-page" });
+  const page = container;
   const heading = page.createDiv({ cls: "gedcom-desk-heading" });
   heading.createEl("h1", { cls: "gedcom-desk-title", text: familyTitle(family.spouseNames) });
   const marriage = family.events.find((event) => event.tag === "MARR");
@@ -45,7 +44,7 @@ export function renderFamilyPage(
 
   renderFactList(page, familyFacts(family), index, options, host);
 
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.family") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.family") });
   const members = page.createDiv({ cls: "gedcom-desk-family" });
   for (const spouse of family.spouses) {
     const role =

@@ -18,11 +18,11 @@ adapted per editor.
 
 ## Features
 
-- An optional genealogy interface, off until you turn it on: a Genealogy mode
-  that shows the file as people and sources — a page per person with their
-  facts, names and family, a page per source — an index of everyone in the
-  file, an evidence panel for what a fact rests on, and a timeline and a graph
-  of the whole file
+- An optional genealogy interface, off until you turn it on: a graph and a
+  timeline of the whole file, an index of everyone in it, and a record card in
+  the right sidebar that shows the selected person, family, source or media
+  record with their facts, names, family, timeline, places and what each fact
+  rests on
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -49,45 +49,59 @@ to a remote service.
 2. Open a `.ged` or `.gedcom` file in your vault. It opens in the editor, and
    Obsidian saves changes back to the same file.
 3. To read the file as people and sources, turn on **Genealogy interface (beta)**
-   in the plugin settings; it is still a beta and may change. Files then open in **Genealogy** mode, on the first person
-   the file declares, and the mode buttons in the view header, with the commands
-   **Show as genealogy**, **Show as graph**, **Show as timeline** and **Show as
-   source**, goes between its modes.
+   in the plugin settings; it is still a beta and may change. Files then open in
+   **Graph** mode, and the mode buttons in the view header, with the commands
+   **Show as graph**, **Show as timeline** and **Show as source**, go between
+   its three modes.
 
-The next paragraphs — Genealogy mode, the index and evidence panels, the modes
-of a tab with the timeline and the graph of the file, and **Open GEDCOM files
-as** — are part of the genealogy interface and appear only
-while it is on; turning it off hides it again and closes its panels without
-losing the mode a tab was in. The editor features after them need no setting.
+The next paragraphs — the modes of a tab, the record card and the index — are
+part of the genealogy interface and appear only while it is on; turning it off
+hides it again and closes its panels without losing the mode a tab was in. The
+editor features after them need no setting.
 
-Genealogy mode reads the file and never writes to it. A person's page lists
-their facts in the order the record states them, each marked with how many
-sources it cites itself, or that it cites none; their other names; and their
-parents, siblings, spouses and children, each of whom opens their own page.
-Back and forward move between the pages you visited. **Show in source** on a
-page, a fact or a missing relative switches to Source with exactly those lines
-selected, which is where a correction is made.
+A GEDCOM tab shows its file in three modes — **Graph**, **Timeline** and
+**Source** — which the three buttons in the tab's header choose, the current
+mode's in the accent colour. The commands **Show as graph**, **Show as
+timeline** and **Show as source**, from the command palette or the tab's menu,
+do the same, and **Switch between source and the last view** goes back and forth
+between Source and the mode before it. The graph and the timeline read the tab's
+own text, so what is typed and not yet saved is already in them. **Find**, and
+its key, opens the search of the mode the tab is in: the editor's panel in
+Source, the search over the board in Graph and Timeline; **Replace** stays in
+Source.
+
+A tab selects one record at a time, and the **record card** in the right sidebar
+shows it, whatever the mode. The first time you select a record in a session the
+card is put in the right sidebar without taking the focus, and **Show the record
+card** brings it back, opens a collapsed sidebar and gives it the focus; on a
+phone it is in the right drawer, which a second touch on a card, or a row of the
+index, opens. A person's card lists their facts in the order the record states
+them, each marked with how many sources it cites itself, or that it cites none;
+their other names; their parents, siblings, spouses and children, each of whom
+selects that person; their media; a **timeline** of their events and their close
+relatives', and the **places** it names; and last the **evidence** — what the
+selected fact, or else the whole record, rests on, kept apart from the sources
+of the whole record so that one is never mistaken for the other. Tapping a fact
+unfolds its sources beneath it, with a way down to the evidence. A family, a
+source and a media record have cards of their own, and **Back** and **Forward** in
+the card's header go between the records it showed. The card reads the file and
+never writes to it. **Show in source** on a card, a fact or a missing relative
+switches to Source with exactly those lines selected, which is where a
+correction is made.
+
+What selects a record: a click or tap on a card or a node in Graph, or a name or
+a lifeline in Timeline, marks the person and shows the card without moving the
+view; a row of the index, a link to a record and **Go to record** also glide to
+the person; a relative, a citation or a tile in the card selects that record. In
+Source a row of the index, a link or the card puts the cursor on the record's
+first line, and the cursor, once it rests in a record that has a card, selects
+it — a note or a repository at the cursor leaves the selection alone. The
+selection is kept when the tab changes mode and across a restart.
 
 The ribbon icon, or **Open Domorium**, puts an index of the file's
 people, families and sources in the left sidebar: search by name, year or
-place, and a filter for the people whose records cite no source at all. A row
-opens its page in Genealogy mode, and in Source mode puts the cursor on the
-record's first line instead. **Open the evidence
-panel** puts the selected fact's sources in the right sidebar, kept apart from
-the sources of the whole record so that one is never mistaken for the other.
-On a phone the two are the left and right drawers, and tapping a fact shows
-the gist beneath it.
-
-A GEDCOM tab shows its file in four modes — **Genealogy**, **Graph**,
-**Timeline** and **Source** — which the four buttons in the tab's header choose,
-the current mode's in the accent colour. The commands **Show as genealogy**,
-**Show as graph**, **Show as timeline** and **Show as source**, from the command
-palette or the tab's menu, do the same, and **Switch between source and the last
-view** goes back and forth between Source and the mode before it. The graph and
-the timeline read the tab's own text, so what is typed and not yet saved is
-already in them. **Find**, and its key, opens the search of the mode the tab is
-in: the editor's panel in Source, the search over the board in Graph and
-Timeline, and nothing in Genealogy, which has none; **Replace** stays in Source.
+place, and a filter for the people whose records cite no source at all. The row
+of the selected record is marked.
 
 In **Timeline** mode the tab shows one row per person, ordered by generation and
 family, and a lifeline from birth to death — pink for a woman, blue for a man,
@@ -98,10 +112,10 @@ and a year cursor gives the age everyone alive reached that year. A search icon
 over the board opens into a field that fades everyone else and steps from match
 to match with arrows, and the zoom buttons widen, narrow or fit the years.
 **Branch** on a row narrows it to one person's ancestors and descendants, and a
-file of more than 500 people opens on the branch of the person its tab shows. A
-person opens their page in the same tab, and Back returns to the timeline; an
-event shows its lines in Source. On a phone the first touch picks a person out
-and places the year cursor, and a second touch opens them.
+file of more than 500 people opens on the branch of the person selected. A
+person's name or lifeline selects them; an event shows its lines in Source. On a
+phone the first touch picks a person out and places the year cursor, and a
+second touch selects them.
 
 In **Graph** mode the tab shows a card per person, generations from top to
 bottom and coloured as in the timeline. Spouses stand side by side, a husband to
@@ -113,21 +127,15 @@ lights their parents, spouses and children; pointing at a node shows the
 marriage and the number of children. Drag or scroll with two fingers to move,
 use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the
 cards are drawn without names. The search, **Branch** and the 500-person rule
-work as in the timeline. A card opens the person's page in the same tab, a node
-the family's, and every card and node can be reached and opened from the
-keyboard.
+work as in the timeline. A card selects the person, a node the family, and every
+card and node can be reached and activated from the keyboard.
 
-While a tab is in Graph or Timeline, a row of the index selects that person
-instead of opening their page: the view glides to their card or row and marks it
-until another is selected or the mode changes, and the evidence panel shows their
-record. A row for a family, a source or a media record still opens its page. In
-Source the row puts the cursor on the record, and in Genealogy it opens the page.
-
-Each tab remembers its mode, and the branch, position and zoom of its graph and
-its timeline, across a restart. **Open GEDCOM files as** in the plugin settings
-chooses which mode a newly opened file starts in — Genealogy, Graph, Timeline or
-Source — while the genealogy interface is on; set it to Source to keep the
-editor as the default.
+Each tab remembers its mode and its selected record, and the branch, position and
+zoom of its graph and its timeline, across a restart. **Open GEDCOM files as** in
+the plugin settings chooses which mode a newly opened file starts in — Graph,
+Timeline or Source — while the genealogy interface is on; Graph is the default,
+and a file last opened in the old Genealogy mode opens as a graph. Set it to
+Source to keep the editor as the default.
 
 Use **Go to GEDCOM definition** from the command palette to jump from an XREF
 usage to its record declaration. **Find GEDCOM references** moves between

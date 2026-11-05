@@ -31,7 +31,6 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     toggleProblemsPanel: vi.fn(),
     showSearch: vi.fn<(replace: boolean) => void>(),
     inSource: () => true,
-    canFind: () => true,
     mode: () => "source",
     showMode: vi.fn(),
     toggleMode: vi.fn(),
@@ -140,15 +139,22 @@ describe("what a command offers itself for", () => {
   });
 });
 
-describe("what a command offers in Genealogy mode", () => {
-  const genealogy = view({
+const FAMILY: GedcomRecord = {
+  tag: "FAM",
+  identifier: "@F3@",
+  label: "Pierre Curie and Marie Skłodowska-Curie",
+  start: { line: 40, character: 0 },
+};
+
+describe("what a command offers in Graph with a family selected", () => {
+  const graph = view({
     inSource: () => false,
-    canFind: () => false,
-    mode: () => "genealogy",
+    mode: () => "graph",
+    recordAtCursor: () => FAMILY,
     problemCount: () => 2,
   });
 
-  it("offers nothing that acts on the editor", () => {
+  it("offers nothing that acts on the editor, and no replace", () => {
     for (const id of [
       "go-to-gedcom-definition",
       "find-gedcom-references",
@@ -156,21 +162,34 @@ describe("what a command offers in Genealogy mode", () => {
       "go-to-next-gedcom-problem",
       "go-to-previous-gedcom-problem",
       "toggle-gedcom-problems-panel",
-      "search-in-gedcom-file",
       "replace-in-gedcom-file",
     ]) {
-      expect(command(id).isAvailable(genealogy), id).toBe(false);
+      expect(command(id).isAvailable(graph), id).toBe(false);
     }
   });
 
-  it("offers copying a link to the record shown, and switching mode", () => {
+  it("offers copying a link to the selected family, switching mode and find", () => {
     for (const id of [
       "copy-gedcom-record-wikilink",
       "copy-gedcom-record-link",
       "toggle-gedcom-mode",
+      "search-in-gedcom-file",
     ]) {
-      expect(command(id).isAvailable(genealogy), id).toBe(true);
+      expect(command(id).isAvailable(graph), id).toBe(true);
     }
+  });
+
+  it("copies the link of the selected family", async () => {
+    const { host: commandHost, copy, notify } = host();
+
+    command("copy-gedcom-record-link").run(commandHost, graph);
+    await vi.waitFor(() => expect(notify).toHaveBeenCalled());
+
+    expect(copy).toHaveBeenCalledWith("obsidian://domorium?vault=Family&file=tree.ged&xref=%40F3%40");
+  });
+
+  it("offers no link with nothing selected", () => {
+    expect(command("copy-gedcom-record-link").isAvailable(view({ ...graph, recordAtCursor: () => undefined }))).toBe(false);
   });
 
   it("does not offer switching mode while the genealogy interface is off", () => {
@@ -191,7 +210,6 @@ describe("what a command offers in Genealogy mode", () => {
 
 describe("showing the file in a mode", () => {
   const MODES: [DeskMode, string][] = [
-    ["genealogy", "users"],
     ["graph", "network"],
     ["timeline", "calendar-range"],
     ["source", "code"],
@@ -226,10 +244,16 @@ describe("showing the file in a mode", () => {
   it("shows the tab in the mode it names", () => {
     for (const [mode] of MODES) {
       const showMode = vi.fn();
-      command(`show-gedcom-as-${mode}`).run(host().host, view({ showMode, mode: () => "genealogy" }));
+      command(`show-gedcom-as-${mode}`).run(host().host, view({ showMode, mode: () => "timeline" }));
 
       expect(showMode).toHaveBeenCalledWith(mode);
     }
+  });
+
+  it("has no command for Genealogy mode", () => {
+    const ids = COMMANDS.map((entry) => entry.id);
+
+    expect(ids).not.toContain("show-gedcom-as-genealogy");
   });
 
   it("opens no overview tab of its own, as the two commands of an earlier version did", () => {
@@ -237,7 +261,7 @@ describe("showing the file in a mode", () => {
     expect(COMMANDS.map((entry) => entry.id)).not.toContain("open-gedcom-file-graph");
   });
 
-  it("keeps the toggle out of the tab's menu, where the four modes are", () => {
+  it("keeps the toggle out of the tab's menu, where the three modes are", () => {
     expect(command("toggle-gedcom-mode").menu).toBe(false);
     expect(command("show-gedcom-as-graph").menu).toBeUndefined();
   });
@@ -250,15 +274,18 @@ describe("showing the file in a mode", () => {
 });
 
 describe("what a command offers in Graph and Timeline", () => {
-  const timeline = view({ inSource: () => false, canFind: () => true, mode: () => "timeline" });
+  const timeline = view({ inSource: () => false, mode: () => "timeline" });
 
-  it("offers find, and not replace nor anything that acts on the editor", () => {
+  it("offers find in every mode, and not replace nor anything that acts on the editor", () => {
+    for (const mode of ["graph", "timeline", "source"] as const) {
+      expect(command("search-in-gedcom-file").isAvailable(view({ mode: () => mode })), mode).toBe(true);
+    }
     expect(command("search-in-gedcom-file").isAvailable(timeline)).toBe(true);
     expect(command("replace-in-gedcom-file").isAvailable(timeline)).toBe(false);
     expect(command("rename-gedcom-reference").isAvailable(timeline)).toBe(false);
   });
 
-  it("offers a link to the person selected, and none with nobody selected", () => {
+  it("offers a link to the record selected in a view, and none with nobody selected", () => {
     expect(command("copy-gedcom-record-link").isAvailable(timeline)).toBe(true);
     expect(command("copy-gedcom-record-link").isAvailable(view({ ...timeline, recordAtCursor: () => undefined }))).toBe(false);
   });

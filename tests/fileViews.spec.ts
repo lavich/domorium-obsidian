@@ -116,12 +116,41 @@ for (const viewport of [
         .toBe(scrolled[1]);
     });
 
-    test("asks the tab to open the person of a card, and the family of a node", async ({ page }) => {
+    test("asks the tab to select the person of a card, and the family of a node, and moves nothing", async ({ page }) => {
       await mountTab(page, { mode: "graph" });
+      const before = await transform(page);
       await page.locator('[data-card="@I12@"]').dispatchEvent("click", { detail: 1 });
       await page.locator('[data-node="@F3@"]').dispatchEvent("click", { detail: 1 });
 
-      expect(await page.evaluate(() => window.tab.calls.opened)).toEqual(["@I12@", "@F3@"]);
+      expect(await page.evaluate(() => window.tab.calls.selected)).toEqual(["@I12@", "@F3@"]);
+      expect(await transform(page)).toBe(before);
+    });
+
+    test("marks a card selected without a reveal and leaves the view where it was, and glides with one", async ({ page }) => {
+      await mountTab(page, { mode: "graph" });
+      const before = await transform(page);
+      await page.evaluate(() => {
+        window.tab.select("@I2@", false);
+      });
+      expect(await selectedCards(page)).toEqual(["@I2@"]);
+      expect(await transform(page)).toBe(before);
+
+      await page.evaluate(() => {
+        window.tab.select("@I12@", true);
+      });
+      await expectCentred(page, "@I12@");
+    });
+
+    test("keeps a reveal asked for while the tab was in Source through a later hand-over without one", async ({ page }) => {
+      await mountTab(page, { mode: "source" });
+      await page.evaluate(() => {
+        window.tab.select("@I12@", true);
+        window.tab.select("@I12@", false);
+      });
+      await page.click("#show-graph");
+
+      expect(await selectedCards(page)).toEqual(["@I12@"]);
+      await expectCentred(page, "@I12@");
     });
 
     test("marks Pierre's card and centres on it, also when he was chosen while the view was hidden", async ({ page }) => {
@@ -136,7 +165,7 @@ for (const viewport of [
 
       await page.evaluate(() => {
         window.tab.setHidden(true);
-        window.tab.select("@I2@");
+        window.tab.select("@I2@", true);
         window.tab.setHidden(false);
         window.tab.resized();
       });
@@ -144,14 +173,20 @@ for (const viewport of [
       await expectCentred(page, "@I2@");
     });
 
-    test("leaves no mark of an earlier selection behind when the graph comes back", async ({ page }) => {
+    test("keeps the selection across the views, and leaves no mark of an earlier one behind", async ({ page }) => {
       await mountTab(page, { mode: "graph" });
       await page.click("#select-pierre");
       await page.click("#show-timeline");
-      await page.click("#select-irene");
       await expect(page.locator(".gedcom-ft-name.is-selected")).toHaveCount(1);
+      await expect(page.locator(".gedcom-ft-name.is-selected")).toHaveAttribute("data-p", "@I2@");
+      await page.click("#select-irene");
+      await expect(page.locator(".gedcom-ft-name.is-selected")).toHaveAttribute("data-p", "@I12@");
       await page.click("#show-graph");
 
+      expect(await selectedCards(page)).toEqual(["@I12@"]);
+      await page.evaluate(() => {
+        window.tab.select(null, false);
+      });
       await expect(page.locator(".is-selected, .gedcom-ft-row-selected")).toHaveCount(0);
       await page.click("#show-timeline");
       await expect(page.locator(".is-selected, .gedcom-ft-row-selected")).toHaveCount(0);

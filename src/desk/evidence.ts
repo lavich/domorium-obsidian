@@ -23,41 +23,23 @@ export interface EvidenceSelection {
   notes?: NoteHit[] | null;
 }
 
-export function renderEvidence(
-  container: HTMLElement,
-  selection: EvidenceSelection | null,
+export function renderEvidenceSection(
+  parent: HTMLElement,
+  selection: EvidenceSelection,
   host: EvidenceHost,
 ): void {
-  container.empty();
-  const root = container.createDiv({ cls: "gedcom-desk-evidence" });
-  const head = root.createDiv({ cls: "gedcom-desk-evidence-head" });
-  head.createDiv({ cls: "gedcom-desk-evidence-title", text: t("evidence.title") });
-  if (!selection) {
-    root.createDiv({ cls: "gedcom-desk-none", text: t("evidence.noTab") });
-    return;
-  }
   const { index, record, fact: key } = selection;
-  const source = index.source(record);
   const person = index.person(record);
   const family = person ? undefined : index.family(record);
+  if (!person && !family) {
+    renderNotes(parent, selection.notes, host, "h2");
+    return;
+  }
+  const root = parent.createDiv({ cls: "gedcom-card-evidence" });
+  root.createEl("h2", { cls: "gedcom-desk-section", text: t("evidence.title") });
+  const head = root.createDiv({ cls: "gedcom-desk-evidence-head" });
   const context = head.createDiv({ cls: "gedcom-desk-evidence-context" });
   const actions = head.createDiv({ cls: "gedcom-desk-actions" });
-
-  if (source && !person && !family) {
-    context.createDiv({ text: sourceTitle(source.title) });
-    context.createDiv({ cls: "gedcom-desk-evidence-sub", text: t("evidence.source") });
-    linkButton(actions, t("desk.showInSource"), () => host.showInSource(source.range));
-    renderNotes(root.createDiv({ cls: "gedcom-desk-evidence-body" }), selection.notes, host);
-    return;
-  }
-  const media = person || family ? undefined : index.media(record);
-  if (media) {
-    context.createDiv({ text: media.title ?? media.file ?? t("evidence.media") });
-    context.createDiv({ cls: "gedcom-desk-evidence-sub", text: t("evidence.media") });
-    linkButton(actions, t("desk.showInSource"), () => host.showInSource(media.range));
-    renderNotes(root.createDiv({ cls: "gedcom-desk-evidence-body" }), selection.notes, host);
-    return;
-  }
   const subject = person
     ? {
         fact: factByKey(person, key),
@@ -95,7 +77,7 @@ export function renderEvidence(
     linkButton(actions, `← ${t("desk.wholeRecord")}`, () => host.wholeRecord());
     linkButton(actions, t("desk.showInSource"), () => host.showInSource(fact.event.range));
 
-    body.createEl("h3", { cls: "gedcom-desk-section", text: t("evidence.factSources") });
+    body.createEl("h3", { cls: "gedcom-desk-subsection", text: t("evidence.factSources") });
     if (fact.event.citations.length > 0) {
       for (const citation of fact.event.citations) {
         renderCitation(body, citation, index, host);
@@ -108,7 +90,7 @@ export function renderEvidence(
       });
     }
     body.createEl("h3", {
-      cls: ["gedcom-desk-section", "gedcom-desk-scope"],
+      cls: ["gedcom-desk-subsection", "gedcom-desk-scope"],
       text: t("desk.wholeRecord"),
     });
   } else {
@@ -118,7 +100,7 @@ export function renderEvidence(
   }
 
   body.createEl("h3", {
-    cls: "gedcom-desk-section",
+    cls: "gedcom-desk-subsection",
     text: `${t("evidence.recordSources")} · ${ofRecord.length}`,
   });
   if (ofRecord.length === 0) {
@@ -127,19 +109,20 @@ export function renderEvidence(
   for (const citation of ofRecord) {
     renderCitation(body, citation, index, host);
   }
-  renderNotes(body, selection.notes, host);
+  renderNotes(body, selection.notes, host, "h3");
 }
 
 function renderNotes(
   parent: HTMLElement,
   notes: NoteHit[] | null | undefined,
   host: EvidenceHost,
+  heading: "h2" | "h3",
 ): void {
   if (notes === undefined) {
     return;
   }
-  parent.createEl("h3", {
-    cls: "gedcom-desk-section",
+  parent.createEl(heading, {
+    cls: heading === "h2" ? "gedcom-desk-section" : "gedcom-desk-subsection",
     text: notes === null ? t("evidence.notes") : `${t("evidence.notes")} · ${notes.length}`,
   });
   if (notes?.length === 0) {

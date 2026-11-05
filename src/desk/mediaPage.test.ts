@@ -15,7 +15,7 @@ function deskHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    openEvidence: vi.fn<PageHost["openEvidence"]>(),
+    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost & MediaHost;
 }
@@ -69,7 +69,7 @@ describe("the media page", () => {
     expect(container.querySelectorAll(".gedcom-desk-user .is-cropped")).toHaveLength(2);
   });
 
-  it("opens a user's page, and the file itself", () => {
+  it("selects a user, and opens the file itself", () => {
     renderMediaPage(container, photo, { whole: picture(), links: [] }, index, host);
     container.querySelector<HTMLElement>(".gedcom-desk-user .gedcom-desk-person")?.click();
     container.querySelector<HTMLElement>(".gedcom-desk-media-stage")?.click();

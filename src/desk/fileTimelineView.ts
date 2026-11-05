@@ -42,7 +42,7 @@ export interface TimelineWindow {
 }
 
 export interface FileTimelineHost {
-  openPerson(xref: string): void;
+  select(xref: string): void;
   showInSource(range: Range): void;
   scopeChanged(scope: TimelineScope): void;
   setIcon(element: HTMLElement, icon: string): void;
@@ -438,11 +438,11 @@ export class FileTimelineBoard {
     plot.scrollTo({ top, ...(left === undefined ? {} : { left }), behavior: "smooth" });
   }
 
-  /** Marks a person selected and brings their row into view, in their own branch where this one does not hold them; `null` ends it. */
-  select(xref: string | null): void {
+  /** Marks a person selected, and with `reveal` brings their row into view, in their own branch where this one does not hold them; `null` ends it. */
+  select(xref: string | null, reveal: boolean): void {
     this.selected = xref;
     const layout = this.layout;
-    if (xref !== null && layout && this.model?.people.has(xref)) {
+    if (reveal && xref !== null && layout && this.model?.people.has(xref)) {
       if (layout.shownSet.has(xref)) {
         this.reveal(xref);
       } else {
@@ -1075,7 +1075,7 @@ export class FileTimelineBoard {
       return;
     }
     this.armed = null;
-    this.host.openPerson(xref);
+    this.host.select(xref);
   }
 
   private describe(parent: HTMLElement, placed: Placed): void {

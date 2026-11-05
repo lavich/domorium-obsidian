@@ -36,7 +36,7 @@ export function renderTimeline(parent: HTMLElement, timeline: Timeline, host: Pa
     renderEntry(list, entry, host);
   }
   if (timeline.undated.length > 0) {
-    parent.createEl("h3", { cls: "gedcom-desk-section", text: t("timeline.undated") });
+    parent.createEl("h3", { cls: "gedcom-desk-subsection", text: t("timeline.undated") });
     const undated = parent.createDiv({ cls: "gedcom-desk-timeline" });
     for (const entry of timeline.undated) {
       renderEntry(undated, entry, host);

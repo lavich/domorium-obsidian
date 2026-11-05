@@ -1,15 +1,16 @@
-import { ItemView, Platform, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Platform, setIcon, type ViewStateResult, type WorkspaceLeaf } from "obsidian";
 
 import type { GedcomView } from "../GedcomView";
+import type { GenealogyIndex } from "../genealogy";
 import { GEDCOM_ICON_ID } from "../icon";
 import { t } from "../i18n";
 import { openFromIndex } from "./deskState";
-import { renderEvidence } from "./evidence";
 import { INDEX_KINDS, IndexList, type IndexKind } from "./indexList";
 import type { NoteHit } from "./noteLinks";
+import { renderRecordCard } from "./recordCard";
 
 export const INDEX_VIEW_TYPE = "domorium-index";
-export const EVIDENCE_VIEW_TYPE = "domorium-evidence";
+export const RECORD_VIEW_TYPE = "domorium-record";
 
 /** The GEDCOM tab the sidebars follow: the one most recently active. */
 export interface DeskViewsHost {
@@ -61,7 +62,7 @@ export class IndexView extends ItemView {
         if (view) {
           openFromIndex(view, xref);
         }
-        if (Platform.isPhone) {
+        if (Platform.isMobile) {
           this.app.workspace.leftSplit.collapse();
         }
       },
@@ -75,17 +76,34 @@ export class IndexView extends ItemView {
     return Promise.resolve();
   }
 
+  private drawn: { view: GedcomView; index: GenealogyIndex } | null = null;
+
+  onClose(): Promise<void> {
+    this.drawn = null;
+    return Promise.resolve();
+  }
+
   redraw(): void {
     const view = this.host.followed();
-    this.list?.show(
-      view?.file
-        ? { index: view.genealogy(), current: view.shownRecord() }
-        : null,
-    );
+    if (!view?.file) {
+      this.drawn = null;
+      this.list?.show(null);
+      return;
+    }
+    const index = view.genealogy();
+    if (this.drawn?.view === view && this.drawn.index === index) {
+      this.list?.setCurrent(view.shownRecord());
+      return;
+    }
+    this.drawn = { view, index };
+    this.list?.show({ index, current: view.shownRecord() });
   }
 }
 
-export class EvidenceView extends ItemView {
+export class RecordCardView extends ItemView {
+  private notes: { key: string; hits: NoteHit[] | null } | null = null;
+  private stale = false;
+
   constructor(
     leaf: WorkspaceLeaf,
     private readonly host: DeskViewsHost,
@@ -94,52 +112,72 @@ export class EvidenceView extends ItemView {
   }
 
   getViewType(): string {
-    return EVIDENCE_VIEW_TYPE;
+    return RECORD_VIEW_TYPE;
   }
 
   getDisplayText(): string {
-    return t("evidence.title");
+    return t("card.title");
   }
 
   getIcon(): string {
-    return "file-check";
+    return "users";
   }
 
   onOpen(): Promise<void> {
+    this.contentEl.addClass("gedcom-record-view");
     this.redraw();
     return Promise.resolve();
   }
 
-  private notes: { key: string; hits: NoteHit[] | null } | null = null;
+  onResize(): void {
+    if (this.stale) {
+      this.redraw();
+    }
+  }
 
   redraw(): void {
+    if (!this.contentEl.isShown()) {
+      this.stale = true;
+      return;
+    }
+    this.stale = false;
     const view = this.host.followed();
-    const selection = view?.deskSelection() ?? null;
+    const record = view?.shownRecord() ?? null;
     const path = view?.file?.path;
-    const key = selection && path ? `${path}#${selection.record}` : "";
-    if (key && this.notes?.key !== key && selection && path) {
+    const key = record && path ? `${path}#${record}` : "";
+    if (key && this.notes?.key !== key && path && record) {
       const asked = { key, hits: null as NoteHit[] | null };
       this.notes = asked;
-      void this.host.notesFor(path, selection.record).then((hits) => {
+      void this.host.notesFor(path, record).then((hits) => {
         if (this.notes === asked) {
           asked.hits = hits;
           this.redraw();
         }
       });
     }
-    renderEvidence(
-      this.contentEl,
-      selection ? { ...selection, notes: this.notes?.key === key ? this.notes.hits : null } : null,
-      {
-        openRecord: (xref) => view?.openRecord(xref),
-        showInSource: (range) => view?.showInSource(range),
-        wholeRecord: () => view?.selectFact(null),
-        openNote: (notePath, line) => this.host.openNote(notePath, line),
+    renderRecordCard(this.contentEl, view, this.notes?.key === key ? (this.notes?.hits ?? null) : null, {
+      setIcon: (element, icon) => {
+        setIcon(element, icon);
       },
-    );
+      openNote: (notePath, line) => {
+        this.host.openNote(notePath, line);
+      },
+    });
   }
 
-  forgetNotes(): void {
-    this.notes = null;
+  refreshNotes(): void {
+    const asked = this.notes;
+    const view = this.host.followed();
+    const path = view?.file?.path;
+    const record = view?.shownRecord();
+    if (!asked || !path || !record) {
+      return;
+    }
+    void this.host.notesFor(path, record).then((hits) => {
+      if (this.notes === asked && JSON.stringify(hits) !== JSON.stringify(asked.hits)) {
+        asked.hits = hits;
+        this.redraw();
+      }
+    });
   }
 }

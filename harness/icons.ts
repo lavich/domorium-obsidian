@@ -72,6 +72,7 @@ const ICONS: Record<string, Shape[]> = {
     { tag: "path", attrs: { d: "M6 10V5a 3 3 0 0 1 3-3h1" } },
     { tag: "rect", attrs: { x: 2, y: 14, width: 8, height: 8, rx: 2 } },
   ],
+  "chevron-left": [{ tag: "path", attrs: { d: "m15 18-6-6 6-6" } }],
   "chevron-right": [{ tag: "path", attrs: { d: "m9 18 6-6-6-6" } }],
   search: [
     { tag: "circle", attrs: { cx: 11, cy: 11, r: 8 } },

@@ -13,8 +13,7 @@ export function renderSourcePage(
   host: PageHost,
   media: MediaItem[] = [],
 ): void {
-  container.empty();
-  const page = container.createDiv({ cls: "gedcom-desk-page" });
+  const page = container;
   const heading = page.createDiv({ cls: "gedcom-desk-heading" });
   heading.createEl("h1", { cls: "gedcom-desk-title", text: sourceTitle(source.title) });
   const publication = source.fields.find((field) => field.tag === "PUBL")?.value;
@@ -24,7 +23,7 @@ export function renderSourcePage(
   });
   linkButton(heading, t("desk.showInSource"), () => host.showInSource(source.range));
 
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.repository") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.repository") });
   const repository = page.createDiv({ cls: "gedcom-desk-repository" });
   if (source.heldAt) {
     for (const line of [source.heldAt.name, source.heldAt.address, source.heldAt.web]) {
@@ -48,7 +47,7 @@ function renderCitedBy(
   index: GenealogyIndex,
   host: PageHost,
 ): void {
-  page.createEl("h3", { cls: "gedcom-desk-section", text: t("desk.citedBy") });
+  page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.citedBy") });
   const list = page.createDiv({ cls: "gedcom-desk-cited-by" });
   const byRecord = new Map<string, Citation[]>();
   for (const citation of source.xref ? index.citedBy(source.xref) : []) {
@@ -100,26 +99,4 @@ function where(citation: Citation): string {
     return eventName({ tag: within });
   }
   return t("desk.wholeRecord");
-}
-
-export function renderEmptyPage(container: HTMLElement, openSource: () => void): void {
-  container.empty();
-  const page = container.createDiv({ cls: ["gedcom-desk-page", "gedcom-desk-state"] });
-  page.createDiv({ cls: "gedcom-desk-state-title", text: t("desk.empty.title") });
-  page.createDiv({ cls: "gedcom-desk-state-desc", text: t("desk.empty.desc") });
-  linkButton(page, t("desk.openSource"), openSource);
-}
-
-export function renderGonePage(
-  container: HTMLElement,
-  actions: { showFirst: (() => void) | null; openSource: () => void },
-): void {
-  container.empty();
-  const page = container.createDiv({ cls: ["gedcom-desk-page", "gedcom-desk-state"] });
-  page.createDiv({ cls: "gedcom-desk-state-title", text: t("desk.gone.title") });
-  const row = page.createDiv({ cls: "gedcom-desk-actions" });
-  if (actions.showFirst) {
-    linkButton(row, t("desk.gone.first"), actions.showFirst);
-  }
-  linkButton(row, t("desk.showInSource"), actions.openSource);
 }

@@ -40,13 +40,6 @@ export interface CanvasCard {
   years: string;
   sex: Sex;
   focus?: boolean;
-  /** A sibling, or a run of them, beside the line a person's tree follows. */
-  aside?: boolean;
-  /** Cites no source anywhere in the record. */
-  gap?: boolean;
-  /** Has parents, or children, the drawing does not reach. */
-  up?: boolean;
-  down?: boolean;
   branch?: boolean;
   /** Set where the name has both, each then on its own line. */
   given?: string;
@@ -477,14 +470,14 @@ export class GraphCanvas {
     return this.layout?.card.has(id) ?? false;
   }
 
-  /** Marks the person's cards as selected until another is, and centres on them; a card not drawn shows the mark once it is. */
-  select(id: string | null): void {
+  /** Marks the person's cards as selected until another is, and centres on them only where `reveal` says so; a card not drawn shows the mark once it is. */
+  select(id: string | null, reveal: boolean): void {
     this.selected = id;
     this.markSelectedIds();
     for (const [one, element] of this.cardOf) {
       element.classList.toggle("is-selected", this.selectedIds.has(one));
     }
-    if (id === null) {
+    if (id === null || !reveal) {
       return;
     }
     const k = this.transform && this.transform.k >= ZOOM.far ? this.transform.k : ZOOM.readable;
@@ -834,9 +827,9 @@ export class GraphCanvas {
         kind: "card",
         id: card.id,
         left: card.x,
-        top: card.y - (shown.up ? 14 : 0),
+        top: card.y,
         right: card.x + CARD.width,
-        bottom: card.y + card.height + (shown.down ? 14 : 0),
+        bottom: card.y + card.height,
         people: [card.id],
         make: (far) => this.cardShape(card, shown, far),
       });
@@ -890,7 +883,6 @@ export class GraphCanvas {
       transform: `translate(${x},${y})`,
     });
     group.classList.toggle("is-focus", shown.focus === true);
-    group.classList.toggle("is-aside", shown.aside === true);
     group.classList.toggle("is-dim", this.misses(id));
     group.classList.toggle("is-armed", id === this.armed);
     group.classList.toggle("is-current", id === this.current);
@@ -904,26 +896,7 @@ export class GraphCanvas {
     card.append(
       svg(this.doc, "rect", "gedcom-fg-card-bg", { width: CARD.width, height, rx: 7 }),
     );
-    if (shown.gap) {
-      card.append(svg(this.doc, "circle", "gedcom-fg-card-gap", { cx: CARD.width - 9, cy: 9, r: 3 }));
-    }
     group.append(card);
-    const more = (up: boolean): void => {
-      const mark = svg(this.doc, "text", `gedcom-fg-card-more ${up ? "is-up" : "is-down"}`, {
-        x: CARD.width / 2,
-        y: up ? -4 : height + 11,
-        "text-anchor": "middle",
-        "aria-label": t(up ? "tree.moreUp" : "tree.moreDown"),
-      });
-      mark.textContent = up ? "▲" : "▼";
-      group.append(mark);
-    };
-    if (shown.up) {
-      more(true);
-    }
-    if (shown.down) {
-      more(false);
-    }
     if (far) {
       return group;
     }

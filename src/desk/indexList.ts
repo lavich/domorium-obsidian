@@ -136,6 +136,17 @@ export class IndexList {
     this.refresh();
   }
 
+  /** Moves the current mark without drawing the list again, so the reader's search and scroll stay. */
+  setCurrent(xref: string | null): void {
+    if (!this.file) {
+      return;
+    }
+    this.file = { ...this.file, current: xref };
+    for (const row of this.windowEl.querySelectorAll<HTMLElement>("[data-xref]")) {
+      row.toggleClass("is-current", row.dataset.xref === xref);
+    }
+  }
+
   private refresh(): void {
     const file = this.file;
     this.kindEl.toggle(file !== null);
@@ -226,6 +237,7 @@ export class IndexList {
   private rowButton(xref: string, file: IndexFile): HTMLElement {
     const button = this.windowEl.createEl("button", { cls: "gedcom-desk-row" });
     button.setAttribute("type", "button");
+    button.dataset.xref = xref;
     button.toggleClass("is-current", file.current === xref);
     button.addEventListener("click", () => this.host.open(xref));
     return button;
