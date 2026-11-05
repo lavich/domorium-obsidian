@@ -5,7 +5,6 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
-import { HOVER_DELAY } from "./dom";
 import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
 import {
   FileTimelineBoard,
@@ -137,7 +136,7 @@ describe("drawing the timeline of a file", () => {
   });
 });
 
-describe("pointing at a person", () => {
+describe("lighting a person", () => {
   it("lights Marie's parents, husband and daughters, and replaces nothing drawn", () => {
     const drawn = board();
     const before = all(".gedcom-ft-items > *");
@@ -165,39 +164,120 @@ describe("pointing at a person", () => {
     expect(arrows.some(([from]) => from === "@I2@")).toBe(false);
   });
 
-  it("clears the arrows and the light when the pointer leaves", () => {
+  it("clears the arrows and the light when the light is put out", () => {
     const drawn = board();
     drawn.highlight("@I1@");
-    drawn.highlight(null);
+    drawn.unlight();
 
     expect(all(".gedcom-ft-kin")).toHaveLength(0);
     expect(all(".is-on")).toHaveLength(0);
     expect(container.querySelector(".gedcom-ft-row-hl")).toBeNull();
   });
+});
 
-  it("lights a person once the pointer has rested on them, and only the last of a sweep", () => {
+describe("the light of a click", () => {
+  const lit = () => all(".is-hl").map((element) => element.getAttribute("data-p"));
+  const litBoard = () => container.querySelector(".gedcom-ft-board")?.classList.contains("has-hl");
+
+  it("is not lit by the pointer, however long it rests", () => {
     vi.useFakeTimers();
     try {
       board();
-      nameRow("@I1@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
-      vi.advanceTimersByTime(HOVER_DELAY / 2);
-      nameRow("@I2@")?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
-      vi.advanceTimersByTime(HOVER_DELAY - 1);
-      expect(container.querySelectorAll(".is-hl")).toHaveLength(0);
+      for (const xref of ["@I1@", "@I2@"]) {
+        nameRow(xref)?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+        of(".gedcom-ft-life", xref)[0]?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+      }
+      vi.advanceTimersByTime(1000);
 
-      vi.advanceTimersByTime(1);
-      expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
-      expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(false);
-      container.querySelector(".gedcom-ft-board")?.dispatchEvent(new MouseEvent("pointerleave"));
-      expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
-      vi.advanceTimersByTime(HOVER_DELAY);
-      expect(container.querySelectorAll(".is-hl")).toHaveLength(0);
-
-      nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-name-open")?.focus();
-      expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
+      expect(all(".is-on, .is-hl, .gedcom-ft-kin, .gedcom-ft-row-hl")).toHaveLength(0);
+      expect(litBoard()).toBe(false);
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("is not lit by the focus arriving on a name", () => {
+    board();
+    openButton("@I2@")?.focus();
+
+    expect(all(".is-on, .is-hl")).toHaveLength(0);
+    expect(litBoard()).toBe(false);
+  });
+
+  it("is lit at once by a click on a name, and the person is selected", () => {
+    board();
+    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+
+    expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(true);
+    expect(nameRow("@I2@")?.classList.contains("is-on")).toBe(true);
+    expect(nameRow("@I11@")?.classList.contains("is-on")).toBe(false);
+    expect(litBoard()).toBe(true);
+    expect(all(".gedcom-ft-kin")).toHaveLength(4);
+    expect(host.select).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("is lit by a click on a lifeline, and moves to the next person clicked", () => {
+    board();
+    of(".gedcom-ft-life", "@I1@")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    of(".gedcom-ft-life", "@I12@")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+
+    expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
+    expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(false);
+    expect(nameRow("@I1@")?.classList.contains("is-on")).toBe(true);
+  });
+
+  it("is lit from the keyboard by Enter or Space on a name's button", () => {
+    board();
+    openButton("@I12@")?.click();
+
+    expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
+    expect(host.select).toHaveBeenCalledWith("@I12@");
+  });
+
+  it("is put out by a click on empty space, and leaves the host's selection alone", () => {
+    board();
+    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    host.select.mockClear();
+    container.querySelector(".gedcom-ft-chart")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+
+    expect(all(".is-on, .is-hl, .gedcom-ft-kin")).toHaveLength(0);
+    expect(litBoard()).toBe(false);
+    expect(host.select).not.toHaveBeenCalled();
+  });
+
+  it("is put out by Escape, and Escape with nothing lit does nothing", () => {
+    board();
+    const escape = () =>
+      openButton("@I1@")?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    escape();
+    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    expect(litBoard()).toBe(true);
+    escape();
+
+    expect(litBoard()).toBe(false);
+    expect(all(".is-on, .gedcom-ft-kin")).toHaveLength(0);
+  });
+
+  it("stays through a redraw of the rows, and is put out by a scope change", () => {
+    const drawn = board();
+    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    drawn.draw({ ...WHOLE, top: 1 });
+    expect(lit()).toContain("@I1@");
+
+    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+    expect(all(".is-on, .is-hl")).toHaveLength(0);
+    expect(litBoard()).toBe(false);
+  });
+
+  it("is put out by the selection of another person and kept by that of the lit one", () => {
+    const drawn = board();
+    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    drawn.select("@I1@", false);
+    expect(litBoard()).toBe(true);
+
+    drawn.select("@I2@", false);
+    expect(litBoard()).toBe(false);
+    expect(all(".is-on")).toHaveLength(0);
   });
 });
 
@@ -538,13 +618,6 @@ describe("the keyboard", () => {
     expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
-  it("lights the person whose row takes the focus", () => {
-    board();
-    openButton("@I2@")?.focus();
-
-    expect(nameRow("@I2@")?.classList.contains("is-hl")).toBe(true);
-  });
-
   it("keeps the focus on a row through a redraw", () => {
     const drawn = board();
     nameRow("@I1@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.focus();
@@ -668,7 +741,7 @@ describe("the selected row", () => {
     expect(host.scopeChanged).not.toHaveBeenCalled();
   });
 
-  it("survives the light of a hover and a search, and is replaced by the next selection", () => {
+  it("survives the light and a search, and is replaced by the next selection", () => {
     const drawn = board();
     drawn.select("@I12@", true);
     drawn.highlight("@I1@");

@@ -314,6 +314,20 @@ describe("hovering while the views come and go", () => {
   });
 });
 
+describe("the timeline's light while the views come and go", () => {
+  it("is put out when the timeline is hidden", () => {
+    const tab = views();
+    tab.show("timeline", index, {});
+    root("timeline")
+      ?.querySelector('.gedcom-ft-name[data-p="@I1@"]')
+      ?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    expect(root("timeline")?.querySelectorAll(".is-hl").length).toBeGreaterThan(0);
+    tab.hide();
+
+    expect(root("timeline")?.querySelectorAll(".is-hl")).toHaveLength(0);
+  });
+});
+
 describe("selecting in a view", () => {
   it("is on the card when the graph is first drawn, for a selection made before any show", () => {
     const tab = views();
