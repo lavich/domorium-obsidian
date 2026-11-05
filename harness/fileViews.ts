@@ -91,7 +91,8 @@ function draw(): void {
 
 function markActive(): void {
   for (const each of ["graph", "timeline", "list", "source"]) {
-    element(`show-${each}`).classList.toggle("is-active", each === mode);
+    element(`show-${each}`).classList.toggle("gedcom-mode-active", each === mode);
+    element(`show-${each}`).setAttribute("aria-pressed", String(each === mode));
   }
 }
 

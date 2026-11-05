@@ -752,7 +752,7 @@ export class GedcomView extends TextFileView implements CardTab {
     for (const button of modeButtons(mode)) {
       const action = this.modeActions.get(button.mode);
       action?.toggle(this.settings.genealogyInterface);
-      action?.toggleClass("is-active", button.active);
+      action?.toggleClass("gedcom-mode-active", button.active);
       action?.setAttribute("aria-pressed", String(button.active));
     }
     if (!isViewMode(mode)) {

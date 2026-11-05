@@ -25,30 +25,39 @@ test.describe("the mode buttons of the tab header", () => {
     expect(first).toBe("0px");
   });
 
-  test("take Obsidian's own active treatment, hover and radius, and no colour of ours", async ({ page }) => {
+  test("take the colours, opacity and hover of Obsidian's own header actions, the mode shown as an on/off action does", async ({ page }) => {
     const look = (selector: string) =>
       page.locator(selector).evaluate((button) => {
         const style = getComputedStyle(button);
-        return { background: style.backgroundColor, color: style.color, radius: style.borderTopLeftRadius };
+        const icon = getComputedStyle(button.querySelector("svg") as Element);
+        return { background: style.backgroundColor, color: style.color, radius: style.borderTopLeftRadius, opacity: icon.opacity };
       });
 
     const active = await look("#show-list");
     const idle = await look("#show-graph");
-    expect(active.background).not.toBe(idle.background);
-    expect(active.background).toBe("rgba(112, 93, 207, 0.15)");
-    expect(idle.background).toBe("rgba(0, 0, 0, 0)");
-    expect(active.color).toBe(idle.color);
-    expect(active.radius).toBe("4px");
-    expect(idle.radius).toBe("4px");
+    expect(idle).toEqual({ background: "rgba(0, 0, 0, 0)", color: "rgb(110, 110, 110)", radius: "4px", opacity: "0.85" });
+    expect(active).toEqual({ background: "rgba(0, 0, 0, 0)", color: "rgb(0, 0, 180)", radius: "4px", opacity: "0.85" });
 
     await page.locator("#show-graph").hover();
-    expect((await look("#show-graph")).background).toBe("rgba(0, 0, 0, 0.075)");
+    expect(await look("#show-graph")).toEqual({ background: "rgba(0, 0, 0, 0.075)", color: "rgb(110, 110, 110)", radius: "4px", opacity: "1" });
+    await page.locator("#show-list").hover();
+    expect((await look("#show-list")).color).toBe("rgb(0, 0, 180)");
+  });
+
+  test("do not rely on one class for the mode shown", async ({ page }) => {
+    await page.evaluate(() => {
+      const button = document.getElementById("show-graph");
+      button?.classList.remove("gedcom-mode-active");
+      button?.setAttribute("aria-pressed", "true");
+    });
+
+    expect(await page.locator("#show-graph").evaluate((button) => getComputedStyle(button).color)).toBe("rgb(0, 0, 180)");
   });
 
   test("keep the active mark as the mode changes", async ({ page }) => {
     await page.click("#show-graph");
 
-    await expect(page.locator("#show-graph")).toHaveClass(/is-active/);
-    await expect(page.locator("#show-list")).not.toHaveClass(/is-active/);
+    await expect(page.locator("#show-graph")).toHaveClass(/gedcom-mode-active/);
+    await expect(page.locator("#show-list")).not.toHaveClass(/gedcom-mode-active/);
   });
 });

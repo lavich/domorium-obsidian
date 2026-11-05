@@ -387,7 +387,7 @@ While the **Genealogy interface** setting is on, the header of a GEDCOM tab SHAL
 carry the mode control: one icon button for each mode — Graph, Timeline, List and
 Source, in that order from left to right on the screen, so that the Source button is
 the rightmost of them, whatever order Obsidian places header actions in — each a header action of the tab, labelled with the name of its
-mode. The buttons SHALL be drawn as Obsidian's own header actions are, with its hover, its active treatment for the mode shown and its focus ring, and SHALL be spaced from one another, without changing the spacing of any other header action. The button of the tab's mode SHALL be marked as the active one, in the accent
+mode. The buttons SHALL be drawn as Obsidian's own header actions are, with its colours, icon opacity, hover and focus ring, and the mode shown SHALL be marked as Obsidian marks a header action that is on, by the active icon colour for the icon and for its hover, with no colour of the plugin's own; the buttons SHALL be spaced from one another, without changing the spacing of any other header action. The button of the tab's mode SHALL be marked as the active one, in the accent
 colour and as pressed to assistive technology, and the mark SHALL follow every
 change of the tab's mode, however it came about. Pressing a button SHALL switch the
 tab to that mode, and pressing the active one SHALL do nothing. While the setting is
@@ -417,8 +417,8 @@ in the command palette as well. No command SHALL show a record as a page in the 
 #### Scenario: Spaced and styled as Obsidian's own actions
 - **WHEN** `curie.ged` is open with the interface on
 - **THEN** there is a gap between neighbouring mode buttons, the button of the mode shown
-  has Obsidian's active background, the others take Obsidian's hover, and the gap after
-  the last and before the first is Obsidian's own
+  has Obsidian's active icon colour, the others take Obsidian's icon colour, opacity and
+  hover, and the gap after the last and before the first is Obsidian's own
 
 #### Scenario: Pressing a button
 - **WHEN** the tab is in Graph mode and the reader presses the Timeline button

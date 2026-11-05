@@ -86,8 +86,11 @@ test.describe("the list on a wide tab", () => {
     await expect(page.locator(".gedcom-list-count")).toHaveText("17 people");
     const heights = await rows(page).evaluateAll((all) => all.map((row) => Math.round(row.getBoundingClientRect().height)));
     expect(new Set(heights).size).toBe(1);
-    const lines = await rowOf(page, "@I1@").locator(".gedcom-list-cell").evaluateAll((cells) => new Set(cells.map((cell) => Math.round(cell.getBoundingClientRect().top))).size);
-    expect(lines).toBe(1);
+    const centres = await rowOf(page, "@I1@").locator(".gedcom-list-cell").evaluateAll((cells) => cells.map((cell) => {
+      const box = cell.getBoundingClientRect();
+      return box.top + box.height / 2;
+    }));
+    expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(1.5);
   });
 
   test("lists the families and the sources the spec names", async ({ page }) => {
@@ -307,7 +310,35 @@ test.describe("the list on a wide tab", () => {
     expect(await compact(700)).toBe(false);
   });
 
-  test("follows the font size: the rows are as tall as the style says and sit at that pitch", async ({ page }) => {
+  test("has the file explorer's metrics: its text size, its line height and padding, and no gap between rows", async ({ page }) => {
+    await mountList(page);
+    const measure = () =>
+      page.evaluate(() => {
+        const rows = [...document.querySelectorAll<HTMLElement>(".gedcom-list-row")];
+        const [one, two] = rows;
+        const name = one?.querySelector(".gedcom-list-cell") as HTMLElement;
+        const second = one?.querySelectorAll(".gedcom-list-cell")[1] as HTMLElement;
+        const body = getComputedStyle(document.body);
+        return {
+          size: getComputedStyle(name).fontSize,
+          navSize: body.getPropertyValue("--nav-item-size").trim(),
+          smaller: getComputedStyle(second).fontSize,
+          uiSmaller: body.getPropertyValue("--font-ui-smaller").trim(),
+          line: Number.parseFloat(body.getPropertyValue("--line-height-tight")),
+          padding: Number.parseFloat(getComputedStyle(one).paddingTop),
+          height: one?.getBoundingClientRect().height ?? 0,
+          step: (two?.getBoundingClientRect().top ?? 0) - (one?.getBoundingClientRect().top ?? 0),
+        };
+      });
+
+    const now = await measure();
+    expect(now.size).toBe(now.navSize);
+    expect(now.smaller).toBe(now.uiSmaller);
+    expect(Math.abs(now.height - (Number.parseFloat(now.size) * now.line + 2 * now.padding))).toBeLessThan(1);
+    expect(Math.abs(now.step - now.height)).toBeLessThan(1);
+  });
+
+  test("follows the font size: the rows grow with it and keep the pitch of their height", async ({ page }) => {
     await mountList(page);
     const pitch = () =>
       page.evaluate(() => {
@@ -337,7 +368,7 @@ test.describe("the list on a wide tab", () => {
   test("lists the header buttons of the stand-in tab as Graph, Timeline, List, Source", async ({ page }) => {
     await mountList(page);
 
-    expect(await page.locator("#bar button").evaluateAll((all) => all.map((button) => button.textContent).slice(0, 4))).toEqual([
+    expect(await page.locator("#bar button").evaluateAll((all) => all.map((button) => button.getAttribute("aria-label")).slice(0, 4))).toEqual([
       "Graph", "Timeline", "List", "Source",
     ]);
   });

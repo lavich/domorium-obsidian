@@ -220,6 +220,8 @@ body {
   --link-external-color-hover: var(--text-accent-hover);
   --link-external-decoration-hover: underline;
   --radius-m: 8px;
+  --nav-item-size: var(--font-ui-small);
+  --line-height-tight: 1.3;
   --nav-item-radius: var(--radius-m);
   --shadow-s: 0 1px 2px rgba(0, 0, 0, 0.15);
   --popover-width: 450px;
@@ -303,10 +305,8 @@ input[type="search"] {
   align-items: center;
   justify-content: center;
   padding: var(--size-2-2) var(--size-2-3);
-  border: none;
   border-radius: var(--clickable-icon-radius);
   color: var(--icon-color);
-  opacity: var(--icon-opacity);
   height: auto;
 }
 
@@ -316,29 +316,38 @@ input[type="search"] {
   gap: 0;
 }
 
-.view-action {
-  --icon-color: var(--text-normal);
-  --icon-color-active: var(--text-normal);
-  margin: 0;
-  padding: 0 var(--size-4-2);
-  height: 28px;
-}
-
 .clickable-icon .svg-icon {
   width: var(--icon-size);
   height: var(--icon-size);
   stroke-width: var(--icon-stroke);
 }
 
+.clickable-icon svg {
+  opacity: var(--icon-opacity);
+}
+
 .clickable-icon:hover {
+  box-shadow: none;
+  color: var(--icon-color-hover);
+  background-color: var(--background-modifier-hover);
+}
+
+.clickable-icon:hover svg {
   opacity: var(--icon-opacity-hover);
+}
+
+.clickable-icon:active {
+  color: var(--icon-color-focused);
   background-color: var(--background-modifier-hover);
 }
 
 .clickable-icon.is-active {
-  opacity: var(--icon-opacity-hover);
   color: var(--icon-color-active);
   background-color: var(--background-modifier-active-hover);
+}
+
+.clickable-icon.is-active svg {
+  opacity: var(--icon-opacity-hover);
 }
 
 .document-search-container {

@@ -341,8 +341,8 @@ test.describe("the research desk in the Obsidian theme", () => {
 
 test.describe("the list in the Obsidian theme", () => {
   const THEMES = [
-    { name: "light", dark: false, active: "rgb(205, 225, 245)", hover: "rgb(235, 225, 245)", accent: "rgb(128, 64, 0)", warning: "rgb(180, 120, 0)" },
-    { name: "dark", dark: true, active: "rgb(50, 70, 100)", hover: "rgb(45, 35, 60)", accent: "rgb(200, 140, 60)", warning: "rgb(255, 200, 100)" },
+    { name: "light", dark: false, active: "rgb(205, 225, 245)", hover: "rgb(235, 225, 245)", focus: "rgb(120, 160, 255)", accent: "rgb(128, 64, 0)", warning: "rgb(180, 120, 0)" },
+    { name: "dark", dark: true, active: "rgb(50, 70, 100)", hover: "rgb(45, 35, 60)", focus: "rgb(90, 120, 200)", accent: "rgb(200, 140, 60)", warning: "rgb(255, 200, 100)" },
   ];
 
   for (const theme of THEMES) {
@@ -360,7 +360,9 @@ test.describe("the list in the Obsidian theme", () => {
         page.locator(selector).first().evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property);
 
       expect(await style('.gedcom-list-row[data-xref="@I2@"]', "background-color")).toBe(theme.active);
-      expect(await style(".gedcom-list-row.is-focused", "box-shadow")).toContain(theme.accent);
+      expect(await style(".gedcom-list-row.is-focused", "box-shadow")).toContain(theme.focus);
+      expect(await style(".gedcom-list-row.is-focused", "box-shadow")).not.toContain(theme.accent);
+      expect(await style(".gedcom-list-row.is-focused", "outline-style")).toBe("none");
       expect(await style('.gedcom-list-row[data-xref="@I1@"]', "background-color")).toBe("rgba(0, 0, 0, 0)");
       for (const selector of ['.gedcom-list-row[data-xref="@I1@"]', '.gedcom-list-row[data-xref="@I2@"]', ".gedcom-list-row.is-focused"]) {
         expect(await style(selector, "border-top-left-radius"), selector).toBe("8px");

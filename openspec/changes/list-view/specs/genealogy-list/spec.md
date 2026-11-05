@@ -314,17 +314,33 @@ timeline, that the first touch lights and the second selects, does not apply to 
 
 The rows SHALL be drawn as the rows of Obsidian's own file explorer are: inset
 from the edges of the list, with the explorer's radius on the hover, the selected
-background and the focus ring alike, the hover and the selected row taking their
-colours and weight from the navigation variables Obsidian's themes set, and the
-keyboard focus drawn as the explorer draws its focused row. A row SHALL be selected to
-assistive technology, whatever the theme makes of its colour, and SHALL NOT have stripes
-or lines between rows.
+background and the focus ring alike, in the explorer's text size, line height and
+vertical padding, one directly below the next with no gap, the first cell at the
+size of the explorer's text and the others smaller. The hover and the selected row SHALL
+take their colours and weight from the navigation variables Obsidian's themes set, and
+the keyboard focus SHALL be drawn as the explorer draws its focused row: a ring in the
+focus border colour, in the active tab of a desktop only, and never in the accent
+colour. A row SHALL be selected to assistive technology, whatever the theme makes of its
+colour, and SHALL NOT have stripes or lines between rows. The height of a row SHALL be
+derived from that text size, so that it follows the reader's font size.
 
 #### Scenario: Styled as the explorer's rows
 - **WHEN** the list shows the people of `curie.ged` with Pierre Curie selected and the
   pointer over Marie's row
 - **THEN** both rows have the explorer's radius, Pierre's has the explorer's active
   background and Marie's its hover background, and no other row is tinted
+
+#### Scenario: The explorer's metrics
+- **WHEN** the list shows the people of `curie.ged`
+- **THEN** the name in a row is in the explorer's text size, a row is as tall as that
+  size times the explorer's line height plus twice its vertical padding, and the next
+  row begins where the one above ends
+
+#### Scenario: The keyboard focus
+- **WHEN** the reader moves the focus to a row with the arrow keys in the active tab of
+  a desktop
+- **THEN** the row has a ring in the focus border colour, not in the accent colour, and
+  its background is unchanged
 
 #### Scenario: Selecting Pierre in the list
 - **WHEN** the tab is in List mode and the reader clicks Pierre Curie's row
