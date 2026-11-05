@@ -1,33 +1,30 @@
 import type { GenealogyIndex } from "../genealogy";
 import { currentLanguage, plural, t } from "../i18n";
-import { BranchScopeBar, readBranchScope, sameBranch, type BranchScope } from "./branchScope";
-import { type IconSetter, prefersReducedMotion, zoomControls } from "./dom";
+import { readBranchScope, sameBranch, type BranchScope } from "./branchScope";
+import { defaultEnv, type FileMapHost, type MapEnv, type MapState, type TableState } from "./mapBoardTypes";
+import { zoomControls } from "./dom";
 import {
-  branchOf,
   fileMapOf,
-  groupByPlace,
   mapSelection,
   NO_ROUTE,
   orderedPlaces,
   placesWithoutRow,
-  recordEvents,
-  routeOf,
-  scopeEvents,
   type FileMap,
   type MapEvent,
   type PlaceGroup,
   type Route,
 } from "./fileMap";
 import { GraphInput } from "./graphInput";
-import { familyTitle, personName, yearText } from "./labels";
+import { yearText } from "./labels";
 import { collatorFor } from "./listRows";
 import { emptyStateOf, MapEmpty } from "./mapEmpty";
+import { activateGroup, activateMark, type ActionHost, nameOfMark } from "./mapActions";
 import { MapFind } from "./mapFind";
+import { markSelection, sliceRange, sliceScope } from "./mapScope";
+import { MapScopeRow } from "./mapScopeRow";
 import { MapGlide } from "./mapGlide";
 import { handleKey, LiveRegion, placeAnnouncement } from "./mapKeys";
-import { clusterName, type DrawnMark, MapMarks } from "./mapMarks";
-import { decodeOutline, outlinePath } from "./mapOutline";
-import { MAP_OUTLINE } from "./mapOutlineData";
+import { MapMarks } from "./mapMarks";
 import {
   boundsOfPoints,
   CITY_ZOOM,
@@ -37,79 +34,26 @@ import {
   MAX_TILE_ZOOM,
   type MapView,
   type SavedView,
-  readMapView,
   saveView,
   type Size,
   viewOf,
   centreOf,
 } from "./mapProjection";
 import { TileLayer } from "./mapTileLayer";
-import { PlacePopup, popupRows } from "./placePopup";
-import { placeKey, type PlacesTable } from "./placesTable";
+import { PlacePopup } from "./placePopup";
 import { PlacesPanel, type PanelRow } from "./placesPanel";
 import { YearChip } from "./yearChip";
 import { least, most } from "./fileTimeline";
-import { boundsOf, keeps, type YearRange } from "./yearRange";
+import { type YearRange } from "./yearRange";
 
-export interface MapState extends BranchScope {
-  view?: SavedView;
-}
-
-export type TableState = { status: "unread" } | { status: "absent" } | { status: "read"; table: PlacesTable };
-
-export interface TileSettings {
-  enabled: boolean;
-  template: string | null;
-  invalid: boolean;
-  attribution: string;
-}
-
-export interface FileMapHost {
-  select(xref: string): void;
-  setIcon: IconSetter;
-  coarsePointer(): boolean;
-  stateChanged(state: MapState): void;
-  tableAction(): void;
-  addMissing(names: string[]): void;
-  tiles(): TileSettings;
-}
-
-export interface MapEnv {
-  frame(callback: () => void): number;
-  cancel(id: number): void;
-  now(): number;
-  set(callback: () => void, ms: number): number;
-  clear(id: number): void;
-  reduced(): boolean;
-  outline(): string;
-}
+export type { FileMapHost, MapEnv, MapState, TableState, TileSettings } from "./mapBoardTypes";
+export { readMapState } from "./mapBoardTypes";
 
 const SVG = "http://www.w3.org/2000/svg";
 const FIT_PAD = 70;
 const REPORT_MS = 300;
 const ZOOM_STEP = 1.5;
 const GLIDE_FROM_WORLD = 6;
-
-let outlineCache: string | null = null;
-
-function defaultEnv(doc: Document): MapEnv {
-  const win = doc.defaultView ?? window;
-  return {
-    frame: (callback) => win.requestAnimationFrame(callback),
-    cancel: (id) => win.cancelAnimationFrame(id),
-    now: () => win.performance.now(),
-    set: (callback, ms) => win.setTimeout(callback, ms),
-    clear: (id) => win.clearTimeout(id),
-    reduced: () => prefersReducedMotion(doc),
-    outline: () => (outlineCache ??= outlinePath(decodeOutline(MAP_OUTLINE))),
-  };
-}
-
-export function readMapState(state: unknown): MapState {
-  const raw = typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
-  const view = readMapView(raw.view);
-  return { ...readBranchScope(raw), ...(view ? { view } : {}) };
-}
 
 function svg<K extends keyof SVGElementTagNameMap>(tag: K, parent: Element, cls?: string): SVGElementTagNameMap[K] {
   const made = parent.ownerDocument.createElementNS(SVG, tag);
@@ -124,11 +68,7 @@ export class MapBoard {
   private readonly env: MapEnv;
   private readonly plot: HTMLElement;
   private readonly baseEl: SVGGElement;
-  private readonly scopeBar: BranchScopeBar;
-  private readonly branchButton: HTMLButtonElement;
-  private readonly countsEl: HTMLElement;
-  private readonly counterEl: HTMLButtonElement;
-  private readonly statusEl: HTMLElement;
+  private readonly scopeRow: MapScopeRow;
   private readonly tip: HTMLElement;
   private readonly credit: HTMLElement;
   private readonly live: LiveRegion;
@@ -143,6 +83,7 @@ export class MapBoard {
   private readonly empty: MapEmpty;
   private readonly textProbe: SVGTextElement;
   private readonly widths = new Map<string, number>();
+  private readonly actions: ActionHost;
 
   private index: GenealogyIndex | null = null;
   private tableState: TableState = { status: "unread" };
@@ -174,27 +115,15 @@ export class MapBoard {
   ) {
     this.env = { ...defaultEnv(root.ownerDocument), ...env };
     root.addClass("gedcom-map");
-    const row = root.createDiv({ cls: "gedcom-map-scope-row" });
-    this.scopeBar = new BranchScopeBar(row, {
-      prefix: "gedcom-map",
+    this.scopeRow = new MapScopeRow(root, {
+      setScope: (change) => this.setScope(change),
+      showUnmapped: () => {
+        this.panel.open();
+        this.panel.scrollToUnmapped();
+      },
+      togglePanel: () => (this.panel.isOpen() ? this.panel.close() : this.panel.open()),
       setIcon: host.setIcon,
-      change: (change) => this.setScope(change),
     });
-    this.branchButton = row.createEl("button", { cls: "gedcom-map-branch", attr: { type: "button" } });
-    this.branchButton.addEventListener("click", () => {
-      if (this.selected !== null && this.index?.person(this.selected)) {
-        this.setScope({ focus: this.selected });
-      }
-    });
-    this.countsEl = row.createSpan({ cls: "gedcom-map-counts" });
-    this.counterEl = row.createEl("button", { cls: "gedcom-map-counter", attr: { type: "button" } });
-    this.counterEl.addEventListener("click", () => {
-      this.panel.open();
-      this.panel.scrollToUnmapped();
-    });
-    const toggle = row.createEl("button", { cls: "gedcom-map-panel-toggle", text: t("map.panel.open"), attr: { type: "button" } });
-    toggle.addEventListener("click", () => (this.panel.isOpen() ? this.panel.close() : this.panel.open()));
-    this.statusEl = row.createSpan({ cls: "gedcom-map-status", attr: { "aria-live": "polite" } });
 
     const stage = root.createDiv({ cls: "gedcom-map-stage" });
     this.plot = stage.createDiv({ cls: "gedcom-map-plot", attr: { tabindex: "0", role: "group" } });
@@ -241,7 +170,7 @@ export class MapBoard {
       activate: (key) => this.activateKey(key),
       tableAction: () => this.host.tableAction(),
       addMissing: () => this.host.addMissing(this.missingNames()),
-      closed: () => this.counterEl.focus({ preventScroll: true }),
+      closed: () => this.scopeRow.focusCounter(),
     });
     this.tiles = new TileLayer(tileLayer, this.credit, { status: (failed) => this.tileStatus(failed) }, {
       set: (callback, ms) => this.env.set(callback, ms),
@@ -276,6 +205,16 @@ export class MapBoard {
       hovered: (event) => this.hovered(event),
       left: () => this.tip.toggle(false),
     });
+    this.actions = {
+      index: () => this.index,
+      select: (xref) => this.host.select(xref),
+      popup: this.popup,
+      opener: this.plot,
+      separate: (bounds) => {
+        this.fitted = false;
+        this.glideTo(fitView(bounds, this.size, FIT_PAD, MAX_TILE_ZOOM));
+      },
+    };
     this.input.listen();
     this.plot.addEventListener("click", (event) => this.clicked(event));
     this.plot.addEventListener("keydown", (event) => this.keyed(event));
@@ -475,13 +414,10 @@ export class MapBoard {
     if (index === null || model === null) {
       return;
     }
-    const branch = this.scope.focus === undefined ? null : branchOf(index, this.scope.focus, this.scope.up, this.scope.down);
-    this.scopeEv = scopeEvents(model, index, branch);
-    const mappedEvents = this.scopeEv.filter((event) => model.places.get(placeKey(event.place))?.coordinates !== undefined);
-    this.chip.setBounds(boundsOf(mappedEvents));
+    const slice = sliceScope(index, model, this.scope);
+    this.scopeEv = slice.events;
+    this.chip.setBounds(slice.bounds);
     this.recomputeRange();
-    this.recomputeSelection();
-    this.drawScopeRow();
   }
 
   private recomputeRange(): void {
@@ -489,10 +425,7 @@ export class MapBoard {
     if (model === null) {
       return;
     }
-    const kept = this.scopeEv.filter((event) => keeps(event, this.range));
-    const groups = groupByPlace(model, kept);
-    this.mapped = groups.filter((group) => group.place.coordinates !== undefined);
-    this.unmapped = groupByPlace(model, this.scopeEv).filter((group) => group.place.coordinates === undefined);
+    ({ mapped: this.mapped, unmapped: this.unmapped } = sliceRange(model, this.scopeEv, this.range));
     this.recomputeSelection();
     this.drawScopeRow();
     this.drawPanel();
@@ -500,42 +433,17 @@ export class MapBoard {
   }
 
   private recomputeSelection(): void {
-    const index = this.index;
-    const model = this.model;
-    this.highlighted = new Set();
-    if (index === null || model === null || this.selected === null) {
-      this.route = NO_ROUTE;
+    if (this.index === null || this.model === null) {
       return;
     }
-    const keep = (event: MapEvent): boolean => keeps(event, this.range);
-    for (const event of recordEvents(model, index, this.selected)) {
-      const place = model.places.get(placeKey(event.place));
-      if (place?.coordinates !== undefined && keep(event)) {
-        this.highlighted.add(place.key);
-      }
-    }
-    this.route = routeOf(model, index, this.selected, keep);
+    ({ highlighted: this.highlighted, route: this.route } = markSelection(this.index, this.model, this.selected, this.range));
   }
 
   private drawScopeRow(): void {
-    const index = this.index;
-    if (index === null) {
+    if (this.index === null) {
       return;
     }
-    const focus = this.scope.focus === undefined ? undefined : index.person(this.scope.focus);
-    this.scopeBar.draw(this.scope, {
-      total: index.people.length,
-      shown: this.scope.focus === undefined ? 0 : branchOf(index, this.scope.focus, this.scope.up, this.scope.down).size,
-      focusName: focus ? personName(focus) : null,
-    });
-    const person = this.selected === null ? undefined : index.person(this.selected);
-    this.branchButton.toggle(this.scope.focus === undefined);
-    this.branchButton.setText(person ? t("map.branch", { name: personName(person) }) : t("overview.branch"));
-    this.branchButton.disabled = person === undefined;
-    const events = this.mapped.reduce((sum, group) => sum + group.events.length, 0);
-    this.countsEl.setText(`${plural("map.places", this.mapped.length)} · ${plural("map.events", events)}`);
-    this.counterEl.toggle(this.unmapped.length > 0);
-    this.counterEl.setText(plural("map.noCoordinates", this.unmapped.length));
+    this.scopeRow.draw({ index: this.index, scope: this.scope, selected: this.selected, mapped: this.mapped, unmapped: this.unmapped });
     this.plot.setAttribute("aria-label", plural("map.label", this.mapped.length));
   }
 
@@ -549,7 +457,7 @@ export class MapBoard {
           : this.selected !== null && this.highlighted.size === 0
             ? t("map.status.noSelectionPlaces")
             : this.findNote;
-    this.statusEl.setText(text);
+    this.scopeRow.say(text);
   }
 
   private tileStatus(failed: boolean): void {
@@ -651,17 +559,9 @@ export class MapBoard {
       this.tip.toggle(false);
       return;
     }
-    this.tip.setText(this.nameOfMark(hit));
+    this.tip.setText(nameOfMark(hit));
     this.tip.toggle(true);
     this.tip.setCssProps({ left: `${x + 14}px`, top: `${y + 14}px` });
-  }
-
-  private nameOfMark(mark: DrawnMark): string {
-    if (mark.kind === "cluster") {
-      return clusterName(mark.groups.length, mark.groups.reduce((sum, group) => sum + group.events.length, 0), [...mark.groups].sort((a, b) => b.events.length - a.events.length).slice(0, 3).map((group) => group.place.name));
-    }
-    const group = mark.groups[0];
-    return group === undefined ? "" : t("map.place.tip", { name: group.place.name, events: plural("map.events", group.events.length) });
   }
 
   private clicked(event: MouseEvent): void {
@@ -671,56 +571,10 @@ export class MapBoard {
     const [x, y] = this.local(event);
     const hit = this.marks.hit(x, y, this.host.coarsePointer() || this.input.pointer === "touch");
     if (hit !== undefined) {
-      this.activate(hit, event);
+      activateMark(this.actions, hit, event);
     } else {
       this.popup.close(false);
     }
-  }
-
-  private activate(mark: DrawnMark, at: { clientX: number; clientY: number }): void {
-    if (mark.kind === "cluster") {
-      const points = mark.members.map((one) => ({ lat: one.lat, lon: one.lon }));
-      const separates = mark.members.some((one) => one.lat !== mark.members[0]?.lat || one.lon !== mark.members[0]?.lon);
-      if (separates) {
-        this.fitted = false;
-        this.glideTo(fitView(boundsOfPoints(points), this.size, FIT_PAD, MAX_TILE_ZOOM));
-      } else {
-        this.openPopup(mark.groups, at);
-      }
-      return;
-    }
-    const [group] = mark.groups;
-    if (group !== undefined) {
-      this.activateGroup(group, at);
-    }
-  }
-
-  private activateGroup(group: PlaceGroup, at: { clientX: number; clientY: number }): void {
-    const records = [...new Set(group.events.map((event) => event.record))];
-    const [only] = records;
-    if (records.length === 1 && only !== undefined) {
-      this.host.select(only);
-    } else {
-      this.openPopup([group], at);
-    }
-  }
-
-  private openPopup(groups: readonly PlaceGroup[], at: { clientX: number; clientY: number }): void {
-    const index = this.index;
-    if (index === null) {
-      return;
-    }
-    const nameOf = (record: string): string => {
-      const person = index.person(record);
-      const family = index.family(record);
-      return person ? personName(person) : family ? familyTitle(family.spouseNames) : record;
-    };
-    this.popup.open(
-      groups.map((group) => group.place.name).join(", "),
-      groups.map((group) => ({ ...(groups.length > 1 ? { place: group.place.name } : {}), rows: popupRows(group.events, nameOf) })),
-      at,
-      this.plot,
-    );
   }
 
   private activateKey(key: string): void {
@@ -730,7 +584,7 @@ export class MapBoard {
     }
     this.goToPlace(group, "focused");
     const box = this.plot.getBoundingClientRect();
-    this.activateGroup(group, { clientX: box.left + this.size.width / 2, clientY: box.top + this.size.height / 2 });
+    activateGroup(this.actions, group, { clientX: box.left + this.size.width / 2, clientY: box.top + this.size.height / 2 });
   }
 
   private goToPlace(group: PlaceGroup, as: "current" | "focused"): void {
@@ -775,7 +629,7 @@ export class MapBoard {
         const group = ordered[at];
         if (group !== undefined) {
           const box = this.plot.getBoundingClientRect();
-          this.activateGroup(group, { clientX: box.left + this.size.width / 2, clientY: box.top + this.size.height / 2 });
+          activateGroup(this.actions, group, { clientX: box.left + this.size.width / 2, clientY: box.top + this.size.height / 2 });
         }
       },
       zoom: (direction) => this.zoomBy(direction > 0 ? ZOOM_STEP : 1 / ZOOM_STEP),
