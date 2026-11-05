@@ -137,7 +137,7 @@ There SHALL be no Evidence view in the sidebar and no command that opens one.
 
 #### Scenario: A person selected in the graph
 - **WHEN** the active GEDCOM tab is in Graph mode and the reader activates Pierre
-  Curie's row in the index
+  Curie's card
 - **THEN** the Evidence section of the card lists `The Nobel Prize in Physics 1903`
   among the sources of Pierre Curie's whole record
 
