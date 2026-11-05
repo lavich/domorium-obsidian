@@ -52,7 +52,7 @@ async function sidewaysOverflow(page: Page): Promise<boolean> {
 async function expectInMiddleHalf(page: Page, xref: string): Promise<void> {
   const { height, top } = await listBox(page);
   const at = await rowOf(page, xref).evaluate((row) => Number((row as HTMLElement).dataset.pos));
-  const rowHeight = await rowOf(page, xref).evaluate((row) => row.getBoundingClientRect().height);
+  const rowHeight = await page.locator(".gedcom-list-probe").evaluate((probe) => probe.getBoundingClientRect().height);
   const offset = at * rowHeight - top;
   expect(offset).toBeGreaterThanOrEqual(height / 4);
   expect(offset + rowHeight).toBeLessThanOrEqual((3 * height) / 4);
@@ -310,7 +310,7 @@ test.describe("the list on a wide tab", () => {
     expect(await compact(700)).toBe(false);
   });
 
-  test("has the file explorer's metrics: its text size, its line height and padding, and no gap between rows", async ({ page }) => {
+  test("has the file explorer's metrics: its text size, its line height and padding, and a gap of 2 pixels between rows", async ({ page }) => {
     await mountList(page);
     const measure = () =>
       page.evaluate(() => {
@@ -335,10 +335,10 @@ test.describe("the list on a wide tab", () => {
     expect(now.size).toBe(now.navSize);
     expect(now.smaller).toBe(now.uiSmaller);
     expect(Math.abs(now.height - (Number.parseFloat(now.size) * now.line + 2 * now.padding))).toBeLessThan(1);
-    expect(Math.abs(now.step - now.height)).toBeLessThan(1);
+    expect(Math.abs(now.step - now.height - 2)).toBeLessThan(1);
   });
 
-  test("follows the font size: the rows grow with it and keep the pitch of their height", async ({ page }) => {
+  test("follows the font size: the rows grow with it and keep the pitch of their height and the gap", async ({ page }) => {
     await mountList(page);
     const pitch = () =>
       page.evaluate(() => {
@@ -352,7 +352,7 @@ test.describe("the list on a wide tab", () => {
     await expect.poll(async () => (await pitch()).height).toBeGreaterThan(before.height + 5);
     await expect.poll(async () => {
       const now = await pitch();
-      return Math.abs(now.step - now.height);
+      return Math.abs(now.step - now.height - 2);
     }).toBeLessThan(1);
   });
 
@@ -555,7 +555,7 @@ test.describe("a list of twenty thousand people", () => {
     await mountList(page, { doc: big });
     expect(await drawnRows(page)).toBeLessThan(100);
     const spacer = await page.locator(".gedcom-list-spacer").evaluate((node) => node.getBoundingClientRect().height);
-    const rowHeight = await rows(page).first().evaluate((row) => row.getBoundingClientRect().height);
+    const rowHeight = await page.locator(".gedcom-list-probe").evaluate((probe) => probe.getBoundingClientRect().height);
     expect(spacer).toBeGreaterThanOrEqual(people * rowHeight - 1);
 
     await page.locator(".gedcom-list-scroll").evaluate((node, to) => {
