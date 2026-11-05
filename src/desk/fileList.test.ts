@@ -476,6 +476,17 @@ describe("the keyboard", () => {
     expect(active()).toBeNull();
   });
 
+  it("does not draw the rows again when the list takes the focus, so a click that began with it still lands", () => {
+    board();
+    const before = rows();
+
+    scroller().dispatchEvent(new Event("focus"));
+
+    expect(rows().map((one, at) => one === before[at])).not.toContain(false);
+    expect(rows()).toHaveLength(before.length);
+    expect(active()).toMatch(/-r0$/);
+  });
+
   it("has the roles of a grid", () => {
     board();
 

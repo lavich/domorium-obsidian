@@ -97,7 +97,7 @@ export class ListBoard {
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
-  private drawn: { first: number; last: number } | null = null;
+  private readonly live = new Map<number, HTMLElement>();
 
   constructor(
     parent: HTMLElement,
@@ -219,7 +219,6 @@ export class ListBoard {
       this.centre(at);
     }
     this.setActive(at, false);
-    this.drawWindow(true);
   }
 
   focusFilter(): void {
@@ -259,8 +258,7 @@ export class ListBoard {
     this.compact = compact;
     this.applyLayout();
     this.rowHeight = 0;
-    this.drawWindow(true);
-    this.measure();
+    this.measureFirst();
     this.spacerEl.setCssProps({ height: `${this.rows.length * this.rowHeight}px` });
     this.scrollEl.scrollTop = anchor * this.rowHeight;
     this.setGutter();
@@ -351,8 +349,6 @@ export class ListBoard {
     this.active = kept ?? (this.active < 0 || this.rows.length === 0 ? -1 : Math.min(this.active, this.rows.length - 1));
     this.drawChrome();
     this.rowHeight = 0;
-    this.drawn = null;
-    this.spacerEl.empty();
     this.measureFirst();
     this.spacerEl.setCssProps({ height: `${this.rows.length * this.rowHeight}px` });
     if (!keepScroll) {
@@ -438,29 +434,28 @@ export class ListBoard {
     this.gridEl.setAttribute("aria-rowcount", String(this.rows.length + 1));
   }
 
-  private measure(): void {
-    const row = this.spacerEl.firstElementChild as HTMLElement | null;
-    const height = row?.getBoundingClientRect().height ?? 0;
-    this.rowHeight = height > 0 ? height : FALLBACK_ROW[this.compact ? "compact" : "wide"];
-  }
-
   /** Draws one row to read the height the style gives it, since it follows the font size. */
   private measureFirst(): void {
+    const fallback = FALLBACK_ROW[this.compact ? "compact" : "wide"];
+    this.rowHeight = fallback;
     if (this.rows.length === 0) {
-      this.rowHeight = FALLBACK_ROW[this.compact ? "compact" : "wide"];
       return;
     }
-    this.spacerEl.append(this.makeRow(0));
-    this.measure();
-    this.spacerEl.empty();
+    const probe = this.makeRow(0);
+    this.spacerEl.append(probe);
+    const height = probe.getBoundingClientRect().height;
+    probe.remove();
+    this.rowHeight = height > 0 ? height : fallback;
   }
 
   private drawWindow(force = false): void {
     const total = this.rows.length;
     this.noneEl.toggle(total === 0);
-    if (total === 0) {
-      this.drawn = null;
+    if (force) {
+      this.live.clear();
       this.spacerEl.empty();
+    }
+    if (total === 0) {
       this.noneEl.setText(this.query.trim() ? t(NOTHING[this.kind], { query: this.query.trim() }) : t(NONE[this.kind]));
       this.syncActive();
       return;
@@ -472,20 +467,30 @@ export class ListBoard {
     const first = Math.max(0, Math.floor(this.scrollEl.scrollTop / this.rowHeight) - MARGIN);
     const count = height > 0 ? Math.ceil(height / this.rowHeight) + 2 * MARGIN : FIRST_WINDOW;
     const last = Math.min(total - 1, first + count);
-    if (!force && this.drawn?.first === first && this.drawn.last === last) {
-      this.syncActive();
-      return;
-    }
-    this.drawn = { first, last };
     this.spacerEl.setCssProps({ height: `${total * this.rowHeight}px` });
-    const rows: HTMLElement[] = [];
+    const wanted = new Set<number>();
     for (let at = first; at <= last; at += 1) {
-      rows.push(this.makeRow(at));
+      wanted.add(at);
     }
-    if (this.active >= 0 && (this.active < first || this.active > last)) {
-      rows.push(this.makeRow(this.active));
+    if (this.active >= 0) {
+      wanted.add(this.active);
     }
-    this.spacerEl.replaceChildren(...rows);
+    for (const [at, el] of this.live) {
+      if (!wanted.has(at)) {
+        el.remove();
+        this.live.delete(at);
+      }
+    }
+    let before: HTMLElement | null = null;
+    for (const at of [...wanted].sort((one, other) => one - other)) {
+      let el = this.live.get(at);
+      if (!el) {
+        el = this.makeRow(at);
+        this.live.set(at, el);
+        this.spacerEl.insertBefore(el, before ? before.nextSibling : this.spacerEl.firstChild);
+      }
+      before = el;
+    }
     this.syncActive();
   }
 
@@ -523,7 +528,7 @@ export class ListBoard {
   }
 
   private applyMarks(): void {
-    for (const el of Array.from(this.spacerEl.children) as HTMLElement[]) {
+    for (const el of this.live.values()) {
       const on = el.dataset.xref === this.marked;
       el.toggleClass("is-selected", on);
       el.setAttribute("aria-selected", String(on));
@@ -531,12 +536,12 @@ export class ListBoard {
   }
 
   private syncActive(): void {
-    for (const el of Array.from(this.spacerEl.children) as HTMLElement[]) {
-      el.toggleClass("is-focused", el.dataset.pos === String(this.active));
+    for (const [at, el] of this.live) {
+      el.toggleClass("is-focused", at === this.active);
     }
-    const shown = this.active >= 0 && this.spacerEl.querySelector(`[id="${this.rowId(this.active)}"]`) !== null;
+    const shown = this.live.get(this.active);
     if (shown) {
-      this.scrollEl.setAttribute("aria-activedescendant", this.rowId(this.active));
+      this.scrollEl.setAttribute("aria-activedescendant", shown.id);
     } else {
       this.scrollEl.removeAttribute("aria-activedescendant");
     }
@@ -548,7 +553,7 @@ export class ListBoard {
     if (scrollTo && at >= 0) {
       this.keepInView(at);
     }
-    this.drawWindow(true);
+    this.drawWindow();
   }
 
   private wholeRowShown(at: number): boolean {

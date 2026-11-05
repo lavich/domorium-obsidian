@@ -629,7 +629,7 @@ button.gedcom-desk-person:hover {
 }
 
 button.gedcom-list-seg-button {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-width: 0;
   height: auto;
   padding: var(--size-2-1) var(--size-4-3);
@@ -857,6 +857,7 @@ button.gedcom-list-sort:hover {
 
 .gedcom-list.is-compact .gedcom-list-row {
   grid-template-columns: minmax(0, 1fr) fit-content(40%);
+  grid-template-rows: repeat(2, minmax(1.3em, auto));
   grid-template-areas:
     "c1 c2"
     "c3 c4";
@@ -891,6 +892,7 @@ button.gedcom-list-sort:hover {
   color: var(--text-muted);
 }
 
+.gedcom-list.is-touch .gedcom-list-filter,
 .gedcom-list.is-touch button.gedcom-list-seg-button,
 .gedcom-list.is-touch button.gedcom-list-chip,
 .gedcom-list.is-touch button.gedcom-list-sort {

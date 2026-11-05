@@ -339,3 +339,29 @@ test.describe("the research desk in the Obsidian theme", () => {
   });
 });
 
+test.describe("the list in the Obsidian theme", () => {
+  const THEMES = [
+    { name: "light", dark: false, selected: "rgba(112, 93, 207, 0.15)", accent: "rgb(128, 64, 0)", warning: "rgb(180, 120, 0)" },
+    { name: "dark", dark: true, selected: "rgba(127, 109, 242, 0.25)", accent: "rgb(200, 140, 60)", warning: "rgb(255, 200, 100)" },
+  ];
+
+  for (const theme of THEMES) {
+    test(`paints the selected row, the focused row and the mark from Obsidian's variables in ${theme.name}`, async ({ page }) => {
+      await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
+      await page.evaluate((dark) => {
+        window.tab.mount({ mode: "list", dark });
+        window.tab.select("@I2@", true);
+      }, theme.dark);
+      await page.locator(".gedcom-list-scroll").focus();
+      await page.keyboard.press("Home");
+      await page.keyboard.press("ArrowDown");
+      const style = (selector: string, property: string) =>
+        page.locator(selector).first().evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property);
+
+      expect(await style('.gedcom-list-row[data-xref="@I2@"]', "background-color")).toBe(theme.selected);
+      expect(await style(".gedcom-list-row.is-focused", "outline-color")).toBe(theme.accent);
+      expect(await style(".gedcom-list-gap", "background-color")).toBe(theme.warning);
+    });
+  }
+});
+
