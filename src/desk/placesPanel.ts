@@ -1,7 +1,7 @@
 import { plural, t } from "../i18n";
 import { rowWindow } from "./listRows";
 
-export const ROW_HEIGHT = 32;
+export const ROW_HEIGHT = 44;
 
 export interface PanelRow {
   key: string;
