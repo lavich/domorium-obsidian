@@ -271,8 +271,7 @@
   background-color: var(--interactive-hover);
 }
 
-.gedcom-card,
-.gedcom-desk-index {
+.gedcom-card {
   color: var(--text-normal);
 }
 
@@ -587,61 +586,83 @@ button.gedcom-desk-person:hover {
   }
 }
 
-.gedcom-desk-index {
+.gedcom-list {
+  --gedcom-list-inset: 2px;
+  --gedcom-list-pad: var(--size-4-3);
+  --gedcom-list-gutter: 0px;
+  --gedcom-list-row: 2.2em;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   height: 100%;
+  min-width: 0;
+  padding: var(--size-4-2) var(--size-4-2) 0;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
 }
 
-.gedcom-desk-index-head {
+.gedcom-list.is-compact {
+  --gedcom-list-row: max(3.6em, 44px);
+}
+
+.is-mobile .gedcom-list {
+  padding-bottom: var(--navbar-height, 0px);
+}
+
+.gedcom-list-bar {
+  flex: none;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--size-4-2);
-  padding-bottom: var(--size-4-2);
 }
 
-.gedcom-desk-seg {
-  --gedcom-desk-seg-inset: 2px;
+.gedcom-list-seg {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
   display: flex;
-  gap: var(--gedcom-desk-seg-inset);
-  padding: var(--gedcom-desk-seg-inset);
+  gap: var(--gedcom-list-inset);
+  padding: var(--gedcom-list-inset);
   border-radius: var(--radius-m);
   background: var(--background-modifier-hover);
 }
 
-button.gedcom-desk-seg-button {
+button.gedcom-list-seg-button {
   flex: 1 1 0;
   min-width: 0;
   height: auto;
-  padding: var(--size-2-1) var(--size-2-3);
+  padding: var(--size-2-1) var(--size-4-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   background: none;
   border: 0;
-  border-radius: calc(var(--radius-m) - var(--gedcom-desk-seg-inset));
+  border-radius: calc(var(--radius-m) - var(--gedcom-list-inset));
   box-shadow: none;
   font-size: var(--font-ui-small);
   color: var(--text-muted);
 }
 
-button.gedcom-desk-seg-button.is-active {
+button.gedcom-list-seg-button.is-active {
   background: var(--background-primary);
   color: var(--text-normal);
   box-shadow: var(--shadow-s);
 }
 
-.gedcom-desk-search {
-  width: 100%;
+.gedcom-list-filter {
+  flex: 1 1 12em;
+  min-width: 0;
 }
 
-.gedcom-desk-filters {
+.gedcom-list-chips {
+  flex: 0 1 auto;
   display: flex;
   flex-wrap: wrap;
   gap: var(--size-2-2);
 }
 
-button.gedcom-desk-chip-filter {
+button.gedcom-list-chip {
   height: auto;
   padding: 2px var(--size-4-2);
   border-radius: var(--radius-l);
@@ -652,78 +673,228 @@ button.gedcom-desk-chip-filter {
   color: var(--text-muted);
 }
 
-button.gedcom-desk-chip-filter.is-active {
+button.gedcom-list-chip.is-active {
   background: var(--background-modifier-active-hover);
   border-color: transparent;
   color: var(--text-accent);
 }
 
-.gedcom-desk-index-list {
-  flex: 1;
-  overflow-y: auto;
-  position: relative;
+.gedcom-list-count {
+  flex: none;
+  padding: var(--size-4-2) var(--gedcom-list-pad) var(--size-2-2);
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
 }
 
-.gedcom-desk-index-spacer {
-  position: relative;
+.gedcom-list-sortbar {
+  flex: none;
+  display: flex;
+  gap: var(--size-4-2);
+  padding-bottom: var(--size-4-2);
 }
 
-.gedcom-desk-index-window {
-  position: absolute;
-  inset-inline: 0;
+.gedcom-list-sort-select {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
 }
 
-button.gedcom-desk-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-content: center;
-  gap: 0 var(--size-4-2);
-  width: 100%;
-  height: 44px;
-  padding: 0 var(--size-4-2);
+button.gedcom-list-direction {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
   background: none;
-  border: 0;
-  border-radius: var(--radius-s);
   box-shadow: none;
-  text-align: start;
-  font-weight: normal;
-  color: var(--text-normal);
+  color: var(--text-muted);
 }
 
-button.gedcom-desk-row:hover {
-  background: var(--background-modifier-hover);
+button.gedcom-list-direction:disabled {
+  opacity: 0.4;
 }
 
-button.gedcom-desk-row.is-current {
-  background: var(--background-modifier-active-hover);
+.gedcom-list-grid {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.gedcom-desk-row-name,
-.gedcom-desk-row-place {
+.gedcom-list-head,
+.gedcom-list-row {
+  display: grid;
+  align-items: center;
+  column-gap: var(--size-4-2);
+  padding-inline: var(--gedcom-list-pad);
+}
+
+.gedcom-list-head {
+  flex: none;
+  padding-inline-end: calc(var(--gedcom-list-pad) + var(--gedcom-list-gutter));
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-list-head.is-people,
+.gedcom-list-row.is-people {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 1.3fr) minmax(0, 2.6fr) minmax(0, 5.5em);
+}
+
+.gedcom-list-head.is-families,
+.gedcom-list-row.is-families {
+  grid-template-columns: minmax(0, 3.4fr) minmax(0, 1fr) minmax(0, 2.4fr) minmax(0, 5.5em);
+}
+
+.gedcom-list-head.is-sources,
+.gedcom-list-row.is-sources {
+  grid-template-columns: minmax(0, 3.2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 5.5em);
+}
+
+.gedcom-list-headcell,
+.gedcom-list-cell {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.gedcom-desk-row-years {
-  color: var(--text-faint);
-  font-size: var(--font-ui-smaller);
+.gedcom-list-headcell.is-numeric,
+.gedcom-list-cell.is-numeric {
+  text-align: end;
 }
 
-.gedcom-desk-row-place {
-  grid-column: 1 / -1;
-  color: var(--text-faint);
+button.gedcom-list-sort {
+  display: block;
+  box-sizing: border-box;
+  max-width: 100%;
+  height: auto;
+  padding: var(--size-2-3) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--text-muted);
   font-size: var(--font-ui-smaller);
+  font-weight: var(--font-medium);
+  text-align: inherit;
 }
 
-.gedcom-desk-gap {
+button.gedcom-list-sort:hover {
+  color: var(--text-normal);
+}
+
+.gedcom-list-headcell[aria-sort="ascending"] button.gedcom-list-sort::after {
+  content: " \2191";
+}
+
+.gedcom-list-headcell[aria-sort="descending"] button.gedcom-list-sort::after {
+  content: " \2193";
+}
+
+.gedcom-list-headcell:not([aria-sort="none"]) button.gedcom-list-sort {
+  color: var(--text-normal);
+}
+
+.gedcom-list-scroll {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.gedcom-list-scroll:focus {
+  outline: none;
+}
+
+.gedcom-list-spacer {
+  position: relative;
+}
+
+.gedcom-list-row {
+  position: absolute;
+  inset-inline: 0;
+  box-sizing: border-box;
+  height: var(--gedcom-list-row);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+.gedcom-list-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-list-row.is-selected {
+  background: var(--background-modifier-active-hover);
+}
+
+.gedcom-list-scroll:focus-visible .gedcom-list-row.is-focused {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: -2px;
+}
+
+.gedcom-list-cell.is-years,
+.gedcom-list-cell.is-marriage,
+.gedcom-list-cell.is-place,
+.gedcom-list-cell.is-author,
+.gedcom-list-cell.is-repository {
+  color: var(--text-muted);
+}
+
+.gedcom-list-gap {
   display: inline-block;
   width: 6px;
   height: 6px;
-  margin-inline-start: var(--size-2-3);
   vertical-align: middle;
   border-radius: 50%;
   background: var(--text-warning);
+}
+
+.gedcom-list-none {
+  padding: var(--size-4-2) var(--gedcom-list-pad);
+  color: var(--text-faint);
+}
+
+.gedcom-list.is-compact .gedcom-list-row {
+  grid-template-columns: minmax(0, 1fr) fit-content(40%);
+  grid-template-areas:
+    "c1 c2"
+    "c3 c4";
+  align-content: center;
+  column-gap: var(--size-4-3);
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-sources {
+  grid-template-areas:
+    "c1 c4"
+    "c2 c3";
+}
+
+.gedcom-list.is-compact .gedcom-list-cell:nth-child(1) {
+  grid-area: c1;
+}
+
+.gedcom-list.is-compact .gedcom-list-cell:nth-child(2) {
+  grid-area: c2;
+}
+
+.gedcom-list.is-compact .gedcom-list-cell:nth-child(3) {
+  grid-area: c3;
+}
+
+.gedcom-list.is-compact .gedcom-list-cell:nth-child(4) {
+  grid-area: c4;
+}
+
+.gedcom-list.is-compact .gedcom-list-cell:nth-child(n + 2) {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.gedcom-list.is-touch button.gedcom-list-seg-button,
+.gedcom-list.is-touch button.gedcom-list-chip,
+.gedcom-list.is-touch button.gedcom-list-sort {
+  min-height: 44px;
 }
 
 .gedcom-desk-evidence-head {

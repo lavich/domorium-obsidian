@@ -1,7 +1,6 @@
 import { GedcomLanguageService, type Position, type Range } from "@domorium/language-service";
 
 import curie from "../demo-vault/curie.ged";
-import { IndexList } from "../src/desk/indexList";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
 import type { NoteHit } from "../src/desk/noteLinks";
@@ -74,7 +73,6 @@ let index: GenealogyIndex;
 let record: string | null = null;
 let fact: FactKey | null = null;
 let hasTab = true;
-let list: IndexList | null = null;
 
 function element(id: string): HTMLElement {
   const found = document.getElementById(id);
@@ -161,7 +159,6 @@ function selectRecord(xref: string): void {
 }
 
 function draw(): void {
-  list?.show({ index, current: record });
   renderRecordCard(element("card"), hasTab ? tab : null, record === "@I1@" ? MARIE_NOTES : [], {
     setIcon: stubSetIcon,
     openNote: (path, line) => {
@@ -193,7 +190,6 @@ function mount(options: DeskOptions): void {
     history.visit(record);
   }
   element("card").empty();
-  list = new IndexList(element("index-pane"), { open: selectRecord });
   draw();
 }
 

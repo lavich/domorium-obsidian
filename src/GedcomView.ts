@@ -58,7 +58,7 @@ import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
 import { t } from "./i18n";
-import type { GedcomSettings } from "./settingsData";
+import { DESK_MODES, type GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
   parseEphemeralState,
@@ -68,12 +68,14 @@ import { openSearch } from "./editor/searchPanel";
 import type { SearchKeyBinding } from "./editor/searchKeys";
 import { routeDocumentLink } from "./editor/service";
 import {
+  actionOrder,
   cursorInside,
   initialMode,
   rememberedMode,
   type ModeSource,
   isViewMode,
   modeButtons,
+  modeLook,
   pageKind,
   readDeskState,
   shownRange,
@@ -161,12 +163,14 @@ export class GedcomView extends TextFileView implements CardTab {
         this.app.workspace.requestSaveLayout();
       },
       setIcon: (element, icon) => setIcon(element, icon),
+      coarsePointer: () => Platform.isMobile || window.matchMedia("(pointer: coarse)").matches,
     });
     this.editor = new EditorView({
       parent: this.editorEl,
       state: this.createState(""),
     });
-    for (const { mode, icon, title } of modeButtons(this.modes.shown)) {
+    for (const mode of actionOrder(DESK_MODES)) {
+      const { icon, title } = modeLook(mode);
       const action = this.addAction(icon, t(title), () => {
         this.setMode(mode, "reader");
       });
@@ -276,6 +280,7 @@ export class GedcomView extends TextFileView implements CardTab {
       ...this.memory,
       ...(desk.graph ? { graph: desk.graph } : {}),
       ...(desk.timeline ? { timeline: desk.timeline } : {}),
+      ...(desk.list ? { list: desk.list } : {}),
     };
     const restored = this.modes.applyState(desk).selectionChanged;
     if (restored) {
@@ -555,10 +560,16 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   private markInViews(reveal: boolean): void {
-    const person = this.modes.shownRecord();
-    const xref = person !== null && this.genealogy().person(person) ? person : null;
-    this.views.select("graph", xref, reveal);
-    this.views.select("timeline", xref, reveal);
+    const selected = this.modes.shownRecord();
+    const person = selected !== null && this.genealogy().person(selected) ? selected : null;
+    this.views.select("graph", person, reveal);
+    this.views.select("timeline", person, reveal);
+    this.views.select("list", this.listRecord(selected), reveal);
+  }
+
+  private listRecord(selected: string | null): string | null {
+    const kind = selected === null ? null : pageKind(this.genealogy(), selected);
+    return kind === "person" || kind === "family" || kind === "source" ? selected : null;
   }
 
   followMove(move: Move, documentPath: string): Outcome {
@@ -775,12 +786,19 @@ export class GedcomView extends TextFileView implements CardTab {
 
   private handSelectionOver(mode: ViewKind, reveal: boolean): void {
     const selected = this.modes.shownRecord();
-    this.views.select(mode, selected !== null && this.genealogy().person(selected) ? selected : null, reveal);
+    const xref =
+      mode === "list"
+        ? this.listRecord(selected)
+        : selected !== null && this.genealogy().person(selected)
+          ? selected
+          : null;
+    this.views.select(mode, xref, reveal);
   }
 
   private clearViewSelections(): void {
     this.views.select("graph", null, false);
     this.views.select("timeline", null, false);
+    this.views.select("list", null, false);
   }
 
   private dropGoneSelection(): void {

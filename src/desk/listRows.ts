@@ -263,7 +263,7 @@ function sorted(kind: ListKind, rows: ListRow[], sort: ListSort, index: Genealog
     }
     return sign * compareValues(a, b, collator) || one - other;
   });
-  return order.map((at) => rows[at] as ListRow);
+  return order.map((at) => rows[at]);
 }
 
 export interface ListQuery {

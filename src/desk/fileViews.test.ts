@@ -28,6 +28,7 @@ let host: {
   portrait: ReturnType<typeof vi.fn<FileViewsHost["portrait"]>>;
   changed: ReturnType<typeof vi.fn<() => void>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
+  coarsePointer: ReturnType<typeof vi.fn<() => boolean>>;
 };
 
 beforeAll(() => {
@@ -72,6 +73,7 @@ beforeEach(() => {
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
       element.setAttribute("data-icon", icon);
     }),
+    coarsePointer: vi.fn(() => false),
   };
 });
 
@@ -488,3 +490,144 @@ describe("what a click in a view asks of the tab", () => {
     expect(host.changed).toHaveBeenCalled();
   });
 });
+
+describe("the list of a tab", () => {
+  const large = indexOf(generated(500));
+  const listRoot = () => parent.querySelector<HTMLElement>(".gedcom-views-root.is-list");
+  const rows = () => all(".gedcom-list-row");
+  const row = (xref: string) => parent.querySelector<HTMLElement>(`.gedcom-list-row[data-xref="${xref}"]`);
+  const scroller = () => parent.querySelector<HTMLElement>(".gedcom-list-scroll") as HTMLElement;
+  const type = (value: string) => {
+    const field = parent.querySelector<HTMLInputElement>(".gedcom-list-filter") as HTMLInputElement;
+    field.value = value;
+    field.dispatchEvent(new Event("input"));
+  };
+  const inMiddle = (xref: string) => {
+    const at = Number(row(xref)?.dataset.pos);
+    const top = at * 36 - scroller().scrollTop;
+    return top >= SIZE.height / 4 && top <= (3 * SIZE.height) / 4;
+  };
+
+  it("is made on its first show, in a root of its own, and only one root is shown", () => {
+    const tab = views();
+    expect(listRoot()).toBeNull();
+
+    tab.show("list", index, {});
+
+    expect(listRoot()?.style.display).not.toBe("none");
+    expect(rows()).toHaveLength(17);
+    tab.show("graph", index, {});
+    expect(listRoot()?.style.display).toBe("none");
+    expect(shown("graph")).toBe(true);
+  });
+
+  it("keeps the kind, the sort, the filter and the scroll across a switch to the graph and back", () => {
+    const tab = views();
+    tab.show("list", large, {});
+    type("person 4");
+    parent.querySelectorAll<HTMLElement>(".gedcom-list-sort")[0]?.click();
+    scroller().scrollTop = 72;
+    const saved = tab.memory();
+
+    tab.show("graph", large, tab.memory());
+    tab.show("list", large, tab.memory());
+
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-filter")?.value).toBe("person 4");
+    expect(tab.memory().list).toEqual(saved.list);
+    expect(saved.list?.sort?.people?.by).toBe("name");
+    expect(scroller().scrollTop).toBe(72);
+  });
+
+  it("applies a selection made while the list was hidden, with its reveal, on the next show", () => {
+    const tab = views();
+    tab.show("list", large, {});
+    tab.show("graph", large, {});
+    tab.select("list", "@I400@", true);
+    expect(row("@I400@")).toBeNull();
+
+    tab.show("list", large, tab.memory());
+
+    expect(row("@I400@")?.classList.contains("is-selected")).toBe(true);
+    expect(inMiddle("@I400@")).toBe(true);
+  });
+
+  it("centres a selection restored before the first show", () => {
+    const tab = views();
+    tab.select("list", "@I400@", false);
+
+    tab.show("list", large, {});
+
+    expect(row("@I400@")?.classList.contains("is-selected")).toBe(true);
+    expect(inMiddle("@I400@")).toBe(true);
+  });
+
+  it("keeps a reveal through a later hand-over of the same record without one", () => {
+    const tab = views();
+    tab.select("list", "@I400@", true);
+    tab.select("list", "@I400@", false);
+
+    tab.show("list", large, {});
+
+    expect(inMiddle("@I400@")).toBe(true);
+  });
+
+  it("parks a drawn list for the timeline and back without a call a list lacks", () => {
+    const tab = views();
+    tab.show("list", index, {});
+
+    expect(() => {
+      tab.show("timeline", index, {});
+      tab.hide();
+      tab.show("list", index, tab.memory());
+    }).not.toThrow();
+    expect(rows()).toHaveLength(17);
+  });
+
+  it("focuses the filter for the search of the list", () => {
+    const tab = views();
+    tab.show("list", index, {});
+
+    tab.openSearch("list");
+
+    expect(document.activeElement).toBe(parent.querySelector(".gedcom-list-filter"));
+  });
+
+  it("forgets the list on reset, and holds a memory of it only once shown", () => {
+    const tab = views();
+    expect(tab.memory().list).toBeUndefined();
+    tab.show("list", index, {});
+    expect(tab.memory().list).toEqual({});
+
+    tab.reset();
+
+    expect(listRoot()).toBeNull();
+    expect(tab.memory().list).toBeUndefined();
+  });
+
+  it("restores the state it reported to a board of a new tab", () => {
+    const tab = views();
+    tab.show("list", index, {});
+    (parent.querySelectorAll(".gedcom-list-seg-button")[1] as HTMLElement).click();
+    const saved = tab.memory();
+    expect(saved.list).toEqual({ kind: "families" });
+
+    parent.replaceChildren();
+    const next = views();
+    next.show("list", index, saved);
+
+    expect(rows()).toHaveLength(5);
+    expect(host.changed).toHaveBeenCalled();
+  });
+
+  it("selects a family and a source through the host", () => {
+    const tab = views();
+    tab.show("list", index, { list: { kind: "families" } });
+    row("@F3@")?.click();
+    tab.show("list", index, { list: { kind: "sources" } });
+    row("@S2@")?.click();
+
+    expect(host.select).toHaveBeenNthCalledWith(1, "@F3@");
+    expect(host.select).toHaveBeenNthCalledWith(2, "@S2@");
+  });
+});
+

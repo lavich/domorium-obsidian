@@ -212,6 +212,7 @@ describe("showing the file in a mode", () => {
   const MODES: [DeskMode, string][] = [
     ["graph", "network"],
     ["timeline", "calendar-range"],
+    ["list", "list"],
     ["source", "code"],
   ];
 
@@ -261,7 +262,7 @@ describe("showing the file in a mode", () => {
     expect(COMMANDS.map((entry) => entry.id)).not.toContain("open-gedcom-file-graph");
   });
 
-  it("keeps the toggle out of the tab's menu, where the three modes are", () => {
+  it("keeps the toggle out of the tab's menu, where the four modes are", () => {
     expect(command("toggle-gedcom-mode").menu).toBe(false);
     expect(command("show-gedcom-as-graph").menu).toBeUndefined();
   });
@@ -270,6 +271,60 @@ describe("showing the file in a mode", () => {
     expect(t(command("show-gedcom-as-timeline").name)).toBe("Show as timeline");
     setLanguage("ru");
     expect(t(command("show-gedcom-as-graph").name)).toBe("Показать как граф");
+    expect(t(command("show-gedcom-as-list").name)).toBe("Показать как список");
+  });
+
+  it("offers Show as list in every mode but List, and runs showMode with list", () => {
+    const list = command("show-gedcom-as-list");
+    expect(t(list.name)).toBe("Show as list");
+    for (const current of ["graph", "timeline", "source"] as const) {
+      expect(list.isAvailable(view({ mode: () => current }))).toBe(true);
+    }
+    expect(list.isAvailable(view({ mode: () => "list" }))).toBe(false);
+    expect(list.isAvailable(view({ genealogyInterface: () => false }))).toBe(false);
+    const showMode = vi.fn();
+    list.run(host().host, view({ showMode, mode: () => "graph" }));
+    expect(showMode).toHaveBeenCalledWith("list");
+  });
+});
+
+describe("what a command offers in List", () => {
+  const list = view({ inSource: () => false, mode: () => "list", recordAtCursor: () => FAMILY, problemCount: () => 2 });
+
+  it("offers find, which focuses the filter, and runs showSearch without replace", () => {
+    const showSearch = vi.fn<(replace: boolean) => void>();
+    expect(command("search-in-gedcom-file").isAvailable(list)).toBe(true);
+    command("search-in-gedcom-file").run(host().host, view({ ...list, showSearch }));
+    expect(showSearch).toHaveBeenCalledWith(false);
+  });
+
+  it("offers no replace and nothing that acts on the editor", () => {
+    for (const id of [
+      "replace-in-gedcom-file",
+      "go-to-gedcom-definition",
+      "rename-gedcom-reference",
+      "go-to-next-gedcom-problem",
+    ]) {
+      expect(command(id).isAvailable(list), id).toBe(false);
+    }
+  });
+
+  it("offers copying a link with a family selected, and copies @F3@", async () => {
+    const { host: commandHost, copy, notify } = host();
+
+    expect(command("copy-gedcom-record-link").isAvailable(list)).toBe(true);
+    command("copy-gedcom-record-link").run(commandHost, list);
+    await vi.waitFor(() => expect(notify).toHaveBeenCalled());
+
+    expect(copy).toHaveBeenCalledWith("obsidian://domorium?vault=Family&file=tree.ged&xref=%40F3%40");
+    expect(command("copy-gedcom-record-link").isAvailable(view({ ...list, recordAtCursor: () => undefined }))).toBe(false);
+  });
+
+  it("toggles between the list and Source through the view", () => {
+    const toggleMode = vi.fn();
+    command("toggle-gedcom-mode").run(host().host, view({ ...list, toggleMode }));
+
+    expect(toggleMode).toHaveBeenCalled();
   });
 });
 

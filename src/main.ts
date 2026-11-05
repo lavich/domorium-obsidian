@@ -29,7 +29,7 @@ import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
 import { RETIRED_VIEW_TYPES, type DeskMode, type Origin } from "./desk/deskState";
 import { originRules } from "./desk/tabModes";
-import { sidePanelPlan, type SidePanelPlan } from "./desk/sidePanels";
+import { sidePanelPlan } from "./desk/sidePanels";
 import { adoptsFollow, fallbackFollowed, noteChangeMatters } from "./desk/followRules";
 import {
   parseGedcomLink,
@@ -40,8 +40,6 @@ import {
 import { MoveFollower } from "./vault/movedFiles";
 import { GEDCOM_VIEW_TYPE, GedcomView, type GedcomViewHost } from "./GedcomView";
 import {
-  INDEX_VIEW_TYPE,
-  IndexView,
   RECORD_VIEW_TYPE,
   RecordCardView,
   type DeskViewsHost,
@@ -124,17 +122,16 @@ export default class GedcomPlugin
       (leaf) => new GedcomView(leaf, this.settings, this),
     );
     this.registerExtensions(["ged", "gedcom"], GEDCOM_VIEW_TYPE);
-    this.registerView(INDEX_VIEW_TYPE, (leaf) => new IndexView(leaf, this));
     this.registerView(RECORD_VIEW_TYPE, (leaf) => new RecordCardView(leaf, this));
     this.addCommand({
       id: "open-gedcom-index",
-      name: t("command.openIndex"),
+      name: t("command.openList"),
       checkCallback: (checking) => {
         if (!this.settings.genealogyInterface) {
           return false;
         }
         if (!checking) {
-          void this.openIndex();
+          void this.openList();
         }
         return true;
       },
@@ -334,17 +331,13 @@ export default class GedcomPlugin
       enabled: this.settings.openPanelsOnSelect,
       mobile: Platform.isMobile,
       origin,
-      index: {
-        open: workspace.getLeavesOfType(INDEX_VIEW_TYPE).length > 0,
-        collapsed: workspace.leftSplit.collapsed,
-      },
       card: {
         open: workspace.getLeavesOfType(RECORD_VIEW_TYPE).length > 0,
         collapsed: workspace.rightSplit.collapsed,
       },
     });
-    if (plan.index === "open" || plan.card === "open") {
-      void this.openSidePanels(plan);
+    if (plan === "open") {
+      void this.openCard();
       return;
     }
     if (originRules(origin, Platform.isMobile).opensDrawer) {
@@ -433,9 +426,9 @@ export default class GedcomPlugin
     if (this.settings.genealogyInterface) {
       this.ribbonIcon ??= this.addRibbonIcon(
         GEDCOM_ICON_ID,
-        t("command.openIndex"),
+        t("command.openList"),
         () => {
-          void this.openIndex();
+          void this.openList();
         },
       );
       return;
@@ -444,7 +437,6 @@ export default class GedcomPlugin
     this.ribbonIcon = undefined;
     this.cardPlaced = false;
     this.followedView = null;
-    workspace.detachLeavesOfType(INDEX_VIEW_TYPE);
     workspace.detachLeavesOfType(RECORD_VIEW_TYPE);
   }
 
@@ -472,26 +464,15 @@ export default class GedcomPlugin
     await leaf.setViewState({ type: RECORD_VIEW_TYPE, active: false });
   }
 
-  private async openSidePanels(plan: SidePanelPlan): Promise<void> {
+  private async openCard(): Promise<void> {
     const { workspace } = this.app;
     const previous = workspace.getActiveViewOfType(View)?.leaf;
-    const opened: Promise<unknown>[] = [];
-    if (plan.index === "open") {
-      opened.push(this.revealSideLeaf(INDEX_VIEW_TYPE, "left"));
-    }
-    if (plan.card === "open") {
-      this.cardPlaced = true;
-      opened.push(this.revealSideLeaf(RECORD_VIEW_TYPE, "right"));
-    }
-    await Promise.allSettled(opened);
+    this.cardPlaced = true;
+    const leaf = await workspace.ensureSideLeaf(RECORD_VIEW_TYPE, "right", { active: false, reveal: true });
+    await leaf.loadIfDeferred();
     if (previous && workspace.getActiveViewOfType(View)?.leaf !== previous) {
       workspace.setActiveLeaf(previous, { focus: true });
     }
-  }
-
-  private async revealSideLeaf(type: string, side: "left" | "right"): Promise<void> {
-    const leaf = await this.app.workspace.ensureSideLeaf(type, side, { active: false, reveal: true });
-    await leaf.loadIfDeferred();
   }
 
   private async revealCardDrawer(): Promise<void> {
@@ -514,33 +495,25 @@ export default class GedcomPlugin
     workspace.setActiveLeaf(leaf, { focus: true });
   }
 
-  private async openIndex(): Promise<void> {
-    await this.revealSidebarView(INDEX_VIEW_TYPE, "left");
-  }
-
-  private async revealSidebarView(type: string, side: "left" | "right"): Promise<void> {
+  private async openList(): Promise<void> {
     if (!this.settings.genealogyInterface) {
       return;
     }
     const { workspace } = this.app;
-    const leaf =
-      workspace.getLeavesOfType(type)[0] ??
-      (side === "left" ? workspace.getLeftLeaf(false) : workspace.getRightLeaf(false));
+    const leaf = this.followedView?.leaf ?? workspace.getLeavesOfType(GEDCOM_VIEW_TYPE)[0];
     if (!leaf) {
+      new Notice(t("notice.noGedcomTab"));
       return;
     }
-    if (leaf.view.getViewType() !== type) {
-      await leaf.setViewState({ type, active: true });
-    }
+    await leaf.loadIfDeferred();
     await workspace.revealLeaf(leaf);
+    workspace.setActiveLeaf(leaf, { focus: true });
+    if (leaf.view instanceof GedcomView) {
+      leaf.view.showMode("list");
+    }
   }
 
   private redrawDesk(): void {
-    for (const leaf of this.app.workspace.getLeavesOfType(INDEX_VIEW_TYPE)) {
-      if (leaf.view instanceof IndexView) {
-        leaf.view.redraw();
-      }
-    }
     for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
       if (leaf.view instanceof RecordCardView) {
         leaf.view.redraw();

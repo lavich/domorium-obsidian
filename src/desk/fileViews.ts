@@ -5,6 +5,8 @@ import { openingMemory, type ViewKind } from "./deskState";
 import { fileTimelineOf } from "./fileTimeline";
 import { FileGraphBoard, type GraphState } from "./fileGraphView";
 import { FileTimelineBoard, type TimelineState } from "./fileTimelineView";
+import { ListBoard } from "./fileList";
+import type { ListState } from "./listRows";
 import type { PortraitContent } from "./graphCanvas";
 
 export type { ViewKind } from "./deskState";
@@ -12,31 +14,35 @@ export type { ViewKind } from "./deskState";
 export interface ViewMemory {
   graph?: GraphState;
   timeline?: TimelineState;
+  list?: ListState;
 }
 
 export interface FileViewsHost {
-  /** A person or a family. */
+  /** A person, a family or a source. */
   select(xref: string): void;
   showInSource(range: Range): void;
   portrait(xref: string): PortraitContent | null;
   /** The memory changed, so the layout wants saving. */
   changed(): void;
   setIcon(element: HTMLElement, icon: string): void;
+  coarsePointer(): boolean;
 }
 
 /** What a view is shown with: the tab's own memory over what the boards last reported. */
 export const memoryToShow = (reported: ViewMemory, tab: ViewMemory): ViewMemory => ({ ...reported, ...tab });
 
-const KINDS: readonly ViewKind[] = ["graph", "timeline"];
+const KINDS: readonly ViewKind[] = ["graph", "timeline", "list"];
 
-/** The graph and the timeline of a file, each made on its first show in a root of its own and kept, so a switch loses neither's view. */
+/** The graph, the timeline and the list of a file, each made on its first show in a root of its own and kept, so a switch loses neither's view. */
 export class FileViews {
   private readonly roots: Partial<Record<ViewKind, HTMLElement>> = {};
   private graph: FileGraphBoard | null = null;
   private timeline: FileTimelineBoard | null = null;
+  private list: ListBoard | null = null;
+  private listScroll: number | undefined;
   private kept: ViewMemory = {};
   private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean }>> = {};
-  private parked: Record<ViewKind, boolean> = { graph: false, timeline: false };
+  private parked: Record<ViewKind, boolean> = { graph: false, timeline: false, list: false };
   private shownKind: ViewKind | null = null;
 
   constructor(
@@ -56,14 +62,16 @@ export class FileViews {
     const before = JSON.stringify(this.kept[kind]);
     if (kind === "graph") {
       this.showGraph(index, memory.graph, around);
-    } else {
+    } else if (kind === "timeline") {
       this.showTimeline(index, memory.timeline, around, restore);
+    } else {
+      this.showList(index, memory.list, restore);
     }
     this.boardOf(kind)?.resized();
     const wanted = this.pending[kind];
     if (wanted !== undefined && (restore || this.displayed())) {
       delete this.pending[kind];
-      this.boardOf(kind)?.select(wanted.xref, wanted.reveal);
+      this.boardOf(kind)?.select(wanted.xref, wanted.reveal || (kind === "list" && restore));
     }
     if (JSON.stringify(this.kept[kind]) !== before) {
       this.host.changed();
@@ -88,7 +96,12 @@ export class FileViews {
 
   /** Opens the search of a drawn board and focuses it, or only focuses it where it is open. */
   openSearch(kind: ViewKind): void {
-    this.boardOf(kind)?.openSearch();
+    const board = this.boardOf(kind);
+    if (board instanceof ListBoard) {
+      board.focusFilter();
+    } else {
+      board?.openSearch();
+    }
   }
 
   hide(): void {
@@ -117,6 +130,7 @@ export class FileViews {
     return {
       ...(this.kept.graph ? { graph: { ...this.kept.graph } } : {}),
       ...(this.kept.timeline ? { timeline: { ...this.kept.timeline } } : {}),
+      ...(this.kept.list ? { list: { ...this.kept.list } } : {}),
     };
   }
 
@@ -127,11 +141,14 @@ export class FileViews {
       this.roots[kind]?.remove();
       delete this.roots[kind];
     }
+    this.list?.dispose();
     this.graph = null;
     this.timeline = null;
+    this.list = null;
+    this.listScroll = undefined;
     this.kept = {};
     this.pending = {};
-    this.parked = { graph: false, timeline: false };
+    this.parked = { graph: false, timeline: false, list: false };
     this.shownKind = null;
   }
 
@@ -168,6 +185,15 @@ export class FileViews {
     }
   }
 
+  private showList(index: GenealogyIndex, saved: ListState | undefined, restore: boolean): void {
+    const board = (this.list ??= this.makeList());
+    board.show(index, saved ?? this.kept.list ?? {});
+    this.kept.list = board.state();
+    if (restore && this.listScroll !== undefined) {
+      board.setScroll(this.listScroll);
+    }
+  }
+
   private parkOthers(keep: ViewKind | null): void {
     for (const kind of KINDS) {
       if (kind === keep) {
@@ -180,11 +206,14 @@ export class FileViews {
       }
       if (board instanceof FileGraphBoard) {
         board.cancelHover();
-      } else {
+      } else if (board instanceof FileTimelineBoard) {
         board.unlight();
       }
       if (kind === "timeline" && this.timeline && this.kept.timeline && this.shownKind === kind) {
         this.kept.timeline = { ...this.kept.timeline, scroll: this.timeline.scroll() };
+      }
+      if (kind === "list" && this.list && this.shownKind === kind) {
+        this.listScroll = this.list.scroll();
       }
       if (this.shownKind === kind) {
         this.parked[kind] = true;
@@ -193,8 +222,8 @@ export class FileViews {
     }
   }
 
-  private boardOf(kind: ViewKind): FileGraphBoard | FileTimelineBoard | null {
-    return kind === "graph" ? this.graph : this.timeline;
+  private boardOf(kind: ViewKind): FileGraphBoard | FileTimelineBoard | ListBoard | null {
+    return kind === "graph" ? this.graph : kind === "timeline" ? this.timeline : this.list;
   }
 
   private rootOf(kind: ViewKind): HTMLElement {
@@ -224,6 +253,18 @@ export class FileViews {
         this.host.changed();
       },
       setIcon: (element, icon) => this.host.setIcon(element, icon),
+    });
+  }
+
+  private makeList(): ListBoard {
+    return new ListBoard(this.rootOf("list"), {
+      select: (xref) => this.host.select(xref),
+      changed: (state) => {
+        this.kept.list = state;
+        this.host.changed();
+      },
+      setIcon: (element, icon) => this.host.setIcon(element, icon),
+      coarsePointer: () => this.host.coarsePointer(),
     });
   }
 }
