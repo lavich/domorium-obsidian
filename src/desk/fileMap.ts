@@ -43,7 +43,7 @@ export interface Route {
   numbers: ReadonlyMap<string, number[]>;
 }
 
-const NO_ROUTE: Route = { stops: [], numbers: new Map() };
+export const NO_ROUTE: Route = { stops: [], numbers: new Map() };
 
 const LINE_WIDTH = 100_000;
 
