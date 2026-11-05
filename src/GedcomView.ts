@@ -169,6 +169,7 @@ export class GedcomView extends TextFileView implements CardTab {
       places: () => this.placesTable,
       placesAction: () => void this.placesAction(),
       addMissingPlaces: (names) => void this.addMissingPlaces(names),
+      showPlaces: () => this.showPlaces(),
       tiles: () => {
         const template = tileTemplate(this.settings.tileUrl);
         return {
@@ -760,7 +761,7 @@ export class GedcomView extends TextFileView implements CardTab {
     }
     if (isViewMode(mode)) {
       this.handSelectionOver(mode, switched);
-      if (mode === "map") {
+      if (mode === "map" || mode === "list") {
         this.loadPlacesTable();
       }
       this.drawViews();
@@ -788,7 +789,7 @@ export class GedcomView extends TextFileView implements CardTab {
       }
       this.placesTable = text === null ? { status: "absent" } : { status: "read", table: parsePlacesTable(text) };
       this.views.refreshPlaces();
-      if (this.modes.shown === "map") {
+      if (this.modes.shown === "map" || this.modes.shown === "list") {
         this.drawViews();
       }
     });
@@ -800,9 +801,14 @@ export class GedcomView extends TextFileView implements CardTab {
       return;
     }
     this.placesTable = { status: "unread" };
-    if (this.modes.shown === "map") {
+    if (this.modes.shown === "map" || this.modes.shown === "list") {
       this.loadPlacesTable();
     }
+  }
+
+  private showPlaces(): void {
+    this.memory = { ...this.memory, list: this.views.placesList() };
+    this.setMode("list", "reader");
   }
 
   private async placesAction(): Promise<void> {

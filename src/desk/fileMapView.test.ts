@@ -26,7 +26,7 @@ let mocks: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   stateChanged: ReturnType<typeof vi.fn<(state: MapState) => void>>;
   tableAction: ReturnType<typeof vi.fn<() => void>>;
-  addMissing: ReturnType<typeof vi.fn<(names: string[]) => void>>;
+  showPlaces: ReturnType<typeof vi.fn<() => void>>;
 };
 let tiles: TileSettings;
 
@@ -62,7 +62,7 @@ beforeEach(() => {
   timers = [];
   reduced = true;
   tiles = { enabled: false, template: null, invalid: false, attribution: "" };
-  mocks = { select: vi.fn(), stateChanged: vi.fn(), tableAction: vi.fn(), addMissing: vi.fn() };
+  mocks = { select: vi.fn(), stateChanged: vi.fn(), tableAction: vi.fn(), showPlaces: vi.fn() };
   host = { ...mocks, setIcon: () => undefined, coarsePointer: () => false, tiles: () => tiles };
 });
 
@@ -100,6 +100,14 @@ describe("the places of the map", () => {
 
     expect(text(".gedcom-map-counts")).toMatch(/^4 места · \d+ событи/u);
     expect(text(".gedcom-map-counter")).toBe("У 6 мест нет координат");
+  });
+
+  it("sends the reader to the places of the list from the counter, and draws no panel of its own", () => {
+    board(undefined, BARE);
+    root.querySelector<HTMLElement>(".gedcom-map-counter")?.click();
+
+    expect(mocks.showPlaces).toHaveBeenCalledOnce();
+    expect(root.querySelector("[class*='gedcom-map-panel']")).toBeNull();
   });
 
   it("sizes a point by its events and colours it by their kind, grey with the number where kinds differ", () => {

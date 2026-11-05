@@ -236,6 +236,6 @@ export function orderedPlaces<T extends { place: MapPlace }>(groups: readonly T[
   return [...groups].sort((a, b) => collator.compare(a.place.name, b.place.name) || (a.place.key < b.place.key ? -1 : 1));
 }
 
-export function placesWithoutRow(groups: readonly PlaceGroup[], table: PlacesTable): string[] {
-  return groups.filter((group) => group.place.coordinates === undefined && !table.rows.has(group.place.key)).map((group) => group.place.name);
+export function placesWithoutRow(places: Iterable<MapPlace>, table: PlacesTable): string[] {
+  return [...places].filter((place) => place.coordinates === undefined && !table.rows.has(place.key)).map((place) => place.name);
 }

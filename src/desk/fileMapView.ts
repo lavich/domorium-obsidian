@@ -8,14 +8,12 @@ import {
   mapSelection,
   NO_ROUTE,
   orderedPlaces,
-  placesWithoutRow,
   type FileMap,
   type MapEvent,
   type PlaceGroup,
   type Route,
 } from "./fileMap";
 import { GraphInput } from "./graphInput";
-import { yearText } from "./labels";
 import { collatorFor } from "./listRows";
 import { emptyStateOf, MapEmpty } from "./mapEmpty";
 import { activateGroup, activateMark, type ActionHost, nameOfMark } from "./mapActions";
@@ -42,7 +40,6 @@ import {
 import { TileLayer } from "./mapTileLayer";
 import { PlacePopup } from "./placePopup";
 import { NO_TABLE } from "./placesTable";
-import { PlacesPanel, type PanelRow } from "./placesPanel";
 import { YearChip } from "./yearChip";
 import { least, most } from "./fileTimeline";
 import { type YearRange } from "./yearRange";
@@ -81,7 +78,6 @@ export class MapBoard {
   private readonly chip: YearChip;
   private readonly find: MapFind;
   private readonly popup: PlacePopup;
-  private readonly panel: PlacesPanel;
   private readonly empty: MapEmpty;
   private readonly textProbe: SVGTextElement;
   private readonly widths = new Map<string, number>();
@@ -119,11 +115,7 @@ export class MapBoard {
     root.addClass("gedcom-map");
     this.scopeRow = new MapScopeRow(root, {
       setScope: (change) => this.setScope(change),
-      showUnmapped: () => {
-        this.panel.open();
-        this.panel.scrollToUnmapped();
-      },
-      togglePanel: () => (this.panel.isOpen() ? this.panel.close() : this.panel.open()),
+      showPlaces: () => this.host.showPlaces(),
       setIcon: host.setIcon,
     });
 
@@ -169,12 +161,6 @@ export class MapBoard {
     this.live = new LiveRegion(this.plot);
     this.popup = new PlacePopup(this.plot, { select: (xref) => this.host.select(xref), closed: () => undefined });
     this.empty = new MapEmpty(this.plot, () => this.host.tableAction());
-    this.panel = new PlacesPanel(stage, {
-      activate: (key) => this.activateKey(key),
-      tableAction: () => this.host.tableAction(),
-      addMissing: () => this.host.addMissing(this.missingNames()),
-      closed: () => this.scopeRow.focusCounter(),
-    });
     this.tiles = new TileLayer(tileLayer, this.credit, { status: (failed) => this.tileStatus(failed) }, {
       set: (callback, ms) => this.env.set(callback, ms),
       clear: (id) => this.env.clear(id),
@@ -431,7 +417,7 @@ export class MapBoard {
     ({ mapped: this.mapped, unmapped: this.unmapped } = sliceRange(model, this.scopeEv, this.range));
     this.recomputeSelection();
     this.drawScopeRow();
-    this.drawPanel();
+    this.drawEmpty();
     this.find.refresh();
   }
 
@@ -468,25 +454,7 @@ export class MapBoard {
     this.drawStatus();
   }
 
-  private missingNames(): string[] {
-    return this.tableState.status === "read" ? placesWithoutRow(this.unmapped, this.tableState.table) : [];
-  }
-
-  private drawPanel(): void {
-    const collator = collatorFor(currentLanguage());
-    const row = (group: PlaceGroup, mapped: boolean): PanelRow => ({
-      key: group.place.key,
-      name: group.place.name,
-      events: group.events.length,
-      years: yearsOf(group.events),
-      mapped,
-    });
-    this.panel.show({
-      mapped: orderedPlaces(this.mapped, collator).map((group) => row(group, true)),
-      unmapped: orderedPlaces(this.unmapped, collator).map((group) => row(group, false)),
-      table: this.tableState.status === "read" ? "open" : "create",
-      missing: this.tableState.status === "read" ? this.missingNames().length : 0,
-    });
+  private drawEmpty(): void {
     this.empty.show(
       emptyStateOf({
         read: this.tableState.status !== "unread",
@@ -580,16 +548,6 @@ export class MapBoard {
     }
   }
 
-  private activateKey(key: string): void {
-    const group = this.mapped.find((one) => one.place.key === key);
-    if (group === undefined) {
-      return;
-    }
-    this.goToPlace(group, "focused");
-    const box = this.plot.getBoundingClientRect();
-    activateGroup(this.actions, group, { clientX: box.left + this.size.width / 2, clientY: box.top + this.size.height / 2 });
-  }
-
   private goToPlace(group: PlaceGroup, as: "current" | "focused"): void {
     const at = group.place.coordinates;
     if (at === undefined || this.view === null) {
@@ -649,14 +607,5 @@ export class MapBoard {
       event.preventDefault();
     }
   }
-}
-
-function yearsOf(events: readonly MapEvent[]): string {
-  const years = events.flatMap((event) => event.span ?? []);
-  if (years.length === 0) {
-    return "";
-  }
-  const [from, to] = [least(years), most(years)];
-  return from === to ? yearText(from) : `${yearText(from)}–${yearText(to)}`;
 }
 

@@ -24,7 +24,7 @@ export interface FileMapHost {
   coarsePointer(): boolean;
   stateChanged(state: MapState): void;
   tableAction(): void;
-  addMissing(names: string[]): void;
+  showPlaces(): void;
   tiles(): TileSettings;
 }
 

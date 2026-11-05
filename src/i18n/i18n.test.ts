@@ -137,7 +137,7 @@ describe("spelling a count", () => {
       "1 place has no coordinates",
       "3 places have no coordinates",
     ]);
-    expect(plural("map.panel.addMissing", 2)).toBe("Add the 2 places that have no row");
+    expect(plural("list.places.addMissing", 2)).toBe("Add the 2 places that have no row");
     setLanguage("ru");
     expect([1, 2, 5, 21].map((count) => plural("map.places", count))).toEqual([
       "1 место",

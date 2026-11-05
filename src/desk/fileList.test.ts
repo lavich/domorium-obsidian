@@ -3,9 +3,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { generated } from "../../tests/generated";
 import { resetLanguage } from "../i18n";
-import { curieIndex, indexOf } from "../testing/curie";
+import { curieIndex, curieWithMap, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
+import { parsePlacesTable } from "./placesTable";
 
 const box = { width: 1000, height: 600, wide: 36, compact: 56 };
 
@@ -45,6 +46,9 @@ let host: {
   scrolled: ReturnType<typeof vi.fn<ListHost["scrolled"]>>;
   setIcon: ReturnType<typeof vi.fn<ListHost["setIcon"]>>;
   coarsePointer: () => boolean;
+  places: ReturnType<typeof vi.fn<ListHost["places"]>>;
+  placesAction: ReturnType<typeof vi.fn<ListHost["placesAction"]>>;
+  addMissing: ReturnType<typeof vi.fn<ListHost["addMissing"]>>;
 };
 
 beforeEach(() => {
@@ -59,6 +63,9 @@ beforeEach(() => {
     scrolled: vi.fn(),
     setIcon: vi.fn(),
     coarsePointer: () => coarse,
+    places: vi.fn(() => ({ status: "read" as const, table: { rows: new Map() } })),
+    placesAction: vi.fn(),
+    addMissing: vi.fn(),
   };
 });
 
@@ -770,3 +777,226 @@ describe("the scroll the board reports", () => {
   });
 });
 
+
+describe("the places", () => {
+  const mapped = indexOf(curieWithMap());
+  const place = (key: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === key);
+  const marks = (): (string | null)[] =>
+    rows().map((one) => one.querySelector(".gedcom-list-gap")?.getAttribute("aria-label") ?? null);
+  const actions = (): string[] => all(".gedcom-list-action").map((one) => one.textContent ?? "");
+  const tableOf = (...lines: string[]) =>
+    ({ status: "read" as const, table: parsePlacesTable(["| P | a | b |", "| - | - | - |", ...lines].join("\n")) });
+  const open = (state = {}) => board({ kind: "places", ...state }, mapped);
+
+  it("is the fourth kind, after the sources", () => {
+    board();
+
+    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places"]);
+  });
+
+  it("lists every place of the file, alphabetically, with its events, years and coordinates", () => {
+    open();
+
+    expect(rows()).toHaveLength(10);
+    expect(names()[0]).toBe("Montpellier, France");
+    expect(text(".gedcom-list-count")).toBe("10 places");
+    expect([1, 2, 3].map((at) => cell(place("paris, france"), at))).toEqual(["11", "1855–1958", "48.8566, 2.3522"]);
+    expect(all(".gedcom-list-headcell").map((one) => one.textContent?.replace(/[↑↓]/u, ""))).toEqual(["Place", "Events", "Years", "Coordinates"]);
+  });
+
+  it("marks a place without coordinates by a shape that has a label, and writes no text for it", () => {
+    open();
+    const mulhouse = place("mulhouse, france");
+
+    expect(mulhouse?.querySelector(".gedcom-list-gap")?.getAttribute("role")).toBe("img");
+    expect(mulhouse?.querySelector(".gedcom-list-gap")?.getAttribute("aria-label")).toBe("No coordinates");
+    expect(cell(mulhouse, 3)).toBe("");
+    expect(marks().filter((mark) => mark !== null)).toHaveLength(6);
+  });
+
+  it("counts the coordinates a places table gives", () => {
+    host.places.mockReturnValue(tableOf("| Sceaux, France | 48.7766 | 2.2917 |"));
+    open();
+
+    expect(cell(place("sceaux, france"), 3)).toBe("48.7766, 2.2917");
+    expect(marks().filter((mark) => mark !== null)).toHaveLength(5);
+  });
+
+  it("draws no mark and no action while the places table is not read, and the marks once it is", () => {
+    host.places.mockReturnValue({ status: "unread" });
+    const made = open();
+
+    expect(marks().filter((mark) => mark !== null)).toHaveLength(0);
+    expect(actions()).toEqual([]);
+
+    host.places.mockReturnValue({ status: "absent" });
+    made.placesChanged();
+
+    expect(marks().filter((mark) => mark !== null)).toHaveLength(6);
+    expect(actions()).toEqual(["Create the places table"]);
+  });
+
+  it("keeps the order a column gives and cycles it in three presses", () => {
+    open();
+
+    click(button(".gedcom-list-sort", "Events"));
+    expect(cell(rows()[0], 1)).toBe("1");
+    click(button(".gedcom-list-sort", "Events"));
+    expect(names()[0]).toBe("Warsaw, Congress Poland");
+    click(button(".gedcom-list-sort", "Events"));
+    expect(names()[0]).toBe("Montpellier, France");
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places" });
+  });
+
+  it("offers alphabetical in place of file order in the sort menu", () => {
+    open();
+
+    expect(query<HTMLSelectElement>(".gedcom-list-sort-select").options[0]?.textContent).toBe("Alphabetical");
+  });
+
+  it("narrows by place name in any case, without accents, and counts what is left", () => {
+    open();
+
+    type("PARIS");
+    expect(names()).toEqual(["Paris, France"]);
+    expect(text(".gedcom-list-count")).toBe("1 of 10 places");
+    type("zzz");
+    expect(text(".gedcom-list-none")).toBe("Nothing matches “zzz”. Search covers place names.");
+    type("");
+    expect(rows()).toHaveLength(10);
+  });
+
+  it("selects the row of a place and nothing else", () => {
+    open();
+
+    click(place("paris, france"));
+
+    expect(place("paris, france")?.getAttribute("aria-selected")).toBe("true");
+    expect(place("paris, france")?.classList.contains("is-selected")).toBe(true);
+    expect(host.select).not.toHaveBeenCalled();
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places", place: "paris, france" });
+  });
+
+  it("selects the active row with Enter after moving with the arrows", () => {
+    open();
+    scroller().focus();
+    press("ArrowDown");
+    press("ArrowDown");
+    press("Enter");
+
+    expect(host.select).not.toHaveBeenCalled();
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places", place: rows()[2]?.dataset.key });
+  });
+
+  it("restores the selected place from the saved state, and the sort", () => {
+    open({ place: "stockholm, sweden", sort: { places: { by: "events", dir: "desc" } } });
+
+    expect(place("stockholm, sweden")?.getAttribute("aria-selected")).toBe("true");
+    expect(names()[0]).toBe("Warsaw, Congress Poland");
+  });
+
+  it("forgets a saved place the file no longer holds", () => {
+    const made = open({ place: "atlantis" });
+
+    expect(made.state()).toEqual({ kind: "places" });
+  });
+
+  it("clears the selected place when the kind changes", () => {
+    open({ place: "paris, france" });
+
+    click(button(".gedcom-list-seg-button", "People"));
+    expect(host.changed).toHaveBeenLastCalledWith({});
+    click(button(".gedcom-list-seg-button", "Places"));
+
+    expect(rows().some((one) => one.getAttribute("aria-selected") === "true")).toBe(false);
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places" });
+  });
+
+  it("stays on the places when a record is selected, and marks that record for the people", () => {
+    const made = open();
+
+    made.select("@I2@", true);
+
+    expect(rows().every((one) => one.dataset.xref === undefined)).toBe(true);
+    expect(host.changed).not.toHaveBeenCalled();
+    click(button(".gedcom-list-seg-button", "People"));
+    expect(row("@I2@")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("shows the actions of the places table only in the places kind", () => {
+    host.places.mockReturnValue(tableOf());
+    board({}, mapped);
+
+    expect(actions()).toEqual([]);
+    click(button(".gedcom-list-seg-button", "Places"));
+    expect(actions()[0]).toBe("Open the places table");
+    click(button(".gedcom-list-seg-button", "Families"));
+    expect(actions()).toEqual([]);
+  });
+
+  it("offers to create the table when there is none, and runs the action", () => {
+    host.places.mockReturnValue({ status: "absent" });
+    open();
+
+    expect(actions()).toEqual(["Create the places table"]);
+    click(query(".gedcom-list-action"));
+    expect(host.placesAction).toHaveBeenCalledOnce();
+  });
+
+  it("offers the places that have no row, and only when there are some", () => {
+    host.places.mockReturnValue(tableOf("| Mulhouse, France |  |  |"));
+    open();
+
+    expect(actions()).toEqual(["Open the places table", "Add the 5 places that have no row"]);
+    click(button(".gedcom-list-action", "Add"));
+    expect(host.addMissing).toHaveBeenCalledOnce();
+    expect(host.addMissing.mock.calls[0]?.[0]).toHaveLength(5);
+    expect(host.addMissing.mock.calls[0]?.[0]).not.toContain("Mulhouse, France");
+  });
+
+  it("offers no addition once every unmapped place has a row", () => {
+    const lines = ["Mulhouse, France", "Sceaux, France", "Montpellier, France", "New York, New York, United States", "United States", "New Orleans, Louisiana, United States"].map(
+      (name) => `| ${name} |  |  |`,
+    );
+    host.places.mockReturnValue(tableOf(...lines));
+    open();
+
+    expect(actions()).toEqual(["Open the places table"]);
+  });
+
+  it("redraws the actions after the table changed", () => {
+    host.places.mockReturnValue(tableOf());
+    const made = open();
+    expect(actions()).toHaveLength(2);
+
+    host.places.mockReturnValue(tableOf(...["Mulhouse, France", "Sceaux, France", "Montpellier, France", "New York, New York, United States", "United States", "New Orleans, Louisiana, United States"].map((name) => `| ${name} |  |  |`)));
+    made.placesChanged();
+
+    expect(actions()).toEqual(["Open the places table"]);
+  });
+
+  it("shows the coordinates of a compact row with the mark spelled out", () => {
+    box.width = 500;
+    const made = open();
+    made.resized();
+
+    expect(cell(place("paris, france"), 1)).toBe("11 events");
+    expect(cell(place("mulhouse, france"), 3)).toBe(" No coordinates");
+  });
+
+  it("empties the search when asked, and leaves a search that is already empty", () => {
+    const made = open();
+    type("paris");
+
+    made.clearSearch();
+
+    expect(rows()).toHaveLength(10);
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
+  });
+
+  it("says so when the file names no place", () => {
+    board({ kind: "places" }, indexOf("0 HEAD\n0 TRLR"));
+
+    expect(text(".gedcom-list-none")).toBe("The file names no places.");
+  });
+});

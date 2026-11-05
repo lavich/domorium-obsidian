@@ -32,6 +32,7 @@ let host: {
   places: ReturnType<typeof vi.fn<FileViewsHost["places"]>>;
   placesAction: ReturnType<typeof vi.fn<() => void>>;
   addMissingPlaces: ReturnType<typeof vi.fn<(names: string[]) => void>>;
+  showPlaces: ReturnType<typeof vi.fn<() => void>>;
   tiles: ReturnType<typeof vi.fn<FileViewsHost["tiles"]>>;
 };
 
@@ -84,6 +85,7 @@ beforeEach(() => {
     places: vi.fn(() => ({ status: "read" as const, table: { rows: new Map() } })),
     placesAction: vi.fn(),
     addMissingPlaces: vi.fn(),
+    showPlaces: vi.fn(),
     tiles: vi.fn(() => ({ enabled: false, template: null, invalid: false, attribution: "" })),
   };
 });
@@ -774,3 +776,74 @@ describe("the list of a tab", () => {
   });
 });
 
+
+describe("the places of the list of a tab", () => {
+  const mapped = indexOf(curieWithMap());
+  const keys = () => [...parent.querySelectorAll<HTMLElement>(".gedcom-list-row")].map((one) => one.dataset.key);
+  const type = (value: string) => {
+    const field = parent.querySelector<HTMLInputElement>(".gedcom-list-search") as HTMLInputElement;
+    field.value = value;
+    field.dispatchEvent(new Event("input"));
+  };
+
+  it("keeps the kind, the sort and the selected place with the list's memory", () => {
+    const tab = views();
+    tab.show("list", mapped, { list: { kind: "places", place: "paris, france" } });
+    parent.querySelectorAll<HTMLElement>(".gedcom-list-sort")[1]?.click();
+
+    expect(tab.memory().list).toEqual({ kind: "places", place: "paris, france", sort: { places: { by: "events", dir: "asc" } } });
+  });
+
+  it("is chosen with its search cleared by placesList, which hands back the memory to show", () => {
+    const tab = views();
+    tab.show("list", mapped, {});
+    type("anna");
+
+    const memory = tab.placesList();
+    tab.show("list", mapped, { list: memory });
+
+    expect(memory).toEqual({ kind: "places" });
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-search")?.value).toBe("");
+    expect(keys()).toHaveLength(10);
+  });
+
+  it("clears a search that was already on the places", () => {
+    const tab = views();
+    tab.show("list", mapped, { list: { kind: "places", place: "paris, france" } });
+    type("paris");
+    expect(keys()).toEqual(["paris, france"]);
+
+    tab.show("list", mapped, { list: tab.placesList() });
+
+    expect(keys()).toHaveLength(10);
+    expect(tab.memory().list).toEqual({ kind: "places" });
+  });
+
+  it("draws the marks of a places table that was read after the list was shown", () => {
+    host.places.mockReturnValue({ status: "unread" });
+    const tab = views();
+    tab.show("list", mapped, { list: { kind: "places" } });
+    expect(parent.querySelectorAll(".gedcom-list-gap")).toHaveLength(0);
+
+    host.places.mockReturnValue({ status: "absent" });
+    tab.refreshPlaces();
+
+    expect(parent.querySelectorAll(".gedcom-list-gap")).toHaveLength(6);
+  });
+
+  it("stays on the places when the tab hands over a record selection", () => {
+    const tab = views();
+    tab.show("list", mapped, { list: { kind: "places" } });
+    tab.select("list", "@I2@", true);
+
+    expect(parent.querySelector(".gedcom-list-seg-button.is-active")?.textContent).toBe("Places");
+  });
+
+  it("asks the host to go to the places when the map's counter is pressed", () => {
+    const tab = views();
+    tab.show("map", mapped, {});
+    parent.querySelector<HTMLElement>(".gedcom-map-counter")?.click();
+
+    expect(host.showPlaces).toHaveBeenCalledOnce();
+  });
+});

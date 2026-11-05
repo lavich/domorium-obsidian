@@ -162,7 +162,7 @@ describe("the scope of the map", () => {
 
   it("names the places with neither coordinates nor a row", () => {
     const table = parsePlacesTable("| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |");
-    const missing = placesWithoutRow(groupByPlace(fileMapOf(index, table), map.events), table);
+    const missing = placesWithoutRow(fileMapOf(index, table).places.values(), table);
 
     expect(missing).not.toContain("Mulhouse, France");
     expect(missing).toContain("Montpellier, France");

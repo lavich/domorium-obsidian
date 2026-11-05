@@ -33,6 +33,7 @@ export interface TabCalls {
   shownInSource: Range[];
   changed: number;
   tableActions: number;
+  shownPlaces: number;
   addedPlaces: string[][];
 }
 
@@ -54,7 +55,7 @@ declare global {
 
 installObsidianDom();
 
-const calls: TabCalls = { selected: [], shownInSource: [], changed: 0, tableActions: 0, addedPlaces: [] };
+const calls: TabCalls = { selected: [], shownInSource: [], changed: 0, tableActions: 0, shownPlaces: 0, addedPlaces: [] };
 const NO_TILES: TileSettings = { enabled: false, template: null, invalid: false, attribution: "" };
 let places: TableState = { status: "read", table: { rows: new Map() } };
 let tiles: TileSettings = NO_TILES;
@@ -129,6 +130,7 @@ function mount(options: TabOptions): void {
   calls.shownInSource = [];
   calls.changed = 0;
   calls.tableActions = 0;
+  calls.shownPlaces = 0;
   calls.addedPlaces = [];
   places =
     options.placesText === null
@@ -157,6 +159,7 @@ function mount(options: TabOptions): void {
     portrait: () => null,
     changed: () => {
       calls.changed += 1;
+      memory = { ...memory, ...views?.memory() };
     },
     setIcon: stubSetIcon,
     coarsePointer: () => touch,
@@ -166,6 +169,11 @@ function mount(options: TabOptions): void {
     },
     addMissingPlaces: (names) => {
       calls.addedPlaces.push(names);
+    },
+    showPlaces: () => {
+      calls.shownPlaces += 1;
+      memory = { ...memory, list: views?.placesList() ?? {} };
+      showMode("list");
     },
     tiles: () => tiles,
   });

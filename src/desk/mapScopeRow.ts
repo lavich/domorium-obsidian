@@ -7,8 +7,7 @@ import { personName } from "./labels";
 
 export interface ScopeRowHost {
   setScope(change: Partial<BranchScope>): void;
-  showUnmapped(): void;
-  togglePanel(): void;
+  showPlaces(): void;
   setIcon: IconSetter;
 }
 
@@ -40,13 +39,8 @@ export class MapScopeRow {
     });
     this.counts = this.el.createSpan({ cls: "gedcom-map-counts" });
     this.counter = this.el.createEl("button", { cls: "gedcom-map-counter", attr: { type: "button" } });
-    this.counter.addEventListener("click", () => host.showUnmapped());
-    this.el.createEl("button", { cls: "gedcom-map-panel-toggle", text: t("map.panel.open"), attr: { type: "button" } }).addEventListener("click", () => host.togglePanel());
+    this.counter.addEventListener("click", () => host.showPlaces());
     this.status = this.el.createSpan({ cls: "gedcom-map-status", attr: { "aria-live": "polite" } });
-  }
-
-  focusCounter(): void {
-    this.counter.focus({ preventScroll: true });
   }
 
   say(text: string): void {

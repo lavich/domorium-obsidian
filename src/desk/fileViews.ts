@@ -31,6 +31,8 @@ export interface FileViewsHost {
   places(): TableState;
   placesAction(): void;
   addMissingPlaces(names: string[]): void;
+  /** The map's counter of places with no coordinates: the tab goes to its list, on the places. */
+  showPlaces(): void;
   tiles(): TileSettings;
 }
 
@@ -208,7 +210,17 @@ export class FileViews {
   refreshPlaces(): void {
     if (this.shownKind === "map" && this.map && this.mapIndex && this.displayed()) {
       this.map.show(this.mapIndex, this.host.places(), this.map.state());
+    } else if (this.shownKind === "list" && this.displayed()) {
+      this.list?.placesChanged();
     }
+  }
+
+  /** The list's memory with the places kind chosen and its search cleared, for the tab to show next. */
+  placesList(): ListState {
+    this.list?.clearSearch();
+    this.kept.list = { ...this.kept.list, kind: "places" };
+    delete this.kept.list.place;
+    return this.kept.list;
   }
 
   refreshTiles(): void {
@@ -298,7 +310,7 @@ export class FileViews {
         this.host.changed();
       },
       tableAction: () => this.host.placesAction(),
-      addMissing: (names) => this.host.addMissingPlaces(names),
+      showPlaces: () => this.host.showPlaces(),
       tiles: () => this.host.tiles(),
     });
   }
@@ -315,6 +327,9 @@ export class FileViews {
       },
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       coarsePointer: () => this.host.coarsePointer(),
+      places: () => this.host.places(),
+      placesAction: () => this.host.placesAction(),
+      addMissing: (names) => this.host.addMissingPlaces(names),
     });
   }
 }

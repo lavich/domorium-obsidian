@@ -1,7 +1,10 @@
 import type { GenealogyIndex } from "../genealogy";
 import { nameBy } from "./dom";
+import { fileMapOf, placesWithoutRow, type FileMap } from "./fileMap";
+import type { TableState } from "./mapBoardTypes";
 import { FloatingSearch } from "./floatingSearch";
 import { currentLanguage, plural, t, type MessageKey } from "../i18n";
+import { NO_TABLE, type PlacesTable } from "./placesTable";
 import {
   cellsOf,
   collatorFor,
@@ -17,6 +20,7 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
+import type { PlaceRow } from "./placeRows";
 
 export interface ListHost {
   select(xref: string): void;
@@ -24,6 +28,9 @@ export interface ListHost {
   scrolled(top: number): void;
   setIcon(element: HTMLElement, icon: string): void;
   coarsePointer(): boolean;
+  places(): TableState;
+  placesAction(): void;
+  addMissing(names: string[]): void;
 }
 
 const COMPACT_BELOW = 640;
@@ -35,42 +42,51 @@ const KIND_LABEL: Record<ListKind, MessageKey> = {
   people: "list.people",
   families: "list.families",
   sources: "list.sources",
+  places: "list.places",
 };
 const SEARCH_HINT: Record<ListKind, MessageKey> = {
   people: "list.search.people",
   families: "list.search.families",
   sources: "list.search.sources",
+  places: "list.search.places",
 };
 const NOTHING: Record<ListKind, MessageKey> = {
   people: "list.nothing.people",
   families: "list.nothing.families",
   sources: "list.nothing.sources",
+  places: "list.nothing.places",
 };
 const NONE: Record<ListKind, MessageKey> = {
   people: "list.none.people",
   families: "list.none.families",
   sources: "list.none.sources",
+  places: "list.none.places",
 };
 const COUNT: Record<ListKind, MessageKey> = {
   people: "list.count.people",
   families: "list.count.families",
   sources: "list.count.sources",
+  places: "list.count.places",
 };
 const COUNT_OF: Record<ListKind, MessageKey> = {
   people: "list.countOf.people",
   families: "list.countOf.families",
   sources: "list.countOf.sources",
+  places: "list.countOf.places",
 };
 
 let boards = 0;
 
 const canonical = (state: ListState): string =>
-  JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
+  JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null), state.place ?? null]);
+
+const keyOf = (row: ListRow): string => row.xref ?? (row as PlaceRow).key;
 
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
   private readonly segEl: HTMLElement;
+  private readonly actionsEl: HTMLElement;
   private readonly find: FloatingSearch;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
@@ -93,6 +109,8 @@ export class ListBoard {
   private positions = new Map<string, number>();
   private totals = { people: 0 };
   private marked: string | null = null;
+  private markedPlace: string | null = null;
+  private placeMap: FileMap | null = null;
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
@@ -114,6 +132,7 @@ export class ListBoard {
       button.dataset.kind = kind;
       button.addEventListener("click", () => this.showKind(kind));
     }
+    this.actionsEl = bar.createDiv({ cls: "gedcom-list-actions" });
     this.find = new FloatingSearch(bar, {
       prefix: "gedcom-list",
       setIcon: (element, icon) => host.setIcon(element, icon),
@@ -181,6 +200,7 @@ export class ListBoard {
     return {
       ...(this.kind === "people" ? {} : { kind: this.kind }),
       ...(Object.keys(sort).length > 0 ? { sort } : {}),
+      ...(this.kind === "places" && this.markedPlace !== null ? { place: this.markedPlace } : {}),
     };
   }
 
@@ -198,8 +218,23 @@ export class ListBoard {
       this.find.reset();
     }
     this.kind = kind;
+    this.markedPlace = kind === "places" ? (state.place ?? null) : null;
     this.sorts = { ...state.sort };
     this.refresh(true);
+  }
+
+  placesChanged(): void {
+    if (this.kind === "places") {
+      this.refresh(true);
+    }
+  }
+
+  clearSearch(): void {
+    if (this.query !== "") {
+      this.query = "";
+      this.find.reset();
+      this.refresh(false);
+    }
   }
 
   select(xref: string | null, reveal: boolean): void {
@@ -220,6 +255,9 @@ export class ListBoard {
     }
     const fresh = xref !== this.marked;
     this.marked = xref;
+    if (this.kind === "places") {
+      return;
+    }
     if (!reveal) {
       this.applyMarks();
       return;
@@ -333,6 +371,7 @@ export class ListBoard {
 
   private switchKind(kind: ListKind): void {
     this.kind = kind;
+    this.markedPlace = null;
     this.query = "";
     this.find.reset();
     this.refresh(false);
@@ -375,13 +414,17 @@ export class ListBoard {
     if (!index) {
       return;
     }
-    const focused = this.active >= 0 ? this.rows[this.active]?.xref : undefined;
+    const focused = this.active >= 0 && this.rows[this.active] !== undefined ? keyOf(this.rows[this.active]) : undefined;
+    this.placeMap = this.kind === "places" ? fileMapOf(index, this.table() ?? NO_TABLE) : null;
     this.rows = listRows(
       index,
-      { kind: this.kind, query: this.query, sort: this.sorts[this.kind] },
+      { kind: this.kind, query: this.query, sort: this.sorts[this.kind], ...(this.placeMap ? { places: this.placeMap } : {}) },
       collatorFor(currentLanguage()),
     );
-    this.positions = new Map(this.rows.map((row, at) => [row.xref ?? "", at]));
+    if (this.markedPlace !== null && this.placeMap?.places.has(this.markedPlace) !== true) {
+      this.markedPlace = null;
+    }
+    this.positions = new Map(this.rows.map((row, at) => [keyOf(row), at]));
     const kept = focused === undefined ? undefined : this.positions.get(focused);
     this.active = kept ?? (this.active < 0 || this.rows.length === 0 ? -1 : Math.min(this.active, this.rows.length - 1));
     this.drawChrome();
@@ -401,6 +444,7 @@ export class ListBoard {
     }
     this.find.describe(t(SEARCH_HINT[this.kind]));
     this.find.refresh();
+    this.drawActions();
     const total = this.totalOfKind();
     this.countEl.setText(
       this.rows.length === total
@@ -422,6 +466,9 @@ export class ListBoard {
     if (this.kind === "people") {
       return this.totals.people;
     }
+    if (this.kind === "places") {
+      return this.placeMap?.places.size ?? 0;
+    }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;
   }
@@ -441,7 +488,7 @@ export class ListBoard {
     if (this.builtKind !== this.kind) {
       this.builtKind = this.kind;
       this.sortSelect.empty();
-      this.sortSelect.createEl("option", { text: t("list.fileOrder"), attr: { value: "" } });
+      this.sortSelect.createEl("option", { text: t(this.kind === "places" ? "list.alphabetical" : "list.fileOrder"), attr: { value: "" } });
       for (const column of columns) {
         this.sortSelect.createEl("option", { text: t(column.label), attr: { value: column.key } });
       }
@@ -502,15 +549,18 @@ export class ListBoard {
   private makeRow(at: number): HTMLElement {
     const row = this.rows[at];
     const { texts, gap } = cellsOf(this.kind, row, this.index as GenealogyIndex);
-    const xref = row.xref ?? "";
+    const key = keyOf(row);
     const el = createDiv({ cls: `gedcom-list-row is-${this.kind}` });
     el.id = this.rowId(at);
-    el.dataset.xref = xref;
+    if (row.xref !== undefined) {
+      el.dataset.xref = key;
+    }
+    el.dataset.key = key;
     el.dataset.pos = String(at);
     el.setAttribute("role", "row");
     el.setAttribute("aria-rowindex", String(at + 2));
-    el.setAttribute("aria-selected", String(xref === this.marked));
-    el.toggleClass("is-selected", xref === this.marked);
+    el.setAttribute("aria-selected", String(key === this.markedKey()));
+    el.toggleClass("is-selected", key === this.markedKey());
     el.toggleClass("is-focused", at === this.active);
     el.setCssProps({ top: `${at * this.rowHeight}px` });
     columnsOf(this.kind).forEach((column, position) => {
@@ -525,6 +575,13 @@ export class ListBoard {
         if (this.compact) {
           cell.appendText(` ${this.countLabel(column.key, 0)}`);
         }
+      } else if (this.kind === "places" && column.key === "coordinates" && gap && this.table() !== null) {
+        const mark = cell.createSpan({ cls: "gedcom-list-gap" });
+        mark.setAttribute("role", "img");
+        mark.setAttribute("aria-label", t("list.noCoordinatesMark"));
+        if (this.compact) {
+          cell.appendText(` ${t("list.noCoordinatesMark")}`);
+        }
       } else {
         cell.setText(this.compact && column.numeric ? this.countLabel(column.key, Number(text)) : text);
       }
@@ -533,7 +590,42 @@ export class ListBoard {
   }
 
   private countLabel(key: SortKey, count: number): string {
+    if (key === "events") {
+      return plural("map.events", count);
+    }
     return key === "citedBy" ? t("list.compact.citedBy", { count }) : plural(key === "children" ? "list.compact.children" : "list.compact.sources", count);
+  }
+
+  private markedKey(): string | null {
+    return this.kind === "places" ? this.markedPlace : this.marked;
+  }
+
+  private table(): PlacesTable | null {
+    const state = this.host.places();
+    return state.status === "read" ? state.table : state.status === "absent" ? NO_TABLE : null;
+  }
+
+  private drawActions(): void {
+    const table = this.host.places();
+    const held = this.actionsEl.contains(this.root.ownerDocument.activeElement);
+    this.actionsEl.empty();
+    const shown = this.kind === "places" && table.status !== "unread";
+    this.actionsEl.toggle(shown);
+    if (!shown) {
+      return;
+    }
+    const button = (text: string, run: () => void): void => {
+      const made = this.actionsEl.createEl("button", { cls: "gedcom-list-action", text, attr: { type: "button" } });
+      made.addEventListener("click", run);
+    };
+    button(t(table.status === "read" ? "map.empty.open" : "map.empty.create"), () => this.host.placesAction());
+    const missing = table.status === "read" && this.placeMap ? placesWithoutRow(this.placeMap.places.values(), table.table) : [];
+    if (missing.length > 0) {
+      button(plural("list.places.addMissing", missing.length), () => this.host.addMissing(missing));
+    }
+    if (held && !this.actionsEl.contains(this.root.ownerDocument.activeElement)) {
+      this.scrollEl.focus({ preventScroll: true });
+    }
   }
 
   private rowId(at: number): string {
@@ -541,8 +633,9 @@ export class ListBoard {
   }
 
   private applyMarks(): void {
+    const marked = this.markedKey();
     for (const el of this.live.values()) {
-      const on = el.dataset.xref === this.marked;
+      const on = el.dataset.key === marked;
       el.toggleClass("is-selected", on);
       el.setAttribute("aria-selected", String(on));
     }
@@ -592,7 +685,8 @@ export class ListBoard {
 
   private focusEntered(): void {
     if (this.active < 0 && this.rows.length > 0) {
-      this.setActive(this.marked !== null ? (this.positions.get(this.marked) ?? 0) : 0, false);
+      const marked = this.markedKey();
+      this.setActive(marked !== null ? (this.positions.get(marked) ?? 0) : 0, false);
     }
   }
 
@@ -605,7 +699,17 @@ export class ListBoard {
   }
 
   private activate(at: number, scrollTo: boolean): void {
-    const xref = this.rows[at]?.xref;
+    const row = this.rows[at];
+    if (row === undefined) {
+      return;
+    }
+    if (this.kind === "places") {
+      this.markedPlace = keyOf(row);
+      this.setActive(at, scrollTo);
+      this.host.changed(this.state());
+      return;
+    }
+    const xref = row.xref;
     if (xref === undefined) {
       return;
     }
@@ -656,7 +760,8 @@ export class ListBoard {
       return;
     }
     if (from < 0 && event.key !== "Home" && event.key !== "End") {
-      to = this.marked === null ? 0 : (this.positions.get(this.marked) ?? 0);
+      const marked = this.markedKey();
+      to = marked === null ? 0 : (this.positions.get(marked) ?? 0);
     }
     this.setActive(Math.min(last, Math.max(0, to)), true);
   }
