@@ -1460,6 +1460,7 @@ button.gedcom-fg-whole {
   border-block: 1px solid transparent;
   border-radius: var(--nav-item-radius, var(--radius-s));
   background-clip: padding-box;
+  position: relative;
   overflow: hidden;
   white-space: nowrap;
   color: var(--nav-item-color, var(--text-muted));
@@ -1509,10 +1510,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-ft-name:has(button.gedcom
   text-overflow: ellipsis;
 }
 
-.gedcom-ft-name.is-focus .gedcom-ft-name-text {
-  font-weight: var(--font-semibold);
-}
-
 .gedcom-ft-name-years {
   margin-inline-start: auto;
   font-size: var(--font-ui-smaller);
@@ -1523,6 +1520,10 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-ft-name:has(button.gedcom
 button.gedcom-ft-branch {
   display: none;
   flex: none;
+  position: absolute;
+  inset-block: 50% auto;
+  inset-inline-end: var(--size-4-2);
+  transform: translateY(-50%);
   height: auto;
   margin-inline-start: auto;
   padding: 0 var(--size-2-3);
@@ -1552,6 +1553,13 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 .gedcom-ft-name.is-hl .gedcom-ft-name-years,
 .gedcom-ft-name:focus-within .gedcom-ft-name-years,
 .gedcom-ft-name.is-focus .gedcom-ft-name-years {
+  visibility: hidden;
+}
+
+.is-phone .gedcom-ft-name:hover .gedcom-ft-name-years,
+.is-phone .gedcom-ft-name.is-hl .gedcom-ft-name-years,
+.is-phone .gedcom-ft-name:focus-within .gedcom-ft-name-years,
+.is-phone .gedcom-ft-name.is-focus .gedcom-ft-name-years {
   display: none;
 }
 
@@ -1561,6 +1569,11 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 }
 
 /* Too narrow for a name and its years side by side, so the years go beneath. */
+.is-phone button.gedcom-ft-branch {
+  position: static;
+  transform: none;
+}
+
 .is-phone .gedcom-ft-name {
   flex-direction: column;
   align-items: flex-start;

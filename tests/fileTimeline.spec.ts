@@ -55,6 +55,26 @@ test.describe("the timeline of a file", () => {
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
   });
 
+  test("keeps the name and the years of a row where they are under the pointer and when selected", async ({ page }) => {
+    await mountTimeline(page);
+    const place = () =>
+      name(page, "@I2@").evaluate((row) => {
+        const box = (selector: string) => {
+          const rect = row.querySelector(selector)?.getBoundingClientRect();
+          return [rect?.left, rect?.top, rect?.width];
+        };
+        return { text: box(".gedcom-ft-name-text"), years: box(".gedcom-ft-name-years") };
+      });
+    const before = await place();
+
+    await name(page, "@I2@").hover();
+    expect(await place()).toEqual(before);
+
+    await page.mouse.move(2, 2);
+    await name(page, "@I2@").evaluate((row) => row.classList.add("is-selected", "is-focus"));
+    expect(await place()).toEqual(before);
+  });
+
   test("fades no one when the pointer is on Marie, and moves over the rows", async ({ page }) => {
     await mountTimeline(page);
     const opacity = (xref: string) => name(page, xref).evaluate((node) => getComputedStyle(node).opacity);
