@@ -1453,11 +1453,18 @@ button.gedcom-fg-whole {
   display: flex;
   align-items: center;
   gap: var(--size-2-3);
+  box-sizing: border-box;
   height: 34px;
-  padding: 0 var(--size-4-2) 0 var(--size-4-3);
+  margin-inline: var(--size-2-2);
+  padding: 0 var(--size-4-2);
+  border-block: 1px solid transparent;
+  border-radius: var(--nav-item-radius, var(--radius-s));
+  background-clip: padding-box;
   overflow: hidden;
   white-space: nowrap;
-  font-size: var(--font-ui-small);
+  color: var(--nav-item-color, var(--text-muted));
+  font-size: var(--nav-item-size, var(--font-ui-small));
+  line-height: var(--line-height-tight, 1.3);
 }
 
 button.gedcom-ft-name-open {
@@ -1478,15 +1485,23 @@ button.gedcom-ft-name-open {
   cursor: pointer;
 }
 
-button.gedcom-ft-name-open:focus-visible,
+button.gedcom-ft-name-open:focus-visible {
+  outline: none;
+}
+
 button.gedcom-ft-branch:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: -2px;
 }
 
+body:not(.is-phone) .workspace-leaf.mod-active .gedcom-ft-name:has(button.gedcom-ft-name-open:focus-visible) {
+  box-shadow: 0 0 0 1px var(--background-modifier-border-focus), inset 0 0 0 1px var(--background-modifier-border-focus);
+}
+
 .gedcom-ft-name:hover,
 .gedcom-ft-name.is-hl {
-  background: var(--background-modifier-hover);
+  background-color: var(--nav-item-background-hover, var(--background-modifier-hover));
+  color: var(--nav-item-color-hover, var(--text-normal));
 }
 
 .gedcom-ft-name-text {
@@ -2018,7 +2033,7 @@ button.gedcom-fg-pop-open {
 
 .gedcom-ft-name.is-current {
   box-shadow: inset 3px 0 0 var(--interactive-accent);
-  background: var(--background-modifier-hover);
+  background-color: var(--nav-item-background-hover, var(--background-modifier-hover));
 }
 
 .gedcom-ft-life.is-current {
@@ -2026,15 +2041,15 @@ button.gedcom-fg-pop-open {
   stroke-width: 2.5;
 }
 
-.gedcom-ft-name.is-selected {
-  background: var(--background-modifier-active-hover);
-  box-shadow: inset 0 0 0 1.5px var(--text-normal);
+.gedcom-ft-name.is-selected,
+.gedcom-ft-name.is-selected:hover {
+  background-color: var(--nav-item-background-active, var(--background-modifier-hover));
+  color: var(--nav-item-color-active, var(--text-normal));
+  font-weight: var(--nav-item-weight-active, inherit);
 }
 
 .gedcom-ft-name.is-selected.is-current {
-  box-shadow:
-    inset 0 0 0 1.5px var(--text-normal),
-    inset 3px 0 0 var(--interactive-accent);
+  box-shadow: inset 3px 0 0 var(--interactive-accent);
 }
 
 .gedcom-ft-row-selected {
