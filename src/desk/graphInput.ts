@@ -1,5 +1,4 @@
 import type { Point } from "./fileGraph";
-import { ZOOM } from "./graphCanvas";
 
 const DRAG = 4;
 const WHEEL_STEP = 1.12;
@@ -10,6 +9,7 @@ export interface GraphInputHost {
   readonly el: HTMLElement;
   transform(): { x: number; y: number; k: number } | null;
   apply(at: { x: number; y: number; k: number }): void;
+  limits(): { min: number; max: number };
   stopGlide(): void;
   zoomAt(factor: number, cx: number, cy: number): void;
   panBy(dx: number, dy: number): void;
@@ -142,7 +142,8 @@ export class GraphInput {
       return;
     }
     const distance = Math.hypot(one.x - other.x, one.y - other.y) || 1;
-    const k = Math.max(ZOOM.min, Math.min(ZOOM.max, (pinch.k * distance) / pinch.distance));
+    const limits = this.host.limits();
+    const k = Math.max(limits.min, Math.min(limits.max, (pinch.k * distance) / pinch.distance));
     const mid = this.local({ clientX: (one.x + other.x) / 2, clientY: (one.y + other.y) / 2 });
     const [cx, cy] = pinch.mid;
     this.host.apply({

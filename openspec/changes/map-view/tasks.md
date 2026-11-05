@@ -39,8 +39,8 @@ Run `npm run test` before touching anything: 1084 tests in 64 files pass on `mai
 
 ## 5. Shared parts
 
-- [ ] 5.1 `src/desk/graphInput.ts`: replace the import of `ZOOM` (`:2`, used at `:145`) by a host method `limits()`; `GraphCanvas` answers with `ZOOM`. Export `GLIDE_MS` and `GLIDE_REACH` from `src/desk/graphCanvas.ts:15-16`. Create `src/desk/graphInput.test.ts` (`happy-dom`): with limits 1 to 4 a pinch cannot pass them; with the graph's limits a drag past four pixels pans, two pointers pinch about the midpoint, a ctrl wheel zooms, a plain trackpad delta pans. `tests/fileGraph.spec.ts` passes unchanged.
-- [ ] 5.2 `src/desk/floatingSearch.ts`: `FloatingSearchOptions` gains optional `label`, `placeholder` and `text` (`none`, `matches`, `matchOf`), defaulting to the `overview.*` keys so graph, timeline and list behave identically; their tests are not edited. Test in `src/desk/floatingSearch.test.ts` (existing or new, `happy-dom`): with options, the icon label, placeholder and counter texts are the given ones; without, they are the `overview.*` texts.
+- [x] 5.1 `src/desk/graphInput.ts`: replace the import of `ZOOM` (`:2`, used at `:145`) by a host method `limits()`; `GraphCanvas` answers with `ZOOM`. Export `GLIDE_MS` and `GLIDE_REACH` from `src/desk/graphCanvas.ts:15-16`. Create `src/desk/graphInput.test.ts` (`happy-dom`): with limits 1 to 4 a pinch cannot pass them; with the graph's limits a drag past four pixels pans, two pointers pinch about the midpoint, a ctrl wheel zooms, a plain trackpad delta pans. `tests/fileGraph.spec.ts` passes unchanged.
+- [x] 5.2 `src/desk/floatingSearch.ts`: `FloatingSearchOptions` gains optional `label`, `placeholder` and `text` (`none`, `matches`, `matchOf`), defaulting to the `overview.*` keys so graph, timeline and list behave identically; their tests are not edited. Test in `src/desk/floatingSearch.test.ts` (existing or new, `happy-dom`): with options, the icon label, placeholder and counter texts are the given ones; without, they are the `overview.*` texts.
 
 ## 6. The board, in modules
 

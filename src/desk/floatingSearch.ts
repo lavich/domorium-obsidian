@@ -16,6 +16,14 @@ export interface FloatingSearchOptions {
   info: () => MatchInfo;
   /** A list narrows rather than steps: no arrows, a counter of its own, and Enter hands the keyboard on. */
   narrowing?: { count: () => string; enter: () => void };
+  /** Words of the field and its counter where the search is not over people. */
+  words?: {
+    label: string;
+    placeholder?: string;
+    none: string;
+    matches: (count: number) => string;
+    matchOf: (current: number, total: number) => string;
+  };
 }
 
 /** A search icon over a canvas that gives way to a field with a match counter and arrows, and comes back while the field is empty. */
@@ -36,15 +44,16 @@ export class FloatingSearch {
   ) {
     const { prefix } = options;
     this.el = parent.createDiv({ cls: `${prefix}-find` });
-    this.toggle = this.button(`${prefix}-find-toggle`, "search", t("overview.search"));
+    const label = options.words?.label ?? t("overview.search");
+    this.toggle = this.button(`${prefix}-find-toggle`, "search", label);
     this.toggle.setAttribute("aria-expanded", "false");
     this.input = this.el.createEl("input", {
       cls: `${prefix}-search`,
       type: "search",
-      placeholder: t("overview.search"),
+      placeholder: options.words?.placeholder ?? options.words?.label ?? t("overview.search"),
       attr: { tabindex: "-1" },
     });
-    this.label = nameBy(this.input, this.el, t("overview.search"));
+    this.label = nameBy(this.input, this.el, label);
     this.count = this.el.createSpan({ cls: `${prefix}-find-count`, attr: { "aria-live": "polite" } });
     const stepping = options.narrowing === undefined;
     this.previous = stepping ? this.button(`${prefix}-find-prev`, "chevron-up", t("overview.previousMatch")) : null;
@@ -153,14 +162,15 @@ export class FloatingSearch {
       this.count.setText(querying ? this.options.narrowing.count() : "");
       return;
     }
+    const words = this.options.words;
     this.count.setText(
       !querying
         ? ""
         : total === 0
-          ? t("overview.noMatches")
+          ? (words?.none ?? t("overview.noMatches"))
           : index < 0
-            ? plural("overview.matches", total)
-            : t("overview.matchOf", { current: index + 1, total }),
+            ? (words?.matches(total) ?? plural("overview.matches", total))
+            : (words?.matchOf(index + 1, total) ?? t("overview.matchOf", { current: index + 1, total })),
     );
     if (this.previous && this.next) {
       this.previous.disabled = !querying || total === 0;
