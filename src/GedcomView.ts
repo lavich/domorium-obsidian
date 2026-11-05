@@ -175,6 +175,7 @@ export class GedcomView extends TextFileView implements CardTab {
       const action = this.addAction(icon, t(title), () => {
         this.setMode(mode, "reader");
       });
+      action.addClass("gedcom-mode-action");
       action.setAttribute("data-tooltip-position", "bottom");
       this.modeActions.set(mode, action);
     }

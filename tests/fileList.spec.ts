@@ -15,6 +15,14 @@ async function mountList(page: Page, options: TabOptions = {}): Promise<void> {
 const WIDE = { width: 1400, height: 800 };
 const PHONE = { width: 390, height: 800 };
 
+async function searchFor(page: Page, text: string): Promise<void> {
+  const open = await page.locator(".gedcom-list-find").evaluate((node) => node.classList.contains("is-open"));
+  if (!open) {
+    await page.locator(".gedcom-list-find-toggle").click();
+  }
+  await page.locator(".gedcom-list-search").fill(text);
+}
+
 const rows = (page: Page) => page.locator(".gedcom-list-row");
 const rowOf = (page: Page, xref: string) => page.locator(`.gedcom-list-row[data-xref="${xref}"]`);
 const names = (page: Page) =>
@@ -109,7 +117,7 @@ test.describe("the list on a wide tab", () => {
   test("narrows with the filter, and says how many", async ({ page }) => {
     await mountList(page);
 
-    await page.locator(".gedcom-list-filter").fill("joliot");
+    await searchFor(page, "joliot");
     await expect(rows(page)).toHaveCount(4);
     await expect(page.locator(".gedcom-list-count")).toHaveText("4 of 17 people");
   });
@@ -188,12 +196,12 @@ test.describe("the list on a wide tab", () => {
     await mountList(page);
     await seg(page, "Families").click();
     await header(page, "Children").click();
-    await page.locator(".gedcom-list-filter").fill("curie");
+    await searchFor(page, "curie");
 
     await page.click("#show-graph");
     await page.click("#show-list");
 
-    await expect(page.locator(".gedcom-list-filter")).toHaveValue("curie");
+    await expect(page.locator(".gedcom-list-search")).toHaveValue("curie");
     await expect(seg(page, "Families")).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator('.gedcom-list-headcell[aria-sort="ascending"]')).toHaveText(/Children/);
   });
@@ -226,21 +234,56 @@ test.describe("the list on a wide tab", () => {
     await expect(name).toBeFocused();
   });
 
-  test("clears the filter on the first Escape and gives the focus to the rows on the second", async ({ page }) => {
+  test("opens from its icon, narrows and counts, clears with the cross and stays open, collapses on the second Escape", async ({ page }) => {
     await mountList(page);
-    await page.locator(".gedcom-list-filter").fill("joliot");
+    const find = page.locator(".gedcom-list-find");
+    await expect(page.locator(".gedcom-list-find-prev, .gedcom-list-find-next")).toHaveCount(0);
 
-    await page.keyboard.press("Escape");
-    await expect(page.locator(".gedcom-list-filter")).toHaveValue("");
-    await expect(page.locator(".gedcom-list-filter")).toBeFocused();
-    await page.keyboard.press("Escape");
+    await searchFor(page, "joliot");
+    await expect(rows(page)).toHaveCount(4);
+    await expect(page.locator(".gedcom-list-find-count")).toHaveText("4 of 17 people");
+    await page.locator(".gedcom-list-find-clear").click();
+    await expect(page.locator(".gedcom-list-search")).toHaveValue("");
+    await expect(rows(page)).toHaveCount(17);
+    await expect(find).toHaveClass(/is-open/);
 
+    await searchFor(page, "joliot");
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".gedcom-list-search")).toHaveValue("");
+    await expect(find).toHaveClass(/is-open/);
+    await page.keyboard.press("Escape");
+    await expect(find).not.toHaveClass(/is-open/);
+  });
+
+  test("opens and focuses its field for the find key", async ({ page }) => {
+    await mountList(page);
+
+    await page.evaluate(() => window.tab.openSearch());
+
+    await expect(page.locator(".gedcom-list-find")).toHaveClass(/is-open/);
+    await expect(page.locator(".gedcom-list-search")).toBeFocused();
+  });
+
+  test("floats inside the toolbar, clear of the header buttons and the scrollbar, and Enter moves to the rows", async ({ page }) => {
+    await mountList(page, { doc: generated(500) });
+    await searchFor(page, "person");
+    const boxes = await page.evaluate(() => {
+      const box = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
+      const find = box(".gedcom-list-find");
+      const head = box(".gedcom-list-head");
+      const root = box(".gedcom-list");
+      return { find: find && { top: find.top, bottom: find.bottom, right: find.right }, head: head && { top: head.top }, root: root && { right: root.right } };
+    });
+    expect(boxes.find?.bottom ?? 0).toBeLessThanOrEqual(boxes.head?.top ?? 0);
+    expect(boxes.find?.right ?? 0).toBeLessThanOrEqual(boxes.root?.right ?? 0);
+
+    await page.keyboard.press("Enter");
     await expect(page.locator(".gedcom-list-scroll")).toBeFocused();
   });
 
   test("says what matches nothing and what an empty kind holds", async ({ page }) => {
     await mountList(page);
-    await page.locator(".gedcom-list-filter").fill("zzz");
+    await searchFor(page, "zzz");
     await expect(page.locator(".gedcom-list-none")).toHaveText("Nothing matches “zzz”. Search covers names, years and places.");
 
     await mountList(page, { doc: "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n1 NAME A /B/\n0 TRLR\n" });
@@ -385,7 +428,7 @@ async function expectOneControlHeight(page: Page): Promise<void> {
     return {
       bar: height(".gedcom-list-seg"),
       buttons: height(".gedcom-list-seg-button"),
-      filter: height(".gedcom-list-filter"),
+      filter: height(".gedcom-list-find"),
       select: height(".gedcom-list-sort-select").filter((one) => one > 0),
     };
   });
@@ -410,7 +453,7 @@ test.describe("the toolbar's controls", () => {
 
     await mountList(page, { touch: true, phone: true });
     await expectOneControlHeight(page);
-    expect(await page.locator(".gedcom-list-filter").evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(43.5);
+    expect(await page.locator(".gedcom-list-find").evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(43.5);
   });
 });
 
@@ -442,7 +485,7 @@ test.describe("the list on a phone", () => {
   test("makes every control at least 44 pixels tall", async ({ page }) => {
     await mountList(page, { phone: true, touch: true });
 
-    for (const selector of [".gedcom-list-sort-select", ".gedcom-list-direction", ".gedcom-list-seg-button", ".gedcom-list-filter"]) {
+    for (const selector of [".gedcom-list-sort-select", ".gedcom-list-direction", ".gedcom-list-seg-button", ".gedcom-list-find"]) {
       const boxes = await page.locator(selector).evaluateAll((all) => all.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...boxes), selector).toBeGreaterThanOrEqual(43.5);
     }
@@ -457,7 +500,7 @@ test.describe("the list on a tablet", () => {
 
     await expect(page.locator(".gedcom-list")).toHaveClass(/is-compact/);
     expect((await rowOf(page, "@I1@").boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-    for (const selector of [".gedcom-list-seg-button", ".gedcom-list-filter"]) {
+    for (const selector of [".gedcom-list-seg-button", ".gedcom-list-find"]) {
       const heights = await page.locator(selector).evaluateAll((all) => all.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...heights), selector).toBeGreaterThanOrEqual(43.5);
     }
@@ -508,7 +551,7 @@ test.describe("a list of twenty thousand people", () => {
   test("draws only a window after each keystroke and after a header press", async ({ page }) => {
     await mountList(page, { doc: big });
 
-    const counts = await page.locator(".gedcom-list-filter").evaluate((input: HTMLInputElement) => {
+    const counts = await page.locator(".gedcom-list-search").evaluate((input: HTMLInputElement) => {
       const drawn: number[] = [];
       for (const query of ["P", "Pe", "Per", "Pers", "Person1234"]) {
         input.value = query;
@@ -520,7 +563,7 @@ test.describe("a list of twenty thousand people", () => {
     expect(Math.max(...counts)).toBeLessThan(100);
     await expect(rows(page).first().locator(".gedcom-list-cell").first()).toHaveText(/^Person1234 /);
 
-    await page.locator(".gedcom-list-filter").fill("");
+    await searchFor(page, "");
     await header(page, "Name").click();
 
     expect(await drawnRows(page)).toBeLessThan(100);

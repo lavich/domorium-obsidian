@@ -9,8 +9,8 @@
 /* ── The view and its chrome ─────────────────────────────────────────────
    */
 
-.workspace-leaf-content[data-type="domorium-gedcom"] .view-action.is-active {
-  color: var(--interactive-accent);
+.view-action.gedcom-mode-action + .gedcom-mode-action {
+  margin-inline-start: var(--size-2-2);
 }
 
 .gedcom-gedcom-view,
@@ -660,14 +660,24 @@ button.gedcom-list-seg-button.is-active {
   box-shadow: var(--shadow-s);
 }
 
-.gedcom-list .gedcom-list-filter {
-  flex: 1 1 12em;
-  min-width: 0;
+.gedcom-list .gedcom-list-bar > .gedcom-list-find {
+  --gedcom-find-size: var(--gedcom-list-control);
+  position: relative;
+  inset: auto;
+  z-index: auto;
   box-sizing: border-box;
   height: var(--gedcom-list-control);
-  margin: 0;
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
   border-radius: var(--input-radius, var(--radius-s));
-  font-size: var(--font-ui-small);
+  background: none;
+  box-shadow: none;
+}
+
+.gedcom-list .gedcom-list-bar > .gedcom-list-find.is-open {
+  background: var(--background-primary);
+  box-shadow: inset 0 0 0 1px var(--background-modifier-border);
 }
 
 .gedcom-list-count {
@@ -816,6 +826,7 @@ button.gedcom-list-sort:hover {
 
 .gedcom-list-spacer {
   position: relative;
+  margin-inline: var(--size-2-2);
 }
 
 .gedcom-list-row {
@@ -823,22 +834,29 @@ button.gedcom-list-sort:hover {
   inset-inline: 0;
   box-sizing: border-box;
   height: var(--gedcom-list-row);
-  border-radius: var(--radius-s);
+  padding-inline: var(--size-4-2);
+  border-radius: var(--nav-item-radius, var(--radius-s));
   cursor: pointer;
 }
 
 .gedcom-list-row:hover {
-  background: var(--background-modifier-hover);
+  background-color: var(--nav-item-background-hover, var(--background-modifier-hover));
+  color: var(--nav-item-color-hover, var(--text-normal));
 }
 
-.gedcom-list-row.is-selected {
-  background: var(--background-modifier-active-hover);
-  box-shadow: inset 3px 0 0 var(--interactive-accent);
+.gedcom-list-row.is-selected,
+.gedcom-list-row.is-selected:hover {
+  background-color: var(--nav-item-background-active, var(--background-modifier-hover));
+  color: var(--nav-item-color-active, var(--text-normal));
+  font-weight: var(--nav-item-weight-active, inherit);
 }
 
-.gedcom-list-scroll:focus-visible .gedcom-list-row.is-focused {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: -2px;
+.gedcom-list-row.is-focused {
+  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+}
+
+.gedcom-list-scroll:focus-within .gedcom-list-row.is-focused {
+  box-shadow: 0 0 0 2px var(--interactive-accent);
 }
 
 .gedcom-list-cell.is-years,
@@ -1833,7 +1851,8 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-controls,
 .gedcom-ft-controls,
 .gedcom-fg-find,
-.gedcom-ft-find {
+.gedcom-ft-find,
+.gedcom-list-find {
   position: absolute;
   z-index: 1;
   inset-inline-end: var(--size-4-2);
@@ -1851,7 +1870,10 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-controls button,
 .gedcom-ft-controls button,
 .gedcom-fg-find button,
-.gedcom-ft-find button {
+.gedcom-ft-find button,
+
+
+.gedcom-list-find button {
   height: auto;
   padding: var(--size-2-2) var(--size-2-3);
   border: 0;
@@ -1866,7 +1888,10 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-controls button:hover,
 .gedcom-ft-controls button:hover,
 .gedcom-fg-find button:hover,
-.gedcom-ft-find button:hover {
+.gedcom-ft-find button:hover,
+
+
+.gedcom-list-find button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
@@ -1874,13 +1899,19 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-controls .svg-icon,
 .gedcom-ft-controls .svg-icon,
 .gedcom-fg-find .svg-icon,
-.gedcom-ft-find .svg-icon {
+.gedcom-ft-find .svg-icon,
+
+
+.gedcom-list-find .svg-icon {
   width: 16px;
   height: 16px;
 }
 
 .gedcom-fg-find,
-.gedcom-ft-find {
+.gedcom-ft-find,
+
+
+.gedcom-list-find {
   top: var(--size-4-2);
   bottom: auto;
   align-items: center;
@@ -1892,7 +1923,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find input.gedcom-fg-search,
-.gedcom-ft-find input.gedcom-ft-search {
+.gedcom-ft-find input.gedcom-ft-search,
+
+
+.gedcom-list-find input.gedcom-list-search {
   width: 0;
   min-width: 0;
   height: var(--gedcom-find-size);
@@ -1909,7 +1943,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find.is-open input.gedcom-fg-search,
-.gedcom-ft-find.is-open input.gedcom-ft-search {
+.gedcom-ft-find.is-open input.gedcom-ft-search,
+
+
+.gedcom-list-find.is-open input.gedcom-list-search {
   width: 220px;
   flex: 0 1 220px;
   padding: 0 var(--size-2-3);
@@ -1919,18 +1956,27 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-search::-webkit-search-cancel-button,
-.gedcom-ft-search::-webkit-search-cancel-button {
+.gedcom-ft-search::-webkit-search-cancel-button,
+
+
+.gedcom-list-search::-webkit-search-cancel-button {
   display: none;
   appearance: none;
 }
 
 .gedcom-fg-find:not(.is-open) :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
-.gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count) {
+.gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count),
+
+
+.gedcom-list-find:not(.is-open) :is(.gedcom-list-find-clear, .gedcom-list-find-prev, .gedcom-list-find-next, .gedcom-list-find-count) {
   display: none;
 }
 
 .gedcom-fg-find,
-.gedcom-ft-find {
+.gedcom-ft-find,
+
+
+.gedcom-list-find {
   max-width: calc(100% - 2 * var(--size-4-2));
 }
 
@@ -1939,7 +1985,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find-count,
-.gedcom-ft-find-count {
+.gedcom-ft-find-count,
+
+
+.gedcom-list-find-count {
   flex: none;
   padding: 0 var(--size-2-3);
   color: var(--text-muted);
@@ -1949,7 +1998,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find button:disabled,
-.gedcom-ft-find button:disabled {
+.gedcom-ft-find button:disabled,
+
+
+.gedcom-list-find button:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -2001,18 +2053,27 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find,
-.gedcom-ft-find {
+.gedcom-ft-find,
+
+
+.gedcom-list-find {
   --gedcom-find-size: 28px;
   gap: 0;
 }
 
 .is-phone .gedcom-fg-find,
-.is-phone .gedcom-ft-find {
+.is-phone .gedcom-ft-find,
+
+
+.is-phone .gedcom-list-find {
   --gedcom-find-size: 44px;
 }
 
 .gedcom-fg-find button,
-.gedcom-ft-find button {
+.gedcom-ft-find button,
+
+
+.gedcom-list-find button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2025,7 +2086,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find .gedcom-fg-find-toggle,
-.gedcom-ft-find .gedcom-ft-find-toggle {
+.gedcom-ft-find .gedcom-ft-find-toggle,
+
+
+.gedcom-list-find .gedcom-list-find-toggle {
   overflow: hidden;
   transition:
     width 180ms ease-out,
@@ -2036,7 +2100,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-find.is-open .gedcom-fg-find-toggle,
-.gedcom-ft-find.is-open .gedcom-ft-find-toggle {
+.gedcom-ft-find.is-open .gedcom-ft-find-toggle,
+
+
+.gedcom-list-find.is-open .gedcom-list-find-toggle {
   width: 0;
   min-width: 0;
   padding: 0;
@@ -2049,7 +2116,11 @@ button.gedcom-fg-pop-open {
   .gedcom-fg-find input.gedcom-fg-search,
   .gedcom-ft-find input.gedcom-ft-search,
   .gedcom-fg-find .gedcom-fg-find-toggle,
-  .gedcom-ft-find .gedcom-ft-find-toggle {
+  .gedcom-ft-find .gedcom-ft-find-toggle,
+
+  .gedcom-list-find input.gedcom-list-search,
+
+  .gedcom-list-find .gedcom-list-find-toggle {
     transition: none;
   }
 }

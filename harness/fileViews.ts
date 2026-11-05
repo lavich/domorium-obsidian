@@ -89,8 +89,15 @@ function draw(): void {
   }
 }
 
+function markActive(): void {
+  for (const each of ["graph", "timeline", "list", "source"]) {
+    element(`show-${each}`).classList.toggle("is-active", each === mode);
+  }
+}
+
 function showMode(next: Mode): void {
   mode = next;
+  markActive();
   if (mode !== "source") {
     hand(selected, true);
   }
@@ -113,6 +120,7 @@ function mount(options: TabOptions): void {
   around = options.around;
   selected = null;
   mode = options.mode ?? "source";
+  markActive();
   const parent = element("views");
   parent.empty();
   views?.dispose();

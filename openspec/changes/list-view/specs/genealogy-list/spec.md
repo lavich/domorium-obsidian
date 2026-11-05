@@ -15,7 +15,7 @@ saved, and SHALL show every later change to it: at once while the tab is in view
 next time it is brought into view otherwise. A tab SHALL NOT draw the list before it has
 read its file. The list SHALL keep the kind it shows, the sort of each kind and the *No
 sources* filter across leaving the mode and coming back and across closing and reopening
-the workspace; it SHALL keep the text typed in its filter field and its scroll position
+the workspace; it SHALL keep the text typed in its search and its scroll position
 across leaving the mode and coming back, and SHALL NOT save either with the workspace.
 Nothing in the list SHALL write to the file, save it or mark it as changed.
 
@@ -44,7 +44,7 @@ Nothing in the list SHALL write to the file, save it or mark it as changed.
 #### Scenario: Restored with the workspace
 - **WHEN** the tab is in List mode on the sources of `curie.ged`, sorted by the number of
   records that cite them, the reader had typed `nobel`, and Obsidian is restarted
-- **THEN** the tab shows the sources in that order with the filter field empty
+- **THEN** the tab shows the sources in that order with the search empty
 
 #### Scenario: A tab that is not in view
 - **WHEN** a tab in List mode is behind another tab and the file changes on disk
@@ -138,17 +138,37 @@ first.
   Sophie-Claire Depouilly among them, come first, each with the mark, and Marie, whose
   record cites two sources, comes last
 
-### Requirement: The filter field
+### Requirement: The search
 
-A filter field above the rows SHALL narrow them as the reader types. For people it SHALL
+The list SHALL have the expanding search the graph and the timeline have: an icon at the
+end of the toolbar, above the rows and clear of the headers and the scrollbar, that gives
+way to a field when pressed and comes back when the field is closed empty. It SHALL narrow
+the rows as the reader types, not step through matches, and so SHALL have no arrows. For people it SHALL
 match the name, any other name the record states, the years shown and the place shown; for
 families the spouses' names, the year and the place; for sources the title, the author and
 the repository. A year before the common era SHALL be matched by its digits as the file
 writes it, not by the mark of the era shown beside it, so the same filter finds it in any
-language. Case SHALL NOT matter. A filter matching nothing SHALL say so and say what it
-searches. Switching the kind SHALL clear the text. Escape in the field SHALL clear its
-text, and with the field empty SHALL return the focus to the rows. The field SHALL be
-shown whatever the width of the tab.
+language. Case SHALL NOT matter. A search matching nothing SHALL say so and say what it
+searches. While it holds text it SHALL show how many rows remain of how many there are,
+spelt by the plural rules of the language shown, as `4 of 17 people`. Switching the kind
+SHALL clear the text and leave the search as open as it was. A cross in the open search
+SHALL clear its text and keep it open; Escape in the field SHALL clear its text, and with
+the field empty SHALL close the search; Enter SHALL move the keyboard to the rows. The
+search SHALL be reachable whatever the width of the tab, and its icon and cross SHALL be at
+least 44 CSS pixels tall on a touch device.
+
+#### Scenario: Opening it
+- **WHEN** the reader presses the search icon of the list
+- **THEN** the icon gives way to a field with the focus, and no arrow to step to the next
+  match is shown
+
+#### Scenario: The counter
+- **WHEN** the reader types `joliot` among the people of `curie.ged`
+- **THEN** the search says `4 of 17 people`
+
+#### Scenario: The cross
+- **WHEN** the search holds `joliot` and the reader presses its cross
+- **THEN** the text is gone, all 17 people are listed, and the field is still open
 
 #### Scenario: Filtering by year
 - **WHEN** the reader types `1867` in the people of `curie.ged`
@@ -190,8 +210,12 @@ shown whatever the width of the tab.
 #### Scenario: Escape
 - **WHEN** the field holds `joliot` and the reader presses Escape, and then presses
   Escape again
-- **THEN** the field is empty after the first, and after the second the focus is on the
-  rows
+- **THEN** the field is empty and open after the first, and after the second the search
+  is closed to its icon
+
+#### Scenario: Enter
+- **WHEN** the field holds `joliot` and the reader presses Enter
+- **THEN** the keyboard is on the rows and they are still narrowed by `joliot`
 
 ### Requirement: Sorting by a column
 
@@ -287,6 +311,20 @@ marked again when its row is drawn. A selection made from the list SHALL NOT mov
 list. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
+
+The rows SHALL be drawn as the rows of Obsidian's own file explorer are: inset
+from the edges of the list, with the explorer's radius on the hover, the selected
+background and the focus ring alike, the hover and the selected row taking their
+colours and weight from the navigation variables Obsidian's themes set, and the
+keyboard focus drawn as the explorer draws its focused row. A row SHALL be selected to
+assistive technology, whatever the theme makes of its colour, and SHALL NOT have stripes
+or lines between rows.
+
+#### Scenario: Styled as the explorer's rows
+- **WHEN** the list shows the people of `curie.ged` with Pierre Curie selected and the
+  pointer over Marie's row
+- **THEN** both rows have the explorer's radius, Pierre's has the explorer's active
+  background and Marie's its hover background, and no other row is tinted
 
 #### Scenario: Selecting Pierre in the list
 - **WHEN** the tab is in List mode and the reader clicks Pierre Curie's row
@@ -407,7 +445,7 @@ be left as it is.
 ### Requirement: The list is reachable with the keyboard
 
 The rows of the list SHALL be one stop in the order of the tab key, after the kind
-buttons, the filter field and the headers. With the focus on a row, the Up and Down arrows
+buttons, the search and the headers. With the focus on a row, the Up and Down arrows
 SHALL move it to the previous and next row of the rows shown, Home and End to the first
 and the last, and Page Up and Page Down by what the list shows at once; the row given the
 focus SHALL be drawn and brought into view, also where only a window of rows is drawn.
@@ -417,7 +455,7 @@ technology: a header row of column headers, each saying its sort, and rows of ce
 row saying its position among all the rows, including those not drawn. The row that has
 the focus SHALL always be one that is drawn. A
 row SHALL say to assistive technology whom or what it shows, and whether it is selected.
-The kind buttons, the headers and the filter SHALL be reachable with the keyboard.
+The kind buttons, the headers and the search SHALL be reachable with the keyboard.
 
 #### Scenario: Arrow keys
 - **WHEN** the focus is on the first row of the people and the reader presses Down twice
@@ -440,10 +478,10 @@ The kind buttons, the headers and the filter SHALL be reachable with the keyboar
   row and presses Down
 - **THEN** the focus does not move
 
-### Requirement: The find key focuses the filter
+### Requirement: The find key opens the search
 
 In List mode the editor's find — the command **Find**, and the key Obsidian dispatches to
-the tab for it — SHALL give the focus to the list's filter field and select its text. It
+the tab for it — SHALL open the list's search if it is closed, give the focus to its field and select its text. It
 SHALL NOT open the editor's search panel or change the mode. Replace SHALL NOT be
 offered.
 
@@ -467,7 +505,7 @@ rows.
   them, and scrolling draws the rows that come into view
 
 #### Scenario: Typing in a large file
-- **WHEN** the reader types in the filter field of that list
+- **WHEN** the reader types in the search of that list
 - **THEN** the rows drawn after each keystroke are still only a window
 
 #### Scenario: Sorting a large file
@@ -484,10 +522,10 @@ take two lines — the name or title with the years, the marriage or the count a
 and the place or the author beneath, with the Sources mark or the count of children or
 citations — the column headers SHALL be replaced by a selector of the column to sort by
 and a button that turns the direction, and a row and each control SHALL be at least 44
-CSS pixels tall. On a touch device the kind buttons, the filter field and the column headers of
+CSS pixels tall. On a touch device the kind buttons, the search and the column headers of
 a wide tab SHALL be at least 44 CSS pixels tall as well. Row and control heights SHALL
 follow the reader's font size rather than a fixed number of pixels, and the page SHALL
-not scroll sideways at any font size the app offers. The kind buttons and the filter field SHALL be as in a wide tab. On a
+not scroll sideways at any font size the app offers. The kind buttons and the search SHALL be as in a wide tab, and the toolbar's controls SHALL share one height, the sort selector and the direction button joining them in a compact list. On a
 phone the list SHALL be the whole of the tab, with the bottom navigation of Obsidian left
 clear.
 

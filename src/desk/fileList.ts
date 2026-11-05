@@ -1,5 +1,6 @@
 import type { GenealogyIndex } from "../genealogy";
 import { nameBy } from "./dom";
+import { FloatingSearch } from "./floatingSearch";
 import { currentLanguage, plural, t, type MessageKey } from "../i18n";
 import {
   cellsOf,
@@ -70,8 +71,7 @@ export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
   private readonly segEl: HTMLElement;
-  private readonly filterEl: HTMLInputElement;
-  private readonly filterLabel: HTMLElement;
+  private readonly find: FloatingSearch;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
   private readonly sortSelect: HTMLSelectElement;
@@ -114,11 +114,14 @@ export class ListBoard {
       button.dataset.kind = kind;
       button.addEventListener("click", () => this.showKind(kind));
     }
-    this.filterEl = bar.createEl("input", { cls: "gedcom-list-filter" });
-    this.filterEl.setAttribute("type", "text");
-    this.filterLabel = nameBy(this.filterEl, bar, t(SEARCH_HINT.people));
-    this.filterEl.addEventListener("input", () => this.setQuery(this.filterEl.value));
-    this.filterEl.addEventListener("keydown", (event) => this.filterKey(event));
+    this.find = new FloatingSearch(bar, {
+      prefix: "gedcom-list",
+      setIcon: (element, icon) => host.setIcon(element, icon),
+      change: (query) => this.setQuery(query),
+      step: () => undefined,
+      info: () => ({ index: -1, total: this.rows.length }),
+      narrowing: { count: () => this.countOf(), enter: () => this.scrollEl.focus() },
+    });
     this.countEl = this.root.createDiv({ cls: "gedcom-list-count" });
     this.countEl.setAttribute("aria-live", "polite");
 
@@ -192,7 +195,7 @@ export class ListBoard {
     const kind = state.kind ?? "people";
     if (kind !== this.kind) {
       this.query = "";
-      this.filterEl.value = "";
+      this.find.reset();
     }
     this.kind = kind;
     this.sorts = { ...state.sort };
@@ -227,7 +230,7 @@ export class ListBoard {
       }
       if (!this.positions.has(xref)) {
         this.query = "";
-        this.filterEl.value = "";
+        this.find.reset();
         this.refresh(true);
       }
     }
@@ -243,8 +246,11 @@ export class ListBoard {
   }
 
   focusFilter(): void {
-    this.filterEl.focus();
-    this.filterEl.select();
+    if (this.find.isOpen()) {
+      this.find.focus(true);
+    } else {
+      this.find.open();
+    }
   }
 
   scroll(): number {
@@ -328,26 +334,13 @@ export class ListBoard {
   private switchKind(kind: ListKind): void {
     this.kind = kind;
     this.query = "";
-    this.filterEl.value = "";
+    this.find.reset();
     this.refresh(false);
   }
 
   private setQuery(query: string): void {
     this.query = query;
     this.refresh(false);
-  }
-
-  private filterKey(event: KeyboardEvent): void {
-    if (event.key !== "Escape") {
-      return;
-    }
-    event.preventDefault();
-    if (this.filterEl.value !== "") {
-      this.filterEl.value = "";
-      this.setQuery("");
-    } else {
-      this.scrollEl.focus();
-    }
   }
 
   private sortHeader(key: SortKey): void {
@@ -406,8 +399,8 @@ export class ListBoard {
       button.toggleClass("is-active", on);
       button.setAttribute("aria-pressed", String(on));
     }
-    this.filterEl.placeholder = t(SEARCH_HINT[this.kind]);
-    this.filterLabel.setText(t(SEARCH_HINT[this.kind]));
+    this.find.describe(t(SEARCH_HINT[this.kind]));
+    this.find.refresh();
     const total = this.totalOfKind();
     this.countEl.setText(
       this.rows.length === total
@@ -415,6 +408,10 @@ export class ListBoard {
         : plural(COUNT_OF[this.kind], total, { shown: this.rows.length }),
     );
     this.drawHeaders();
+  }
+
+  private countOf(): string {
+    return plural(COUNT_OF[this.kind], this.totalOfKind(), { shown: this.rows.length });
   }
 
   private totalOfKind(): number {

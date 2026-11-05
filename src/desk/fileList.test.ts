@@ -85,7 +85,7 @@ const press = (key: string, target: HTMLElement = scroller()): KeyboardEvent => 
   return event;
 };
 const type = (value: string): void => {
-  const field = query<HTMLInputElement>(".gedcom-list-filter");
+  const field = query<HTMLInputElement>(".gedcom-list-search");
   field.value = value;
   field.dispatchEvent(new Event("input"));
 };
@@ -165,21 +165,58 @@ describe("the filter", () => {
     type("joliot");
     click(button(".gedcom-list-seg-button", "Families"));
 
-    expect(query<HTMLInputElement>(".gedcom-list-filter").value).toBe("");
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
     expect(rows()).toHaveLength(5);
   });
 
-  it("clears on the first Escape and gives the focus to the rows on the second", () => {
-    board();
+  it("clears on the first Escape and collapses the search on the second", () => {
+    const made = board();
+    made.focusFilter();
     type("joliot");
-    const field = query<HTMLInputElement>(".gedcom-list-filter");
+    const field = query<HTMLInputElement>(".gedcom-list-search");
+    const find = query(".gedcom-list-find");
 
     expect(press("Escape", field).defaultPrevented).toBe(true);
     expect(field.value).toBe("");
     expect(rows()).toHaveLength(17);
+    expect(find.classList.contains("is-open")).toBe(true);
     press("Escape", field);
 
+    expect(find.classList.contains("is-open")).toBe(false);
+  });
+
+  it("opens from its icon, counts what it narrows to, clears with the cross and stays open, and hands the keyboard to the rows on Enter", () => {
+    board();
+    const find = query(".gedcom-list-find");
+    click(query(".gedcom-list-find-toggle"));
+    expect(find.classList.contains("is-open")).toBe(true);
+    type("joliot");
+
+    expect(text(".gedcom-list-find-count")).toBe("4 of 17 people");
+    click(query(".gedcom-list-find-clear"));
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
+    expect(rows()).toHaveLength(17);
+    expect(find.classList.contains("is-open")).toBe(true);
+    press("Enter", query(".gedcom-list-search"));
     expect(document.activeElement).toBe(scroller());
+  });
+
+  it("has no arrows, since a list narrows and does not step", () => {
+    board();
+
+    expect(all(".gedcom-list-find-prev, .gedcom-list-find-next")).toHaveLength(0);
+  });
+
+  it("keeps the search open but empty when a selection from outside clears a filter that hides its row", () => {
+    const made = board();
+    made.focusFilter();
+    type("joliot");
+
+    made.select("@I1@", true);
+
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
+    expect(query(".gedcom-list-find").classList.contains("is-open")).toBe(true);
+    expect(text(".gedcom-list-find-count")).toBe("");
   });
 
   it("says what matches nothing and what the search covers", () => {
@@ -190,13 +227,13 @@ describe("the filter", () => {
     expect(rows()).toHaveLength(0);
   });
 
-  it("is a text field, which a first Escape does not swallow, and is focused and selected by focusFilter", () => {
+  it("is opened, focused and selected by focusFilter", () => {
     const made = board();
     type("joliot");
     made.focusFilter();
 
-    expect(query<HTMLInputElement>(".gedcom-list-filter").getAttribute("type")).toBe("text");
-    expect(document.activeElement).toBe(query(".gedcom-list-filter"));
+    expect(query(".gedcom-list-find").classList.contains("is-open")).toBe(true);
+    expect(document.activeElement).toBe(query(".gedcom-list-search"));
   });
 });
 
@@ -267,7 +304,7 @@ describe("showing the same file again", () => {
 
     expect(rows().map((one, at) => one === before[at])).not.toContain(false);
     expect(rows()).toHaveLength(before.length);
-    expect(query<HTMLInputElement>(".gedcom-list-filter").value).toBe("curie");
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("curie");
   });
 
   it("keeps the filter across a new reading of the file", () => {
@@ -338,7 +375,7 @@ describe("selecting", () => {
     made.select("@I12@", true);
     type("zzz");
     made.select("@I1@", true);
-    expect(query<HTMLInputElement>(".gedcom-list-filter").value).toBe("");
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
     expect(row("@I1@")?.classList.contains("is-selected")).toBe(true);
   });
 
@@ -349,7 +386,7 @@ describe("selecting", () => {
 
     made.select("@I12@", true);
 
-    expect(query<HTMLInputElement>(".gedcom-list-filter").value).toBe("joliot");
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("joliot");
     expect(rows()).toHaveLength(4);
   });
 
@@ -360,7 +397,7 @@ describe("selecting", () => {
     click(row("@I14@"));
     made.select("@I14@", false);
 
-    expect(query<HTMLInputElement>(".gedcom-list-filter").value).toBe("joliot");
+    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("joliot");
   });
 
   describe("in a file of 500 people", () => {
@@ -484,11 +521,11 @@ describe("the keyboard", () => {
     };
 
     expect(named(scroller())).toBe("Records of the file");
-    expect(named(query(".gedcom-list-filter"))).toBe("Name, year, place…");
+    expect(named(query(".gedcom-list-search"))).toBe("Name, year, place…");
     expect(named(query(".gedcom-list-sort-select"))).toBe("Sort by");
     click(button(".gedcom-list-seg-button", "Families"));
-    expect(named(query(".gedcom-list-filter"))).toBe("Names, year, place…");
-    for (const element of [scroller(), query(".gedcom-list"), query(".gedcom-list-filter"), query(".gedcom-list-sort-select"), ...rows()]) {
+    expect(named(query(".gedcom-list-search"))).toBe("Names, year, place…");
+    for (const element of [scroller(), query(".gedcom-list"), query(".gedcom-list-search"), query(".gedcom-list-sort-select"), ...rows()]) {
       expect(element.hasAttribute("aria-label")).toBe(false);
     }
   });

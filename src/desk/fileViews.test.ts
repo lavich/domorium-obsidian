@@ -501,7 +501,7 @@ describe("the list of a tab", () => {
   const row = (xref: string) => parent.querySelector<HTMLElement>(`.gedcom-list-row[data-xref="${xref}"]`);
   const scroller = () => parent.querySelector<HTMLElement>(".gedcom-list-scroll") as HTMLElement;
   const type = (value: string) => {
-    const field = parent.querySelector<HTMLInputElement>(".gedcom-list-filter") as HTMLInputElement;
+    const field = parent.querySelector<HTMLInputElement>(".gedcom-list-search") as HTMLInputElement;
     field.value = value;
     field.dispatchEvent(new Event("input"));
   };
@@ -535,7 +535,7 @@ describe("the list of a tab", () => {
     tab.show("graph", large, tab.memory());
     tab.show("list", large, tab.memory());
 
-    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-filter")?.value).toBe("person 4");
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-search")?.value).toBe("person 4");
     expect(tab.memory().list).toEqual(saved.list);
     expect(saved.list?.sort?.people?.by).toBe("name");
     expect(scroller().scrollTop).toBe(72);
@@ -592,7 +592,7 @@ describe("the list of a tab", () => {
 
     tab.openSearch("list");
 
-    expect(document.activeElement).toBe(parent.querySelector(".gedcom-list-filter"));
+    expect(document.activeElement).toBe(parent.querySelector(".gedcom-list-search"));
   });
 
   it("forgets the list on reset, and holds a memory of it only once shown", () => {
@@ -656,10 +656,10 @@ describe("the list of a tab", () => {
     type("joliot");
 
     tab.select("list", "@I14@", true);
-    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-filter")?.value).toBe("joliot");
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-search")?.value).toBe("joliot");
     tab.select("list", "@I1@", true);
 
-    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-filter")?.value).toBe("");
+    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-search")?.value).toBe("");
     expect(row("@I1@")?.classList.contains("is-selected")).toBe(true);
   });
 

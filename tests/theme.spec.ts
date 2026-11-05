@@ -341,12 +341,12 @@ test.describe("the research desk in the Obsidian theme", () => {
 
 test.describe("the list in the Obsidian theme", () => {
   const THEMES = [
-    { name: "light", dark: false, selected: "rgba(112, 93, 207, 0.15)", accent: "rgb(128, 64, 0)", warning: "rgb(180, 120, 0)" },
-    { name: "dark", dark: true, selected: "rgba(127, 109, 242, 0.25)", accent: "rgb(200, 140, 60)", warning: "rgb(255, 200, 100)" },
+    { name: "light", dark: false, active: "rgb(205, 225, 245)", hover: "rgb(235, 225, 245)", accent: "rgb(128, 64, 0)", warning: "rgb(180, 120, 0)" },
+    { name: "dark", dark: true, active: "rgb(50, 70, 100)", hover: "rgb(45, 35, 60)", accent: "rgb(200, 140, 60)", warning: "rgb(255, 200, 100)" },
   ];
 
   for (const theme of THEMES) {
-    test(`paints the selected row, the focused row and the mark from Obsidian's variables in ${theme.name}`, async ({ page }) => {
+    test(`paints the rows as the file explorer's rows from the navigation variables in ${theme.name}`, async ({ page }) => {
       await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
       await page.evaluate((dark) => {
         window.tab.mount({ mode: "list", dark });
@@ -355,15 +355,19 @@ test.describe("the list in the Obsidian theme", () => {
       await page.locator(".gedcom-list-scroll").focus();
       await page.keyboard.press("Home");
       await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("ArrowDown");
       const style = (selector: string, property: string) =>
         page.locator(selector).first().evaluate((node, name) => getComputedStyle(node).getPropertyValue(name), property);
 
-      expect(await style('.gedcom-list-row[data-xref="@I2@"]', "background-color")).toBe(theme.selected);
-      expect(await style(".gedcom-list-row.is-focused", "outline-color")).toBe(theme.accent);
+      expect(await style('.gedcom-list-row[data-xref="@I2@"]', "background-color")).toBe(theme.active);
+      expect(await style(".gedcom-list-row.is-focused", "box-shadow")).toContain(theme.accent);
+      expect(await style('.gedcom-list-row[data-xref="@I1@"]', "background-color")).toBe("rgba(0, 0, 0, 0)");
+      for (const selector of ['.gedcom-list-row[data-xref="@I1@"]', '.gedcom-list-row[data-xref="@I2@"]', ".gedcom-list-row.is-focused"]) {
+        expect(await style(selector, "border-top-left-radius"), selector).toBe("8px");
+      }
+      await page.locator('.gedcom-list-row[data-xref="@I1@"]').hover();
+      expect(await style('.gedcom-list-row[data-xref="@I1@"]', "background-color")).toBe(theme.hover);
       expect(await style(".gedcom-list-gap", "border-top-color")).toBe(theme.warning);
-      expect(await style('.gedcom-list-row[data-xref="@I2@"]', "box-shadow")).toContain(theme.accent);
-      expect(await style('.gedcom-list-row:not(.is-selected)', "box-shadow")).toBe("none");
     });
   }
 });
-
