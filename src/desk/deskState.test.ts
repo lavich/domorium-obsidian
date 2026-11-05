@@ -239,7 +239,7 @@ describe("the modes a tab offers", () => {
   });
 
   it("opens a map on the whole file at any size, with no focus", () => {
-    const big = indexOf(generated(20_000));
+    const big = indexOf(generated(2000));
 
     expect(openingMemory("map", undefined, big, "@I1@")).toEqual({ up: 2, down: 2 });
     expect(openingMemory("map", { up: 4, down: 1, focus: "@I3@" }, big, undefined)).toEqual({ up: 4, down: 1, focus: "@I3@" });

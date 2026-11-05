@@ -365,11 +365,11 @@ test.describe("the list on a wide tab", () => {
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(10);
   });
 
-  test("lists the header buttons of the stand-in tab as Graph, Timeline, List, Source", async ({ page }) => {
+  test("lists the header buttons of the stand-in tab as Graph, Timeline, List, Map, Source", async ({ page }) => {
     await mountList(page);
 
-    expect(await page.locator("#bar button").evaluateAll((all) => all.map((button) => button.getAttribute("aria-label")).slice(0, 4))).toEqual([
-      "Graph", "Timeline", "List", "Source",
+    expect(await page.locator("#bar button").evaluateAll((all) => all.map((button) => button.getAttribute("aria-label")).slice(0, 5))).toEqual([
+      "Graph", "Timeline", "List", "Map", "Source",
     ]);
   });
 

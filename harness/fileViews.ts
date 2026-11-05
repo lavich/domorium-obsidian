@@ -6,7 +6,8 @@ import type { TableState, TileSettings } from "../src/desk/fileMapView";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
-import { CURIE, indexOf } from "../src/testing/curie";
+import { parsePlacesTable } from "../src/desk/placesTable";
+import { CURIE, curieWithMap, indexOf } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
 import { stubSetIcon } from "./icons";
 
@@ -22,7 +23,9 @@ export interface TabOptions {
   phone?: boolean;
   touch?: boolean;
   language?: string;
-  places?: TableState;
+  fixture?: "map";
+  /** The text of the places table; null for none, nothing for one with no rows. */
+  placesText?: string | null;
   tiles?: TileSettings;
 }
 
@@ -128,9 +131,12 @@ function mount(options: TabOptions): void {
   calls.changed = 0;
   calls.tableActions = 0;
   calls.addedPlaces = [];
-  places = options.places ?? { status: "read", table: { rows: new Map() } };
+  places =
+    options.placesText === null
+      ? { status: "absent" }
+      : { status: "read", table: parsePlacesTable(options.placesText ?? "") };
   tiles = options.tiles ?? NO_TILES;
-  index = indexOf(options.doc ?? CURIE);
+  index = indexOf(options.doc ?? (options.fixture === "map" ? curieWithMap() : CURIE));
   memory = options.memory ?? {};
   around = options.around;
   selected = null;

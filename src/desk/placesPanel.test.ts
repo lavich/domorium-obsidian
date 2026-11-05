@@ -96,3 +96,24 @@ describe("the places panel", () => {
     expect(host.addMissing).toHaveBeenCalledOnce();
   });
 });
+
+describe("the places panel while the list scrolls", () => {
+  it("keeps the focus on the row it was on where the window is drawn again", () => {
+    panel.show(state({ mapped: Array.from({ length: 200 }, (_, i) => row(`P${i}`, true)), unmapped: [] }));
+    panel.open();
+    const first = panel.el.querySelector<HTMLButtonElement>("button.gedcom-map-panel-row");
+    first?.focus();
+    panel.show(state({ mapped: Array.from({ length: 200 }, (_, i) => row(`P${i}`, true)), unmapped: [] }));
+
+    expect(document.activeElement?.getAttribute("data-key")).toBe("p0");
+  });
+
+  it("does not build the rows again where the window has not moved", () => {
+    panel.show(state());
+    panel.open();
+    const before = panel.el.querySelector("button.gedcom-map-panel-row");
+    panel.el.querySelector(".gedcom-map-panel-list")?.dispatchEvent(new Event("scroll"));
+
+    expect(panel.el.querySelector("button.gedcom-map-panel-row")).toBe(before);
+  });
+});

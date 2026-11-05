@@ -25,6 +25,15 @@ test.describe("the mode buttons of the tab header", () => {
     expect(first).toBe("0px");
   });
 
+  test("read Graph, Timeline, List, Map and Source from the left", async ({ page }) => {
+    const names = await page.locator(".gedcom-mode-action").evaluateAll((buttons) =>
+      buttons.map((button) => ({ name: button.getAttribute("aria-label"), left: button.getBoundingClientRect().left })),
+    );
+
+    expect(names.map((one) => one.name)).toEqual(["Graph", "Timeline", "List", "Map", "Source"]);
+    expect(names.map((one) => one.left)).toEqual([...names.map((one) => one.left)].sort((a, b) => a - b));
+  });
+
   test("are spaced from the action that follows them", async ({ page }) => {
     const gap = await page.evaluate(
       () => document.getElementById("more")!.getBoundingClientRect().left - document.getElementById("show-source")!.getBoundingClientRect().right,

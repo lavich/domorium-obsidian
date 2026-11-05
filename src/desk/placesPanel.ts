@@ -34,6 +34,7 @@ export class PlacesPanel {
   private readonly foot: HTMLElement;
   private items: Item[] = [];
   private state: PanelState = { mapped: [], unmapped: [], table: "create", missing: 0 };
+  private drawn: { first: number; last: number } | null = null;
 
   constructor(parent: HTMLElement, private readonly host: PlacesPanelHost) {
     this.el = parent.createDiv({ cls: "gedcom-map-panel", attr: { role: "region", "aria-label": t("map.panel.title") } });
@@ -66,6 +67,7 @@ export class PlacesPanel {
 
   show(state: PanelState): void {
     this.state = state;
+    this.drawn = null;
     this.items = [
       { kind: "head", text: `${t("map.panel.onMap")} · ${state.mapped.length}` },
       ...state.mapped.map((row): Item => ({ kind: "row", row })),
@@ -91,6 +93,12 @@ export class PlacesPanel {
   private draw(): void {
     this.spacer.setCssProps({ height: `${this.items.length * ROW_HEIGHT}px` });
     const { first, last } = rowWindow(this.list.scrollTop, this.list.clientHeight, ROW_HEIGHT, this.items.length);
+    if (this.drawn?.first === first && this.drawn.last === last) {
+      return;
+    }
+    this.drawn = { first, last };
+    const active = this.el.ownerDocument.activeElement;
+    const held = active !== null && this.spacer.contains(active) ? active.getAttribute("data-key") : null;
     this.spacer.empty();
     for (let at = first; at <= last; at += 1) {
       const item = this.items[at];
@@ -103,13 +111,16 @@ export class PlacesPanel {
         continue;
       }
       const { row } = item;
-      const node = this.spacer.createEl(row.mapped ? "button" : "div", { cls: "gedcom-map-panel-row", attr: row.mapped ? { type: "button" } : {} });
+      const node = this.spacer.createEl(row.mapped ? "button" : "div", { cls: "gedcom-map-panel-row", attr: row.mapped ? { type: "button", "data-key": row.key } : {} });
       node.setCssProps(placed);
       node.createSpan({ cls: "gedcom-map-panel-name", text: row.name });
       node.createSpan({ cls: "gedcom-map-panel-meta", text: [plural("map.events", row.events), row.years].filter((one) => one !== "").join(" · ") });
       if (row.mapped) {
         node.addEventListener("click", () => this.host.activate(row.key));
       }
+    }
+    if (held !== null) {
+      this.spacer.querySelector<HTMLElement>(`[data-key="${CSS.escape(held)}"]`)?.focus({ preventScroll: true });
     }
   }
 
