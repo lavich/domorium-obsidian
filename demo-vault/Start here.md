@@ -27,8 +27,8 @@ checked against. Ctrl/Cmd-hover any `@I1@` to see the record it points at.
 
 With **Genealogy interface** on, choose **Map** in the tab's header. Warsaw, Paris and
 Passy are placed by the `MAP` lines in [[curie.ged]]; the other places have no
-coordinates, so the map counts them, and the **Places** kind of the list names them and can
-create a places table for you to fill in. Select Marie and a numbered line follows her places.
+coordinates, so the map counts them, and the **Places** kind of the list names them. Add a
+`MAP` with `LATI` and `LONG` under a `PLAC` in the file to place another. Select Marie and a numbered line follows her places.
 
 ## Follow a link into it
 

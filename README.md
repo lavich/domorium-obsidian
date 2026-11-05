@@ -86,16 +86,18 @@ reader. The map opens fitted to its places;
 **Fit** and the key `0` do it again. A tab remembers where it was across a restart, and
 the map is not remembered as the mode another file opens in.
 
-Where a place's coordinates come from, in this order: the `MAP` structure under its `PLAC`
-in the file (`N52.2297` and `E21.0122`, with a point or a comma, a sign or a letter), then a
-row of the **places table**, a note beside the file named like it, `curie.places.md` for
-`curie.ged`, holding a table of `Place | Latitude | Longitude`. The first table of the note
-is read, its header is skipped whatever it says, and the file wins over a row. When no place
-has coordinates the map offers **Create the places table**, which writes that note with a row
-for each place the file gives none, and the **Places** of the list can append the places that
-have no row yet. Nothing looks a place up by its name. The table is a note you own: the plugin
-writes it only when you press a button, and renames it with the file when you rename the
-file.
+A place gets its position from the `MAP` structure under its `PLAC` in the file —
+`LATI` and `LONG`, as `N52.2297` and `E21.0122`, with a point or a comma, a sign or a
+letter. The file is the only source: nothing looks a place up by its name, and the
+plugin creates and edits no other note. When no place has coordinates the map says so
+and shows the lines to add, in the **Source** mode:
+
+```
+2 PLAC Paris, France
+3 MAP
+4 LATI N48.8566
+4 LONG E2.3522
+```
 
 Map tiles are off. **Load map tiles from the web** with a **Tile server address** — a
 template such as `https://tiles.example/{z}/{x}/{y}.png`; the plugin ships no server — draws the tiles of the part of the world in view under the outline, with
@@ -109,8 +111,7 @@ show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
 them; places show every place of the file, mapped or not, with the number of events there,
 their years and the coordinates, or a mark with the label *No coordinates* where it has
-none, and **Open the places table** or **Create the places table** and **Add the places that
-have no row** sit at the end of the row of the kinds. Places are in alphabetical order until
+none. Places are in alphabetical order until
 a column is chosen, and a click on a place only marks its row: no record is selected and the
 map does not move. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
