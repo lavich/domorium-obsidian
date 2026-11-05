@@ -476,6 +476,23 @@ describe("the keyboard", () => {
     expect(active()).toMatch(/-r0$/);
   });
 
+  it("names the grid, the filter and the sort select by hidden text, so no large element is a hover tooltip", () => {
+    board();
+    const named = (element: Element | null): string | undefined => {
+      const id = element?.getAttribute("aria-labelledby");
+      return id ? (document.getElementById(id)?.textContent ?? undefined) : undefined;
+    };
+
+    expect(named(scroller())).toBe("Records of the file");
+    expect(named(query(".gedcom-list-filter"))).toBe("Name, year, place…");
+    expect(named(query(".gedcom-list-sort-select"))).toBe("Sort by");
+    click(button(".gedcom-list-seg-button", "Families"));
+    expect(named(query(".gedcom-list-filter"))).toBe("Names, year, place…");
+    for (const element of [scroller(), query(".gedcom-list"), query(".gedcom-list-filter"), query(".gedcom-list-sort-select"), ...rows()]) {
+      expect(element.hasAttribute("aria-label")).toBe(false);
+    }
+  });
+
   it("has the roles of a grid", () => {
     board();
 
@@ -693,7 +710,7 @@ describe("what the row height follows", () => {
     made.resized();
 
     expect(cell(row("@I1@"), 3)).toBe("2 sources");
-    expect(row("@I5@")?.querySelector(".gedcom-list-gap")?.getAttribute("title")).toBe("No sources at all");
+    expect(row("@I5@")?.querySelector(".gedcom-list-gap")?.getAttribute("aria-label")).toBe("No sources at all");
     expect(cell(row("@I5@"), 3)).toBe(" 0 sources");
     click(button(".gedcom-list-seg-button", "Families"));
     expect(cell(row("@F3@"), 3)).toBe("2 children");

@@ -79,6 +79,16 @@ export function tipPlace(element: Element, place: TipPlace): void {
   element.setAttribute("data-tooltip-position", place);
 }
 
+let labels = 0;
+
+/** Obsidian shows any `aria-label` as a hover tooltip, so a large or text-bearing element is named by hidden text instead. */
+export function nameBy(target: HTMLElement, host: HTMLElement, text: string): HTMLElement {
+  const label = host.createSpan({ cls: "gedcom-visually-hidden", text });
+  label.id = `gedcom-label-${(labels += 1)}`;
+  target.setAttribute("aria-labelledby", label.id);
+  return label;
+}
+
 export type IconSetter = (element: HTMLElement, icon: string) => void;
 
 /** An icon from Obsidian where there is one to ask, else a sign for it. */

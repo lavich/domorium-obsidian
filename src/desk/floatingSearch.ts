@@ -1,5 +1,5 @@
 import { plural, t } from "../i18n";
-import { putIcon, tipPlace, type IconSetter } from "./dom";
+import { nameBy, putIcon, tipPlace, type IconSetter } from "./dom";
 import type { GraphCanvas } from "./graphCanvas";
 
 export interface MatchInfo {
@@ -38,8 +38,9 @@ export class FloatingSearch {
       cls: `${prefix}-search`,
       type: "search",
       placeholder: t("overview.search"),
-      attr: { "aria-label": t("overview.search"), tabindex: "-1" },
+      attr: { tabindex: "-1" },
     });
+    nameBy(this.input, this.el, t("overview.search"));
     this.count = this.el.createSpan({ cls: `${prefix}-find-count`, attr: { "aria-live": "polite" } });
     this.previous = this.button(`${prefix}-find-prev`, "chevron-up", t("overview.previousMatch"));
     this.next = this.button(`${prefix}-find-next`, "chevron-down", t("overview.nextMatch"));

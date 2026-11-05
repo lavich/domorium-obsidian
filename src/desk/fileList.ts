@@ -1,4 +1,5 @@
 import type { GenealogyIndex } from "../genealogy";
+import { nameBy } from "./dom";
 import { currentLanguage, plural, t, type MessageKey } from "../i18n";
 import {
   cellsOf,
@@ -70,6 +71,7 @@ export class ListBoard {
   private readonly root: HTMLElement;
   private readonly segEl: HTMLElement;
   private readonly filterEl: HTMLInputElement;
+  private readonly filterLabel: HTMLElement;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
   private readonly sortSelect: HTMLSelectElement;
@@ -114,6 +116,7 @@ export class ListBoard {
     }
     this.filterEl = bar.createEl("input", { cls: "gedcom-list-filter" });
     this.filterEl.setAttribute("type", "text");
+    this.filterLabel = nameBy(this.filterEl, bar, t(SEARCH_HINT.people));
     this.filterEl.addEventListener("input", () => this.setQuery(this.filterEl.value));
     this.filterEl.addEventListener("keydown", (event) => this.filterKey(event));
     this.countEl = this.root.createDiv({ cls: "gedcom-list-count" });
@@ -121,7 +124,7 @@ export class ListBoard {
 
     this.sortBarEl = this.root.createDiv({ cls: "gedcom-list-sortbar" });
     this.sortSelect = this.sortBarEl.createEl("select", { cls: "gedcom-list-sort-select dropdown" });
-    this.sortSelect.setAttribute("aria-label", t("list.sortBy"));
+    nameBy(this.sortSelect, this.sortBarEl, t("list.sortBy"));
     this.sortSelect.addEventListener("change", () => this.chooseSort(this.sortSelect.value));
     this.directionEl = this.sortBarEl.createEl("button", { cls: "gedcom-list-direction" });
     this.directionEl.setAttribute("type", "button");
@@ -129,7 +132,7 @@ export class ListBoard {
 
     this.scrollEl = this.root.createDiv({ cls: "gedcom-list-scroll" });
     this.scrollEl.setAttribute("role", "grid");
-    this.scrollEl.setAttribute("aria-label", t("list.label"));
+    nameBy(this.scrollEl, this.root, t("list.label"));
     this.scrollEl.setAttribute("tabindex", "0");
     this.headEl = this.scrollEl.createDiv({ cls: "gedcom-list-head" });
     this.headEl.setAttribute("role", "row");
@@ -404,7 +407,7 @@ export class ListBoard {
       button.setAttribute("aria-pressed", String(on));
     }
     this.filterEl.placeholder = t(SEARCH_HINT[this.kind]);
-    this.filterEl.setAttribute("aria-label", t(SEARCH_HINT[this.kind]));
+    this.filterLabel.setText(t(SEARCH_HINT[this.kind]));
     const total = this.totalOfKind();
     this.countEl.setText(
       this.rows.length === total
@@ -451,7 +454,6 @@ export class ListBoard {
     this.host.setIcon(this.directionEl, sort?.dir === "desc" ? "arrow-down" : "arrow-up");
     const label = t(sort?.dir === "desc" ? "list.sortDescending" : "list.sortAscending");
     this.directionEl.setAttribute("aria-label", label);
-    this.directionEl.setAttribute("title", label);
     this.directionEl.disabled = sort === undefined;
     this.scrollEl.setAttribute("aria-rowcount", String(this.rows.length + 1));
   }
@@ -525,7 +527,6 @@ export class ListBoard {
         const mark = cell.createSpan({ cls: "gedcom-list-gap" });
         mark.setAttribute("role", "img");
         mark.setAttribute("aria-label", t("list.gapMark"));
-        mark.setAttribute("title", t("list.gapMark"));
         if (this.compact) {
           cell.appendText(` ${this.countLabel(column.key, 0)}`);
         }

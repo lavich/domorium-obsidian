@@ -282,11 +282,11 @@ test.describe("the list on a wide tab", () => {
     }).toBeLessThan(1);
   });
 
-  test("shows the mark of a person with no source as a shape with a title", async ({ page }) => {
+  test("shows the mark of a person with no source as a shape with a label", async ({ page }) => {
     await mountList(page);
 
     const mark = rowOf(page, "@I5@").locator(".gedcom-list-gap");
-    await expect(mark).toHaveAttribute("title", "No sources at all");
+    await expect(mark).toHaveAttribute("aria-label", "No sources at all");
     const box = await mark.boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(10);
   });
@@ -525,5 +525,46 @@ test.describe("a list of twenty thousand people", () => {
 
     expect(await drawnRows(page)).toBeLessThan(100);
     expect(await drawnRows(page)).toBeGreaterThan(0);
+  });
+});
+
+test.describe("hover tooltips", () => {
+  test.use({ viewport: WIDE });
+
+  const large = () =>
+    [...document.querySelectorAll<HTMLElement | SVGElement>("[aria-label]")]
+      .filter((node) => !node.matches("button, [role=button], select, input, .gedcom-list-gap"))
+      .filter((node) => {
+        const box = node.getBoundingClientRect();
+        return box.width > 120 && box.height > 60;
+      })
+      .map((node) => `${node.tagName}.${node.getAttribute("class")}`);
+
+  for (const mode of ["list", "graph", "timeline"] as const) {
+    test(`no large element of the ${mode} carries an aria-label`, async ({ page }) => {
+      await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
+      await page.evaluate((shown) => window.tab.mount({ mode: shown }), mode);
+      await page.waitForSelector(mode === "list" ? ".gedcom-list-row" : mode === "graph" ? ".gedcom-fg-person" : ".gedcom-ft-name");
+
+      expect(await page.evaluate(large)).toEqual([]);
+    });
+  }
+
+  test("the grid is named by an element that holds the label", async ({ page }) => {
+    await mountList(page);
+
+    const label = await page.locator(".gedcom-list-scroll").evaluate((grid) => {
+      const id = grid.getAttribute("aria-labelledby") ?? "";
+      return document.getElementById(id)?.textContent;
+    });
+    expect(label).toBe("Records of the file");
+  });
+
+  test("no large element of the record card carries an aria-label", async ({ page }) => {
+    await page.goto(pathToFileURL(resolve("harness/desk.html")).href);
+    await page.evaluate(() => window.desk.mount({}));
+    await page.waitForSelector(".gedcom-card");
+
+    expect(await page.evaluate(large)).toEqual([]);
   });
 });
