@@ -378,6 +378,41 @@ test.describe("the list on a wide tab", () => {
   });
 });
 
+async function expectOneControlHeight(page: Page): Promise<void> {
+  const heights = await page.evaluate(() => {
+    const height = (selector: string) => [...document.querySelectorAll(selector)].map((node) => node.getBoundingClientRect().height);
+    return {
+      bar: height(".gedcom-list-seg"),
+      buttons: height(".gedcom-list-seg-button"),
+      filter: height(".gedcom-list-filter"),
+      chips: height(".gedcom-list-chip"),
+    };
+  });
+  const control = heights.filter[0] ?? NaN;
+  for (const [name, all] of Object.entries(heights)) {
+    if (name === "buttons") {
+      continue;
+    }
+    for (const one of all) {
+      expect(Math.abs(one - control), name).toBeLessThanOrEqual(1);
+    }
+  }
+  expect(Math.max(...heights.buttons) - Math.min(...heights.buttons)).toBeLessThanOrEqual(1);
+  expect(heights.buttons[0] ?? NaN).toBeLessThan(control);
+}
+
+test.describe("the toolbar's controls", () => {
+  test("share one height on a desktop and with a touch pointer", async ({ page }) => {
+    await page.setViewportSize(WIDE);
+    await mountList(page);
+    await expectOneControlHeight(page);
+
+    await mountList(page, { touch: true, phone: true });
+    await expectOneControlHeight(page);
+    expect(await page.locator(".gedcom-list-filter").evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(43.5);
+  });
+});
+
 test.describe("the list on a phone", () => {
   test.use({ viewport: PHONE });
 

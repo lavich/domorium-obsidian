@@ -590,6 +590,7 @@ button.gedcom-desk-person:hover {
   --gedcom-list-inset: 2px;
   --gedcom-list-pad: var(--size-4-3);
   --gedcom-list-row: 2.2em;
+  --gedcom-list-control: var(--input-height, 30px);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -603,6 +604,10 @@ button.gedcom-desk-person:hover {
 
 .gedcom-list.is-compact {
   --gedcom-list-row: max(3.6em, 44px);
+}
+
+.gedcom-list.is-touch {
+  --gedcom-list-control: 44px;
 }
 
 .is-mobile .gedcom-list {
@@ -621,10 +626,13 @@ button.gedcom-desk-person:hover {
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
+  box-sizing: border-box;
+  height: var(--gedcom-list-control);
   display: flex;
+  align-items: stretch;
   gap: var(--gedcom-list-inset);
   padding: var(--gedcom-list-inset);
-  border-radius: var(--radius-m);
+  border-radius: var(--input-radius, var(--radius-s));
   background: var(--background-modifier-hover);
 }
 
@@ -632,13 +640,14 @@ button.gedcom-list-seg-button {
   flex: 1 1 auto;
   min-width: 0;
   height: auto;
-  padding: var(--size-2-1) var(--size-4-3);
+  min-height: 0;
+  padding: 0 var(--size-4-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   background: none;
   border: 0;
-  border-radius: calc(var(--radius-m) - var(--gedcom-list-inset));
+  border-radius: calc(var(--input-radius, var(--radius-s)) - var(--gedcom-list-inset));
   box-shadow: none;
   font-size: var(--font-ui-small);
   color: var(--text-muted);
@@ -653,6 +662,11 @@ button.gedcom-list-seg-button.is-active {
 .gedcom-list-filter {
   flex: 1 1 12em;
   min-width: 0;
+  box-sizing: border-box;
+  height: var(--gedcom-list-control);
+  margin: 0;
+  border-radius: var(--input-radius, var(--radius-s));
+  font-size: var(--font-ui-small);
 }
 
 .gedcom-list-chips {
@@ -663,13 +677,15 @@ button.gedcom-list-seg-button.is-active {
 }
 
 button.gedcom-list-chip {
-  height: auto;
-  padding: 2px var(--size-4-2);
-  border-radius: var(--radius-l);
+  box-sizing: border-box;
+  height: var(--gedcom-list-control);
+  margin: 0;
+  padding: 0 var(--size-4-3);
+  border-radius: var(--input-radius, var(--radius-s));
   border: 1px solid var(--background-modifier-border);
   background: none;
   box-shadow: none;
-  font-size: var(--font-ui-smaller);
+  font-size: var(--font-ui-small);
   color: var(--text-muted);
 }
 
@@ -696,13 +712,17 @@ button.gedcom-list-chip.is-active {
 .gedcom-list-sort-select {
   flex: 1 1 0;
   min-width: 0;
-  min-height: 44px;
+  box-sizing: border-box;
+  height: max(var(--gedcom-list-control), 44px);
+  border-radius: var(--input-radius, var(--radius-s));
 }
 
 button.gedcom-list-direction {
   flex: none;
+  box-sizing: border-box;
   min-width: 44px;
-  min-height: 44px;
+  height: max(var(--gedcom-list-control), 44px);
+  border-radius: var(--input-radius, var(--radius-s));
   background: none;
   box-shadow: none;
   color: var(--text-muted);
@@ -904,9 +924,6 @@ button.gedcom-list-sort:hover {
   padding-inline: 0;
 }
 
-.gedcom-list.is-touch .gedcom-list-filter,
-.gedcom-list.is-touch button.gedcom-list-seg-button,
-.gedcom-list.is-touch button.gedcom-list-chip,
 .gedcom-list.is-touch button.gedcom-list-sort {
   min-height: 44px;
 }
