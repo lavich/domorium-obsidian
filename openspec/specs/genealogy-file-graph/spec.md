@@ -13,9 +13,9 @@ Each person the file declares with an identifier SHALL have a card showing,
 from top to bottom, their portrait where they have one, their given names,
 their surname and their years of life, written as the timeline of the file
 writes them. The portrait SHALL be the picture, cut as its crop says, that the
-person's page shows; a picture from the web SHALL be shown only where the
+person's card shows; a picture from the web SHALL be shown only where the
 setting *Load images from the web*, or the reader's answer for this session,
-allows it, as on the page. A card without a portrait, or whose portrait cannot
+allows it, as on the card. A card without a portrait, or whose portrait cannot
 be shown, SHALL show none, and a name the record writes with no surname SHALL
 stand on one line. A card's background SHALL be tinted pink for a woman, blue
 for a man, and grey where the record states no sex, in colours taken from the
@@ -214,9 +214,9 @@ read as pressed while their branch is shown. While the whole file is shown, no
 line about the scope SHALL be shown.
 
 A file of more than 500 people SHALL show its graph, the first time the tab does,
-on the branch of the person the tab had in view when it was brought to the graph
-— the page's person in Genealogy mode, the person at the cursor in Source mode —
-or of the first person the file declares where neither names one. A smaller file
+on the branch of the person the tab had selected when it was brought to the graph
+— in Source mode, the person of the record at the cursor — or of the first person
+the file declares where neither names one. A smaller file
 SHALL open on all of it. Once the tab has shown the graph, the scope the reader
 leaves it on SHALL be kept, the whole file included.
 
@@ -237,8 +237,8 @@ leaves it on SHALL be kept, the whole file included.
 - **THEN** one row shows Pierre Curie and Marie
 
 #### Scenario: A large file
-- **WHEN** a file of 2 000 people is open on a person's page and the reader
-  switches the tab to Graph mode
+- **WHEN** a file of 2 000 people is open in Source mode with the cursor inside one
+  person's record and the reader switches the tab to Graph mode
 - **THEN** the graph shows that person's branch, with the way back to the whole
   file
 
@@ -266,8 +266,7 @@ beyond the point where names can be read, cards SHALL be drawn without text.
 A graph restored with the workspace, or shown again after the tab was in another
 mode, SHALL be shown as it was left. Any other graph SHALL first be shown fitted
 to its view where it can then be read, and otherwise at a readable size around
-the first of these that is shown: the person the tab had in view when it was
-brought to the graph, the person whose branch it shows, the first card of the top
+the first of these that is shown: the person the tab had selected when it was brought to the graph, the person whose branch it shows, the first card of the top
 row. An edit of the file SHALL leave the view where it is. Changing the scope
 SHALL show the new scope at a readable size around the person whose branch it now
 shows, or, on returning to the whole file, around the person whose branch it
@@ -283,11 +282,11 @@ showed.
 
 #### Scenario: A drag that begins on a card
 - **WHEN** the reader presses on Marie's card, moves the pointer and releases it
-- **THEN** the graph has moved, and Marie's page is not opened
+- **THEN** the graph has moved, and Marie is not selected
 
 #### Scenario: Choosing a branch
-- **WHEN** the tab of `curie.ged` was on Marie's page when it was switched to
-  Graph mode and the reader chooses Irène's branch, and then returns to the whole
+- **WHEN** the tab of `curie.ged` had Marie selected when it was switched to Graph
+  mode and the reader chooses Irène's branch, and then returns to the whole
   file
 - **THEN** the view is centred on Irène's card both times, at a readable size
 
@@ -300,40 +299,6 @@ showed.
 - **WHEN** the reader has moved and zoomed the graph, switches to Timeline mode
   and then back to Graph mode
 - **THEN** the graph is at the same position and zoom, and was not laid out again
-
-### Requirement: The graph leads to the pages
-
-Activating a person's card SHALL show that person's page in the same tab, until
-a later change gives the card a place of its own: the tab leaves Graph mode for Genealogy mode, and Back
-SHALL return it to the graph, at the scope, position and zoom it had. Activating
-a family node SHALL show that family's page the same way. Activating either SHALL
-open no other tab.
-
-Every card and family node drawn SHALL be reachable with the keyboard, in the
-order of the rows and, within a row, from left to right; SHALL say whom it
-shows to assistive technology; and SHALL be activated with Enter or Space. A
-card's **Branch** choice SHALL be reachable with the keyboard too. A card or node
-given the focus SHALL be brought into view.
-
-#### Scenario: From the graph to Irène's page
-- **WHEN** the tab of `curie.ged` is in Graph mode and the reader activates
-  Irène's card
-- **THEN** the same tab is in Genealogy mode showing Irène's page, and no other
-  tab has opened
-
-#### Scenario: Back to the graph
-- **WHEN** Irène's page was opened from the graph of Irène's branch, zoomed in,
-  and the reader presses back
-- **THEN** the tab is in Graph mode again, showing Irène's branch at the same
-  position and zoom
-
-#### Scenario: From a family node to the family page
-- **WHEN** the reader activates the node between Pierre Curie and Marie
-- **THEN** the tab is in Genealogy mode showing the Curies' family page
-
-#### Scenario: From the keyboard
-- **WHEN** the reader moves the focus to Marie's card and presses Enter
-- **THEN** Marie's page is shown in the tab
 
 ### Requirement: The graph holds up at size
 
@@ -359,20 +324,21 @@ canvas, as the timeline of the file has none; the search icon SHALL be at least 
 pixels square. The graph SHALL show no legend. Dragging with
 one finger SHALL move it and pinching with two SHALL zoom it; neither SHALL
 activate what it began on. Touching a card SHALL light that person and their
-family as pointing does and offer their **Branch**; touching it again SHALL show
-the person as activating does on a desktop. Touching a family node SHALL show
-its details, with the way to the family's page. Touching empty space SHALL put
+family as pointing does and offer their **Branch**; touching it again SHALL select the person as activating does on a desktop, and
+open the right drawer on their card. Touching a family node SHALL show
+its details, with the way to the family's card. Touching empty space SHALL put
 the light out.
 
 #### Scenario: Touching Marie's card
 - **WHEN** the reader touches Marie's card on a phone, and then touches it again
-- **THEN** her family is lit, and then her page is shown
+- **THEN** her family is lit, and then Marie is selected and the right drawer
+  shows her card
 
 #### Scenario: Pinching
 - **WHEN** the reader pinches the graph on a phone, beginning with a finger on a
   card
 - **THEN** it zooms around the point between the two fingers, the card's person
-  is not opened, and no page of the app scrolls or zooms with it
+  is not selected, and no page of the app scrolls or zooms with it
 
 ### Requirement: The graph is a mode of the file's tab
 
@@ -392,7 +358,7 @@ renamed or moved, as the tab does.
 Nothing in the graph SHALL write to the file.
 
 #### Scenario: Choosing it from the mode control
-- **WHEN** `curie.ged` is open in Genealogy mode and the reader chooses Graph from
+- **WHEN** `curie.ged` is open in Source mode and the reader chooses Graph from
   the mode control in its header
 - **THEN** the same tab shows the graph of `curie.ged`, with a card for each of
   its 17 people in four generations, and no new tab is open
@@ -425,26 +391,34 @@ Nothing in the graph SHALL write to the file.
 
 ### Requirement: A selected card
 
-The graph SHALL mark one person's card as **selected** when the GEDCOM tab is told
-to select them, as an index row does in Graph mode. The view SHALL centre on the
-card at a readable zoom, gliding there rather than jumping unless the reader has
-asked for reduced motion or the card is further away than a glide can show without
-a streak, as stepping to a match does. The mark SHALL be unlike the light of
-pointing and unlike the ring of the search's current match, SHALL stay while the
-pointer lights other people and while the reader searches, and SHALL stay until
-another person is selected or the tab leaves Graph mode. Where the person is not
-in the branch shown, the graph SHALL show their branch, with the way back to the
-whole file. The selection SHALL belong to the person, not to what is drawn: a card out of view,
-outside a scope the reader has narrowed, or absent from a text that has changed
-SHALL show the mark again when it is drawn, and every card of a person drawn more
-than once SHALL carry it. Searching, and changing the scope, SHALL NOT end it.
+The graph SHALL mark one person's card as **selected** when the person is the
+tab's selected record, however it was selected: by activating a card, from an
+index row, from the record card, by a link or by the cursor in Source mode. Where
+the selection came from outside the graph, the view SHALL centre on the card at a
+readable zoom, gliding there rather than jumping unless the reader has asked for
+reduced motion or the card is further away than a glide can show without a streak,
+as stepping to a match does; where it came from activating a card of the graph, the
+view SHALL NOT move. A selection made from outside the graph while the tab was behind another tab, in another mode or not yet drawn SHALL, when the graph is shown, centre on the card; one that the reader switched into the view with, SHALL also centre on the card, as the reader has just chosen this view; one restored with the workspace SHALL mark the card without moving a view that has a position. The mark SHALL be unlike the light of pointing and unlike the ring of the
+search's current match, SHALL stay while the pointer lights other people and while
+the reader searches, and SHALL stay until another record is selected or the
+selection ends. Where the person is not in the branch shown and the view is asked
+to move to them, the graph SHALL show their branch, with the way back to the whole
+file. The selection SHALL belong to the person, not to what is drawn: a card out of
+view, outside a scope the reader has narrowed, or absent from a text that has
+changed SHALL show the mark again when it is drawn, and every card of a person drawn
+more than once SHALL carry it. Searching, and changing the scope, SHALL NOT end it.
 Selecting SHALL NOT open a page, change the mode or write to the file.
 
 #### Scenario: Selecting Pierre from the index
 - **WHEN** the tab is in Graph mode and the reader activates Pierre Curie's row in
   the index
 - **THEN** his card is marked selected and centred, the tab is still in Graph
-  mode, and no page is open
+  mode, and the record card shows him
+
+#### Scenario: Selecting Pierre from the record card
+- **WHEN** the tab is in Graph mode and the reader activates Pierre Curie among
+  Marie's relatives in the record card
+- **THEN** his card is marked selected and the graph glides to it
 
 #### Scenario: The mark outlasts hover and search
 - **WHEN** Pierre Curie is selected, the pointer rests on Marie's card and the
@@ -466,6 +440,26 @@ Selecting SHALL NOT open a page, change the mode or write to the file.
   zero of descendants and the reader activates Hélène's row in the index
 - **THEN** the graph shows Hélène's branch, with her card selected
 
+#### Scenario: Selected while the tab is behind another
+- **WHEN** a tab in Graph mode is behind another tab and the reader activates Pierre
+  Curie's row in the index, and then brings the tab to the front
+- **THEN** the graph shows his card selected and centred, and no page was opened
+
+#### Scenario: Selected in Source and then shown
+- **WHEN** the reader activates Pierre Curie's row while the tab is in Source mode,
+  and then switches to Graph mode
+- **THEN** his card is marked selected and the graph is centred on it
+
+#### Scenario: Switching to Graph mode with a selection
+- **WHEN** Marie is selected, the graph was zoomed in and moved, the reader
+  switched to Timeline mode and then back to Graph mode
+- **THEN** Marie's card is marked selected and the graph is centred on it
+
+#### Scenario: Restored with the workspace
+- **WHEN** Marie is selected in a tab in Graph mode, zoomed in and moved, and
+  Obsidian is restarted
+- **THEN** the graph is at that zoom and position, with Marie's card marked
+
 ### Requirement: The find key opens the graph's search
 
 In Graph mode the editor's find — the command **Find**, and the key Obsidian
@@ -483,3 +477,38 @@ editor's search panel or change the mode. Replace SHALL NOT be offered.
 - **WHEN** the search is open with `joliot` typed and the focus is elsewhere in
   the graph, and the reader runs **Find**
 - **THEN** the field keeps its text and takes the focus
+
+### Requirement: A card or a node selects a record
+
+Activating a person's card SHALL select that person: the tab SHALL stay in Graph
+mode, SHALL open no page and no other tab, and the card SHALL be marked as selected
+and shown in the record card of the right sidebar. The graph SHALL NOT move when it
+is a card of the graph that was activated: the reader is looking at it. Activating
+a family node SHALL select that family the same way, and show it in the record
+card; no card is marked while a family is selected.
+
+Every card and family node drawn SHALL be reachable with the keyboard, in the
+order of the rows and, within a row, from left to right; SHALL say whom it
+shows to assistive technology; and SHALL be activated with Enter or Space. A
+card's **Branch** choice SHALL be reachable with the keyboard too. A card or node
+given the focus SHALL be brought into view.
+
+#### Scenario: From the graph to Irène's card
+- **WHEN** the tab of `curie.ged` is in Graph mode and the reader activates Irène's
+  card
+- **THEN** the tab is still in Graph mode with Irène's card marked selected, the
+  record card shows Irène Joliot-Curie, and no other tab has opened
+
+#### Scenario: The graph stays where it is
+- **WHEN** the reader has zoomed the graph until Marie's card is at its edge, and
+  activates her card
+- **THEN** her card is marked selected and the graph has not moved
+
+#### Scenario: From a family node
+- **WHEN** the reader activates the node between Pierre Curie and Marie
+- **THEN** the tab is in Graph mode, the record card shows the Curies' family, and
+  no card is marked selected
+
+#### Scenario: From the keyboard
+- **WHEN** the reader moves the focus to Marie's card and presses Enter
+- **THEN** Marie is selected and the record card shows her
