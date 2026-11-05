@@ -11,8 +11,22 @@ import {
   type GedcomSettingDefinition,
 } from "./settingDefinitions";
 import { changedSetting, type GedcomSettings } from "./settingsData";
+import { DeferredCommit, noteFor, wireTextRow } from "./settingTextRow";
 
 export class GedcomSettingTab extends PluginSettingTab {
+  private readonly deferred = new DeferredCommit(
+    (key, value) => {
+      const change = changedSetting(key, value);
+      if (change) {
+        void this.plugin.updateSettings(change);
+      }
+    },
+    {
+      set: (callback, ms) => window.setTimeout(callback, ms),
+      clear: (id) => window.clearTimeout(id),
+    },
+  );
+
   constructor(
     app: App,
     private readonly plugin: GedcomPlugin,
@@ -31,6 +45,10 @@ export class GedcomSettingTab extends PluginSettingTab {
   }
 
   setControlValue(key: string, value: unknown): Promise<void> {
+    if (typeof value === "string" && settingDefinitions().some((one) => one.control.type === "text" && one.control.key === key)) {
+      this.deferred.type(key, value);
+      return Promise.resolve();
+    }
     const change = changedSetting(key, value);
     return change ? this.plugin.updateSettings(change) : Promise.resolve();
   }
@@ -48,6 +66,10 @@ export class GedcomSettingTab extends PluginSettingTab {
     }
   }
 
+  hide(): void {
+    this.deferred.flush();
+  }
+
   private render(definition: GedcomSettingDefinition): void {
     const setting = new Setting(this.containerEl)
       .setName(definition.name)
@@ -57,6 +79,33 @@ export class GedcomSettingTab extends PluginSettingTab {
       void this.setControlValue(control.key, value);
     };
 
+    if (control.type === "text") {
+      const note = setting.descEl.createDiv({ cls: "gedcom-setting-note" });
+      setting.addText((text) => {
+        text
+          .setPlaceholder(control.placeholder ?? "")
+          .setValue(this.plugin.settings[control.key] as string);
+        note.setText(noteFor(control.key, text.getValue()));
+        wireTextRow(
+          {
+            onInput: (listener) => {
+              text.onChange(listener);
+            },
+            onBlur: (listener) => text.inputEl.addEventListener("blur", listener),
+            onEnter: (listener) =>
+              text.inputEl.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                  listener();
+                }
+              }),
+            setNote: (message) => note.setText(message),
+          },
+          control.key,
+          this.deferred,
+        );
+      });
+      return;
+    }
     if (control.type === "toggle") {
       setting.addToggle((toggle) =>
         toggle

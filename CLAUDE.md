@@ -88,6 +88,7 @@ cost twice for one API. The move to 1.8.7 cleared `Workspace.revealLeaf`
 | --- | --- | --- | --- |
 | Only `getSettingDefinitions` | 1.13.0 | The deprecated `display()` and its `render()` are kept beside it, for an app that does not call the new one | `src/settings.ts` |
 | `visible` and `update()` on a setting, to show *Open the side panels when selecting* only while the genealogy interface is on | 1.13.0 | The row is always shown, and its description says it applies while the interface is on | `src/settingDefinitions.ts` |
+| `visible` and `update()` on a setting, to show the tile address and attribution only while *Load map tiles from the web* is on | 1.13.0 | The rows are always shown, and their descriptions say they apply while tiles are loaded | `src/settingDefinitions.ts` |
 
 `eslint-plugin-obsidianmd` catches a call above the floor
 (`obsidianmd/no-unsupported-api`), so a new entry announces itself at lint time

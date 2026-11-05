@@ -17,6 +17,9 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
+      mapTiles: false,
+      tileUrl: "",
+      tileAttribution: "",
       lastMode: "graph",
       genealogyInterface: false,
       openPanelsOnSelect: true,
@@ -31,6 +34,9 @@ describe("GEDCOM settings", () => {
         recordPreview: "modifier",
         mediaPreview: "off",
         remoteImages: true,
+        mapTiles: true,
+        tileUrl: "https://tiles.example/{z}/{x}/{y}.png",
+        tileAttribution: "© Example Maps",
         lastMode: "timeline",
         genealogyInterface: true,
         openPanelsOnSelect: false,
@@ -42,6 +48,9 @@ describe("GEDCOM settings", () => {
       recordPreview: "modifier",
       mediaPreview: "off",
       remoteImages: true,
+      mapTiles: true,
+      tileUrl: "https://tiles.example/{z}/{x}/{y}.png",
+      tileAttribution: "© Example Maps",
       lastMode: "timeline",
       genealogyInterface: true,
       openPanelsOnSelect: false,
@@ -62,6 +71,9 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
+      mapTiles: false,
+      tileUrl: "",
+      tileAttribution: "",
       lastMode: "graph",
       genealogyInterface: false,
       openPanelsOnSelect: true,
@@ -186,6 +198,27 @@ describe("GEDCOM settings", () => {
           defaultValue: false,
         },
       },
+      {
+        name: "Load map tiles from the web",
+        desc: "Off, the map is drawn on the bundled outline and nothing is requested. On, the tile server you name learns the tile numbers, which say what part of the world you look at, and your network address. No place name leaves the vault.",
+        control: { type: "toggle", key: "mapTiles", defaultValue: false },
+      },
+      {
+        name: "Tile server address",
+        desc: "A template with {z}, {x} and {y}, starting with https://. Applies while tiles are loaded. It is saved as typed, with any key it holds, in the plugin's data.",
+        control: {
+          type: "text",
+          key: "tileUrl",
+          placeholder: "https://tiles.example/{z}/{x}/{y}.png",
+          defaultValue: "",
+          validate: expect.any(Function) as unknown,
+        },
+      },
+      {
+        name: "Tile attribution",
+        desc: "Text shown in the corner of the map while tiles are loaded. Empty, the map shows the host of the address.",
+        control: { type: "text", key: "tileAttribution", defaultValue: "" },
+      },
     ]);
   });
 
@@ -224,6 +257,29 @@ describe("GEDCOM settings", () => {
         });
       }
     }
+  });
+});
+
+describe("the map tile settings", () => {
+  it("read off and empty for a settings file written before they existed", () => {
+    const parsed = parseSettings({ diagnostics: true });
+
+    expect([parsed.mapTiles, parsed.tileUrl, parsed.tileAttribution]).toEqual([false, "", ""]);
+  });
+
+  it("read the defaults for a value of the wrong kind or an address of 3000 characters", () => {
+    const parsed = parseSettings({ mapTiles: "yes", tileUrl: 5, tileAttribution: "x".repeat(3000) });
+
+    expect([parsed.mapTiles, parsed.tileUrl, parsed.tileAttribution]).toEqual([false, "", ""]);
+  });
+
+  it("keep an address as typed, spaces and all", () => {
+    expect(changedSetting("tileUrl", " https://x/{z}")).toEqual({ tileUrl: " https://x/{z}" });
+    expect(changedSetting("mapTiles", "yes")).toBeNull();
+  });
+
+  it("ship no server", () => {
+    expect(JSON.stringify(DEFAULT_SETTINGS)).not.toContain("http");
   });
 });
 
