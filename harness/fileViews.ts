@@ -1,6 +1,8 @@
 import type { Range } from "@domorium/language-service";
 
 import type { ViewKind } from "../src/desk/deskState";
+import { mapSelection } from "../src/desk/fileMap";
+import type { TableState, TileSettings } from "../src/desk/fileMapView";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
@@ -20,12 +22,16 @@ export interface TabOptions {
   phone?: boolean;
   touch?: boolean;
   language?: string;
+  places?: TableState;
+  tiles?: TileSettings;
 }
 
 export interface TabCalls {
   selected: string[];
   shownInSource: Range[];
   changed: number;
+  tableActions: number;
+  addedPlaces: string[][];
 }
 
 declare global {
@@ -46,7 +52,10 @@ declare global {
 
 installObsidianDom();
 
-const calls: TabCalls = { selected: [], shownInSource: [], changed: 0 };
+const calls: TabCalls = { selected: [], shownInSource: [], changed: 0, tableActions: 0, addedPlaces: [] };
+const NO_TILES: TileSettings = { enabled: false, template: null, invalid: false, attribution: "" };
+let places: TableState = { status: "read", table: { rows: new Map() } };
+let tiles: TileSettings = NO_TILES;
 let views: FileViews | null = null;
 let memory: ViewMemory = {};
 let index = indexOf(CURIE);
@@ -60,6 +69,7 @@ function hand(xref: string | null, reveal: boolean): void {
     views?.select("graph", person, reveal);
   views?.select("timeline", person, reveal);
   views?.select("list", listSelection(index, xref), reveal);
+  views?.select("map", mapSelection(index, xref), reveal);
 }
 
 const element = (id: string): HTMLElement => {
@@ -90,7 +100,7 @@ function draw(): void {
 }
 
 function markActive(): void {
-  for (const each of ["graph", "timeline", "list", "source"]) {
+  for (const each of ["graph", "timeline", "list", "map", "source"]) {
     element(`show-${each}`).classList.toggle("gedcom-mode-active", each === mode);
     element(`show-${each}`).setAttribute("aria-pressed", String(each === mode));
   }
@@ -116,6 +126,10 @@ function mount(options: TabOptions): void {
   calls.selected = [];
   calls.shownInSource = [];
   calls.changed = 0;
+  calls.tableActions = 0;
+  calls.addedPlaces = [];
+  places = options.places ?? { status: "read", table: { rows: new Map() } };
+  tiles = options.tiles ?? NO_TILES;
   index = indexOf(options.doc ?? CURIE);
   memory = options.memory ?? {};
   around = options.around;
@@ -141,6 +155,14 @@ function mount(options: TabOptions): void {
     },
     setIcon: stubSetIcon,
     coarsePointer: () => touch,
+    places: () => places,
+    placesAction: () => {
+      calls.tableActions += 1;
+    },
+    addMissingPlaces: (names) => {
+      calls.addedPlaces.push(names);
+    },
+    tiles: () => tiles,
   });
   window.tab.views = views;
   draw();
@@ -153,6 +175,7 @@ const wire = (id: string, run: () => void): void => {
 wire("show-graph", () => showMode("graph"));
 wire("show-timeline", () => showMode("timeline"));
 wire("show-list", () => showMode("list"));
+wire("show-map", () => showMode("map"));
 wire("show-source", () => showMode("source"));
 wire("select-pierre", () => window.tab.select("@I2@", true));
 wire("select-irene", () => window.tab.select("@I12@", true));

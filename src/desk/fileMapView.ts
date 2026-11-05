@@ -355,9 +355,18 @@ export class MapBoard {
     this.tip.toggle(false);
   }
 
+  dispose(): void {
+    this.glide.stop();
+    if (this.reportTimer !== null) {
+      this.env.clear(this.reportTimer);
+      this.reportTimer = null;
+    }
+    this.tiles.update({ x: 0, y: 0, k: 1 }, this.size, { enabled: false, template: null, attribution: "", maxZoom: MAX_TILE_ZOOM });
+  }
+
   state(): MapState {
-    const scope = { ...this.scope };
-    return { ...scope, ...(this.view && !this.fitted && this.size.width > 0 ? { view: saveView(this.view, this.size) } : {}) };
+    const view = this.pendingSaved ?? (this.view && !this.fitted && this.size.width > 0 ? saveView(this.view, this.size) : null);
+    return { ...this.scope, ...(view ? { view } : {}) };
   }
 
   tilesChanged(): void {

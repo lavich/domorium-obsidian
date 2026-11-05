@@ -68,6 +68,7 @@ const SHOW_NAMES: Record<DeskMode, MessageKey> = {
   graph: "command.showGraph",
   timeline: "command.showTimeline",
   list: "command.showList",
+  map: "command.showMap",
   source: "command.showSource",
 };
 

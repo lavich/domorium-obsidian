@@ -12,6 +12,7 @@ import {
   Plugin,
   removeIcon,
   Setting,
+  type TAbstractFile,
   TFile,
   TFolder,
   View,
@@ -22,6 +23,7 @@ import { COMMANDS, type CommandHost } from "./commands";
 import { recordText, type GedcomRecord } from "./editor/records";
 import { formatStatus } from "./editor/status";
 import { setLanguage, t } from "./i18n";
+import { appendMissingRows, placesTablePath } from "./desk/placesTable";
 import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
@@ -255,8 +257,15 @@ export default class GedcomPlugin
           { from: oldPath, to: file.path, folder: file instanceof TFolder },
           descendants,
         );
+        void this.followPlacesTable(file, oldPath);
+        this.placesTouched(file.path, oldPath);
       }),
     );
+    this.registerEvent(this.app.vault.on("modify", (file) => this.placesTouched(file.path)));
+    this.registerEvent(this.app.vault.on("delete", (file) => this.placesTouched(file.path)));
+    this.app.workspace.onLayoutReady(() => {
+      this.registerEvent(this.app.vault.on("create", (file) => this.placesTouched(file.path)));
+    });
     this.registerEvent(
       this.app.workspace.on("css-change", () => {
         this.forEachView((view) => {
@@ -520,6 +529,63 @@ export default class GedcomPlugin
   statusChanged(view: GedcomView): void {
     if (this.app.workspace.getActiveViewOfType(GedcomView) === view) {
       this.refreshStatusBar();
+    }
+  }
+
+  readPlacesTable(path: string): Promise<string | null> {
+    const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+    return file instanceof TFile ? this.app.vault.read(file) : Promise.resolve(null);
+  }
+
+  async createPlacesTable(path: string, text: string): Promise<"created" | "exists"> {
+    const target = normalizePath(path);
+    if (this.app.vault.getAbstractFileByPath(target) instanceof TFile) {
+      return "exists";
+    }
+    try {
+      await this.app.vault.create(target, text);
+      return "created";
+    } catch (error) {
+      if (this.app.vault.getAbstractFileByPath(target) instanceof TFile) {
+        return "exists";
+      }
+      throw error;
+    }
+  }
+
+  async openPlacesTable(path: string): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+    if (file instanceof TFile) {
+      await this.app.workspace.getLeaf("tab").openFile(file);
+    }
+  }
+
+  async appendPlaces(path: string, names: string[]): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+    if (file instanceof TFile) {
+      await this.app.vault.process(file, (text) => appendMissingRows(text, names));
+    }
+  }
+
+  private placesTouched(path: string, oldPath?: string): void {
+    this.forEachView((view) => {
+      view.placesFileTouched(path, oldPath);
+    });
+  }
+
+  /** A renamed GEDCOM file takes its places table along, unless the new name already has one. */
+  private async followPlacesTable(file: TAbstractFile, oldPath: string): Promise<void> {
+    if (!(file instanceof TFile)) {
+      return;
+    }
+    const [from, to] = [placesTablePath(oldPath), placesTablePath(file.path)];
+    if (from === null || to === null || from === to) {
+      return;
+    }
+    const table = this.app.vault.getAbstractFileByPath(normalizePath(from));
+    if (table instanceof TFile && !this.app.vault.getAbstractFileByPath(normalizePath(to))) {
+      await this.app.fileManager.renameFile(table, normalizePath(to));
+      new Notice(t("map.table.followed", { path: to }));
     }
   }
 

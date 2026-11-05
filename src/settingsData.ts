@@ -2,7 +2,7 @@ export const RECORD_PREVIEW_TRIGGERS = ["modifier", "hover", "off"] as const;
 
 export type RecordPreviewTrigger = (typeof RECORD_PREVIEW_TRIGGERS)[number];
 
-export const DESK_MODES = ["graph", "timeline", "list", "source"] as const;
+export const DESK_MODES = ["graph", "timeline", "list", "map", "source"] as const;
 
 export type DeskMode = (typeof DESK_MODES)[number];
 

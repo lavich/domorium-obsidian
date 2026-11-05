@@ -54,11 +54,20 @@ describe("what a tab keeps of the desk", () => {
     expect(readDeskState({ selected: 7 })).toEqual({});
   });
 
-  it("reads each of the four modes", () => {
-    expect(DESK_MODES).toEqual(["graph", "timeline", "list", "source"]);
+  it("reads each of the five modes", () => {
+    expect(DESK_MODES).toEqual(["graph", "timeline", "list", "map", "source"]);
     for (const mode of DESK_MODES) {
       expect(readDeskState({ mode })).toEqual({ mode });
     }
+  });
+
+  it("keeps a valid map state, drops a bad one and reads a pixel view as none", () => {
+    expect(readDeskState({ mode: "map", map: { up: 1, down: 3, focus: "@I1@", view: { lat: 48.85, lon: 2.35, zoom: 7 } } })).toEqual({
+      mode: "map",
+      map: { up: 1, down: 3, focus: "@I1@", view: { lat: 48.85, lon: 2.35, zoom: 7 } },
+    });
+    expect(readDeskState({ map: "x" })).toEqual({});
+    expect(readDeskState({ map: { up: 1, down: 1, view: { x: 1, y: 2, k: 3 } } }).map).toEqual({ up: 1, down: 1 });
   });
 
   it("reads a saved genealogy mode as graph", () => {
@@ -208,11 +217,11 @@ describe("the mode the next file opens in", () => {
 });
 
 describe("the modes a tab offers", () => {
-  it("lists Graph, Timeline, List and Source in that order, with the current one active", () => {
+  it("lists Graph, Timeline, List, Map and Source in that order, with the current one active", () => {
     for (const current of DESK_MODES) {
       const choices = modeButtons(current);
 
-      expect(choices.map((choice) => choice.mode)).toEqual(["graph", "timeline", "list", "source"]);
+      expect(choices.map((choice) => choice.mode)).toEqual(["graph", "timeline", "list", "map", "source"]);
       expect(choices.filter((choice) => choice.active).map((choice) => choice.mode)).toEqual([current]);
     }
   });
@@ -220,8 +229,20 @@ describe("the modes a tab offers", () => {
   it("gives each mode an icon and a title of its own", () => {
     const choices = modeButtons("graph");
 
-    expect(choices.map((choice) => choice.icon)).toEqual(["network", "calendar-range", "list", "code"]);
-    expect(new Set(choices.map((choice) => choice.title)).size).toBe(4);
+    expect(choices.map((choice) => choice.icon)).toEqual(["network", "calendar-range", "list", "map", "code"]);
+    expect(new Set(choices.map((choice) => choice.title)).size).toBe(5);
+  });
+
+  it("does not remember the map as the mode the next file opens in", () => {
+    expect(rememberedMode("list", "map", "reader")).toBe("list");
+    expect(rememberedMode("list", "timeline", "reader")).toBe("timeline");
+  });
+
+  it("opens a map on the whole file at any size, with no focus", () => {
+    const big = indexOf(generated(20_000));
+
+    expect(openingMemory("map", undefined, big, "@I1@")).toEqual({ up: 2, down: 2 });
+    expect(openingMemory("map", { up: 4, down: 1, focus: "@I3@" }, big, undefined)).toEqual({ up: 4, down: 1, focus: "@I3@" });
   });
 
   it("toggles Source to the last other mode, Graph where there is none, and any other mode to Source", () => {
@@ -229,14 +250,14 @@ describe("the modes a tab offers", () => {
     expect(toggleTarget("source", "graph")).toBe("graph");
     expect(toggleTarget("source", undefined)).toBe("graph");
     expect(toggleTarget("source", "list")).toBe("list");
-    for (const current of ["graph", "timeline", "list"] as const) {
+    for (const current of ["graph", "timeline", "list", "map"] as const) {
       expect(toggleTarget(current, "graph")).toBe("source");
       expect(toggleTarget(current, undefined)).toBe("source");
     }
   });
 
   it("adds the header buttons in the reverse of the modes, so that Obsidian, which puts each to the left of the last, shows them in the order of the modes", () => {
-    expect(actionOrder(DESK_MODES)).toEqual(["source", "list", "timeline", "graph"]);
+    expect(actionOrder(DESK_MODES)).toEqual(["source", "map", "list", "timeline", "graph"]);
 
     const shown: string[] = [];
     const addAction = (mode: string): void => {
@@ -244,7 +265,7 @@ describe("the modes a tab offers", () => {
     };
     actionOrder(DESK_MODES).forEach(addAction);
 
-    expect(shown).toEqual(["graph", "timeline", "list", "source"]);
+    expect(shown).toEqual(["graph", "timeline", "list", "map", "source"]);
   });
 
   it("names the tabs and the panels of earlier versions, which no view is registered under", () => {

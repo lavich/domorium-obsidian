@@ -49,7 +49,7 @@ import type { AllowScope } from "./editor/mediaPreviewView";
 import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
-import { t } from "./i18n";
+import { currentLanguage, t } from "./i18n";
 import { DESK_MODES, type GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
@@ -76,7 +76,11 @@ import {
   type Origin,
   type ViewKind,
 } from "./desk/deskState";
-import { listSelection } from "./desk/listRows";
+import { fileMapOf, groupByPlace, mapSelection } from "./desk/fileMap";
+import type { TableState } from "./desk/fileMapView";
+import { collatorFor, listSelection } from "./desk/listRows";
+import { tileTemplate } from "./desk/mapProjection";
+import { NO_TABLE, parsePlacesTable, placesTablePath, placesTableText } from "./desk/placesTable";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
@@ -108,6 +112,11 @@ export interface GedcomViewHost {
   cardWanted(view: GedcomView, origin: Origin): void;
   lastMode(): DeskMode;
   modeChosen(mode: DeskMode): void;
+  /** The text of a note, read afresh, or null where there is none. */
+  readPlacesTable(path: string): Promise<string | null>;
+  createPlacesTable(path: string, text: string): Promise<"created" | "exists">;
+  openPlacesTable(path: string): Promise<void>;
+  appendPlaces(path: string, names: string[]): Promise<void>;
 }
 
 export class GedcomView extends TextFileView implements CardTab {
@@ -118,6 +127,8 @@ export class GedcomView extends TextFileView implements CardTab {
   private readonly modes: TabModes;
   private readonly views: FileViews;
   private memory: ViewMemory = {};
+  private placesTable: TableState = { status: "unread" };
+  private placesLoadedFor: string | null = null;
   private selectedFact: FactKey | null = null;
   private readonly recordHistory = new RecordHistory();
   private revision = 0;
@@ -156,6 +167,18 @@ export class GedcomView extends TextFileView implements CardTab {
       },
       setIcon: (element, icon) => setIcon(element, icon),
       coarsePointer: () => Platform.isMobile || window.matchMedia("(pointer: coarse)").matches,
+      places: () => this.placesTable,
+      placesAction: () => void this.placesAction(),
+      addMissingPlaces: (names) => void this.addMissingPlaces(names),
+      tiles: () => {
+        const template = tileTemplate(this.settings.tileUrl);
+        return {
+          enabled: this.settings.mapTiles,
+          template,
+          invalid: this.settings.tileUrl.trim() !== "" && template === null,
+          attribution: this.settings.tileAttribution,
+        };
+      },
     });
     this.popovers = new PreviewPopovers({
       open: (target) => new HoverPopover(this.leaf, target),
@@ -291,6 +314,7 @@ export class GedcomView extends TextFileView implements CardTab {
       ...(desk.graph ? { graph: desk.graph } : {}),
       ...(desk.timeline ? { timeline: desk.timeline } : {}),
       ...(desk.list ? { list: desk.list } : {}),
+      ...(desk.map ? { map: desk.map } : {}),
     };
     const restored = this.modes.applyState(desk).selectionChanged;
     if (restored) {
@@ -342,6 +366,7 @@ export class GedcomView extends TextFileView implements CardTab {
       settings.genealogyInterface !== this.settings.genealogyInterface;
     this.settings = settings;
     this.refresh();
+    this.views.refreshTiles();
     if (interfaceChanged) {
       if (this.modes.interfaceChanged(settings.genealogyInterface).selectionCleared) {
         this.selectedFact = null;
@@ -575,6 +600,7 @@ export class GedcomView extends TextFileView implements CardTab {
     this.views.select("graph", person, reveal);
     this.views.select("timeline", person, reveal);
     this.views.select("list", listSelection(this.genealogy(), selected), reveal);
+    this.views.select("map", mapSelection(this.genealogy(), selected), reveal);
   }
 
   followMove(move: Move, documentPath: string): Outcome {
@@ -735,7 +761,73 @@ export class GedcomView extends TextFileView implements CardTab {
     }
     if (isViewMode(mode)) {
       this.handSelectionOver(mode, switched);
+      if (mode === "map") {
+        this.loadPlacesTable();
+      }
       this.drawViews();
+    }
+  }
+
+  private tablePath(): string | null {
+    return this.file === null ? null : placesTablePath(this.file.path);
+  }
+
+  /** Reads the places table once while the tab is in Map mode and again after it has been marked stale. */
+  private loadPlacesTable(): void {
+    const path = this.tablePath();
+    if (path === null) {
+      this.placesTable = { status: "absent" };
+      this.placesLoadedFor = null;
+      return;
+    }
+    if (this.placesTable.status !== "unread" && this.placesLoadedFor === path) {
+      return;
+    }
+    this.placesLoadedFor = path;
+    void this.host.readPlacesTable(path).then((text) => {
+      if (this.tablePath() !== path) {
+        return;
+      }
+      this.placesTable = text === null ? { status: "absent" } : { status: "read", table: parsePlacesTable(text) };
+      this.views.refreshPlaces();
+      if (this.modes.shown === "map") {
+        this.drawViews();
+      }
+    });
+  }
+
+  /** A note was changed, created, deleted or moved: re-read the table where it was this tab's. */
+  placesFileTouched(path: string, oldPath?: string): void {
+    const table = this.tablePath();
+    if (table === null || (path !== table && oldPath !== table && this.placesLoadedFor === table)) {
+      return;
+    }
+    this.placesTable = { status: "unread" };
+    if (this.modes.shown === "map") {
+      this.loadPlacesTable();
+    }
+  }
+
+  private async placesAction(): Promise<void> {
+    const path = this.tablePath();
+    if (path === null) {
+      return;
+    }
+    if (this.placesTable.status !== "read") {
+      const map = fileMapOf(this.genealogy(), NO_TABLE);
+      const names = groupByPlace(map, map.events)
+        .filter((group) => group.place.coordinates === undefined)
+        .map((group) => group.place.name);
+      const note = t("map.table.note", { file: this.file?.name ?? "" });
+      await this.host.createPlacesTable(path, placesTableText(names, collatorFor(currentLanguage()), note));
+    }
+    await this.host.openPlacesTable(path);
+  }
+
+  private async addMissingPlaces(names: string[]): Promise<void> {
+    const path = this.tablePath();
+    if (path !== null && names.length > 0) {
+      await this.host.appendPlaces(path, names);
     }
   }
 
@@ -756,9 +848,11 @@ export class GedcomView extends TextFileView implements CardTab {
     const xref =
       mode === "list"
         ? listSelection(this.genealogy(), selected)
-        : selected !== null && this.genealogy().person(selected)
-          ? selected
-          : null;
+        : mode === "map"
+          ? mapSelection(this.genealogy(), selected)
+          : selected !== null && this.genealogy().person(selected)
+            ? selected
+            : null;
     this.views.select(mode, xref, reveal);
   }
 
@@ -766,6 +860,7 @@ export class GedcomView extends TextFileView implements CardTab {
     this.views.select("graph", null, false);
     this.views.select("timeline", null, false);
     this.views.select("list", null, false);
+    this.views.select("map", null, false);
   }
 
   private dropGoneSelection(): void {

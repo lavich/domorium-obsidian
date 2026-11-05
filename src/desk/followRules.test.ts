@@ -18,6 +18,7 @@ describe("when the cursor's record is selected", () => {
 
   it("is not in another mode, nor with the interface off", () => {
     expect(shouldFollowCursor({ ...rest, mode: "graph" })).toBe(false);
+    expect(shouldFollowCursor({ ...rest, mode: "map" })).toBe(false);
     expect(shouldFollowCursor({ ...rest, interfaceOn: false })).toBe(false);
   });
 });
