@@ -36,12 +36,12 @@ test.describe("the mode buttons of the tab header", () => {
     const active = await look("#show-list");
     const idle = await look("#show-graph");
     expect(idle).toEqual({ background: "rgba(0, 0, 0, 0)", color: "rgb(110, 110, 110)", radius: "4px", opacity: "0.85" });
-    expect(active).toEqual({ background: "rgba(0, 0, 0, 0)", color: "rgb(0, 0, 180)", radius: "4px", opacity: "0.85" });
+    expect(active).toEqual({ background: "rgba(0, 0, 0, 0.075)", color: "rgb(0, 0, 0)", radius: "4px", opacity: "0.85" });
 
     await page.locator("#show-graph").hover();
     expect(await look("#show-graph")).toEqual({ background: "rgba(0, 0, 0, 0.075)", color: "rgb(110, 110, 110)", radius: "4px", opacity: "1" });
     await page.locator("#show-list").hover();
-    expect((await look("#show-list")).color).toBe("rgb(0, 0, 180)");
+    expect((await look("#show-list")).color).toBe("rgb(0, 0, 0)");
   });
 
   test("do not rely on one class for the mode shown", async ({ page }) => {
@@ -51,7 +51,7 @@ test.describe("the mode buttons of the tab header", () => {
       button?.setAttribute("aria-pressed", "true");
     });
 
-    expect(await page.locator("#show-graph").evaluate((button) => getComputedStyle(button).color)).toBe("rgb(0, 0, 180)");
+    expect(await page.locator("#show-graph").evaluate((button) => getComputedStyle(button).color)).toBe("rgb(0, 0, 0)");
   });
 
   test("keep the active mark as the mode changes", async ({ page }) => {

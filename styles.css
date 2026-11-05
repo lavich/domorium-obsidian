@@ -15,8 +15,9 @@
 
 .view-action.gedcom-mode-action.gedcom-mode-active,
 .view-action.gedcom-mode-action[aria-pressed="true"] {
-  --icon-color: var(--icon-color-active);
-  --icon-color-hover: var(--icon-color-active);
+  --icon-color: var(--icon-color-focused, var(--text-normal));
+  --icon-color-hover: var(--icon-color-focused, var(--text-normal));
+  background-color: var(--background-modifier-hover);
 }
 
 .gedcom-gedcom-view,
