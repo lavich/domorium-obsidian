@@ -20,7 +20,7 @@ Recorded as given; they are not open.
 
 ## What Changes
 
-- **A fifth mode, Map.** A GEDCOM tab is in Graph, Timeline, List, **Map** or Source mode. The header buttons read Graph, Timeline, List, Map, Source from the left, Source rightmost; a command **Show as map** and the tab's menu reach it; the mode a reader last chose (Map included) is the mode the next file opens in; Map keeps its own scope, position and zoom per tab across switching modes and restarting.
+- **A fifth mode, Map.** A GEDCOM tab is in Graph, Timeline, List, **Map** or Source mode. The header buttons read Graph, Timeline, List, Map, Source from the left, Source rightmost; a command **Show as map** and the tab's menu reach it; Map is not remembered as the last mode for other files (they open in the last non-Map mode), and a tab keeps its own mode; Map keeps its own scope, position and zoom per tab across switching modes and restarting.
 - **Places drawn from coordinates the file or the vault carries.** The read model reads `PLAC > MAP > LATI/LONG` of every event of a person and a family (both published packages already hand these lines over as symbols, so nothing waits for upstream). A places table `<name>.places.md` beside the `.ged` gives coordinates to the places the file does not. A place with neither is not drawn and is counted, and the counter opens the list of such places.
 - **A bundled outline of the world** in Web Mercator, drawn in the plugin's own SVG, from Natural Earth 110 m land (public domain), packed into a few tens of kilobytes. No map library.
 - **Tiles only when asked for.** Two new settings, **Load map tiles from the web** (off) and **Tile server address** (a template with `{z}/{x}/{y}`, empty by default), and a third, **Tile attribution**. Nothing is fetched while the toggle is off or the template is empty or invalid; with it on, only the tiles in view are requested, they never delay the points, and a failing server leaves the outline showing.
@@ -46,6 +46,10 @@ Repository or upstream: **this repository only.** Parsing and the language servi
 - `genealogy-record-card`: the card opens on a selection made in Map as in the other views, the empty card names the map, and the places section no longer says that no map is drawn.
 - `genealogy-read-model`: an event's place carries the coordinates its `MAP` states.
 
+## What a reader of the product should know
+
+The places table `<name>.places.md` is a note the reader owns that holds coordinates outside the GEDCOM file. It does not convert records, never shadows the file (a `MAP` in the file wins) and is created or extended only by a button. This is accepted as consistent with the file being the source of truth and with `CLAUDE.md`'s "no second genealogy database"; `PRODUCT.md` is updated to say so.
+
 ## Non-goals
 
 - Editing a place or its coordinates from the UI; the places table is edited as any note is.
@@ -69,7 +73,7 @@ Consumers, with the code they sit in:
 - **Settings**: `src/settingsData.ts`, `src/settingDefinitions.ts`, `src/settings.ts` (a text control and the legacy `render`), `src/settings.test.ts`.
 - **Strings**: `src/i18n/en.json`, `src/i18n/ru.json`, `src/i18n/i18n.test.ts`.
 - **Styles**: `styles.css` (`gedcom-map-*`, `.gedcom-views-root.is-map`).
-- **Harness and specs**: `harness/fileViews.ts` (a `map` mode of the stand-in tab), a new `harness/fileMap.ts` and `harness/fileMap.html`, `harness/build.mjs:3` (the entry list), `tests/fileMap.spec.ts` (new), `tests/fileViews.spec.ts`, `tests/header.spec.ts` (the order of the mode buttons), `tests/theme.spec.ts`, `tests/desk.spec.ts` (the empty-card text), `tests/generated.ts` if it builds the large file the map specs reuse.
-- **Documents**: `README.md` (the modes, the places table, the tile settings, the Privacy section at 227), `CLAUDE.md` (a row in the *minimum app version* table, see `design.md`), `demo-vault/` (a `curie.places.md` and `MAP` on a few places, so the demo draws), `docs/design/upstream-issue-drafts.md` only if a later need arises (none now).
-- **Dependencies**: none added; `@domorium/*` stay at 2.3.0 / 2.3.1 / 2.2.1. The outline is data in the bundle: a generated module of the order of 40 KB of text.
+- **Harness and specs**: `harness/fileViews.ts` (a `map` mode of the stand-in tab), a new `harness/fileMap.ts` and `harness/fileMap.html`, `harness/build.mjs:3` (the entry list), `tests/fileMap.spec.ts` (new), `tests/fileViews.spec.ts`, `tests/header.spec.ts` (the order of the mode buttons), `tests/theme.spec.ts`, `tests/desk.spec.ts` (the empty-card text), `tests/generated.ts` (no `PLAC` at all: a new generator with places and coordinates for the large file), `src/desk/floatingSearch.ts` (label, placeholder and counter-text options), `src/desk/recordCard.test.ts` (the empty-card text), `eslint.config.mjs` (`scripts/**` ignored).
+- **Documents**: `README.md` (the modes, the places table, the tile settings, the Privacy section at 227), `CLAUDE.md` (a row in the *minimum app version* table, see `design.md`), `demo-vault/` (a `curie.places.md` and `MAP` on a few places, so the demo draws), `PRODUCT.md` (the network rule and Principle 1), `docs/design/research-desk.md:58` and `docs/design/next-steps.md:15` (the old open decision on the map), `docs/design/upstream-issue-drafts.md` only if a later need arises (none now).
+- **Dependencies**: none added; `@domorium/*` stay at 2.3.0 / 2.3.1 / 2.2.1. The outline is data in the bundle: a generated module of 11–14 KB of base64 (110 m land; 40 KB is a ceiling).
 - **`minAppVersion`**: stays 1.8.7. No API above it is used; the tile rows of the settings are always shown, which declines `visible`/`update()` once more (1.13.0).

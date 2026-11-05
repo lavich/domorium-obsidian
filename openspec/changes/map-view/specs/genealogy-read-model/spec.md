@@ -2,7 +2,7 @@
 
 ### Requirement: An event's place carries the coordinates its MAP states
 
-Where the `PLAC` line of an event of a person or of a family has a `MAP` structure holding a `LATI` and a `LONG`, the model SHALL report, with the event's place, the coordinates as signed decimal degrees, positive north and east and negative south and west. A latitude SHALL be valid as one letter `N` or `S` followed by a decimal number from 0 to 90 and a longitude as one letter `E` or `W` followed by a decimal number from 0 to 180. Where either is missing or invalid, the model SHALL report no coordinates for the event, and SHALL still report the place as written. An event with no `PLAC` SHALL have none, and a `MAP` anywhere else SHALL be ignored. The coordinates SHALL be read from the document's own lines, in a document of either version and in one that declares none, and SHALL NOT be looked up from the name of a place, from another file or from the network.
+Where the `PLAC` line of an event of a person or of a family has a `MAP` structure holding a `LATI` and a `LONG`, the model SHALL report, with the event's place, the coordinates as signed decimal degrees, positive north and east and negative south and west. A coordinate SHALL be read by one rule: a decimal number of degrees with a point or a comma, signed or with one letter before or after it and no sign, the letter either case and optionally set off by a space; `N` and `S` belong to a latitude, `E` and `W` to a longitude, `S` and `W` are negative, `S0` is 0, a latitude is valid from -90 to 90 and a longitude from -180 to 180, and a sign together with a letter is invalid. Where either is missing or invalid, the model SHALL report no coordinates for the event, and SHALL still report the place as written. An event with no `PLAC` SHALL have none, and a `MAP` anywhere else SHALL be ignored. The coordinates SHALL be read from the document's own lines, in a document of either version and in one that declares none, and SHALL NOT be looked up from the name of a place, from another file or from the network.
 
 #### Scenario: A birth with coordinates
 - **WHEN** a birth has `PLAC Warsaw, Congress Poland` with `MAP`, `LATI N52.2297` and `LONG E21.0122`
@@ -22,6 +22,14 @@ Where the `PLAC` line of an event of a person or of a family has a `MAP` structu
 
 #### Scenario: A half-stated MAP
 - **WHEN** a `MAP` has a `LATI` and no `LONG`, or a latitude of `N95.0`
+- **THEN** the event reports the place and no coordinates
+
+#### Scenario: Case, spaces and signs
+- **WHEN** a place has `LATI n 52.2297` and `LONG -70.6693`
+- **THEN** its coordinates are 52.2297 and -70.6693
+
+#### Scenario: A sign with a letter
+- **WHEN** a place has `LONG W-1.5`
 - **THEN** the event reports the place and no coordinates
 
 #### Scenario: A MAP beside the event

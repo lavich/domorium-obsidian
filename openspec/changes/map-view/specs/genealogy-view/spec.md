@@ -1,5 +1,60 @@
 ## MODIFIED Requirements
 
+### Requirement: A year before the common era is shown as one
+
+Wherever the plugin shows a year read from a date — a person's heading on the
+card, a row of a list, an entry of the timeline section, a card or a row of the
+graph and the timeline, a label, the years chip and the popup of the map — a year before the common era SHALL be shown as the year the
+file writes, marked in the reader's language as before the common era. It SHALL
+NOT be shown as a negative number, nor bare as though it were of the common era.
+A year of the common era SHALL be shown bare, as before.
+
+#### Scenario: A heading in English
+- **WHEN** the reader's language is English and a person's birth reads
+  `1401 BCE` in a 7.0 document
+- **THEN** the heading shows the year of birth as `1401 BCE`
+
+#### Scenario: A heading in Russian
+- **WHEN** the reader's language is Russian and a person's birth reads
+  `ABT 1401 BCE` in a 7.0 document
+- **THEN** the heading shows the year of birth as approximate and before the
+  common era, `≈1401 до н. э.`
+
+#### Scenario: A timeline across the start of the era
+- **WHEN** a person's own events are dated `10 BCE`, `5 BCE` and `20` in a 7.0
+  document
+- **THEN** the timeline section of their card lists them in that order, showing `10 BCE`, `5 BCE` and
+  `20`
+
+#### Scenario: A map label before the common era
+- **WHEN** the only event at a place of the map is dated `44 BCE`
+- **THEN** its label reads the place and `44 BCE`, and the map's years chip and its popup show the year as `44 BCE`
+
+### Requirement: A tab navigated to another file starts afresh
+
+When a tab that was showing one GEDCOM file is navigated to another, the Graph,
+Timeline, List and Map of the first — the scope, position, zoom and scroll position, the
+kind, sort, filter and scroll position, the map's years range, search and places panel, the drawn boards and the selection — SHALL NOT be shown for
+the second. The second file's
+views SHALL be opened as for a view never shown, or from the state saved for the
+second file where the navigation brings it.
+
+#### Scenario: From one file to another
+- **WHEN** a tab in Graph mode on a branch of one file is navigated to another
+  file
+- **THEN** the graph of the other file is opened by the rule for a first opening,
+  with that file's own people
+
+#### Scenario: A list navigated to another file
+- **WHEN** a tab in List mode on the families of one file, filtered and sorted, is
+  navigated to another file
+- **THEN** the list shows the people of the other file, unfiltered and in the order of
+  that file
+
+#### Scenario: A map navigated to another file
+- **WHEN** a tab in Map mode on a branch of one file, zoomed on Paris with a years range set, is navigated to another file
+- **THEN** the map of the other file opens fitted to its own places, on the whole file, with the chip reading **Years: all**
+
 ### Requirement: Links into a record
 
 Following a link that names a record of a GEDCOM file — a wikilink with a

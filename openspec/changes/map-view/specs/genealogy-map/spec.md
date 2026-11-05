@@ -43,9 +43,11 @@ The map SHALL be drawn from the same reading of the tab's text that the record c
 A place SHALL be the text of a `PLAC` line of an event of a person or a family, trimmed, with runs of white space made one space, and two places SHALL be the same place where those texts are equal without regard to case; the place SHALL be named as its first occurrence in the file writes it.
 
 The coordinates of a place SHALL be, in this order of priority:
-1. those of the first `MAP` structure under a `PLAC` line of that place, in the order of the file, that states a valid `LATI` and a valid `LONG`; a latitude is valid as one letter `N` or `S` followed by a decimal number from 0 to 90, and a longitude as one letter `E` or `W` followed by a decimal number from 0 to 180, in the form both GEDCOM 5.5.1 and 7.0 write (`N52.2297`, `E21.0122`); `S` and `W` are negative;
+1. those of the first `MAP` structure under a `PLAC` line of that place, in the order of the file, that states a valid `LATI` and a valid `LONG`; a coordinate is read by one rule, the same for the file and for the places table, described below the list;
 2. else those of the first row of the places table whose place is that place, where the row states both a valid latitude and a valid longitude;
 3. else none.
+
+A coordinate SHALL be a decimal number of degrees, read with a point or a comma, in one of two forms: signed, positive north and east and negative south and west (`52.2297`, `-70.6693`), or with one letter before or after the number and no sign, the letter either case and optionally set off by a space: `N52.2297`, `N 52.2297`, `21.0122 e`. A latitude takes the letters `N` and `S` and a longitude `E` and `W`; `S` and `W` are negative; `S0` is 0, never negative zero. A latitude outside -90 to 90, a longitude outside -180 to 180, a letter of the other axis, a sign together with a letter (`W-1.5`), an empty cell and any other text give no coordinate. A pair is valid only where both its coordinates are.
 
 A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT stop the table from giving the place its coordinates. A place with coordinates from the file and from the table SHALL be drawn where the file puts it. A place with no coordinates SHALL NOT be drawn; it SHALL be counted and listed as the requirement on scope and counts says. Coordinates SHALL be read for the places of events of both versions of GEDCOM and of a document with no declared version, and SHALL NOT be looked up by the name of the place, locally or remotely.
 
@@ -69,6 +71,18 @@ A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT s
 - **WHEN** one event writes `Paris, France` and another `paris, france`, and only the second has a `MAP`
 - **THEN** there is one place, named `Paris, France`, at the coordinates of the `MAP`
 
+#### Scenario: Letters, case and spacing
+- **WHEN** a place has `LATI n 52.2297` and `LONG 21,0122 E`
+- **THEN** the place is at latitude 52.2297 and longitude 21.0122
+
+#### Scenario: A sign with a letter
+- **WHEN** a place has `LATI N52.2` and `LONG W-1.5`
+- **THEN** the place has no coordinates
+
+#### Scenario: The equator
+- **WHEN** a place has `LATI S0` and `LONG E0`
+- **THEN** the place is at latitude 0 and longitude 0
+
 #### Scenario: A half-stated MAP
 - **WHEN** a place has a `MAP` with a `LATI` and no `LONG`, and a row in the table
 - **THEN** the `MAP` is ignored and the place is at the table's coordinates
@@ -87,11 +101,11 @@ A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT s
 
 ### Requirement: The places table is a note next to the file
 
-The places table of a GEDCOM file SHALL be the Markdown note named like the file with its extension, `.ged` or `.gedcom`, replaced by `.places.md`, in the same folder: `curie.places.md` for `curie.ged`. It SHALL be a plain note the reader edits as any note, and the plugin SHALL read it and SHALL NOT keep another copy of it.
+The places table of a GEDCOM file SHALL be the Markdown note named like the file with its extension, `.ged` or `.gedcom`, replaced by `.places.md`, in the same folder: `curie.places.md` for `curie.ged`. The extension SHALL be matched without regard to case (`curie.GED`), and two files of one folder that differ only in the extension (`a.ged` and `a.gedcom`) SHALL share one table. It SHALL be a plain note the reader edits as any note, and the plugin SHALL read it and SHALL NOT keep another copy of it.
 
-Its table SHALL be a Markdown table of three columns, **Place**, **Latitude** and **Longitude**, one place to a row. The first table of the note SHALL be the places table; its header row and the delimiter row under it SHALL be skipped by position, whatever the header says, and the text of the note outside that table, including front matter, SHALL be ignored. Cells SHALL be separated by `|`, a `|` inside a place SHALL be written `\|`, and leading and trailing white space in a cell SHALL be ignored. A coordinate SHALL be a decimal number of degrees, positive north and east, negative south and west, written with a point or a comma (`52.2297`, `52,2297`), or with a letter `N`, `S`, `E` or `W` before or after the number and no sign (`N52.2297`, `21.0122 E`); a latitude outside -90 to 90, a longitude outside -180 to 180, an empty cell and any other text SHALL make that coordinate, and so that row, give no coordinates. A row whose place is the same place as an earlier row's, by the rule above, SHALL be ignored. A note with no table, an empty note and a note the plugin cannot read as a table SHALL give no rows, and SHALL NOT stop the map from drawing the places the file gives coordinates to.
+Its table SHALL be a Markdown table of three columns, **Place**, **Latitude** and **Longitude**, one place to a row. The first table of the note SHALL be the places table; its header row and the delimiter row under it SHALL be skipped by position, whatever the header says, and the text of the note outside that table, including front matter, SHALL be ignored. Cells SHALL be separated by `|`, a `|` inside a place SHALL be written `\|`, and leading and trailing white space in a cell SHALL be ignored. A coordinate SHALL be read by the rule of the requirement on coordinates, and a coordinate that rule gives nothing for SHALL make that row give no coordinates. A row whose place is the same place as an earlier row's, by the rule above, SHALL be ignored. A note with no table, an empty note and a note the plugin cannot read as a table SHALL give no rows, and SHALL NOT stop the map from drawing the places the file gives coordinates to.
 
-The plugin SHALL read the note while a tab of the file is in Map mode, and again when it changes, is created, is renamed or is deleted. When a GEDCOM file is renamed or moved and its places table is not, and the table of the new name does not exist, the plugin SHALL rename the table to follow the file, by Obsidian's own rename so that links to it are updated, and SHALL say so in a notice; where the table of the new name exists the plugin SHALL leave both as they are.
+The plugin SHALL read the note while a tab of the file is in Map mode, and again when it changes, is created, is renamed or is deleted, or when the folder holding it is renamed or moved. Until the first read has finished the map SHALL draw from the file alone and SHALL NOT show the message of the empty state. When a GEDCOM file is renamed or moved and its places table is not, and the table of the new name does not exist, the plugin SHALL rename the table to follow the file, by Obsidian's own rename so that links to it are updated, and SHALL say so in a notice; where the table of the new name exists the plugin SHALL leave both as they are.
 
 #### Scenario: The expected format
 - **WHEN** `curie.places.md` holds `| Place | Latitude | Longitude |`, `| --- | --- | --- |` and `| Warsaw, Congress Poland | 52.2297 | 21.0122 |`
@@ -133,13 +147,25 @@ The plugin SHALL read the note while a tab of the file is in Map mode, and again
 - **WHEN** `curie.ged` is renamed `family.ged` while `curie.places.md` exists and `family.places.md` does not
 - **THEN** the note is renamed `family.places.md`, a notice says so, and the map of the tab still draws from it
 
+#### Scenario: A folder is renamed
+- **WHEN** the folder `Family` holding `curie.ged` and `curie.places.md` is renamed `Curies`
+- **THEN** the tab of the file reads the table at `Curies/curie.places.md` and the map keeps drawing from it
+
+#### Scenario: Two extensions, one table
+- **WHEN** `a.ged` and `a.gedcom` are in one folder with `a.places.md`
+- **THEN** both files' maps read `a.places.md`
+
+#### Scenario: Not read yet
+- **WHEN** the tab enters Map mode on a file with no `MAP` and a table with rows that has not been read yet
+- **THEN** the map does not show the message **No place has coordinates yet** while the table is being read
+
 #### Scenario: The new name is taken
 - **WHEN** `curie.ged` is renamed `family.ged` while both `curie.places.md` and `family.places.md` exist
 - **THEN** neither note is renamed, and the map reads `family.places.md`
 
 ### Requirement: The map is drawn on an outline of the world that the plugin carries
 
-The map SHALL be drawn on an outline of the land of the world, simplified coastlines with no borders, no place names and no rivers, that the plugin carries inside itself and draws without any network request. The outline SHALL be a work in the public domain, its source and licence SHALL be named in the README, and its data SHALL add no more than 300 KB to the plugin's bundle; the plugin SHALL NOT bundle a map library. The projection SHALL be Web Mercator, so that the outline, the points and the tiles of the next requirement agree, and latitudes beyond 85.05113 degrees SHALL be clamped to it. The world SHALL be drawn once and SHALL NOT wrap horizontally. The reader SHALL NOT be able to zoom out beyond the whole world fitting the tab, and SHALL NOT be able to move the map until none of the world is in the tab.
+The map SHALL be drawn on an outline of the land of the world, simplified coastlines with no borders, no place names and no rivers, that the plugin carries inside itself and draws without any network request. The outline SHALL be a work in the public domain, its source and licence SHALL be named in the README, the source being a named version of Natural Earth land polygons with its address and checksum recorded where the outline is generated, and its data SHALL add no more than 300 KB to the plugin's bundle; the plugin SHALL NOT bundle a map library. The projection SHALL be Web Mercator, so that the outline, the points and the tiles of the next requirement agree, and latitudes beyond 85.05113 degrees SHALL be clamped to it, so that the land below that latitude (Antarctica) is cut at the bottom edge of the world and does not run off it. The world SHALL be drawn once and SHALL NOT wrap horizontally. The reader SHALL NOT be able to zoom out beyond the whole world fitting the tab, and SHALL NOT be able to move the map until none of the world is in the tab.
 
 #### Scenario: A first opening
 - **WHEN** a tab opens in Map mode with no setting changed
@@ -163,7 +189,7 @@ The map SHALL be drawn on an outline of the land of the world, simplified coastl
 
 ### Requirement: Map tiles are loaded only when the reader allows them
 
-The plugin SHALL have three settings: **Load map tiles from the web**, off by default and off for every reader whose settings were saved before it existed; **Tile server address**, a text field that is empty by default; and **Tile attribution**, a text field that is empty by default. The plugin SHALL NOT contain, offer or request any default tile server. Each setting row SHALL stay in the settings whatever the others hold, and the description of the address and the attribution SHALL say that they apply while tiles are loaded.
+The plugin SHALL have three settings: **Load map tiles from the web**, off by default and off for every reader whose settings were saved before it existed; **Tile server address**, a text field that is empty by default; and **Tile attribution**, a text field that is empty by default. The plugin SHALL NOT contain, offer or request any default tile server. Each setting row SHALL stay in the settings whatever the others hold, and the description of the address and the attribution SHALL say that they apply while tiles are loaded and that the address is saved as typed, with any key it holds, in the plugin's data. The text fields SHALL take effect when the reader leaves the field or presses Enter, or after the reader has stopped typing for a moment, and not on each key, so that an address half typed is never requested.
 
 The address SHALL be a template that begins with `https://` and holds `{z}`, `{x}` and `{y}`, each at least once, and that is a web address once numbers are put in for them; an address that is not, including every `http://` address, SHALL be treated as none and the settings and the map SHALL say that it is not valid. While **Load map tiles from the web** is off, or the address is none, the plugin SHALL make no network request for a map, and the map SHALL be drawn on the outline alone. While it is on and the address is valid, the plugin SHALL request, as images, the tiles that cover the part of the map in view and the ring of tiles around it, at the zoom level that matches the map's scale, and SHALL draw them in the same transform as the outline and below it, the outline then drawn as a line with no fill over them, so that a tile, the outline and a point agree. A request SHALL carry nothing of the file: the host of the address SHALL learn, from it, the numbers of tiles, which say what part of the world is in view, and the reader's address and the application's identification, as any image request teaches them, and SHALL NOT learn any place name, person name, record or year. Turning the toggle off SHALL stop further requests and remove the tiles drawn.
 
@@ -176,6 +202,10 @@ The README's Privacy section SHALL name tiles as the second thing the reader can
 #### Scenario: Off by default
 - **WHEN** the reader installs the plugin and opens the map of `curie.ged`
 - **THEN** the setting is off, the address is empty, and the browser's network log holds no request made by the map
+
+#### Scenario: An address half typed
+- **WHEN** the toggle is on and the reader types the address `https://tiles.example/{z}/{x}/{y}.png` character by character
+- **THEN** no request is made for a prefix of it, and the tiles are requested once the address is whole and the field is left or Enter is pressed
 
 #### Scenario: The toggle on and no address
 - **WHEN** the reader turns **Load map tiles from the web** on and leaves the address empty
@@ -245,6 +275,10 @@ Each point SHALL carry a label of the place's name as far as its first comma and
 - **WHEN** `Paris, France` has events in 1891, 1894 and 1934 and the zoom is level 8
 - **THEN** its label reads `Paris · 1891–1934`
 
+#### Scenario: A period
+- **WHEN** the only event at `Paris, France` is an education `FROM 1891 TO 1894`
+- **THEN** its label reads `Paris · 1891–1894`
+
 #### Scenario: One year
 - **WHEN** the only event at `Stockholm, Sweden` is dated 1903
 - **THEN** the label reads `Stockholm · 1903`
@@ -283,11 +317,11 @@ Points that would overlap on the screen at the map's scale SHALL be drawn as one
 
 ### Requirement: A selected person or family draws their moves
 
-Where a person is selected, the map SHALL draw a line through the places of that person's events that have coordinates, in the scope and the years range and with a year: the events of the person's own record and of the families the person is a spouse in, in the order of their years, ties in the order of the file, and an event at the same place as the one before it SHALL add no stop. The line SHALL be drawn as straight segments of the projection with an arrowhead at the middle of each segment in the direction of the move, and each stop SHALL carry its order number, the numbers of a place stopped at twice both, `1, 4`. Where a family is selected, the line SHALL be drawn in the same way through the places of the events of the family's record. A selected record with one place, with no place with coordinates, a source or a media record SHALL have no line. Where nothing is selected, no line SHALL be drawn. The points of the selected record's events SHALL be highlighted, and every other point, line and label SHALL be dimmed, as the timeline dims what the selected person is not. Events with no year SHALL highlight their place and SHALL NOT take part in the line.
+Where a person is selected, the map SHALL draw a line through the places of that person's events that have coordinates, in the scope and the years range and with a year: the events of the person's own record and of the families the person is a spouse in, in the order of their years, ties in the order of the lines of the file whichever record holds them, and an event at the same place as the one before it SHALL add no stop: the order numbers count stops, not events. The line SHALL be drawn as straight segments of the projection with an arrowhead at the middle of each segment in the direction of the move, and each stop SHALL carry its order number, the numbers of a place stopped at twice both, `1, 4`. Where a family is selected, the line SHALL be drawn in the same way through the places of the events of the family's record. A selected record with one place, with no place with coordinates, a source or a media record SHALL have no line. Where nothing is selected, no line SHALL be drawn. The points of the selected record's events SHALL be highlighted, and every other point, line and label SHALL be dimmed, as the timeline dims what the selected person is not. Events with no year SHALL highlight their place and SHALL NOT take part in the line.
 
 #### Scenario: Marie's moves
-- **WHEN** Marie is selected, with a birth at Warsaw in 1867, an education at Paris from 1891, a Nobel Prize at Stockholm in 1903 and 1911, and a death at Passy in 1934
-- **THEN** a line runs Warsaw, Paris, Stockholm, Passy, with an arrow on each segment and the numbers 1, 2, 3 and 4, and Stockholm is stopped at once because its two events are consecutive
+- **WHEN** Marie is selected, with a birth at Warsaw in 1867, an emigration at Warsaw in 1891, an education at Paris from 1891, her marriage at Sceaux in 1895, a Nobel Prize at Stockholm in 1903 and another in 1911, and a death at Passy in 1934
+- **THEN** a line runs Warsaw, Paris, Sceaux, Stockholm, Passy, with an arrow on each segment and the numbers 1, 2, 3, 4 and 5, and Warsaw and Stockholm are each one stop because their two events are consecutive
 
 #### Scenario: Returning to a place
 - **WHEN** a selected person has events at A in 1900, B in 1910 and A in 1920
@@ -301,6 +335,10 @@ Where a person is selected, the map SHALL draw a line through the places of that
 - **WHEN** the Curies' family is selected and its marriage and a residence are at two places
 - **THEN** a line joins the two places in the order of their years
 
+#### Scenario: Ties across records
+- **WHEN** a person's birth and the marriage of a family they are a spouse in are both dated 1900 at different places
+- **THEN** the stop of the event that comes first in the file is numbered first
+
 #### Scenario: Dimming
 - **WHEN** Marie is selected
 - **THEN** her points are drawn as highlighted, and every other point is dimmed
@@ -311,7 +349,7 @@ Where a person is selected, the map SHALL draw a line through the places of that
 
 ### Requirement: The years range filters points and lines and never the selection
 
-The map SHALL carry a floating chip at the bottom left that reads **Years: all** and is collapsed by default. Pressing it SHALL expand it into a range with two handles, a readout of the years chosen (`1880–1920`) and a clear control; the range SHALL run from the earliest to the latest year of an event with a year at a place with coordinates in the scope, in steps of one year. Moving a handle SHALL show, as it moves, only the events whose years fall within the range: an event with a period or a range of dates SHALL stay while its span overlaps the range, and an event with no year SHALL be hidden while a range is set. A place with no event left SHALL have no point, label or place in the counts; the size, colour, label and numbers of a place SHALL be those of the events left. The clear control SHALL restore **Years: all** and every event, and the chip MAY be collapsed while a range is set, in which case it SHALL read the range, **Years: 1880–1920**. A range SHALL NOT change, clear or move the selection, the scope, the card or the file; a selected person whose events are within the range SHALL stay selected and keep their line through them, and one with none SHALL stay selected with nothing highlighted. The handles SHALL be sliders for assistive technology with a name, a minimum, a maximum and a value read as a year, SHALL move by a year with the Left and Right keys, by ten with Page Up and Page Down, and to the ends with Home and End, SHALL be reachable on a phone with a target of at least 44 px, and SHALL NOT let the first pass the second. A file with no event that has a year and a place with coordinates SHALL show no chip.
+The map SHALL carry a floating chip at the bottom left that reads **Years: all** and is collapsed by default. Pressing it SHALL expand it into a range with two handles, a readout of the years chosen (`1880–1920`) and a clear control; the range SHALL run from the earliest to the latest year of an event with a year at a place with coordinates in the scope, in steps of one year. Moving a handle SHALL show, as it moves, only the events whose years fall within the range: an event with a period or a range of dates SHALL stay while its span overlaps the range, and an event with no year SHALL be hidden while a range is set. A place with no event left SHALL have no point, label or place in the counts; the size, colour, label and numbers of a place SHALL be those of the events left. The clear control SHALL restore **Years: all** and every event, and the chip MAY be collapsed while a range is set, in which case it SHALL read the range, **Years: 1880–1920**. Where an edit moves the earliest or latest year, a range held by the tab SHALL be kept within the new bounds. A range SHALL NOT change, clear or move the selection, the scope, the card or the file; a selected person whose events are within the range SHALL stay selected and keep their line through them, and one with none SHALL stay selected with nothing highlighted. The handles SHALL be sliders for assistive technology with a name, a minimum, a maximum and a value read as a year, SHALL move by a year with the Left and Right keys, by ten with Page Up and Page Down, and to the ends with Home and End, SHALL be reachable on a phone with a target of at least 44 px, and SHALL NOT let the first pass the second. A file with no event that has a year and a place with coordinates SHALL show no chip.
 
 #### Scenario: Collapsed by default
 - **WHEN** a tab opens in Map mode
@@ -345,23 +383,59 @@ The map SHALL carry a floating chip at the bottom left that reads **Years: all**
 - **WHEN** the reader focuses the first handle and presses Right, Page Down and End
 - **THEN** it moves a year later, ten years earlier, and to the end but not past the second handle
 
+#### Scenario: Bounds move
+- **WHEN** a range of 1890–1950 is set and the reader edits the file so that the latest year with a place is 1934
+- **THEN** the range reads 1890–1934
+
 #### Scenario: A file with no years
 - **WHEN** no event with a place has a year
 - **THEN** no chip is shown
 
+### Requirement: A map with no saved view opens fitted to its places
+
+A map with no saved position and zoom SHALL open fitted to the places in its scope and years range that have coordinates: the smallest view, no closer than a city and no farther than the whole world, that holds all of them with a margin. The **Fit** button and the `0` key SHALL do the same. A change of the branch scope SHALL fit the map again. A change of the years range, of the search and of the places table SHALL NOT move the map. A map with no place to draw SHALL show the whole world. A saved position and zoom SHALL be used in place of the fit, until the reader presses **Fit** or changes the scope.
+
+#### Scenario: A first opening
+- **WHEN** a tab opens in Map mode for the first time on a file whose mapped places are all in France
+- **THEN** the map shows France and its places, not the whole world
+
+#### Scenario: Fit
+- **WHEN** the reader has panned away and presses **Fit** or the `0` key
+- **THEN** the map is again fitted to the places in scope and range
+
+#### Scenario: The scope changes
+- **WHEN** the reader chooses a branch
+- **THEN** the map is fitted to the places of the branch
+
+#### Scenario: The range does not move the map
+- **WHEN** the reader narrows the years range
+- **THEN** the map stays where it is
+
+#### Scenario: One place
+- **WHEN** one place is mapped
+- **THEN** the map is centred on it at the zoom of a city
+
 ### Requirement: The scope row says what the map shows and what it cannot
 
-The map SHALL reuse the scope bar of the graph and the timeline for its branch: with a person at its focus, a line that reads **Branch of** the person's name, with the steppers for ancestors and descendants and **Whole file**; with the whole file, no branch. Beside it, always, the map SHALL show how much it draws, as `7 places · 18 events`, counting what the scope and the years range leave, and SHALL show a counter, **3 places have no coordinates**, of the places of the events in the scope that have none, in the language's plural forms; the counter SHALL NOT be shown where there are no such places. The map SHALL open on the whole file whatever its size. The counter SHALL be a button that opens the places panel on the places with no coordinates.
+The map SHALL reuse the scope bar of the graph and the timeline for its branch: with a person at its focus, a line that reads **Branch of** the person's name, with the steppers for ancestors and descendants and **Whole file**; with the whole file, no branch line. The map SHALL give the reader a way to choose a branch: a button **Branch of** the selected person's name in its scope row, enabled while a person is selected, that makes that person the focus, and a clear control that returns to the whole file; with a family or nothing selected the button SHALL be disabled. Beside it, always, the map SHALL show how much it draws, as `7 places · 18 events`, counting what the scope and the years range leave, and SHALL show a counter, **3 places have no coordinates**, of the places of the events in the scope that have none, in the language's plural forms; the counter SHALL NOT be shown where there are no such places. The map SHALL open on the whole file whatever its size. The counter SHALL be a button that opens the places panel on the places with no coordinates.
 
 The places panel SHALL list the places of the scope: those on the map, each with the number of its events and its years, and those with no coordinates, named; and, below the places with no coordinates, a button **Open the places table**, which SHALL create the table as the requirement on the empty state says where it does not exist and open it in a tab of the workspace. Choosing a place on the map in the panel SHALL glide the map to it as a search does. The panel SHALL be reachable with the keyboard and by assistive technology, and closes with Escape.
 
 #### Scenario: The whole file
-- **WHEN** a tab opens in Map mode on `curie.ged` with places at 4 of its 6 places and 9 events there
-- **THEN** the row reads `4 places · 9 events` and `2 places have no coordinates`, and no branch line is shown
+- **WHEN** a tab opens in Map mode on a file that names six places with eleven events, of which four places with eight events have coordinates
+- **THEN** the row reads `4 places · 8 events` and `2 places have no coordinates`, and no branch line is shown
 
-#### Scenario: A branch
-- **WHEN** the reader chooses Irène's branch
-- **THEN** the line reads `Branch of Irène Joliot-Curie`, the counts are those of the branch's events, and the steppers work as in the graph
+#### Scenario: Choosing a branch
+- **WHEN** Irène is selected and the reader presses **Branch of Irène Joliot-Curie** in the scope row
+- **THEN** the line reads `Branch of Irène Joliot-Curie` with the steppers, the counts are those of the branch's events, the map is fitted to the branch's places, and the steppers work as in the graph
+
+#### Scenario: No person selected
+- **WHEN** nothing, or a family, is selected
+- **THEN** the button **Branch of** is disabled
+
+#### Scenario: Back to the whole file
+- **WHEN** a branch is shown and the reader presses **Whole file**
+- **THEN** the branch line goes, the counts are those of the whole file and the map is fitted to its places
 
 #### Scenario: The counter opens the list
 - **WHEN** the reader presses `2 places have no coordinates`
@@ -437,7 +511,7 @@ While a person or a family is selected in the tab, by any gesture and from any p
 
 ### Requirement: The search finds places by name
 
-The map SHALL have the expanding search of the graph and the timeline — a search icon that gives way to a field with a counter and arrows, and comes back while the field is empty — and the find key SHALL open it and focus it. The search SHALL match the names of the places that are drawn, the whole place as the file writes it, in every spelling that makes that one place, case-insensitively and without regard to accents; `varsovie`, `WARSAW` and `warsaw, congress` all match `Warsaw, Congress Poland`. It SHALL NOT match the names of people, years or event kinds. While the field is not empty the points whose places do not match SHALL be dimmed and the counter SHALL say how many places match, `2 / 5` once the reader has stepped; with no match it SHALL say there are no results. The next and previous buttons, and Enter and Shift+Enter in the field, SHALL step through the matching places in the order of the places panel, wrapping, and for each SHALL glide the map to the place, zooming in to a city where the map shows more than a country and never zooming out, show its label and a ring on its point, and say its name and events for assistive technology. Stepping SHALL NOT select a record. A place hidden in a cluster SHALL be brought out of it. Where the query matches no drawn place but does match a place with no coordinates, the search SHALL say that place has no coordinates. Escape and the clear control SHALL clear the field, and then close the search.
+The map SHALL have the expanding search of the graph and the timeline — a search icon that gives way to a field with a counter and arrows, and comes back while the field is empty — and the find key SHALL open it and focus it. The search SHALL match the names of the places that are drawn, the whole place as the file writes it, in every spelling that makes that one place, case-insensitively and without regard to accents or marks, with the letters that carry no mark folded as `ł` to `l`, `ß` to `ss`, `ø` to `o`, `đ` to `d`, `æ` to `ae`, `œ` to `oe` and `ı` to `i`; `WARSAW`, `warsaw, congress` and `skłodowska` match as written or folded. A name in another language (`varsovie` for Warsaw) is not the place as the file writes it and SHALL NOT match. It SHALL NOT match the names of people, years or event kinds. While the field is not empty the points whose places do not match SHALL be dimmed and the counter SHALL say how many places match, `2 / 5` once the reader has stepped; with no match it SHALL say there are no results. The next and previous buttons, and Enter and Shift+Enter in the field, SHALL step through the matching places in the order of the places panel, wrapping, and for each SHALL glide the map to the place, zooming in to a city where the map shows more than a country and never zooming out, show its label and a ring on its point, and say its name and events for assistive technology. Stepping SHALL NOT select a record. A place hidden in a cluster SHALL be brought out of it. Where the query matches no drawn place but does match a place with no coordinates, the search SHALL say that place has no coordinates. Escape and the clear control SHALL clear the field, and then close the search.
 
 #### Scenario: Matching a place
 - **WHEN** the reader types `paris` and the file has `Paris, France` and `Passy, Haute-Savoie, France` drawn
@@ -450,6 +524,14 @@ The map SHALL have the expanding search of the graph and the timeline — a sear
 #### Scenario: Accents and case
 - **WHEN** the reader types `skłodowska` and a place is written `Warsaw, Skłodowska Street` and, in another event, `warsaw, skłodowska street`
 - **THEN** it is one match
+
+#### Scenario: Letters without a mark
+- **WHEN** the reader types `lodz` and a place is written `Łódź, Poland`
+- **THEN** it matches
+
+#### Scenario: An exonym
+- **WHEN** the reader types `varsovie` and the file writes `Warsaw, Congress Poland`
+- **THEN** there are no results
 
 #### Scenario: Not a person
 - **WHEN** the reader types `Marie`
@@ -469,7 +551,9 @@ The map SHALL have the expanding search of the graph and the timeline — a sear
 
 ### Requirement: A map with no place to draw says why and offers the places table
 
-Where no place of the file has coordinates — every place lacks a `MAP` and a row in the places table, or the file names no place — the map SHALL show, in place of an empty world, the message **No place has coordinates yet**, and say which of the two it is: that no place in the file has a `MAP` and no row of the places table gives one, or that the file names no place. Where the file names places and no places table exists, it SHALL offer a button **Create the places table**. Pressing it SHALL create the note named by the requirement on the places table, next to the file, holding a short line saying what the table is for and a table whose header row is `Place | Latitude | Longitude`, with one row for each distinct place of the file that the file gives no coordinates, named as its first occurrence writes it, in alphabetical order by the language's collation, with the coordinates empty; it SHALL then open the note in a tab of the workspace. The plugin SHALL NOT overwrite or change a note that exists: where the note exists when the button is pressed, whether it was created in the meantime or the map has not noticed it, the plugin SHALL open it and create nothing. Where the note exists and no place has coordinates, the button SHALL read **Open the places table** and open it. The message and the button SHALL fit a phone and SHALL be reachable with the keyboard. The creation SHALL write only that note.
+Where no place of the file has coordinates — every place lacks a `MAP` and a row in the places table, or the file names no place — the map SHALL show, in place of an empty world, the message **No place has coordinates yet**, and say which of the two it is: that no place in the file has a `MAP` and no row of the places table gives one, or that the file names no place. Where the file names places and no places table exists, it SHALL offer a button **Create the places table**. Pressing it SHALL create the note named by the requirement on the places table, next to the file, holding a short line saying what the table is for and a table whose header row is `Place | Latitude | Longitude`, with one row for each distinct place of the file that the file gives no coordinates, named as its first occurrence writes it, in alphabetical order by the language's collation, with the coordinates empty; it SHALL then open the note in a tab of the workspace. The plugin SHALL NOT overwrite or change a note that exists: where the note exists when the button is pressed, whether it was created in the meantime or the map has not noticed it, the plugin SHALL open it and create nothing. Where the note exists and no place has coordinates, the button SHALL read **Open the places table** and open it. The message and the button SHALL fit a phone and SHALL be reachable with the keyboard. The creation SHALL write only that note. Until the places table has been read, the map SHALL NOT show the empty state.
+
+The places panel SHALL also offer, where the places table exists and some places of the scope that the file gives no coordinates have no row in it, a button **Add the N places that have no row**, that appends those places, named as first written, with empty coordinates, to the end of the table's first table and changes nothing else in the note; where the note has no table, it SHALL add the header and the rows at its end. It SHALL write only that note.
 
 #### Scenario: Nothing to draw
 - **WHEN** no place in `plain.ged` has a `MAP`, and there is no places table
@@ -490,6 +574,10 @@ Where no place of the file has coordinates — every place lacks a `MAP` and a r
 #### Scenario: A file with no places
 - **WHEN** no event of the file names a place
 - **THEN** the message says the file names no place, and no button is offered
+
+#### Scenario: Adding the missing places
+- **WHEN** the table has a row for Paris and the file names Paris and Sceaux, neither with a `MAP`, and the reader presses the button that adds the one place that has no row
+- **THEN** one row for `Sceaux, France` with empty coordinates is appended to the table, the rows already there and the text around them are unchanged, and the button goes
 
 #### Scenario: Filling it in
 - **WHEN** the reader adds coordinates for `Paris, France` in the note and saves
@@ -525,7 +613,7 @@ The map SHALL have a stop for the keyboard of its own, named **Map of places** w
 
 ### Requirement: The map on a phone and in a narrow tab
 
-The map SHALL be drawn and be usable on a phone and in a tab of any width with no sideways scrolling of the tab. A finger SHALL pan it by dragging and zoom it by pinching about the point between the fingers; a mouse SHALL pan it by dragging and zoom it with the wheel, and a trackpad SHALL pan with two fingers and zoom with a pinch, as the graph does; the zoom buttons **−**, **+** and **Fit** SHALL zoom and fit the map. Every control a finger is meant to press — the zoom buttons, the search, the chip and its handles, the counter, the rows of the popup and the places panel, a cluster and a point — SHALL have a target at least 44 px square on a coarse pointer, a point drawn smaller SHALL keep a target of that size, and the controls SHALL clear the bottom navigation of the app and the system's inset. A tab narrower than 640 px SHALL show the scope row on lines of its own and the popup and the places panel as sheets that fit the tab. The map SHALL NOT disturb the position and zoom it had when the tab is resized, hidden or its size is momentarily nothing. The motion of a glide SHALL be dropped where the reader asks for reduced motion. No part of the map SHALL be drawn by assigning markup from a string.
+The map SHALL be drawn and be usable on a phone and in a tab of any width with no sideways scrolling of the tab. A finger SHALL pan it by dragging and zoom it by pinching about the point between the fingers; a mouse SHALL pan it by dragging and zoom it with the wheel, and a trackpad SHALL pan with two fingers and zoom with a pinch, as the graph does; the zoom buttons **−**, **+** and **Fit** SHALL zoom and fit the map. Every control a finger is meant to press — the zoom buttons, the search, the chip and its handles, the counter, the rows of the popup and the places panel, a cluster and a point — SHALL have a target at least 44 px square on a coarse pointer, a point drawn smaller SHALL keep a target of that size, points and clusters SHALL be kept at least 22 px apart on a coarse pointer by clustering, and a press SHALL choose the nearest point or cluster within its target and not the one drawn on top, and the controls SHALL clear the bottom navigation of the app and the system's inset. A tab narrower than 640 px SHALL show the scope row on lines of its own and the popup and the places panel as sheets that fit the tab. The map SHALL NOT disturb the position and zoom it had when the tab is resized, hidden or its size is momentarily nothing. The motion of a glide SHALL be dropped where the reader asks for reduced motion. No part of the map SHALL be drawn by assigning markup from a string.
 
 #### Scenario: Pinching
 - **WHEN** the reader pinches out over Paris on a phone
@@ -550,6 +638,10 @@ The map SHALL be drawn and be usable on a phone and in a tab of any width with n
 ### Requirement: The map holds up at size
 
 The map SHALL stay responsive in a file of twenty thousand people and some five thousand distinct places: it SHALL draw only the points, labels and tiles that fall within the view and a margin round it, SHALL make clusters of what it draws rather than of the file, SHALL NOT make a node for every place, and SHALL NOT make the file's model again for a pan, a zoom, a hover, a range or a search. Opening the map SHALL draw the first view before the places are all measured for labels. Changing the years range, typing in the search and panning SHALL redraw only what is in view.
+
+#### Scenario: A bounded count
+- **WHEN** the map is drawn at any view
+- **THEN** the number of points and clusters drawn is at most the number of cells of a grid over the view and its margin, the cell being 22 px on a coarse pointer and 10 px otherwise
 
 #### Scenario: Five thousand places
 - **WHEN** a file with five thousand places with coordinates is shown whole, at the zoom that fits the world

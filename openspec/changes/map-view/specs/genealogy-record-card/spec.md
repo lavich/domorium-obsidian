@@ -48,8 +48,8 @@ where the file declares no person, family or source it SHALL say that the file h
 
 #### Scenario: Nothing selected
 - **WHEN** the active GEDCOM tab is in Graph mode with nothing selected
-- **THEN** the card says to select a record in the graph, the timeline or the
-  list
+- **THEN** the card says to select a record in the graph, the timeline, the
+  list or the map
 
 #### Scenario: A file with no people
 - **WHEN** the active GEDCOM tab holds a file declaring no `INDI`, `FAM` or `SOUR`
