@@ -178,7 +178,11 @@ export class FileViews {
       if (root === undefined || board === null) {
         continue;
       }
-      board.cancelHover();
+      if (board instanceof FileGraphBoard) {
+        board.cancelHover();
+      } else {
+        board.unlight();
+      }
       if (kind === "timeline" && this.timeline && this.kept.timeline && this.shownKind === kind) {
         this.kept.timeline = { ...this.kept.timeline, scroll: this.timeline.scroll() };
       }

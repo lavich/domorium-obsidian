@@ -90,4 +90,22 @@ None.
 
 ## Implementation
 
-Filled in when built.
+What differs from the plan above, or was settled while building it.
+
+- **The light follows the selection (mine).** As in "The light follows the
+  selected person": `select` of another person puts the light out, and a click
+  lights before it calls `host.select`, so the selection that returns keeps it.
+  Escape and a click on empty space leave the selection.
+- **Escape is a `keydown` on the board's root** and does nothing while no one is
+  lit, so it does not swallow Escape for the search field (which stops it first).
+- **A click on empty space** is any click of the board's element whose target is no
+  person, mark or branch button; the search and zoom controls sit outside the board.
+- **The timeline board loses `cancelHover`**; `FileViews.parkOthers` calls
+  `unlight()` on it, and `cancelHover()` on the graph.
+- **The 10 000-person browser spec** now clicks a name for the light and keeps the
+  pointer moves for the cursor.
+- **The hover browser spec waits 400 ms** (three times the old rest) before it asserts
+  that nothing is faded, because an absence cannot be polled for.
+- **Not changed (mine):** the graph's hover light; the `is-hl` name background
+  that shows the branch button for a lit row; styles for the light, which already
+  covered a class set from anywhere.
