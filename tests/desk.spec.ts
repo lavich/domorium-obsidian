@@ -192,7 +192,7 @@ test.describe("the empty states", () => {
     await mountDesk(page, { record: "" });
 
     await expect(page.locator(".gedcom-card-state")).toHaveText(
-      "Select a record in the graph, the timeline or the list.",
+      "Select a record in the graph, the timeline, the list or the map.",
     );
   });
 

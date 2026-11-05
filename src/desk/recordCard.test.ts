@@ -82,11 +82,11 @@ describe("the empty states of the card", () => {
   it("says to select a record where the tab has none selected, or a selected one the file lacks", () => {
     state.record = null;
     draw();
-    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline or the list."]);
+    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline, the list or the map."]);
 
     state.record = "@I99@";
     draw();
-    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline or the list."]);
+    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline, the list or the map."]);
   });
 
   it("says the file holds nothing to show where it declares no person, family or source", () => {
@@ -104,7 +104,7 @@ describe("the empty states of the card", () => {
 
     state.record = null;
     draw();
-    expect(texts(".gedcom-card-state")).toEqual(["Выберите запись на графе, в хронологии или в списке."]);
+    expect(texts(".gedcom-card-state")).toEqual(["Выберите запись на графе, в хронологии, в списке или на карте."]);
     index = indexOf("0 HEAD\n0 TRLR\n");
     draw();
     expect(texts(".gedcom-card-state")).toEqual(["В файле нечего показывать."]);
