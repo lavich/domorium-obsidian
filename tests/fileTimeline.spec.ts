@@ -55,14 +55,43 @@ test.describe("the timeline of a file", () => {
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
   });
 
-  test("picks out Marie's family with arrows when the pointer is on her", async ({ page }) => {
+  test("fades no one when the pointer is on Marie, and moves over the rows", async ({ page }) => {
     await mountTimeline(page);
+    const opacity = (xref: string) => name(page, xref).evaluate((node) => getComputedStyle(node).opacity);
     await name(page, "@I1@").hover();
+    await life(page, "@I11@").hover();
+    await page.waitForTimeout(400);
+
+    await expect(page.locator(".gedcom-ft-kin")).toHaveCount(0);
+    await expect(page.locator(".gedcom-ft-board.has-hl")).toHaveCount(0);
+    expect(await opacity("@I11@")).toBe("1");
+    expect(await opacity("@I2@")).toBe("1");
+    expect(await life(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.35");
+  });
+
+  test("picks out Marie's family with arrows when she is clicked, and puts the light out on empty space and on Escape", async ({ page }) => {
+    await mountTimeline(page);
+    const opacity = (xref: string) => name(page, xref).evaluate((node) => getComputedStyle(node).opacity);
+    await name(page, "@I1@").locator(".gedcom-ft-name-open").click();
 
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
     expect(await page.locator('.gedcom-ft-kin[data-from="@I2@"]').count()).toBe(0);
-    await expect.poll(() => name(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.18");
-    expect(await name(page, "@I2@").evaluate((node) => getComputedStyle(node).opacity)).toBe("1");
+    await expect.poll(() => opacity("@I11@")).toBe("0.18");
+    expect(await opacity("@I2@")).toBe("1");
+
+    await name(page, "@I12@").locator(".gedcom-ft-name-open").click();
+    await expect(name(page, "@I12@")).toHaveClass(/is-hl/);
+    await expect(name(page, "@I1@")).not.toHaveClass(/is-hl/);
+
+    await page.locator(".gedcom-ft-chart").click({ position: { x: 2, y: 2 } });
+    await expect.poll(() => opacity("@I11@")).toBe("1");
+    await expect(page.locator(".gedcom-ft-kin")).toHaveCount(0);
+
+    await name(page, "@I1@").locator(".gedcom-ft-name-open").click();
+    await expect.poll(() => opacity("@I11@")).toBe("0.18");
+    await page.keyboard.press("Escape");
+    await expect.poll(() => opacity("@I11@")).toBe("1");
+    expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I1@", "@I12@", "@I1@"]);
   });
 
   test("shows the event under the pointer, and leads to its lines", async ({ page }) => {
@@ -111,7 +140,9 @@ test.describe("the timeline of a file", () => {
   test("opens a person and their branch from the keyboard", async ({ page }) => {
     await mountTimeline(page);
     await name(page, "@I12@").locator(".gedcom-ft-name-open").focus();
+    await expect(page.locator(".gedcom-ft-board.has-hl")).toHaveCount(0);
     await page.keyboard.press("Space");
+    await expect(name(page, "@I12@")).toHaveClass(/is-hl/);
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I12@"]);
 
     await page.keyboard.press("Tab");
@@ -154,6 +185,8 @@ test.describe("the timeline of a file", () => {
     expect(await transition()).toContain("opacity");
     await page.emulateMedia({ reducedMotion: "reduce" });
     expect(await transition()).toBe("none");
+    await name(page, "@I1@").locator(".gedcom-ft-name-open").click();
+    expect(await name(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.18");
   });
 
     test("keeps the names and the years in place while the board scrolls", async ({ page }) => {
@@ -446,6 +479,7 @@ test.describe("the timeline of a file on a phone", () => {
 
     await page.touchscreen.tap(at.x, at.y);
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I1@"]);
+    await expect(name(page, "@I1@")).toHaveClass(/is-hl/);
   });
 
   test("shows a touched mark's event, with the way to its lines", async ({ page }) => {
@@ -518,7 +552,7 @@ test.describe("the timeline of a file of 10 000 people", () => {
     const row = page.locator(".gedcom-ft-name").nth(40);
     const took = await row.evaluate((node) => {
       const started = performance.now();
-      node.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerType: "mouse" }));
+      node.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
       return performance.now() - started;
     });
     await expect(row).toHaveClass(/is-hl/);

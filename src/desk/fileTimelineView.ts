@@ -10,7 +10,7 @@ import {
   type TimelinePerson,
 } from "./fileTimeline";
 import { FloatingSearch } from "./floatingSearch";
-import { HoverDelay, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
+import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
@@ -125,7 +125,7 @@ interface Span {
 
 /**
  * Laid out once per file, scope, zoom and switch; drawn for the window it is
- * handed and one window around it. Hovering only changes classes on what is
+ * handed and one window around it. Lighting a person only changes classes on what is
  * drawn, and puts arrows in a layer of their own.
  */
 export class FileTimelineBoard {
@@ -168,7 +168,6 @@ export class FileTimelineBoard {
   /** The person a first touch lit, whom a second touch opens. */
   private armed: string | null = null;
   private pending = false;
-  private readonly resting: HoverDelay<string>;
 
   constructor(
     parent: HTMLElement,
@@ -213,7 +212,6 @@ export class FileTimelineBoard {
 
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
-    this.resting = new HoverDelay(this.doc.defaultView ?? window, (xref) => this.highlight(xref));
     this.listen();
   }
 
@@ -276,7 +274,6 @@ export class FileTimelineBoard {
     this.highlight(this.highlighted, true);
     this.drawCursor();
     if (focused?.xref) {
-      this.highlight(focused.xref);
       this.byName
         .get(focused.xref)
         ?.querySelector<HTMLElement>(focused.branch ? "[data-branch]" : ".gedcom-ft-name-open")
@@ -309,13 +306,11 @@ export class FileTimelineBoard {
     }
   }
 
-  /** Stops a light the pointer has asked for and not yet waited out, as a view closes. */
-  cancelHover(): void {
-    this.resting.cancel();
+  unlight(): void {
+    this.highlight(null);
   }
 
   highlight(xref: string | null, force = false): void {
-    this.resting.cancel();
     if (xref === this.highlighted && !force) {
       return;
     }
@@ -441,6 +436,9 @@ export class FileTimelineBoard {
   /** Marks a person selected, and with `reveal` brings their row into view, in their own branch where this one does not hold them; `null` ends it. */
   select(xref: string | null, reveal: boolean): void {
     this.selected = xref;
+    if (xref !== this.highlighted) {
+      this.highlight(null);
+    }
     const layout = this.layout;
     if (reveal && xref !== null && layout && this.model?.people.has(xref)) {
       if (layout.shownSet.has(xref)) {
@@ -568,6 +566,7 @@ export class FileTimelineBoard {
     const branchChanged = next.focus !== this.scope.focus || next.up !== this.scope.up || next.down !== this.scope.down;
     const person = next.focus ?? this.scope.focus;
     const centre = this.centreYear();
+    this.highlight(null);
     this.scope = next;
     this.relayout(branchChanged && person !== undefined ? { person } : centre);
     this.host.scopeChanged(scopeOf(next));
@@ -986,10 +985,6 @@ export class FileTimelineBoard {
         return;
       }
       this.pointer = event.pointerType || "mouse";
-      const xref = this.personAt(event.target);
-      if (xref !== null) {
-        this.resting.rest(xref, this.highlighted);
-      }
       this.showTip(this.markAt(event.target), event);
       const onPlot = event.target instanceof Node && (this.plot.contains(event.target) || this.axisClip.contains(event.target));
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
@@ -998,7 +993,6 @@ export class FileTimelineBoard {
       if (event.pointerType === "touch") {
         return;
       }
-      this.resting.rest(null, this.highlighted);
       this.setYear(null);
       this.showTip(null, event);
     });
@@ -1020,10 +1014,10 @@ export class FileTimelineBoard {
     this.names.addEventListener("scroll", () => this.pull(this.plot, this.names, "scrollTop"));
     this.axisClip.addEventListener("scroll", () => this.pull(this.plot, this.axisClip, "scrollLeft"));
     this.board.addEventListener("click", (event) => this.activate(event));
-    this.names.addEventListener("focusin", (event) => {
-      const xref = this.personAt(event.target);
-      if (xref !== null) {
-        this.highlight(xref);
+    this.root.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.highlighted !== null) {
+        this.armed = null;
+        this.highlight(null);
       }
     });
     this.root.addEventListener("click", (event) => {
@@ -1060,9 +1054,9 @@ export class FileTimelineBoard {
     this.closePop();
     const xref = this.personAt(target);
     if (xref === null) {
+      this.armed = null;
+      this.highlight(null);
       if (touch) {
-        this.armed = null;
-        this.highlight(null);
         this.setYear(null);
       }
       return;
@@ -1075,6 +1069,7 @@ export class FileTimelineBoard {
       return;
     }
     this.armed = null;
+    this.highlight(xref);
     this.host.select(xref);
   }
 

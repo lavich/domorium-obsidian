@@ -106,9 +106,9 @@ of the selected record is marked.
 In **Timeline** mode the tab shows one row per person, ordered by generation and
 family, and a lifeline from birth to death — pink for a woman, blue for a man,
 grey where the record states no sex — with the person's dated events on it; an
-approximate date is drawn dashed and a period as a span. Pointing at a person
-picks out their parents, spouses and children with arrows from parent to child,
-and a year cursor gives the age everyone alive reached that year. A search icon
+approximate date is drawn dashed and a period as a span. Clicking a person
+selects them and picks out their parents, spouses and children with arrows from
+parent to child, and a year cursor gives the age everyone alive reached that year. A search icon
 over the board opens into a field that fades everyone else and steps from match
 to match with arrows, and the zoom buttons widen, narrow or fit the years.
 **Branch** on a row narrows it to one person's ancestors and descendants, and a
