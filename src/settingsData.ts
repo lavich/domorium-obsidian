@@ -14,6 +14,7 @@ export interface GedcomSettings {
   remoteImages: boolean;
   openAs: OpenAsMode;
   genealogyInterface: boolean;
+  openPanelsOnSelect: boolean;
 }
 
 export const DEFAULT_SETTINGS: GedcomSettings = {
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // The pages and panels are the plugin's largest surface; a reader who came
   // for the editor has not asked for them.
   genealogyInterface: false,
+  openPanelsOnSelect: true,
 };
 
 function isOpenAsMode(value: unknown): value is OpenAsMode {
@@ -89,5 +91,9 @@ export function parseSettings(data: unknown): GedcomSettings {
       typeof settings.genealogyInterface === "boolean"
         ? settings.genealogyInterface
         : DEFAULT_SETTINGS.genealogyInterface,
+    openPanelsOnSelect:
+      typeof settings.openPanelsOnSelect === "boolean"
+        ? settings.openPanelsOnSelect
+        : DEFAULT_SETTINGS.openPanelsOnSelect,
   };
 }

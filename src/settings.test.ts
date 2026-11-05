@@ -20,6 +20,7 @@ describe("GEDCOM settings", () => {
       remoteImages: false,
       openAs: "graph",
       genealogyInterface: false,
+      openPanelsOnSelect: true,
     });
   });
 
@@ -33,6 +34,7 @@ describe("GEDCOM settings", () => {
         remoteImages: true,
         openAs: "source",
         genealogyInterface: true,
+        openPanelsOnSelect: false,
       }),
       "a trigger the reader chose outlives a change of default",
     ).toEqual({
@@ -43,6 +45,7 @@ describe("GEDCOM settings", () => {
       remoteImages: true,
       openAs: "source",
       genealogyInterface: true,
+      openPanelsOnSelect: false,
     });
   });
 
@@ -62,6 +65,7 @@ describe("GEDCOM settings", () => {
       remoteImages: false,
       openAs: "graph",
       genealogyInterface: false,
+      openPanelsOnSelect: true,
     });
   });
 
@@ -99,6 +103,20 @@ describe("GEDCOM settings", () => {
     );
   });
 
+  it("opens the side panels for a settings file written before the choice existed", () => {
+    expect(parseSettings({ diagnostics: true }).openPanelsOnSelect).toBe(true);
+  });
+
+  it("keeps the side panels closed for a reader who turned the choice off, and ignores a value that is not a boolean", () => {
+    expect(parseSettings({ openPanelsOnSelect: false }).openPanelsOnSelect).toBe(false);
+    expect(parseSettings({ openPanelsOnSelect: "no" }).openPanelsOnSelect).toBe(true);
+  });
+
+  it("accepts a change of the side panels choice only as a boolean", () => {
+    expect(changedSetting("openPanelsOnSelect", false)).toEqual({ openPanelsOnSelect: false });
+    expect(changedSetting("openPanelsOnSelect", "no")).toBeNull();
+  });
+
   it("leaves the web off for a settings file written before it existed", () => {
     expect(
       parseSettings({
@@ -130,6 +148,15 @@ describe("GEDCOM settings", () => {
           key: "openAs",
           options: openAsOptions(),
           defaultValue: "graph",
+        },
+      },
+      {
+        name: "Open the side panels when selecting",
+        desc: "Selecting a record in a graph, a timeline or the index shows the Domorium index on the left and the record card on the right, opening a collapsed sidebar without moving the focus. Applies when the genealogy interface is on; on a phone only the right drawer opens.",
+        control: {
+          type: "toggle",
+          key: "openPanelsOnSelect",
+          defaultValue: true,
         },
       },
       {
@@ -176,10 +203,11 @@ describe("GEDCOM settings", () => {
 
   it("speaks the reader's language when Obsidian asks for the definitions", () => {
     setLanguage("ru");
-    const [, first, second] = settingDefinitions();
+    const [, first, panels, second] = settingDefinitions();
 
     expect(first?.name).toBe("Открывать файлы GEDCOM как");
     expect(openAsOptions().source).toBe("Исходник");
+    expect(panels?.name).toBe("Открывать боковые панели при выборе");
     expect(second?.name).toBe("Диагностика");
     expect(first?.desc).toMatch(/GEDCOM/);
     expect(recordPreviewOptions().off).toBe("Никогда");

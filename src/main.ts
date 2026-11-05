@@ -13,6 +13,7 @@ import {
   Setting,
   TFile,
   TFolder,
+  View,
 } from "obsidian";
 
 import { createGedcomApi, type GedcomApi, type VaultReader } from "./api";
@@ -27,6 +28,7 @@ import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
 import { RETIRED_VIEW_TYPES, type Origin } from "./desk/deskState";
 import { originRules } from "./desk/tabModes";
+import { sidePanelPlan, type SidePanelPlan } from "./desk/sidePanels";
 import { adoptsFollow, fallbackFollowed, noteChangeMatters } from "./desk/followRules";
 import {
   parseGedcomLink,
@@ -312,6 +314,24 @@ export default class GedcomPlugin
     if (!this.settings.genealogyInterface) {
       return;
     }
+    const { workspace } = this.app;
+    const plan = sidePanelPlan({
+      enabled: this.settings.openPanelsOnSelect,
+      mobile: Platform.isMobile,
+      origin,
+      index: {
+        open: workspace.getLeavesOfType(INDEX_VIEW_TYPE).length > 0,
+        collapsed: workspace.leftSplit.collapsed,
+      },
+      card: {
+        open: workspace.getLeavesOfType(RECORD_VIEW_TYPE).length > 0,
+        collapsed: workspace.rightSplit.collapsed,
+      },
+    });
+    if (plan.index === "open" || plan.card === "open") {
+      void this.openSidePanels(plan);
+      return;
+    }
     if (originRules(origin, Platform.isMobile).opensDrawer) {
       void this.revealCardDrawer();
       return;
@@ -435,6 +455,28 @@ export default class GedcomPlugin
     }
     this.cardPlaced = true;
     await leaf.setViewState({ type: RECORD_VIEW_TYPE, active: false });
+  }
+
+  private async openSidePanels(plan: SidePanelPlan): Promise<void> {
+    const { workspace } = this.app;
+    const previous = workspace.getActiveViewOfType(View)?.leaf;
+    const opened: Promise<unknown>[] = [];
+    if (plan.index === "open") {
+      opened.push(this.revealSideLeaf(INDEX_VIEW_TYPE, "left"));
+    }
+    if (plan.card === "open") {
+      this.cardPlaced = true;
+      opened.push(this.revealSideLeaf(RECORD_VIEW_TYPE, "right"));
+    }
+    await Promise.allSettled(opened);
+    if (previous && workspace.getActiveViewOfType(View)?.leaf !== previous) {
+      workspace.setActiveLeaf(previous, { focus: true });
+    }
+  }
+
+  private async revealSideLeaf(type: string, side: "left" | "right"): Promise<void> {
+    const leaf = await this.app.workspace.ensureSideLeaf(type, side, { active: false, reveal: true });
+    await leaf.loadIfDeferred();
   }
 
   private async revealCardDrawer(): Promise<void> {
