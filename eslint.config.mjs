@@ -12,6 +12,7 @@ export default tseslint.config(
       "coverage/**",
       "demo-vault/**",
       "esbuild.config.mjs",
+      "scripts/**",
       "playwright.config.ts",
       "vitest.config.ts",
     ],
