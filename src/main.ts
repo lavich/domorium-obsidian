@@ -1,6 +1,7 @@
 import {
   addIcon,
   type App,
+  debounce,
   FuzzySuggestModal,
   getLanguage,
   type Menu,
@@ -26,7 +27,7 @@ import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
 import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
-import { RETIRED_VIEW_TYPES, type Origin } from "./desk/deskState";
+import { RETIRED_VIEW_TYPES, type DeskMode, type Origin } from "./desk/deskState";
 import { originRules } from "./desk/tabModes";
 import { sidePanelPlan, type SidePanelPlan } from "./desk/sidePanels";
 import { adoptsFollow, fallbackFollowed, noteChangeMatters } from "./desk/followRules";
@@ -65,6 +66,7 @@ export default class GedcomPlugin
   implements GedcomViewHost, DeskViewsHost
 {
   settings: GedcomSettings = DEFAULT_SETTINGS;
+  private readonly saveLastMode = debounce(() => void this.saveData(this.settings), 1000, true);
   /**
    * The offer's shorter answer. A reader who says yes to one face in a group
    * photograph has answered for the other four, and unloading is what forgets
@@ -276,6 +278,7 @@ export default class GedcomPlugin
   }
 
   onunload(): void {
+    this.saveLastMode.run();
     this.moves.stop();
     removeIcon(GEDCOM_ICON_ID);
   }
@@ -301,6 +304,18 @@ export default class GedcomPlugin
 
   followed(): GedcomView | null {
     return this.followedView;
+  }
+
+  lastMode(): DeskMode {
+    return this.settings.lastMode;
+  }
+
+  modeChosen(mode: DeskMode): void {
+    if (mode === this.settings.lastMode) {
+      return;
+    }
+    this.settings = { ...this.settings, lastMode: mode };
+    this.saveLastMode();
   }
 
   genealogyChanged(view: GedcomView): void {

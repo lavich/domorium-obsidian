@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "./i18n";
 import {
-  openAsOptions,
   recordPreviewOptions,
   settingDefinitions,
 } from "./settingDefinitions";
@@ -18,7 +17,7 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
-      openAs: "graph",
+      lastMode: "graph",
       genealogyInterface: false,
       openPanelsOnSelect: true,
     });
@@ -32,7 +31,7 @@ describe("GEDCOM settings", () => {
         recordPreview: "modifier",
         mediaPreview: "off",
         remoteImages: true,
-        openAs: "source",
+        lastMode: "timeline",
         genealogyInterface: true,
         openPanelsOnSelect: false,
       }),
@@ -43,7 +42,7 @@ describe("GEDCOM settings", () => {
       recordPreview: "modifier",
       mediaPreview: "off",
       remoteImages: true,
-      openAs: "source",
+      lastMode: "timeline",
       genealogyInterface: true,
       openPanelsOnSelect: false,
     });
@@ -63,31 +62,30 @@ describe("GEDCOM settings", () => {
       recordPreview: "hover",
       mediaPreview: "hover",
       remoteImages: false,
-      openAs: "graph",
+      lastMode: "graph",
       genealogyInterface: false,
       openPanelsOnSelect: true,
     });
   });
 
-  it("opens files as a graph for a settings file written before the choice existed", () => {
-    expect(
-      parseSettings({ diagnostics: true, openAs: "reading" }).openAs,
-    ).toBe("graph");
+  it("remembers Graph as the last mode for a settings file written before the mode was kept", () => {
+    expect(parseSettings({ diagnostics: true }).lastMode).toBe("graph");
   });
 
-  it("opens files as a graph, a timeline or the source when the reader chose one, and a saved genealogy as a graph", () => {
-    expect(parseSettings({ openAs: "graph" }).openAs).toBe("graph");
-    expect(parseSettings({ openAs: "timeline" }).openAs).toBe("timeline");
-    expect(parseSettings({ openAs: "genealogy" }).openAs).toBe("graph");
-    expect(parseSettings({ openAs: "source" }).openAs).toBe("source");
-    expect(changedSetting("openAs", "graph")).toEqual({ openAs: "graph" });
+  it("keeps the last mode the reader chose, reads a saved genealogy as a graph and ignores any other value", () => {
+    expect(parseSettings({ lastMode: "source" }).lastMode).toBe("source");
+    expect(parseSettings({ lastMode: "timeline" }).lastMode).toBe("timeline");
+    expect(parseSettings({ lastMode: "genealogy" }).lastMode).toBe("graph");
+    expect(parseSettings({ lastMode: "reading" }).lastMode).toBe("graph");
+    expect(parseSettings({ lastMode: 3 }).lastMode).toBe("graph");
   });
 
-  it("offers the three modes in order, in English and Russian", () => {
-    expect(Object.keys(openAsOptions())).toEqual(["graph", "timeline", "source"]);
-    expect(Object.values(openAsOptions())).toEqual(["Graph", "Timeline", "Source"]);
-    setLanguage("ru");
-    expect(Object.values(openAsOptions())).toEqual(["Граф", "Хронологию", "Исходник"]);
+  it("drops the retired Open GEDCOM files as value on the next save", () => {
+    const parsed = parseSettings({ openAs: "source", diagnostics: false });
+
+    expect(parsed).not.toHaveProperty("openAs");
+    expect(parsed.lastMode).toBe("graph");
+    expect(parsed.diagnostics).toBe(false);
   });
 
   it("leaves the genealogy interface off for a settings file written before it existed", () => {
@@ -138,16 +136,6 @@ describe("GEDCOM settings", () => {
           type: "toggle",
           key: "genealogyInterface",
           defaultValue: false,
-        },
-      },
-      {
-        name: "Open GEDCOM files as",
-        desc: "How a GEDCOM file opens in a new tab: as a graph, a timeline or the source; the record card appears beside the graph or the timeline. Each tab remembers the mode it was last in. Applies when the genealogy interface is on.",
-        control: {
-          type: "dropdown",
-          key: "openAs",
-          options: openAsOptions(),
-          defaultValue: "graph",
         },
       },
       {
@@ -203,19 +191,19 @@ describe("GEDCOM settings", () => {
 
   it("speaks the reader's language when Obsidian asks for the definitions", () => {
     setLanguage("ru");
-    const [, first, panels, second] = settingDefinitions();
+    const [, panels, second] = settingDefinitions();
 
-    expect(first?.name).toBe("Открывать файлы GEDCOM как");
-    expect(openAsOptions().source).toBe("Исходник");
     expect(panels?.name).toBe("Открывать боковые панели при выборе");
     expect(second?.name).toBe("Диагностика");
-    expect(first?.desc).toMatch(/GEDCOM/);
+    expect(second?.desc).toMatch(/GEDCOM/);
     expect(recordPreviewOptions().off).toBe("Никогда");
   });
 
-  it("has a definition for every setting, and a setting for every definition", () => {
+  it("has a definition for every setting the reader can change, and for no other", () => {
     expect(settingDefinitions().map((item) => item.control.key).sort()).toEqual(
-      Object.keys(DEFAULT_SETTINGS).sort(),
+      Object.keys(DEFAULT_SETTINGS)
+        .filter((key) => key !== "lastMode")
+        .sort(),
     );
   });
 

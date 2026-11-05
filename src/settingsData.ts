@@ -4,7 +4,7 @@ export type RecordPreviewTrigger = (typeof RECORD_PREVIEW_TRIGGERS)[number];
 
 export const DESK_MODES = ["graph", "timeline", "source"] as const;
 
-export type OpenAsMode = (typeof DESK_MODES)[number];
+export type DeskMode = (typeof DESK_MODES)[number];
 
 export interface GedcomSettings {
   diagnostics: boolean;
@@ -12,7 +12,7 @@ export interface GedcomSettings {
   recordPreview: RecordPreviewTrigger;
   mediaPreview: RecordPreviewTrigger;
   remoteImages: boolean;
-  openAs: OpenAsMode;
+  lastMode: DeskMode;
   genealogyInterface: boolean;
   openPanelsOnSelect: boolean;
 }
@@ -27,22 +27,22 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // Reaching a stranger's host is a statement about a family, not about a
   // plugin, so it waits to be asked.
   remoteImages: false,
-  openAs: "graph",
+  lastMode: "graph",
   // The pages and panels are the plugin's largest surface; a reader who came
   // for the editor has not asked for them.
   genealogyInterface: false,
   openPanelsOnSelect: true,
 };
 
-function isOpenAsMode(value: unknown): value is OpenAsMode {
-  return DESK_MODES.includes(value as OpenAsMode);
+function isDeskMode(value: unknown): value is DeskMode {
+  return DESK_MODES.includes(value as DeskMode);
 }
 
-export function readOpenAs(value: unknown): OpenAsMode | undefined {
+export function readDeskMode(value: unknown): DeskMode | undefined {
   if (value === "genealogy") {
     return "graph";
   }
-  return isOpenAsMode(value) ? value : undefined;
+  return isDeskMode(value) ? value : undefined;
 }
 
 function isRecordPreviewTrigger(value: unknown): value is RecordPreviewTrigger {
@@ -86,7 +86,7 @@ export function parseSettings(data: unknown): GedcomSettings {
       typeof settings.remoteImages === "boolean"
         ? settings.remoteImages
         : DEFAULT_SETTINGS.remoteImages,
-    openAs: readOpenAs(settings.openAs) ?? DEFAULT_SETTINGS.openAs,
+    lastMode: readDeskMode(settings.lastMode) ?? DEFAULT_SETTINGS.lastMode,
     genealogyInterface:
       typeof settings.genealogyInterface === "boolean"
         ? settings.genealogyInterface

@@ -10,6 +10,7 @@ import {
   cursorInside,
   effectiveMode,
   initialMode,
+  rememberedMode,
   modeButtons,
   openFromIndex,
   openingMemory,
@@ -174,7 +175,7 @@ describe("the mode a tab shows while the genealogy interface is off", () => {
     expect(effectiveMode("timeline", true)).toBe("timeline");
   });
 
-  it("starts a new tab in the mode the setting names while the interface is on", () => {
+  it("starts a new tab in the mode the reader last chose while the interface is on", () => {
     expect(initialMode(undefined, "source", true)).toBe("source");
     expect(initialMode(undefined, "graph", true)).toBe("graph");
     expect(initialMode(undefined, "timeline", true)).toBe("timeline");
@@ -190,6 +191,18 @@ describe("the mode a tab shows while the genealogy interface is off", () => {
     expect(initialMode("timeline", "source", true)).toBe("timeline");
     expect(initialMode("source", "graph", false)).toBe("source");
     expect(initialMode("graph", "source", false)).toBe("graph");
+  });
+});
+
+describe("the mode the next file opens in", () => {
+  it("follows a mode the reader picked", () => {
+    expect(rememberedMode("graph", "source", "reader")).toBe("source");
+    expect(rememberedMode("source", "timeline", "reader")).toBe("timeline");
+  });
+
+  it("is not moved by a change the plugin made", () => {
+    expect(rememberedMode("timeline", "source", "program")).toBe("timeline");
+    expect(rememberedMode("graph", "timeline", "program")).toBe("graph");
   });
 });
 

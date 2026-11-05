@@ -137,11 +137,12 @@ work as in the timeline. A card selects the person, a node the family, and every
 card and node can be reached and activated from the keyboard.
 
 Each tab remembers its mode and its selected record, and the branch, position and
-zoom of its graph and its timeline, across a restart. **Open GEDCOM files as** in
-the plugin settings chooses which mode a newly opened file starts in — Graph,
-Timeline or Source — while the genealogy interface is on; Graph is the default,
-and a file last opened in the old Genealogy mode opens as a graph. Set it to
-Source to keep the editor as the default.
+zoom of its graph and its timeline, across a restart. A file
+opened in a new tab, or a tab navigated to another file, starts in the mode you last
+chose in a GEDCOM tab with the header buttons or a **Show as** command — Graph the
+first time — so working in Source or in Timeline carries over from file to file.
+Only a choice of yours counts: opening a file, restoring a workspace or Back never
+changes it.
 
 Use **Go to GEDCOM definition** from the command palette to jump from an XREF
 usage to its record declaration. **Find GEDCOM references** moves between

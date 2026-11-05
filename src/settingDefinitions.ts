@@ -20,14 +20,6 @@ export function recordPreviewOptions(): Record<string, string> {
   };
 }
 
-export function openAsOptions(): Record<string, string> {
-  return {
-    graph: t("openAsOption.graph"),
-    timeline: t("openAsOption.timeline"),
-    source: t("openAsOption.source"),
-  };
-}
-
 export function settingDefinitions(): GedcomSettingDefinition[] {
   return [
     {
@@ -37,16 +29,6 @@ export function settingDefinitions(): GedcomSettingDefinition[] {
         type: "toggle",
         key: "genealogyInterface",
         defaultValue: DEFAULT_SETTINGS.genealogyInterface,
-      },
-    },
-    {
-      name: t("setting.openAs.name"),
-      desc: t("setting.openAs.desc"),
-      control: {
-        type: "dropdown",
-        key: "openAs",
-        options: openAsOptions(),
-        defaultValue: DEFAULT_SETTINGS.openAs,
       },
     },
     {

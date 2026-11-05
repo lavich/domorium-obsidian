@@ -3,14 +3,14 @@ import type { Position, Range } from "@domorium/language-service";
 import type { GenealogyIndex } from "../genealogy";
 import type { MessageKey } from "../i18n";
 import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON } from "../icon";
-import { DESK_MODES, readOpenAs, type OpenAsMode } from "../settingsData";
+import { DESK_MODES, readDeskMode, type DeskMode } from "../settingsData";
 import { BRANCH_STEPS, initialFocus } from "./fileTimeline";
 import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
 import { familyFactByKey } from "./familyPage";
 import { factByKey, type FactKey } from "./personPage";
 
-export type DeskMode = OpenAsMode;
+export type { DeskMode };
 
 export type PageKind = "person" | "family" | "source" | "media";
 
@@ -32,7 +32,7 @@ export function readDeskState(state: unknown): DeskState {
     return {};
   }
   const { mode, selected, graph, timeline } = state as Record<string, unknown>;
-  const read = readOpenAs(mode);
+  const read = readDeskMode(mode);
   return {
     ...(read === undefined ? {} : { mode: read }),
     ...(typeof selected === "string" && selected ? { selected } : {}),
@@ -48,10 +48,17 @@ export function effectiveMode(stored: DeskMode, interfaceOn: boolean): DeskMode 
 /** A tab opened while the interface is off must not store the default, or turning it on would flip the tab. */
 export function initialMode(
   persisted: DeskMode | undefined,
-  openAs: OpenAsMode,
+  lastMode: DeskMode,
   interfaceOn: boolean,
 ): DeskMode {
-  return persisted ?? (interfaceOn ? openAs : "source");
+  return persisted ?? (interfaceOn ? lastMode : "source");
+}
+
+export type ModeSource = "reader" | "program";
+
+/** Only a mode the reader picked is the one the next file opens in. */
+export function rememberedMode(last: DeskMode, next: DeskMode, source: ModeSource): DeskMode {
+  return source === "reader" ? next : last;
 }
 
 export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
