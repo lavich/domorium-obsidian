@@ -28,9 +28,7 @@ export interface FileViewsHost {
   changed(): void;
   setIcon(element: HTMLElement, icon: string): void;
   coarsePointer(): boolean;
-  /** The places table of the file, as the tab last read it. */
   places(): TableState;
-  /** Creates the places table, or opens it where it exists. */
   placesAction(): void;
   addMissingPlaces(names: string[]): void;
   tiles(): TileSettings;
@@ -207,14 +205,12 @@ export class FileViews {
     this.kept.map = board.state();
   }
 
-  /** The places table changed: a map in view draws from it at once, one out of view when it is next shown. */
   refreshPlaces(): void {
     if (this.shownKind === "map" && this.map && this.mapIndex && this.displayed()) {
       this.map.show(this.mapIndex, this.host.places(), this.map.state());
     }
   }
 
-  /** The tile settings changed. */
   refreshTiles(): void {
     this.map?.tilesChanged();
   }

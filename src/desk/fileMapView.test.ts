@@ -2,7 +2,7 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
-import { curieIndex, curieWithMap, indexOf } from "../testing/curie";
+import { CURIE as CURIE_TEXT, curieWithMap, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { type FileMapHost, MapBoard, type MapEnv, type MapState, type TableState, type TileSettings } from "./fileMapView";
 import { parsePlacesTable } from "./placesTable";
@@ -326,7 +326,7 @@ describe("the keyboard and the search", () => {
 });
 
 describe("a map with no place to draw", () => {
-  const plain = curieIndex();
+  const plain = indexOf(CURIE_TEXT.replace(/^[34] (?:MAP|LATI|LONG).*\n/gmu, ""));
 
   it("says why and offers to create the table, which calls its host once", () => {
     board(undefined, { status: "absent" }, plain);

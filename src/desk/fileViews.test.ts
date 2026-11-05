@@ -556,7 +556,7 @@ describe("what a click in a view asks of the tab", () => {
     click(parent.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]'));
 
     const range = host.showInSource.mock.lastCall?.[0];
-    expect([range?.start.line, range?.end.line]).toEqual([21, 23]);
+    expect([range?.start.line, range?.end.line]).toEqual([21, 26]);
   });
 
   it("selects the person of a timeline row", () => {

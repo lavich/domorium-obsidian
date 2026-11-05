@@ -75,8 +75,8 @@ Each module is a small DOM unit over the pure layer; none holds more than one co
 
 ## 9. Documents
 
-- [ ] 9.1 `README.md`: the Features line and the modes paragraph, a *Places* section (format, location, creating, appending, that `MAP` in the file wins), the settings, the *Privacy* section with the second thing a reader can ask for and the text of D7, *Development* (the outline script), and under *License* the Natural Earth line. `PRODUCT.md`: the network constraint (images and map tiles on request) and Principle 1 (the reader-owned places table). `docs/design/research-desk.md:58` and `docs/design/next-steps.md:15`: the map decision recorded as taken. `CHANGELOG.md` is not touched. Test: `grep -n "no map\|draws no map" README.md openspec/specs` finds none outside archived specs.
-- [ ] 9.2 The demo vault: add `MAP` to a few places of `demo-vault/curie.ged` and a `demo-vault/curie.places.md`, run the whole suite, and fix the ranges and counts of the tests that read the file (about 24 files import it); list the additions in *Implementation*.
+- [x] 9.1 `README.md`: the Features line and the modes paragraph, a *Places* section (format, location, creating, appending, that `MAP` in the file wins), the settings, the *Privacy* section with the second thing a reader can ask for and the text of D7, *Development* (the outline script), and under *License* the Natural Earth line. `PRODUCT.md`: the network constraint (images and map tiles on request) and Principle 1 (the reader-owned places table). `docs/design/research-desk.md:58` and `docs/design/next-steps.md:15`: the map decision recorded as taken. `CHANGELOG.md` is not touched. Test: `grep -n "no map\|draws no map" README.md openspec/specs` finds none outside archived specs.
+- [x] 9.2 The demo vault: add `MAP` to a few places of `demo-vault/curie.ged` and a `demo-vault/curie.places.md`, run the whole suite, and fix the ranges and counts of the tests that read the file (about 24 files import it); list the additions in *Implementation*.
 
 ## 10. Verify
 

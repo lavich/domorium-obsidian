@@ -53,9 +53,10 @@ dates, a file with validation errors, the file changing outside while edited.
 
 ## Open decisions
 
-- **Map.** Not in the reading stage: Places is a list. A later slice decides
-  between coordinates from `MAP` only and tiles behind explicit permission;
-  tiles need the network, which `PRODUCT.md` forbids by default.
+- **Map.** Decided: a Map mode draws the places on a bundled outline from the
+  coordinates the file's `MAP` and a places table beside it give, with no lookup
+  of a name; tiles come only from a server the reader names and switches on
+  (openspec change `map-view`).
 - **Undo and confirmation of edits**, and whether they share history with the
   source editor.
 - **Several trees in one vault.** Deferred.

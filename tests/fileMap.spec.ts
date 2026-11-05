@@ -8,6 +8,7 @@ import type { TabOptions } from "../harness/fileViews";
 import { placesFile } from "./generated";
 
 const SCEAUX = "| Place | Latitude | Longitude |\n| --- | --- | --- |\n| Sceaux, France | 48.7766 | 2.2917 |";
+const PLAIN = ["0 HEAD", "0 @I1@ INDI", "1 NAME Marie /Curie/", "1 BIRT", "2 PLAC Warsaw, Congress Poland", "0 TRLR", ""].join("\n");
 const TILES = "https://tiles.example/{z}/{x}/{y}.png";
 
 async function mountMap(page: Page, options: TabOptions = {}): Promise<void> {
@@ -195,7 +196,7 @@ for (const viewport of [
     });
 
     test("says why there is no place to draw and calls its host once from the button", async ({ page }) => {
-      await mountMap(page, { fixture: undefined, placesText: null, phone, touch: phone });
+      await mountMap(page, { fixture: undefined, doc: PLAIN, placesText: null, phone, touch: phone });
 
       await expect(page.locator(".gedcom-map-empty h3")).toHaveText("No place has coordinates yet");
       await page.locator(".gedcom-map-empty button").click();

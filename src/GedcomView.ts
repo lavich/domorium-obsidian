@@ -112,7 +112,6 @@ export interface GedcomViewHost {
   cardWanted(view: GedcomView, origin: Origin): void;
   lastMode(): DeskMode;
   modeChosen(mode: DeskMode): void;
-  /** The text of a note, read afresh, or null where there is none. */
   readPlacesTable(path: string): Promise<string | null>;
   createPlacesTable(path: string, text: string): Promise<"created" | "exists">;
   openPlacesTable(path: string): Promise<void>;
@@ -772,7 +771,6 @@ export class GedcomView extends TextFileView implements CardTab {
     return this.file === null ? null : placesTablePath(this.file.path);
   }
 
-  /** Reads the places table once while the tab is in Map mode and again after it has been marked stale. */
   private loadPlacesTable(): void {
     const path = this.tablePath();
     if (path === null) {
@@ -796,7 +794,6 @@ export class GedcomView extends TextFileView implements CardTab {
     });
   }
 
-  /** A note was changed, created, deleted or moved: re-read the table where it was this tab's. */
   placesFileTouched(path: string, oldPath?: string): void {
     const table = this.tablePath();
     if (table === null || (path !== table && oldPath !== table && this.placesLoadedFor === table)) {

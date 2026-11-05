@@ -24,7 +24,6 @@ export interface TabOptions {
   touch?: boolean;
   language?: string;
   fixture?: "map";
-  /** The text of the places table; null for none, nothing for one with no rows. */
   placesText?: string | null;
   tiles?: TileSettings;
 }

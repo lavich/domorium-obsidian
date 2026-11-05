@@ -320,7 +320,6 @@ export const WINDOW_MARGIN = 10;
 
 const FIRST_WINDOW = 40;
 
-/** The rows to hold in the document: those in view and a margin each side, `first` to `last` inclusive. */
 export function rowWindow(
   scrollTop: number,
   height: number,

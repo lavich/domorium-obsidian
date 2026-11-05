@@ -23,6 +23,13 @@ levels, tags and identifiers are coloured, nested lines are indented without the
 file being changed, and the status bar names the specification the file is
 checked against. Ctrl/Cmd-hover any `@I1@` to see the record it points at.
 
+## See where they lived
+
+With **Genealogy interface** on, choose **Map** in the tab's header. Warsaw, Paris and
+Passy are placed by the `MAP` lines in [[curie.ged]]; four more places take their
+coordinates from the note [[curie.places.md]] beside it, and one, New Orleans, is left
+blank so the map counts it. Select Marie and a numbered line follows her places.
+
 ## Follow a link into it
 
 [[curie.ged#@I1@|Marie Skłodowska-Curie]] opens the file on her record. Hover it

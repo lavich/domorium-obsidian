@@ -145,7 +145,6 @@ export function tangled(count: number, { seed = 7, founders = 40 }: { seed?: num
   return made.text(false);
 }
 
-/** A file of `count` people, each born at a place of its own that has coordinates, gathered round forty cities. */
 export function placesFile(count: number): string {
   const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
   for (let i = 0; i < count; i += 1) {

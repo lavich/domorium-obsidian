@@ -89,10 +89,7 @@ export function curieWithEvents(): string {
 }
 
 const MAPPED: Record<string, [string, string]> = {
-  "Warsaw, Congress Poland": ["N52.2297", "E21.0122"],
-  "Paris, France": ["N48.8566", "E2.3522"],
   "Stockholm, Sweden": ["N59.3293", "E18.0686"],
-  "Passy, Haute-Savoie, France": ["N45.9167", "E6.7"],
 };
 
 export function curieWithMap(): string {

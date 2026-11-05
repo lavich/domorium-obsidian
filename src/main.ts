@@ -573,7 +573,6 @@ export default class GedcomPlugin
     });
   }
 
-  /** A renamed GEDCOM file takes its places table along, unless the new name already has one. */
   private async followPlacesTable(file: TAbstractFile, oldPath: string): Promise<void> {
     if (!(file instanceof TFile)) {
       return;

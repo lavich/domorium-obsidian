@@ -197,3 +197,20 @@ Decided by the planner, to be confirmed by the user; each is a one-task change i
 11. **Search fold:** NFD without marks, lowercase and a small transliteration table; exonyms do not match.
 12. **The table is a reader-owned note outside the file** (see D3), accepted and written into `PRODUCT.md`.
 13. The map has no tile provider name anywhere; `referrerpolicy="no-referrer"` is checked against a public server in the manual task.
+
+## Implementation
+
+Deviations from the plan as written, found while building it.
+
+- **The outline source is Natural Earth 4.1.0**, not 5.1.1: `ne_110m_land.zip` at `https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip`, SHA-256 `1926c621afd6ac67c3f36639bb1236134a48d82226dc675d3e3df53d02d2a3de`; the script takes the unzipped `.shp` (it reads the shapefile itself, so there is no GeoJSON step) and checks its own SHA-256, `8689e6932b8e370e2ca4587cf3ba21e460b1235db37b6ed3c172c35b4a6088de`. 110 m was kept after looking at the harness at world and country zoom: 115 rings, 13 972 characters of base64; the coast is coarse at city zoom, where tiles are the answer. Antarctica is clamped by `project`, which clamps latitude, so its ring closes along the bottom edge.
+- **City zoom is 10**, not 6: a single place, a revealed selection and a search that starts from a view wider than zoom 6 land on a view about 200 km across (`CITY_ZOOM` in `mapProjection.ts`).
+- **No `followedTablePath`.** `placesTablePath` returns null for a path that is not `.ged`/`.gedcom` and the rename follow in `main.ts` compares the table paths of the old and the new name.
+- **No separate `harness/fileMap.*`.** The stand-in tab of `harness/fileViews.*` carries a Map button and the options `fixture: "map"`, `placesText` (null for no table) and `tiles`; the real bundled outline is drawn, so the specs also exercise the bundle. A `placesFile(count)` generator in `tests/generated.ts` builds the large file.
+- **The scope bar is reused unchanged**: its line reads `Branch of Irène · 6 of 17 people` as in the other views, and the **Branch of** button is Map's own (`mapScopeRow.ts`), so task 5.2's `label` option was not needed.
+- **The 1.13 settings path** rejects an invalid address with the control's own `validate` (an inline error, nothing saved) and commits a valid one after 700 ms of quiet; the deprecated `display()` path wires blur and Enter. Both go through `DeferredCommit`.
+- **The panel's rows are 44 px** on every width, so the window arithmetic has one row height.
+- **The counter of places with no coordinates** counts the scope, not the years range; the points and the counts line follow the range.
+- **Modules the plan did not name**: `mapScope.ts` (the slices of scope, range and selection), `mapScopeRow.ts`, `mapActions.ts`, `mapBoardTypes.ts`; `fileMapView.ts` is still the largest new file, about 660 lines after the formatter.
+- **Existing tests edited**, each for a behaviour that changed: `recordCard.test.ts` and `tests/desk.spec.ts` (the empty card names the map), `settings.test.ts` (the three rows, the interface description, the defaults), `deskState.test.ts` (five modes), `fileViews.test.ts` (the host gained four members; Marie's birth is now lines 21–26 because the demo file gained a `MAP`), `tests/fileList.spec.ts` (five header buttons), `tests/header.spec.ts` and `tests/fileViews.spec.ts` (additions).
+- **The demo vault**: `demo-vault/curie.ged` has a `MAP` under the first `PLAC` of Warsaw, Paris and Passy; `demo-vault/curie.places.md` gives Sceaux, Mulhouse, Montpellier and New York and leaves New Orleans blank; `Start here.md` has a paragraph on the map. `curieWithMap()` adds Stockholm, which only `curieWithEvents()` writes.
+- **Strings** avoid `MAP` and `IP` in English because the sentence-case check lowercases acronyms it does not know.

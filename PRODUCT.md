@@ -61,7 +61,8 @@ Constraints:
 - No Node built-ins under `src/`; must run on Obsidian mobile.
 - Minimum app version 1.8.7; newer APIs are declined unless the floor moves.
 - Every string follows the app's language (English and Russian today).
-- No network request unless the user explicitly allows remote images.
+- No network request unless the user explicitly allows it: remote images, or map
+  tiles from a server the user names. No place name or other vault data is ever sent.
 
 The work on branch `feat/person-browser` (sidebar panel, person, family and
 source pages, read-only) is a draft. The genealogy interface is being rethought
@@ -90,7 +91,9 @@ Undecided:
 ## Product Principles
 
 1. The file is the truth. Every view is a reading of it, every edit lands in it,
-   and nothing is kept anywhere else.
+   and nothing is kept anywhere else. The one note beside it is the places table:
+   coordinates the file does not carry, in a note the reader owns, never over a
+   `MAP` the file states, written only by a button the reader presses.
 2. Genealogy, not syntax. A researcher sees people, relationships, dates and
    evidence; tags, levels and pointers stay out of sight unless asked for.
 3. Every claim shows what it rests on. Sources and citations are one step away

@@ -16,7 +16,6 @@ export interface FloatingSearchOptions {
   info: () => MatchInfo;
   /** A list narrows rather than steps: no arrows, a counter of its own, and Enter hands the keyboard on. */
   narrowing?: { count: () => string; enter: () => void };
-  /** Words of the field and its counter where the search is not over people. */
   words?: {
     label: string;
     placeholder?: string;
