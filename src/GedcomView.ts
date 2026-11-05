@@ -70,6 +70,8 @@ import { routeDocumentLink } from "./editor/service";
 import {
   cursorInside,
   initialMode,
+  rememberedMode,
+  type ModeSource,
   isViewMode,
   modeButtons,
   pageKind,
@@ -109,6 +111,8 @@ export interface GedcomViewHost {
   allowRemoteImages(scope: AllowScope): void;
   genealogyChanged(view: GedcomView): void;
   cardWanted(view: GedcomView, origin: Origin): void;
+  lastMode(): DeskMode;
+  modeChosen(mode: DeskMode): void;
 }
 
 export class GedcomView extends TextFileView implements CardTab {
@@ -141,7 +145,7 @@ export class GedcomView extends TextFileView implements CardTab {
     super(leaf);
     this.contentEl.addClass("gedcom-gedcom-view");
     this.modes = new TabModes(
-      initialMode(undefined, settings.openAs, settings.genealogyInterface),
+      initialMode(undefined, host.lastMode(), settings.genealogyInterface),
       settings.genealogyInterface,
     );
     this.editorEl = this.contentEl.createDiv({ cls: "gedcom-gedcom-editor" });
@@ -164,7 +168,7 @@ export class GedcomView extends TextFileView implements CardTab {
     });
     for (const { mode, icon, title } of modeButtons(this.modes.shown)) {
       const action = this.addAction(icon, t(title), () => {
-        this.setMode(mode);
+        this.setMode(mode, "reader");
       });
       action.setAttribute("data-tooltip-position", "bottom");
       this.modeActions.set(mode, action);
@@ -261,7 +265,7 @@ export class GedcomView extends TextFileView implements CardTab {
     const sameFile = file === undefined || file === this.file?.path;
     if (!sameFile) {
       this.modes.fileChanged(
-        initialMode(desk.mode, this.settings.openAs, this.settings.genealogyInterface),
+        initialMode(desk.mode, this.host.lastMode(), this.settings.genealogyInterface),
       );
       this.views.reset();
       this.memory = {};
@@ -382,7 +386,7 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   showMode(mode: DeskMode): void {
-    this.setMode(mode);
+    this.setMode(mode, "reader");
   }
 
   genealogyInterface(): boolean {
@@ -390,7 +394,7 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   toggleMode(): void {
-    this.setMode(this.modes.toggleTarget());
+    this.setMode(this.modes.toggleTarget(), "reader");
   }
 
   private moveCursorToShown(): void {
@@ -709,7 +713,10 @@ export class GedcomView extends TextFileView implements CardTab {
     return recordAtLine(this.records(), doc.lineAt(selection.main.head).number - 1);
   }
 
-  private setMode(mode: DeskMode): void {
+  private setMode(mode: DeskMode, source: ModeSource = "program"): void {
+    if (this.settings.genealogyInterface) {
+      this.host.modeChosen(rememberedMode(this.host.lastMode(), mode, source));
+    }
     const change = this.modes.setMode(mode, {
       cursorRecord:
         this.modes.mode === "source" ? this.sourceRecordAtCursor()?.identifier : undefined,
