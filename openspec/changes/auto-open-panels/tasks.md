@@ -13,5 +13,5 @@
 
 ## 4. Verify
 
-- [ ] 4.1 `npm run check`, `npm run test:browser` three times, `npm run openspec:validate`.
+- [x] 4.1 `npm run check`, `npm run test:browser` three times, `npm run openspec:validate`.
 - [ ] 4.2 Manual check in Obsidian, desktop: both sidebars collapsed, click a graph card, a timeline row, a family node and a wikilink to a record — both sidebars open, focus stays in the view; collapse the right sidebar and click again — it opens again; with both open, a click expands nothing and does not change the front tab; Back in the card and the cursor in Source open nothing; turn the setting off — no sidebar opens; turn the interface off — nothing opens. Phone: the second touch opens the right drawer; the left drawer never opens.

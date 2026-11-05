@@ -50,6 +50,15 @@ export function settingDefinitions(): GedcomSettingDefinition[] {
       },
     },
     {
+      name: t("setting.openPanelsOnSelect.name"),
+      desc: t("setting.openPanelsOnSelect.desc"),
+      control: {
+        type: "toggle",
+        key: "openPanelsOnSelect",
+        defaultValue: DEFAULT_SETTINGS.openPanelsOnSelect,
+      },
+    },
+    {
       name: t("setting.diagnostics.name"),
       desc: t("setting.diagnostics.desc"),
       control: {

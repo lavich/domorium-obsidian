@@ -71,8 +71,14 @@ Source, the search over the board in Graph and Timeline; **Replace** stays in
 Source.
 
 A tab selects one record at a time, and the **record card** in the right sidebar
-shows it, whatever the mode. The first time you select a record in a session the
-card is put in the right sidebar without taking the focus, and **Show the record
+shows it, whatever the mode. While **Open the side panels when selecting** is on, which it is by default,
+clicking a card, a node, a row or a link opens the index in the left sidebar and
+the card in the right one, putting each there if it is closed and expanding a
+collapsed sidebar, and the view you clicked in keeps the focus; a panel already
+open is left alone, and one you collapse or close comes back with the next click.
+Following the cursor in Source and moving inside the card open nothing. With it
+off, the first selection in a session puts the card in the right sidebar without
+expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a row of the
 index, opens. A person's card lists their facts in the order the record states
