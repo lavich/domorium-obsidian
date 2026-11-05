@@ -8,11 +8,8 @@ TBD - created by archiving change record-card-panel. Update Purpose after archiv
 ### Requirement: The card lives in the right sidebar and follows the GEDCOM tab
 
 While the **Genealogy interface** setting is on, the plugin SHALL offer a view
-named **Record**, the record card, in the right sidebar. It SHALL be placed there,
-without taking the focus, the first time in a session a record is selected in a
-GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row,
-an index row, a link, *Go to record* — and no card is open; a reader who then
-closes it SHALL not have it put back until the plugin loads again. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and activating a row of the index, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the setting is off, the plugin
+named **Record**, the record card, in the right sidebar. It SHALL be placed there, without taking the focus, the first time in a session a record is selected in a
+GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, an index row, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the side panels when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and activating a row of the index, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the side panels when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph or Timeline, by an index row, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, by Back or Forward in the card, or by a relative, a citation or a tile in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
 SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
 is open.
 
@@ -29,8 +26,12 @@ where the file declares no person, family or source it SHALL say that the file h
   Marie Skłodowska-Curie, and the graph keeps the focus
 
 #### Scenario: Closed by the reader
-- **WHEN** the card was placed, the reader closed it, and selects Pierre Curie
+- **WHEN** the setting **Open the side panels when selecting** is off, the card was placed, the reader closed it, and selects Pierre Curie
 - **THEN** the card is not put back during that session
+
+#### Scenario: Closed by the reader, with the setting on
+- **WHEN** the setting is on, the card was placed, the reader closed it, and clicks Pierre Curie's card in the graph
+- **THEN** the card is put back in the right sidebar showing Pierre Curie, and the graph keeps the focus
 
 #### Scenario: The command
 - **WHEN** the card is open behind another tab of the right sidebar, or the
@@ -81,9 +82,33 @@ where the file declares no person, family or source it SHALL say that the file h
 - **THEN** the right drawer opens on Marie's card
 
 #### Scenario: A collapsed sidebar on a desktop
-- **WHEN** the card is open, the right sidebar is collapsed, and the reader activates
+- **WHEN** the setting is off, the card is open, the right sidebar is collapsed, and the reader activates
   Marie's card in the graph
 - **THEN** the sidebar stays collapsed, and the card shows Marie when it is opened
+
+#### Scenario: Both sidebars collapsed
+- **WHEN** the setting is on, both sidebars are collapsed, and the reader clicks Marie's card in the graph on a desktop
+- **THEN** the right sidebar expands on the card showing Marie, the left sidebar expands on the index, and the graph keeps the focus
+
+#### Scenario: The setting is off
+- **WHEN** the setting is off, both sidebars are collapsed, and the reader clicks Marie's card in the graph
+- **THEN** both sidebars stay collapsed
+
+#### Scenario: A card already visible
+- **WHEN** the setting is on, the card is open in the expanded right sidebar and the reader clicks Pierre's card in the graph
+- **THEN** the sidebar is not expanded, switched or moved, and the card shows Pierre
+
+#### Scenario: Collapsed again by the reader
+- **WHEN** the setting is on and the reader collapsed the right sidebar after the card opened, then clicks Marie's card in the graph
+- **THEN** the right sidebar expands again on the card
+
+#### Scenario: Following the cursor in Source
+- **WHEN** the setting is on, both sidebars are collapsed, the tab is in Source mode, and the cursor rests in Pierre's record
+- **THEN** no sidebar opens
+
+#### Scenario: Back in the card
+- **WHEN** the setting is on, the card is open, the reader collapsed the left sidebar, and presses Back in the card
+- **THEN** the left sidebar stays collapsed
 
 #### Scenario: The announcement
 - **WHEN** the reader selects Pierre Curie
