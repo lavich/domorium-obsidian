@@ -19,7 +19,7 @@ bar, the search bar's placeholders and button tooltips, the rows and buttons of
 the media popover, the record switcher's placeholder, the rename dialog, the
 "line N" prefix of a problem listed under a `gedcom` block in a note, the
 mode buttons, the headings, labels, buttons and empty states of the record
-card, the index, the names of
+card, the column headings, buttons, counts and empty states of the list, the names of
 events and of the relationships they are shown under, and the quality of
 evidence a citation states.
 
