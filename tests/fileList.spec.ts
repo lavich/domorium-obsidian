@@ -642,3 +642,138 @@ test.describe("hover tooltips", () => {
     expect(await page.evaluate(large)).toEqual([]);
   });
 });
+
+for (const viewport of [WIDE, PHONE]) {
+  const phone = viewport.width < 400;
+
+  test.describe(`the places of the list at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    const mountPlaces = (page: Page, options: TabOptions = {}) =>
+      mountList(page, { fixture: "map", phone, touch: phone, memory: { list: { kind: "places" } }, ...options });
+    const place = (page: Page, key: string) => page.locator(`.gedcom-list-row[data-key="${key}"]`);
+    const actions = (page: Page) => page.locator(".gedcom-list-action").allInnerTexts();
+
+    test("lists every place alphabetically with the events, the years and the coordinates", async ({ page }) => {
+      await mountPlaces(page);
+
+      await expect(rows(page)).toHaveCount(10);
+      expect((await names(page))[0]).toBe("Montpellier, France");
+      await expect(page.locator(".gedcom-list-count")).toHaveText("10 places");
+      const cells = await place(page, "paris, france").locator(".gedcom-list-cell").allInnerTexts();
+      expect(cells.map((cell) => cell.trim())).toEqual(["Paris, France", phone ? "11 events" : "11", "1855–1958", "48.8566, 2.3522"]);
+    });
+
+    test("marks a place without coordinates by a labelled shape that has a size, not by colour", async ({ page }) => {
+      await mountPlaces(page);
+      const mark = place(page, "mulhouse, france").locator(".gedcom-list-gap");
+
+      await expect(mark).toHaveAttribute("aria-label", "No coordinates");
+      const box = await mark.boundingBox();
+      expect(box?.width).toBeGreaterThan(6);
+      expect(box?.height).toBeGreaterThan(6);
+      await expect(page.locator(".gedcom-list-gap")).toHaveCount(6);
+    });
+
+    test("sorts by each column in three presses and keeps the sort", async ({ page }) => {
+      test.skip(phone, "the headers are a menu on a phone");
+      await mountPlaces(page);
+
+      await header(page, "Events").click();
+      expect((await names(page))[0]).toBe("Passy, Haute-Savoie, France");
+      await header(page, "Events").click();
+      expect((await names(page))[0]).toBe("Warsaw, Congress Poland");
+      await header(page, "Events").click();
+      expect((await names(page))[0]).toBe("Montpellier, France");
+      await header(page, "Coordinates").click();
+      expect(await page.locator(".gedcom-list-row").first().locator(".gedcom-list-gap").count()).toBe(1);
+      expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ places: { by: "coordinates", dir: "asc" } });
+    });
+
+    test("sorts by a menu on a phone", async ({ page }) => {
+      test.skip(!phone, "the headers do the work above a phone");
+      await mountPlaces(page);
+      const menu = page.locator(".gedcom-list-sort-select");
+
+      await expect(menu.locator("option").first()).toHaveText("Alphabetical");
+      await menu.selectOption("events");
+      expect((await names(page))[0]).toBe("Passy, Haute-Savoie, France");
+    });
+
+    test("narrows by place name without case or accents and counts what is left", async ({ page }) => {
+      await mountPlaces(page);
+      await searchFor(page, "MONTPELLIÉR");
+
+      expect(await names(page)).toEqual(["Montpellier, France"]);
+      await expect(page.locator(".gedcom-list-count")).toHaveText("1 of 10 places");
+    });
+
+    test("selects a row without selecting a record or leaving the list", async ({ page }) => {
+      await mountPlaces(page);
+      await place(page, "paris, france").click();
+
+      await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
+      expect(await selected(page)).toEqual([]);
+      expect(await page.evaluate(() => window.tab.views?.memory().list)).toEqual({ kind: "places", place: "paris, france" });
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Places");
+    });
+
+    test("keeps the selected place across a visit to another view and drops it with the kind", async ({ page }) => {
+      await mountPlaces(page);
+      await place(page, "paris, france").click();
+      await page.evaluate(() => window.tab.showMode("map"));
+      await page.evaluate(() => window.tab.showMode("list"));
+      await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
+
+      await seg(page, "People").click();
+      await seg(page, "Places").click();
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(0);
+    });
+
+    test("is reached by keyboard and selects by Enter", async ({ page }) => {
+      await mountPlaces(page);
+      await page.locator(".gedcom-list-scroll").focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
+      expect(await selected(page)).toEqual([]);
+    });
+
+    test("offers the places table actions only on the places, in the row of the kinds", async ({ page }) => {
+      await mountPlaces(page, { placesText: "| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |" });
+
+      expect(await actions(page)).toEqual(["Open the places table", "Add the 5 places that have no row"]);
+      const bar = (await page.locator(".gedcom-list-bar").boundingBox())?.y ?? 0;
+      const first = (await page.locator(".gedcom-list-action").first().boundingBox())?.y ?? 0;
+      expect(first).toBeGreaterThanOrEqual(bar);
+      await seg(page, "People").click();
+      await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
+    });
+
+    test("calls the host for the table and for the missing rows", async ({ page }) => {
+      await mountPlaces(page, { placesText: null });
+
+      expect(await actions(page)).toEqual(["Create the places table"]);
+      await page.locator(".gedcom-list-action").click();
+      expect(await page.evaluate(() => window.tab.calls.tableActions)).toBe(1);
+    });
+
+    test("gives its action buttons targets a finger finds", async ({ page }) => {
+      test.skip(!phone, "a pointer needs no more than the default");
+      await mountPlaces(page, { placesText: "| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |" });
+
+      for (const box of await page.locator(".gedcom-list-action").evaluateAll((all) => all.map((one) => one.getBoundingClientRect().height))) {
+        expect(box).toBeGreaterThanOrEqual(44);
+      }
+      const rowHeight = (await rows(page).first().boundingBox())?.height ?? 0;
+      expect(rowHeight).toBeGreaterThanOrEqual(44);
+    });
+
+    test("does not overflow sideways", async ({ page }) => {
+      await mountPlaces(page, { placesText: "| P | a | b |\n| - | - | - |\n| Mulhouse, France |  |  |" });
+
+      expect(await sidewaysOverflow(page)).toBe(false);
+    });
+  });
+}

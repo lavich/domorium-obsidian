@@ -183,17 +183,28 @@ for (const viewport of [
       await expect(page.locator(".gedcom-map-plot")).toHaveAccessibleName("Map of places, 4 places");
     });
 
-    test("opens the list of places by the counter, reaches every place by keyboard and selects by Enter", async ({ page }) => {
+    test("opens the places of the list from the counter and draws no panel", async ({ page }) => {
       await mountMap(page, { phone, touch: phone });
+      await expect(page.locator("[class*='gedcom-map-panel']")).toHaveCount(0);
       await page.locator(".gedcom-map-counter").click();
-      await expect(page.locator(".gedcom-map-panel")).toBeVisible();
-      expect(await page.locator(".gedcom-map-panel-group").allInnerTexts()).toEqual(["On the map · 4", "No coordinates · 6"]);
-      await page.locator("button.gedcom-map-panel-row").first().focus();
-      await page.keyboard.press("ArrowDown");
-      await page.keyboard.press("Enter");
 
-      expect((await selected(page)).length + (await page.locator(".gedcom-map-popup-row").count())).toBeGreaterThan(0);
-      await page.keyboard.press("Escape");
+      await expect(page.locator(".gedcom-list")).toBeVisible();
+      await expect(page.locator(".gedcom-map-plot")).toBeHidden();
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Places");
+      await expect(page.locator(".gedcom-list-row")).toHaveCount(10);
+      expect(await page.evaluate(() => window.tab.calls.shownPlaces)).toBe(1);
+    });
+
+    test("clears the search of the list on the way to the places", async ({ page }) => {
+      await mountMap(page, { phone, touch: phone, memory: { list: { kind: "places" } } });
+      await page.evaluate(() => window.tab.showMode("list"));
+      await page.locator(".gedcom-list-find-toggle").click();
+      await page.locator(".gedcom-list-search").fill("paris");
+      await expect(page.locator(".gedcom-list-row")).toHaveCount(1);
+      await page.evaluate(() => window.tab.showMode("map"));
+      await page.locator(".gedcom-map-counter").click();
+
+      await expect(page.locator(".gedcom-list-row")).toHaveCount(10);
     });
 
     test("says why there is no place to draw and calls its host once from the button", async ({ page }) => {
