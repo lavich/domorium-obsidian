@@ -6,7 +6,7 @@ Run `npm run test` before touching anything: 970 tests pass on `main`. A new wor
 
 ## 0. Rebase
 
-- [ ] 0.1 `open-in-last-mode` merges first (the user removes *Open GEDCOM files as*): `git rebase origin/main` before starting, then re-derive from `openspec/specs/` the blocks of `specs/genealogy-view/spec.md` that quote the `openAs` wording (*A GEDCOM tab is in one of four modes*, *The genealogy interface is off…*, *Links into a record*, the scenario *The setting row*), keep only what list-view adds, and write the scenario that a reader who last chose List sees the next file open as a list. Re-run `npm run openspec:validate`. Where `DeskMode`, `DESK_MODES` and the saved `lastMode` now live, tasks 1.2 and 2.x follow them. No code is written for this task beyond the rebase. Test: none.
+- [x] 0.1 `open-in-last-mode` merges first (the user removes *Open GEDCOM files as*): `git rebase origin/main` before starting, then re-derive from `openspec/specs/` the blocks of `specs/genealogy-view/spec.md` that quote the `openAs` wording (*A GEDCOM tab is in one of four modes*, *The genealogy interface is off…*, *Links into a record*, the scenario *The setting row*), keep only what list-view adds, and write the scenario that a reader who last chose List sees the next file open as a list. Re-run `npm run openspec:validate`. Where `DeskMode`, `DESK_MODES` and the saved `lastMode` now live, tasks 1.2 and 2.x follow them. No code is written for this task beyond the rebase. Test: none.
 
 ## 1. The pure model
 

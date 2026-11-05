@@ -506,3 +506,5 @@ uses it for her years.
 ## Implementation
 
 Deviations and decisions made while implementing are recorded here.
+
+- 0.1: the `genealogy-view` blocks that quoted `openAs` are re-derived from the main spec as `open-in-last-mode` left it (the last-mode rule restated in full for four modes, with a scenario that a reader who last chose List sees a file open as a list); every MODIFIED block of the other capabilities was compared with the current main text and its scenarios and none had drifted.

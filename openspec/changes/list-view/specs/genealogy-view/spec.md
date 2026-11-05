@@ -19,14 +19,68 @@ selection puts the cursor, on switching to Source mode, is said by the requireme
 on Source mode and the selection.
 
 Each tab SHALL remember its own mode, its selected record, the scope, position
-and zoom of its Graph and its Timeline, and the kind, sort and *No sources* filter of its List,
-across closing and reopening the workspace.
-Which of the four modes a file opened anew while the interface is on opens in is said
-by the rule for a new tab, which this requirement leaves as it is; any of the four MAY
-be the mode it gives, List included. A file opened anew while the interface is off SHALL be remembered
-as in Source mode, so that turning the interface on does not change the tab. Two
-tabs of one file SHALL each have a mode of their own. A tab, or a setting, saved
-by an earlier version as **Genealogy** SHALL be read as Graph.
+and zoom of its Graph and its Timeline, and the kind, sort and *No sources* filter of its
+List, across closing and reopening the workspace.
+A tab with no mode of its own — a file opened in a new tab, or a tab navigated to
+another file — while the interface is on SHALL open in the mode the reader last
+chose in any GEDCOM tab, and in Graph mode while the reader has chosen none; List is
+a mode the reader can choose, so a file can open as a list. There
+SHALL be no setting that names the mode instead. The reader chooses a mode only
+with a button of the mode control, a **Show as** command or the command that
+switches between source and the last view; a mode a tab takes in any other way —
+opening a file, the interface being turned off, a workspace being restored, Back or
+Forward, a link that takes a tab to Source mode at a record that has no card —
+SHALL NOT change the mode the next file opens in. The last mode SHALL be kept across
+closing and reopening Obsidian. A value saved by an earlier version for the retired
+*Open GEDCOM files as* setting SHALL be ignored and not written again. A file
+opened anew while the interface is off SHALL be remembered as in Source mode, so
+that turning the interface on does not change the tab. Two tabs of one file SHALL
+each have a mode of their own. A tab saved by an earlier version as **Genealogy**
+SHALL be read as Graph.
+
+#### Scenario: A file opened with the default setting
+- **WHEN** the reader has turned the Genealogy interface on, has not yet chosen a
+  mode and opens `curie.ged`
+- **THEN** the tab is in Graph mode and shows a card for each of the 17 people
+
+#### Scenario: A reader who prefers the source
+- **WHEN** the Genealogy interface is on, the reader chose Source in a tab and opens
+  `curie.ged` in a new tab
+- **THEN** the tab opens in Source mode
+
+#### Scenario: A reader who prefers the timeline
+- **WHEN** the Genealogy interface is on, the reader chose Timeline in a tab and
+  opens `curie.ged`
+- **THEN** the tab opens in Timeline mode and shows a row for each of the 17 people
+
+#### Scenario: A reader who prefers the list
+- **WHEN** the Genealogy interface is on, the reader chose List in a tab and opens
+  `curie.ged` in a new tab
+- **THEN** the tab opens in List mode and shows a row for each of the 17 people
+
+#### Scenario: A tab navigated to another file
+- **WHEN** the reader chose Timeline in a tab and navigates that tab to another
+  GEDCOM file
+- **THEN** the other file opens in Timeline mode
+
+#### Scenario: A mode chosen with a command
+- **WHEN** the reader runs **Show as source** in one tab and then opens another file
+- **THEN** the other file opens in Source mode
+
+#### Scenario: A change the reader did not make
+- **WHEN** the reader chose Timeline, a link takes a tab to Source mode at a note
+  record, and the reader then opens another file
+- **THEN** the other file opens in Timeline mode
+
+#### Scenario: A restored workspace
+- **WHEN** the reader chose Source last and Obsidian restarts with a tab in Graph
+  mode
+- **THEN** the tab is in Graph mode, and a file opened anew opens in Source mode
+
+#### Scenario: A reader who set Open GEDCOM files as before
+- **WHEN** the saved data holds a value of the retired setting
+- **THEN** it has no effect on the mode a file opens in and is gone from the saved
+  data after the next save
 
 #### Scenario: A tab in List mode opens as a list
 - **WHEN** a tab of `curie.ged` was saved in List mode and the workspace is restored with
@@ -258,7 +312,7 @@ Source mode at it, never moving a cursor in an editor that is not shown.
   in view, and the card shows her
 
 #### Scenario: A link into a file that opens as a graph
-- **WHEN** *Open GEDCOM files as* names Graph and the reader follows
+- **WHEN** Graph is the mode the reader last chose and the reader follows
   `[[curie.ged#@I1@]]` to a file not open
 - **THEN** the tab is in Graph mode with Marie Skłodowska-Curie selected
 
@@ -284,10 +338,10 @@ that show a mode or open a panel; every GEDCOM tab SHALL show the source.
 
 Turning the setting on or off SHALL take effect in every open tab and sidebar
 without restarting Obsidian. A mode a tab was last in, the scope and zoom of its
-Graph and Timeline, the kind, sort and *No sources* filter of its List, and the *Open GEDCOM files as* value, SHALL be kept while the
-setting is off and honoured again when it is turned on; the *Open GEDCOM files as*
-setting SHALL stay in the settings and say that it applies only while the
-interface is on.
+Graph and Timeline, the kind, sort and *No sources* filter of its List, and the last
+mode the reader chose, SHALL be kept while the
+setting is off and honoured again when it is turned on. A mode chosen on purpose
+SHALL be remembered only while the interface is on.
 
 #### Scenario: A reader who never touched the setting
 - **WHEN** the plugin is installed or updated and the setting is not changed
@@ -300,10 +354,10 @@ interface is on.
   description says that the interface is still in beta and may change
 
 #### Scenario: A reader who used Genealogy mode before
-- **WHEN** the plugin updates, their saved settings name Genealogy in *Open GEDCOM
-  files as*, and the interface is off
-- **THEN** `curie.ged` opens in Source mode until they turn the setting on, and in
-  Graph mode after
+- **WHEN** the plugin updates, their saved settings hold a value of the retired
+  *Open GEDCOM files as* setting, and the interface is off
+- **THEN** `curie.ged` opens in Source mode until they turn the setting on, and a
+  file opened anew after that opens in Graph mode
 
 #### Scenario: Turning it on with a tab open
 - **WHEN** `curie.ged` is open in Source mode and the reader turns the setting
