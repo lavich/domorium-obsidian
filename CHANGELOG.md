@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.16.0
+
+- **The list is a mode of the tab.** A GEDCOM tab has four modes, **Graph**,
+  **Timeline**, **List** and **Source**, in that order in the tab's header. The
+  list shows the people, the families or the sources of the file as rows in the
+  look of the file explorer. The search over them opens from an icon, like the
+  graph's, and a click on a column header sorts it: ascending, descending, then
+  the order of the file. Selecting a row shows the record in the card on the
+  right. A person who cites no source is marked, and sorts first by **Sources**.
+  A file of many thousands of people scrolls without lag, and the list can be
+  used from the keyboard and with a screen reader. The command **Show as list**
+  opens it.
+- **The Index in the left sidebar is gone.** The list replaces it. A saved Index
+  panel is closed once, when Obsidian starts, and the ribbon icon is removed.
+  The command **Open the list of the GEDCOM file** keeps its identifier and now
+  opens the list of the tab you were in.
+- **A file opens in the mode you last chose.** Choosing a mode with a header
+  button or a command is remembered; the next file you open starts in it, and
+  Graph is the first. The setting **Open GEDCOM files as** is removed.
+- **Selecting a record opens its card.** In the graph, the timeline and the list,
+  selecting a record shows the record card on the right, opening a collapsed
+  sidebar without taking the focus from the view. The setting **Open the record
+  card when selecting** turns this off.
+- **The timeline.** A click on a person lights their family, and pointing at
+  one no longer does. The years sit apart from the names, on an axis with ticks,
+  and the names are rows in the look of the file explorer's, more compact and
+  still under the pointer.
+
 ## 1.15.0
 
 - **The record card.** A record now opens in a card in the right sidebar instead
