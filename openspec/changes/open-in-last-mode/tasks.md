@@ -15,4 +15,4 @@
 ## 4. Verify
 
 - [x] 4.1 `npm run check`, `npm run test:browser` three times, `npm run openspec:validate`.
-- [ ] 4.2 Manual check in Obsidian, desktop, interface on: open file A, switch to Source, open file B — it is Source; switch to Timeline, open C — it is Timeline; navigate a tab to another file — it keeps Timeline; a link to a note record takes a tab to Source and the next file still opens in Timeline; restart — each tab keeps its own mode and a file opened anew takes the last chosen one; a `data.json` that still holds `openAs` is rewritten without it; interface off — every tab is Source.
+- [x] 4.2 Manual check in Obsidian, desktop, interface on: open file A, switch to Source, open file B — it is Source; switch to Timeline, open C — it is Timeline; navigate a tab to another file — it keeps Timeline; a link to a note record takes a tab to Source and the next file still opens in Timeline; restart — each tab keeps its own mode and a file opened anew takes the last chosen one; a `data.json` that still holds `openAs` is rewritten without it; interface off — every tab is Source.
