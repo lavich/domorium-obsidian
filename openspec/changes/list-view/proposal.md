@@ -37,9 +37,10 @@ centre is where the width is.
   (`Mod+F`) focuses the filter. List is one more mode a file can open in by the rule for a new
   tab: *Open GEDCOM files as* is being removed by the separate change `open-in-last-mode`,
   which merges first and which this change rebases on, so no **List** option is added to it.
-  The ribbon icon and the command **Open Domorium** stay as one door: they bring the most
-  recently active GEDCOM tab to the front as a list, and say so in a notice when no GEDCOM tab
-  is open.
+  The command **Open Domorium** stays, renamed **Open the list of the GEDCOM file**, as one
+  door: it brings the most recently active GEDCOM tab to the front as a list, and says so in a
+  notice when no GEDCOM tab is open. The ribbon icon that opened the Index is removed, and the
+  plugin adds none.
 - **The setting is renamed for what is left.** *Open the side panels when selecting*
   becomes **Open the record card when selecting**: the saved key, `openPanelsOnSelect`,
   and its meaning for the card are unchanged, and a saved value is read as before.
@@ -56,7 +57,7 @@ or `@domorium/codemirror`, and no new upstream release is waited for.
 ### New Capabilities
 
 - `genealogy-list`: the List mode of a GEDCOM tab: kinds, columns, filter, sort,
-  selection, keyboard, size, phone, and the door from the ribbon and the command.
+  selection, keyboard, size, phone, and the command that shows the list.
 
 ### Modified Capabilities
 

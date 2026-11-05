@@ -333,7 +333,7 @@ off by default for every reader, including one whose settings were saved before
 the setting existed, and whose description SHALL say that the interface is still
 in beta and may change. It SHALL be changed only in the plugin settings. While it is
 off, the plugin SHALL NOT offer Graph, Timeline or List mode, the record card,
-the ribbon icon, the mode control in a tab header, or the commands
+the mode control in a tab header, or the commands
 that show a mode or open a panel; every GEDCOM tab SHALL show the source.
 
 Turning the setting on or off SHALL take effect in every open tab and sidebar
@@ -345,7 +345,7 @@ SHALL be remembered only while the interface is on.
 
 #### Scenario: A reader who never touched the setting
 - **WHEN** the plugin is installed or updated and the setting is not changed
-- **THEN** no ribbon icon, no card or mode command, and no mode
+- **THEN** no card or mode command, and no mode
   control in a tab header is offered
 
 #### Scenario: The setting says it is a beta
@@ -362,14 +362,14 @@ SHALL be remembered only while the interface is on.
 #### Scenario: Turning it on with a tab open
 - **WHEN** `curie.ged` is open in Source mode and the reader turns the setting
   on
-- **THEN** the mode control appears in the tab header, the ribbon icon appears,
+- **THEN** the mode control appears in the tab header and the commands appear,
   and the tab stays in Source mode
 
 #### Scenario: Turning it off with panels open
 - **WHEN** a tab is in List mode, the card is open, and the reader turns the
   setting off
 - **THEN** the card closes, the tab shows the source, and the mode control and
-  the ribbon icon are gone
+  the commands are gone
 
 #### Scenario: Turning it on again
 - **WHEN** a tab was in Graph mode on Irène's branch, zoomed in, the setting was

@@ -131,7 +131,7 @@ describe("GEDCOM settings", () => {
     expect(settingDefinitions()).toEqual([
       {
         name: "Genealogy interface (beta)",
-        desc: "Still in beta: it may change and have rough edges. Show the record card and the graph, the timeline and the list of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
+        desc: "Still in beta: it may change and have rough edges. Show the record card and the graph, the timeline and the list of the file, with their commands. While this is off, GEDCOM files open in the source editor.",
         control: {
           type: "toggle",
           key: "genealogyInterface",

@@ -122,7 +122,7 @@ first line, and the cursor, once it rests in a record that has a card, selects
 it — a note or a repository at the cursor leaves the selection alone. The
 selection is kept when the tab changes mode and across a restart.
 
-The ribbon icon, or **Open the list of the GEDCOM file**, brings the GEDCOM tab
+The command **Open the list of the GEDCOM file** brings the GEDCOM tab
 you used last to the front as a list, wherever it is; with no GEDCOM tab open it
 says so.
 

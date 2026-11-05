@@ -304,9 +304,9 @@ the list. A saved `mode: "list"` read by a version that does not know it is drop
 version's reader and the tab opens by the rule for a new tab; that is an older-plugin problem
 only.
 
-### The door: ribbon icon and command
+### The door: a command
 
-The ribbon icon and the command `open-gedcom-index` stay, as one door, now **Open the list
+The command `open-gedcom-index` stays, as the one door, now **Open the list
 of the GEDCOM file** (`command.openList`; `command.openIndex` goes). The id is kept so a
 hotkey the reader bound survives (mine). `main.openList()`:
 the followed tab (`followedView`), else the first leaf of `GEDCOM_VIEW_TYPE`; if it is
@@ -318,9 +318,11 @@ focus a tab); `view.showMode("list")` (a no-op in List). The leaf is the followe
 need a modal and a "last file" memory the plugin does not have, and the command **Show as
 list** already covers the active tab. The door is for the tab that is behind a note.
 
-Alternative: remove the ribbon icon and the command with the Index. Rejected for now: the
-icon is the plugin's visible presence while the interface is on (a spec requirement), and
-a reader looking at a note has no other way to reach the list of the file next to it.
+The ribbon icon that opened the Index is removed outright at the user's request (2026-11-05):
+the plugin adds no ribbon icon, and `syncInterface` no longer creates or removes one. The
+command stays, in the palette and for a hotkey. `GEDCOM_ICON_ID` stays registered, since the
+views use it as their icon. Alternative: remove the command too. Rejected: a reader looking
+at a note would have no way left to reach the list of the file next to it.
 
 ### The setting keeps its key and loses a word
 
@@ -362,7 +364,7 @@ implementation commit. What a delta would have said:
 
 | `genealogy-index` requirement | Reason | Moves to |
 | --- | --- | --- |
-| The index lives in the left sidebar and follows the GEDCOM tab | The left sidebar duplicated the file's list; the list is a mode of the tab | `genealogy-list`: A GEDCOM tab can show its file as a list; The ribbon icon and a command show the file's list; `genealogy-view`: A workspace saved with the Index in the left sidebar opens without it, and the renamed setting |
+| The index lives in the left sidebar and follows the GEDCOM tab | The left sidebar duplicated the file's list; the list is a mode of the tab | `genealogy-list`: A GEDCOM tab can show its file as a list; A command shows the file's list; `genealogy-view`: A workspace saved with the Index in the left sidebar opens without it, and the renamed setting |
 | People, families and sources | Laid out as a table for the centre | `genealogy-list`: People, families and sources |
 | Who rests on no source | The *All / No sources* filter was dropped on purpose, at the user's request (2026-11-05); the mark stays and sorting by Sources lists those people first | `genealogy-list`: People who cite no source |
 | Search | Unchanged matching, plus the repository | `genealogy-list`: The filter field |
@@ -538,3 +540,5 @@ The user found the kind buttons and the filter field of different heights. All o
 ### The No sources switch is gone
 
 The user (2026-11-05) does not want the *All / No sources* switch. The two chips, their counts, the `noSources` key of the saved list state (an old saved key is read and ignored; the kind and the sorts are kept), the filter by "cites no source" in `listRows.ts`, `restsOnNothing`, the strings `list.all` and `list.noSources` and the CSS are removed, with their tests and the README sentence. Kept: the mark of a person who cites no source (the ring with its title, and "0 sources" on a compact row) and the sortable Sources column, whose ascending order lists those people first (checked on `curie.ged`: the 11 people, I5 to I17 in the file's order, then Pierre and Marie). That sort replaces the filter. The toolbar is now the kind bar, the filter field and, in a compact list, the sort select, which share one height. On touch the kind bar has no inset, so its buttons are 44 px as well. (mine)
+- Ribbon (mine, by the user's decision): `addRibbonIcon`, the `ribbonIcon` field and its removal are deleted from `main.ts`; the interface-setting description no longer names the ribbon icon, in either language; the requirement is now "A command shows the file's list", with a scenario that the ribbon holds no icon of the plugin. No pure test of `syncInterface` existed. `addIcon` and `removeIcon` stay for the views. The README names the command only.
+

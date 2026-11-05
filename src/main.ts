@@ -86,7 +86,6 @@ export default class GedcomPlugin
   /** Reachable as app.plugins.plugins["domorium"].api — see README. */
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
-  private ribbonIcon: HTMLElement | undefined;
   private followedView: GedcomView | null = null;
   /** Placed once a session, so a card the reader closes stays closed. */
   private cardPlaced = false;
@@ -424,17 +423,8 @@ export default class GedcomPlugin
   private syncInterface(): void {
     const { workspace } = this.app;
     if (this.settings.genealogyInterface) {
-      this.ribbonIcon ??= this.addRibbonIcon(
-        GEDCOM_ICON_ID,
-        t("command.openList"),
-        () => {
-          void this.openList();
-        },
-      );
       return;
     }
-    this.ribbonIcon?.remove();
-    this.ribbonIcon = undefined;
     this.cardPlaced = false;
     this.followedView = null;
     workspace.detachLeavesOfType(RECORD_VIEW_TYPE);

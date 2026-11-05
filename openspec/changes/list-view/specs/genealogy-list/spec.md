@@ -513,23 +513,25 @@ clear.
 - **WHEN** a name, a place and a title are far longer than the width of the tab
 - **THEN** they are cut with an ellipsis and the page has nothing to scroll sideways
 
-### Requirement: The ribbon icon and a command show the file's list
+### Requirement: A command shows the file's list
 
-While the **Genealogy interface** setting is on, the plugin SHALL show a ribbon icon and
-offer a command, **Open the list of the GEDCOM file**, that bring the GEDCOM tab most
+While the **Genealogy interface** setting is on, the plugin SHALL offer a command,
+**Open the list of the GEDCOM file**, that brings the GEDCOM tab most
 recently active in this session to the front and give it the focus, wherever it is, and
 show it as a list; where
 no GEDCOM tab has been active yet, as after a restart, the first GEDCOM tab that is open
 SHALL be used. A tab that is already a list SHALL be only brought to the front. Where no
-GEDCOM tab is open they SHALL give a
+GEDCOM tab is open it SHALL give a
 notice that says to open a GEDCOM file, and open nothing. While the setting is off, the
-plugin SHALL show no ribbon icon and SHALL NOT offer the command. The command SHALL keep
+plugin SHALL NOT offer the command. The plugin SHALL add no icon to the ribbon, whatever
+the setting, and a ribbon icon an earlier version added SHALL be gone once the plugin is
+loaded. The command SHALL keep
 the identifier the plugin's earlier command to open the index had, so that a hotkey the
 reader bound to it still works.
 
 #### Scenario: From a note
 - **WHEN** the interface is on, `curie.ged` is open in Graph mode behind a Markdown note
-  and the reader clicks the ribbon icon
+  and the reader runs the command
 - **THEN** the tab of `curie.ged` is in front, in List mode
 
 #### Scenario: Already a list
@@ -542,9 +544,13 @@ reader bound to it still works.
 - **THEN** that tab is loaded, brought to the front and shown as a list
 
 #### Scenario: No GEDCOM tab
-- **WHEN** no GEDCOM tab is open and the reader clicks the ribbon icon
+- **WHEN** no GEDCOM tab is open and the reader runs the command
 - **THEN** a notice says to open a GEDCOM file, and nothing opens
 
 #### Scenario: The interface is off
 - **WHEN** the Genealogy interface is off
-- **THEN** there is no ribbon icon, and the palette does not offer the command
+- **THEN** the palette does not offer the command
+
+#### Scenario: No ribbon icon
+- **WHEN** the plugin is loaded, with the interface on or off
+- **THEN** the ribbon holds no icon of the plugin

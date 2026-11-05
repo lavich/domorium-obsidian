@@ -40,7 +40,7 @@
     "other": "{count} files"
   },
   "setting.genealogyInterface.name": "Genealogy interface (beta)",
-  "setting.genealogyInterface.desc": "Still in beta: it may change and have rough edges. Show the record card and the graph, the timeline and the list of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
+  "setting.genealogyInterface.desc": "Still in beta: it may change and have rough edges. Show the record card and the graph, the timeline and the list of the file, with their commands. While this is off, GEDCOM files open in the source editor.",
   "setting.openPanelsOnSelect.name": "Open the record card when selecting",
   "setting.openPanelsOnSelect.desc": "Selecting a record in a graph, a timeline or a list shows the record card on the right, opening a collapsed sidebar without moving the focus. Applies when the genealogy interface is on; on a phone the right drawer opens as before.",
   "setting.diagnostics.name": "Diagnostics",
