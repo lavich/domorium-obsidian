@@ -18,8 +18,8 @@ descriptions in the settings tab and the options of its dropdowns, the status
 bar, the search bar's placeholders and button tooltips, the rows and buttons of
 the media popover, the record switcher's placeholder, the rename dialog, the
 "line N" prefix of a problem listed under a `gedcom` block in a note, the
-Genealogy and Source switch, the headings, labels, buttons and empty states of
-the person and source pages, the index and the evidence panel, the names of
+mode buttons, the headings, labels, buttons and empty states of the record
+card, the index, the names of
 events and of the relationships they are shown under, and the quality of
 evidence a citation states.
 
@@ -50,7 +50,7 @@ what the app does with its own text.
 - **THEN** the plugin speaks Russian
 
 #### Scenario: A person page in Russian
-- **WHEN** Obsidian's language is Russian and a person page is shown for a
+- **WHEN** Obsidian's language is Russian and a person card is shown for a
   record with `1 BIRT` and `2 PLAC Warsaw, Congress Poland`
 - **THEN** the fact is named in Russian, its source state reads in Russian, and
   the place reads `Warsaw, Congress Poland` as the file writes it

@@ -8,74 +8,14 @@ never mistaken for a source of a fact.
 
 ## Requirements
 
-### Requirement: The panel lives in the right sidebar and follows the selection
-
-While the **Genealogy interface** setting is on, the plugin SHALL offer an
-evidence view, named **Evidence**, in the right sidebar. It SHALL be placed
-there, without taking the focus, the first time in a session a GEDCOM file is
-shown as genealogy, or a person is selected in Graph or Timeline mode, and no such
-view is open; a reader who then closes it SHALL
-not have it put back until the plugin loads again. It SHALL open from a command,
-and selecting a fact on a desktop SHALL bring it into view. On a phone it SHALL
-be reached as Obsidian's other sidebar views are, from the right drawer, and
-from the action beneath a tapped fact. While the setting is off, the plugin
-SHALL NOT place the view, SHALL NOT offer the command, and SHALL close an
-evidence view that is open.
-
-The panel SHALL show the selection of the GEDCOM tab most recently active: in
-Genealogy mode, a fact of the person or family shown, or the whole record when
-no fact is selected; in Graph or Timeline mode, the whole record of the person
-selected in the view. Its heading SHALL name what it shows — the fact with its
-date and place, or *Whole record* with the person's or family's name — and
-SHALL offer *Whole record* when a fact is selected and Show in source always.
-
-The panel follows the one GEDCOM tab most recently active. Where that tab shows
-nothing to select — it is in Source mode, or in Graph or Timeline mode with nobody
-selected — or no GEDCOM tab is open, it SHALL say so.
-
-#### Scenario: The first file shown as genealogy
-- **WHEN** the reader opens `curie.ged` as genealogy with no evidence view open
-- **THEN** the right sidebar gains the Evidence view as one of its tabs, and the
-  page keeps the focus
-
-#### Scenario: Selecting a fact brings the panel into view
-- **WHEN** the right sidebar shows another tab, or is collapsed, and the reader
-  selects Marie's birth on a desktop
-- **THEN** the right sidebar shows the Evidence view, naming the birth
-
-#### Scenario: Selecting a birth
-- **WHEN** the reader selects Marie's birth
-- **THEN** the panel's heading names the birth with `7 NOV 1867` and
-  `Warsaw, Congress Poland`
-
-#### Scenario: Back to the whole record
-- **WHEN** a fact is selected and the reader chooses Whole record
-- **THEN** the panel shows Marie's whole record and the fact is no longer
-  selected on the page
-
-#### Scenario: The interface is off
-- **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
-- **THEN** no Evidence view is placed and the palette does not offer to open it
-
-#### Scenario: A tab in Graph mode with nobody selected
-- **WHEN** the Evidence view is open and the active GEDCOM tab is in Graph mode
-  with no person selected
-- **THEN** the panel asks to open a GEDCOM file as genealogy, as it does with no
-  GEDCOM tab open
-
-#### Scenario: A person selected in the graph
-- **WHEN** the active GEDCOM tab is in Graph mode and the reader activates Pierre
-  Curie's row in the index
-- **THEN** the panel shows Pierre Curie's whole record
-
 ### Requirement: Sources of the fact, then of the whole record
 
-With a fact selected, the panel SHALL first list the citations that fact
+With a fact selected, the section SHALL first list the citations that fact
 itself makes. Below them, under a separate heading, it SHALL list the citations
 the person's or family's record makes on itself. With no fact selected it
 SHALL list only the latter.
 
-Where the selected fact cites nothing, the panel SHALL say the fact has no
+Where the selected fact cites nothing, the section SHALL say the fact has no
 source of its own, and SHALL say either that the sources below belong to the
 whole record and may not support this fact, or that the record cites nothing
 either.
@@ -85,7 +25,7 @@ citations as its own; the whole record SHALL remain the person's.
 
 #### Scenario: A fact with no source of its own
 - **WHEN** Marie's birth is selected
-- **THEN** the panel says the birth has no source of its own and that the two
+- **THEN** the section says the birth has no source of its own and that the two
   sources below belong to the whole record, and lists those two below
 
 #### Scenario: A fact with its own source
@@ -94,13 +34,13 @@ citations as its own; the whole record SHALL remain the person's.
 
 #### Scenario: A record that cites nothing
 - **WHEN** a fact of Zofia Skłodowska is selected
-- **THEN** the panel says the fact has no source of its own and that the record
+- **THEN** the section says the fact has no source of its own and that the record
   cites nothing either
 
 ### Requirement: What a citation shows
 
-Each citation SHALL show the title of the source it names, which opens that
-source's page; the page or entry the citation states; the quality of evidence
+Each citation SHALL show the title of the source it names, which selects that
+source; the page or entry the citation states; the quality of evidence
 it states, in words; and the author and publication the source states.
 
 A citation of a source the file does not declare SHALL say so and offer Show in
@@ -118,33 +58,13 @@ say that it is described in the record rather than as a source record.
 - **THEN** it shows that the evidence is primary
 
 #### Scenario: Opening a source
-- **WHEN** the reader activates `The Nobel Prize in Physics 1903` in the panel
-- **THEN** the GEDCOM tab shows that source's page
-
-### Requirement: The panel on a family page
-
-On a family page the panel SHALL treat the family as it treats a person: the
-selected family fact's own citations first, then those the family record makes
-on itself.
-
-#### Scenario: The Curies' marriage selected
-- **WHEN** the family page of Pierre and Marie Curie is shown and the marriage
-  is selected
-- **THEN** the panel says the marriage has no source of its own and that the
-  family record cites nothing either
-
-### Requirement: The panel on a source page
-
-When the GEDCOM tab shows a source page, the panel SHALL name the source and
-offer Show in source.
-
-#### Scenario: A source page shown
-- **WHEN** the tab shows `Parish registers of Warsaw`
-- **THEN** the panel's heading names that source and offers Show in source
+- **WHEN** the reader activates `The Nobel Prize in Physics 1903` in the Evidence
+  section
+- **THEN** the card shows that source
 
 ### Requirement: Notes in the vault that link to the record
 
-Below the record's own sources the panel SHALL list every Markdown note in the
+Below the record's own sources the Evidence section SHALL list every Markdown note in the
 vault that links to the record shown — a link or an embed whose target resolves
 to this GEDCOM file and whose subpath names the record — for a person, a family,
 a source or a multimedia record alike. Each note SHALL be shown by its name with
@@ -157,7 +77,7 @@ with the record.
 
 #### Scenario: Notes linking to Marie
 - **WHEN** Marie's whole record is shown in the demo vault
-- **THEN** the panel lists six notes, among them *Radium* with the line
+- **THEN** the Evidence section lists six notes, among them *Radium* with the line
   "…announced in December 1898 by Marie Skłodowska-Curie and…", her name marked
 
 #### Scenario: A note linking twice
@@ -165,5 +85,62 @@ with the record.
 - **THEN** it is listed once, with both lines
 
 #### Scenario: A record no note links to
-- **WHEN** the panel shows Sophie-Claire Depouilly
+- **WHEN** the card shows Sophie-Claire Depouilly
 - **THEN** it says no note links to this record
+
+### Requirement: The section on a family card
+
+On a family card the section SHALL treat the family as it treats a person: the
+selected family fact's own citations first, then those the family record makes
+on itself.
+
+#### Scenario: The Curies' marriage selected
+- **WHEN** the family card of Pierre and Marie Curie is shown and the marriage
+  is selected
+- **THEN** the section says the marriage has no source of its own and that the
+  family record cites nothing either
+
+### Requirement: The section on a source card and a media card
+
+On a source card and on a media card there SHALL be no list of citations, and the
+last section of the card SHALL be the notes in the vault that link to the record.
+The card's heading names the source or the file and offers Show in source.
+
+#### Scenario: A source page shown
+- **WHEN** the card shows `Parish registers of Warsaw`
+- **THEN** its heading names that source and offers Show in source, and the card
+  lists no citations of the source's own beneath it
+
+### Requirement: The evidence section closes the card and follows the selection
+
+The last section of a person card and of a family card SHALL be **Evidence**: what
+the selected fact, or else the whole record, rests on in the file, kept apart so
+that a source of the person is never mistaken for a source of a fact. It SHALL show
+the fact selected on the card the tab holds, or the whole record when no fact is
+selected. Its heading SHALL name what it shows — the fact with its date and place,
+or *Whole record* with the person's or family's name — and SHALL offer *Whole
+record* when a fact is selected and Show in source always. Selecting a fact on the
+card, in the timeline section or in the list of facts, SHALL change the section at
+once and SHALL NOT scroll the card.
+
+There SHALL be no Evidence view in the sidebar and no command that opens one.
+
+#### Scenario: Selecting a birth
+- **WHEN** the reader selects Marie's birth on her card
+- **THEN** the section's heading names the birth with `7 NOV 1867` and `Warsaw,
+  Congress Poland`
+
+#### Scenario: Back to the whole record
+- **WHEN** a fact is selected and the reader chooses Whole record in the section
+- **THEN** the section shows Marie's whole record and the fact is no longer
+  selected on the card
+
+#### Scenario: A person selected in the graph
+- **WHEN** the active GEDCOM tab is in Graph mode and the reader activates Pierre
+  Curie's row in the index
+- **THEN** the Evidence section of the card lists `The Nobel Prize in Physics 1903`
+  among the sources of Pierre Curie's whole record
+
+#### Scenario: The interface is off
+- **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
+- **THEN** no card is placed and the palette offers no command to open evidence

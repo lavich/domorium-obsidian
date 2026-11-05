@@ -149,9 +149,9 @@ that person's Branch SHALL read as pressed while their branch is shown. While
 the whole file is shown, no line about the scope SHALL be shown.
 
 A file of more than 500 people SHALL show its timeline, the first time the tab
-does, on the branch of the person the tab had in view when it was brought to the
-timeline — the page's person in Genealogy mode, the person at the cursor in
-Source mode — or of the first person the file declares where neither names one. A
+does, on the branch of the person the tab had selected when it was brought to the
+timeline — in Source mode, the person of the record at the cursor — or of the first
+person the file declares where neither names one. A
 smaller file SHALL open on all of it. Once the tab has shown the timeline, the
 scope the reader leaves it on SHALL be kept, the whole file included.
 
@@ -166,8 +166,8 @@ scope the reader leaves it on SHALL be kept, the whole file included.
   the scope is shown
 
 #### Scenario: A large file
-- **WHEN** a file of 2 000 people is open on a person's page and the reader
-  switches the tab to Timeline mode
+- **WHEN** a file of 2 000 people is open in Source mode with the cursor inside one
+  person's record and the reader switches the tab to Timeline mode
 - **THEN** the timeline shows that person's branch, with the way back to the
   whole file
 
@@ -180,32 +180,6 @@ scope the reader leaves it on SHALL be kept, the whole file included.
 - **WHEN** the reader returns a large file's timeline to the whole file, switches
   to Source mode and back to Timeline mode
 - **THEN** the whole file is shown
-
-### Requirement: The timeline leads to the page and to the source
-
-Activating a person's name or lifeline SHALL show that person's page in the
-same tab, until a later change gives the person a place of its own: the tab leaves
-Timeline mode for Genealogy mode, and Back SHALL return it to the timeline, at the scope and zoom it had.
-Activating a mark SHALL show the lines of its event in the source: the tab
-leaves Timeline mode for Source mode with those lines selected and in view.
-Activating either SHALL open no other tab.
-
-#### Scenario: From the timeline to Irène's page
-- **WHEN** the tab of `curie.ged` is in Timeline mode and the reader activates
-  Irène's lifeline
-- **THEN** the same tab is in Genealogy mode showing Irène's page, and no other
-  tab has opened
-
-#### Scenario: Back to the timeline
-- **WHEN** Irène's page was opened from the timeline of Irène's branch, and the
-  reader presses back
-- **THEN** the tab is in Timeline mode again, showing Irène's branch at the zoom
-  it had
-
-#### Scenario: From a mark to the source
-- **WHEN** the reader activates the mark of Marie's birth
-- **THEN** the tab is in Source mode with her `1 BIRT` lines selected — `1 BIRT`,
-  `2 DATE 7 NOV 1867` and `2 PLAC Warsaw, Congress Poland` — and in view
 
 ### Requirement: Finding a person and zooming
 
@@ -306,14 +280,15 @@ at a person SHALL not redraw the rows.
 On a phone the timeline SHALL fit the screen's width, with a narrower column of
 names and the years scrolling sideways. Touching a lifeline SHALL highlight that
 person and their family and place the year cursor where it was touched; touching
-it again SHALL show the person as activating it does on a desktop. Touching a
+it again SHALL select the person as activating it does on a desktop, and open the
+right drawer on their card. Touching a
 mark SHALL show its event, with the way to its lines in the source.
 
 #### Scenario: Touching Marie's lifeline
 - **WHEN** the reader touches Marie's lifeline on a phone, and then touches it
   again
 - **THEN** her family stands out with the cursor at the touched year, and then
-  her page is shown
+  Marie is selected and the right drawer shows her card
 
 ### Requirement: The timeline is a mode of the file's tab
 
@@ -334,7 +309,7 @@ Like the rest of the plugin's genealogy modes, nothing in the timeline SHALL
 write to the file.
 
 #### Scenario: Choosing it from the mode control
-- **WHEN** `curie.ged` is open in Genealogy mode and the reader chooses Timeline
+- **WHEN** `curie.ged` is open in Source mode and the reader chooses Timeline
   from the mode control in its header
 - **THEN** the same tab shows the timeline of `curie.ged`, with a row for each of
   its 17 people, and no new tab is open
@@ -363,27 +338,35 @@ write to the file.
 
 ### Requirement: A selected row
 
-The timeline SHALL mark one person's row as **selected** when the GEDCOM tab is
-told to select them, as an index row does in Timeline mode. The row SHALL be
-brought to the middle of the board's height, and its lifeline into view sideways
-where it is out of it, smoothly unless the reader has asked for reduced motion or
-the row is further away than a smooth scroll can show without leaving rows blank,
-as stepping to a match does. The mark SHALL be unlike the light of pointing and
-unlike the ring of the search's current match, SHALL stay while the pointer lights
-other people and while the reader searches, and SHALL stay until another person is
-selected or the tab leaves Timeline mode. Where the person is not in the branch
-shown, the timeline SHALL show their branch, with the way back to the whole file.
-The selection SHALL belong to the person, not to what is drawn: a row out of view,
-outside a branch the reader has narrowed, or absent from a text that has changed
-SHALL show the mark again when it is drawn. Searching, and changing the scope,
-SHALL NOT end it. Selecting SHALL NOT open a page, change the mode or write to
-the file.
+The timeline SHALL mark one person's row as **selected** when the person is the
+tab's selected record, however it was selected: by activating a name or a lifeline,
+from an index row, from the record card, by a link or by the cursor in Source mode.
+Where the selection came from outside the timeline, the row SHALL be brought to the
+middle of the board's height, and its lifeline into view sideways where it is out of
+it, smoothly unless the reader has asked for reduced motion or the row is further
+away than a smooth scroll can show without leaving rows blank, as stepping to a
+match does; where it came from activating a name or a lifeline of the timeline, the
+timeline SHALL NOT move. A selection made from outside the timeline while the tab was behind another tab, in another mode or not yet drawn SHALL, when the timeline is shown, scroll to the row; one that the reader switched into the view with SHALL also scroll to the row, as the reader has just chosen this view; one restored with the workspace SHALL mark the row without moving a view that has a position. The mark SHALL be unlike the light of pointing and unlike the ring
+of the search's current match, SHALL stay while the pointer lights other people and
+while the reader searches, and SHALL stay until another record is selected or the
+selection ends. Where the person is not in the branch shown and the view is asked
+to move to them, the timeline SHALL show their branch, with the way back to the
+whole file. The selection SHALL belong to the person, not to what is drawn: a row
+out of view, outside a branch the reader has narrowed, or absent from a text that
+has changed SHALL show the mark again when it is drawn. Searching, and changing the
+scope, SHALL NOT end it. Selecting SHALL NOT open a page, change the mode or write
+to the file.
 
 #### Scenario: Selecting Irène from the index
 - **WHEN** the tab is in Timeline mode and the reader activates Irène's row in the
   index
 - **THEN** Irène's row is marked selected and scrolled to the middle, the tab is
-  still in Timeline mode, and no page is open
+  still in Timeline mode, and the record card shows her
+
+#### Scenario: Selecting from the record card
+- **WHEN** the tab is in Timeline mode and the reader activates Irène among Marie's
+  children in the record card
+- **THEN** Irène's row is marked selected and scrolled to the middle
 
 #### Scenario: The mark outlasts hover and search
 - **WHEN** Irène is selected, the pointer rests on Marie's name and the reader
@@ -400,6 +383,22 @@ the file.
 - **WHEN** the timeline shows Marie's branch with zero generations of ancestors
   and zero of descendants and the reader activates Hélène's row in the index
 - **THEN** the timeline shows Hélène's branch, with her row selected
+
+#### Scenario: Selected while the tab is behind another
+- **WHEN** a tab in Timeline mode is behind another tab and the reader activates
+  Irène's row in the index, and then brings the tab to the front
+- **THEN** Irène's row is marked selected and scrolled to the middle, and no page was
+  opened
+
+#### Scenario: Selected in Source and then shown
+- **WHEN** the reader activates Irène's row while the tab is in Source mode, and then
+  switches to Timeline mode
+- **THEN** her row is marked selected and the timeline is scrolled to it
+
+#### Scenario: Switching to Timeline mode with a selection
+- **WHEN** Irène is selected, the timeline was scrolled, the reader switched to
+  Graph mode and then back to Timeline mode
+- **THEN** Irène's row is marked selected and the timeline is scrolled to it
 
 ### Requirement: The find key opens the timeline's search
 
@@ -418,3 +417,28 @@ editor's search panel or change the mode. Replace SHALL NOT be offered.
 - **WHEN** the search is open with `joliot` typed and the focus is elsewhere in
   the timeline, and the reader runs **Find**
 - **THEN** the field keeps its text and takes the focus
+
+### Requirement: A name or a lifeline selects a record, and a mark leads to the source
+
+Activating a person's name or lifeline SHALL select that person: the tab SHALL stay
+in Timeline mode, SHALL open no page and no other tab, and the row SHALL be marked
+as selected and shown in the record card of the right sidebar. The timeline SHALL
+NOT move when it is a row of the timeline that was activated. Activating a mark
+SHALL show the lines of its event in the source: the tab leaves Timeline mode for
+Source mode with those lines selected and in view.
+
+#### Scenario: From the timeline to Irène's card
+- **WHEN** the tab of `curie.ged` is in Timeline mode and the reader activates
+  Irène's lifeline
+- **THEN** the tab is still in Timeline mode with Irène's row marked selected, the
+  record card shows Irène Joliot-Curie, and no other tab has opened
+
+#### Scenario: The timeline stays where it is
+- **WHEN** the reader has scrolled the timeline until Marie's row is at its edge,
+  and activates her name
+- **THEN** her row is marked selected and the timeline has not scrolled
+
+#### Scenario: From a mark to the source
+- **WHEN** the reader activates the mark of Marie's birth
+- **THEN** the tab is in Source mode with her `1 BIRT` lines selected — `1 BIRT`,
+  `2 DATE 7 NOV 1867` and `2 PLAC Warsaw, Congress Poland` — and in view
