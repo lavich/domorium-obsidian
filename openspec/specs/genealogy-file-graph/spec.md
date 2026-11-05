@@ -243,7 +243,7 @@ leaves it on SHALL be kept, the whole file included.
   file
 
 #### Scenario: A large file opened as a graph
-- **WHEN** *Open GEDCOM files as* names Graph and the reader opens a file of
+- **WHEN** Graph is the mode the reader last chose and the reader opens a file of
   2 000 people
 - **THEN** the graph shows the branch of the first person the file declares
 
