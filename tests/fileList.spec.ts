@@ -8,7 +8,7 @@ import { generated } from "./generated";
 
 async function mountList(page: Page, options: TabOptions = {}): Promise<void> {
   await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
-  await page.evaluate((tabOptions) => window.tab.mount(tabOptions), { mode: "list", ...options });
+  await page.evaluate((tabOptions) => window.tab.mount(tabOptions), { mode: "list", ...options } satisfies TabOptions);
   await page.waitForSelector(".gedcom-list-row");
 }
 
