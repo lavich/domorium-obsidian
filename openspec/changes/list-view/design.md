@@ -36,15 +36,59 @@ and everything that served only it are gone; saved workspaces migrate without a 
 
 `ViewKind` becomes `"graph" | "timeline" | "list"`, `isViewMode` is true for all three, and
 `DESK_MODES` is `["graph", "timeline", "list", "source"]`, which fixes the order of the
-header buttons, of the *Open GEDCOM files as* options and of the mode commands: Source
-stays last, where it was, and List sits between the two boards (mine). A new
+mode commands and of the header buttons on the screen: Source is the rightmost, as the
+user asked (2026-11-05), and List sits between the two boards (mine). A new
 `ListBoard` (`src/desk/fileList.ts`) is made by `FileViews` on the first show of `list`, in
 `gedcom-views-root is-list`, parked when another mode is shown and unparked with its
 filter, sort and scroll as they were. It gets what Graph and Timeline get: the tab's
 `GenealogyIndex`, a saved state, `select(xref, reveal)`, `openSearch()` (focus the filter),
 `resized()`.
 
-Alternatives: a separate `ItemView` for the list in the centre (what `file-views-as-modes`
+### The change assumes `open-in-last-mode`
+
+The user (2026-11-05) is removing the setting *Open GEDCOM files as* (`openAs`) in a
+separate change, `open-in-last-mode`: a file opened anew takes the mode the reader last
+chose on purpose (`lastMode`), Graph on first use. That change merges first and this one
+rebases on it. Consequences:
+
+- `list-view` adds no **List** option to *Open GEDCOM files as*, no `openAsOption.list`
+  string and no test of the dropdown, and does not touch `openAs`, `readOpenAs`,
+  `openAsOptions` or `setting.openAs.*`. `list` joins `DESK_MODES` and `DeskMode`, and so is one
+  more mode the last-mode rule can pick; the rule itself is theirs.
+- At the rebase these blocks of the delta specs are re-derived from `openspec/specs/` as
+  that change leaves them, keeping only what list-view adds: `genealogy-view`'s *A GEDCOM
+  tab is in one of four modes* (the sentence on how a file opens anew is a placeholder
+  here that says "the rule for a new tab" and is replaced by theirs), *The genealogy interface is off until the
+  reader turns it on*, *Links into a record* (its scenario *A link into a file that opens
+  as a graph*) and the scenario *The setting row* of *Selecting a record opens the record
+  card…* (it no longer says the row follows *Open GEDCOM files as*). They still quote the
+  `openAs` wording because that is what `main` holds today.
+- `deskState.ts`'s `DeskMode = OpenAsMode` and `settingsData.ts`'s `DESK_MODES` are wherever
+  that change leaves them; the task that adds `list` to the modes follows them.
+- The new scenario *A tab in List mode opens as a list* needs a counterpart in their
+  rule: a reader who last chose List sees the next file open as a list. It is written at the
+  rebase, against their requirement.
+
+### The header buttons are added in reverse
+
+Obsidian's `View.addAction` puts each new action to the left of the ones already there:
+in the 1.15.0 bundle (`~/Library/Application Support/obsidian/obsidian-1.15.0.asar`,
+`app.js`) it is `addAction(e,i,r){let n=createEl("button","clickable-icon view-action");return
+this.actionsEl.prepend(n),…}`. Today `GedcomView` adds Graph, Timeline, Source, so on the
+screen they read Source, Timeline, Graph from the left. The user wants Graph, Timeline,
+List, Source from the left, Source rightmost, so `GedcomView` adds them in the order of a new
+pure function, `actionOrder(modes)` in `deskState.ts`, which is the reverse of `DESK_MODES`
+(Source first, Graph last). The unit test pins the reverse relation to the screen order (a
+stand-in `addAction` that prepends, as Obsidian does), so a reordered `DESK_MODES` or a
+change in how the buttons are added fails a test, not only the eye. Whether 1.8.7, the floor,
+prepends as well is not verifiable here, the installed app being 1.15.0; the manual task
+looks at it on a phone and a desktop, and the harness has no header.
+
+Alternatives: reading the buttons' order from the DOM after adding and reordering the
+elements (breaks if Obsidian re-creates the actions container); relying on `prepend`
+without a test. Rejected.
+
+Alternatives for the board: a separate `ItemView` for the list in the centre (what `file-views-as-modes`
 removed for the timeline and graph, and which brings the tab-of-its-own problems back);
 keeping the sidebar `IndexList` and merely moving its leaf to the centre (the widget is
 laid out for a 300 px column, and `followed()` plumbing would stay). Neither.
@@ -116,29 +160,50 @@ has no row; the list is left as it is.
 
 ### Showing the selected row
 
-`ListBoard.select(xref, reveal)`:
+`ListBoard.select(xref, reveal)` keeps `marked`, the record it last marked, and:
 
-1. `xref === null` or no row for the record's kind: unmark, change nothing else.
-2. Mark the row (`is-selected`, `aria-selected="true"` on the row element) in the window; if
-   the row is not drawn it is marked when it is.
-3. With `reveal` false (a click in the list itself, a restore) stop there.
-4. With `reveal` true: if the record's kind is not the one shown, switch to it (this
-   clears the typed filter, as switching does); if the row is not among the rows shown
-   because of the filter or *No sources*, clear both; then set the scroll so the row is in
-   the middle of the list's height. The scroll is a direct `scrollTop` assignment, not a
-   smooth scroll: a virtualised list that animates across ten thousand rows streaks, and
-   "reduced motion" is honoured trivially (mine).
-5. The roving focus moves to that row, so the arrow keys continue from the selection.
+1. `xref === null`, or a record with no row (a media record): unmark, change nothing else.
+2. Mark the row (`is-selected`, `aria-selected="true"`) in the window; if the row is not
+   drawn it is marked when it is.
+3. With `reveal` false (a click in the list itself) stop there.
+4. A selection that differs from `marked` (from outside, made while the list was away, or
+   met on the first draw, which includes a restore) is brought into view fully: switch to
+   the record's kind where the list shows another (this clears the typed filter, as
+   switching does); clear the filter and *No sources* where they hide the row; then, if the
+   row is not wholly within the visible rows, set `scrollTop` so the row is in the middle of
+   the height. The scroll is a direct assignment, not a smooth scroll: a virtualised list
+   that animates across ten thousand rows streaks, and reduced motion is honoured
+   trivially (mine).
+5. A selection equal to `marked` with `reveal` true (the reader switched back to the list)
+   first lets the saved scroll be put back, then centres the row only if it is shown and
+   outside the visible rows. The reader's filter is not cleared (mine): a filter typed on
+   purpose is not the reader asking to see the record, a link or Back is.
+6. The virtual focus moves to that row, so the arrow keys continue from the selection.
 
-`FileViews` already keeps a pending selection until the board is drawn and displayed and
-`reveal` survives a later hand-over without it (`select` of `pending`), so a link followed
-while the tab is behind another, in Source, or before its first draw centres the row when
-the list is shown. `renderMode(true)` (the reader chose the mode) reveals; a restore does
-not.
+Why a restore reveals. Graph and Timeline save a position, so a restore marks the card
+without moving a view that has one. The list saves no scroll (a number of rows scrolled is
+meaningless once the file changes), so on the first draw there is nothing to keep: the first
+draw is "a selection not yet marked" and the row is centred, which is what a reader of a
+restored tab with a selection wants (the review of this plan found the earlier text, "a
+restore does not", contradicting the spec and the first draw).
 
-Alternative to clearing the filter: leave the row hidden and say so. Rejected: the reader
-asked to see the record (a link, *Go to record*, Back), and a hidden selection is the
-failure the Graph spec guards against by showing the person's branch.
+`FileViews` keeps a pending selection until the board is drawn and displayed and `reveal`
+survives a later hand-over without it, so a link followed while the tab is behind another, or
+in Source, or before the first draw, is applied when the list is shown. A first show hands
+the pending selection over (`restore || displayed()`), and for the list that also covers a
+tab that had a selection restored before its board existed: `FileViews.show` selects with
+`reveal: true` for `first || parked` when the kind is `list`. `renderMode(true)` (the reader
+chose the mode) is rule 5.
+
+Alternative to clearing the filter on an outside selection: leave the row hidden and say so.
+Rejected: the reader asked to see the record, and a hidden selection is the failure the
+Graph spec guards against by showing the person's branch.
+
+`GedcomView.markInViews` hands Graph and Timeline the person only. For the list the tab
+hands `selectRecord`'s record whatever its kind where `pageKind` says person, family or
+source (a media record becomes `null`), through `views.select("list", …)` from
+`markInViews`, `handSelectionOver` and `clearViewSelections`; without this a family chosen in the card would never
+switch the list's kind and no family or source row would ever be marked.
 
 ### The filter is a field, not the floating search
 
@@ -166,31 +231,60 @@ Families show Spouses, Marriage, Place, Children. Sources show Title, Author, Re
 Cited by (`citingRecords`). The kind is kept in `ListState.kind`, the chip in
 `noSources`, each kind's sort in `sort[kind]`.
 
-### Narrow tabs and phones
+### Narrow tabs, phones and touch
 
-`ListBoard.resized()` measures its own root (`clientWidth`) and toggles `is-compact` below
-640 CSS pixels; a width of zero (hidden, or happy-dom) changes nothing. A width, not
-`Platform.isPhone`, because a desktop split can be as narrow as a phone and the rule is
-about the room, not the device (mine). Compact: rows of two lines and 56 px (the wide row
-is 32 px), the header row replaced by a `<select>` of the sort column and a direction
-button, each at least 44 px high. The row height is a constant per layout
-(`ROW_HEIGHT = 32`, `COMPACT_ROW_HEIGHT = 56`) because a virtualised window needs one;
-the text is cut, never wrapped, so a wide font cannot change it. The root leaves room for
-Obsidian's mobile navigation (`padding-bottom: var(--navbar-height, 0px)` as `.gedcom-fg`
-does) and for the safe area.
+`ListBoard` measures its own root (`clientWidth`) in `resized()` and in a `ResizeObserver`
+on the root (the tab's `onResize` alone misses a width that changes while the card opens),
+and is `is-compact` below 640 CSS pixels **or** on a touch device (`Platform.isMobile` or
+`matchMedia("(pointer: coarse)")`, which the board reads through its host so a test can
+set it); a width of zero (hidden, or happy-dom) changes nothing. A width as well as the
+device, because a desktop split can be as narrow as a phone and a tablet is wide but
+touched (mine). Above 640 px on touch, rows are two lines too, and the kind buttons, chips
+and column headers are at least 44 px tall.
+
+The compact flip happens when a selection opens the card and shrinks the tab, which moves
+the rows under the reader's finger. The board therefore keeps a hysteresis (compact below
+640, wide again from 680) and, when the layout flips, re-anchors the scroll to the first
+visible row (`scrollTop = firstVisibleIndex * newRowHeight`) before it redraws the window.
+A resize alone never re-sorts or re-filters: `show` is a no-op for the same `GenealogyIndex`
+identity and the same state, so only the window is redrawn. Compact: rows of two lines (the wide row
+one), the header row replaced by a `<select>` of the sort column and a direction button, each
+at least 44 px high.
+
+Row heights follow the font size: `--gedcom-list-row` is `2.2em`-based (wide) and `3.6em`-based
+(compact) on the root, with a floor of 44 px on touch, and the window reads the computed
+height of one drawn row (`getBoundingClientRect`) rather than a constant, re-reading it on a
+change of the root's font size. The text is cut with an ellipsis, never wrapped, so a wide
+font changes a row's width but not its height. The root leaves room for Obsidian's mobile
+navigation (`padding-bottom: var(--navbar-height, 0px)` as `.gedcom-fg` does) and for the
+safe area.
 
 ### Keyboard and assistive technology
 
-The scroller is the one focusable element (`role="grid"`, `tabindex="0"`) and keeps a
-virtual focus: `aria-activedescendant` names the row, which carries `id`, `role="row"`,
-`aria-rowindex`, and `.is-focused`. Rows are recycled by the window, so a DOM focus on a row
-would be lost on each redraw; a virtual focus is not (mine). Keys: Up, Down, Home, End,
-Page Up, Page Down move it and scroll it into the window; Enter and Space select it (Space
-`preventDefault`s the page scroll) and the focus stays; a click sets the virtual focus and
-selects. `aria-rowcount` is the number of rows shown plus the header. Headers are buttons
-with `aria-sort`; the kind buttons are `aria-pressed`; the filter has a label. How a screen
-reader reads a grid with a virtual focus and sticky headers is checked in the manual task;
-if the tree is wrong the fix is the roles, not the model.
+The grid is `role="grid"` with `aria-rowcount` (rows shown plus the header) and holds a
+header row (`role="row"` of `role="columnheader"` cells, each containing the sort button,
+`aria-sort` on the cell) and a scroller (`role="rowgroup"`, `tabindex="0"`) of
+`role="row"` rows with `role="gridcell"` cells and `aria-rowindex`. The scroller keeps a
+virtual focus: `aria-activedescendant` names the active row, which has an id and
+`.is-focused`. Rows are recycled by the window, so a DOM focus on a row would be lost on
+each redraw; a virtual focus is not (mine). The id is `${boardId}-r${position}`, a
+per-board prefix plus the row's position among the rows shown, never the xref (an xref
+contains `@`, and two tabs of one file would collide). A window redraw always draws the
+active row, and a filter or sort that removes it re-points the focus to the nearest
+shown row or clears the attribute, so the attribute never dangles. Keys: Up, Down, Home,
+End, Page Up, Page Down move it and scroll it into the window; Enter and Space select it
+(Space `preventDefault`s the page scroll) and the focus stays; a click sets the virtual
+focus and selects. The kind buttons are `aria-pressed`. The filter is
+`<input type="text">`, not `type="search"`, which would swallow the first Escape in some
+engines and break the two-step Escape of the spec. How a screen reader reads a grid with a
+virtual focus and a sticky header is checked in the manual task; if the tree is wrong the
+fix is the roles or a roving `tabindex` on the drawn row, not the model.
+
+### One collator
+
+A module-level `collatorFor(language)` in `listRows.ts` owns one `Intl.Collator` per
+language (`numeric: true`, `sensitivity: "base"`), created on first use; `ListBoard` and
+`listRows` take it from there, not from `new` per sort.
 
 ### What is saved, and what is not
 
@@ -200,11 +294,16 @@ belongs to another kind, a non-boolean chip are dropped, the rest kept), and
 `getState`/`setState` carry it through `ViewMemory` as the other two do. The typed filter
 and the scroll are kept in memory while the tab is open (the board is kept, and the scroll
 is recorded when the root is parked, as the timeline's is, because a webview may reset the
-scroll of a hidden element) and are not saved: a restored list starts at the selected row.
+scroll of a hidden element) and are not saved: a restored list is drawn from the top and centres the selected row on its first
+draw (see "Showing the selected row").
+
+`FileViews.parkOthers` today calls `cancelHover()` on a graph and `unlight()` on a timeline; it
+gains the list as a third case that does nothing (a list has no light), so parking a list or
+parking another mode with a list drawn never calls a method the list lacks.
 
 A tab navigated to another file resets the views (`FileViews.reset`), which now includes
-the list. A saved `mode: "list"` in a version that does not know it would be read by
-`readOpenAs` as `undefined` and fall back to the setting; that is an older-plugin problem
+the list. A saved `mode: "list"` read by a version that does not know it is dropped by that
+version's reader and the tab opens by the rule for a new tab; that is an older-plugin problem
 only.
 
 ### The door: ribbon icon and command
@@ -214,7 +313,9 @@ of the GEDCOM file** (`command.openList`; `command.openIndex` goes). The id is k
 hotkey the reader bound survives (mine). `main.openList()`:
 the followed tab (`followedView`), else the first leaf of `GEDCOM_VIEW_TYPE`; if it is
 deferred, `await leaf.loadIfDeferred()`; `workspace.revealLeaf(leaf)` (1.7.2, below the
-floor); `view.showMode("list")` (a no-op in List). With no GEDCOM leaf a `Notice`
+floor) and `workspace.setActiveLeaf(leaf, { focus: true })` (revealing alone does not
+focus a tab); `view.showMode("list")` (a no-op in List). The leaf is the followed view's own
+`leaf`, so a tab in a split or a popout is the one revealed. With no GEDCOM leaf a `Notice`
 (`notice.noGedcomTab`). The simplest thing that works: opening a file from a picker would
 need a modal and a "last file" memory the plugin does not have, and the command **Show as
 list** already covers the active tab. The door is for the tab that is behind a note.
@@ -251,10 +352,12 @@ lists it among the retired.
 
 #### Retiring `genealogy-index`
 
-All six of its requirements move to `genealogy-list`. Written as a delta with every
-requirement REMOVED, `openspec archive` refuses it ("removes the last requirement … cannot
-be written"), and refuses it again once the main spec is deleted by hand ("nothing to
-remove"). What archives cleanly, tried on a copy of `openspec/`, is a change with **no**
+All six of its requirements move to `genealogy-list`. `openspec archive` does have a way to
+retire a capability, but it refuses while the main spec holds content the merge cannot
+account for ("removes the last requirement … cannot be written … delete the spec by hand");
+a delta of REMOVED requirements for every one of them was refused on that ground. Deleting
+the main spec by hand while keeping the delta was refused too ("nothing to remove"). The
+route that was run to success on a copy of `openspec/` is a change with **no**
 `genealogy-index` delta and the main spec deleted by hand. So the change carries no delta for
 the capability, and a task deletes `openspec/specs/genealogy-index/spec.md` in the
 implementation commit. What a delta would have said:
@@ -308,6 +411,8 @@ A scenario whose name stayed true ("Turning it off with panels open") kept its n
   tabs…", "the index in a narrow sidebar", "the index of a large file"; replaced by specs in
   `tests/fileList.spec.ts`. The empty-state expectation «…the timeline or the index.»
   becomes «…or the list.».
+- Left alone: `docs/design/research-desk*.md`, `docs/design/next-steps.md` and `CHANGELOG.md`
+  mention the Index; they are historical notes and a release's job, not this change's.
 - `README.md`: the paragraph on the ribbon icon and the index, and the clauses about the
   index in the paragraphs on the panels and on what selects a record.
 - `openspec/specs/genealogy-index/spec.md` (see above).
@@ -315,11 +420,9 @@ A scenario whose name stayed true ("Turning it off with panels open") kept its n
 ## Migration
 
 - A saved `mode` is read as before and may now also be `"list"`; every earlier value
-  (`graph`, `timeline`, `source`, `genealogy`) means what it did. A tab saved by this
-  version in List mode opened by an older one reads `undefined` and falls back to *Open
-  GEDCOM files as*.
-- *Open GEDCOM files as* keeps its saved value; `list` is a new option, the default stays
-  `graph`.
+  (`graph`, `timeline`, `source`, `genealogy`) means what it did.
+- *Open GEDCOM files as* is not touched here: `open-in-last-mode` removes it and merges
+  first (see "The change assumes `open-in-last-mode`").
 - `openPanelsOnSelect` keeps its key and value; only its label changed.
 - A saved Index leaf in the left sidebar is closed once, at layout-ready, by
   `sweepRetiredViews`, interface on or off.
@@ -394,6 +497,9 @@ uses it for her years.
 - CI is a slower Linux runner with a wider font: browser specs assert relations (inside,
   no overflow, fixed row heights, a bounded number of drawn rows, order of text) and never
   a duration or a text width.
+- The `## Purpose` of a new capability is written by hand: archive creates `genealogy-list`'s
+  spec with a placeholder ("TBD - created by archiving change list-view"), as it did for
+  `genealogy-record-card`, so the archive PR must write a real Purpose (a task).
 - A MODIFIED requirement restates the whole current text and every scenario; a new one is
   ADDED; a rename is REMOVED with a Reason and a Migration plus ADDED.
 

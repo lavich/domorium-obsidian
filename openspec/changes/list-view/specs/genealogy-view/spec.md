@@ -19,35 +19,19 @@ selection puts the cursor, on switching to Source mode, is said by the requireme
 on Source mode and the selection.
 
 Each tab SHALL remember its own mode, its selected record, the scope, position
-and zoom of its Graph and its Timeline, and the kind, sort and filter of its List,
+and zoom of its Graph and its Timeline, and the kind, sort and *No sources* filter of its List,
 across closing and reopening the workspace.
-A file opened anew while the interface is on SHALL open in the mode the *Open GEDCOM
-files as* setting names, which SHALL offer Graph, Timeline, List and Source and SHALL
-default to Graph. A file opened anew while the interface is off SHALL be remembered
+Which of the four modes a file opened anew while the interface is on opens in is said
+by the rule for a new tab, which this requirement leaves as it is; any of the four MAY
+be the mode it gives, List included. A file opened anew while the interface is off SHALL be remembered
 as in Source mode, so that turning the interface on does not change the tab. Two
 tabs of one file SHALL each have a mode of their own. A tab, or a setting, saved
 by an earlier version as **Genealogy** SHALL be read as Graph.
 
-#### Scenario: A file opened with the default setting
-- **WHEN** the reader has turned the Genealogy interface on, leaves *Open GEDCOM
-  files as* unchanged and opens `curie.ged`
-- **THEN** the tab is in Graph mode and shows a card for each of the 17 people
-
-#### Scenario: A reader who prefers the list
-- **WHEN** the Genealogy interface is on, the setting names List and the reader opens
-  `curie.ged`
-- **THEN** the tab opens in List mode and shows a row for each of the 17 people
-
-#### Scenario: A reader who prefers the source
-- **WHEN** the Genealogy interface is on, the setting names Source and the reader
-  opens `curie.ged`
-- **THEN** the tab opens in Source mode, as the plugin did before it had a
-  genealogy interface
-
-#### Scenario: A reader who prefers the timeline
-- **WHEN** the Genealogy interface is on, the setting names Timeline and the reader
-  opens `curie.ged`
-- **THEN** the tab opens in Timeline mode and shows a row for each of the 17 people
+#### Scenario: A tab in List mode opens as a list
+- **WHEN** a tab of `curie.ged` was saved in List mode and the workspace is restored with
+  the interface on
+- **THEN** the tab is in List mode and shows a row for each of the 17 people
 
 #### Scenario: The interface is off
 - **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
@@ -86,7 +70,7 @@ tab whose file changes while it is behind another, or while it is in another mod
 SHALL draw it when it is next in view. Switching between modes SHALL NOT lay the
 graph or the timeline out again where the text and the scope are the same, and
 SHALL leave each at the scope, position, zoom and scroll position it was left at,
-and the list at its kind, sort, filter and scroll position. Graph and
+and the list at its kind, sort, filters and scroll position. Graph and
 Timeline SHALL each keep a scope of their own: choosing a branch in one SHALL NOT
 change the other. A tab SHALL NOT draw any of them before it has read its file. A change of the
 tab's size SHALL NOT disturb any of them: a tab that is not displayed, or whose
@@ -177,7 +161,7 @@ phone the setting SHALL change nothing: the right drawer opens as the card speci
 
 #### Scenario: The setting row
 - **WHEN** the reader opens the plugin settings
-- **THEN** a toggle named **Open the record card when selecting** follows *Open GEDCOM files as*, and its description says it applies while the genealogy interface is on
+- **THEN** a toggle named **Open the record card when selecting** is in the settings, and its description says it applies while the genealogy interface is on
 
 #### Scenario: The interface is off
 - **WHEN** the Genealogy interface is off
@@ -300,7 +284,7 @@ that show a mode or open a panel; every GEDCOM tab SHALL show the source.
 
 Turning the setting on or off SHALL take effect in every open tab and sidebar
 without restarting Obsidian. A mode a tab was last in, the scope and zoom of its
-Graph and Timeline, the kind, sort and filter of its List, and the *Open GEDCOM files as* value, SHALL be kept while the
+Graph and Timeline, the kind, sort and *No sources* filter of its List, and the *Open GEDCOM files as* value, SHALL be kept while the
 setting is off and honoured again when it is turned on; the *Open GEDCOM files as*
 setting SHALL stay in the settings and say that it applies only while the
 interface is on.
@@ -347,7 +331,8 @@ interface is on.
 
 While the **Genealogy interface** setting is on, the header of a GEDCOM tab SHALL
 carry the mode control: one icon button for each mode — Graph, Timeline, List and
-Source, in that order — each a header action of the tab, labelled with the name of its
+Source, in that order from left to right on the screen, so that the Source button is
+the rightmost of them, whatever order Obsidian places header actions in — each a header action of the tab, labelled with the name of its
 mode. The button of the tab's mode SHALL be marked as the active one, in the accent
 colour and as pressed to assistive technology, and the mark SHALL follow every
 change of the tab's mode, however it came about. Pressing a button SHALL switch the
@@ -366,8 +351,14 @@ in the command palette as well. No command SHALL show a record as a page in the 
 
 #### Scenario: A button for each mode
 - **WHEN** `curie.ged` is open in Graph mode with the interface on
-- **THEN** the header shows buttons for Graph, Timeline, List and Source in that
-  order, and the Graph button is marked as active and no other
+- **THEN** the header shows buttons for Graph, Timeline, List and Source from left to
+  right, and the Graph button is marked as active and no other
+
+#### Scenario: Source is the rightmost
+- **WHEN** `curie.ged` is open with the interface on
+- **THEN** the Source button is to the right of the List button, which is to the right
+  of the Timeline button, which is to the right of the Graph button, on a desktop and
+  on a phone, and the order does not change when the mode does
 
 #### Scenario: Pressing a button
 - **WHEN** the tab is in Graph mode and the reader presses the Timeline button
@@ -469,7 +460,7 @@ record.
 
 When a tab that was showing one GEDCOM file is navigated to another, the Graph,
 Timeline and List of the first — the scope, position, zoom and scroll position, the
-kind, sort and filter, the drawn boards and the selection — SHALL NOT be shown for
+kind, sort, filters and scroll position, the drawn boards and the selection — SHALL NOT be shown for
 the second. The second file's
 views SHALL be opened as for a view never shown, or from the state saved for the
 second file where the navigation brings it.

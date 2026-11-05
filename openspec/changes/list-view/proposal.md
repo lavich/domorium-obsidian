@@ -33,10 +33,14 @@ centre is where the width is.
   with the existing mechanism: the record card on the right shows it, the tab stays in
   List mode, the row is marked selected. The selection is the tab's, so it survives a
   switch to Graph (which then centres on the person) and back (which centres the row).
-- **Where it is reached.** A header button and a command **Show as list**, a **List**
-  option in *Open GEDCOM files as*, the tab's menu; Find (`Mod+F`) focuses the filter. The
-  ribbon icon and the command **Open Domorium** stay as one door: they show the most
-  recently active GEDCOM tab as a list, and say so in a notice when no GEDCOM tab is open.
+- **Where it is reached.** A header button and a command **Show as list**, the tab's menu;
+  the mode buttons read Graph, Timeline, List, Source from the left, Source rightmost. Find
+  (`Mod+F`) focuses the filter. List is one more mode a file can open in by the rule for a new
+  tab: *Open GEDCOM files as* is being removed by the separate change `open-in-last-mode`,
+  which merges first and which this change rebases on, so no **List** option is added to it.
+  The ribbon icon and the command **Open Domorium** stay as one door: they bring the most
+  recently active GEDCOM tab to the front as a list, and say so in a notice when no GEDCOM tab
+  is open.
 - **The setting is renamed for what is left.** *Open the side panels when selecting*
   becomes **Open the record card when selecting**: the saved key, `openPanelsOnSelect`,
   and its meaning for the card are unchanged, and a saved value is read as before.
@@ -60,8 +64,8 @@ or `@domorium/codemirror`, and no new upstream release is waited for.
 - `genealogy-index`: retired. Every requirement moves to `genealogy-list`; the spec file is
   deleted by hand (see `design.md`, "Retiring `genealogy-index`"), since `openspec archive`
   refuses a delta that removes the last requirement of a capability.
-- `genealogy-view`: four modes, the mode control and commands, *Open GEDCOM files as*,
-  Find in List, a workspace saved with the Index, the renamed setting.
+- `genealogy-view`: four modes, the mode control (and the order of its buttons) and
+  commands, Find in List, a workspace saved with the Index, the renamed setting.
 - `genealogy-record-card`: the card no longer names an Index; a list row selects.
 - `genealogy-evidence`: a scenario that selected through the Index row.
 - `genealogy-file-graph`, `genealogy-file-timeline`: a selection made in the list is a
@@ -76,6 +80,7 @@ or `@domorium/codemirror`, and no new upstream release is waited for.
 - Changing the file format, the parser, validation or the language service.
 - Raising `minAppVersion`: every Obsidian API used is already below the floor 1.8.7.
   `Workspace.revealLeaf` (1.7.2) and `ResizeObserver` are.
+- Touching *Open GEDCOM files as* (`openAs`), which `open-in-last-mode` removes.
 - Keeping the Index behind a setting. The user asked for it to go.
 
 ## Impact

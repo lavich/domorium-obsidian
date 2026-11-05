@@ -5,8 +5,8 @@
 A GEDCOM tab SHALL offer a **List** mode that shows the people, the families or the
 sources of its file as a table, in the tab itself, with no tab of its own and no sidebar.
 The tab SHALL enter it from the mode control in its header, from a command, from the
-tab's menu and from the *Open GEDCOM files as* setting, as the requirements on the mode
-control and on the modes of a GEDCOM tab say. Entering it SHALL NOT open another tab.
+tab's menu, as the requirement on the mode control says, and a file opened anew MAY open
+in it by the rule for a new tab, as the requirement on the modes of a GEDCOM tab says. Entering it SHALL NOT open another tab.
 
 The list SHALL be drawn from the same reading of the tab's text that the record card,
 the graph and the timeline use, and SHALL NOT read the file from the vault itself. It
@@ -289,7 +289,8 @@ selection however it was made: from the list, from the record card, by a link or
 to record*; and SHALL stay across sorting, filtering and switching the kind, and be
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
 list. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
-record and open the right drawer on the card.
+record and open the right drawer on the card at once: the rule of the graph and the
+timeline, that the first touch lights and the second selects, does not apply to rows.
 
 #### Scenario: Selecting Pierre in the list
 - **WHEN** the tab is in List mode and the reader clicks Pierre Curie's row
@@ -334,21 +335,55 @@ record and open the right drawer on the card.
 
 ### Requirement: The selected row is brought into view
 
-When the list is shown with a record selected, whether the reader switched to the mode,
-the tab was restored, or the selection was made while the list was out of view, the row
-of that record SHALL be scrolled to the middle of the list's height, without animation, as
-soon as the list is drawn. A selection made from outside the list while it is in view —
-from the record card, by a link, *Go to record*, or Back and Forward in the card — SHALL
-do the same. Where the record is of a kind the list is not showing, the list SHALL switch
-to that kind. Where the filter hides the row, the list SHALL clear the filter and the
-*No sources* choice. A selection made by activating a row of the list SHALL leave both as
-they are. Where the record has no row, the list SHALL be left as it is.
+The list SHALL bring the row of the selected record into view when the selection is
+one it has not yet marked: a selection made from outside the list — from the record
+card, by a link, *Go to record*, or Back and Forward in the card — whether the list is
+in view or out of it, and a selection the list meets when it is first drawn, which
+includes a tab restored with the workspace, since the list's scroll position is not
+saved. Bringing into view SHALL, in this order: switch to the record's kind where the
+list shows another; clear the typed filter and the *No sources* choice where they hide
+the row; and, where the row is not wholly within the visible rows, scroll it to the
+middle of the list's height, without animation.
+
+When the reader returns to the list with the selection unchanged, the list SHALL first
+put back the scroll position it left; then, where the row of the selected record is
+shown but is not wholly within the visible rows, it SHALL be scrolled to the middle as
+above, because the reader has just chosen this view. A filter the reader typed and a
+*No sources* choice SHALL NOT be cleared by returning to the list with the selection
+unchanged. A selection made by activating a row of the list SHALL change neither the
+scroll position, the kind nor the filters. Where the record has no row, the list SHALL
+be left as it is.
 
 #### Scenario: Entering the list with a selection
 - **WHEN** a file of 500 people has its 400th person selected in Graph mode and the
   reader switches to List mode
 - **THEN** that person's row is drawn, marked selected, and inside the middle half of the
   list's visible height
+
+#### Scenario: A tab restored with a selection
+- **WHEN** a file of 500 people has its 400th person selected in a tab in List mode, and
+  Obsidian is restarted
+- **THEN** that person's row is drawn, marked selected, and inside the middle half of the
+  list's visible height
+
+#### Scenario: Returning with the place kept
+- **WHEN** nobody is selected, the reader scrolls the list, switches to Graph mode and back
+- **THEN** the list is scrolled to the same place
+
+#### Scenario: Returning to a selected row that is out of sight
+- **WHEN** the 400th of 500 people is selected, the reader scrolls the list to the top,
+  switches to Graph mode and back
+- **THEN** the row of the 400th person is inside the middle half of the list's height
+
+#### Scenario: Returning with the row in sight
+- **WHEN** Marie is selected, the reader scrolls the 17 people a little, switches to Graph
+  mode and back
+- **THEN** the list is scrolled to the same place
+
+#### Scenario: A filter kept on returning
+- **WHEN** Marie is selected, the filter holds `joliot`, and the reader switches to Graph
+  mode and back
+- **THEN** the filter still holds `joliot`
 
 #### Scenario: The kind follows the record
 - **WHEN** the list shows the people and the reader activates the Curies' family in the
@@ -382,7 +417,9 @@ and the last, and Page Up and Page Down by what the list shows at once; the row 
 focus SHALL be drawn and brought into view, also where only a window of rows is drawn.
 Enter or Space SHALL select the record of the row with the focus, and the focus SHALL
 stay on the row. Moving the focus SHALL NOT select. The list SHALL be a grid to assistive
-technology, each row saying its position among all the rows and each header its sort. A
+technology: a header row of column headers, each saying its sort, and rows of cells, each
+row saying its position among all the rows, including those not drawn. The row that has
+the focus SHALL always be one that is drawn. A
 row SHALL say to assistive technology whom or what it shows, and whether it is selected.
 The kind buttons, the headers and the filter SHALL be reachable with the keyboard.
 
@@ -445,12 +482,16 @@ rows.
 ### Requirement: The list on a phone and in a narrow tab
 
 The list SHALL fit the tab it is in without scrolling sideways, at any width. Where the
-tab is narrower than 640 CSS pixels, as on a phone or in a narrow split, each row SHALL
+tab is narrower than 640 CSS pixels, as in a narrow split, or the device is a touch one,
+as a phone or a tablet, each row SHALL
 take two lines — the name or title with the years, the marriage or the count at its end,
 and the place or the author beneath, with the Sources mark or the count of children or
 citations — the column headers SHALL be replaced by a selector of the column to sort by
 and a button that turns the direction, and a row and each control SHALL be at least 44
-CSS pixels tall. The kind buttons and the filter field SHALL be as in a wide tab. On a
+CSS pixels tall. On a touch device the kind buttons, the chips and the column headers of
+a wide tab SHALL be at least 44 CSS pixels tall as well. Row and control heights SHALL
+follow the reader's font size rather than a fixed number of pixels, and the page SHALL
+not scroll sideways at any font size the app offers. The kind buttons and the filter field SHALL be as in a wide tab. On a
 phone the list SHALL be the whole of the tab, with the bottom navigation of Obsidian left
 clear.
 
@@ -459,8 +500,13 @@ clear.
 - **THEN** the page has nothing to scroll sideways, each row is two lines of at least 44
   pixels, and a selector of the sort is shown where the headers were
 
+#### Scenario: A tablet
+- **WHEN** the tab is 1000 pixels wide on a touch device
+- **THEN** each row takes two lines, and the kind buttons and the headers, where shown, are
+  at least 44 pixels tall
+
 #### Scenario: A wide tab
-- **WHEN** the tab is 1400 pixels wide
+- **WHEN** the tab is 1400 pixels wide with a mouse
 - **THEN** each row is one line, the headers are shown, and no selector of the sort is
 
 #### Scenario: Sorting on a phone
@@ -475,7 +521,8 @@ clear.
 
 While the **Genealogy interface** setting is on, the plugin SHALL show a ribbon icon and
 offer a command, **Open the list of the GEDCOM file**, that bring the GEDCOM tab most
-recently active in this session to the front, wherever it is, and show it as a list; where
+recently active in this session to the front and give it the focus, wherever it is, and
+show it as a list; where
 no GEDCOM tab has been active yet, as after a restart, the first GEDCOM tab that is open
 SHALL be used. A tab that is already a list SHALL be only brought to the front. Where no
 GEDCOM tab is open they SHALL give a
