@@ -7,13 +7,11 @@ type ItemKind = "card" | "node" | "line";
 
 export interface Item {
   kind: ItemKind;
-  /** The card's id, or the family's of a node or a line. */
   id: string;
   left: number;
   top: number;
   right: number;
   bottom: number;
-  /** The cards a highlight reaches it through. */
   people: string[];
   make(far: boolean): SVGElement;
 }

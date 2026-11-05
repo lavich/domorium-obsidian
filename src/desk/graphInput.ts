@@ -4,7 +4,6 @@ import { ZOOM } from "./graphCanvas";
 const DRAG = 4;
 const WHEEL_STEP = 1.12;
 const TRACKPAD_DELTA = 40;
-/** A wheel event this soon after the last one belongs to the same gesture. */
 const GESTURE_GAP = 150;
 
 export interface GraphInputHost {
@@ -20,9 +19,7 @@ export interface GraphInputHost {
   left(): void;
 }
 
-/** Dragging, pinching and the wheel, which move the view; what the pointer rests on is the canvas's. */
 export class GraphInput {
-  /** The kind of pointer last seen. */
   pointer = "mouse";
   private swallow = false;
   private readonly down = new Map<number, { x: number; y: number }>();
@@ -32,7 +29,6 @@ export class GraphInput {
 
   constructor(private readonly host: GraphInputHost) {}
 
-  /** Whether a click that ends a drag or pinch is still to be swallowed; asking spends it. */
   swallows(): boolean {
     if (!this.swallow) {
       return false;

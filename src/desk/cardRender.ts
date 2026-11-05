@@ -25,7 +25,6 @@ export function svg<K extends keyof SVGElementTagNameMap>(
   return node;
 }
 
-/** Vertical where it leaves each point and where it arrives at the next. */
 export function curve(points: readonly Point[]): string {
   const [first] = points;
   if (!first) {
@@ -41,7 +40,6 @@ export function curve(points: readonly Point[]): string {
   return d;
 }
 
-/** The longest start of `text` that, with an ellipsis, `measure` says fits in `room`, cut between code points. */
 export function fitText(text: string, room: number, measure: (text: string) => number): string {
   if (measure(text) <= room) {
     return text;
@@ -60,7 +58,6 @@ export function fitText(text: string, room: number, measure: (text: string) => n
   return `${points.slice(0, low).join("")}…`;
 }
 
-/** The width of a card's name in the font it is drawn in; by count of code points where no canvas can measure. */
 export function nameMeasure(root: HTMLElement): (text: string) => number {
   let context: CanvasRenderingContext2D | null | undefined;
   const widths = new Map<string, number>();
@@ -89,7 +86,6 @@ export function nameMeasure(root: HTMLElement): (text: string) => number {
   };
 }
 
-/** What a card is drawn with besides what it says. */
 export interface CardMarks {
   dim: boolean;
   armed: boolean;
@@ -158,7 +154,6 @@ export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, f
   return group;
 }
 
-/** The picture the card's person has, from the host, in the space above the name; none where it fails. */
 function avatar(doc: Document, card: SVGGElement, shown: CanvasCard): void {
   const content = shown.portrait?.() ?? null;
   if (!content) {
