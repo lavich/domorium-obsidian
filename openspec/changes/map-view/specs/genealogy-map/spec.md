@@ -8,7 +8,7 @@ The map of a GEDCOM file: a mode of the file's tab, beside Graph, Timeline, List
 
 A GEDCOM tab SHALL offer a **Map** mode that shows the places of its file as points on a map, in the tab itself, with no tab of its own and no sidebar. The tab SHALL enter it from the mode control in its header, from a command and from the tab's menu, as the requirement on the mode control says, and a file opened anew MAY open in it by the rule for a new tab. Entering it SHALL NOT open another tab.
 
-The map SHALL be drawn from the same reading of the tab's text that the record card, the graph, the timeline and the list use, and from the places table of the file where there is one, and SHALL NOT read the GEDCOM file from the vault itself. It SHALL show the file as the tab holds it, including text typed in the tab and not yet saved, and SHALL show every later change to it, or to the places table: at once while the tab is in view, and the next time it is brought into view otherwise. A tab SHALL NOT draw the map before it has read its file. The map SHALL keep its scope, its position and its zoom across leaving the mode and coming back and across closing and reopening the workspace; it SHALL keep the years range and the text typed in its search across leaving the mode and coming back, and SHALL NOT save them with the workspace. Nothing in the map SHALL write to the GEDCOM file, save it or mark it as changed.
+The map SHALL be drawn from the same reading of the tab's text that the record card, the graph, the timeline and the list use, and from nothing else, and SHALL NOT read the GEDCOM file from the vault itself. It SHALL show the file as the tab holds it, including text typed in the tab and not yet saved, and SHALL show every later change to it: at once while the tab is in view, and the next time it is brought into view otherwise. A tab SHALL NOT draw the map before it has read its file. The map SHALL keep its scope, its position and its zoom across leaving the mode and coming back and across closing and reopening the workspace; it SHALL keep the years range and the text typed in its search across leaving the mode and coming back, and SHALL NOT save them with the workspace. Nothing in the map SHALL write to the GEDCOM file, save it or mark it as changed.
 
 #### Scenario: Choosing it from the mode control
 - **WHEN** `curie.ged` is open in Source mode and the reader chooses Map from the mode control in its header
@@ -17,10 +17,6 @@ The map SHALL be drawn from the same reading of the tab's text that the record c
 #### Scenario: An edit not yet saved
 - **WHEN** the reader adds `2 PLAC Berlin` with a `MAP` of `N52.52` and `E13.405` to a birth in Source mode, the file is not yet saved, and the reader switches to Map mode
 - **THEN** the map shows a point for Berlin
-
-#### Scenario: The places table changes
-- **WHEN** the tab is in Map mode and the reader adds a row for Warsaw to `curie.places.md` in another tab and saves it
-- **THEN** the map shows Warsaw where the row puts it, without the tab being reopened
 
 #### Scenario: Leaving the mode and coming back
 - **WHEN** the tab is in Map mode on Marie's branch, zoomed on Paris, with the years range 1890–1900 and the search holding `paris`, and the reader switches to Graph mode and back
@@ -38,18 +34,15 @@ The map SHALL be drawn from the same reading of the tab's text that the record c
 - **WHEN** the reader pans, zooms, filters by years, searches, opens popups and selects ten records
 - **THEN** the GEDCOM file on disk is byte for byte what it was
 
-### Requirement: A place's coordinates come from the file, then from the places table
+### Requirement: A place's coordinates come from the file
 
 A place SHALL be the text of a `PLAC` line of an event of a person or a family, trimmed, with runs of white space made one space, and two places SHALL be the same place where those texts are equal without regard to case; the place SHALL be named as its first occurrence in the file writes it.
 
-The coordinates of a place SHALL be, in this order of priority:
-1. those of the first `MAP` structure under a `PLAC` line of that place, in the order of the file, that states a valid `LATI` and a valid `LONG`; a coordinate is read by one rule, the same for the file and for the places table, described below the list;
-2. else those of the first row of the places table whose place is that place, where the row states both a valid latitude and a valid longitude;
-3. else none.
+The coordinates of a place SHALL be those of the first `MAP` structure under a `PLAC` line of that place, in the order of the file, that states a valid `LATI` and a valid `LONG`, and SHALL come from nowhere else: the GEDCOM file is the only source, and the plugin SHALL NOT read, create, rename or edit any other note or file for them.
 
-A coordinate SHALL be a decimal number of degrees, read with a point or a comma, in one of two forms: signed, positive north and east and negative south and west (`52.2297`, `-70.6693`), or with one letter before or after the number and no sign, the letter either case and optionally set off by a space: `N52.2297`, `N 52.2297`, `21.0122 e`. A latitude takes the letters `N` and `S` and a longitude `E` and `W`; `S` and `W` are negative; `S0` is 0, never negative zero. A latitude outside -90 to 90, a longitude outside -180 to 180, a letter of the other axis, a sign together with a letter (`W-1.5`), an empty cell and any other text give no coordinate. A pair is valid only where both its coordinates are.
+A coordinate SHALL be a decimal number of degrees, read with a point or a comma, in one of two forms: signed, positive north and east and negative south and west (`52.2297`, `-70.6693`), or with one letter before or after the number and no sign, the letter either case and optionally set off by a space: `N52.2297`, `N 52.2297`, `21.0122 e`. A latitude takes the letters `N` and `S` and a longitude `E` and `W`; `S` and `W` are negative; `S0` is 0, never negative zero. A latitude outside -90 to 90, a longitude outside -180 to 180, a letter of the other axis, a sign together with a letter (`W-1.5`), an empty value and any other text give no coordinate. A pair is valid only where both its coordinates are.
 
-A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT stop the table from giving the place its coordinates. A place with coordinates from the file and from the table SHALL be drawn where the file puts it. A place with no coordinates SHALL NOT be drawn; it SHALL be counted and listed as the requirement on scope and counts says. Coordinates SHALL be read for the places of events of both versions of GEDCOM and of a document with no declared version, and SHALL NOT be looked up by the name of the place, locally or remotely.
+A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT stop a later `MAP` of the same place from giving it coordinates. A place with no valid `MAP` SHALL NOT be drawn; it SHALL be counted and listed as the requirement on scope and counts says. Coordinates SHALL be read for the places of events of both versions of GEDCOM and of a document with no declared version, and SHALL NOT be looked up by the name of the place, locally or remotely.
 
 #### Scenario: A MAP in the file
 - **WHEN** a birth names `PLAC Warsaw, Congress Poland` with `MAP`, `LATI N52.2297` and `LONG E21.0122`
@@ -59,17 +52,13 @@ A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT s
 - **WHEN** a place has `LATI S18.150944` and `LONG W46.6`
 - **THEN** the place is at latitude -18.150944 and longitude -46.6
 
-#### Scenario: The file wins over the table
-- **WHEN** `Paris, France` has a `MAP` of `N48.8566` and `E2.3522` in the file and a row of 48.0 and 2.0 in the places table
-- **THEN** the point is at 48.8566, 2.3522
-
-#### Scenario: The table fills in
-- **WHEN** `Sceaux, France` has no `MAP` in the file and a row of 48.7766 and 2.2917 in the places table
-- **THEN** the point is at 48.7766, 2.2917
-
 #### Scenario: Another spelling of one place
 - **WHEN** one event writes `Paris, France` and another `paris, france`, and only the second has a `MAP`
 - **THEN** there is one place, named `Paris, France`, at the coordinates of the `MAP`
+
+#### Scenario: Several spellings with a MAP each
+- **WHEN** `Paris, France` has a `MAP` of `N48.8566` and `E2.3522` and `paris, france` later in the file has a `MAP` of `N48.0` and `E2.0`
+- **THEN** the place is at 48.8566, 2.3522, the first valid `MAP` in the order of the file
 
 #### Scenario: Letters, case and spacing
 - **WHEN** a place has `LATI n 52.2297` and `LONG 21,0122 E`
@@ -84,84 +73,20 @@ A `MAP` with one coordinate missing or invalid SHALL be ignored, and SHALL NOT s
 - **THEN** the place is at latitude 0 and longitude 0
 
 #### Scenario: A half-stated MAP
-- **WHEN** a place has a `MAP` with a `LATI` and no `LONG`, and a row in the table
-- **THEN** the `MAP` is ignored and the place is at the table's coordinates
+- **WHEN** a place has a `MAP` with a `LATI` and no `LONG`, and a later `MAP` with both
+- **THEN** the first `MAP` is ignored and the place is at the coordinates of the later one
 
 #### Scenario: An impossible latitude
-- **WHEN** a place has `LATI N95.0` and `LONG E10.0`, and no row in the table
+- **WHEN** a place has `LATI N95.0` and `LONG E10.0`
 - **THEN** the place has no coordinates
 
-#### Scenario: A place with neither
-- **WHEN** `Passy, Haute-Savoie, France` has no `MAP` and no row
-- **THEN** it is not drawn and is counted among the places with no coordinates
+#### Scenario: A place with no MAP
+- **WHEN** `Passy, Haute-Savoie, France` has no `MAP`
+- **THEN** it is not drawn and is counted among the places with no coordinates, and no note or file is read or created for it
 
 #### Scenario: A document with no version
 - **WHEN** a file declares no version and a place has a `MAP`
 - **THEN** the place is at the coordinates of the `MAP`
-
-### Requirement: The places table is a note next to the file
-
-The places table of a GEDCOM file SHALL be the Markdown note named like the file with its extension, `.ged` or `.gedcom`, replaced by `.places.md`, in the same folder: `curie.places.md` for `curie.ged`. The extension SHALL be matched without regard to case (`curie.GED`), and two files of one folder that differ only in the extension (`a.ged` and `a.gedcom`) SHALL share one table. It SHALL be a plain note the reader edits as any note, and the plugin SHALL read it and SHALL NOT keep another copy of it.
-
-Its table SHALL be a Markdown table of three columns, **Place**, **Latitude** and **Longitude**, one place to a row. The first table of the note SHALL be the places table; its header row and the delimiter row under it SHALL be skipped by position, whatever the header says, and the text of the note outside that table, including front matter, SHALL be ignored. Cells SHALL be separated by `|`, a `|` inside a place SHALL be written `\|`, and leading and trailing white space in a cell SHALL be ignored. A coordinate SHALL be read by the rule of the requirement on coordinates, and a coordinate that rule gives nothing for SHALL make that row give no coordinates. A row whose place is the same place as an earlier row's, by the rule above, SHALL be ignored. A note with no table, an empty note and a note the plugin cannot read as a table SHALL give no rows, and SHALL NOT stop the map from drawing the places the file gives coordinates to.
-
-The plugin SHALL read the note while a tab of the file is in Map mode, and again when it changes, is created, is renamed or is deleted, or when the folder holding it is renamed or moved. Until the first read has finished the map SHALL draw from the file alone and SHALL NOT show the message of the empty state. When a GEDCOM file is renamed or moved and its places table is not, and the table of the new name does not exist, the plugin SHALL rename the table to follow the file, by Obsidian's own rename so that links to it are updated, and SHALL say so in a notice; where the table of the new name exists the plugin SHALL leave both as they are.
-
-#### Scenario: The expected format
-- **WHEN** `curie.places.md` holds `| Place | Latitude | Longitude |`, `| --- | --- | --- |` and `| Warsaw, Congress Poland | 52.2297 | 21.0122 |`
-- **THEN** `Warsaw, Congress Poland` is at 52.2297, 21.0122
-
-#### Scenario: Written by a reader of another language
-- **WHEN** the header reads `| Место | Широта | Долгота |` and a row reads `| Москва | 55,7558 | 37,6173 |`
-- **THEN** Москва is at 55.7558, 37.6173
-
-#### Scenario: Letters for the hemisphere
-- **WHEN** a row reads `| Santiago, Chile | S33.4489 | W70.6693 |`
-- **THEN** Santiago is at -33.4489, -70.6693
-
-#### Scenario: A place with a bar in it
-- **WHEN** a row reads `| A \| B | 10 | 20 |`
-- **THEN** the place is `A | B`
-
-#### Scenario: Text around the table
-- **WHEN** the note has front matter, a paragraph before the table and a second table after it
-- **THEN** only the first table is read
-
-#### Scenario: A blank row to fill in
-- **WHEN** a row reads `| Stockholm, Sweden |  |  |`
-- **THEN** it gives no coordinates, and Stockholm is counted among the places with no coordinates
-
-#### Scenario: A repeated place
-- **WHEN** two rows name `Paris, France` with different coordinates
-- **THEN** the first row's coordinates are used
-
-#### Scenario: No table note
-- **WHEN** no note `curie.places.md` exists
-- **THEN** the map draws the places the file gives coordinates to, and nothing is created
-
-#### Scenario: A table that cannot be read
-- **WHEN** the note holds a paragraph and no table
-- **THEN** it gives no rows and the map is as if there were no note
-
-#### Scenario: The file is renamed
-- **WHEN** `curie.ged` is renamed `family.ged` while `curie.places.md` exists and `family.places.md` does not
-- **THEN** the note is renamed `family.places.md`, a notice says so, and the map of the tab still draws from it
-
-#### Scenario: A folder is renamed
-- **WHEN** the folder `Family` holding `curie.ged` and `curie.places.md` is renamed `Curies`
-- **THEN** the tab of the file reads the table at `Curies/curie.places.md` and the map keeps drawing from it
-
-#### Scenario: Two extensions, one table
-- **WHEN** `a.ged` and `a.gedcom` are in one folder with `a.places.md`
-- **THEN** both files' maps read `a.places.md`
-
-#### Scenario: Not read yet
-- **WHEN** the tab enters Map mode on a file with no `MAP` and a table with rows that has not been read yet
-- **THEN** the map does not show the message **No place has coordinates yet** while the table is being read
-
-#### Scenario: The new name is taken
-- **WHEN** `curie.ged` is renamed `family.ged` while both `curie.places.md` and `family.places.md` exist
-- **THEN** neither note is renamed, and the map reads `family.places.md`
 
 ### Requirement: The map is drawn on an outline of the world that the plugin carries
 
@@ -393,7 +318,7 @@ The map SHALL carry a floating chip at the bottom left that reads **Years: all**
 
 ### Requirement: A map with no saved view opens fitted to its places
 
-A map with no saved position and zoom SHALL open fitted to the places in its scope and years range that have coordinates: the smallest view, no closer than a city and no farther than the whole world, that holds all of them with a margin. The **Fit** button and the `0` key SHALL do the same. A change of the branch scope SHALL fit the map again. A change of the years range, of the search and of the places table SHALL NOT move the map. A map with no place to draw SHALL show the whole world. A saved position and zoom SHALL be used in place of the fit, until the reader presses **Fit** or changes the scope.
+A map with no saved position and zoom SHALL open fitted to the places in its scope and years range that have coordinates: the smallest view, no closer than a city and no farther than the whole world, that holds all of them with a margin. The **Fit** button and the `0` key SHALL do the same. A change of the branch scope SHALL fit the map again. A change of the years range and of the search SHALL NOT move the map. A map with no place to draw SHALL show the whole world. A saved position and zoom SHALL be used in place of the fit, until the reader presses **Fit** or changes the scope.
 
 #### Scenario: A first opening
 - **WHEN** a tab opens in Map mode for the first time on a file whose mapped places are all in France
@@ -551,34 +476,20 @@ The map SHALL have the expanding search of the graph and the timeline — a sear
 - **WHEN** the tab is in Map mode and the reader presses the find key
 - **THEN** the search is open and its field has the focus, and the editor's search panel is not opened
 
-### Requirement: A map with no place to draw says why and offers the places table
+### Requirement: A map with no place to draw says why
 
-Where no place of the file has coordinates — every place lacks a `MAP` and a row in the places table, or the file names no place — the map SHALL show, in place of an empty world, the message **No place has coordinates yet**, and say which of the two it is: that no place in the file has a `MAP` and no row of the places table gives one, or that the file names no place. Where the file names places and no places table exists, it SHALL offer a button **Create the places table**. Pressing it SHALL create the note named by the requirement on the places table, next to the file, holding a short line saying what the table is for and a table whose header row is `Place | Latitude | Longitude`, with one row for each distinct place of the file that the file gives no coordinates, named as its first occurrence writes it, in alphabetical order by the language's collation, with the coordinates empty; it SHALL then open the note in a tab of the workspace. The plugin SHALL NOT overwrite or change a note that exists: where the note exists when the button is pressed, whether it was created in the meantime or the map has not noticed it, the plugin SHALL open it and create nothing. Where the note exists and no place has coordinates, the button SHALL read **Open the places table** and open it. The message and the button SHALL fit a phone and SHALL be reachable with the keyboard. The creation SHALL write only that note. Until the places table has been read, the map SHALL NOT show the empty state.
-
-Appending the places that have no row to the places table is offered by the Places of the list, as the list specification says.
+Where no place of the file has coordinates — no place has a valid `MAP`, or the file names no place — the map SHALL show, in place of an empty world, the message **No place has coordinates yet** and an explanation that says which of the two it is. Where the file names places, the explanation SHALL read: *A place gets a position from a MAP with LATI and LONG under its PLAC in the file.* and SHALL show, beside it, the lines of that structure as a small code-like example (`PLAC`, `MAP`, `LATI`, `LONG`, with sample values), in the plugin's language for the sentence and as the standard writes the tags. Where the file names no place, it SHALL say the file names no place. The empty state SHALL have no button and SHALL NOT create, open or write any note or file. The message SHALL fit a phone and SHALL be readable by assistive technology. A counter of places with no coordinates SHALL stay where the scope row has it, and SHALL open the Places of the list.
 
 #### Scenario: Nothing to draw
-- **WHEN** no place in `plain.ged` has a `MAP`, and there is no places table
-- **THEN** the map shows **No place has coordinates yet**, says no place has a `MAP` and no row of a places table gives one, and offers **Create the places table**
-
-#### Scenario: Creating the table
-- **WHEN** the reader presses **Create the places table** for `plain.ged`, which names `Warsaw, Congress Poland`, `Paris, France` and `Warsaw, congress poland`
-- **THEN** `plain.places.md` is created next to it with the header `Place | Latitude | Longitude` and the rows `Paris, France` and `Warsaw, Congress Poland`, both with empty coordinates, and it is opened in a tab
-
-#### Scenario: The note exists
-- **WHEN** `plain.places.md` exists with the reader's own rows and the reader presses **Create the places table** from a map that was drawn before it was created
-- **THEN** the note is opened and its content is unchanged
-
-#### Scenario: A table with no coordinates in it
-- **WHEN** `plain.places.md` exists with every coordinate empty
-- **THEN** the map shows the message and the button reads **Open the places table**
+- **WHEN** no place in `plain.ged` has a `MAP`
+- **THEN** the map shows **No place has coordinates yet**, the explanation of the MAP lines with their example, and no button
 
 #### Scenario: A file with no places
 - **WHEN** no event of the file names a place
-- **THEN** the message says the file names no place, and no button is offered
+- **THEN** the message says the file names no place, and no example is shown
 
-#### Scenario: Filling it in
-- **WHEN** the reader adds coordinates for `Paris, France` in the note and saves
+#### Scenario: Adding a MAP in the file
+- **WHEN** the reader adds a `MAP` with `LATI N48.8566` and `LONG E2.3522` under the `PLAC` of Paris in Source mode and returns to Map mode
 - **THEN** the map draws a point at Paris in place of the message
 
 #### Scenario: A file with some places mapped

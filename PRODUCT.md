@@ -91,9 +91,7 @@ Undecided:
 ## Product Principles
 
 1. The file is the truth. Every view is a reading of it, every edit lands in it,
-   and nothing is kept anywhere else. The one note beside it is the places table:
-   coordinates the file does not carry, in a note the reader owns, never over a
-   `MAP` the file states, written only by a button the reader presses.
+   and nothing is kept anywhere else.
 2. Genealogy, not syntax. A researcher sees people, relationships, dates and
    evidence; tags, levels and pointers stay out of sight unless asked for.
 3. Every claim shows what it rests on. Sources and citations are one step away

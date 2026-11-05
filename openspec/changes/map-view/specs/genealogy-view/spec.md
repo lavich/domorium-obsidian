@@ -440,7 +440,7 @@ SHALL be read as Graph.
 ### Requirement: The graph, the timeline, the list and the map draw the tab's own reading of the file
 
 The Graph, Timeline, List and Map modes SHALL draw the file from the same reading of the
-tab's text that the record card uses, the Map also reading the places table of the file, and SHALL NOT read the GEDCOM file from the vault themselves. A mode not in view SHALL NOT be drawn: a
+tab's text that the record card uses, and SHALL NOT read the GEDCOM file from the vault themselves. A mode not in view SHALL NOT be drawn: a
 tab whose file changes while it is behind another, or while it is in another mode,
 SHALL draw it when it is next in view. Switching between modes SHALL NOT lay the
 graph or the timeline out again where the text and the scope are the same, and
