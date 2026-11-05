@@ -670,20 +670,6 @@ button.gedcom-list-seg-button.is-active {
   box-shadow: var(--shadow-s);
 }
 
-.gedcom-list-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--size-4-2);
-  min-width: 0;
-}
-
-button.gedcom-list-action {
-  height: var(--gedcom-list-control);
-  padding: 0 var(--size-4-3);
-  font-size: var(--font-ui-small);
-}
-
 .gedcom-list .gedcom-list-bar > .gedcom-list-find {
   --gedcom-find-size: var(--gedcom-list-control);
   position: relative;
@@ -2875,6 +2861,19 @@ button.gedcom-map-popup-row:focus-visible {
 .gedcom-map-empty p {
   max-width: 32em;
   color: var(--text-muted);
+}
+
+.gedcom-map-empty-example {
+  max-width: 100%;
+  margin: 0;
+  padding: var(--size-4-2) var(--size-4-4);
+  overflow-x: auto;
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-small);
+  text-align: start;
 }
 
 @container (max-width: 640px) {
