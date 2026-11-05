@@ -769,7 +769,7 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   private tablePath(): string | null {
-    return this.file === null ? null : placesTablePath(this.file.path);
+    return this.file ? placesTablePath(this.file.path) : null;
   }
 
   private loadPlacesTable(): void {
