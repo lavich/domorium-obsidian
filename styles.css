@@ -836,6 +836,7 @@ button.gedcom-list-sort:hover {
 
 .gedcom-list-spacer {
   position: relative;
+  margin-block-start: var(--size-2-2);
   margin-inline: var(--size-2-2);
 }
 
