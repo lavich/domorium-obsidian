@@ -25,6 +25,14 @@ test.describe("the mode buttons of the tab header", () => {
     expect(first).toBe("0px");
   });
 
+  test("are spaced from the action that follows them", async ({ page }) => {
+    const gap = await page.evaluate(
+      () => document.getElementById("more")!.getBoundingClientRect().left - document.getElementById("show-source")!.getBoundingClientRect().right,
+    );
+
+    expect(gap).toBeGreaterThan(1);
+  });
+
   test("take the colours, opacity and hover of Obsidian's own header actions, the mode shown as an on/off action does", async ({ page }) => {
     const look = (selector: string) =>
       page.locator(selector).evaluate((button) => {

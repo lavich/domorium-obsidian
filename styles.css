@@ -9,7 +9,7 @@
 /* ── The view and its chrome ─────────────────────────────────────────────
    */
 
-.view-action.gedcom-mode-action + .gedcom-mode-action {
+.view-action.gedcom-mode-action + .view-action {
   margin-inline-start: var(--size-2-2);
 }
 
