@@ -11,10 +11,10 @@ import {
   type TimelinePerson,
 } from "./fileTimeline";
 import { FloatingSearch } from "./floatingSearch";
-import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
+import { nameBy, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
-export const ROW = 34;
+export const ROW = 27;
 const AXIS = 26;
 const TICK_HEIGHT = { minor: 3, medium: 5, major: 7 } as const;
 const GLIDE_REACH = 1.5;
@@ -200,6 +200,7 @@ export class FileTimelineBoard {
     this.board.createDiv({ cls: "gedcom-ft-axis-pad" });
     this.axisClip = this.board.createDiv({ cls: "gedcom-ft-axis-band" }).createDiv({ cls: "gedcom-ft-axis-clip" });
     this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
+    this.names.setCssProps({ "--gedcom-ft-row": `${ROW}px` });
     this.plot = this.board.createDiv({ cls: "gedcom-ft-plot" });
     this.axis = svg(this.doc, "svg", "gedcom-ft-axis", { height: AXIS });
     this.chart = svg(this.doc, "svg", "gedcom-ft-chart");
@@ -922,11 +923,8 @@ export class FileTimelineBoard {
       row.toggleClass("is-current", xref === this.current);
       row.toggleClass("is-selected", xref === this.selected);
       const years = lifelineYears(person.lifeline);
-      const open = row.createEl("button", {
-        cls: "gedcom-ft-name-open",
-        attr: { type: "button", "aria-label": years ? `${name}, ${years}` : name },
-      });
-      tipPlace(open, "right");
+      const open = row.createEl("button", { cls: "gedcom-ft-name-open", attr: { type: "button" } });
+      nameBy(open, row, years ? `${name}, ${years}` : name);
       open.createSpan({ cls: "gedcom-ft-name-text", text: name });
       open.createSpan({ cls: "gedcom-ft-name-years", text: years });
       const branch = row.createEl("button", {

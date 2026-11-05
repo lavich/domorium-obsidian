@@ -50,9 +50,37 @@ test.describe("the timeline of a file", () => {
     const lines = await page.locator(".gedcom-ft-marriage").evaluateAll((nodes) =>
       nodes.map((node) => node.getBoundingClientRect()).map((box) => ({ x: box.x, height: box.height })),
     );
-    expect(lines.some((line) => Math.abs(line.x - at) < 2 && Math.abs(line.height - 34) < 2)).toBe(true);
+    expect(lines.some((line) => Math.abs(line.x - at) < 2 && Math.abs(line.height - 27) < 2)).toBe(true);
     const span = await page.locator('.gedcom-ft-span[data-p="@I2@"]').boundingBox();
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
+  });
+
+  test("keeps the name and the years of a row where they are under the pointer and when selected", async ({ page }) => {
+    await mountTimeline(page);
+    const place = () =>
+      name(page, "@I2@").evaluate((row) => {
+        const box = (selector: string) => {
+          const rect = row.querySelector(selector)?.getBoundingClientRect();
+          return [rect?.left, rect?.top, rect?.width];
+        };
+        return { text: box(".gedcom-ft-name-text"), years: box(".gedcom-ft-name-years") };
+      });
+    const before = await place();
+
+    await name(page, "@I2@").hover();
+    expect(await place()).toEqual(before);
+
+    await page.mouse.move(2, 2);
+    await name(page, "@I2@").evaluate((row) => row.classList.add("is-selected", "is-focus"));
+    expect(await place()).toEqual(before);
+  });
+
+  test("names a row's button for a reader without a tooltip over it", async ({ page }) => {
+    await mountTimeline(page);
+
+    const open = name(page, "@I1@").locator(".gedcom-ft-name-open");
+    await expect(open).not.toHaveAttribute("aria-label", /.*/);
+    await expect(open).toHaveAccessibleName("Marie Skłodowska-Curie, 1867–1934");
   });
 
   test("fades no one when the pointer is on Marie, and moves over the rows", async ({ page }) => {
@@ -479,7 +507,7 @@ test.describe("the zoom buttons of the timeline", () => {
   });
 });
 
-for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 500 }]) {
+for (const viewport of [{ width: 1400, height: 380 }, { width: 390, height: 500 }]) {
   test.describe(`the scrollbars of the timeline at ${viewport.width} px`, () => {
     test.use({ viewport });
 
@@ -648,7 +676,7 @@ test.describe("the timeline of a file of 10 000 people", () => {
     const drawn = () => page.locator(".gedcom-ft-name").count();
     expect(await drawn()).toBeLessThan(300);
 
-    for (const top of [50_000, 150_000, 300_000]) {
+    for (const top of [50_000, 150_000, 250_000]) {
       await page.locator(".gedcom-ft-plot").evaluate((board, to) => {
         board.scrollTop = to;
       }, top);

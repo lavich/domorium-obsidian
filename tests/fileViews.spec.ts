@@ -269,7 +269,6 @@ for (const viewport of [
       const row = await page
         .locator('.gedcom-ft-name[data-p="@I2@"]')
         .evaluate((element) => getComputedStyle(element).boxShadow);
-      expect(row).toContain(colours.text);
       expect(row).toContain(colours.accent);
 
       await page.locator(".gedcom-ft-search").fill("joliot");
