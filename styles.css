@@ -866,7 +866,7 @@ button.gedcom-list-sort:hover {
 }
 
 body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible .gedcom-list-row.is-focused {
-  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
+  box-shadow: inset 0 0 0 2px var(--background-modifier-border-focus);
 }
 
 .gedcom-list-cell:nth-child(n + 2) {
