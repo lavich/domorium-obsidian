@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.15.0
+
+- **The record card.** A record now opens in a card in the right sidebar instead
+  of a page in the middle of the tab. The card follows the GEDCOM tab you are in
+  and shows a person, a family, a source or a media record. A person's card has
+  their portrait, facts, other names, relatives as a list, media, and then their
+  timeline, places and the sources they rest on, one under another; the
+  separate **Evidence** panel is gone, its content is the card's last section.
+  The card has **Back** and **Forward** over the records it has shown and
+  **Show in source**. The command **Show the record card** opens it, and on a
+  phone it opens in the right drawer.
+- **Selecting a record shows it in the card.** A click on a card in the graph, a
+  row in the timeline, a row in the index, a family node or a link inside the
+  card selects the record. In Source the card follows the record under the
+  cursor, without moving the cursor or taking focus from the editor. The
+  selection is saved with the workspace.
+- **The graph and the timeline are views of the file's tab.** A tab has three
+  modes, **Graph**, **Timeline** and **Source**, chosen with buttons in the
+  tab's header, with a command for each. They show what you have typed without
+  saving, and they no longer open in tabs of their own. **Open GEDCOM files as**
+  chooses the mode a file opens in; the default is Graph.
+- **Genealogy mode and the tree on a person's page are gone.** A tab or a setting
+  that was in Genealogy mode now opens as Graph. Saved tabs of the old timeline,
+  graph and Evidence views are closed once, when Obsidian starts.
+- **Find opens the view's own search.** In the graph and the timeline, **Find**
+  opens the floating search; **Replace** works in Source only.
+
 ## 1.14.1
 
 - **The timeline and the graph are calmer.** The captions under the timeline, its
