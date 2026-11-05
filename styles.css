@@ -1227,6 +1227,10 @@ button.gedcom-fg-whole {
   border-inline-end: 1px solid var(--background-modifier-border);
 }
 
+.gedcom-ft-axis-pad {
+  border-inline-end: 1px solid var(--background-modifier-border);
+}
+
 .gedcom-ft-axis-pad,
 .gedcom-ft-axis-band {
   box-sizing: border-box;
@@ -1394,6 +1398,17 @@ button.gedcom-ft-branch[aria-pressed="true"] {
 
 .gedcom-ft-axis {
   background: var(--background-secondary);
+}
+
+.gedcom-ft-tick {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.gedcom-ft-tick.is-minor {
+  opacity: 0.55;
 }
 
 .gedcom-ft-gridline {
