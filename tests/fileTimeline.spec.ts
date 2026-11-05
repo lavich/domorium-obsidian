@@ -50,7 +50,7 @@ test.describe("the timeline of a file", () => {
     const lines = await page.locator(".gedcom-ft-marriage").evaluateAll((nodes) =>
       nodes.map((node) => node.getBoundingClientRect()).map((box) => ({ x: box.x, height: box.height })),
     );
-    expect(lines.some((line) => Math.abs(line.x - at) < 2 && Math.abs(line.height - 34) < 2)).toBe(true);
+    expect(lines.some((line) => Math.abs(line.x - at) < 2 && Math.abs(line.height - 27) < 2)).toBe(true);
     const span = await page.locator('.gedcom-ft-span[data-p="@I2@"]').boundingBox();
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
   });
@@ -499,7 +499,7 @@ test.describe("the zoom buttons of the timeline", () => {
   });
 });
 
-for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 500 }]) {
+for (const viewport of [{ width: 1400, height: 380 }, { width: 390, height: 500 }]) {
   test.describe(`the scrollbars of the timeline at ${viewport.width} px`, () => {
     test.use({ viewport });
 
@@ -668,7 +668,7 @@ test.describe("the timeline of a file of 10 000 people", () => {
     const drawn = () => page.locator(".gedcom-ft-name").count();
     expect(await drawn()).toBeLessThan(300);
 
-    for (const top of [50_000, 150_000, 300_000]) {
+    for (const top of [50_000, 150_000, 250_000]) {
       await page.locator(".gedcom-ft-plot").evaluate((board, to) => {
         board.scrollTop = to;
       }, top);

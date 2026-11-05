@@ -14,7 +14,7 @@ import { FloatingSearch } from "./floatingSearch";
 import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { eventName, lifelineYears, personName, yearText } from "./labels";
 
-export const ROW = 34;
+export const ROW = 27;
 const AXIS = 26;
 const TICK_HEIGHT = { minor: 3, medium: 5, major: 7 } as const;
 const GLIDE_REACH = 1.5;
@@ -200,6 +200,7 @@ export class FileTimelineBoard {
     this.board.createDiv({ cls: "gedcom-ft-axis-pad" });
     this.axisClip = this.board.createDiv({ cls: "gedcom-ft-axis-band" }).createDiv({ cls: "gedcom-ft-axis-clip" });
     this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
+    this.names.setCssProps({ "--gedcom-ft-row": `${ROW}px` });
     this.plot = this.board.createDiv({ cls: "gedcom-ft-plot" });
     this.axis = svg(this.doc, "svg", "gedcom-ft-axis", { height: AXIS });
     this.chart = svg(this.doc, "svg", "gedcom-ft-chart");

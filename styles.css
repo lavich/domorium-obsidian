@@ -1454,7 +1454,7 @@ button.gedcom-fg-whole {
   align-items: center;
   gap: var(--size-2-3);
   box-sizing: border-box;
-  height: 34px;
+  height: var(--gedcom-ft-row);
   margin-inline: var(--size-2-2);
   padding: 0 var(--size-4-2);
   border-block: 1px solid transparent;
@@ -1580,7 +1580,12 @@ button.gedcom-ft-branch[aria-pressed="true"] {
   justify-content: center;
   gap: 0;
   padding-inline: var(--size-4-2);
-  line-height: 1.2;
+  font-size: var(--font-ui-smaller);
+  line-height: 1.1;
+}
+
+.is-phone .gedcom-ft-name-years {
+  font-size: var(--font-smallest);
 }
 
 .is-phone button.gedcom-ft-name-open {
