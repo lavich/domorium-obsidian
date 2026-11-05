@@ -13,7 +13,12 @@ Read them first; this skill only orders the work.
 Every edit, commit and push in this flow happens in an Orca worktree — the plan,
 the implementation, fixes after review. The main checkout stays on `main` and only
 pulls. A worktree is created with `--setup run`, which runs the repository's setup
-hook in Orca; where that installs nothing, `npm ci` before anything else.
+hook in Orca; where that installs nothing, `npm ci` before anything else. The
+install it leaves can be incomplete — a lint plugin missing a file, `npm run check`
+exiting 127 or Vitest reporting dozens of unhandled errors and fewer tests than
+`main` — so in a new worktree run `rm -rf node_modules && npm ci` before the first
+`npm run check`, and never push a branch before `npm run check` has exited 0:
+chain it with `&&`, not `;`.
 To continue a branch that already exists on the remote:
 `orca worktree create --name <name> --no-parent --setup run --base-branch origin/<branch> --json`,
 then push with `git push origin HEAD:<branch>` — Orca names the local branch
