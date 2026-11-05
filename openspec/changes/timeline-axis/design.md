@@ -73,3 +73,15 @@ None.
 ## Implementation
 
 What differs from the plan above, or was settled while building it.
+
+- **The divider is one border on the corner (mine).** Both header cells keep
+  `--background-secondary`; the bottom border was already there. Looked at in light
+  and dark at 1400 and 390 px: the line reads at both, and the ticks stay clear of
+  the labels and under the year cursor's flag.
+- **The ticks are three `path`s in a `g.gedcom-ft-ticks`, one `M x y v -h` per tick (mine).**
+  Drawn from `drawn.left` to `drawn.right`, clipped to the layout's decades.
+- **Cap (mine):** a kind is dropped when its span holds more than 1000 ticks
+  (`MAX_TICKS_PER_KIND`); short ticks are also dropped under 4.5 px per year.
+- **Tick heights (mine):** 3, 5 and 7 px from y = 25, since the band's last pixel is
+  its border.
+- **Not changed:** labels, gridlines, the gutters of the scrollbars.

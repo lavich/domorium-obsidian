@@ -1,6 +1,7 @@
 import type { Range } from "@domorium/language-service";
 
 import { t } from "../i18n";
+import { ticksBetween } from "./axisTicks";
 import { BranchScopeBar, readBranchScope, type BranchScope } from "./branchScope";
 import {
   least,
@@ -15,6 +16,7 @@ import { eventName, lifelineYears, personName, yearText } from "./labels";
 
 export const ROW = 34;
 const AXIS = 26;
+const TICK_HEIGHT = { minor: 3, medium: 5, major: 7 } as const;
 const GLIDE_REACH = 1.5;
 const PAD = 12;
 
@@ -272,6 +274,7 @@ export class FileTimelineBoard {
     this.drawSelectedBand(layout);
     this.lit = [];
     this.highlight(this.highlighted, true);
+    this.drawTicks(layout);
     this.drawCursor();
     if (focused?.xref) {
       this.byName
@@ -812,6 +815,26 @@ export class FileTimelineBoard {
         arrow(xref, child, layout.x(line.start));
       }
     }
+  }
+
+  private drawTicks(layout: Layout): void {
+    this.axis.querySelector(".gedcom-ft-ticks")?.remove();
+    const k = this.scope.zoom;
+    const yearAt = (at: number): number => layout.lo + (at - PAD) / k;
+    const ticks = ticksBetween(
+      Math.max(layout.lo, Math.floor(yearAt(this.drawn.left))),
+      Math.min(layout.hi, Math.ceil(yearAt(this.drawn.right))),
+      k,
+    );
+    const group = svg(this.doc, "g", "gedcom-ft-ticks");
+    for (const kind of ["minor", "medium", "major"] as const) {
+      if (ticks[kind].length === 0) {
+        continue;
+      }
+      const d = ticks[kind].map((year) => `M${layout.x(year)} ${AXIS - 1}v${-TICK_HEIGHT[kind]}`).join("");
+      group.append(svg(this.doc, "path", `gedcom-ft-tick is-${kind}`, { d }));
+    }
+    this.axis.prepend(group);
   }
 
   private drawCursor(): void {

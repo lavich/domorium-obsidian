@@ -327,6 +327,120 @@ test.describe("the glide of the timeline to a match", () => {
   });
 });
 
+const ticks = (page: Page, kind: string) =>
+  page.locator(`.gedcom-ft-axis .gedcom-ft-tick.is-${kind}`).evaluate((path) => (path.getAttribute("d") ?? "").split("M").length - 1);
+
+test.describe("the axis of years of the timeline", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 900 });
+  });
+
+  for (const dark of [false, true]) {
+    test(`is set apart from the corner and the rows by lines in the theme's border colour (${dark ? "dark" : "light"})`, async ({ page }) => {
+      await mountTimeline(page, { dark });
+
+      const lines = await page.evaluate(() => {
+        const style = (selector: string) => getComputedStyle(document.querySelector(selector) as Element);
+        const border = style(".gedcom-ft-names").borderInlineEndColor;
+        return {
+          border,
+          cornerEnd: style(".gedcom-ft-axis-pad").borderInlineEndWidth,
+          cornerEndColor: style(".gedcom-ft-axis-pad").borderInlineEndColor,
+          namesEnd: style(".gedcom-ft-names").borderInlineEndWidth,
+          bandEnd: style(".gedcom-ft-axis-band").borderInlineEndWidth,
+          plotEnd: style(".gedcom-ft-plot").borderInlineEndWidth,
+          cornerBottom: style(".gedcom-ft-axis-pad").borderBottomWidth,
+          bandBottom: style(".gedcom-ft-axis-band").borderBottomWidth,
+          bandBottomColor: style(".gedcom-ft-axis-band").borderBottomColor,
+          plotBottom: style(".gedcom-ft-plot").borderBottomWidth,
+          tick: style(".gedcom-ft-tick.is-major").stroke,
+          text: style(".gedcom-ft-names").color,
+        };
+      });
+      expect(lines.cornerEnd).toBe("1px");
+      expect(lines.cornerEnd).toBe(lines.namesEnd);
+      expect(lines.cornerEndColor).toBe(lines.border);
+      expect(lines.bandEnd).toBe("0px");
+      expect(lines.plotEnd).toBe("0px");
+      expect(lines.cornerBottom).toBe("1px");
+      expect(lines.bandBottom).toBe("1px");
+      expect(lines.bandBottomColor).toBe(lines.border);
+      expect(lines.plotBottom).toBe("0px");
+      expect(lines.tick).not.toBe(lines.border);
+      expect(lines.tick).not.toBe("none");
+    });
+  }
+
+  test("ticks every year, every five and every ten at the initial zoom, the long ones on the labelled years", async ({ page }) => {
+    await mountTimeline(page);
+
+    const span = await page.evaluate(() => {
+      const gridlines = [...document.querySelectorAll(".gedcom-ft-gridline")].map((line) => Number(line.getAttribute("x1")));
+      const major = (document.querySelector(".gedcom-ft-axis .gedcom-ft-tick.is-major")?.getAttribute("d") ?? "")
+        .split("M")
+        .slice(1)
+        .map((segment) => Number.parseFloat(segment));
+      return { gridlines, major };
+    });
+    expect(span.major).toEqual(span.gridlines);
+    const decades = span.major.length;
+    expect(decades).toBeGreaterThan(5);
+    expect(await ticks(page, "medium")).toBe(decades - 1);
+    expect(await ticks(page, "minor")).toBe((decades - 1) * 8);
+    await expect(page.locator(".gedcom-ft-axis .gedcom-ft-tick")).toHaveCount(3);
+
+    const reach = await page.evaluate(() => {
+      const base = document.querySelector(".gedcom-ft-axis")?.getBoundingClientRect().bottom ?? 0;
+      return [...document.querySelectorAll(".gedcom-ft-axis .gedcom-ft-tick")].map((tick) => base - tick.getBoundingClientRect().top);
+    });
+    expect(reach[0]).toBeLessThan(reach[1]);
+    expect(reach[1]).toBeLessThan(reach[2]);
+  });
+
+  test("leaves out the yearly ticks at the narrowest zoom and keeps the others", async ({ page }) => {
+    await mountTimeline(page);
+    for (let press = 0; press < 12; press += 1) {
+      await page.locator(".gedcom-ft-zoom-out").click();
+    }
+
+    await expect(page.locator(".gedcom-ft-axis .gedcom-ft-tick.is-minor")).toHaveCount(0);
+    expect(await ticks(page, "medium")).toBeGreaterThan(0);
+    expect(await ticks(page, "major")).toBeGreaterThan(0);
+  });
+
+  test("draws the year cursor's label over the ticks", async ({ page }) => {
+    await mountTimeline(page);
+    const chart = await page.locator(".gedcom-ft-chart").boundingBox();
+    await page.mouse.move((chart?.x ?? 0) + 400, (chart?.y ?? 0) + 60);
+
+    await expect(page.locator(".gedcom-ft-axis-cursor")).toBeVisible();
+    const order = await page.evaluate(() => {
+      const children = [...(document.querySelector(".gedcom-ft-axis")?.children ?? [])];
+      return {
+        ticks: children.findIndex((child) => child.classList.contains("gedcom-ft-ticks")),
+        cursor: children.findIndex((child) => child.classList.contains("gedcom-ft-axis-cursor")),
+      };
+    });
+    expect(order.ticks).toBe(0);
+    expect(order.cursor).toBeGreaterThan(order.ticks);
+  });
+
+  test("keeps the ticks under the window and the shapes that hold them few while scrolling far", async ({ page }) => {
+    await mountTimeline(page);
+    await page.locator(".gedcom-ft-zoom-in").click();
+    await page.locator(".gedcom-ft-zoom-in").click();
+    const before = await page.locator(".gedcom-ft-axis path").count();
+
+    for (const left of [0, 700, 100_000]) {
+      await page.locator(".gedcom-ft-plot").evaluate((plot, to) => {
+        plot.scrollLeft = to;
+      }, left);
+      await page.waitForFunction(() => document.querySelector(".gedcom-ft-axis-clip") !== null);
+      await expect(page.locator(".gedcom-ft-axis .gedcom-ft-tick")).toHaveCount(before);
+    }
+  });
+});
+
 test.describe("the zoom buttons of the timeline", () => {
   test("float in the corner of the board while the rows scroll, and widen and narrow the years", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 400 });
@@ -530,6 +644,7 @@ test.describe("the timeline of a file of 10 000 people", () => {
     await mountTimeline(page, { doc: generated(10_000), whole: true });
 
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
+    expect(await page.locator(".gedcom-ft-axis .gedcom-ft-tick").count()).toBeLessThanOrEqual(3);
     const drawn = () => page.locator(".gedcom-ft-name").count();
     expect(await drawn()).toBeLessThan(300);
 
