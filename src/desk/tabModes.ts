@@ -36,12 +36,12 @@ export interface OriginRules {
 
 export function originRules(origin: Origin, mobile: boolean): OriginRules {
   return {
-    cursorToRecord: origin === "index" || origin === "card" || origin === "link",
-    editorFocus: origin === "index" || origin === "link",
+    cursorToRecord: origin === "card" || origin === "link",
+    editorFocus: origin === "link",
     revealsView: origin !== "view" && origin !== "cursor",
     addsStep: origin === "cursor" ? "follow" : origin === "history" ? "none" : "visit",
     placesCard: origin !== "cursor",
-    opensDrawer: mobile && (origin === "index" || origin === "view"),
+    opensDrawer: mobile && origin === "view",
   };
 }
 
@@ -144,7 +144,7 @@ export class TabModes {
     return isViewMode(mode) ? (this.selected ?? undefined) : cursorRecord;
   }
 
-  /** The record the card shows and the Index marks. */
+  /** The record the card shows and the views mark. */
   shownRecord(): string | null {
     return this.interfaceOn ? this.selected : null;
   }

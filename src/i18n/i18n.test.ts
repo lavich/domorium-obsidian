@@ -116,6 +116,21 @@ describe("spelling a count", () => {
     expect(plural("status.problems", 21)).toBe("21 проблема");
   });
 
+  it("spells the count line of the list in both languages", () => {
+    expect([1, 2].map((count) => plural("list.count.people", count))).toEqual(["1 person", "2 people"]);
+    expect(plural("list.countOf.people", 17, { shown: 11 })).toBe("11 of 17 people");
+    expect(plural("list.countOf.sources", 1, { shown: 1 })).toBe("1 of 1 source");
+    setLanguage("ru");
+    expect([1, 2, 5, 21].map((count) => plural("list.count.people", count))).toEqual([
+      "1 человек",
+      "2 человека",
+      "5 человек",
+      "21 человек",
+    ]);
+    expect(plural("list.countOf.people", 17, { shown: 11 })).toBe("11 из 17 человек");
+    expect(plural("list.countOf.families", 21, { shown: 2 })).toBe("2 из 21 семьи");
+  });
+
   it("carries the other parameters through", () => {
     expect(
       plural("notice.references", 3),
@@ -124,6 +139,17 @@ describe("spelling a count", () => {
 });
 
 describe("the two sides of the catalogue", () => {
+  it("give every plural key of the list the forms its language needs", () => {
+    for (const key of Object.keys(en).filter((name) => name.startsWith("list.")) as MessageKey[]) {
+      const english = en[key];
+      if (typeof english === "string") {
+        continue;
+      }
+      expect(Object.keys(english).sort(), key).toEqual(["one", "other"]);
+      expect(Object.keys(ru[key] as object).sort(), key).toEqual(["few", "many", "one", "other"]);
+    }
+  });
+
   it("name the same placeholders for every key", () => {
     for (const key of Object.keys(en) as MessageKey[]) {
       expect(placeholdersOf(ru[key]), key).toEqual(placeholdersOf(en[key]));

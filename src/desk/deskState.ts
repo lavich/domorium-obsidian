@@ -8,22 +8,29 @@ import { BRANCH_STEPS, initialFocus } from "./fileTimeline";
 import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
 import { familyFactByKey } from "./familyPage";
+import { readListState, type ListState } from "./listRows";
 import { factByKey, type FactKey } from "./personPage";
 
 export type { DeskMode };
 
 export type PageKind = "person" | "family" | "source" | "media";
 
-export type ViewKind = "graph" | "timeline";
+export type ViewKind = "graph" | "timeline" | "list";
 
 export interface DeskState {
   mode?: DeskMode;
   selected?: string;
   graph?: GraphState;
   timeline?: TimelineState;
+  list?: ListState;
 }
 
-export const RETIRED_VIEW_TYPES = ["domorium-file-timeline", "domorium-file-graph", "domorium-evidence"] as const;
+export const RETIRED_VIEW_TYPES = [
+  "domorium-file-timeline",
+  "domorium-file-graph",
+  "domorium-evidence",
+  "domorium-index",
+] as const;
 
 const isObject = (value: unknown): boolean => typeof value === "object" && value !== null;
 
@@ -31,13 +38,14 @@ export function readDeskState(state: unknown): DeskState {
   if (typeof state !== "object" || state === null) {
     return {};
   }
-  const { mode, selected, graph, timeline } = state as Record<string, unknown>;
+  const { mode, selected, graph, timeline, list } = state as Record<string, unknown>;
   const read = readDeskMode(mode);
   return {
     ...(read === undefined ? {} : { mode: read }),
     ...(typeof selected === "string" && selected ? { selected } : {}),
     ...(isObject(graph) ? { graph: readGraphState(graph) } : {}),
     ...(isObject(timeline) ? { timeline: readTimelineState(timeline) } : {}),
+    ...(isObject(list) ? { list: readListState(list) } : {}),
   };
 }
 
@@ -74,15 +82,7 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   return index.media(xref) ? "media" : null;
 }
 
-export type Origin = "view" | "index" | "card" | "link" | "history" | "cursor";
-
-export interface IndexTarget {
-  selectRecord(xref: string, origin: Origin): boolean;
-}
-
-export function openFromIndex(tab: IndexTarget, xref: string): void {
-  tab.selectRecord(xref, "index");
-}
+export type Origin = "view" | "card" | "link" | "history" | "cursor";
 
 export interface ModeButton {
   mode: DeskMode;
@@ -94,6 +94,7 @@ export interface ModeButton {
 const MODE_LOOKS: Record<DeskMode, { title: MessageKey; icon: string }> = {
   graph: { title: "mode.graph", icon: FILE_GRAPH_ICON },
   timeline: { title: "mode.timeline", icon: FILE_TIMELINE_ICON },
+  list: { title: "mode.list", icon: "list" },
   source: { title: "mode.source", icon: "code" },
 };
 
@@ -103,12 +104,15 @@ export function modeButtons(current: DeskMode): ModeButton[] {
   return DESK_MODES.map((mode) => ({ mode, ...MODE_LOOKS[mode], active: mode === current }));
 }
 
+/** Obsidian puts each header action to the left of those already there, so adding them in the reverse order reads them in the order of the modes. */
+export const actionOrder = (modes: readonly DeskMode[]): DeskMode[] => [...modes].reverse();
+
 /** From Source to the mode before it, Graph where this session has none; from anywhere else to Source. */
 export function toggleTarget(current: DeskMode, last: DeskMode | undefined): DeskMode {
   return current === "source" ? (last ?? "graph") : "source";
 }
 
-export const isViewMode = (mode: DeskMode): mode is ViewKind => mode === "graph" || mode === "timeline";
+export const isViewMode = (mode: DeskMode): mode is ViewKind => mode !== "source";
 
 export function openingMemory(
   kind: "graph",
@@ -123,7 +127,7 @@ export function openingMemory(
   around: string | undefined,
 ): TimelineState;
 export function openingMemory(
-  kind: ViewKind,
+  kind: "graph" | "timeline",
   saved: GraphState | TimelineState | undefined,
   index: GenealogyIndex,
   around: string | undefined,

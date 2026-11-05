@@ -131,7 +131,7 @@ describe("GEDCOM settings", () => {
     expect(settingDefinitions()).toEqual([
       {
         name: "Genealogy interface (beta)",
-        desc: "Still in beta: it may change and have rough edges. Show the Domorium index, the record card, the timeline and the graph of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
+        desc: "Still in beta: it may change and have rough edges. Show the record card and the graph, the timeline and the list of the file, with the ribbon icon and their commands. While this is off, GEDCOM files open in the source editor.",
         control: {
           type: "toggle",
           key: "genealogyInterface",
@@ -139,8 +139,8 @@ describe("GEDCOM settings", () => {
         },
       },
       {
-        name: "Open the side panels when selecting",
-        desc: "Selecting a record in a graph, a timeline or the index shows the Domorium index on the left and the record card on the right, opening a collapsed sidebar without moving the focus. Applies when the genealogy interface is on; on a phone only the right drawer opens.",
+        name: "Open the record card when selecting",
+        desc: "Selecting a record in a graph, a timeline or a list shows the record card on the right, opening a collapsed sidebar without moving the focus. Applies when the genealogy interface is on; on a phone the right drawer opens as before.",
         control: {
           type: "toggle",
           key: "openPanelsOnSelect",
@@ -193,7 +193,7 @@ describe("GEDCOM settings", () => {
     setLanguage("ru");
     const [, panels, second] = settingDefinitions();
 
-    expect(panels?.name).toBe("Открывать боковые панели при выборе");
+    expect(panels?.name).toBe("Открывать карточку записи при выборе");
     expect(second?.name).toBe("Диагностика");
     expect(second?.desc).toMatch(/GEDCOM/);
     expect(recordPreviewOptions().off).toBe("Никогда");

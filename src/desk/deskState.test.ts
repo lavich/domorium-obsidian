@@ -1,5 +1,5 @@
 import { GedcomLanguageService } from "@domorium/language-service";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { generated } from "../../tests/generated";
 import { buildIndex } from "../genealogy";
@@ -7,12 +7,12 @@ import { DESK_MODES } from "../settingsData";
 import { curieIndex, indexOf } from "../testing/curie";
 import { ZOOM } from "./fileTimelineView";
 import {
+  actionOrder,
   cursorInside,
   effectiveMode,
   initialMode,
   rememberedMode,
   modeButtons,
-  openFromIndex,
   openingMemory,
   pageKind,
   readDeskState,
@@ -54,8 +54,8 @@ describe("what a tab keeps of the desk", () => {
     expect(readDeskState({ selected: 7 })).toEqual({});
   });
 
-  it("reads each of the three modes", () => {
-    expect(DESK_MODES).toEqual(["graph", "timeline", "source"]);
+  it("reads each of the four modes", () => {
+    expect(DESK_MODES).toEqual(["graph", "timeline", "list", "source"]);
     for (const mode of DESK_MODES) {
       expect(readDeskState({ mode })).toEqual({ mode });
     }
@@ -86,6 +86,13 @@ describe("what a tab keeps of the desk", () => {
       graph: { up: 2, down: 2 },
       timeline: { up: 2, down: 2, zoom: ZOOM.initial },
     });
+  });
+
+  it("keeps a valid list state and drops a bad one", () => {
+    expect(readDeskState({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } }))
+      .toEqual({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } });
+    expect(readDeskState({ list: "wide" })).toEqual({});
+    expect(readDeskState({ list: { kind: "everyone" } })).toEqual({ list: {} });
   });
 
   it("ignores what it does not recognise, so the setting decides", () => {
@@ -127,15 +134,6 @@ describe("where a link into a record lands", () => {
   });
 });
 
-describe("a row of the index, activated", () => {
-  it.each(["graph", "timeline", "source"] as const)("selects the record with the index as its origin in %s", () => {
-    const tab = { selectRecord: vi.fn(() => true) };
-    openFromIndex(tab, "@I2@");
-
-    expect(tab.selectRecord).toHaveBeenCalledWith("@I2@", "index");
-  });
-});
-
 describe("where the source opens when the tab switches to it", () => {
   const curie = curieIndex();
   const marie = curie.person("@I1@");
@@ -173,12 +171,15 @@ describe("the mode a tab shows while the genealogy interface is off", () => {
     expect(effectiveMode("source", true)).toBe("source");
     expect(effectiveMode("graph", true)).toBe("graph");
     expect(effectiveMode("timeline", true)).toBe("timeline");
+    expect(effectiveMode("list", true)).toBe("list");
+    expect(effectiveMode("list", false)).toBe("source");
   });
 
   it("starts a new tab in the mode the reader last chose while the interface is on", () => {
     expect(initialMode(undefined, "source", true)).toBe("source");
     expect(initialMode(undefined, "graph", true)).toBe("graph");
     expect(initialMode(undefined, "timeline", true)).toBe("timeline");
+    expect(initialMode(undefined, "list", true)).toBe("list");
   });
 
   it("stores source for a tab opened while the interface is off, so turning it on leaves the tab alone", () => {
@@ -207,11 +208,11 @@ describe("the mode the next file opens in", () => {
 });
 
 describe("the modes a tab offers", () => {
-  it("lists Graph, Timeline and Source in that order, with the current one active", () => {
+  it("lists Graph, Timeline, List and Source in that order, with the current one active", () => {
     for (const current of DESK_MODES) {
       const choices = modeButtons(current);
 
-      expect(choices.map((choice) => choice.mode)).toEqual(["graph", "timeline", "source"]);
+      expect(choices.map((choice) => choice.mode)).toEqual(["graph", "timeline", "list", "source"]);
       expect(choices.filter((choice) => choice.active).map((choice) => choice.mode)).toEqual([current]);
     }
   });
@@ -219,23 +220,41 @@ describe("the modes a tab offers", () => {
   it("gives each mode an icon and a title of its own", () => {
     const choices = modeButtons("graph");
 
-    expect(choices.map((choice) => choice.icon)).toEqual(["network", "calendar-range", "code"]);
-    expect(new Set(choices.map((choice) => choice.title)).size).toBe(3);
+    expect(choices.map((choice) => choice.icon)).toEqual(["network", "calendar-range", "list", "code"]);
+    expect(new Set(choices.map((choice) => choice.title)).size).toBe(4);
   });
 
   it("toggles Source to the last other mode, Graph where there is none, and any other mode to Source", () => {
     expect(toggleTarget("source", "timeline")).toBe("timeline");
     expect(toggleTarget("source", "graph")).toBe("graph");
     expect(toggleTarget("source", undefined)).toBe("graph");
-    for (const current of ["graph", "timeline"] as const) {
+    expect(toggleTarget("source", "list")).toBe("list");
+    for (const current of ["graph", "timeline", "list"] as const) {
       expect(toggleTarget(current, "graph")).toBe("source");
       expect(toggleTarget(current, undefined)).toBe("source");
     }
   });
 
-  it("names the tabs and the panel of earlier versions, which no view is registered under", () => {
-    expect(RETIRED_VIEW_TYPES).toEqual(["domorium-file-timeline", "domorium-file-graph", "domorium-evidence"]);
-    for (const registered of ["domorium-gedcom", "domorium-index", "domorium-record"]) {
+  it("adds the header buttons in the reverse of the modes, so that Obsidian, which puts each to the left of the last, shows them in the order of the modes", () => {
+    expect(actionOrder(DESK_MODES)).toEqual(["source", "list", "timeline", "graph"]);
+
+    const shown: string[] = [];
+    const addAction = (mode: string): void => {
+      shown.unshift(mode);
+    };
+    actionOrder(DESK_MODES).forEach(addAction);
+
+    expect(shown).toEqual(["graph", "timeline", "list", "source"]);
+  });
+
+  it("names the tabs and the panels of earlier versions, which no view is registered under", () => {
+    expect(RETIRED_VIEW_TYPES).toEqual([
+      "domorium-file-timeline",
+      "domorium-file-graph",
+      "domorium-evidence",
+      "domorium-index",
+    ]);
+    for (const registered of ["domorium-gedcom", "domorium-record"]) {
       expect(RETIRED_VIEW_TYPES).not.toContain(registered);
     }
   });
