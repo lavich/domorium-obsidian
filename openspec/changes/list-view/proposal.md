@@ -25,8 +25,7 @@ centre is where the width is.
   retired views before it were.
 - **A fourth mode, List.** A GEDCOM tab is in Graph, Timeline, **List** or Source mode.
   List shows the people, families or sources of the file as a table in the tab: columns,
-  sortable by a click on a header, a filter field that narrows the rows, the *No sources*
-  filter for people, a count, and the same virtualised rows at twenty thousand. It is
+  sortable by a click on a header, a filter field that narrows the rows, a count, and the same virtualised rows at twenty thousand. It is
   drawn from the tab's own reading of the file like Graph and Timeline, and kept (kind,
   sort, filter) across switching modes and restarting.
 - **A row selects.** Activating a row — click, tap, Enter, Space — selects that record

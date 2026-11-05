@@ -19,7 +19,7 @@ selection puts the cursor, on switching to Source mode, is said by the requireme
 on Source mode and the selection.
 
 Each tab SHALL remember its own mode, its selected record, the scope, position
-and zoom of its Graph and its Timeline, and the kind, sort and *No sources* filter of its
+and zoom of its Graph and its Timeline, and the kind and sort of its
 List, across closing and reopening the workspace.
 A tab with no mode of its own — a file opened in a new tab, or a tab navigated to
 another file — while the interface is on SHALL open in the mode the reader last
@@ -124,7 +124,7 @@ tab whose file changes while it is behind another, or while it is in another mod
 SHALL draw it when it is next in view. Switching between modes SHALL NOT lay the
 graph or the timeline out again where the text and the scope are the same, and
 SHALL leave each at the scope, position, zoom and scroll position it was left at,
-and the list at its kind, sort, filters and scroll position. Graph and
+and the list at its kind, sort, filter and scroll position. Graph and
 Timeline SHALL each keep a scope of their own: choosing a branch in one SHALL NOT
 change the other. A tab SHALL NOT draw any of them before it has read its file. A change of the
 tab's size SHALL NOT disturb any of them: a tab that is not displayed, or whose
@@ -338,7 +338,7 @@ that show a mode or open a panel; every GEDCOM tab SHALL show the source.
 
 Turning the setting on or off SHALL take effect in every open tab and sidebar
 without restarting Obsidian. A mode a tab was last in, the scope and zoom of its
-Graph and Timeline, the kind, sort and *No sources* filter of its List, and the last
+Graph and Timeline, the kind and sort of its List, and the last
 mode the reader chose, SHALL be kept while the
 setting is off and honoured again when it is turned on. A mode chosen on purpose
 SHALL be remembered only while the interface is on.
@@ -514,7 +514,7 @@ record.
 
 When a tab that was showing one GEDCOM file is navigated to another, the Graph,
 Timeline and List of the first — the scope, position, zoom and scroll position, the
-kind, sort, filters and scroll position, the drawn boards and the selection — SHALL NOT be shown for
+kind, sort, filter and scroll position, the drawn boards and the selection — SHALL NOT be shown for
 the second. The second file's
 views SHALL be opened as for a view never shown, or from the state saved for the
 second file where the navigation brings it.

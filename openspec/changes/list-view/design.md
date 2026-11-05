@@ -9,7 +9,7 @@ Today (1.15.0 plus `auto-open-panels`):
   `handSelectionOver` drive them from the tab's own reading of the file (`genealogy()`).
 - The record card is `RecordCardView` in the right sidebar; the Index is `IndexView` in the
   left one (`src/desk/DeskViews.ts`), a widget `IndexList` (`src/desk/indexList.ts`) with a
-  kind switch, a search field, two chips and 44 px two-line rows in a window of a
+  kind switch, a search field, two chips (since dropped) and 44 px two-line rows in a window of a
   virtualised list. Both follow `main.followed()`, the most recently active GEDCOM tab, and
   are redrawn by `redrawDesk`.
 - A row calls `openFromIndex(view, xref)`, which is `selectRecord(xref, "index")`. The
@@ -104,17 +104,17 @@ type SortKey = "name" | "years" | "place" | "sources"        // people
              | "spouses" | "marriage" | "place" | "children" // families
              | "title" | "author" | "repository" | "citedBy"; // sources
 interface ListSort { by: SortKey; dir: "asc" | "desc" }
-interface ListState { kind?: ListKind; noSources?: boolean; sort?: Partial<Record<ListKind, ListSort>> }
+interface ListState { kind?: ListKind; sort?: Partial<Record<ListKind, ListSort>> }
 
 columnsOf(kind): Column[]                    // key, label, numeric
 sourcesCited(index, xref): number            // distinct sources, inline ones one each
 citingRecords(index, xref): number           // distinct records that cite a source
-listRows(index, { kind, query, noSources, sort }, collator): Row[]
+listRows(index, { kind, query, sort }, collator): Row[]
 nextSort(current: ListSort | undefined, by: SortKey): ListSort | undefined  // asc, desc, none
 readListState(value: unknown): ListState
 ```
 
-`peopleShown`, `familiesShown`, `sourcesShown` and `restsOnNothing` move over unchanged: the
+`peopleShown` (without the chip's filter), `familiesShown` and `sourcesShown` move over: the
 same matching, which is why the filter scenarios are the Index's. The row types are the
 plugin's own `PersonRow`, `FamilyRow`, `SourceRow` from `src/genealogy` (`childCount` and
 `repository` are already there), so nothing is asked of upstream. The two counts are
@@ -169,7 +169,7 @@ has no row; the list is left as it is.
 4. A selection that differs from `marked` (from outside, made while the list was away, or
    met on the first draw, which includes a restore) is brought into view fully: switch to
    the record's kind where the list shows another (this clears the typed filter, as
-   switching does); clear the filter and *No sources* where they hide the row; then, if the
+   switching does); clear the filter where it hides the row; then, if the
    row is not wholly within the visible rows, set `scrollTop` so the row is in the middle of
    the height. The scroll is a direct assignment, not a smooth scroll: a virtualised list
    that animates across ten thousand rows streaks, and reduced motion is honoured
@@ -219,8 +219,7 @@ Escape clears; with an empty field it returns the focus to the rows.
 ### Columns, headers, kinds
 
 The toolbar is, left to right: the three kind buttons (the segmented control the Index
-had, re-homed under `gedcom-list-seg*`), the filter field, and for people the chips
-*All N* and *No sources N*; beneath it the count line (an `aria-live="polite"` text) and,
+had, re-homed under `gedcom-list-seg*`), the filter field; beneath it the count line (an `aria-live="polite"` text) and,
 on a wide tab, the header row. Columns are fixed per kind (`columnsOf`) and laid out with
 `grid-template-columns: minmax(0, …fr) …` so that a long value is cut with an ellipsis and
 the row can never be wider than the list.
@@ -228,8 +227,7 @@ the row can never be wider than the list.
 People show Name, Years, Place, Sources; the Sources cell is the count of distinct sources
 (`sourcesCited`) or, at zero, the `gedcom-list-gap` mark with the label «No sources at all».
 Families show Spouses, Marriage, Place, Children. Sources show Title, Author, Repository,
-Cited by (`citingRecords`). The kind is kept in `ListState.kind`, the chip in
-`noSources`, each kind's sort in `sort[kind]`.
+Cited by (`citingRecords`). The kind is kept in `ListState.kind`, each kind's sort in `sort[kind]`.
 
 ### Narrow tabs, phones and touch
 
@@ -290,7 +288,7 @@ language (`numeric: true`, `sensitivity: "base"`), created on first use; `ListBo
 
 A tab's state gains `list?: ListState` beside `graph` and `timeline`; `mode` may be
 `"list"`. `readDeskState` reads it tolerantly (an unknown kind, a sort whose column
-belongs to another kind, a non-boolean chip are dropped, the rest kept), and
+belongs to another kind are dropped, and an old `noSources` key is ignored, the rest kept), and
 `getState`/`setState` carry it through `ViewMemory` as the other two do. The typed filter
 and the scroll are kept in memory while the tab is open (the board is kept, and the scroll
 is recorded when the root is parked, as the timeline's is, because a webview may reset the
@@ -366,7 +364,7 @@ implementation commit. What a delta would have said:
 | --- | --- | --- |
 | The index lives in the left sidebar and follows the GEDCOM tab | The left sidebar duplicated the file's list; the list is a mode of the tab | `genealogy-list`: A GEDCOM tab can show its file as a list; The ribbon icon and a command show the file's list; `genealogy-view`: A workspace saved with the Index in the left sidebar opens without it, and the renamed setting |
 | People, families and sources | Laid out as a table for the centre | `genealogy-list`: People, families and sources |
-| Who rests on no source | Unchanged | `genealogy-list`: Who rests on no source |
+| Who rests on no source | The *All / No sources* filter was dropped on purpose, at the user's request (2026-11-05); the mark stays and sorting by Sources lists those people first | `genealogy-list`: People who cite no source |
 | Search | Unchanged matching, plus the repository | `genealogy-list`: The filter field |
 | The index follows the file and holds up at size | Every mode follows the file | `genealogy-list`: A GEDCOM tab can show its file as a list; The list holds up at size |
 | Selecting a record from the index | A row selects in the tab it is drawn in | `genealogy-list`: A row selects…; The selected row is brought into view |
@@ -536,3 +534,7 @@ Two reviews of the implementation; what was changed, each decision (mine):
 ### The toolbar's one height
 
 The user found the kind buttons and the filter field of different heights. All of the toolbar's controls now take one height from `--gedcom-list-control`, which is Obsidian's `--input-height` (30 px where it is missing) and 44 px on a touch device, set on the root with `is-touch`, so the lift applies to every one of them together. The segmented bar, the filter field and the chips are that height with the same radius (`--input-radius`) and the same font size, centred in the row; the buttons inside the bar are the bar's height less its inset. In a compact list the sort select and the direction button are the larger of that height and 44 px, which the spec asks of them. The browser spec compares the heights of the bar, the filter and the chips, and of the buttons among themselves, on a desktop and with touch. (mine)
+
+### The No sources switch is gone
+
+The user (2026-11-05) does not want the *All / No sources* switch. The two chips, their counts, the `noSources` key of the saved list state (an old saved key is read and ignored; the kind and the sorts are kept), the filter by "cites no source" in `listRows.ts`, `restsOnNothing`, the strings `list.all` and `list.noSources` and the CSS are removed, with their tests and the README sentence. Kept: the mark of a person who cites no source (the ring with its title, and "0 sources" on a compact row) and the sortable Sources column, whose ascending order lists those people first (checked on `curie.ged`: the 11 people, I5 to I17 in the file's order, then Pierre and Marie). That sort replaces the filter. The toolbar is now the kind bar, the filter field and, in a compact list, the sort select, which share one height. On touch the kind bar has no inset, so its buttons are 44 px as well. (mine)

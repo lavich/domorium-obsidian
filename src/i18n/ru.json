@@ -320,18 +320,6 @@
   "list.column.author": "Автор",
   "list.column.repository": "Хранилище",
   "list.column.citedBy": "Цитируют",
-  "list.all": {
-    "one": "Все {count}",
-    "few": "Все {count}",
-    "many": "Все {count}",
-    "other": "Все {count}"
-  },
-  "list.noSources": {
-    "one": "Без источников {count}",
-    "few": "Без источников {count}",
-    "many": "Без источников {count}",
-    "other": "Без источников {count}"
-  },
   "list.count.people": {
     "one": "{count} человек",
     "few": "{count} человека",

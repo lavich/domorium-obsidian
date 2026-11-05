@@ -8,7 +8,6 @@ import {
   listRows,
   nextSort,
   recordKind,
-  restsOnNothing,
   type ListKind,
   type ListRow,
   type ListSort,
@@ -64,14 +63,13 @@ const COUNT_OF: Record<ListKind, MessageKey> = {
 let boards = 0;
 
 const canonical = (state: ListState): string =>
-  JSON.stringify([state.kind ?? "people", state.noSources === true, LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
+  JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
 
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
   private readonly segEl: HTMLElement;
   private readonly filterEl: HTMLInputElement;
-  private readonly chipsEl: HTMLElement;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
   private readonly sortSelect: HTMLSelectElement;
@@ -82,18 +80,16 @@ export class ListBoard {
   private readonly noneEl: HTMLElement;
   private readonly probeEl: HTMLElement;
   private readonly headCells: { cell: HTMLElement; label: HTMLElement; mark: HTMLElement }[] = [];
-  private readonly chips: { el: HTMLElement; noSources: boolean }[] = [];
   private builtKind: ListKind | null = null;
   private readonly observer: ResizeObserver | null = null;
 
   private index: GenealogyIndex | null = null;
   private kind: ListKind = "people";
-  private noSources = false;
   private sorts: Partial<Record<ListKind, ListSort>> = {};
   private query = "";
   private rows: ListRow[] = [];
   private positions = new Map<string, number>();
-  private totals = { people: 0, gaps: 0 };
+  private totals = { people: 0 };
   private marked: string | null = null;
   private active = -1;
   private rowHeight = 0;
@@ -120,17 +116,6 @@ export class ListBoard {
     this.filterEl.setAttribute("type", "text");
     this.filterEl.addEventListener("input", () => this.setQuery(this.filterEl.value));
     this.filterEl.addEventListener("keydown", (event) => this.filterKey(event));
-    this.chipsEl = bar.createDiv({ cls: "gedcom-list-chips" });
-    for (const noSources of [false, true]) {
-      const el = this.chipsEl.createEl("button", { cls: "gedcom-list-chip" });
-      el.setAttribute("type", "button");
-      el.addEventListener("click", () => {
-        this.noSources = noSources;
-        this.refresh(false);
-        this.host.changed(this.state());
-      });
-      this.chips.push({ el, noSources });
-    }
     this.countEl = this.root.createDiv({ cls: "gedcom-list-count" });
     this.countEl.setAttribute("aria-live", "polite");
 
@@ -189,7 +174,6 @@ export class ListBoard {
     const sort = Object.fromEntries(LIST_KINDS.flatMap((kind) => (this.sorts[kind] ? [[kind, this.sorts[kind]]] : [])));
     return {
       ...(this.kind === "people" ? {} : { kind: this.kind }),
-      ...(this.noSources ? { noSources: true } : {}),
       ...(Object.keys(sort).length > 0 ? { sort } : {}),
     };
   }
@@ -200,8 +184,7 @@ export class ListBoard {
     }
     if (index !== this.index) {
       this.index = index;
-      const people = index.people.filter((row) => row.xref !== undefined);
-      this.totals = { people: people.length, gaps: people.filter((row) => restsOnNothing(index, row)).length };
+      this.totals = { people: index.people.filter((row) => row.xref !== undefined).length };
     }
     const kind = state.kind ?? "people";
     if (kind !== this.kind) {
@@ -209,7 +192,6 @@ export class ListBoard {
       this.filterEl.value = "";
     }
     this.kind = kind;
-    this.noSources = state.noSources === true;
     this.sorts = { ...state.sort };
     this.refresh(true);
   }
@@ -243,7 +225,6 @@ export class ListBoard {
       if (!this.positions.has(xref)) {
         this.query = "";
         this.filterEl.value = "";
-        this.noSources = false;
         this.refresh(true);
       }
     }
@@ -401,7 +382,7 @@ export class ListBoard {
     const focused = this.active >= 0 ? this.rows[this.active]?.xref : undefined;
     this.rows = listRows(
       index,
-      { kind: this.kind, query: this.query, noSources: this.kind === "people" && this.noSources, sort: this.sorts[this.kind] },
+      { kind: this.kind, query: this.query, sort: this.sorts[this.kind] },
       collatorFor(currentLanguage()),
     );
     this.positions = new Map(this.rows.map((row, at) => [row.xref ?? "", at]));
@@ -424,13 +405,6 @@ export class ListBoard {
     }
     this.filterEl.placeholder = t(SEARCH_HINT[this.kind]);
     this.filterEl.setAttribute("aria-label", t(SEARCH_HINT[this.kind]));
-    this.chipsEl.toggle(this.kind === "people");
-    for (const { el, noSources } of this.chips) {
-      const on = this.noSources === noSources;
-      el.setText(noSources ? plural("list.noSources", this.totals.gaps) : plural("list.all", this.totals.people));
-      el.setAttribute("aria-pressed", String(on));
-      el.toggleClass("is-active", on);
-    }
     const total = this.totalOfKind();
     this.countEl.setText(
       this.rows.length === total

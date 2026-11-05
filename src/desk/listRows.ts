@@ -27,7 +27,6 @@ export interface ListSort {
 
 export interface ListState {
   kind?: ListKind;
-  noSources?: boolean;
   sort?: Partial<Record<ListKind, ListSort>>;
 }
 
@@ -62,19 +61,15 @@ const COLUMNS: Record<ListKind, Column[]> = {
 
 export const columnsOf = (kind: ListKind): Column[] => COLUMNS[kind];
 
-export const restsOnNothing = (index: GenealogyIndex, row: PersonRow): boolean =>
-  row.xref !== undefined && index.citesBy(row.xref).length === 0;
-
 function personSearch(row: PersonRow): string {
   return [row.search, yearsOf(row).toLowerCase()].join(" ");
 }
 
-export function peopleShown(index: GenealogyIndex, query: string, gapsOnly: boolean): PersonRow[] {
+export function peopleShown(index: GenealogyIndex, query: string): PersonRow[] {
   const wanted = query.trim().toLowerCase();
   return index.people.filter(
     (row) =>
       row.xref !== undefined &&
-      (!gapsOnly || restsOnNothing(index, row)) &&
       (!wanted || personSearch(row).includes(wanted)),
   );
 }
@@ -266,13 +261,12 @@ function sorted(kind: ListKind, rows: ListRow[], sort: ListSort, index: Genealog
 export interface ListQuery {
   kind: ListKind;
   query: string;
-  noSources: boolean;
   sort: ListSort | undefined;
 }
 
-export function listRows(index: GenealogyIndex, { kind, query, noSources, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
+export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
   const rows: ListRow[] =
-    kind === "people" ? peopleShown(index, query, noSources) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);
+    kind === "people" ? peopleShown(index, query) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);
   return sort ? sorted(kind, rows, sort, index, collator) : rows;
 }
 
@@ -289,7 +283,7 @@ export function readListState(value: unknown): ListState {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return {};
   }
-  const { kind, noSources, sort } = value as Record<string, unknown>;
+  const { kind, sort } = value as Record<string, unknown>;
   const sorts: Partial<Record<ListKind, ListSort>> = {};
   if (typeof sort === "object" && sort !== null) {
     for (const each of LIST_KINDS) {
@@ -305,7 +299,6 @@ export function readListState(value: unknown): ListState {
   }
   return {
     ...(isKind(kind) ? { kind } : {}),
-    ...(typeof noSources === "boolean" ? { noSources } : {}),
     ...(Object.keys(sorts).length > 0 ? { sort: sorts } : {}),
   };
 }

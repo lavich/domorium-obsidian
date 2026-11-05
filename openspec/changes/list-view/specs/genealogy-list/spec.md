@@ -64,7 +64,7 @@ show them as the card shows the same facts:
 - people: **Name**, as the person card names them; **Years**, as the person card shows
   them; **Place**, the place of birth, or of death where no birth place is stated; and
   **Sources**, how many distinct sources the record cites, on itself or beneath any of its
-  events, or the mark of Who rests on no source where it cites none;
+  events, or the mark of People who cite no source where it cites none;
 - families: **Spouses**, as the family card names them; **Marriage**, the year of the
   marriage where the record states it; **Place**, the place of the marriage; and
   **Children**, how many children the family has;
@@ -114,28 +114,29 @@ since it cannot be selected. A kind with no record SHALL say that the file holds
 - **WHEN** a person record is declared as `0 INDI` with no identifier
 - **THEN** it is not listed
 
-### Requirement: Who rests on no source
+### Requirement: People who cite no source
 
 A person whose record cites no source, neither on the record nor beneath any of its
-events, SHALL be marked in the **Sources** column of the list. While People are shown, a
-filter **No sources** SHALL list only such people, beside a filter **All**, and each
-filter SHALL say how many people it lists. The filter chosen SHALL be kept with the kind.
+events, SHALL be marked in the **Sources** column of the list by a mark that is a shape
+with a text alternative, not a colour alone. There SHALL be no switch that narrows the
+people to them; sorting by **Sources**, as the requirement on sorting says, lists them
+first.
 
-#### Scenario: The demo vault
-- **WHEN** the list shows the people of `curie.ged` and the reader chooses *No sources*
-- **THEN** it lists the 11 people whose records cite nothing, Zofia Skłodowska and
-  Sophie-Claire Depouilly among them, and Marie, whose record cites two sources, and
-  Pierre Curie, whose record cites one, are not among them; the count reads
-  `11 of 17 people`
-
-#### Scenario: The marks without the filter
+#### Scenario: The marks
 - **WHEN** the list shows the people of `curie.ged`
 - **THEN** the rows of Zofia Skłodowska and of Sophie-Claire Depouilly carry the mark in
   the Sources column and Marie's row shows `2`
 
-#### Scenario: Only for people
-- **WHEN** the reader chooses Families
-- **THEN** neither filter is offered
+#### Scenario: No switch for them
+- **WHEN** the list shows the people of `curie.ged`
+- **THEN** no control narrows the people to those who cite no source, and the count
+  reads `17 people`
+
+#### Scenario: Sorted to the top
+- **WHEN** the reader presses Sources among the people of `curie.ged`
+- **THEN** the 11 people whose records cite nothing, Zofia Skłodowska and
+  Sophie-Claire Depouilly among them, come first, each with the mark, and Marie, whose
+  record cites two sources, comes last
 
 ### Requirement: The filter field
 
@@ -172,11 +173,6 @@ shown whatever the width of the tab.
 - **WHEN** the reader types `archive` among the sources
 - **THEN** `Parish registers of Warsaw` is listed
 
-#### Scenario: The filter and the No sources filter together
-- **WHEN** the reader chooses *No sources* and types `joliot`
-- **THEN** Hélène Langevin-Joliot and Pierre Joliot are listed, and the count reads
-  `2 of 17 people`
-
 #### Scenario: Filtering by a year before the common era
 - **WHEN** a person's birth and a family's marriage are dated `1401 BCE` in a 7.0
   document, and the reader types `1401` in the people and in the families
@@ -210,7 +206,7 @@ so that a letter with a mark sorts with its base letter. Years SHALL be compared
 year of birth, Marriage by the year of the marriage, and Sources, Children and Cited by
 as numbers. A row whose value is missing — no birth year, no marriage, no place, no
 author, an unnamed person, an untitled source — SHALL come last in either direction. The
-sort of each kind SHALL be kept with the kind, SHALL combine with the filters, and SHALL
+sort of each kind SHALL be kept with the kind, SHALL combine with the filter, and SHALL
 NOT change which record is selected.
 
 #### Scenario: Sorting the people by name
@@ -341,17 +337,17 @@ card, by a link, *Go to record*, or Back and Forward in the card — whether the
 in view or out of it, and a selection the list meets when it is first drawn, which
 includes a tab restored with the workspace, since the list's scroll position is not
 saved. Bringing into view SHALL, in this order: switch to the record's kind where the
-list shows another; clear the typed filter and the *No sources* choice where they hide
+list shows another; clear the typed filter where it hides
 the row; and, where the row is not wholly within the visible rows, scroll it to the
 middle of the list's height, without animation.
 
 When the reader returns to the list with the selection unchanged, the list SHALL first
 put back the scroll position it left; then, where the row of the selected record is
 shown but is not wholly within the visible rows, it SHALL be scrolled to the middle as
-above, because the reader has just chosen this view. A filter the reader typed and a
-*No sources* choice SHALL NOT be cleared by returning to the list with the selection
+above, because the reader has just chosen this view. A filter the reader typed
+SHALL NOT be cleared by returning to the list with the selection
 unchanged. A selection made by activating a row of the list SHALL change neither the
-scroll position, the kind nor the filters. Where the record has no row, the list SHALL
+scroll position, the kind nor the filter. Where the record has no row, the list SHALL
 be left as it is.
 
 #### Scenario: Entering the list with a selection
@@ -488,7 +484,7 @@ take two lines — the name or title with the years, the marriage or the count a
 and the place or the author beneath, with the Sources mark or the count of children or
 citations — the column headers SHALL be replaced by a selector of the column to sort by
 and a button that turns the direction, and a row and each control SHALL be at least 44
-CSS pixels tall. On a touch device the kind buttons, the chips and the column headers of
+CSS pixels tall. On a touch device the kind buttons, the filter field and the column headers of
 a wide tab SHALL be at least 44 CSS pixels tall as well. Row and control heights SHALL
 follow the reader's font size rather than a fixed number of pixels, and the page SHALL
 not scroll sideways at any font size the app offers. The kind buttons and the filter field SHALL be as in a wide tab. On a

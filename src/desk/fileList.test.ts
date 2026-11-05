@@ -109,16 +109,15 @@ describe("the people", () => {
     expect(text(".gedcom-list-count")).toBe("17 people");
   });
 
-  it("offers All and No sources as chips and narrows to the 11 who cite nothing", () => {
+  it("has no chip that narrows the people to those who cite no source, and sorts them first by Sources", () => {
     board();
-    expect(all(".gedcom-list-chip").map((chip) => chip.textContent)).toEqual(["All 17", "No sources 11"]);
+    expect(all(".gedcom-list-chip")).toHaveLength(0);
 
-    click(button(".gedcom-list-chip", "No sources"));
+    click(button(".gedcom-list-sort", "Sources"));
 
-    expect(rows()).toHaveLength(11);
-    expect(names()).not.toContain("Marie Skłodowska-Curie");
-    expect(text(".gedcom-list-count")).toBe("11 of 17 people");
-    expect(host.changed).toHaveBeenLastCalledWith({ noSources: true });
+    expect(rows()).toHaveLength(17);
+    expect(xrefs().slice(0, 11).map((xref) => cell(row(xref ?? ""), 3))).toEqual(Array(11).fill(""));
+    expect(xrefs().at(-1)).toBe("@I1@");
   });
 });
 
@@ -132,7 +131,6 @@ describe("the kinds", () => {
     expect(rows().find((one) => one.dataset.xref === "@F3@")?.textContent).toContain("Pierre Curie and Marie Skłodowska-Curie");
     expect([1, 2, 3].map((at) => cell(row("@F3@"), at))).toEqual(["1895", "Sceaux, France", "2"]);
     expect(text(".gedcom-list-count")).toBe("5 families");
-    expect(query(".gedcom-list-chips").style.display).toBe("none");
 
     click(button(".gedcom-list-seg-button", "Sources"));
     expect(names()).toEqual([
@@ -233,18 +231,16 @@ describe("sorting", () => {
     expect(order.indexOf("@I13@")).toBeLessThan(order.indexOf("@I15@"));
   });
 
-  it("reports the sort and brings it back with the chip", () => {
+  it("reports the sort and brings it back", () => {
     const made = board();
     click(header("Years"));
-    click(button(".gedcom-list-chip", "No sources"));
     const saved = made.state();
-    expect(saved).toEqual({ noSources: true, sort: { people: { by: "years", dir: "asc" } } });
+    expect(saved).toEqual({ sort: { people: { by: "years", dir: "asc" } } });
 
     document.body.replaceChildren((parent = document.createElement("div")));
     const again = board(saved);
 
     expect(again.state()).toEqual(saved);
-    expect(rows()).toHaveLength(11);
     expect(sortOf("Years")).toBe("ascending");
   });
 
@@ -343,16 +339,6 @@ describe("selecting", () => {
     type("zzz");
     made.select("@I1@", true);
     expect(query<HTMLInputElement>(".gedcom-list-filter").value).toBe("");
-    expect(row("@I1@")?.classList.contains("is-selected")).toBe(true);
-  });
-
-  it("also clears the No sources chip where it hides the row", () => {
-    const made = board({ noSources: true });
-    expect(rows()).toHaveLength(11);
-
-    made.select("@I1@", true);
-
-    expect(rows()).toHaveLength(17);
     expect(row("@I1@")?.classList.contains("is-selected")).toBe(true);
   });
 
@@ -645,15 +631,6 @@ describe("a change of the selection that the tab must hear of", () => {
     expect(host.changed).toHaveBeenLastCalledWith({ kind: "families" });
   });
 
-  it("reports a chip cleared by a selection from outside", () => {
-    const made = board({ noSources: true });
-    host.changed.mockClear();
-
-    made.select("@I1@", true);
-
-    expect(host.changed).toHaveBeenLastCalledWith({});
-  });
-
   it("reports nothing for a selection that changes no state", () => {
     const made = board();
     host.changed.mockClear();
@@ -666,7 +643,7 @@ describe("a change of the selection that the tab must hear of", () => {
 });
 
 describe("the keyboard focus on the controls", () => {
-  it("stays on a header button and a chip through a sort and a toggle", () => {
+  it("stays on a header button through a sort", () => {
     board();
     const header = button(".gedcom-list-sort", "Name") as HTMLElement;
     header.focus();
@@ -677,12 +654,6 @@ describe("the keyboard focus on the controls", () => {
     expect(header.parentElement?.getAttribute("aria-sort")).toBe("descending");
     click(header);
     expect(header.parentElement?.getAttribute("aria-sort")).toBe("none");
-
-    const chip = button(".gedcom-list-chip", "No sources") as HTMLElement;
-    chip.focus();
-    click(chip);
-    expect(document.activeElement).toBe(chip);
-    expect(chip.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("leaves Enter and Space on a header button to the button", () => {

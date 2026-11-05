@@ -607,6 +607,7 @@ button.gedcom-desk-person:hover {
 }
 
 .gedcom-list.is-touch {
+  --gedcom-list-inset: 0px;
   --gedcom-list-control: 44px;
 }
 
@@ -659,7 +660,7 @@ button.gedcom-list-seg-button.is-active {
   box-shadow: var(--shadow-s);
 }
 
-.gedcom-list-filter {
+.gedcom-list .gedcom-list-filter {
   flex: 1 1 12em;
   min-width: 0;
   box-sizing: border-box;
@@ -667,32 +668,6 @@ button.gedcom-list-seg-button.is-active {
   margin: 0;
   border-radius: var(--input-radius, var(--radius-s));
   font-size: var(--font-ui-small);
-}
-
-.gedcom-list-chips {
-  flex: 0 1 auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-2-2);
-}
-
-button.gedcom-list-chip {
-  box-sizing: border-box;
-  height: var(--gedcom-list-control);
-  margin: 0;
-  padding: 0 var(--size-4-3);
-  border-radius: var(--input-radius, var(--radius-s));
-  border: 1px solid var(--background-modifier-border);
-  background: none;
-  box-shadow: none;
-  font-size: var(--font-ui-small);
-  color: var(--text-muted);
-}
-
-button.gedcom-list-chip.is-active {
-  background: var(--background-modifier-active-hover);
-  border-color: transparent;
-  color: var(--text-accent);
 }
 
 .gedcom-list-count {

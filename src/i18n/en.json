@@ -300,14 +300,6 @@
   "list.column.author": "Author",
   "list.column.repository": "Repository",
   "list.column.citedBy": "Cited by",
-  "list.all": {
-    "one": "All {count}",
-    "other": "All {count}"
-  },
-  "list.noSources": {
-    "one": "No sources {count}",
-    "other": "No sources {count}"
-  },
   "list.count.people": {
     "one": "{count} person",
     "other": "{count} people"

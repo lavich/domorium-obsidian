@@ -78,8 +78,8 @@ show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
 them. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
-and place, and for people a chip lists only those whose records cite no source
-at all. A count says how many rows are shown. Clicking a row, or pressing Enter
+and place. Sorting people by Sources puts those whose records cite no source
+first. A count says how many rows are shown. Clicking a row, or pressing Enter
 or Space on it, selects that record; the row of the selected record is marked
 and brought into view when it was selected elsewhere. The arrow keys, Home,
 End and the page keys move through the rows. A file of twenty thousand people

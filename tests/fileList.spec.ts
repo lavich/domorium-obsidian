@@ -106,16 +106,24 @@ test.describe("the list on a wide tab", () => {
     await expect(page.locator('.gedcom-list-headcell[aria-sort="none"]')).toHaveCount(4);
   });
 
-  test("narrows with the filter and the chip, and says how many", async ({ page }) => {
+  test("narrows with the filter, and says how many", async ({ page }) => {
     await mountList(page);
 
     await page.locator(".gedcom-list-filter").fill("joliot");
     await expect(rows(page)).toHaveCount(4);
     await expect(page.locator(".gedcom-list-count")).toHaveText("4 of 17 people");
-    await page.locator(".gedcom-list-filter").fill("");
-    await page.locator(".gedcom-list-chip", { hasText: "No sources" }).click();
-    await expect(rows(page)).toHaveCount(11);
-    await expect(page.locator(".gedcom-list-count")).toHaveText("11 of 17 people");
+  });
+
+  test("has no switch for the people who cite no source, and sorting by Sources lists them first", async ({ page }) => {
+    await mountList(page);
+    await expect(page.locator(".gedcom-list-chip")).toHaveCount(0);
+
+    await header(page, "Sources").click();
+
+    await expect(rows(page)).toHaveCount(17);
+    const marks = await rows(page).evaluateAll((all) => all.map((row) => row.querySelector(".gedcom-list-gap") !== null));
+    expect(marks.slice(0, 11)).toEqual(Array(11).fill(true));
+    expect(marks.slice(11)).toEqual(Array(6).fill(false));
   });
 
   test("selects the record of a clicked row, marks the row, and does not move the list", async ({ page }) => {
@@ -202,7 +210,7 @@ test.describe("the list on a wide tab", () => {
     await expect(rowOf(page, "@F3@")).toHaveClass(/is-selected/);
   });
 
-  test("keeps the keyboard focus on a header button and on a chip, and sorts ascending, descending, then in file order", async ({ page }) => {
+  test("keeps the keyboard focus on a header button, and sorts ascending, descending, then in file order", async ({ page }) => {
     await mountList(page);
     const name = header(page, "Name");
     await name.focus();
@@ -216,12 +224,6 @@ test.describe("the list on a wide tab", () => {
     await page.keyboard.press("Enter");
     await expect(name.locator("xpath=..")).toHaveAttribute("aria-sort", "none");
     await expect(name).toBeFocused();
-
-    const chip = page.locator(".gedcom-list-chip", { hasText: "No sources" });
-    await chip.focus();
-    await page.keyboard.press("Enter");
-    await expect(chip).toHaveAttribute("aria-pressed", "true");
-    await expect(chip).toBeFocused();
   });
 
   test("clears the filter on the first Escape and gives the focus to the rows on the second", async ({ page }) => {
@@ -367,7 +369,6 @@ test.describe("the list on a wide tab", () => {
     for (const selector of [
       ".gedcom-list-sort",
       ".gedcom-list-seg-button:not(.is-active)",
-      ".gedcom-list-chip:not(.is-active)",
       ".gedcom-list-row:not(.is-selected)",
     ]) {
       expect(await look(selector), selector).toEqual({ background: "rgba(0, 0, 0, 0)", shadow: "none" });
@@ -385,7 +386,7 @@ async function expectOneControlHeight(page: Page): Promise<void> {
       bar: height(".gedcom-list-seg"),
       buttons: height(".gedcom-list-seg-button"),
       filter: height(".gedcom-list-filter"),
-      chips: height(".gedcom-list-chip"),
+      select: height(".gedcom-list-sort-select").filter((one) => one > 0),
     };
   });
   const control = heights.filter[0] ?? NaN;
@@ -398,11 +399,11 @@ async function expectOneControlHeight(page: Page): Promise<void> {
     }
   }
   expect(Math.max(...heights.buttons) - Math.min(...heights.buttons)).toBeLessThanOrEqual(1);
-  expect(heights.buttons[0] ?? NaN).toBeLessThan(control);
+  expect(heights.buttons[0] ?? NaN).toBeLessThanOrEqual(control);
 }
 
 test.describe("the toolbar's controls", () => {
-  test("share one height on a desktop and with a touch pointer", async ({ page }) => {
+  test("share one height on a desktop and with a touch pointer, the sort select with them in a compact list", async ({ page }) => {
     await page.setViewportSize(WIDE);
     await mountList(page);
     await expectOneControlHeight(page);
@@ -441,7 +442,7 @@ test.describe("the list on a phone", () => {
   test("makes every control at least 44 pixels tall", async ({ page }) => {
     await mountList(page, { phone: true, touch: true });
 
-    for (const selector of [".gedcom-list-sort-select", ".gedcom-list-direction", ".gedcom-list-seg-button", ".gedcom-list-chip"]) {
+    for (const selector of [".gedcom-list-sort-select", ".gedcom-list-direction", ".gedcom-list-seg-button", ".gedcom-list-filter"]) {
       const boxes = await page.locator(selector).evaluateAll((all) => all.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...boxes), selector).toBeGreaterThanOrEqual(43.5);
     }
@@ -456,7 +457,7 @@ test.describe("the list on a tablet", () => {
 
     await expect(page.locator(".gedcom-list")).toHaveClass(/is-compact/);
     expect((await rowOf(page, "@I1@").boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-    for (const selector of [".gedcom-list-seg-button", ".gedcom-list-chip"]) {
+    for (const selector of [".gedcom-list-seg-button", ".gedcom-list-filter"]) {
       const heights = await page.locator(selector).evaluateAll((all) => all.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...heights), selector).toBeGreaterThanOrEqual(43.5);
     }

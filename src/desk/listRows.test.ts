@@ -24,11 +24,11 @@ const collator = collatorFor("en");
 
 const xrefs = (
   kind: ListKind,
-  options: { query?: string; noSources?: boolean; sort?: ListSort; source?: typeof index } = {},
+  options: { query?: string; sort?: ListSort; source?: typeof index } = {},
 ): (string | undefined)[] =>
   listRows(
     options.source ?? index,
-    { kind, query: options.query ?? "", noSources: options.noSources ?? false, sort: options.sort },
+    { kind, query: options.query ?? "", sort: options.sort },
     collator,
   ).map((row) => row.xref);
 
@@ -50,11 +50,6 @@ describe("filtering the rows", () => {
     expect(xrefs("sources", { query: "archive" })).toEqual(["@S2@"]);
   });
 
-  it("combines the text with the people who rest on no source", () => {
-    expect(xrefs("people", { query: "joliot", noSources: true })).toEqual(["@I16@", "@I17@"]);
-    expect(xrefs("people", { noSources: true })).toHaveLength(11);
-  });
-
   it("finds a year before the common era by its digits in people and families", () => {
     const bce = indexOf(
       [
@@ -67,7 +62,7 @@ describe("filtering the rows", () => {
       ].join("\n"),
     );
 
-    expect(peopleShown(bce, "1401", false).map((row) => row.xref)).toEqual(["@I1@"]);
+    expect(peopleShown(bce, "1401").map((row) => row.xref)).toEqual(["@I1@"]);
     expect(xrefs("families", { query: "1401", source: bce })).toEqual(["@F1@"]);
   });
 });
@@ -169,7 +164,9 @@ describe("sorting the rows", () => {
 
   it("sorts by how many sources a person cites, and families and sources by their counts", () => {
     const up = xrefs("people", { sort: asc("sources") });
-    expect(up.slice(0, 11)).toHaveLength(11);
+    const first = up.slice(0, 11);
+    expect(first.map((xref) => sourcesCited(index, xref ?? ""))).toEqual(Array(11).fill(0));
+    expect(first).toEqual(["@I5@", "@I6@", "@I7@", "@I8@", "@I9@", "@I10@", "@I11@", "@I13@", "@I15@", "@I16@", "@I17@"]);
     expect(up.at(-1)).toBe("@I1@");
     expect(xrefs("families", { sort: desc("children") })).toEqual(["@F1@", "@F2@", "@F3@", "@F4@", "@F5@"]);
     expect(xrefs("sources", { sort: desc("citedBy") })).toEqual(["@S3@", "@S1@", "@S2@"]);
@@ -218,11 +215,11 @@ describe("reading a saved list state", () => {
     expect(
       readListState({
         kind: "families",
-        noSources: true,
         sort: { people: asc("name"), families: { by: "name", dir: "asc" }, sources: { by: "title", dir: "sideways" } },
       }),
-    ).toEqual({ kind: "families", noSources: true, sort: { people: asc("name") } });
-    expect(readListState({ kind: "everyone", noSources: "yes" })).toEqual({});
+    ).toEqual({ kind: "families", sort: { people: asc("name") } });
+    expect(readListState({ kind: "everyone", noSources: true })).toEqual({});
+    expect(readListState({ kind: "sources", noSources: true })).toEqual({ kind: "sources" });
     expect(readListState({ kind: "sources", sort: { sources: desc("citedBy") } })).toEqual({
       kind: "sources",
       sort: { sources: desc("citedBy") },
