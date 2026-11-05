@@ -475,22 +475,51 @@ export function layoutFileGraph(
   );
 }
 
-export function layoutGraph(input: GraphInput, clock: () => number = () => performance.now()): FileGraphLayout {
-  const { focus } = input;
-  const shown = input.cards.map((one) => one.id);
-  const on = new Set(shown);
-  const rowIndex = new Map(shown.map((id, at) => [id, at]));
-  const rowOf = new Map(input.cards.map((one) => [one.id, one.row]));
-  const sexes = new Map(input.cards.map((one) => [one.id, one.sex]));
+interface Indexed {
+  shown: string[];
+  on: Set<string>;
+  rowIndex: Map<string, number>;
+  generations: number[];
+  layerOf: (id: string) => number;
+  portraits: Set<string>;
+}
 
+interface Marriages {
+  spouses: Map<string, string[]>;
+  husbands: Set<string>;
+  marriedAt: Map<string, number>;
+}
+
+interface Layering {
+  layers: Unit[][];
+  crossingsAtStart: number;
+  best: number;
+  sweeps: number;
+}
+
+type Late = (budget: number) => boolean;
+
+function indexCards(input: GraphInput): Indexed {
+  const shown = input.cards.map((one) => one.id);
+  const rowOf = new Map(input.cards.map((one) => [one.id, one.row]));
   const generations = [...new Set(input.cards.map((one) => one.row))].sort((a, b) => a - b);
   const layerOfGeneration = new Map(generations.map((generation, at) => [generation, at]));
-  const layerOf = (id: string): number => layerOfGeneration.get(rowOf.get(id) ?? 0) ?? 0;
+  return {
+    shown,
+    on: new Set(shown),
+    rowIndex: new Map(shown.map((id, at) => [id, at])),
+    generations,
+    layerOf: (id) => layerOfGeneration.get(rowOf.get(id) ?? 0) ?? 0,
+    portraits: new Set(input.cards.filter((one) => one.portrait).map((one) => one.id)),
+  };
+}
 
+function mapMarriages(families: readonly GraphInputFamily[], index: Indexed): Marriages {
+  const { shown, on, layerOf } = index;
   const spouses = new Map<string, string[]>(shown.map((id) => [id, []]));
   const husbands = new Set<string>();
   const marriedAt = new Map<string, number>();
-  input.families.forEach((family, at) => {
+  families.forEach((family, at) => {
     const [a, b] = family.spouses;
     if (a === undefined || b === undefined) {
       return;
@@ -506,17 +535,13 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       spouses.get(b)?.push(a);
     }
   });
+  return { spouses, husbands, marriedAt };
+}
 
-  const sexOf = (id: string) => sexes.get(id) ?? "U";
-  const childOf = new Map<string, string>();
-  for (const family of input.families) {
-    for (const child of family.children) {
-      if (!childOf.has(child)) {
-        childOf.set(child, family.id);
-      }
-    }
-  }
-  const portraits = new Set(input.cards.filter((one) => one.portrait).map((one) => one.id));
+function readsBetterIn(
+  sexOf: (id: string) => string,
+  { husbands, marriedAt }: Marriages,
+): (one: string[], other: string[]) => boolean {
   const husbandLeft = (order: string[]): [number, number] => {
     let bySex = 0;
     let byRole = 0;
@@ -534,7 +559,7 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
   };
   const firstMarriageLeft = (order: string[]): number =>
     order.length < 2 ? 0 : (marriedAt.get(`${order[0] ?? ""}|${order[1] ?? ""}`) ?? Infinity);
-  const readsBetter = (one: string[], other: string[]): boolean => {
+  return (one, other) => {
     const [sexOne, roleOne] = husbandLeft(one);
     const [sexOther, roleOther] = husbandLeft(other);
     if (sexOne !== sexOther) {
@@ -545,7 +570,24 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     }
     return firstMarriageLeft(one) < firstMarriageLeft(other);
   };
+}
 
+function makeUnits(
+  input: GraphInput,
+  index: Indexed,
+  marriages: Marriages,
+): { units: Unit[]; unitOf: Map<string, Unit>; place: Map<string, number> } {
+  const { shown, rowIndex, layerOf } = index;
+  const sexes = new Map(input.cards.map((one) => [one.id, one.sex]));
+  const readsBetter = readsBetterIn((id) => sexes.get(id) ?? "U", marriages);
+  const childOf = new Map<string, string>();
+  for (const family of input.families) {
+    for (const child of family.children) {
+      if (!childOf.has(child)) {
+        childOf.set(child, family.id);
+      }
+    }
+  }
   const units: Unit[] = [];
   const unitOf = new Map<string, Unit>();
   const place = new Map<string, number>();
@@ -553,7 +595,7 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     if (unitOf.has(xref)) {
       continue;
     }
-    let members = walkBlock(xref, spouses);
+    let members = walkBlock(xref, marriages.spouses);
     const reversed = [...members].reverse();
     if (readsBetter(reversed, members)) {
       members = reversed;
@@ -576,15 +618,26 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       place.set(member, at);
     });
   }
+  return { units, unitOf, place };
+}
 
-  const link = (from: Unit, near: number, to: Unit, far: number): void => {
-    from.down.push({ to, far, near });
-    to.up.push({ to: from, far: near, near: far });
-  };
+function link(from: Unit, near: number, to: Unit, far: number): void {
+  from.down.push({ to, far, near });
+  to.up.push({ to: from, far: near, near: far });
+}
+
+function linkFamilies(
+  families: readonly GraphInputFamily[],
+  index: Indexed,
+  units: Unit[],
+  unitOf: ReadonlyMap<string, Unit>,
+  place: ReadonlyMap<string, number>,
+): Edge[] {
+  const { shown, on, layerOf } = index;
   const edges: Edge[] = [];
   const laneCap = LANES_PER_PERSON * shown.length;
   let laneCount = 0;
-  for (const family of input.families) {
+  for (const family of families) {
     const parents = family.spouses.filter((xref) => on.has(xref));
     const upper = least(parents.map(layerOf));
     const anchor = parents.find((xref) => layerOf(xref) === upper);
@@ -630,8 +683,11 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       edges.push({ family: family.id, parents, child, lanes });
     }
   }
+  return edges;
+}
 
-  const layers: Unit[][] = Array.from({ length: generations.length }, () => []);
+function stackLayers(units: Unit[], count: number): Unit[][] {
+  const layers: Unit[][] = Array.from({ length: count }, () => []);
   for (const unit of units) {
     layers[unit.layer]?.push(unit);
   }
@@ -639,9 +695,10 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     layer.sort((a, b) => a.key - b.key);
     pack(layer);
   }
+  return layers;
+}
 
-  const started = clock();
-  const late = (budget: number): boolean => clock() - started >= budget;
+function reduceCrossings(layers: Unit[][], late: Late): Layering {
   const crossingsAtStart = crossingsOf(layers);
   for (const layer of layers) {
     if (late(SWEEPS.budget)) {
@@ -685,7 +742,10 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     layers[at] = layer;
     pack(layer);
   });
+  return { layers, crossingsAtStart, best, sweeps };
+}
 
+function pullTogether(layers: Unit[][], late: Late): void {
   for (let pass = 0; pass < PULLS && !late(SWEEPS.pulls); pass += 1) {
     const forward = pass % 2 === 0;
     for (let step = 0; step < layers.length; step += 1) {
@@ -720,15 +780,24 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       keepGaps(layer);
     }
   }
-  squeeze(units, MOST_GAP);
+}
 
-  const minX = units.length > 0 ? least(units.map(leftOf)) : 0;
+function stackBands(layers: Unit[][], portraits: ReadonlySet<string>): GraphBand[] {
   const bands: GraphBand[] = [];
   layers.forEach((layer, at) => {
     const top = at === 0 ? 0 : (bands[at - 1]?.bottom ?? 0) + ROW_GAP;
     const tall = layer.some((unit) => unit.members.some((id) => portraits.has(id)));
     bands.push({ top, bottom: top + CARD.height + (tall ? CARD.portrait : 0) });
   });
+  return bands;
+}
+
+function placeCards(
+  layers: Unit[][],
+  bands: readonly GraphBand[],
+  portraits: ReadonlySet<string>,
+  minX: number,
+): { cards: GraphCard[]; card: Map<string, GraphCard> } {
   const cards: GraphCard[] = [];
   const card = new Map<string, GraphCard>();
   layers.forEach((layer, row) => {
@@ -743,10 +812,62 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       });
     }
   });
+  return { cards, card };
+}
 
+function nodeOf(family: GraphInputFamily, one: GraphCard, other: GraphCard): GraphNode {
+  const { year } = family;
+  const bottom = (at: GraphCard): Point => [at.x + CARD.width / 2, at.y + at.height];
+  if (one.row === other.row) {
+    const [a, b] = one.x <= other.x ? [one, other] : [other, one];
+    const neighbours = Math.abs(b.x - a.x - pitch) < 0.5;
+    if (neighbours) {
+      const y = a.y + a.height - CARD.height / 2;
+      return {
+        family: family.id,
+        kind: "pair",
+        x: (a.x + CARD.width + b.x) / 2,
+        y,
+        year,
+        spouses: [a.id, b.id],
+        joins: [[[a.x + CARD.width, y], [b.x, y]]],
+      };
+    }
+    const x = (a.x + b.x + CARD.width) / 2;
+    const y = a.y + a.height + BELOW;
+    return {
+      family: family.id,
+      kind: "below",
+      x,
+      y,
+      year,
+      spouses: [a.id, b.id],
+      joins: [[bottom(a), [x, y]], [bottom(b), [x, y]]],
+    };
+  }
+  const [upper, lower] = one.row < other.row ? [one, other] : [other, one];
+  const from = bottom(upper);
+  const to: Point = [lower.x + CARD.width / 2, lower.y];
+  const next = lower.row - upper.row === 1;
+  const at: Point = next ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : [from[0], from[1] + BELOW];
+  return {
+    family: family.id,
+    kind: "across",
+    x: at[0],
+    y: at[1],
+    year,
+    spouses: [upper.id, lower.id],
+    joins: next ? [[from, to]] : [[from, at], [at, to]],
+  };
+}
+
+function joinSpouses(
+  families: readonly GraphInputFamily[],
+  card: ReadonlyMap<string, GraphCard>,
+): { nodes: GraphNode[]; node: Map<string, GraphNode> } {
   const nodes: GraphNode[] = [];
   const node = new Map<string, GraphNode>();
-  for (const family of input.families) {
+  for (const family of families) {
     const placed = family.spouses
       .map((id) => card.get(id))
       .filter((one): one is GraphCard => one !== undefined);
@@ -754,56 +875,19 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     if (!one || !other) {
       continue;
     }
-    const { year } = family;
-    const bottom = (at: GraphCard): Point => [at.x + CARD.width / 2, at.y + at.height];
-    let made: GraphNode;
-    if (one.row === other.row) {
-      const [a, b] = one.x <= other.x ? [one, other] : [other, one];
-      const neighbours = Math.abs(b.x - a.x - pitch) < 0.5;
-      if (neighbours) {
-        const y = a.y + a.height - CARD.height / 2;
-        made = {
-          family: family.id,
-          kind: "pair",
-          x: (a.x + CARD.width + b.x) / 2,
-          y,
-          year,
-          spouses: [a.id, b.id],
-          joins: [[[a.x + CARD.width, y], [b.x, y]]],
-        };
-      } else {
-        const x = (a.x + b.x + CARD.width) / 2;
-        const y = a.y + a.height + BELOW;
-        made = {
-          family: family.id,
-          kind: "below",
-          x,
-          y,
-          year,
-          spouses: [a.id, b.id],
-          joins: [[bottom(a), [x, y]], [bottom(b), [x, y]]],
-        };
-      }
-    } else {
-      const [upper, lower] = one.row < other.row ? [one, other] : [other, one];
-      const from = bottom(upper);
-      const to: Point = [lower.x + CARD.width / 2, lower.y];
-      const next = lower.row - upper.row === 1;
-      const at: Point = next ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : [from[0], from[1] + BELOW];
-      made = {
-        family: family.id,
-        kind: "across",
-        x: at[0],
-        y: at[1],
-        year,
-        spouses: [upper.id, lower.id],
-        joins: next ? [[from, to]] : [[from, at], [at, to]],
-      };
-    }
+    const made = nodeOf(family, one, other);
     nodes.push(made);
     node.set(family.id, made);
   }
+  return { nodes, node };
+}
 
+function routeLines(
+  edges: readonly Edge[],
+  card: ReadonlyMap<string, GraphCard>,
+  node: ReadonlyMap<string, GraphNode>,
+  bands: readonly GraphBand[],
+): GraphLine[] {
   const lines: GraphLine[] = [];
   for (const edge of edges) {
     const child = card.get(edge.child);
@@ -845,7 +929,27 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
       points,
     });
   }
+  return lines;
+}
 
+export function layoutGraph(input: GraphInput, clock: () => number = () => performance.now()): FileGraphLayout {
+  const index = indexCards(input);
+  const marriages = mapMarriages(input.families, index);
+  const { units, unitOf, place } = makeUnits(input, index, marriages);
+  const edges = linkFamilies(input.families, index, units, unitOf, place);
+
+  const layers = stackLayers(units, index.generations.length);
+  const started = clock();
+  const late: Late = (budget) => clock() - started >= budget;
+  const { best, crossingsAtStart, sweeps } = reduceCrossings(layers, late);
+  pullTogether(layers, late);
+  squeeze(units, MOST_GAP);
+
+  const bands = stackBands(layers, index.portraits);
+  const minX = units.length > 0 ? least(units.map(leftOf)) : 0;
+  const { cards, card } = placeCards(layers, bands, index.portraits, minX);
+  const { nodes, node } = joinSpouses(input.families, card);
+  const lines = routeLines(edges, card, node, bands);
   bendApart(lines, bands);
 
   const rights = units.map((unit) => unit.cx + unit.width / 2);
@@ -855,16 +959,17 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
     nodes,
     node,
     lines,
-    focus,
+    focus: input.focus,
     width: rights.length > 0 ? most(rights) : 0,
     height: bands.at(-1)?.bottom ?? 0,
     bands,
-    rows: generations.length,
+    rows: index.generations.length,
     crossings: best,
     crossingsAtStart,
     sweeps,
   };
 }
+
 
 const LAYOUTS_HELD = 4;
 const held = new WeakMap<FileTimeline, { key: string; layout: FileGraphLayout }[]>();
