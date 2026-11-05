@@ -22,10 +22,6 @@ import {
   type RecordPreview,
   type WorkspaceEdit,
 } from "@domorium/codemirror";
-import type {
-  GedcomLanguageService,
-  MediaReference,
-} from "@domorium/language-service";
 import {
   debounce,
   HoverPopover,
@@ -43,17 +39,13 @@ import {
 } from "obsidian";
 
 import { createGedcomComposition } from "./editor/composition";
-import {
-  mediaPreviewContent,
-  mediaVaultPath,
-  previewBounds,
-  type MediaVault,
-} from "./editor/media";
+import { isDarkTheme } from "./editor/darkTheme";
+import { mediaItemAt, mediaItemsOf, mediaVaultOf, portraitOf } from "./editor/mediaItems";
+import { PreviewPopovers } from "./editor/previewPopovers";
+import { pushSearchScope } from "./editor/searchScope";
+import { openVaultFile } from "./editor/vaultFile";
 import { clearMediaPreview } from "./editor/mediaPreviewHover";
-import {
-  renderMediaPreview,
-  type AllowScope,
-} from "./editor/mediaPreviewView";
+import type { AllowScope } from "./editor/mediaPreviewView";
 import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
@@ -122,8 +114,7 @@ export class GedcomView extends TextFileView implements CardTab {
   private editor: EditorView;
   private readonly language = new EditorLanguageService();
   private applyingData = false;
-  private preview: HoverPopover | null = null;
-  private mediaPreview: HoverPopover | null = null;
+  private readonly popovers: PreviewPopovers;
   private readonly modes: TabModes;
   private readonly views: FileViews;
   private memory: ViewMemory = {};
@@ -165,6 +156,23 @@ export class GedcomView extends TextFileView implements CardTab {
       },
       setIcon: (element, icon) => setIcon(element, icon),
       coarsePointer: () => Platform.isMobile || window.matchMedia("(pointer: coarse)").matches,
+    });
+    this.popovers = new PreviewPopovers({
+      open: (target) => new HoverPopover(this.leaf, target),
+      clearMediaSession: () => clearMediaPreview(this.editor),
+      mediaVault: () => {
+        const service = this.language.update(this.editor.state.doc);
+        return mediaVaultOf(service, this.file?.path ?? "", (path) =>
+          this.resolveVaultResource(path),
+        );
+      },
+      remoteImages: () => this.host.remoteImages(),
+      allowRemoteImages: (scope) => this.host.allowRemoteImages(scope),
+      setIcon: (element, icon) => setIcon(element, icon),
+      contentSize: () => ({
+        width: this.contentEl.clientWidth,
+        height: this.contentEl.clientHeight,
+      }),
     });
     this.editor = new EditorView({
       parent: this.editorEl,
@@ -667,53 +675,15 @@ export class GedcomView extends TextFileView implements CardTab {
     return Promise.resolve();
   }
 
-  /**
-   * The bar's keys answer wherever the focus sits, which is what a scope on
-   * app.keymap gives and a CodeMirror keymap cannot: the panel's own DOM is
-   * outside contentDOM. Parenting it on app.scope lets every key the bar does
-   * not register fall through untouched.
-   *
-   * A scope on app.keymap answers app-wide, though, and the panel outlives the
-   * leaf being looked at — so the scope follows the active leaf rather than the
-   * panel alone. Without it F3 would search, and Mod+Alt+Enter rewrite, a file
-   * in a background tab.
-   */
   private pushScope(bindings: SearchKeyBinding[]): () => void {
-    const scope = new Scope(this.app.scope);
-    for (const binding of bindings) {
-      // Obsidian reads false as "the key was mine" and preventDefaults it.
-      scope.register(
-        binding.modifiers,
-        binding.key,
-        (event) => !binding.run(event),
-      );
-    }
-    let pushed = false;
-    const follow = (): void => {
-      const active =
-        this.app.workspace.getActiveViewOfType(GedcomView) === this;
-      if (active === pushed) {
-        return;
-      }
-      if (active) {
-        this.app.keymap.pushScope(scope);
-      } else {
-        this.app.keymap.popScope(scope);
-      }
-      pushed = active;
-    };
-    follow();
-    // Not registerEvent: closing the view destroys the editor and with it the
-    // panel, so the panel's own destroy always drops this — while a registered
-    // unload would pile up, one per open of the bar.
-    const ref = this.app.workspace.on("active-leaf-change", follow);
-    return () => {
-      this.app.workspace.offref(ref);
-      if (pushed) {
-        this.app.keymap.popScope(scope);
-        pushed = false;
-      }
-    };
+    return pushSearchScope(bindings, {
+      createScope: () => new Scope(this.app.scope),
+      push: (scope) => this.app.keymap.pushScope(scope),
+      pop: (scope) => this.app.keymap.popScope(scope),
+      isActive: () => this.app.workspace.getActiveViewOfType(GedcomView) === this,
+      onActiveChange: (callback) => this.app.workspace.on("active-leaf-change", callback),
+      offActiveChange: (ref) => this.app.workspace.offref(ref),
+    });
   }
 
   private sourceRecordAtCursor(): GedcomRecord | undefined {
@@ -837,57 +807,46 @@ export class GedcomView extends TextFileView implements CardTab {
   /** The picture a person's page shows, for a card: the first of their media that can be drawn. */
   portrait(xref: string): PortraitContent | null {
     const person = this.genealogy().person(xref);
-    const found = person ? this.mediaItems(person.media).find((item) => item.content.kind === "image") : undefined;
-    return found?.content.kind === "image" ? found.content : null;
+    return person ? portraitOf(this.mediaItems(person.media)) : null;
   }
 
   mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
-    return media.flatMap((one) => {
-      const item = this.mediaItem(one.at);
-      return item ? [{ ...item, ...(one.record ? { record: one.record } : {}) }] : [];
-    });
+    return mediaItemsOf(media, (at) => this.mediaItem(at));
   }
 
   mediaItem(at: Position): MediaItem | null {
-    const service = this.language.update(this.editor.state.doc);
-    const reference = service.getMediaAt(at);
-    if (!reference) {
-      return null;
-    }
-    const vault = this.mediaVault(service);
-    const content = mediaPreviewContent(reference, vault, this.host.remoteImages());
-    const path = mediaVaultPath(reference, vault);
-    return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
+    return mediaItemAt(
+      this.language.update(this.editor.state.doc),
+      at,
+      this.file?.path ?? "",
+      (path) => this.resolveVaultResource(path),
+      this.host.remoteImages(),
+    );
   }
 
-  private mediaVault(service: GedcomLanguageService): MediaVault {
-    return {
-      documentPath: this.file?.path ?? "",
-      dialect: service.getDocument().getDialect(),
-      resolve: (path) => {
-        const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-        return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
-      },
-    };
+  private resolveVaultResource(path: string): string | null {
+    const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
+    return file instanceof TFile ? this.app.vault.getResourcePath(file) : null;
   }
 
   private openVaultFile(relativePath: string): void {
-    const path = normalizePath(relativePath);
-    const file = this.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) {
-      new Notice(t("notice.vaultFileNotFound", { path }));
-      return;
-    }
-    const open = this.leafShowing(path);
-    if (open) {
-      void this.app.workspace.revealLeaf(open);
-      return;
-    }
-    void this.app.workspace.getLeaf("tab").openFile(file);
-  }
-
-  private isDark(): boolean {
-    return this.containerEl.ownerDocument.body.classList.contains("theme-dark");
+    openVaultFile<TFile, WorkspaceLeaf>(relativePath, {
+      normalize: normalizePath,
+      find: (path) => {
+        const file = this.app.vault.getAbstractFileByPath(path);
+        return file instanceof TFile ? file : null;
+      },
+      leafShowing: (path) => this.leafShowing(path),
+      reveal: (leaf) => {
+        void this.app.workspace.revealLeaf(leaf);
+      },
+      openInTab: (file) => {
+        void this.app.workspace.getLeaf("tab").openFile(file);
+      },
+      notFound: (path) => {
+        new Notice(t("notice.vaultFileNotFound", { path }));
+      },
+    });
   }
 
   private createState(data: string, cursor?: number): EditorState {
@@ -899,7 +858,7 @@ export class GedcomView extends TextFileView implements CardTab {
         ...createGedcomComposition({
           language: this.language,
           settings: this.settings,
-          dark: this.isDark(),
+          dark: isDarkTheme(this.containerEl),
           gesture: previewGesture(this.settings.recordPreview, (event) =>
             Keymap.isModifier(event, "Mod"),
           ),
@@ -920,12 +879,11 @@ export class GedcomView extends TextFileView implements CardTab {
           },
           showPreview: (preview, _view, event) =>
             this.showPreview(preview, event.target as HTMLElement),
-          hidePreview: () => this.hidePreview(),
+          hidePreview: () => this.popovers.hideRecord(),
           showMedia: (media, _view, event) =>
-            this.showMediaPreview(media, event.target as HTMLElement),
-          hideMedia: () => this.hideMediaPreview(),
-          mediaHolds: (node) =>
-            this.mediaPreview?.hoverEl.contains(node as Node) ?? false,
+            this.popovers.showMedia(media, event.target as HTMLElement),
+          hideMedia: () => this.popovers.hideMedia(),
+          mediaHolds: (node) => this.popovers.mediaHolds(node as Node),
         }),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !this.applyingData) {
@@ -947,26 +905,11 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   private showPreview(preview: RecordPreview, target: HTMLElement): void {
-    // Moving from one XREF to the next asks to show without asking to hide.
-    this.hidePreview();
-    this.preview = new HoverPopover(this.leaf, target);
-    const block = this.preview.hoverEl.createEl("pre", {
-      cls: "gedcom-record-preview",
-    });
-    for (const run of getRecordPreviewRuns(
-      this.editor.state,
-      this.language,
-      preview,
-    )) {
-      if (run.className) {
-        block.createSpan({ cls: run.className, text: run.text });
-      } else {
-        block.appendText(run.text);
-      }
-    }
-    if (preview.truncated) {
-      block.appendText("\n…");
-    }
+    this.popovers.showRecord(
+      getRecordPreviewRuns(this.editor.state, this.language, preview),
+      preview.truncated,
+      target,
+    );
   }
 
   /**
@@ -977,61 +920,7 @@ export class GedcomView extends TextFileView implements CardTab {
    * movement over that line with "keep".
    */
   private hidePreviews(): void {
-    this.hidePreview();
-    clearMediaPreview(this.editor);
-  }
-
-  private hidePreview(): void {
-    this.preview?.unload();
-    this.preview = null;
-  }
-
-  private showMediaPreview(media: MediaReference, target: HTMLElement): void {
-    // Moving between two rectangles of one photograph reopens rather than keeps.
-    this.hideMediaPreview();
-    const popover = new HoverPopover(this.leaf, target);
-    // Otherwise a fixed width with its overflow hidden, which cuts a picture
-    // off at the edge rather than scaling it. See styles.css.
-    popover.hoverEl.classList.add("gedcom-media-popover");
-    this.mediaPreview = popover;
-    // The popover keeps itself while the pointer is inside it and goes on its
-    // own once it is not. The session is keyed by the line and would answer the
-    // next movement over it with "keep", so it goes when the popover does.
-    popover.register(() => {
-      if (this.mediaPreview === popover) {
-        this.mediaPreview = null;
-        clearMediaPreview(this.editor);
-      }
-    });
-    this.drawMediaPreview(popover, media);
-  }
-
-  /** Drawn again where an answer has been given, the content being the answer's. */
-  private drawMediaPreview(popover: HoverPopover, media: MediaReference): void {
-    const content = mediaPreviewContent(
-      media,
-      this.mediaVault(this.language.update(this.editor.state.doc)),
-      this.host.remoteImages(),
-    );
-    renderMediaPreview(content, {
-      container: popover.hoverEl,
-      bounds: previewBounds(
-        this.contentEl.clientWidth,
-        this.contentEl.clientHeight,
-      ),
-      setIcon,
-      isCurrent: () => this.mediaPreview === popover,
-      allow: (scope) => {
-        this.host.allowRemoteImages(scope);
-        this.drawMediaPreview(popover, media);
-      },
-    });
-  }
-
-  private hideMediaPreview(): void {
-    const popover = this.mediaPreview;
-    this.mediaPreview = null;
-    popover?.unload();
+    this.popovers.hideAll();
   }
 
   private leafShowing(path: string): WorkspaceLeaf | null {
@@ -1053,23 +942,7 @@ export class GedcomView extends TextFileView implements CardTab {
             "noopener,noreferrer",
           );
         },
-        openVaultFile: (relativePath) => {
-          const path = normalizePath(relativePath);
-          const file = this.app.vault.getAbstractFileByPath(path);
-          if (!(file instanceof TFile)) {
-            new Notice(t("notice.vaultFileNotFound", { path }));
-            return;
-          }
-          // Where it already is, or else a tab of its own: replacing this one
-          // loses the reader's place in the file the link was followed from.
-          const open = this.leafShowing(path);
-          if (open) {
-            void this.app.workspace.revealLeaf(open);
-            return;
-          }
-          // Not `'window'`, which the mobile app has no popout for.
-          void this.app.workspace.getLeaf("tab").openFile(file);
-        },
+        openVaultFile: (relativePath) => this.openVaultFile(relativePath),
       },
     );
     if (!routed) {
