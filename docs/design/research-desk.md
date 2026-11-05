@@ -54,7 +54,7 @@ dates, a file with validation errors, the file changing outside while edited.
 ## Open decisions
 
 - **Map.** Decided: a Map mode draws the places on a bundled outline from the
-  coordinates the file's `MAP` and a places table beside it give, with no lookup
+  coordinates the file's `MAP` gives, and only that, with no lookup
   of a name; tiles come only from a server the reader names and switches on
   (openspec change `map-view`).
 - **Undo and confirmation of edits**, and whether they share history with the

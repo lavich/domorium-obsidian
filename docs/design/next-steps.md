@@ -14,7 +14,7 @@ reading has shipped.
 
 - [x] **Map.** No basemap in this stage: Places is a list of the places in a
       life, as in the mockup. The map is its own slice and is decided: `MAP`
-      coordinates and a places table on a bundled outline, tiles only from a server
+      coordinates of the file alone on a bundled outline, tiles only from a server
       the reader names (openspec change `map-view`).
 - [x] **Format tabs on a phone.** They scroll sideways, as Obsidian's own panels
       do. Check against the real app when the phone part is compared.
