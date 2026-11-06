@@ -1539,11 +1539,6 @@ button.gedcom-fg-whole {
   min-height: 0;
 }
 
-.gedcom-ft-stage > .gedcom-ft-controls {
-  inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
-  bottom: calc(var(--size-4-2) + var(--gedcom-ft-hbar, 0px) + env(safe-area-inset-bottom, 0px));
-}
-
 .gedcom-ft-board {
   position: relative;
   flex: 1;
@@ -1981,9 +1976,50 @@ button.gedcom-fg-pop-open {
   align-items: center;
 }
 
-.gedcom-ft-stage > .gedcom-ft-find {
+.gedcom-fg-dock,
+.gedcom-ft-dock {
+  position: absolute;
+  z-index: 1;
+  top: var(--size-4-2);
+  inset-inline-end: var(--size-4-2);
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  max-width: calc(100% - 2 * var(--size-4-2));
+  padding: var(--size-2-1);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-s);
+  box-sizing: border-box;
+  cursor: default;
+}
+
+.gedcom-ft-dock {
   top: calc(var(--gedcom-ft-axis) + var(--size-4-2));
   inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
+  max-width: calc(100% - 2 * var(--size-4-2) - var(--gedcom-ft-vbar, 0px));
+}
+
+:is(.gedcom-fg-dock, .gedcom-ft-dock) > :is(.gedcom-fg-find, .gedcom-ft-find, .gedcom-fg-controls, .gedcom-ft-controls) {
+  position: static;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.is-phone :is(.gedcom-fg-dock, .gedcom-ft-dock):has(.is-open) > :is(.gedcom-fg-controls, .gedcom-ft-controls) {
+  display: none;
+}
+
+:is(.gedcom-fg-dock, .gedcom-ft-dock) > :is(.gedcom-fg-controls, .gedcom-ft-controls) {
+  flex: none;
+  padding-inline-start: var(--size-2-1);
+  border-inline-start: 1px solid var(--background-modifier-border);
 }
 
 .gedcom-fg-find input.gedcom-fg-search,
@@ -2044,10 +2080,6 @@ button.gedcom-fg-pop-open {
   max-width: calc(100% - 2 * var(--size-4-2));
 }
 
-.gedcom-ft-stage > .gedcom-ft-find {
-  max-width: calc(100% - 2 * var(--size-4-2) - var(--gedcom-ft-vbar, 0px));
-}
-
 .gedcom-fg-find-count,
 .gedcom-ft-find-count,
 
@@ -2100,17 +2132,20 @@ button.gedcom-fg-pop-open {
   outline-offset: 3px;
 }
 
-.gedcom-fg-find,
-.gedcom-ft-find,
-
-
+.gedcom-fg-dock,
+.gedcom-ft-dock,
 .gedcom-list-find {
   --gedcom-find-size: 28px;
+}
+
+.gedcom-fg-find,
+.gedcom-ft-find,
+.gedcom-list-find {
   gap: 0;
 }
 
-.is-phone .gedcom-fg-find,
-.is-phone .gedcom-ft-find,
+.is-phone .gedcom-fg-dock,
+.is-phone .gedcom-ft-dock,
 
 
 .is-phone .gedcom-list-find {
@@ -2119,8 +2154,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find button,
 .gedcom-ft-find button,
-
-
+.gedcom-fg-controls button,
+.gedcom-ft-controls button,
 .gedcom-list-find button {
   display: flex;
   align-items: center;

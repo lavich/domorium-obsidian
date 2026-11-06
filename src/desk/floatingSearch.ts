@@ -195,13 +195,13 @@ export class FloatingSearch {
 
 /** The search over a graph canvas, first in its order: a query lights the matching cards and a step glides to the next. */
 export function searchOver(canvas: GraphCanvas, setIcon?: IconSetter): FloatingSearch {
-  const find = new FloatingSearch(canvas.el, {
+  const find = new FloatingSearch(canvas.dock, {
     prefix: "gedcom-fg",
     ...(setIcon ? { setIcon } : {}),
     change: (query) => canvas.setQuery(query),
     step: (by) => canvas.stepMatch(by),
     info: () => canvas.matchInfo(),
   });
-  canvas.el.prepend(find.el);
+  canvas.dock.prepend(find.el);
   return find;
 }

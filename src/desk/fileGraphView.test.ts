@@ -127,10 +127,11 @@ describe("drawing the graph of a file", () => {
 
   it("floats −, + and Fit over the canvas, right after the search, without starting a drag or a touch", () => {
     const drawn = board();
-    const controls = container.querySelector(".gedcom-fg-canvas > .gedcom-fg-controls");
+    const controls = container.querySelector(".gedcom-fg-dock > .gedcom-fg-controls");
     const k = drawn.view()?.k ?? 1;
 
-    expect(container.querySelector(".gedcom-fg-canvas")?.firstElementChild).toBe(container.querySelector(".gedcom-fg-find"));
+    expect(container.querySelector(".gedcom-fg-canvas")?.firstElementChild).toBe(container.querySelector(".gedcom-fg-dock"));
+    expect(container.querySelector(".gedcom-fg-dock")?.firstElementChild).toBe(container.querySelector(".gedcom-fg-find"));
     expect(container.querySelector(".gedcom-fg-find")?.nextElementSibling).toBe(controls);
     expect([...(controls?.querySelectorAll("button") ?? [])].map((one) => one.getAttribute("aria-label"))).toEqual([
       "Zoom out",
@@ -516,7 +517,7 @@ describe("the search", () => {
       expect(button.hasAttribute("title"), button.className).toBe(false);
       expect(button.getAttribute("aria-label"), button.className).toBeTruthy();
       expect(button.getAttribute("data-tooltip-position"), button.className).toBe(
-        button.closest(".gedcom-fg-controls") ? "top" : "bottom",
+        "bottom",
       );
     }
     expect(container.querySelector("title, [title]")).toBeNull();
@@ -583,7 +584,7 @@ describe("the search", () => {
     it("floats inside the canvas, first in its order, as an icon that opens into a field", () => {
       board();
 
-      expect(find()?.parentElement?.classList.contains("gedcom-fg-canvas")).toBe(true);
+      expect(find()?.parentElement?.parentElement?.classList.contains("gedcom-fg-canvas")).toBe(true);
       expect(find()?.nextElementSibling?.classList.contains("gedcom-fg-controls")).toBe(true);
       expect(find()?.classList.contains("is-open")).toBe(false);
       expect(input()?.tabIndex).toBe(-1);

@@ -100,13 +100,18 @@ export function putIcon(element: HTMLElement, icon: string, setIcon?: IconSetter
   }
 }
 
+/** The corner over a canvas where the search and the zoom controls sit side by side. */
+export function floatingDock(parent: HTMLElement, prefix: string): HTMLElement {
+  return parent.createDiv({ cls: `${prefix}-dock` });
+}
+
 export interface ZoomActions {
   out: () => void;
   in: () => void;
   fit: () => void;
 }
 
-/** −, + and Fit, floating over `parent` and first in its order for the keyboard. */
+/** −, + and Fit, in the dock `parent`, after the search. */
 export function zoomControls(
   parent: HTMLElement,
   prefix: string,
@@ -119,7 +124,7 @@ export function zoomControls(
       cls: ["clickable-icon", `${prefix}-${cls}`],
       attr: { type: "button", "aria-label": label },
     });
-    tipPlace(made, "top");
+    tipPlace(made, "bottom");
     putIcon(made, icon, setIcon);
     made.addEventListener("click", run);
   };
