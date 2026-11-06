@@ -282,6 +282,62 @@ describe("the families the Curies do not have", () => {
     expect(layout.height).toBe(2 * CARD.height + ROW_GAP);
   });
 
+  it("stands a man with no parents in the row above his daughter, beside his daughter's husband's father", () => {
+    const layout = layoutFileGraph(
+      file(
+        ["N:M", "P:M", "V:M", "F:F", "M:M"],
+        [
+          { id: "F1", husb: "N", children: ["P"] },
+          { id: "F2", husb: "P", children: ["V"] },
+          { id: "F3", husb: "V", wife: "F" },
+          { id: "F4", husb: "M", children: ["F"] },
+        ],
+      ),
+      WHOLE,
+    );
+    const row = (id: string) => layout.card.get(`@${id}@`)?.row;
+
+    expect([row("N"), row("P"), row("M"), row("V"), row("F")]).toEqual([0, 1, 1, 2, 2]);
+    expect(layout.crossings).toBe(0);
+  });
+
+  it("stands brothers and sisters eldest first where no order crosses fewer lines", () => {
+    const layout = layoutGraph({
+      cards: [
+        { id: "p", row: 0, sex: "M" },
+        { id: "young", row: 1, sex: "M", born: 1914 },
+        { id: "old", row: 1, sex: "M", born: 1901 },
+        { id: "none", row: 1, sex: "F" },
+      ],
+      families: [{ id: "f", spouses: ["p"], children: ["young", "old", "none"], year: null }],
+      focus: null,
+    });
+    const at = (id: string) => layout.card.get(id)?.x ?? NaN;
+
+    expect(at("old")).toBeLessThan(at("young"));
+    expect(at("young")).toBeLessThan(at("none"));
+  });
+
+  it("keeps the order that crosses fewer lines over the eldest at the left", () => {
+    const layout = layoutGraph({
+      cards: [
+        { id: "q", row: 0, sex: "M" },
+        { id: "p", row: 0, sex: "M" },
+        { id: "young", row: 1, sex: "M", born: 1914 },
+        { id: "old", row: 1, sex: "M", born: 1901 },
+        { id: "wife", row: 1, sex: "F" },
+      ],
+      families: [
+        { id: "f", spouses: ["p"], children: ["young", "old"], year: null },
+        { id: "g", spouses: ["q"], children: ["wife"], year: null },
+        { id: "m", spouses: ["old", "wife"], children: [], year: 1930 },
+      ],
+      focus: null,
+    });
+
+    expect(layout.crossings).toBe(0);
+  });
+
   it("stands siblings with no spouse closer to each other than to anyone else", () => {
     const layout = layoutGraph({
       cards: [

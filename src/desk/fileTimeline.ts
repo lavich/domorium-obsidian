@@ -231,7 +231,46 @@ function generationsOf(
       }
     }
   }
+  lowerRoots(order, parents, couples, generation);
   return generation;
+}
+
+function lowerRoots(
+  order: string[],
+  parents: Map<string, string[]>,
+  couples: [string, string][],
+  generation: Map<string, number>,
+): void {
+  const hasParents = (xref: string): boolean => (parents.get(xref) ?? []).length > 0;
+  const childrenOf = new Map<string, string[]>();
+  for (const xref of order) {
+    for (const parent of parents.get(xref) ?? []) {
+      childrenOf.set(parent, [...(childrenOf.get(parent) ?? []), xref]);
+    }
+  }
+  const marriedIn = new Set(
+    couples.flatMap(([a, b]) => [...(hasParents(b) ? [a] : []), ...(hasParents(a) ? [b] : [])]),
+  );
+  const partners = new Map<string, string[]>();
+  for (const [a, b] of couples) {
+    partners.set(a, [...(partners.get(a) ?? []), b]);
+    partners.set(b, [...(partners.get(b) ?? []), a]);
+  }
+  const target = (xref: string): number => {
+    const below = (childrenOf.get(xref) ?? []).map((child) => generation.get(child) ?? 0);
+    return below.length === 0 ? 0 : least(below) - 1;
+  };
+  const movable = (xref: string): boolean => !hasParents(xref) && !marriedIn.has(xref);
+  for (const xref of order) {
+    if (!movable(xref)) {
+      continue;
+    }
+    const block = [xref, ...(partners.get(xref) ?? []).filter(movable)];
+    const to = least(block.map(target));
+    for (const one of block) {
+      generation.set(one, Math.max(generation.get(one) ?? 0, to));
+    }
+  }
 }
 
 interface Ordering {
