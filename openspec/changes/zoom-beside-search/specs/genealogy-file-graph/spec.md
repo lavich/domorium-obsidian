@@ -86,7 +86,7 @@ The reader SHALL be able to move the graph by dragging it from anywhere, a card
 included; a press that moves before it is released SHALL NOT activate what it
 began on. A mouse wheel SHALL zoom around the pointer; a trackpad's two-finger
 scroll SHALL move the graph and its pinch SHALL zoom; buttons floating over the top
-corner of the graph, in the same row as the search icon and right after it, which
+corner of the graph, inside the same bordered box as the search icon, right after it, which
 stay where they are as it moves, SHALL zoom in and out. **Fit** SHALL show the whole scope where the zoom range allows, and
 otherwise as much of it as the farthest zoom shows, centred on it. Zoomed out
 beyond the point where names can be read, cards SHALL be drawn without text.
@@ -130,6 +130,6 @@ showed.
 
 #### Scenario: The search and the zoom side by side
 - **WHEN** the graph of `curie.ged` is shown
-- **THEN** the search icon and the zoom out, zoom in and Fit buttons are in one row
+- **THEN** the search icon and the zoom out, zoom in and Fit buttons are in one bordered box
   in the top corner of the canvas, the buttons to the right of the icon, and none is
   at the bottom of the canvas

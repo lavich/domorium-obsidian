@@ -386,6 +386,11 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
 
       await expect(page.locator(".gedcom-ft-find-toggle")).toBeVisible();
       await expect(page.locator(".gedcom-ft-search")).toBeHidden();
+      const frames = await page.evaluate((p) => {
+        const width = (selector: string) => getComputedStyle(document.querySelector(selector) as Element).borderTopWidth;
+        return [width(`.gedcom-${p}-dock`), width(`.gedcom-${p}-find`), width(`.gedcom-${p}-controls`)];
+      }, "ft");
+      expect(frames).toEqual(["1px", "0px", "0px"]);
       const zoomBefore = await box(".gedcom-ft-controls");
       await page.locator(".gedcom-ft-find-toggle").click();
       await expect(page.locator(".gedcom-ft-search")).toBeFocused();

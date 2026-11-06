@@ -26,7 +26,7 @@ mouse or a key SHALL leave the focus in the field.
 
 The timeline SHALL also offer a zoom that widens or narrows the axis of years. The zoom
 SHALL be a group of buttons — zoom out, zoom in and Fit — floating over the top corner of
-the board, in the same row as the search icon and right after it, and staying there while
+the board, inside the same bordered box as the search icon, right after it, and staying there while
 the rows and years scroll beneath it, not a slider in the toolbar; each press of zoom in or zoom out SHALL change the width of a year by a fifth,
 within a fixed range, and Fit SHALL narrow or widen the years to the width the board
 has. The axis of years SHALL stay in place while the rows scroll beneath it and the
@@ -80,7 +80,7 @@ years scroll along it.
 
 #### Scenario: The search and the zoom side by side
 - **WHEN** the timeline is shown
-- **THEN** the search icon and the zoom out, zoom in and Fit buttons are in one row under
+- **THEN** the search icon and the zoom out, zoom in and Fit buttons are in one bordered box under
   the axis, the buttons to the right of the icon, and none is at the bottom of the board
 
 #### Scenario: Opening the search beside the zoom

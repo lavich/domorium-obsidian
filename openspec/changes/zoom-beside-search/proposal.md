@@ -9,7 +9,8 @@ User decision, 2026-11-06, verbatim: «на графе и таймлайне э�
 ## What Changes
 
 - The zoom out, zoom in and Fit buttons move from the bottom corner to the top corner, into one
-  row with the search icon, right after it.
+  row with the search icon, right after it, and the two share one bordered box, a thin line
+  between them.
 - The search field opens to the left, away from the zoom buttons, and never covers them.
 - The tooltips of the zoom buttons open downwards, as the search's do, because the row is at the top.
 
@@ -34,5 +35,4 @@ above `minAppVersion` is used.
 ## Non-goals
 
 - No new setting, command or string; no change to what the buttons do or to the zoom range.
-- No merging of the two boxes into one frame.
 - The list's search.

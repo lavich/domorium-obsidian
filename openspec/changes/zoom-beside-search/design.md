@@ -11,6 +11,8 @@ offsets would depend on that width.
   The dock is anchored to the end corner, so the field grows away from the zoom group. Rejected:
   offsetting the search by the zoom group's width, which breaks when the width changes (phone
   buttons are 44 px).
+- **One box.** The dock carries the border, the radius, the background and the shadow; its two
+  children carry none, and the zoom group has a thin line at its start edge.
 - **Timeline offsets** (under the axis, clear of the vertical scrollbar) belong to the dock, so
   `--gedcom-ft-hbar`, which only the bottom zoom group used, is removed.
 - **Tooltips** of the zoom buttons are placed `bottom`.
