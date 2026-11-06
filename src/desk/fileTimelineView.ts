@@ -6,7 +6,7 @@ import { BranchScopeBar, readBranchScope, type BranchScope } from "./branchScope
 import type { FileTimeline } from "./fileTimeline";
 import { FloatingSearch } from "./floatingSearch";
 import { nameMeasure } from "./cardRender";
-import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
+import { floatingDock, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { BAR, FADE_AT, layoutOf, maskName, PAD, ROW, SOFT, SOFT_OPACITY, svg, type BarEnd, type Layout, type Placed } from "./timelineLayout";
 import { listenTimeline } from "./timelineEvents";
 import { barOf, markOf, missesQuery, personOf, yearAtX } from "./timelineHits";
@@ -137,14 +137,15 @@ export class FileTimelineBoard {
     });
 
     this.stage = this.root.createDiv({ cls: "gedcom-ft-stage" });
-    this.find = new FloatingSearch(this.stage, {
+    const dock = floatingDock(this.stage, "gedcom-ft");
+    this.find = new FloatingSearch(dock, {
       prefix: "gedcom-ft",
       setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (query) => this.setQuery(query),
       step: (by) => this.stepMatch(by),
       info: () => this.matchInfo(),
     });
-    zoomControls(this.stage, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
+    zoomControls(dock, "gedcom-ft", (element, icon) => this.host.setIcon(element, icon), {
       out: () => this.zoomBy(1 / ZOOM.step),
       in: () => this.zoomBy(ZOOM.step),
       fit: () => this.fit(),
@@ -557,7 +558,6 @@ export class FileTimelineBoard {
   private fitGutters(): void {
     this.stage.setCssProps({
       "--gedcom-ft-vbar": `${this.plot.offsetWidth - this.plot.clientWidth}px`,
-      "--gedcom-ft-hbar": `${this.plot.offsetHeight - this.plot.clientHeight}px`,
     });
   }
 

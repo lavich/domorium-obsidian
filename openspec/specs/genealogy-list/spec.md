@@ -608,7 +608,7 @@ record or a source from a link, the graph, the timeline or the cursor SHALL NOT 
 - **THEN** the list shows the people with the row of Pierre Curie marked and in view
 
 #### Scenario: A family pressed in the card of a place
-- **WHEN** the list shows the places, `Sceaux, France` is selected, and the reader presses the Curies' marriage in the card of that place
+- **WHEN** the list shows the places, `Sceaux, France` is selected, and the reader presses the Curies in the row of their marriage in the card of that place
 - **THEN** the list shows the families with the row of the Curies' family marked and in view
 
 #### Scenario: The record pressed in the card of an event

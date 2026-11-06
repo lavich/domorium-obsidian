@@ -221,7 +221,7 @@ test.describe("the graph of a file", () => {
     expect((await transition()).property).toBe("none");
   });
 
-  test("floats the zoom buttons in the canvas's corner, where they stay as the graph moves", async ({ page }) => {
+  test("floats the zoom buttons in the canvas's top corner, where they stay as the graph moves", async ({ page }) => {
     await mountGraph(page);
     const controls = page.locator(".gedcom-fg-controls");
     const canvas = await page.locator(".gedcom-fg-canvas").boundingBox();
@@ -230,7 +230,7 @@ test.describe("the graph of a file", () => {
     expect(before?.x ?? 0).toBeGreaterThan(canvas?.x ?? Infinity);
     expect((before?.x ?? 0) + (before?.width ?? 0)).toBeLessThanOrEqual((canvas?.x ?? 0) + (canvas?.width ?? 0));
     expect((before?.y ?? 0) + (before?.height ?? 0)).toBeLessThanOrEqual((canvas?.y ?? 0) + (canvas?.height ?? 0));
-    expect(before?.y ?? 0).toBeGreaterThan((canvas?.y ?? 0) + (canvas?.height ?? 0) / 2);
+    expect(before?.y ?? 0).toBeLessThan((canvas?.y ?? 0) + (canvas?.height ?? 0) / 2);
     await page.mouse.move((canvas?.x ?? 0) + 300, (canvas?.y ?? 0) + 300);
     await page.mouse.down();
     await page.mouse.move((canvas?.x ?? 0) + 200, (canvas?.y ?? 0) + 150, { steps: 4 });
@@ -371,7 +371,7 @@ for (const viewport of [{ width: 1400, height: 900 }, { width: 390, height: 844 
   test.describe(`the search over the graph at ${viewport.width} px`, () => {
     test.use({ viewport });
 
-    test("floats inside the canvas away from the zoom buttons, with no toolbar band above it", async ({ page }) => {
+    test("floats inside the canvas beside the zoom buttons, with no toolbar band above it", async ({ page }) => {
       const phone = viewport.width < 600;
       await mountGraph(page, { phone });
       const box = (selector: string) => page.locator(selector).boundingBox();
@@ -382,13 +382,35 @@ for (const viewport of [{ width: 1400, height: 900 }, { width: 390, height: 844 
       const closed = await box(".gedcom-fg-find");
       const zoomGroup = await box(".gedcom-fg-controls");
       expect(closed?.x ?? 0).toBeGreaterThanOrEqual(canvas?.x ?? 0);
-      expect((closed?.y ?? 0) + (closed?.height ?? 0)).toBeLessThan(zoomGroup?.y ?? 0);
+      expect((closed?.x ?? 0) + (closed?.width ?? 0)).toBeLessThanOrEqual(zoomGroup?.x ?? 0);
+      expect(Math.abs((closed?.y ?? 0) + (closed?.height ?? 0) / 2 - (zoomGroup?.y ?? 0) - (zoomGroup?.height ?? 0) / 2)).toBeLessThan(2);
       expect(closed?.height ?? 0).toBeGreaterThanOrEqual(phone ? 44 : 0);
 
       await expect(page.locator(".gedcom-fg-find-toggle")).toBeVisible();
       await expect(page.locator(".gedcom-fg-search")).toBeHidden();
+      const frames = await page.evaluate((p) => {
+        const width = (selector: string) => getComputedStyle(document.querySelector(selector) as Element).borderTopWidth;
+        return [width(`.gedcom-${p}-dock`), width(`.gedcom-${p}-find`), width(`.gedcom-${p}-controls`)];
+      }, "fg");
+      expect(frames).toEqual(["1px", "0px", "0px"]);
+      const sizes = await page.evaluate((p) => {
+        const size = (selector: string) => {
+          const rect = (document.querySelector(selector) as Element).getBoundingClientRect();
+          return [Math.round(rect.width), Math.round(rect.height)];
+        };
+        return [`.gedcom-${p}-find-toggle`, `.gedcom-${p}-zoom-out`, `.gedcom-${p}-zoom-in`, `.gedcom-${p}-fit`].map(size);
+      }, "fg");
+      expect(new Set(sizes.map((one) => one.join("x"))).size).toBe(1);
+      expect(sizes[0]?.[0]).toBe(phone ? 44 : 28);
+      const zoomBefore = await box(".gedcom-fg-controls");
       await page.locator(".gedcom-fg-find-toggle").click();
       await expect(page.locator(".gedcom-fg-search")).toBeFocused();
+      await expect.poll(async () => (await box(".gedcom-fg-search"))?.width ?? 0).toBeGreaterThan(30);
+      if (phone) {
+        await expect(page.locator(".gedcom-fg-controls")).toBeHidden();
+      } else {
+        expect(await box(".gedcom-fg-controls")).toEqual(zoomBefore);
+      }
       await expect(page.locator(".gedcom-fg-find-toggle")).toBeHidden();
       await expect(page.locator(".gedcom-fg-find-clear")).toBeVisible();
       await expect.poll(async () => (await box(".gedcom-fg-search"))?.width ?? 0).toBeGreaterThan(100);

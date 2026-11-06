@@ -1,6 +1,6 @@
 import { plural, t } from "../i18n";
 import { cardShape, nameMeasure, svg } from "./cardRender";
-import { HoverDelay, placeInside, prefersReducedMotion, zoomControls } from "./dom";
+import { floatingDock, HoverDelay, placeInside, prefersReducedMotion, zoomControls } from "./dom";
 import { CARD, type FileGraphLayout, type GraphCard, type Point } from "./fileGraph";
 import { GraphInput } from "./graphInput";
 import { buildItems, type Item } from "./sceneItems";
@@ -144,7 +144,7 @@ export class GraphCanvas {
   private refocusing = false;
   private wantsFocus: string | null = null;
   private readonly hover: HoverDelay<string>;
-  private readonly controls: HTMLElement;
+  readonly dock: HTMLElement;
   private readonly measureName: (text: string) => number;
   private readonly input: GraphInput;
 
@@ -180,7 +180,8 @@ export class GraphCanvas {
         this.hideTip();
       },
     });
-    this.controls = zoomControls(this.el, "gedcom-fg", this.options.setIcon && ((element, icon) => this.options.setIcon?.(element, icon)), {
+    this.dock = floatingDock(this.el, "gedcom-fg");
+    zoomControls(this.dock, "gedcom-fg", this.options.setIcon && ((element, icon) => this.options.setIcon?.(element, icon)), {
       out: () => this.zoomBy(1 / BUTTON_STEP),
       in: () => this.zoomBy(BUTTON_STEP),
       fit: () => this.fit(),
@@ -443,7 +444,7 @@ export class GraphCanvas {
   }
 
   private onControls(target: EventTarget | null): boolean {
-    return target instanceof Element && target.closest(".gedcom-fg-controls, .gedcom-fg-find") !== null;
+    return target instanceof Element && target.closest(".gedcom-fg-dock") !== null;
   }
 
   stepMatch(by: 1 | -1): string | null {
