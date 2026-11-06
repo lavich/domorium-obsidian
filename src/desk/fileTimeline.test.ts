@@ -56,6 +56,49 @@ describe("a person on the timeline of a file", () => {
     expect(buildFileTimeline(curieIndex(), 1990).people.get("@I16@")?.lifeline?.end).toBe(1990);
   });
 
+  it("gives a person the whole surname the record writes, and none where it writes none", () => {
+    const model = withEvents();
+
+    expect(curie().people.get("@I1@")?.surname).toBe("Skłodowska-Curie");
+    expect(model.people.get(named(model, "Kazimierz Żorawski"))?.surname).toBe("Żorawski");
+    const lone = buildFileTimeline(
+      indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 NAME Plato", "0 TRLR", ""].join("\n")),
+      NOW,
+    );
+    expect(lone.people.get("@I1@")?.surname).toBeUndefined();
+  });
+
+  it("gives a family the year its link stands at: the marriage, else the first child's bar, else none", () => {
+    const family = (lines: string[]) =>
+      buildFileTimeline(
+        indexOf(
+          [
+            "0 HEAD", "1 GEDC", "2 VERS 7.0",
+            "0 @I1@ INDI", "1 FAMS @F1@",
+            "0 @I2@ INDI", "1 FAMS @F1@",
+            "0 @I3@ INDI", "1 FAMC @F1@", "1 BIRT", "2 DATE 1902",
+            "0 @I4@ INDI", "1 FAMC @F1@", "1 BIRT", "2 DATE 1900",
+            "0 @F1@ FAM", "1 HUSB @I1@", "1 WIFE @I2@", "1 CHIL @I3@", "1 CHIL @I4@",
+            ...lines,
+            "0 TRLR", "",
+          ].join("\n"),
+        ),
+        NOW,
+      ).families.get("@F1@");
+
+    expect(family(["1 MARR", "2 DATE 1895"])?.linkYear).toBe(1895);
+    expect(family([])?.linkYear).toBe(1900);
+    expect(
+      buildFileTimeline(
+        indexOf(
+          ["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 FAMS @F1@", "0 @I2@ INDI", "1 FAMS @F1@",
+            "0 @F1@ FAM", "1 HUSB @I1@", "1 WIFE @I2@", "0 TRLR", ""].join("\n"),
+        ),
+        NOW,
+      ).families.get("@F1@")?.linkYear,
+    ).toBeUndefined();
+  });
+
   it("writes the years of a lifeline, with an open end, an approximate start and a year before the era", () => {
     const bce = buildFileTimeline(
       indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 BIRT", "2 DATE 1401 BCE", "1 DEAT", "2 DATE 1350 BCE", "0 TRLR", ""].join("\n")),
@@ -67,6 +110,19 @@ describe("a person on the timeline of a file", () => {
     expect(lifelineYears(withEvents().people.get("@I3@")?.lifeline ?? null)).toBe("≈1832–1902");
     expect(lifelineYears(bce.people.get("@I1@")?.lifeline ?? null)).toBe("1401 BCE–1350 BCE");
     expect(lifelineYears(null)).toBe("");
+  });
+
+  it("takes a person with no death who began at a birth in the last hundred years as living, up to the present", () => {
+    const line = (lines: string[]) =>
+      buildFileTimeline(
+        indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", ...lines, "0 TRLR", ""].join("\n")),
+        NOW,
+      ).people.get("@I1@")?.lifeline;
+
+    expect(line(["1 BIRT", "2 DATE 1990"])).toMatchObject({ living: true, open: true, end: 2026 });
+    expect(line(["1 BIRT", "2 DATE 1850"])).toMatchObject({ living: false, open: true, end: 1950 });
+    expect(line(["1 RESI", "2 DATE 1930"])).toMatchObject({ living: false, open: true });
+    expect(line(["1 BIRT", "2 DATE 1990", "1 DEAT", "2 DATE 2010"])).toMatchObject({ living: false, open: false, end: 2010 });
   });
 
   it("marks each event by its kind, and another kind with a sign", () => {

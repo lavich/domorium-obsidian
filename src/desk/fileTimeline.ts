@@ -23,6 +23,8 @@ export interface Lifeline {
   end: number;
   /** No death, burial or cremation is dated, so the line fades out at `end`. */
   open: boolean;
+  /** No death is recorded and the line begins at a birth, christening or baptism less than `OPEN_SPAN` years ago, so it runs to the present. */
+  living: boolean;
   startUncertain: boolean;
   endUncertain: boolean;
   /** Absent where the line begins at an event that is neither a birth nor a christening. */
@@ -33,6 +35,7 @@ export interface TimelinePerson {
   xref: string;
   row: PersonRow;
   sex: Sex;
+  surname?: string;
   lifeline: Lifeline | null;
   marks: TimelineMark[];
   parents: string[];
@@ -47,6 +50,8 @@ export interface TimelineFamily {
   children: string[];
   marks: TimelineMark[];
   marriage?: TimelineMark;
+  /** The year a line between the spouses stands at: the marriage, else the earliest child's bar. */
+  linkYear?: number;
 }
 
 export interface AliveAt {
@@ -170,6 +175,7 @@ function lifelineOf(own: TimelineMark[], all: TimelineMark[], now: number): Life
     start: begin.year,
     end: death ? death.year : Math.min(now, begin.year + OPEN_SPAN),
     open: !death,
+    living: !death && birth !== undefined && begin.year + OPEN_SPAN > now,
     startUncertain: begin.uncertain,
     endUncertain: death?.uncertain ?? false,
     ...(birth ? { age: { from: birth.year, approximate: birth.uncertain } } : {}),
@@ -391,6 +397,7 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       xref,
       row: person,
       sex: sexOf(person),
+      ...(person.surname === undefined ? {} : { surname: person.surname }),
       lifeline: lifelineOf(own, marks, now),
       marks,
       parents: xrefsOf(person.parents, known),
@@ -398,6 +405,14 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       children: xrefsOf(person.children, known),
       ...(person.portrait === undefined ? {} : { portrait: person.portrait }),
     });
+  }
+
+  for (const family of families.values()) {
+    const first = least(family.children.map((child) => people.get(child)?.lifeline?.start ?? Infinity));
+    const year = family.marriage?.year ?? (Number.isFinite(first) ? first : undefined);
+    if (year !== undefined) {
+      family.linkYear = year;
+    }
   }
 
   const order = [...people.keys()];
