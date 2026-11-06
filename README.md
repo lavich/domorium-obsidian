@@ -21,7 +21,7 @@ adapted per editor.
 - An optional genealogy interface, off until you turn it on: a graph and a
   timeline of the whole file, a sortable list of its people, families,
   sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
-  record with their facts, names, family, timeline, places and what each fact
+  record with their facts, names, family, timeline and what each fact
   rests on
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings

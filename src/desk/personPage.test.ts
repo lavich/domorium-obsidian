@@ -124,6 +124,12 @@ describe("the person card", () => {
     expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 2 of 2"]);
   });
 
+  it("draws no line for a person with no facts", () => {
+    draw("@I1@", { index: gedcom("0 @I1@ INDI", "1 NAME Anna /Nowak/") });
+
+    expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
+  });
+
   it("puts the line above the facts, not in the list", () => {
     draw("@I1@");
     const line = container.querySelector(".gedcom-desk-unsourced");
