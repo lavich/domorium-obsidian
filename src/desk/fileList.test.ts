@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { generated } from "../../tests/generated";
 import { resetLanguage } from "../i18n";
-import { curieIndex, curieWithMap, indexOf, SCEAUX_MAP } from "../testing/curie";
+import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
 
@@ -772,12 +772,9 @@ describe("the scroll the board reports", () => {
 
 
 describe("the places", () => {
-  const mapped = indexOf(curieWithMap());
-  const withSceaux = indexOf(curieWithMap(SCEAUX_MAP));
+  const events = indexOf(curieWithEvents());
   const place = (key: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === key);
-  const marks = (): (string | null)[] =>
-    rows().map((one) => one.querySelector(".gedcom-list-gap")?.getAttribute("aria-label") ?? null);
-  const open = (state = {}) => board({ kind: "places", ...state }, mapped);
+  const open = (state = {}) => board({ kind: "places", ...state }, events);
 
   it("is the fourth kind, after the sources", () => {
     board();
@@ -785,31 +782,14 @@ describe("the places", () => {
     expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places"]);
   });
 
-  it("lists every place of the file, alphabetically, with its events, years and coordinates", () => {
+  it("lists every place of the file, alphabetically, with its events and years", () => {
     open();
 
     expect(rows()).toHaveLength(10);
     expect(names()[0]).toBe("Montpellier, France");
     expect(text(".gedcom-list-count")).toBe("10 places");
-    expect([1, 2, 3].map((at) => cell(place("paris, france"), at))).toEqual(["11", "1855–1958", "48.8566, 2.3522"]);
-    expect(all(".gedcom-list-headcell").map((one) => one.textContent?.replace(/[↑↓]/u, ""))).toEqual(["Place", "Events", "Years", "Coordinates"]);
-  });
-
-  it("marks a place without coordinates by a shape that has a label, and writes no text for it", () => {
-    open();
-    const mulhouse = place("mulhouse, france");
-
-    expect(mulhouse?.querySelector(".gedcom-list-gap")?.getAttribute("role")).toBe("img");
-    expect(mulhouse?.querySelector(".gedcom-list-gap")?.getAttribute("aria-label")).toBe("No coordinates");
-    expect(cell(mulhouse, 3)).toBe("");
-    expect(marks().filter((mark) => mark !== null)).toHaveLength(6);
-  });
-
-  it("takes the coordinates of a place from its MAP in the file", () => {
-    board({ kind: "places" }, withSceaux);
-
-    expect(cell(place("sceaux, france"), 3)).toBe("48.7766, 2.2917");
-    expect(marks().filter((mark) => mark !== null)).toHaveLength(5);
+    expect([1, 2].map((at) => cell(place("paris, france"), at))).toEqual(["11", "1855–1958"]);
+    expect(all(".gedcom-list-headcell:not([hidden])").map((one) => one.textContent?.replace(/[↑↓]/u, ""))).toEqual(["Place", "Events", "Years"]);
   });
 
   it("keeps the order a column gives and cycles it in three presses", () => {
@@ -906,13 +886,12 @@ describe("the places", () => {
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
-  it("shows the coordinates of a compact row with the mark spelled out", () => {
+  it("spells out the events of a compact row", () => {
     box.width = 500;
     const made = open();
     made.resized();
 
     expect(cell(place("paris, france"), 1)).toBe("11 events");
-    expect(cell(place("mulhouse, france"), 3)).toBe(" No coordinates");
   });
 
   it("empties the search when asked, and leaves a search that is already empty", () => {

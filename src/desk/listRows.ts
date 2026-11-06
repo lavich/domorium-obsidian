@@ -1,10 +1,9 @@
 import type { FamilyRow, GenealogyIndex, PersonRow, SourceRow } from "../genealogy";
 import { UNNAMED, UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
-import type { FileMap } from "./fileMap";
 import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
-import { coordinatesText, placeRows, yearsText, type PlaceRow } from "./placeRows";
+import { placeRows, yearsText, type PlaceRow } from "./placeRows";
 
 export type ListKind = "people" | "families" | "sources" | "places";
 
@@ -22,8 +21,7 @@ export type SortKey =
   | "author"
   | "repository"
   | "citedBy"
-  | "events"
-  | "coordinates";
+  | "events";
 
 export interface ListSort {
   by: SortKey;
@@ -67,7 +65,6 @@ const COLUMNS: Record<ListKind, Column[]> = {
     { key: "place", label: "list.column.place", numeric: false },
     { key: "events", label: "list.column.events", numeric: true },
     { key: "years", label: "list.column.years", numeric: false },
-    { key: "coordinates", label: "list.column.coordinates", numeric: false },
   ],
 };
 
@@ -165,10 +162,7 @@ export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Ce
   }
   if (kind === "places") {
     const place = row as PlaceRow;
-    return {
-      texts: [place.name, String(place.events), yearsText(place), coordinatesText(place)],
-      gap: place.coordinates === undefined,
-    };
+    return { texts: [place.name, String(place.events), yearsText(place)], gap: false };
   }
   const source = row as SourceRow;
   return {
@@ -249,12 +243,11 @@ export interface ListQuery {
   kind: ListKind;
   query: string;
   sort: ListSort | undefined;
-  places?: FileMap;
 }
 
-export function listRows(index: GenealogyIndex, { kind, query, sort, places }: ListQuery, collator: Intl.Collator): ListRow[] {
+export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
   if (kind === "places") {
-    return places === undefined ? [] : placeRows(places, { query, sort }, collator);
+    return placeRows(index, { query, sort }, collator);
   }
   const rows: ListRow[] =
     kind === "people" ? peopleShown(index, query) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);

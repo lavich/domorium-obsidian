@@ -1,26 +1,26 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage } from "../i18n";
-import { curieWithMap, indexOf } from "../testing/curie";
-import { fileMapOf } from "./fileMap";
+import { curieWithEvents, indexOf } from "../testing/curie";
 import { cellsOf, collatorFor, columnsOf, listRows, nextSort, readListState, type ListSort } from "./listRows";
-import { coordinatesText, placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
+import { placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
 
 afterEach(resetLanguage);
 
-const index = indexOf(curieWithMap());
-const map = fileMapOf(index);
+const index = indexOf(curieWithEvents());
 const collator = collatorFor("en");
-const names = (query = "", sort?: ListSort, source = map): string[] => placeRows(source, { query, sort }, collator).map((row) => row.name);
-const flags = (count: number, value: boolean): boolean[] => Array.from({ length: count }, () => value);
-const row = (name: string): PlaceRow => placesOf(map).find((one) => one.name === name) as PlaceRow;
+const names = (query = "", sort?: ListSort, source = index): string[] => placeRows(source, { query, sort }, collator).map((row) => row.name);
+const row = (name: string): PlaceRow => placesOf(index).find((one) => one.name === name) as PlaceRow;
 const doc = (...places: string[]) =>
-  fileMapOf(indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", ...places.flatMap((place) => ["1 BIRT", `2 PLAC ${place}`]), "0 TRLR"].join("\n")));
+  indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", ...places.flatMap((place) => ["1 BIRT", `2 PLAC ${place}`]), "0 TRLR"].join("\n"));
 
 describe("the rows of the places kind", () => {
-  it("holds every place of the file, mapped or not, once", () => {
-    expect(placesOf(map)).toHaveLength(10);
-    expect(placesOf(map).filter((one) => one.coordinates === undefined)).toHaveLength(6);
+  it("holds every place of the file once", () => {
+    expect(placesOf(index)).toHaveLength(10);
+  });
+
+  it("lists the places in the order the file first names them", () => {
+    expect(placesOf(index)[0]?.name).toBe("Warsaw, Congress Poland");
   });
 
   it("counts the events at a place and spans their years", () => {
@@ -33,15 +33,6 @@ describe("the rows of the places kind", () => {
     const spellings = doc("paris, France", "Paris,  FRANCE");
 
     expect(names("", undefined, spellings)).toEqual(["paris, France"]);
-  });
-
-  it("shows no coordinates for a place with no MAP", () => {
-    expect(coordinatesText(row("Sceaux, France"))).toBe("");
-  });
-
-  it("writes coordinates as degrees to four places", () => {
-    expect(coordinatesText(row("Paris, France"))).toBe("48.8566, 2.3522");
-    expect(coordinatesText({ ...row("Paris, France"), coordinates: { latitude: -33.8688, longitude: 151.20931 } })).toBe("-33.8688, 151.2093");
   });
 });
 
@@ -75,13 +66,6 @@ describe("ordering the places", () => {
   it("orders by the first year", () => {
     expect(names("", { by: "years", dir: "asc" }).slice(0, 2)).toEqual(["Mulhouse, France", "Warsaw, Congress Poland"]);
     expect(names("", { by: "years", dir: "desc" })[0]).toBe("New York, New York, United States");
-  });
-
-  it("puts the places without coordinates first when ascending and last when descending", () => {
-    const withoutAt = (order: string[]): boolean[] => order.map((name) => row(name).coordinates === undefined);
-
-    expect(withoutAt(names("", { by: "coordinates", dir: "asc" }))).toEqual([...flags(6, true), ...flags(4, false)]);
-    expect(withoutAt(names("", { by: "coordinates", dir: "desc" }))).toEqual([...flags(4, false), ...flags(6, true)]);
   });
 
   it("goes round the three presses of a header", () => {
@@ -119,26 +103,15 @@ describe("searching the places", () => {
 });
 
 describe("the places kind in the shared model of the list", () => {
-  it("has the columns place, events, years and coordinates", () => {
-    expect(columnsOf("places").map((column) => column.key)).toEqual(["place", "events", "years", "coordinates"]);
-    expect(columnsOf("places").map((column) => column.numeric)).toEqual([false, true, false, false]);
+  it("has the columns place, events and years", () => {
+    expect(columnsOf("places").map((column) => column.key)).toEqual(["place", "events", "years"]);
+    expect(columnsOf("places").map((column) => column.numeric)).toEqual([false, true, false]);
   });
 
   it("serves its rows through listRows", () => {
-    const rows = listRows(index, { kind: "places", query: "paris", sort: undefined, places: map }, collator);
+    const rows = listRows(index, { kind: "places", query: "paris", sort: undefined }, collator);
 
-    expect(cellsOf("places", rows[0] as PlaceRow, index)).toEqual({
-      texts: ["Paris, France", "11", "1855–1958", "48.8566, 2.3522"],
-      gap: false,
-    });
-  });
-
-  it("marks a place with no coordinates as a gap", () => {
-    expect(cellsOf("places", row("Mulhouse, France"), index).gap).toBe(true);
-  });
-
-  it("has no rows without a model of places", () => {
-    expect(listRows(index, { kind: "places", query: "", sort: undefined }, collator)).toEqual([]);
+    expect(cellsOf("places", rows[0] as PlaceRow, index)).toEqual({ texts: ["Paris, France", "11", "1855–1958"], gap: false });
   });
 
   it("reads the kind, a sort of its columns and the selected place of a saved state", () => {

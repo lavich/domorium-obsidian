@@ -650,28 +650,17 @@ for (const viewport of [WIDE, PHONE]) {
     test.use({ viewport });
 
     const mountPlaces = (page: Page, options: TabOptions = {}) =>
-      mountList(page, { fixture: "map", phone, touch: phone, memory: { list: { kind: "places" } }, ...options });
+      mountList(page, { events: true, phone, touch: phone, memory: { list: { kind: "places" } }, ...options });
     const place = (page: Page, key: string) => page.locator(`.gedcom-list-row[data-key="${key}"]`);
 
-    test("lists every place alphabetically with the events, the years and the coordinates", async ({ page }) => {
+    test("lists every place alphabetically with the events and the years", async ({ page }) => {
       await mountPlaces(page);
 
       await expect(rows(page)).toHaveCount(10);
       expect((await names(page))[0]).toBe("Montpellier, France");
       await expect(page.locator(".gedcom-list-count")).toHaveText("10 places");
       const cells = await place(page, "paris, france").locator(".gedcom-list-cell").allInnerTexts();
-      expect(cells.map((cell) => cell.trim())).toEqual(["Paris, France", phone ? "11 events" : "11", "1855–1958", "48.8566, 2.3522"]);
-    });
-
-    test("marks a place without coordinates by a labelled shape that has a size, not by colour", async ({ page }) => {
-      await mountPlaces(page);
-      const mark = place(page, "mulhouse, france").locator(".gedcom-list-gap");
-
-      await expect(mark).toHaveAttribute("aria-label", "No coordinates");
-      const box = await mark.boundingBox();
-      expect(box?.width).toBeGreaterThan(6);
-      expect(box?.height).toBeGreaterThan(6);
-      await expect(page.locator(".gedcom-list-gap")).toHaveCount(6);
+      expect(cells.map((cell) => cell.trim())).toEqual(["Paris, France", phone ? "11 events" : "11", "1855–1958"]);
     });
 
     test("sorts by each column in three presses and keeps the sort", async ({ page }) => {
@@ -684,9 +673,8 @@ for (const viewport of [WIDE, PHONE]) {
       expect((await names(page))[0]).toBe("Warsaw, Congress Poland");
       await header(page, "Events").click();
       expect((await names(page))[0]).toBe("Montpellier, France");
-      await header(page, "Coordinates").click();
-      expect(await page.locator(".gedcom-list-row").first().locator(".gedcom-list-gap").count()).toBe(1);
-      expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ places: { by: "coordinates", dir: "asc" } });
+      await header(page, "Years").click();
+      expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ places: { by: "years", dir: "asc" } });
     });
 
     test("sorts by a menu on a phone", async ({ page }) => {

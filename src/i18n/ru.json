@@ -322,7 +322,6 @@
   "list.column.repository": "Хранилище",
   "list.column.citedBy": "Цитируют",
   "list.column.events": "События",
-  "list.column.coordinates": "Координаты",
   "list.count.people": {
     "one": "{count} человек",
     "few": "{count} человека",
@@ -389,7 +388,6 @@
   "list.fileOrder": "Порядок файла",
   "list.alphabetical": "По алфавиту",
   "list.gapMark": "Ни одного источника",
-  "list.noCoordinatesMark": "Без координат",
   "list.label": "Записи файла",
   "list.compact.sources": {
     "one": "{count} источник",
@@ -404,6 +402,12 @@
     "other": "{count} ребёнка"
   },
   "list.compact.citedBy": "Цитируют: {count}",
+  "list.compact.events": {
+    "one": "{count} событие",
+    "few": "{count} события",
+    "many": "{count} событий",
+    "other": "{count} события"
+  },
   "mode.map": "Карта",
   "command.showMap": "Показать как карту",
   "map.label": {

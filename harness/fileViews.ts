@@ -6,7 +6,7 @@ import type { TileSettings } from "../src/desk/fileMapView";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
-import { CURIE, curieWithMap, indexOf, SCEAUX_MAP } from "../src/testing/curie";
+import { CURIE, curieWithEvents, curieWithMap, indexOf, SCEAUX_MAP } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
 import { stubSetIcon } from "./icons";
 
@@ -22,6 +22,7 @@ export interface TabOptions {
   phone?: boolean;
   touch?: boolean;
   language?: string;
+  events?: boolean;
   fixture?: "map" | "mapWithSceaux";
   tiles?: TileSettings;
 }
@@ -128,7 +129,7 @@ function mount(options: TabOptions): void {
   tiles = options.tiles ?? NO_TILES;
   index = indexOf(
     options.doc ??
-      (options.fixture === "map" ? curieWithMap() : options.fixture === "mapWithSceaux" ? curieWithMap(SCEAUX_MAP) : CURIE),
+      (options.events ? curieWithEvents() : options.fixture === "map" ? curieWithMap() : options.fixture === "mapWithSceaux" ? curieWithMap(SCEAUX_MAP) : CURIE),
   );
   memory = options.memory ?? {};
   around = options.around;

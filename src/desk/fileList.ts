@@ -1,6 +1,5 @@
 import type { GenealogyIndex } from "../genealogy";
 import { nameBy } from "./dom";
-import { fileMapOf, type FileMap } from "./fileMap";
 import { FloatingSearch } from "./floatingSearch";
 import { currentLanguage, plural, t, type MessageKey } from "../i18n";
 import {
@@ -18,7 +17,7 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
-import type { PlaceRow } from "./placeRows";
+import { placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
   select(xref: string): void;
@@ -104,7 +103,6 @@ export class ListBoard {
   private totals = { people: 0 };
   private marked: string | null = null;
   private markedPlace: string | null = null;
-  private placeMap: FileMap | null = null;
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
@@ -402,13 +400,12 @@ export class ListBoard {
       return;
     }
     const focused = this.active >= 0 && this.rows[this.active] !== undefined ? keyOf(this.rows[this.active]) : undefined;
-    this.placeMap = this.kind === "places" ? fileMapOf(index) : null;
     this.rows = listRows(
       index,
-      { kind: this.kind, query: this.query, sort: this.sorts[this.kind], ...(this.placeMap ? { places: this.placeMap } : {}) },
+      { kind: this.kind, query: this.query, sort: this.sorts[this.kind] },
       collatorFor(currentLanguage()),
     );
-    if (this.markedPlace !== null && this.placeMap?.places.has(this.markedPlace) !== true) {
+    if (this.markedPlace !== null && !placesOf(index).some((place) => place.key === this.markedPlace)) {
       this.markedPlace = null;
     }
     this.positions = new Map(this.rows.map((row, at) => [keyOf(row), at]));
@@ -453,7 +450,7 @@ export class ListBoard {
       return this.totals.people;
     }
     if (this.kind === "places") {
-      return this.placeMap?.places.size ?? 0;
+      return placesOf(index).length;
     }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;
@@ -465,6 +462,10 @@ export class ListBoard {
     this.headEl.className = `gedcom-list-head is-${this.kind}`;
     this.headCells.forEach(({ cell, label, mark }, position) => {
       const column = columns[position];
+      cell.hidden = column === undefined;
+      if (column === undefined) {
+        return;
+      }
       const direction = sort?.by === column.key ? sort.dir : null;
       cell.className = `gedcom-list-headcell is-${column.key}${column.numeric ? " is-numeric" : ""}`;
       cell.setAttribute("aria-sort", direction === "asc" ? "ascending" : direction === "desc" ? "descending" : "none");
@@ -561,13 +562,6 @@ export class ListBoard {
         if (this.compact) {
           cell.appendText(` ${this.countLabel(column.key, 0)}`);
         }
-      } else if (this.kind === "places" && column.key === "coordinates" && gap) {
-        const mark = cell.createSpan({ cls: "gedcom-list-gap" });
-        mark.setAttribute("role", "img");
-        mark.setAttribute("aria-label", t("list.noCoordinatesMark"));
-        if (this.compact) {
-          cell.appendText(` ${t("list.noCoordinatesMark")}`);
-        }
       } else {
         cell.setText(this.compact && column.numeric ? this.countLabel(column.key, Number(text)) : text);
       }
@@ -577,7 +571,7 @@ export class ListBoard {
 
   private countLabel(key: SortKey, count: number): string {
     if (key === "events") {
-      return plural("map.events", count);
+      return plural("list.compact.events", count);
     }
     return key === "citedBy" ? t("list.compact.citedBy", { count }) : plural(key === "children" ? "list.compact.children" : "list.compact.sources", count);
   }

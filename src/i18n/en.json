@@ -302,7 +302,6 @@
   "list.column.repository": "Repository",
   "list.column.citedBy": "Cited by",
   "list.column.events": "Events",
-  "list.column.coordinates": "Coordinates",
   "list.count.people": {
     "one": "{count} person",
     "other": "{count} people"
@@ -353,7 +352,6 @@
   "list.fileOrder": "File order",
   "list.alphabetical": "Alphabetical",
   "list.gapMark": "No sources at all",
-  "list.noCoordinatesMark": "No coordinates",
   "list.label": "Records of the file",
   "list.compact.sources": {
     "one": "{count} source",
@@ -364,6 +362,10 @@
     "other": "{count} children"
   },
   "list.compact.citedBy": "Cited by {count}",
+  "list.compact.events": {
+    "one": "{count} event",
+    "other": "{count} events"
+  },
   "mode.map": "Map",
   "command.showMap": "Show as map",
   "map.label": {

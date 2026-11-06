@@ -2,6 +2,9 @@ import type { GenealogyIndex, PersonEvent } from "../genealogy";
 import type { Coordinates } from "../genealogy/types";
 import { fileTimelineOf, kindOf, least, type MarkKind, most } from "./fileTimeline";
 import { shortPlace, yearText } from "./labels";
+import { placeKey } from "./placeRows";
+
+export { placeKey };
 
 export interface MapEvent {
   record: string;
@@ -45,10 +48,6 @@ export interface Route {
 export const NO_ROUTE: Route = { stops: [], numbers: new Map() };
 
 const LINE_WIDTH = 100_000;
-
-export function placeKey(text: string): string {
-  return text.trim().replace(/\s+/gu, " ").normalize("NFC").toLowerCase();
-}
 
 function eventOf(event: PersonEvent, record: string, family: boolean): MapEvent | null {
   const place = event.place?.trim().replace(/\s+/gu, " ");
