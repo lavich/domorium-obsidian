@@ -87,3 +87,13 @@ years scroll along it.
 - **WHEN** the reader presses the search icon
 - **THEN** the field grows away from the zoom buttons, which stay where they
   were and uncovered
+
+#### Scenario: The buttons of the box are one size
+- **WHEN** the search and the zoom buttons are shown
+- **THEN** the search icon and the zoom out, zoom in and Fit buttons are squares of one size, at least 44
+  pixels on a phone
+
+#### Scenario: The zoom on a phone while the search is open
+- **WHEN** the reader opens the search on a phone
+- **THEN** the zoom buttons are hidden while the field is open, so it has the room to be used, and are
+  shown again when it closes

@@ -19,6 +19,11 @@ offsets would depend on that width.
 - **Archive order.** `timeline-named-bars` is archived first; the MODIFIED requirement of the
   timeline restates its text as that change leaves it.
 
+- **Same size.** The dock sets `--gedcom-find-size` (28 px, 44 px on a phone) and the zoom buttons take
+  it, so every button of the box is one square.
+- **Phone.** Three 44 px zoom buttons leave an open field about 60 px wide at 390 px, so while the field
+  is open the zoom group is hidden on a phone, where a pinch zooms, and returns when it closes.
+
 ## Risks / Trade-offs
 
 - A phone's narrow canvas: the dock has the canvas width less its margins as its maximum, and the

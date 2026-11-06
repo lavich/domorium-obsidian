@@ -133,3 +133,13 @@ showed.
 - **THEN** the search icon and the zoom out, zoom in and Fit buttons are in one bordered box
   in the top corner of the canvas, the buttons to the right of the icon, and none is
   at the bottom of the canvas
+
+#### Scenario: The buttons of the box are one size
+- **WHEN** the search and the zoom buttons are shown
+- **THEN** the search icon and the zoom out, zoom in and Fit buttons are squares of one size, at least 44
+  pixels on a phone
+
+#### Scenario: The zoom on a phone while the search is open
+- **WHEN** the reader opens the search on a phone
+- **THEN** the zoom buttons are hidden while the field is open, so it has the room to be used, and are
+  shown again when it closes

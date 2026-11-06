@@ -391,11 +391,24 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
         return [width(`.gedcom-${p}-dock`), width(`.gedcom-${p}-find`), width(`.gedcom-${p}-controls`)];
       }, "ft");
       expect(frames).toEqual(["1px", "0px", "0px"]);
+      const sizes = await page.evaluate((p) => {
+        const size = (selector: string) => {
+          const rect = (document.querySelector(selector) as Element).getBoundingClientRect();
+          return [Math.round(rect.width), Math.round(rect.height)];
+        };
+        return [`.gedcom-${p}-find-toggle`, `.gedcom-${p}-zoom-out`, `.gedcom-${p}-zoom-in`, `.gedcom-${p}-fit`].map(size);
+      }, "ft");
+      expect(new Set(sizes.map((one) => one.join("x"))).size).toBe(1);
+      expect(sizes[0]?.[0]).toBe(phone ? 44 : 28);
       const zoomBefore = await box(".gedcom-ft-controls");
       await page.locator(".gedcom-ft-find-toggle").click();
       await expect(page.locator(".gedcom-ft-search")).toBeFocused();
       await expect.poll(async () => (await box(".gedcom-ft-search"))?.width ?? 0).toBeGreaterThan(30);
-      expect(await box(".gedcom-ft-controls")).toEqual(zoomBefore);
+      if (phone) {
+        await expect(page.locator(".gedcom-ft-controls")).toBeHidden();
+      } else {
+        expect(await box(".gedcom-ft-controls")).toEqual(zoomBefore);
+      }
       await expect(page.locator(".gedcom-ft-find-toggle")).toBeHidden();
       await page.locator(".gedcom-ft-search").fill("joliot");
       await expect(page.locator(".gedcom-ft-life:not(.is-dim)")).toHaveCount(4);
