@@ -207,7 +207,7 @@
   "event.MARS": "Брачное соглашение",
   "desk.unnamed": "Без имени",
   "desk.untitled": "Источник без названия",
-  "desk.couple": "{one} и {other}",
+  "desk.couple": "{one} ⚭ {other}",
   "desk.familyNoSpouses": "Семья без указанных супругов",
   "desk.familyPage": "Карточка семьи",
   "desk.noFacts": "В записи нет ни одного факта.",

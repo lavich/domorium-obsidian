@@ -89,7 +89,7 @@ describe("the source page", () => {
     ].join("\n"))));
     container.querySelector<HTMLElement>(".gedcom-desk-person")?.click();
 
-    expect(texts(".gedcom-desk-person-name")).toEqual(["Jan Nowak and Anna Nowak"]);
+    expect(texts(".gedcom-desk-person-name")).toEqual(["Jan Nowak ⚭ Anna Nowak"]);
     expect(texts(".gedcom-desk-citer-where")).toEqual(["Marriage"]);
     expect(host.openRecord).toHaveBeenCalledWith("@F1@");
   });

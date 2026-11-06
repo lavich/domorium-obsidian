@@ -47,7 +47,7 @@ describe("the family page", () => {
   it("is headed by the spouses with the marriage", () => {
     draw("@F3@");
 
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie and Marie Skłodowska-Curie"]);
+    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-subtitle")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
@@ -119,6 +119,6 @@ describe("the family page", () => {
     setLanguage("ru");
     draw("@F3@");
 
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie и Marie Skłodowska-Curie"]);
+    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
   });
 });

@@ -131,7 +131,7 @@ describe("the page of each kind of record, with its evidence", () => {
     state.record = "@F3@";
     draw();
 
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie and Marie Skłodowska-Curie"]);
+    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-card-body h2").at(-1)).toBe("Evidence");
   });
 

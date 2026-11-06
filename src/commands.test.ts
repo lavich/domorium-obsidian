@@ -144,7 +144,7 @@ describe("what a command offers itself for", () => {
 const FAMILY: GedcomRecord = {
   tag: "FAM",
   identifier: "@F3@",
-  label: "Pierre Curie and Marie Skłodowska-Curie",
+  label: "Pierre Curie ⚭ Marie Skłodowska-Curie",
   start: { line: 40, character: 0 },
 };
 
