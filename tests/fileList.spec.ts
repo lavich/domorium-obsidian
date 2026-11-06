@@ -755,6 +755,8 @@ for (const viewport of [WIDE, PHONE]) {
       mountList(page, { events: true, phone, touch: phone, memory: { list: { kind: "events" } }, ...options });
     const event = (page: Page, key: string) => page.locator(`.gedcom-list-row[data-key="${key}"]`);
     const calls = (page: Page) => page.evaluate(() => window.tab.calls.selectedEvent);
+    const cellsOfColumn = (page: Page, position: number) =>
+      rows(page).evaluateAll((all, at) => all.map((row) => row.querySelectorAll(".gedcom-list-cell")[at]?.textContent ?? ""), position);
 
     test("lists the events with the record, the date and the place", async ({ page }) => {
       await mountEvents(page);
@@ -783,6 +785,11 @@ for (const viewport of [WIDE, PHONE]) {
       expect(await names(page)).toEqual(order);
       await header(page, "Date").click();
       expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ events: { by: "date", dir: "asc" } });
+      expect((await cellsOfColumn(page, 2)).filter(Boolean)[0]).toBe("28 AUG 1827");
+      await header(page, "Event").click();
+      expect((await names(page))[0]).toBe("Award · Nobel Prize in Chemistry");
+      await header(page, "Place").click();
+      expect((await cellsOfColumn(page, 3))[0]).toBe("Montpellier, France");
     });
 
     test("selects the record and the event of a row, and marks only that row", async ({ page }) => {
@@ -802,7 +809,25 @@ for (const viewport of [WIDE, PHONE]) {
       await page.keyboard.press("Enter");
 
       await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
-      expect(await calls(page)).toHaveLength(1);
+      expect(await calls(page)).toEqual([{ xref: "@I1@", fact: "p:1" }]);
+    });
+
+    test("brings an event pressed in the card into view and marks it", async ({ page }) => {
+      await mountEvents(page, { doc: generated(500) });
+      await page.evaluate(() => window.tab.select("@I400@", true, "p:0"));
+
+      const row = event(page, "@I400@|p:0");
+      await expect(row).toHaveAttribute("aria-selected", "true");
+      const top = (await row.boundingBox())?.y ?? -1;
+      expect(top).toBeGreaterThan(0);
+      expect(top).toBeLessThan(viewport.height);
+    });
+
+    test("says so when nothing matches", async ({ page }) => {
+      await mountEvents(page);
+      await searchFor(page, "zzz");
+
+      await expect(page.locator(".gedcom-list-none")).toHaveText("Nothing matches “zzz”. Search covers events, records, dates and places.");
     });
 
     test("stays on the events and marks no row for a record selected elsewhere", async ({ page }) => {

@@ -1034,6 +1034,43 @@ describe("the events", () => {
     expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
   });
 
+  describe("bringing an event into view", () => {
+    const large = indexOf(generated(500));
+    const key = (made: ListBoard, row: string): number => (made as unknown as { positions: Map<string, number> }).positions.get(row) as number;
+
+    it("scrolls to the event pressed in the card, and marks it", () => {
+      const made = open({}, large);
+      scroller().scrollTop = 0;
+
+      made.select("@I400@", true, "p:0");
+
+      expect(marked()).toEqual(["@I400@|p:0"]);
+      const top = key(made, "@I400@|p:0") * box.wide - scroller().scrollTop;
+      expect(top).toBeGreaterThanOrEqual(0);
+      expect(top).toBeLessThan(box.height);
+    });
+
+    it("clears a filter that hides the event", () => {
+      const made = open({}, large);
+      type("zzzzzz");
+      expect(rows()).toHaveLength(0);
+
+      made.select("@I400@", true, "p:0");
+
+      expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
+      expect(marked()).toEqual(["@I400@|p:0"]);
+    });
+
+    it("leaves the scroll alone for a selection made from the list", () => {
+      const made = open({}, large);
+      scroller().scrollTop = 90;
+
+      made.select("@I400@", false, "p:0");
+
+      expect(scroller().scrollTop).toBe(90);
+    });
+  });
+
   it("has no button but the kinds on the events", () => {
     open();
 

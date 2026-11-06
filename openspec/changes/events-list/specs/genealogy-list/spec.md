@@ -483,7 +483,7 @@ shown but is not wholly within the visible rows, it SHALL be scrolled to the mid
 above, because the reader has just chosen this view. A filter the reader typed
 SHALL NOT be cleared by returning to the list with the selection
 unchanged. A selection made by activating a row of the list SHALL change neither the
-scroll position, the kind nor the filter. Where the record has no row, the list SHALL
+scroll position, the kind nor the filter. On the Events the row of an event selected from outside the list, by pressing it in the record card, SHALL be brought into view in the same way, without a change of kind, and a filter that hides it SHALL be cleared; a record selected without an event SHALL NOT. Where the record has no row, the list SHALL
 be left as it is, and so it SHALL be on the Places and the Events, where no record has a row of its own: the selection of a
 record or a source SHALL NOT switch the list away from them, while the selection of a place SHALL switch the list from the Events to the Places and bring the row of the place into view.
 
@@ -545,6 +545,15 @@ record or a source SHALL NOT switch the list away from them, while the selection
 - **WHEN** the list shows the places and the reader follows `[[curie.ged#@I1@]]`
 - **THEN** the list still shows the places and no row of them is marked, and Marie's row is
   marked once the reader chooses People
+
+#### Scenario: An event pressed in the card, out of view
+- **WHEN** the list shows the events of a file of 500 people, scrolled to the top, and the reader presses
+  the birth of the 400th person in that person's card
+- **THEN** the row of that birth is marked and in view, and the list still shows the events
+
+#### Scenario: An event pressed in the card, hidden by the filter
+- **WHEN** the filter of the events hides the row of the event the reader presses in the card
+- **THEN** the filter is cleared and the row is marked and in view
 
 #### Scenario: The events stay
 - **WHEN** the list shows the events and the reader follows `[[curie.ged#@I1@]]`

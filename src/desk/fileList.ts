@@ -230,6 +230,7 @@ export class ListBoard {
   }
 
   private place(xref: string | null, reveal: boolean, fact: FactKey | null): void {
+    const previous = this.markedKey();
     this.markedFact = fact;
     const index = this.index;
     const kind = index !== null && xref !== null ? recordKind(index, xref) : null;
@@ -241,6 +242,10 @@ export class ListBoard {
     const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
+    if (this.kind === "events" && kind !== "places" && fact !== null && reveal) {
+      this.revealEvent(`${xref}|${fact}`, previous !== this.markedKey());
+      return;
+    }
     if ((this.kind === "places" || this.kind === "events") && kind !== "places") {
       this.applyMarks();
       return;
@@ -354,6 +359,23 @@ export class ListBoard {
   private showKind(kind: ListKind): void {
     this.switchKind(kind);
     this.host.changed(this.state());
+  }
+
+  private revealEvent(rowKey: string, fresh: boolean): void {
+    if (!this.positions.has(rowKey)) {
+      this.query = "";
+      this.find.reset();
+      this.refresh(true);
+    }
+    const at = this.positions.get(rowKey);
+    if (at === undefined) {
+      this.applyMarks();
+      return;
+    }
+    if (fresh || !this.wholeRowShown(at)) {
+      this.centre(at);
+    }
+    this.setActive(at, false);
   }
 
   private switchKind(kind: ListKind): void {

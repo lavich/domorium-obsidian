@@ -1,7 +1,7 @@
 import type { FamilyRow, GenealogyIndex, PersonRow, SourceRow } from "../genealogy";
-import { UNNAMED, UNTITLED } from "../genealogy";
+import { UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
-import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
+import { familySortKey, familyTitle, personName, personSortKey, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
 import { eventCells, eventRows, type EventRow } from "./eventRows";
 import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
@@ -207,12 +207,7 @@ function sortValue(kind: ListKind, by: SortKey, row: ListRow, index: GenealogyIn
     const person = row as PersonRow;
     switch (by) {
       case "name":
-        if (person.name === UNNAMED) {
-          return undefined;
-        }
-        return person.surname !== undefined || person.given !== undefined
-          ? [person.surname ?? "", person.given ?? ""]
-          : [person.name];
+        return personSortKey(person);
       case "years":
         return person.birth?.year;
       case "place":
@@ -225,7 +220,7 @@ function sortValue(kind: ListKind, by: SortKey, row: ListRow, index: GenealogyIn
     const family = row as FamilyRow;
     switch (by) {
       case "spouses":
-        return family.spouseNames.length === 0 ? undefined : [familyTitle(family.spouseNames)];
+        return familySortKey(family.spouseNames);
       case "marriage":
         return family.marriage?.year;
       case "place":

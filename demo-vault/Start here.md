@@ -40,7 +40,7 @@ card, press a place in its **Places** section to land on its row.
 
 Choose **Events** in the same **List** to see every event of the file, one row each, with
 its record, date and place: an occupation or an award reads with its text. Sort by
-Date to see the file in time order. Click a row and its person or family opens in the
+Date to order them by year. Click a row and its person or family opens in the
 right panel with that event shown, its sources included.
 
 ## Write one yourself

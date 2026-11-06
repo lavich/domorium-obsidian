@@ -78,7 +78,7 @@ show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
 them; places lists each place the file names once, however it is spelt in case or
 spacing, with its number of events and their years; events lists every event of the people and
-families, an occupation or an award with its text, with its record, date and place. A click on a column header sorts by it, a second click reverses the order
+families, an occupation or an award with its text, with its record, date and place, and sorts by the year of the date. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter

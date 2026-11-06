@@ -1,8 +1,7 @@
 import type { FamilyRow, GenealogyIndex, PersonEvent, PersonRow } from "../genealogy";
-import { UNNAMED } from "../genealogy";
 import { currentLanguage } from "../i18n";
 import { foldText } from "./foldText";
-import { eventName, familyTitle, personName } from "./labels";
+import { eventName, familySortKey, familyTitle, personName, personSortKey } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
 import type { ListSort } from "./listRows";
 import type { FactKey } from "./personPage";
@@ -35,7 +34,12 @@ export function eventsOf(index: GenealogyIndex): EventRow[] {
   let rows = held.get(index);
   if (rows === undefined) {
     const found: EventRow[] = [];
+    const seen = new Set<string>();
     const take = (xref: string, prefix: "p" | "f", events: PersonEvent[], record: Pick<EventRow, "person" | "family">): void => {
+      if (seen.has(xref)) {
+        return;
+      }
+      seen.add(xref);
       events.forEach((event, at) => {
         const fact = `${prefix}:${at}`;
         found.push({ xref, fact, key: `${xref}|${fact}`, event, ...record });
@@ -75,13 +79,7 @@ const text = (value: string | undefined): SortValue => (value ? [value] : undefi
 
 function recordSort(row: EventRow): SortValue {
   const { person, family } = row;
-  if (person !== undefined) {
-    if (person.name === UNNAMED) {
-      return undefined;
-    }
-    return person.surname !== undefined || person.given !== undefined ? [person.surname ?? "", person.given ?? ""] : [person.name];
-  }
-  return family === undefined || family.spouseNames.length === 0 ? undefined : [familyTitle(family.spouseNames)];
+  return person !== undefined ? personSortKey(person) : familySortKey(family?.spouseNames ?? []);
 }
 
 function sortValue(row: EventRow, by: ListSort["by"]): SortValue {

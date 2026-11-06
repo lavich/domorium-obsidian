@@ -775,7 +775,7 @@ button.gedcom-list-direction:disabled {
 
 .gedcom-list-head.is-events,
 .gedcom-list-row.is-events {
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr) minmax(0, 1.3fr) minmax(0, 2.4fr);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr) minmax(7.5em, 1.3fr) minmax(0, 2.4fr);
 }
 
 .gedcom-list-headcell,

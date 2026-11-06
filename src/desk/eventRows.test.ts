@@ -78,6 +78,12 @@ describe("the rows of the events kind", () => {
     expect(eventsOf(only)).toHaveLength(0);
   });
 
+  it("lists the events of a record declared twice once", () => {
+    const twice = doc("0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "0 @I1@ INDI", "1 NAME C /D/", "1 DEAT");
+
+    expect(keys(eventsOf(twice))).toEqual(["@I1@|p:0"]);
+  });
+
   it("is built once for one reading of the file", () => {
     expect(eventsOf(index)).toBe(eventsOf(index));
   });
@@ -112,7 +118,8 @@ describe("searching the events", () => {
     expect(rowsOf("zzz")).toHaveLength(0);
   });
 
-  it("matches in the language shown", () => {
+  it("matches in the language shown, on rows searched before the language changed", () => {
+    expect(rowsOf("birth").length).toBeGreaterThan(0);
     setLanguage("ru");
 
     expect(rowsOf("рождение").length).toBeGreaterThan(0);
