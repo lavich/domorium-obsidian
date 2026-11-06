@@ -33,6 +33,7 @@ export interface GraphInputCard {
   /** Any number, a generation or a step from a focus: rows are ordered by it, and a number no card has makes no row. */
   row: number;
   sex: Sex;
+  born?: number;
   portrait?: boolean;
 }
 
@@ -134,6 +135,8 @@ interface Unit {
   lane: boolean;
   /** For a person standing alone: the family they are a child of, beside whose other children they stand closer. */
   family?: string;
+  /** The families the unit's members are children of, with the year each was born. */
+  kin: Map<string, number | undefined>;
   cx: number;
 }
 
@@ -328,7 +331,18 @@ function crossed(left: Link[], right: Link[]): number {
   return found;
 }
 
-/** Neighbours swapped wherever that crosses fewer lines to the rows above and below. */
+/** -1 where `one` is the elder of two brothers or sisters, 1 where `other` is, and 0 for anyone else. */
+function eldest(one: Unit, other: Unit): number {
+  for (const [family, born] of one.kin) {
+    const against = other.kin.get(family);
+    if (born !== undefined && against !== undefined && born !== against) {
+      return born < against ? -1 : 1;
+    }
+  }
+  return 0;
+}
+
+/** Neighbours swapped wherever that crosses fewer lines to the rows above and below, or as many with the elder put left. */
 function transpose(layer: Unit[]): void {
   for (let round = 0; round < TRANSPOSE_ROUNDS; round += 1) {
     let swapped = false;
@@ -340,7 +354,7 @@ function transpose(layer: Unit[]): void {
       }
       const now = crossed(one.up, other.up) + crossed(one.down, other.down);
       const then = crossed(other.up, one.up) + crossed(other.down, one.down);
-      if (then < now) {
+      if (then < now || (then === now && eldest(other, one) < 0)) {
         layer[at] = other;
         layer[at + 1] = one;
         swapped = true;
@@ -460,6 +474,7 @@ export function layoutFileGraph(
         id: xref,
         row: model.generations.get(xref) ?? 0,
         sex: model.people.get(xref)?.sex ?? "U",
+        ...bornOf(model, xref),
       })),
       families: [...model.families.values()].map((family) => ({
         id: family.xref,
@@ -471,6 +486,11 @@ export function layoutFileGraph(
     },
     clock,
   );
+}
+
+function bornOf(model: FileTimeline, xref: string): { born?: number } {
+  const born = model.people.get(xref)?.lifeline?.age?.from;
+  return born === undefined ? {} : { born };
 }
 
 interface Indexed {
@@ -575,6 +595,7 @@ function makeUnits(
 ): { units: Unit[]; unitOf: Map<string, Unit>; place: Map<string, number> } {
   const { shown, rowIndex, layerOf } = index;
   const sexes = new Map(input.cards.map((one) => [one.id, one.sex]));
+  const births = new Map(input.cards.map((one) => [one.id, one.born]));
   const readsBetter = readsBetterIn((id) => sexes.get(id) ?? "U", marriages);
   const childOf = new Map<string, string>();
   for (const family of input.families) {
@@ -606,6 +627,12 @@ function makeUnits(
       down: [],
       key: rowIndex.get(xref) ?? 0,
       lane: false,
+      kin: new Map(
+        members.flatMap((member) => {
+          const family = childOf.get(member);
+          return family === undefined ? [] : [[family, births.get(member)] as const];
+        }),
+      ),
       cx: 0,
     };
     units.push(unit);
@@ -665,7 +692,7 @@ function linkFamilies(
       for (let layer = from.layer + 1; layer < to.layer; layer += 1) {
         let lane = shared.get(layer);
         if (!lane) {
-          lane = { members: [], layer, width: LANE, up: [], down: [], key: from.key, lane: true, cx: 0 };
+          lane = { members: [], layer, width: LANE, up: [], down: [], key: from.key, lane: true, kin: new Map(), cx: 0 };
           units.push(lane);
           shared.set(layer, lane);
           laneCount += 1;
@@ -721,7 +748,7 @@ function reduceCrossings(layers: Unit[][], late: Late): Layering {
         const links = down ? unit.up : unit.down;
         wanted.set(unit, links.length > 0 ? wish(unit, links) : unit.cx);
       }
-      layer.sort((a, b) => (wanted.get(a) ?? 0) - (wanted.get(b) ?? 0));
+      layer.sort((a, b) => (wanted.get(a) ?? 0) - (wanted.get(b) ?? 0) || eldest(a, b));
       pack(layer);
       transpose(layer);
     }

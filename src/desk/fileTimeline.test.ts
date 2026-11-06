@@ -17,6 +17,44 @@ const NOW = 2026;
 const curie = (): FileTimeline => buildFileTimeline(curieIndex(), NOW);
 const withEvents = (): FileTimeline => buildFileTimeline(indexOf(curieWithEvents()), NOW);
 
+interface Kin {
+  id: string;
+  husb?: string;
+  wife?: string;
+  children?: string[];
+}
+
+function kinship(people: string[], families: Kin[]): FileTimeline {
+  const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
+  for (const id of people) {
+    lines.push(`0 @${id}@ INDI`, `1 NAME ${id} /Test/`);
+    for (const family of families) {
+      if (family.children?.includes(id)) {
+        lines.push(`1 FAMC @${family.id}@`);
+      }
+      if (family.husb === id || family.wife === id) {
+        lines.push(`1 FAMS @${family.id}@`);
+      }
+    }
+  }
+  for (const family of families) {
+    lines.push(`0 @${family.id}@ FAM`);
+    if (family.husb) {
+      lines.push(`1 HUSB @${family.husb}@`);
+    }
+    if (family.wife) {
+      lines.push(`1 WIFE @${family.wife}@`);
+    }
+    for (const child of family.children ?? []) {
+      lines.push(`1 CHIL @${child}@`);
+    }
+  }
+  lines.push("0 TRLR", "");
+  return buildFileTimeline(indexOf(lines.join("\n")), NOW);
+}
+
+const generationOf = (model: FileTimeline, id: string): number | undefined => model.generations.get(`@${id}@`);
+
 const named = (model: FileTimeline, name: string): string => {
   const found = [...model.people.values()].find((person) => person.row.name === name);
   if (!found) {
@@ -338,5 +376,94 @@ describe("what a new timeline opens on", () => {
     expect(initialTimelineFocus(index, "@P3@")).toBe("@P3@");
     expect(initialFocus(index, "@P7@")).toBe("@P7@");
     expect(initialTimelineFocus(indexOf(people(LARGE_FILE)), "@P7@")).toBeUndefined();
+  });
+});
+
+describe("the generation of a person with no parents", () => {
+  const lineage = [
+    { id: "F1", husb: "N", children: ["P"] },
+    { id: "F2", husb: "P", children: ["V"] },
+    { id: "F3", husb: "V", wife: "F" },
+    { id: "F4", husb: "M", children: ["F"] },
+  ];
+
+  it("is the row above their daughter, who married into a family two generations down", () => {
+    const model = kinship(["N", "P", "V", "F", "M"], lineage);
+
+    expect([..."NPVFM"].map((id) => generationOf(model, id))).toEqual([0, 1, 2, 2, 1]);
+  });
+
+  it("stands a man with no parents among the generation of his daughter's husband's father in the rows", () => {
+    const model = kinship(
+      ["N", "P", "V", "F", "M"],
+      [
+        { id: "F1", husb: "N", children: ["P"] },
+        { id: "F2", husb: "P", children: ["V"] },
+        { id: "F3", husb: "V", wife: "F" },
+        { id: "F4", husb: "M", children: ["F"] },
+      ],
+    );
+    const at = (id: string) => model.rows.indexOf(`@${id}@`);
+
+    expect(at("N")).toBe(0);
+    expect(Math.min(at("P"), at("M"))).toBe(1);
+    expect(Math.max(at("P"), at("M"))).toBe(2);
+    expect([at("V"), at("F")].sort()).toEqual([3, 4]);
+  });
+
+  it("is the first row where they have no children in the file", () => {
+    const model = kinship(["N", "P", "V", "F", "M", "X"], lineage);
+
+    expect(generationOf(model, "X")).toBe(0);
+  });
+
+  it("is one above the higher of their children, and the first row where that is the first", () => {
+    const model = kinship(
+      ["R", "A", "B", "C", "D", "S"],
+      [
+        { id: "F1", husb: "R", children: ["A", "B"] },
+        { id: "F2", husb: "A", children: ["C"] },
+        { id: "F3", husb: "C", wife: "D" },
+        { id: "F4", husb: "S", children: ["D"] },
+      ],
+    );
+
+    expect(generationOf(model, "R")).toBe(0);
+    expect(generationOf(model, "B")).toBe(1);
+  });
+
+  it("is shared by a couple of two people with no parents, above the higher child of either", () => {
+    const model = kinship(
+      ["H", "W", "C", "X", "Y", "Z"],
+      [
+        { id: "F1", husb: "H", wife: "W", children: ["C"] },
+        { id: "F2", husb: "C", wife: "X" },
+        { id: "F3", husb: "Y", children: ["Z"] },
+        { id: "F4", husb: "Z", children: ["X"] },
+      ],
+    );
+
+    expect(generationOf(model, "H")).toBe(generationOf(model, "W"));
+    expect(generationOf(model, "H")).toBe((generationOf(model, "C") ?? 0) - 1);
+  });
+
+  it("is that of the spouse they married where that spouse has parents", () => {
+    const model = kinship(
+      ["N", "P", "S"],
+      [
+        { id: "F1", husb: "N", children: ["P"] },
+        { id: "F2", husb: "P", wife: "S" },
+      ],
+    );
+
+    expect(generationOf(model, "S")).toBe(generationOf(model, "P"));
+  });
+
+  it("leaves every row of the Curie file where it stood", () => {
+    const model = curie();
+
+    expect(
+      ["@I3@", "@I4@", "@I9@", "@I10@", "@I1@", "@I2@", "@I8@", "@I12@", "@I14@", "@I16@"].map((id) => model.generations.get(id)),
+    ).toEqual([0, 0, 0, 0, 1, 1, 1, 2, 2, 3]);
   });
 });
