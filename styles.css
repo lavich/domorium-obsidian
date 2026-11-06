@@ -1111,22 +1111,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
   min-height: 44px;
 }
 
-.gedcom-desk-evidence-head {
-  padding-bottom: var(--size-4-2);
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-evidence-context {
-  margin-top: var(--size-2-3);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-desk-evidence-sub {
-  font-weight: normal;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
 .gedcom-desk-scope {
   color: var(--text-muted);
   border-top: 1px solid var(--background-modifier-border);

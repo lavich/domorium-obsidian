@@ -12,17 +12,17 @@ Archive order: #233 (`places-list`, `events-list`) first, then this change.
 
 - [x] 2.1 `src/i18n/en.json`, `ru.json`: *Person* and *Family* for the owner line; remove `desk.eventRecord`, `desk.eventDate`, `desk.eventPlace`.
 - [x] 2.2 `src/desk/eventPage.ts`: owner line, title, date and place subtitle. Test: `src/desk/recordCard.test.ts` rewritten where it reads `.gedcom-desk-event-detail`, `.gedcom-desk-event-value`, `.gedcom-desk-evidence-context` and the place link (around lines 166 and 177–182); `tests/desk.spec.ts` rewritten where it reads them (around lines 127–137 and 164–172) and the narrow-column loop over the cards (around line 53).
-- [x] 2.3 `src/desk/evidence.ts`: the event of an event card in place of a fact key; the fact branch, `EvidenceHost.wholeRecord` and `EvidenceSelection.fact` deleted; `src/desk/recordCard.ts` and `src/desk/DeskViews.ts` follow. Test: `src/desk/evidence.test.ts`, whose cases for the head, *Whole record* and `wholeRecord` are rewritten for the event card.
-- [x] 2.4 `styles.css`: the owner line, the subtitle; remove the `gedcom-desk-event-details`, `-event-detail`, `-event-label`, `-event-value`, `-event-sources` and `gedcom-desk-place-when` rules.
+- [x] 2.3 `src/desk/evidence.ts`: the event of an event card in place of a fact key; the fact branch, `EvidenceHost.wholeRecord` and `EvidenceSelection.fact` deleted; `src/desk/recordCard.ts` follows; `PageHost.select`, `tab.selectFact` and the harness's `fact` option stay, unused, for a later clean-up. Test: `src/desk/evidence.test.ts`, whose cases for the head, *Whole record* and `wholeRecord` are rewritten for the event card.
+- [x] 2.4 `styles.css`: the owner line, the subtitle; remove the `gedcom-desk-event-details`, `-event-detail`, `-event-label`, `-event-value`, `-event-sources`, `gedcom-desk-place-when` and the three `gedcom-desk-evidence-head/-context/-sub` rules, and the string `evidence.familyEvent`.
 
 ## 3. One event row
 
 - [x] 3.1 New `src/desk/factRow.ts` with `renderEventRow`; `src/desk/personPage.ts` `renderFactList` uses it. The name keeps `data-focus-key`; the row keeps the one click handler. Test: `src/desk/personPage.test.ts`, `src/desk/familyPage.test.ts` and the focus-restore case of `src/desk/recordCard.test.ts` unchanged in what they assert.
-- [x] 3.2 `src/desk/placePage.ts` uses it, the record a link in the detail, the name opening the event card; `occurrencesAt` in `src/desk/placeRows.ts` returns the event's id. Test: new `src/desk/placePage.test.ts`; `tests/fileList.spec.ts` and `src/desk/fileList.test.ts` where they press a record or an event in a place's card.
+- [x] 3.2 `src/desk/placePage.ts` uses it, the record a link in the detail, the name opening the event card; `occurrencesAt` in `src/desk/placeRows.ts` lists a record declared twice once, and `placePage.ts` takes the event's id from `eventIdOf`. Test: new `src/desk/placePage.test.ts`; `tests/fileList.spec.ts` and `src/desk/fileList.test.ts` where they press a record or an event in a place's card.
 
 ## 4. Folding
 
-- [x] 4.1 `src/desk/personPage.ts` and new `src/desk/fold.ts`: *Timeline* and *Places* as folds, closed, the count in a muted span, the button in the `h2`. Test: `src/desk/personPage.test.ts`.
+- [x] 4.1 `src/desk/personPage.ts` and new `src/desk/fold.ts`: *Timeline* and *Places* as folds, closed, the count shown from `data-count` by CSS, the button in the `h2`. Test: `src/desk/personPage.test.ts`.
 - [x] 4.2 `src/desk/recordCard.ts`: `data-open` kept across a redraw of the same record, reset for another. Test: `src/desk/recordCard.test.ts`.
 - [x] 4.3 `styles.css`: the fold button looks as a section heading, with a chevron; `tests/desk.spec.ts` line 65 stops asking the closed timeline's rows for a box, and a spec opens the fold and reads them.
 

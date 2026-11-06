@@ -96,7 +96,12 @@ export interface PlaceOccurrence {
 
 export function occurrencesAt(index: GenealogyIndex, key: string): PlaceOccurrence[] {
   const found: PlaceOccurrence[] = [];
+  const seen = new Set<string>();
   const take = (record: string | undefined, events: PersonEvent[]): void => {
+    if (record === undefined || seen.has(record)) {
+      return;
+    }
+    seen.add(record);
     for (const event of events) {
       if (record !== undefined && event.place !== undefined && placeKey(event.place) === key) {
         found.push({ event, record });

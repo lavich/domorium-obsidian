@@ -134,7 +134,6 @@
   "evidence.recordEmpty": "The record cites no source.",
   "evidence.inline": "Described in the record, not as a source record",
   "evidence.missingSource": "Points to a source that is not in the file",
-  "evidence.familyEvent": "Family event",
   "quality.0": "Unreliable evidence",
   "quality.1": "Questionable evidence",
   "quality.2": "Secondary evidence",

@@ -21,13 +21,13 @@ export function renderPlacePage(container: HTMLElement, place: PlaceRow, index: 
     const person = index.person(record);
     const family = person ? undefined : index.family(record);
     const who = person ? personName(person) : family ? familyTitle(family.spouseNames) : record;
-    const events = (person ?? family)?.events ?? [];
+    const id = eventIdOf(record, (person ?? family)?.events ?? [], event);
     renderEventRow(
       list,
       {
         name: eventName(event),
-        focusKey: eventIdOf(record, events, event),
-        open: eventIdOf(record, events, event),
+        focusKey: id,
+        open: id,
         detail: {
           ...(event.date?.text ? { date: event.date.text } : {}),
           ...(event.value ? { text: event.value } : {}),
