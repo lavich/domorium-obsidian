@@ -36,4 +36,4 @@ None. The saved list state gains an optional `place`; a state without it reads a
 
 - The list's header holds four cells for every kind; the Places has three columns, so the fourth cell is hidden there.
 - `placeKey` and `foldText` stay private to `src/desk/placeRows.ts`; nothing else uses them.
-- The stand-in tab of the harness takes an `events` option, which mounts `curieWithEvents()`, the file with the places the specs need.
+- The stand-in tab of the harness takes an `events` option, which mounts `curieWithEvents()`, the file with the places the specs need, and its `changed` keeps the tab's memory as the real tab does, so a marked place survives a visit to another mode.

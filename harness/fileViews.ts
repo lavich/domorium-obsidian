@@ -139,6 +139,7 @@ function mount(options: TabOptions): void {
     portrait: () => null,
     changed: () => {
       calls.changed += 1;
+      memory = { ...memory, ...views?.memory() };
     },
     setIcon: stubSetIcon,
     coarsePointer: () => touch,
