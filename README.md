@@ -114,7 +114,7 @@ belongs to as a link above its name, its date and place under it, and the eviden
 that is its own below; a place named there opens the card of that place, which lists
 the events held there as the facts of a person are listed, and a list in view
 shows the event or the place. Every control of a card shows a focus ring for the
-keyboard and, on a phone, can be hit over at least 36 pixels, a block button over 44. A family, a
+keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a
 source, a place, an event and a media record have cards of their own, and **Back** and **Forward** in
 the card's header go between the records it showed. The card reads the file and
 never writes to it. **Show in source** on a card, a fact or a missing relative

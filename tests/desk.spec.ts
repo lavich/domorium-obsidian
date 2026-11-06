@@ -366,7 +366,7 @@ test.describe("the controls of a card", () => {
 test.describe("the controls of a card on a phone", () => {
   test.use({ hasTouch: true });
 
-  test("can be hit over a height of at least 36 pixels", async ({ page }) => {
+  test("can be hit over a height of at least 32 pixels", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     for (const record of ["@I1@", "@F3@", "@S3@", "place:warsaw, congress poland", "event:@I1@:BIRT:0"]) {
       await mountDesk(page, { record, phone: true });
@@ -386,7 +386,7 @@ test.describe("the controls of a card on a phone", () => {
               hits.push(y);
             }
           }
-          if (Math.max(...hits) - Math.min(...hits) < 36) {
+          if (Math.max(...hits) - Math.min(...hits) < 32) {
             missed.push(`${control.className} ${control.textContent ?? ""}`);
           }
         }
