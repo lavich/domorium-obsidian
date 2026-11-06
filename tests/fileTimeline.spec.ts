@@ -662,15 +662,14 @@ for (const viewport of [{ width: 1400, height: 380 }, { width: 390, height: 500 
         plot.scrollTop = plot.scrollHeight;
         plot.scrollLeft = plot.scrollWidth;
       });
-      await expect
-        .poll(() => page.evaluate(() => document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft ?? 0))
-        .toBeGreaterThan(0);
-      const synced = await page.evaluate(() => ({
-        plotLeft: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollLeft,
-        axisLeft: document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft,
-      }));
-      expect(synced.plotLeft).toBeGreaterThan(0);
-      expect(synced.axisLeft).toBe(synced.plotLeft);
+      const offset = () =>
+        page.evaluate(
+          () =>
+            (document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollLeft ?? 0) -
+            (document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft ?? 0),
+        );
+      await expect.poll(offset).toBe(0);
+      expect(await page.locator(".gedcom-ft-plot").evaluate((plot) => plot.scrollLeft)).toBeGreaterThan(0);
     });
   });
 }
