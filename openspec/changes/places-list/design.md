@@ -12,9 +12,9 @@ The List mode shows the people, the families and the sources of a file as rows (
 
 Without a sort the rows are alphabetical by the language's collator. A column sorts through the shared stable order (`listOrder.ts`): ties keep the order in which the file first names the places, a missing value comes last in both directions. Years sort by the first year of the first dated event. The search narrows by name with `foldText`: NFD without marks, lowercase, and the table `ł ß ø đ æ œ ı`.
 
-### D3. The marked place is list-local
+### D3. A place is selected as a record is
 
-A click or Enter on a row sets `ListState.place` to the place's key and nothing else: no record is selected, the host is told only that the list's state changed. The key is saved with the list's kind and sorts, dropped when the kind changes and when the file no longer holds the place. A record selected elsewhere leaves the list on the Places.
+A place has no xref, so its id is `place:` plus its key; GEDCOM identifiers cannot hold a colon, so no record can collide with it. `pageKind` answers `place` for an id the file names, which gives it a card, a step in the history, a place in the saved selection, and its drop when an edit removes the last event of that place. A click or Enter on a row calls the host's `select` with that id; the row is marked from the tab's selection, so `ListState` keeps no place. A place selected from a card switches the list to Places and scrolls its row into view; a record selected while the list is on Places leaves the list there and unmarks the rows.
 
 ### D4. The compact sort menu
 

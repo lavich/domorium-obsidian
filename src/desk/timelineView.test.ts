@@ -97,12 +97,22 @@ describe("the places", () => {
   it("lists each place with its events and their count", () => {
     const marie = index.person("@I1@");
     if (marie) {
-      renderPlaces(container, placesOf(timelineOf(marie, index)));
+      renderPlaces(container, placesOf(timelineOf(marie, index)), host);
     }
 
     expect(texts(".gedcom-desk-place-name")).toEqual([
       "Warsaw, Congress Poland", "Sceaux, France", "Paris, France", "Passy, Haute-Savoie, France",
     ]);
     expect(texts(".gedcom-desk-place-count")[1]).toBe("1 event");
+  });
+
+  it("opens the place of a row", () => {
+    const marie = index.person("@I1@");
+    if (marie) {
+      renderPlaces(container, placesOf(timelineOf(marie, index)), host);
+    }
+    container.querySelectorAll<HTMLElement>(".gedcom-desk-place-name")[1]?.click();
+
+    expect(host.openRecord).toHaveBeenCalledWith("place:sceaux, france");
   });
 });

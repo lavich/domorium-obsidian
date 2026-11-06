@@ -28,6 +28,14 @@ checked against. Ctrl/Cmd-hover any `@I1@` to see the record it points at.
 [[curie.ged#@I1@|Marie Skłodowska-Curie]] opens the file on her record. Hover it
 first: the record appears without opening anything.
 
+## Browse the places
+
+With the **Genealogy interface** on, switch [[curie.ged]] to **List** and choose
+**Places**: each place the file names is listed once, with its number of events
+and their years. Click one and its card opens in the right panel, with every
+event held there; press an event to go to the person or family. From a person's
+card, press a place in its **Places** section to land on its row.
+
 ## Write one yourself
 
 Type `[[curie.ged#` on the line below and the records of that file are offered by

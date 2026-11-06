@@ -16,4 +16,4 @@ Every group ends with `npm run check` exiting 0.
 ## 3. Verify
 
 - [ ] 3.1 `npm run check`, `npm run test:browser` (three runs) and `npm run openspec:validate` pass.
-- [ ] 3.2 By hand in Obsidian on `demo-vault/`, desktop and phone (leave unticked until someone has done it): the four kind buttons, the Places rows and their years, the search with and without accents, the three-press sort of each column, a click marking a row without changing the card, the mark kept across modes and a restart, the two-line rows on a phone, the Russian text.
+- [ ] 3.2 By hand in Obsidian on `demo-vault/`, desktop and phone (leave unticked until someone has done it): the four kind buttons, the Places rows and their years, the search with and without accents, the three-press sort of each column, a click selecting the place and opening its card in the right panel, a place link in a person's card leading to its row, the selection kept across modes and a restart, the two-line rows on a phone, the Russian text.

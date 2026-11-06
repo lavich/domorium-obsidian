@@ -13,8 +13,7 @@ the graph and the timeline use, and SHALL NOT read the file from the vault itsel
 SHALL show the file as the tab holds it, including text typed in the tab and not yet
 saved, and SHALL show every later change to it: at once while the tab is in view, and the
 next time it is brought into view otherwise. A tab SHALL NOT draw the list before it has
-read its file. The list SHALL keep the kind it shows, the sort of each kind and, on the Places, the
-place whose row is marked, across leaving the mode and coming back and across closing and
+read its file. The list SHALL keep the kind it shows and the sort of each kind across leaving the mode and coming back and across closing and
 reopening the workspace; it SHALL keep the text typed in its search and its scroll position
 across leaving the mode and coming back, and SHALL NOT save either with the workspace.
 Nothing in the list SHALL write to the file, save it or mark it as changed.
@@ -54,10 +53,10 @@ Nothing in the list SHALL write to the file, save it or mark it as changed.
 - **WHEN** the reader sorts, filters and selects ten rows
 - **THEN** the file on disk is byte for byte what it was
 
-#### Scenario: A place marked, restored with the workspace
-- **WHEN** the tab is in List mode on the places of `curie.ged`, `Paris, France` is marked,
+#### Scenario: A place selected, restored with the workspace
+- **WHEN** the tab is in List mode on the places of `curie.ged`, `Paris, France` is selected,
   and Obsidian is restarted
-- **THEN** the tab shows the places with the row of `Paris, France` marked
+- **THEN** the tab shows the places with the row of `Paris, France` marked and its card in the right panel
 
 ### Requirement: People, families and sources
 
@@ -323,10 +322,9 @@ has no row — a multimedia record — no row SHALL be marked. The mark SHALL fo
 selection however it was made: from the list, from the record card, by a link or by *Go
 to record*; and SHALL stay across sorting, filtering and switching the kind, and be
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
-list. A row of the Places SHALL NOT select a record, since a place is not one: activating it
-SHALL mark that row, and as selected to assistive technology, and nothing else, so that the
-tab stays in List mode, the selection and the record card are as they were, no panel is
-opened; with another row marked, that one SHALL be marked no more. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+list. A row of the Places SHALL select its place, which has no xref and is selected under the id
+`place:` and its key: the record card shows the place, with its events, each linking to the person
+or family it belongs to. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -403,8 +401,8 @@ derived from that text size, so that it follows the reader's font size.
 
 #### Scenario: A place row
 - **WHEN** the reader chooses Places, and clicks `Paris, France`, with Marie selected
-- **THEN** the row of `Paris, France` is marked selected, the record card still shows Marie,
-  and the tab is still in List mode
+- **THEN** the row of `Paris, France` is marked selected, the record card shows `Paris, France`
+  with its events, and the tab is still in List mode
 
 #### Scenario: Another place row
 - **WHEN** `Paris, France` is marked and the reader clicks `Warsaw, Congress Poland`
@@ -414,9 +412,10 @@ derived from that text size, so that it follows the reader's font size.
 - **WHEN** `Paris, France` is marked, and the reader switches to Graph mode and back
 - **THEN** the row of `Paris, France` is marked again
 
-#### Scenario: The place is let go with the kind
-- **WHEN** `Paris, France` is marked and the reader chooses People and then Places
-- **THEN** no row of the places is marked
+#### Scenario: A place in a person's card
+- **WHEN** the reader presses `Paris, France` in the Places section of Marie's card
+- **THEN** the list shows the places with the row of `Paris, France` marked and in view, and the
+  card shows `Paris, France`
 
 ### Requirement: The selected row is brought into view
 
@@ -507,8 +506,7 @@ buttons, the search and the headers. With the focus on a row, the Up and Down ar
 SHALL move it to the previous and next row of the rows shown, Home and End to the first
 and the last, and Page Up and Page Down by what the list shows at once; the row given the
 focus SHALL be drawn and brought into view, also where only a window of rows is drawn.
-Enter or Space SHALL select the record of the row with the focus, or, in the Places,
-mark the row, and the focus SHALL stay on the row. Moving the focus SHALL NOT select. The list SHALL be a grid to assistive
+Enter or Space SHALL select the record, or the place, of the row with the focus, and the focus SHALL stay on the row. Moving the focus SHALL NOT select. The list SHALL be a grid to assistive
 technology: a header row of column headers, each saying its sort, and rows of cells, each
 row saying its position among all the rows, including those not drawn. The row that has
 the focus SHALL always be one that is drawn. A

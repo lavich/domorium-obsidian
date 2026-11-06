@@ -82,7 +82,7 @@ export function renderPersonPage(
   container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.timeline") });
   renderTimeline(container, timeline, host);
   container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.places") });
-  renderPlaces(container, placesOf(timeline));
+  renderPlaces(container, placesOf(timeline), host);
 }
 
 function renderHeading(

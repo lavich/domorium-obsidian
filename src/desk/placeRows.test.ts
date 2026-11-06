@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage } from "../i18n";
 import { curieWithEvents, indexOf } from "../testing/curie";
 import { cellsOf, collatorFor, columnsOf, listRows, nextSort, readListState, type ListSort } from "./listRows";
-import { placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
+import { occurrencesAt, placeAt, placeId, placeKeyOf, placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
 
 afterEach(resetLanguage);
 
@@ -102,6 +102,29 @@ describe("searching the places", () => {
   });
 });
 
+describe("a place as a selectable record", () => {
+  it("has an id that no xref can have, which reads back to the key", () => {
+    expect(placeId("  Paris,   FRANCE ")).toBe("place:paris, france");
+    expect(placeKeyOf("place:paris, france")).toBe("paris, france");
+    expect(placeKeyOf("@I1@")).toBeNull();
+  });
+
+  it("is found in the file by its id, and only if the file names it", () => {
+    expect(placeAt(index, placeId("Paris, France"))?.name).toBe("Paris, France");
+    expect(placeAt(index, "place:atlantis")).toBeUndefined();
+    expect(placeAt(index, "@I1@")).toBeUndefined();
+  });
+
+  it("lists the events held there by year, with the record each belongs to", () => {
+    const found = occurrencesAt(index, "paris, france");
+
+    expect(found).toHaveLength(11);
+    expect(found.every(({ record }) => record.startsWith("@"))).toBe(true);
+    const years = found.map(({ event }) => event.date?.year ?? Infinity);
+    expect(years).toEqual([...years].sort((a, b) => a - b));
+  });
+});
+
 describe("the places kind in the shared model of the list", () => {
   it("has the columns place, events and years", () => {
     expect(columnsOf("places").map((column) => column.key)).toEqual(["place", "events", "years"]);
@@ -114,16 +137,14 @@ describe("the places kind in the shared model of the list", () => {
     expect(cellsOf("places", rows[0] as PlaceRow, index)).toEqual({ texts: ["Paris, France", "11", "1855–1958"], gap: false });
   });
 
-  it("reads the kind, a sort of its columns and the selected place of a saved state", () => {
-    expect(readListState({ kind: "places", sort: { places: { by: "events", dir: "desc" } }, place: "paris, france" })).toEqual({
+  it("reads the kind and a sort of its columns of a saved state", () => {
+    expect(readListState({ kind: "places", sort: { places: { by: "events", dir: "desc" } } })).toEqual({
       kind: "places",
       sort: { places: { by: "events", dir: "desc" } },
-      place: "paris, france",
     });
   });
 
-  it("drops a selected place that is not in the places kind, and a sort column from another kind", () => {
-    expect(readListState({ kind: "families", place: "paris, france" })).toEqual({ kind: "families" });
+  it("drops a sort column from another kind", () => {
     expect(readListState({ kind: "places", sort: { places: { by: "name", dir: "asc" } } })).toEqual({ kind: "places" });
     expect(readListState({ sort: { people: { by: "events", dir: "asc" } } })).toEqual({});
   });

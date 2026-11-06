@@ -112,6 +112,13 @@ describe("which records have a card", () => {
     expect(pageKind(index(), "@S1@")).toBe("source");
     expect(pageKind(index(), "@N1@")).toBeNull();
   });
+
+  it("gives a place the file names a card, and one it does not name none", () => {
+    const named = index(["0 HEAD", "0 @I1@ INDI", "1 BIRT", "2 PLAC Paris, France", "0 TRLR"].join("\n"));
+
+    expect(pageKind(named, "place:paris, france")).toBe("place");
+    expect(pageKind(index(), "place:atlantis")).toBeNull();
+  });
 });
 
 describe("where a link into a record lands", () => {

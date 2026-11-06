@@ -16,7 +16,7 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
-import { placesOf, type PlaceRow } from "./placeRows";
+import { placeId, placeKeyOf, placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
   select(xref: string): void;
@@ -72,7 +72,7 @@ const COUNT_OF: Record<ListKind, MessageKey> = {
 let boards = 0;
 
 const canonical = (state: ListState): string =>
-  JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null), state.place ?? null]);
+  JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
 
 const keyOf = (row: ListRow): string => row.xref ?? (row as PlaceRow).key;
 
@@ -102,7 +102,6 @@ export class ListBoard {
   private positions = new Map<string, number>();
   private totals = { people: 0 };
   private marked: string | null = null;
-  private markedPlace: string | null = null;
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
@@ -191,7 +190,6 @@ export class ListBoard {
     return {
       ...(this.kind === "people" ? {} : { kind: this.kind }),
       ...(Object.keys(sort).length > 0 ? { sort } : {}),
-      ...(this.kind === "places" && this.markedPlace !== null ? { place: this.markedPlace } : {}),
     };
   }
 
@@ -209,7 +207,6 @@ export class ListBoard {
       this.find.reset();
     }
     this.kind = kind;
-    this.markedPlace = kind === "places" ? (state.place ?? null) : null;
     this.sorts = { ...state.sort };
     this.refresh(true);
   }
@@ -230,9 +227,11 @@ export class ListBoard {
       this.applyMarks();
       return;
     }
+    const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
-    if (this.kind === "places") {
+    if (this.kind === "places" && kind !== "places") {
+      this.applyMarks();
       return;
     }
     if (!reveal) {
@@ -243,13 +242,13 @@ export class ListBoard {
       if (kind !== this.kind) {
         this.switchKind(kind);
       }
-      if (!this.positions.has(xref)) {
+      if (!this.positions.has(rowKey)) {
         this.query = "";
         this.find.reset();
         this.refresh(true);
       }
     }
-    const at = this.positions.get(xref);
+    const at = this.positions.get(rowKey);
     if (at === undefined) {
       this.applyMarks();
       return;
@@ -348,7 +347,6 @@ export class ListBoard {
 
   private switchKind(kind: ListKind): void {
     this.kind = kind;
-    this.markedPlace = null;
     this.query = "";
     this.find.reset();
     this.refresh(false);
@@ -397,9 +395,6 @@ export class ListBoard {
       { kind: this.kind, query: this.query, sort: this.sorts[this.kind] },
       collatorFor(currentLanguage()),
     );
-    if (this.markedPlace !== null && !placesOf(index).some((place) => place.key === this.markedPlace)) {
-      this.markedPlace = null;
-    }
     this.positions = new Map(this.rows.map((row, at) => [keyOf(row), at]));
     const kept = focused === undefined ? undefined : this.positions.get(focused);
     this.active = kept ?? (this.active < 0 || this.rows.length === 0 ? -1 : Math.min(this.active, this.rows.length - 1));
@@ -571,7 +566,7 @@ export class ListBoard {
   }
 
   private markedKey(): string | null {
-    return this.kind === "places" ? this.markedPlace : this.marked;
+    return this.kind === "places" && this.marked !== null ? placeKeyOf(this.marked) : this.marked;
   }
 
   private rowId(at: number): string {
@@ -649,16 +644,7 @@ export class ListBoard {
     if (row === undefined) {
       return;
     }
-    if (this.kind === "places") {
-      this.markedPlace = keyOf(row);
-      this.setActive(at, scrollTo);
-      this.host.changed(this.state());
-      return;
-    }
-    const xref = row.xref;
-    if (xref === undefined) {
-      return;
-    }
+    const xref = row.xref ?? placeId((row as PlaceRow).key);
     this.marked = xref;
     this.setActive(at, scrollTo);
     this.host.select(xref);

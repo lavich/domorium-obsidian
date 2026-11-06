@@ -301,6 +301,7 @@
   "card.empty": "В файле нечего показывать.",
   "desk.timeline": "Хронология",
   "desk.places": "Места",
+  "desk.placeEvents": "События",
   "card.announce": "Показано: {name}",
   "mode.list": "Список",
   "command.showList": "Показать как список",

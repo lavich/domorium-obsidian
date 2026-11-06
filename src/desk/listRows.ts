@@ -3,7 +3,7 @@ import { UNNAMED, UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
 import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
-import { placeRows, yearsText, type PlaceRow } from "./placeRows";
+import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
 export type ListKind = "people" | "families" | "sources" | "places";
 
@@ -31,7 +31,6 @@ export interface ListSort {
 export interface ListState {
   kind?: ListKind;
   sort?: Partial<Record<ListKind, ListSort>>;
-  place?: string;
 }
 
 export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow;
@@ -267,7 +266,7 @@ export function readListState(value: unknown): ListState {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return {};
   }
-  const { kind, sort, place } = value as Record<string, unknown>;
+  const { kind, sort } = value as Record<string, unknown>;
   const sorts: Partial<Record<ListKind, ListSort>> = {};
   if (typeof sort === "object" && sort !== null) {
     for (const each of LIST_KINDS) {
@@ -284,7 +283,6 @@ export function readListState(value: unknown): ListState {
   return {
     ...(isKind(kind) ? { kind } : {}),
     ...(Object.keys(sorts).length > 0 ? { sort: sorts } : {}),
-    ...(kind === "places" && typeof place === "string" && place !== "" ? { place } : {}),
   };
 }
 
@@ -295,7 +293,10 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   if (index.family(xref)) {
     return "families";
   }
-  return index.source(xref) ? "sources" : null;
+  if (index.source(xref)) {
+    return "sources";
+  }
+  return placeAt(index, xref) ? "places" : null;
 }
 
 export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>

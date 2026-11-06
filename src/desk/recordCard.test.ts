@@ -160,6 +160,17 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(view.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
   });
 
+  it("shows a place with its events, and opens the record of an event through the tab", () => {
+    state.record = "place:paris, france";
+    draw();
+    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrence .gedcom-desk-link")?.click();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Paris, France"]);
+    expect(texts(".gedcom-card-head-name")).toEqual(["Paris, France"]);
+    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
+    expect(calls.select).toHaveBeenCalledTimes(1);
+  });
+
   it("selects a relative through the tab", () => {
     draw();
     [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]

@@ -9,6 +9,8 @@ import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
 import type { NoteHit } from "./noteLinks";
+import { placeAt } from "./placeRows";
+import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type FactKey, type PageHost } from "./personPage";
 import { renderSourcePage } from "./sourcePage";
 
@@ -49,7 +51,7 @@ function recordName(index: GenealogyIndex, xref: string): string {
     return sourceTitle(source.title);
   }
   const media = index.media(xref);
-  return media?.title ?? media?.file ?? t("desk.media");
+  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? t("desk.media");
 }
 
 export function renderRecordCard(
@@ -114,7 +116,7 @@ export function renderRecordCard(
 }
 
 function pageKind(index: GenealogyIndex, xref: string): boolean {
-  return Boolean(index.person(xref) ?? index.family(xref) ?? index.source(xref) ?? index.media(xref));
+  return Boolean(index.person(xref) ?? index.family(xref) ?? index.source(xref) ?? index.media(xref) ?? placeAt(index, xref));
 }
 
 function makeRoot(container: HTMLElement): HTMLElement {
@@ -170,6 +172,7 @@ function drawRecord(
   const family = person ? undefined : index.family(record);
   const source = person || family ? undefined : index.source(record);
   const media = person || family || source ? undefined : index.media(record);
+  const place = person || family || source || media ? undefined : placeAt(index, record);
   if (person) {
     renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media) }, host);
   } else if (family) {
@@ -185,6 +188,9 @@ function drawRecord(
       index,
       host,
     );
+  } else if (place) {
+    renderPlacePage(body, place, index, host);
+    return;
   }
   renderEvidenceSection(
     body,

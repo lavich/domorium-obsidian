@@ -822,15 +822,14 @@ describe("the places", () => {
     expect(rows()).toHaveLength(10);
   });
 
-  it("selects the row of a place and nothing else", () => {
+  it("selects the place of a clicked row, as it does a record", () => {
     open();
 
     click(place("paris, france"));
 
     expect(place("paris, france")?.getAttribute("aria-selected")).toBe("true");
     expect(place("paris, france")?.classList.contains("is-selected")).toBe(true);
-    expect(host.select).not.toHaveBeenCalled();
-    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places", place: "paris, france" });
+    expect(host.select).toHaveBeenCalledWith("place:paris, france");
   });
 
   it("selects the active row with Enter after moving with the arrows", () => {
@@ -840,32 +839,31 @@ describe("the places", () => {
     press("ArrowDown");
     press("Enter");
 
-    expect(host.select).not.toHaveBeenCalled();
-    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places", place: rows()[2]?.dataset.key });
+    expect(host.select).toHaveBeenCalledWith(`place:${rows()[2]?.dataset.key}`);
   });
 
-  it("restores the selected place from the saved state, and the sort", () => {
-    open({ place: "stockholm, sweden", sort: { places: { by: "events", dir: "desc" } } });
+  it("marks the selected place and keeps the sort of the saved state", () => {
+    const made = open({ sort: { places: { by: "events", dir: "desc" } } });
+    made.select("place:stockholm, sweden", true);
 
     expect(place("stockholm, sweden")?.getAttribute("aria-selected")).toBe("true");
     expect(names()[0]).toBe("Warsaw, Congress Poland");
   });
 
-  it("forgets a saved place the file no longer holds", () => {
-    const made = open({ place: "atlantis" });
+  it("switches from the people to the places to show a place selected elsewhere", () => {
+    const made = board({}, events);
+    made.select("place:paris, france", true);
 
-    expect(made.state()).toEqual({ kind: "places" });
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
+    expect(place("paris, france")?.getAttribute("aria-selected")).toBe("true");
   });
 
-  it("clears the selected place when the kind changes", () => {
-    open({ place: "paris, france" });
-
-    click(button(".gedcom-list-seg-button", "People"));
-    expect(host.changed).toHaveBeenLastCalledWith({});
-    click(button(".gedcom-list-seg-button", "Places"));
+  it("unmarks the place when a record is selected elsewhere", () => {
+    const made = open();
+    made.select("place:paris, france", true);
+    made.select("@I2@", true);
 
     expect(rows().some((one) => one.getAttribute("aria-selected") === "true")).toBe(false);
-    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places" });
   });
 
   it("stays on the places when a record is selected, and marks that record for the people", () => {

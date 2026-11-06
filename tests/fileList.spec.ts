@@ -695,26 +695,21 @@ for (const viewport of [WIDE, PHONE]) {
       await expect(page.locator(".gedcom-list-count")).toHaveText("1 of 10 places");
     });
 
-    test("selects a row without selecting a record or leaving the list", async ({ page }) => {
+    test("selects the place of a row and stays on the places", async ({ page }) => {
       await mountPlaces(page);
       await place(page, "paris, france").click();
 
       await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
-      expect(await selected(page)).toEqual([]);
-      expect(await page.evaluate(() => window.tab.views?.memory().list)).toEqual({ kind: "places", place: "paris, france" });
+      expect(await selected(page)).toEqual(["place:paris, france"]);
       await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Places");
     });
 
-    test("keeps the selected place across a visit to another view and drops it with the kind", async ({ page }) => {
-      await mountPlaces(page);
-      await place(page, "paris, france").click();
-      await page.evaluate(() => window.tab.showMode("graph"));
-      await page.evaluate(() => window.tab.showMode("list"));
-      await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
+    test("brings a place selected elsewhere into view on the places", async ({ page }) => {
+      await mountList(page, { events: true, phone, touch: phone });
+      await page.evaluate(() => window.tab.select("place:paris, france", true));
 
-      await seg(page, "People").click();
-      await seg(page, "Places").click();
-      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(0);
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Places");
+      await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
     });
 
     test("is reached by keyboard and selects by Enter", async ({ page }) => {
@@ -724,7 +719,7 @@ for (const viewport of [WIDE, PHONE]) {
       await page.keyboard.press("Enter");
 
       await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
-      expect(await selected(page)).toEqual([]);
+      expect(await selected(page)).toHaveLength(1);
     });
 
     test("has no button in the row of the kinds but the kinds", async ({ page }) => {

@@ -15,6 +15,8 @@ export interface PlaceRow {
 const LINE_WIDTH = 100_000;
 const TRANSLITERATION: Record<string, string> = { ł: "l", ß: "ss", ø: "o", đ: "d", æ: "ae", œ: "oe", ı: "i" };
 
+const PLACE_PREFIX = "place:";
+
 function placeKey(text: string): string {
   return text.trim().replace(/\s+/gu, " ").normalize("NFC").toLowerCase();
 }
@@ -85,6 +87,38 @@ function sortValue(row: PlaceRow, by: ListSort["by"]): SortValue {
     default:
       return [row.name];
   }
+}
+
+export const placeId = (name: string): string => `${PLACE_PREFIX}${placeKey(name)}`;
+
+export const placeKeyOf = (id: string): string | null => (id.startsWith(PLACE_PREFIX) ? id.slice(PLACE_PREFIX.length) : null);
+
+export function placeAt(index: GenealogyIndex, id: string): PlaceRow | undefined {
+  const key = placeKeyOf(id);
+  return key === null ? undefined : placesOf(index).find((row) => row.key === key);
+}
+
+export interface PlaceOccurrence {
+  event: PersonEvent;
+  record: string;
+}
+
+export function occurrencesAt(index: GenealogyIndex, key: string): PlaceOccurrence[] {
+  const found: PlaceOccurrence[] = [];
+  const take = (record: string | undefined, events: PersonEvent[]): void => {
+    for (const event of events) {
+      if (record !== undefined && event.place !== undefined && placeKey(event.place) === key) {
+        found.push({ event, record });
+      }
+    }
+  };
+  for (const row of index.people) {
+    take(row.xref, row.xref === undefined ? [] : (index.person(row.xref)?.events ?? []));
+  }
+  for (const row of index.families) {
+    take(row.xref, row.xref === undefined ? [] : (index.family(row.xref)?.events ?? []));
+  }
+  return found.sort((a, b) => (a.event.date?.year ?? Infinity) - (b.event.date?.year ?? Infinity));
 }
 
 export function placeRows(index: GenealogyIndex, { query, sort }: { query: string; sort: ListSort | undefined }, collator: Intl.Collator): PlaceRow[] {

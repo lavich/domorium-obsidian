@@ -281,6 +281,7 @@
   "card.empty": "The file holds nothing to show.",
   "desk.timeline": "Timeline",
   "desk.places": "Places",
+  "desk.placeEvents": "Events",
   "card.announce": "Shown: {name}",
   "mode.list": "List",
   "command.showList": "Show as list",

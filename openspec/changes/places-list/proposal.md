@@ -16,7 +16,7 @@ The map was planned and implemented on 2026-11-05 under the change `map-view`. I
 - **One place per spelling.** Spellings that agree after case folding and collapsing white space are one place, named as first written in the file.
 - **Order.** Alphabetical by the collator of the plugin's language until a column is chosen; each column sorts with the list's three-press cycle and ties keep the file's order.
 - **Search.** The list's expanding search narrows the places by name, ignoring case and marks on letters, with the small table `ł`→`l`, `ß`→`ss`, `ø`→`o`, `đ`→`d`, `æ`→`ae`, `œ`→`oe`, `ı`→`i`.
-- **A click only marks the row.** The marked place is list-local state kept per tab with the list's saved state and cleared when the kind changes; it selects no record and the record card does not change.
+- **A place is selected like a record.** A click or Enter on a row selects the place (`place:<key>`, an id no xref can have), marks its row and shows its card in the right panel: the name, the events and years, and every event of that place linking to the person or family it belongs to. The Places section of a person's card links each place to this row, and a place selected from a card switches the list to Places and brings its row into view. The selection is the tab's, so history, Back and Forward and the restart carry it; the list no longer keeps a marked place of its own.
 - **The same list machinery.** Virtual window, keyboard, ARIA grid, and the phone and narrow-tab layout.
 - **No coordinates, no actions.** The Places has no Coordinates column, no mark for a place without coordinates, and no action buttons.
 
