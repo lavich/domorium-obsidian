@@ -31,3 +31,9 @@ The row of kind buttons holds the four kinds and the search. The Places has no C
 ## Migration Plan
 
 None. The saved list state gains an optional `place`; a state without it reads as before.
+
+## Implementation
+
+- The list's header holds four cells for every kind; the Places has three columns, so the fourth cell is hidden there.
+- `placeKey` and `foldText` stay private to `src/desk/placeRows.ts`; nothing else uses them.
+- The stand-in tab of the harness takes an `events` option, which mounts `curieWithEvents()`, the file with the places the specs need.

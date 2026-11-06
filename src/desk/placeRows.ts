@@ -15,11 +15,11 @@ export interface PlaceRow {
 const LINE_WIDTH = 100_000;
 const TRANSLITERATION: Record<string, string> = { ł: "l", ß: "ss", ø: "o", đ: "d", æ: "ae", œ: "oe", ı: "i" };
 
-export function placeKey(text: string): string {
+function placeKey(text: string): string {
   return text.trim().replace(/\s+/gu, " ").normalize("NFC").toLowerCase();
 }
 
-export function foldText(text: string): string {
+function foldText(text: string): string {
   return text
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
