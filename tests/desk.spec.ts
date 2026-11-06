@@ -168,7 +168,7 @@ test.describe("Obsidian's own button styling", () => {
 });
 
 test.describe("every kind of card in a narrow column", () => {
-  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@"]) {
+  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "event:@I1@:p:0"]) {
     for (const [width, phone, language] of [[320, false, "en"], [320, false, "ru"], [390, true, "ru"]] as const) {
       test(`${record} at ${width} pixels in ${language} has nothing to scroll sideways`, async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 760 });
