@@ -1,5 +1,71 @@
 ## MODIFIED Requirements
 
+### Requirement: The person card
+
+A person card SHALL show, without any cross-reference identifier, level number or
+tag, in this order:
+
+- a heading with the person's portrait where there is one, their name, the years
+  of birth and death where a year can be read, marked when a year is approximate
+  or one end of a range, and the places of birth and death;
+- their **facts**: each event and attribute of the person, in the order the
+  record writes them, followed by the events of each family the person is a
+  spouse of, named with the other spouse. Each fact SHALL show its name in the
+  reader's language, its date as the file writes it, its place, and its own
+  payload where it has one, and SHALL show how many sources the fact itself
+  cites, or that it cites none;
+- their **other names**, where the record states more than one;
+- their **family**, as a list of people and not a drawing: parents; siblings; and
+  for each family the person is a spouse of, the other spouse with that family's
+  marriage date and place where stated, the children of that family, and a way to
+  that family's card;
+- their **media**;
+- their **timeline** and their **places**, each a section of the card below the
+  one before it, not a tab;
+- the **evidence**: what the whole record rests on; what an event rests on is on the card of that event.
+
+Every relative shown SHALL select that person. A relative the file points at but
+does not declare SHALL be shown as a pointer to a record that is not in the file,
+with an action that shows it in the source. No section of the card SHALL be a tab
+or a separate page, and the card SHALL NOT draw the family as a tree.
+
+#### Scenario: Marie's facts
+- **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
+- **THEN** it lists her birth with `7 NOV 1867` and `Warsaw, Congress Poland`, her
+  death with `4 JUL 1934` and `Passy, Haute-Savoie, France`, her occupation
+  `Physicist and chemist`, and her marriage with Pierre Curie with `26 JUL 1895`
+  and `Sceaux, France`, each marked as citing no source of its own
+
+#### Scenario: The sections in order
+- **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
+- **THEN** its section headings read, from the top, Facts, Other names, Family,
+  Media, Timeline, Places and Evidence, with her other name `Maria Salomea
+  Skłodowska` under Other names, and no tab bar and no tree
+
+#### Scenario: Marie's family as a list
+- **WHEN** the card shows Marie Skłodowska-Curie
+- **THEN** the family section lists her parents Władysław Skłodowski and Bronisława
+  Boguska, her four siblings, her husband Pierre Curie with the way to their
+  family, and her children Irène Joliot-Curie and Ève Curie
+
+#### Scenario: A fact that cites a source
+- **WHEN** a person's `1 BIRT` carries `2 SOUR @S2@` beneath it
+- **THEN** the birth shows that it cites one source
+
+#### Scenario: Two marriages
+- **WHEN** a person is a spouse of two families
+- **THEN** the family section shows two spouses, each with the children of that
+  family under them
+
+#### Scenario: A parent who is not in the file
+- **WHEN** a person's child-family names a husband the file does not declare
+- **THEN** the parents show the declared parent and a pointer to a record that is
+  not in the file
+
+#### Scenario: Following a relative
+- **WHEN** the reader activates Pierre Curie in Marie's family section
+- **THEN** the card shows Pierre Curie, and the tab's mode is as it was
+
 ### Requirement: The card fits a narrow panel and a phone
 
 The card SHALL be readable and usable in one column at the width a sidebar has,

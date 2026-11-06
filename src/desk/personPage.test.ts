@@ -6,7 +6,7 @@ import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
-import { factsOf, renderPersonPage, type FactKey, type PageHost } from "./personPage";
+import { factsOf, renderFactList, renderPersonPage, type FactKey, type PageHost } from "./personPage";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -169,10 +169,18 @@ describe("the person card", () => {
     expect(host.openRecord.mock.calls).toEqual([["place:warsaw, congress poland"]]);
   });
 
-  it("shows no fact as selected and unfolds nothing", () => {
-    draw("@I1@", { selected: "p:0" });
+  it("gives a fact of a record with no identifier an inert row and a disabled name", () => {
+    const index = buildIndex(new GedcomLanguageService(["0 HEAD", "0 INDI", "1 NAME A /B/", "1 BIRT", "0 TRLR", ""].join("\n")));
+    const person = index.people[0];
+    container.empty();
+    if (person) {
+      renderFactList(container, [{ key: "p:0", event: { tag: "BIRT", citations: [], range: { start: { line: 3, character: 0 }, end: { line: 3, character: 6 } } } }], index, { selected: null }, host);
+    }
 
-    expect(container.querySelector(".gedcom-desk-unfold, .gedcom-desk-fact.is-selected")).toBeNull();
+    expect(container.querySelector(".gedcom-desk-fact")?.classList.contains("is-inert")).toBe(true);
+    expect(container.querySelector(".gedcom-desk-fact-name")?.hasAttribute("disabled")).toBe(true);
+    container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
+    expect(host.openRecord).not.toHaveBeenCalled();
   });
 
   it("shows in source the selected fact, or else the whole record", () => {

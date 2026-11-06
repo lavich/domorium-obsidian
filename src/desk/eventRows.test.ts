@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
-import { collectEvents, eventAt, eventCells, eventId, eventOwner, eventRows, eventTitle, type EventRow } from "./eventRows";
+import { collectEvents, eventAt, eventCells, eventId, eventIdOf, eventOwner, eventRows, eventTitle, type EventRow } from "./eventRows";
 import { collatorFor, listRows, type ListSort } from "./listRows";
 
 afterEach(resetLanguage);
@@ -115,6 +115,17 @@ describe("the rows of the events kind", () => {
     expect(eventAt(first, "event:@I1@:RESI:1")?.event.place).toBe("Two");
     expect(eventAt(without, "event:@I1@:RESI:1")).toBeUndefined();
     expect(eventAt(without, "event:@I1@:RESI:0")?.event.place).toBe("Two");
+  });
+
+  it("gives an event the id the list gives it, for a person's, a family's and a union's events of one tag", () => {
+    const text = doc("0 @I1@ INDI", "1 NAME A /B/", "1 FAMS @F1@", "0 @F1@ FAM", "1 HUSB @I1@", "1 MARR", "2 DATE 1900", "1 MARR", "2 DATE 1910");
+    const listed = collectEvents(text).map((row) => row.key);
+    const person = text.person("@I1@");
+    const family = text.family("@F1@");
+
+    expect(listed).toEqual(["event:@F1@:MARR:0", "event:@F1@:MARR:1"]);
+    expect(person?.unions[0]?.events.map((event) => eventIdOf("@F1@", person.unions[0]?.events ?? [], event))).toEqual(listed);
+    expect(family?.events.map((event) => eventIdOf("@F1@", family.events, event))).toEqual(listed);
   });
 
   it("numbers events of one tag among themselves", () => {

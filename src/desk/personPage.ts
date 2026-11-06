@@ -142,6 +142,7 @@ export function renderFactList(
         }
       });
     } else {
+      row.addClass("is-inert");
       name.setAttribute("disabled", "");
     }
     renderFactValue(row.createSpan({ cls: "gedcom-desk-fact-value" }), fact, host);

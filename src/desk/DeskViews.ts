@@ -58,7 +58,7 @@ export class RecordCardView extends ItemView {
     const view = this.host.followed();
     const record = view?.shownRecord() ?? null;
     const path = view?.file?.path;
-    const key = record && path ? `${path}#${record}` : "";
+    const key = record && path ? `${path}#${eventOwner(record) ?? record}` : "";
     if (key && this.notes?.key !== key && path && record) {
       const asked = { key, hits: null as NoteHit[] | null };
       this.notes = asked;

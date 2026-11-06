@@ -439,7 +439,11 @@ button.gedcom-desk-link:hover {
   border-top: 0;
 }
 
-.gedcom-desk-fact:hover {
+.gedcom-desk-fact.is-inert {
+  cursor: default;
+}
+
+.gedcom-desk-fact:not(.is-inert):hover {
   background: var(--background-modifier-hover);
 }
 

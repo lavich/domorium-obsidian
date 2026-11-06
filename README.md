@@ -107,8 +107,7 @@ them, each marked with how many sources it cites itself, or that it cites none;
 their other names; their parents, siblings, spouses and children, each of whom
 selects that person; their media; a **timeline** of their events and their close
 relatives', and the **places** it names; and last the **evidence** — what the
-selected fact, or else the whole record, rests on, kept apart from the sources
-of the whole record so that one is never mistaken for the other. Tapping a fact, or
+whole record rests on. Tapping a fact, or
 an entry of the timeline, opens the card of its event, which ends with its own
 evidence; a place named there opens the card of that place, and a list in view
 shows the event or the place. A family, a
