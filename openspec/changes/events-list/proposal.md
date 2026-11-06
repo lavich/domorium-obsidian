@@ -12,8 +12,9 @@ In Russian: «я так же хочу чтобы была таблица Events�
 - **Every event, once.** Dated or not, placed or not; the order is the file's. A custom event (`EVEN`, `FACT`) is named by its type, as the card names it.
 - **Search.** The list's expanding search narrows the events by event name, record name, date, place and the text the event carries, ignoring case and marks on letters, with the table the Places search uses.
 - **Sort.** Each column sorts with the list's three-press cycle; Date by its first year; a missing value comes last in both directions; ties keep the file's order.
-- **A click selects the record and the event.** A click or Enter on a row selects the person or the family and unfolds that event in the card the plugin already shows — with its sources and *Show in source* — as pressing the event in the card does. Only the row of that event is marked. The event is the tab's while its record stays selected; Back, Forward and a restart return to the record with no event and no row marked.
-- **Records elsewhere leave the list alone.** On the Events, as on the Places, selecting a record elsewhere neither switches the kind nor marks a row.
+- **A click selects the record and the event.** A click or Enter on a row selects the person or the family and unfolds that event in the card the plugin already shows — with its sources and *Show in source* — as pressing the event in the card does. Only the row of that event is marked. The event is kept while its record stays selected and nothing selects a record anew; Back, Forward, a link and a restart return to the record with no event and no row marked.
+- **Records elsewhere leave the list alone.** On the Events, as on the Places, selecting a record or a source elsewhere neither switches the kind nor marks a row; a place switches the list to the Places, as it does now.
+- **One correction to the Places text.** The restated *keyboard* requirement fixes the scenario *Enter on a place*, which still said that no record is selected; the card shows the place, as the merged code does.
 - **The same list machinery.** Virtual window, keyboard, ARIA grid, and the phone and narrow-tab layout.
 - **Read-only.** No actions, and nothing written to the file, a note or the vault.
 

@@ -234,7 +234,11 @@ least 44 CSS pixels tall on a touch device.
 
 #### Scenario: Filtering the events
 - **WHEN** the reader types `paris` among the events of `curie.ged`
-- **THEN** the events that name Paris, or whose record does, are listed, and the count reads `8 of 51 events`
+- **THEN** the events that name Paris, or whose record does, are listed, and the count reads how many of the 51 events they are
+
+#### Scenario: Nothing matches among the events
+- **WHEN** the reader types `zzz` among the events
+- **THEN** the list says nothing matches `zzz` and that the filter covers events, records, dates and places
 
 #### Scenario: Filtering the events by what they carry
 - **WHEN** the reader types `physicist` among the events of `curie.ged`
@@ -344,14 +348,14 @@ Activating a row of the list, by a click, a tap, or Enter or Space on a row with
 focus, SHALL select that record in the tab, as the requirement on the selected record
 says, and, on a row of the Events, the event of the row in that record: the record card shows it, the tab stays in List mode, and no page or other tab is
 opened. The row of the selected record SHALL be marked as selected, and as selected to
-assistive technology, whichever kind is shown; with nothing selected, or a record that
-has no row — a multimedia record — no row SHALL be marked. Among the events, the row marked SHALL be that of the event selected in its record, and only that row, though other events belong to the same record; a record selected without an event, from the graph or a link, marks no row. The mark SHALL follow the
+assistive technology, whichever kind but the Places and the Events is shown; with nothing selected, or a record that
+has no row — a multimedia record — no row SHALL be marked. Among the events, the row marked SHALL be that of the event selected in its record, and only that row, though other events belong to the same record; a record selected without an event, from the graph or a link, marks no row, nor does an event of a family pressed in a person's card. The mark SHALL follow the
 selection however it was made: from the list, from the record card, by a link or by *Go
 to record*; and SHALL stay across sorting, filtering and switching the kind, and be
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
 list. A row of the Places SHALL select its place, which has no xref and is selected under the id
 `place:` and its key: the record card shows the place, with its events, each linking to the person
-or family it belongs to. A row of the Events SHALL select the person or the family the event belongs to, with the event shown unfolded in its card as the card shows an event pressed there, with its sources and *Show in source*. The event is the tab's while its record stays selected; Back, Forward and a restart return to the record with no event. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+or family it belongs to. A row of the Events SHALL select the person or the family the event belongs to, with the event shown unfolded in its card as the card shows an event pressed there, with its sources and *Show in source*. The event is kept while its record stays selected and nothing selects a record anew; Back, Forward, a link, the cursor in Source mode and a restart return to the record with no event. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -480,9 +484,8 @@ above, because the reader has just chosen this view. A filter the reader typed
 SHALL NOT be cleared by returning to the list with the selection
 unchanged. A selection made by activating a row of the list SHALL change neither the
 scroll position, the kind nor the filter. Where the record has no row, the list SHALL
-be left as it is, and so it SHALL be on the Places and the Events, where no record has a row of its own: a selection
-SHALL NOT switch the list away from them, and the row of the selected record is marked
-when the list next shows its kind.
+be left as it is, and so it SHALL be on the Places and the Events, where no record has a row of its own: the selection of a
+record or a source SHALL NOT switch the list away from them, while the selection of a place SHALL switch the list from the Events to the Places and bring the row of the place into view.
 
 #### Scenario: Entering the list with a selection
 - **WHEN** a file of 500 people has its 400th person selected in Graph mode and the
@@ -546,6 +549,10 @@ when the list next shows its kind.
 #### Scenario: The events stay
 - **WHEN** the list shows the events and the reader follows `[[curie.ged#@I1@]]`
 - **THEN** the list still shows the events and no row of them is marked
+
+#### Scenario: A place selected among the events
+- **WHEN** the list shows the events and the reader presses `Paris, France` in the Places section of Marie's card
+- **THEN** the list shows the places with the row of `Paris, France` marked and in view
 
 ### Requirement: The list is reachable with the keyboard
 
@@ -612,7 +619,7 @@ table or a file. The Places SHALL be read-only.
 The **Events** kind SHALL list every event the file states on a person or on a family that has an
 identifier, an attribute such as an occupation among them, one row for each, whether or not it names a
 date or a place, in the order the file writes them. Its columns SHALL be **Event**, the name the card
-gives the event, a custom event by its type, followed, where the event carries text, by that text,
+gives the event, a custom event by its type, followed, where the event carries text other than `Y`, by that text,
 as `Occupation · Physicist`; **Record**, the person or the family it belongs to, named as their cards name them;
 **Date**, as the file writes it; and **Place**, as the file writes it. Every row SHALL be built from the
 file alone, the count above the rows SHALL be of events, spelt by the plural rules of the language
