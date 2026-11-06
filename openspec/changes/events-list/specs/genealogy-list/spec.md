@@ -497,7 +497,7 @@ SHALL NOT be cleared by returning to the list with the selection
 unchanged. A selection made by activating a row of the list SHALL change neither the
 scroll position, the kind nor the filter. Where the record has no row, the list SHALL
 be left as it is, and so it SHALL be on the Places and the Events, where no record has a row of its own: the selection of a
-record or a source SHALL NOT switch the list away from them, while the selection of a place or of an event SHALL switch the list to the Places or the Events, and bring its row into view.
+record or a source from a link, the graph, the timeline or the cursor SHALL NOT switch the list away from them, while the selection of a place or of an event SHALL switch the list to the Places or the Events, and bring its row into view. A record or a source that the reader selects in the record card, a person on the card of a place or of an event, for one, SHALL switch the list to the kind of that record and bring its row into view.
 
 #### Scenario: Entering the list with a selection
 - **WHEN** a file of 500 people has its 400th person selected in Graph mode and the
@@ -573,6 +573,18 @@ record or a source SHALL NOT switch the list away from them, while the selection
 #### Scenario: A place selected among the events
 - **WHEN** the list shows the events and the reader presses `Paris, France` in the Places section of Marie's card
 - **THEN** the list shows the places with the row of `Paris, France` marked and in view
+
+#### Scenario: A person pressed in the card of a place
+- **WHEN** the list shows the places, `Paris, France` is selected, and the reader presses Pierre Curie in the card of that place
+- **THEN** the list shows the people with the row of Pierre Curie marked and in view
+
+#### Scenario: A family pressed in the card of a place
+- **WHEN** the list shows the places, `Sceaux, France` is selected, and the reader presses the Curies' marriage in the card of that place
+- **THEN** the list shows the families with the row of the Curies' family marked and in view
+
+#### Scenario: The record pressed in the card of an event
+- **WHEN** the list shows the events, Marie's birth is selected, and the reader presses her name in its card
+- **THEN** the list shows the people with the row of Marie marked and in view
 
 #### Scenario: An event selected among the places
 - **WHEN** the reader selected Marie's birth, then `Paris, France` in the card, so that the list shows the places, and steps Back in the history

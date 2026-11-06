@@ -37,7 +37,7 @@ declare global {
       views: FileViews | null;
       mode(): Mode;
       showMode(mode: Mode): void;
-      select(xref: string | null, reveal: boolean): void;
+      select(xref: string | null, reveal: boolean, fromCard?: boolean): void;
       openSearch(): void;
       resized(): void;
       setHidden(hidden: boolean): void;
@@ -56,11 +56,11 @@ let around: string | undefined;
 let selected: string | null = null;
 let touch = false;
 
-function hand(xref: string | null, reveal: boolean): void {
+function hand(xref: string | null, reveal: boolean, fromCard = false): void {
   const person = xref !== null && index.person(xref) ? xref : null;
     views?.select("graph", person, reveal);
   views?.select("timeline", person, reveal);
-  views?.select("list", listSelection(index, xref), reveal);
+  views?.select("list", listSelection(index, xref), reveal, fromCard);
 }
 
 const element = (id: string): HTMLElement => {
@@ -166,9 +166,9 @@ window.tab = {
   views: null,
   mode: () => mode,
   showMode,
-  select: (xref, reveal) => {
+  select: (xref, reveal, fromCard = false) => {
     selected = xref;
-    hand(xref, reveal);
+    hand(xref, reveal, fromCard);
   },
   openSearch: () => {
     if (mode !== "source") {

@@ -712,6 +712,14 @@ for (const viewport of [WIDE, PHONE]) {
       await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
     });
 
+    test("switches to the people for a person chosen in the card of a place", async ({ page }) => {
+      await mountPlaces(page);
+      await page.evaluate(() => window.tab.select("@I2@", true, true));
+
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("People");
+      await expect(rowOf(page, "@I2@")).toHaveAttribute("aria-selected", "true");
+    });
+
     test("is reached by keyboard and selects by Enter", async ({ page }) => {
       await mountPlaces(page);
       await page.locator(".gedcom-list-scroll").focus();

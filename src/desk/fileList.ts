@@ -218,15 +218,15 @@ export class ListBoard {
     this.refresh(true);
   }
 
-  select(xref: string | null, reveal: boolean): void {
+  select(xref: string | null, reveal: boolean, fromCard = false): void {
     const before = canonical(this.state());
-    this.place(xref, reveal);
+    this.place(xref, reveal, fromCard);
     if (canonical(this.state()) !== before) {
       this.host.changed(this.state());
     }
   }
 
-  private place(xref: string | null, reveal: boolean): void {
+  private place(xref: string | null, reveal: boolean, fromCard: boolean): void {
     const index = this.index;
     const kind = index !== null && xref !== null ? recordKind(index, xref) : null;
     if (xref === null || kind === null) {
@@ -237,7 +237,7 @@ export class ListBoard {
     const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
-    if ((this.kind === "places" || this.kind === "events") && kind !== "places" && kind !== "events") {
+    if ((this.kind === "places" || this.kind === "events") && kind !== "places" && kind !== "events" && !fromCard) {
       this.applyMarks();
       return;
     }
@@ -245,7 +245,7 @@ export class ListBoard {
       this.applyMarks();
       return;
     }
-    if (fresh) {
+    if (fresh || (fromCard && kind !== this.kind)) {
       if (kind !== this.kind) {
         this.switchKind(kind);
       }

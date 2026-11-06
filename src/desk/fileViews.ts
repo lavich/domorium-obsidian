@@ -40,7 +40,7 @@ export class FileViews {
   private list: ListBoard | null = null;
   private listScroll: number | undefined;
   private kept: ViewMemory = {};
-  private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean }>> = {};
+  private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean; fromCard: boolean }>> = {};
   private parked: Record<ViewKind, boolean> = { graph: false, timeline: false, list: false };
   private shownKind: ViewKind | null = null;
 
@@ -70,7 +70,7 @@ export class FileViews {
     const wanted = this.pending[kind];
     if (wanted !== undefined && (restore || this.displayed())) {
       delete this.pending[kind];
-      this.boardOf(kind)?.select(wanted.xref, wanted.reveal || (kind === "list" && restore));
+      this.selectOn(kind, wanted.xref, wanted.reveal || (kind === "list" && restore), wanted.fromCard);
     }
     if (JSON.stringify(this.kept[kind]) !== before) {
       this.host.changed();
@@ -78,7 +78,7 @@ export class FileViews {
   }
 
   /** Never fails and never needs a board: kept until one is drawn and shown, and moving only where a gesture that asked for it set it. */
-  select(kind: ViewKind, xref: string | null, reveal: boolean): void {
+  select(kind: ViewKind, xref: string | null, reveal: boolean, fromCard = false): void {
     if (xref === null) {
       delete this.pending[kind];
       this.boardOf(kind)?.select(null, false);
@@ -86,11 +86,20 @@ export class FileViews {
     }
     if (this.shownKind === kind && this.displayed()) {
       delete this.pending[kind];
-      this.boardOf(kind)?.select(xref, reveal);
+      this.selectOn(kind, xref, reveal, fromCard);
       return;
     }
     const held = this.pending[kind];
-    this.pending[kind] = { xref, reveal: reveal || (held?.xref === xref && held.reveal) };
+    this.pending[kind] = { xref, reveal: reveal || (held?.xref === xref && held.reveal), fromCard: fromCard || (held?.xref === xref && held.fromCard) };
+  }
+
+  private selectOn(kind: ViewKind, xref: string, reveal: boolean, fromCard: boolean): void {
+    const board = this.boardOf(kind);
+    if (board instanceof ListBoard) {
+      board.select(xref, reveal, fromCard);
+    } else {
+      board?.select(xref, reveal);
+    }
   }
 
   /** Opens the search of a drawn board and focuses it, or only focuses it where it is open. */

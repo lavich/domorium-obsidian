@@ -866,6 +866,16 @@ describe("the places", () => {
     expect(rows().some((one) => one.getAttribute("aria-selected") === "true")).toBe(false);
   });
 
+  it("switches to the people for a person selected from the card, though the same person was selected before", () => {
+    const made = open();
+    made.select("@I2@", true);
+
+    made.select("@I2@", true, true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["People"]);
+    expect(row("@I2@")?.getAttribute("aria-selected")).toBe("true");
+  });
+
   it("stays on the places when a record is selected, and marks that record for the people", () => {
     const made = open();
 
@@ -1065,6 +1075,24 @@ describe("the events", () => {
 
       expect(scroller().scrollTop).toBe(90);
     });
+  });
+
+  it("switches to the people for a person selected from the card, and marks that person", () => {
+    const made = open();
+
+    made.select("@I2@", true, true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["People"]);
+    expect(row("@I2@")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("switches to the families for a family selected from the card", () => {
+    const made = open();
+
+    made.select("@F3@", true, true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Families"]);
+    expect(row("@F3@")?.getAttribute("aria-selected")).toBe("true");
   });
 
   it("has no button but the kinds on the events", () => {

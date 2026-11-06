@@ -475,7 +475,7 @@ export class GedcomView extends TextFileView implements CardTab {
     } else if (rules.addsStep === "follow") {
       this.recordHistory.follow(xref);
     }
-    this.markInViews(rules.revealsView);
+    this.markInViews(rules.revealsView, origin === "card");
     if (this.modes.shown === "source" && rules.cursorToRecord) {
       const start = eventAt(this.genealogy(), xref)?.event.range.start ?? this.records().find((entry) => entry.identifier === xref)?.start;
       if (start) {
@@ -570,12 +570,12 @@ export class GedcomView extends TextFileView implements CardTab {
     }
   }
 
-  private markInViews(reveal: boolean): void {
+  private markInViews(reveal: boolean, fromCard = false): void {
     const selected = this.modes.shownRecord();
     const person = selected !== null && this.genealogy().person(selected) ? selected : null;
     this.views.select("graph", person, reveal);
     this.views.select("timeline", person, reveal);
-    this.views.select("list", listSelection(this.genealogy(), selected), reveal);
+    this.views.select("list", listSelection(this.genealogy(), selected), reveal, fromCard);
   }
 
   followMove(move: Move, documentPath: string): Outcome {
