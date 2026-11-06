@@ -311,6 +311,7 @@
   "list.families": "Семьи",
   "list.sources": "Источники",
   "list.places": "Места",
+  "list.events": "События",
   "list.column.name": "Имя",
   "list.column.years": "Годы",
   "list.column.place": "Место",
@@ -323,6 +324,9 @@
   "list.column.repository": "Хранилище",
   "list.column.citedBy": "Цитируют",
   "list.column.events": "События",
+  "list.column.event": "Событие",
+  "list.column.record": "Запись",
+  "list.column.date": "Дата",
   "list.count.people": {
     "one": "{count} человек",
     "few": "{count} человека",
@@ -346,6 +350,12 @@
     "few": "{count} места",
     "many": "{count} мест",
     "other": "{count} места"
+  },
+  "list.count.events": {
+    "one": "{count} событие",
+    "few": "{count} события",
+    "many": "{count} событий",
+    "other": "{count} события"
   },
   "list.countOf.people": {
     "one": "{shown} из {count} человека",
@@ -371,18 +381,27 @@
     "many": "{shown} из {count} мест",
     "other": "{shown} из {count} места"
   },
+  "list.countOf.events": {
+    "one": "{shown} из {count} события",
+    "few": "{shown} из {count} событий",
+    "many": "{shown} из {count} событий",
+    "other": "{shown} из {count} события"
+  },
   "list.search.people": "Имя, год, место…",
   "list.search.families": "Имена, год, место…",
   "list.search.sources": "Название, автор, хранилище…",
   "list.search.places": "Название места…",
+  "list.search.events": "Событие, запись, дата, место…",
   "list.nothing.people": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.families": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.sources": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям, авторам и хранилищам.",
   "list.nothing.places": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям мест.",
+  "list.nothing.events": "Ничего не найдено по запросу «{query}». Поиск идёт по событиям, записям, датам и местам.",
   "list.none.people": "В файле нет людей.",
   "list.none.families": "В файле нет семей.",
   "list.none.sources": "В файле нет источников.",
   "list.none.places": "В файле нет мест.",
+  "list.none.events": "В файле нет событий.",
   "list.sortBy": "Сортировать по",
   "list.sortAscending": "По возрастанию",
   "list.sortDescending": "По убыванию",

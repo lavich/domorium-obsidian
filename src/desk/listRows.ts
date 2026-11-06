@@ -3,11 +3,12 @@ import { UNNAMED, UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
 import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
+import { eventCells, eventRows, type EventRow } from "./eventRows";
 import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
-export type ListKind = "people" | "families" | "sources" | "places";
+export type ListKind = "people" | "families" | "sources" | "places" | "events";
 
-export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places"];
+export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places", "events"];
 
 export type SortKey =
   | "name"
@@ -21,7 +22,10 @@ export type SortKey =
   | "author"
   | "repository"
   | "citedBy"
-  | "events";
+  | "events"
+  | "event"
+  | "record"
+  | "date";
 
 export interface ListSort {
   by: SortKey;
@@ -33,7 +37,7 @@ export interface ListState {
   sort?: Partial<Record<ListKind, ListSort>>;
 }
 
-export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow;
+export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow | EventRow;
 
 export interface Column {
   key: SortKey;
@@ -64,6 +68,12 @@ const COLUMNS: Record<ListKind, Column[]> = {
     { key: "place", label: "list.column.place", numeric: false },
     { key: "events", label: "list.column.events", numeric: true },
     { key: "years", label: "list.column.years", numeric: false },
+  ],
+  events: [
+    { key: "event", label: "list.column.event", numeric: false },
+    { key: "record", label: "list.column.record", numeric: false },
+    { key: "date", label: "list.column.date", numeric: false },
+    { key: "place", label: "list.column.place", numeric: false },
   ],
 };
 
@@ -163,6 +173,9 @@ export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Ce
     const place = row as PlaceRow;
     return { texts: [place.name, String(place.events), yearsText(place)], gap: false };
   }
+  if (kind === "events") {
+    return { texts: eventCells(row as EventRow), gap: false };
+  }
   const source = row as SourceRow;
   return {
     texts: [
@@ -247,6 +260,9 @@ export interface ListQuery {
 export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
   if (kind === "places") {
     return placeRows(index, { query, sort }, collator);
+  }
+  if (kind === "events") {
+    return eventRows(index, { query, sort }, collator);
   }
   const rows: ListRow[] =
     kind === "people" ? peopleShown(index, query) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);

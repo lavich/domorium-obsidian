@@ -3,6 +3,7 @@ import type { Range } from "@domorium/language-service";
 import type { ViewKind } from "../src/desk/deskState";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
+import type { FactKey } from "../src/desk/personPage";
 import { setLanguage } from "../src/i18n";
 import { CURIE, curieWithEvents, indexOf } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
@@ -25,6 +26,7 @@ export interface TabOptions {
 
 export interface TabCalls {
   selected: string[];
+  selectedEvent: { xref: string; fact: FactKey }[];
   shownInSource: Range[];
   changed: number;
 }
@@ -37,7 +39,7 @@ declare global {
       views: FileViews | null;
       mode(): Mode;
       showMode(mode: Mode): void;
-      select(xref: string | null, reveal: boolean): void;
+      select(xref: string | null, reveal: boolean, fact?: FactKey | null): void;
       openSearch(): void;
       resized(): void;
       setHidden(hidden: boolean): void;
@@ -47,20 +49,21 @@ declare global {
 
 installObsidianDom();
 
-const calls: TabCalls = { selected: [], shownInSource: [], changed: 0 };
+const calls: TabCalls = { selected: [], selectedEvent: [], shownInSource: [], changed: 0 };
 let views: FileViews | null = null;
 let memory: ViewMemory = {};
 let index = indexOf(CURIE);
 let mode: Mode = "source";
 let around: string | undefined;
 let selected: string | null = null;
+let selectedFact: FactKey | null = null;
 let touch = false;
 
-function hand(xref: string | null, reveal: boolean): void {
+function hand(xref: string | null, reveal: boolean, fact: FactKey | null = null): void {
   const person = xref !== null && index.person(xref) ? xref : null;
-    views?.select("graph", person, reveal);
+  views?.select("graph", person, reveal);
   views?.select("timeline", person, reveal);
-  views?.select("list", listSelection(index, xref), reveal);
+  views?.select("list", listSelection(index, xref), reveal, fact);
 }
 
 const element = (id: string): HTMLElement => {
@@ -101,7 +104,7 @@ function showMode(next: Mode): void {
   mode = next;
   markActive();
   if (mode !== "source") {
-    hand(selected, true);
+    hand(selected, true, selectedFact);
   }
   draw();
 }
@@ -115,12 +118,14 @@ function mount(options: TabOptions): void {
   body.classList.toggle("is-mobile", options.phone ?? false);
   body.classList.toggle("is-phone", options.phone ?? false);
   calls.selected = [];
+  calls.selectedEvent = [];
   calls.shownInSource = [];
   calls.changed = 0;
   index = indexOf(options.doc ?? (options.events ? curieWithEvents() : CURIE));
   memory = options.memory ?? {};
   around = options.around;
   selected = null;
+  selectedFact = null;
   mode = options.mode ?? "source";
   markActive();
   const parent = element("views");
@@ -131,7 +136,14 @@ function mount(options: TabOptions): void {
     select: (xref) => {
       calls.selected.push(xref);
       selected = xref;
+      selectedFact = null;
       hand(xref, false);
+    },
+    selectEvent: (xref, fact) => {
+      calls.selectedEvent.push({ xref, fact });
+      selected = xref;
+      selectedFact = fact;
+      hand(xref, false, fact);
     },
     showInSource: (range) => {
       calls.shownInSource.push(range);
@@ -166,9 +178,10 @@ window.tab = {
   views: null,
   mode: () => mode,
   showMode,
-  select: (xref, reveal) => {
+  select: (xref, reveal, fact = null) => {
     selected = xref;
-    hand(xref, reveal);
+    selectedFact = fact;
+    hand(xref, reveal, fact);
   },
   openSearch: () => {
     if (mode !== "source") {

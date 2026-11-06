@@ -36,6 +36,13 @@ and their years. Click one and its card opens in the right panel, with every
 event held there; press an event to go to the person or family. From a person's
 card, press a place in its **Places** section to land on its row.
 
+## Browse the events
+
+Choose **Events** in the same **List** to see every event of the file, one row each, with
+its record, date and place: an occupation or an award reads with its text. Sort by
+Date to see the file in time order. Click a row and its person or family opens in the
+right panel with that event shown, its sources included.
+
 ## Write one yourself
 
 Type `[[curie.ged#` on the line below and the records of that file are offered by

@@ -16,10 +16,13 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
+import { eventsOf } from "./eventRows";
+import type { FactKey } from "./personPage";
 import { placeId, placeKeyOf, placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
   select(xref: string): void;
+  selectEvent(xref: string, fact: FactKey): void;
   changed(state: ListState): void;
   scrolled(top: number): void;
   setIcon(element: HTMLElement, icon: string): void;
@@ -37,36 +40,42 @@ const KIND_LABEL: Record<ListKind, MessageKey> = {
   families: "list.families",
   sources: "list.sources",
   places: "list.places",
+  events: "list.events",
 };
 const SEARCH_HINT: Record<ListKind, MessageKey> = {
   people: "list.search.people",
   families: "list.search.families",
   sources: "list.search.sources",
   places: "list.search.places",
+  events: "list.search.events",
 };
 const NOTHING: Record<ListKind, MessageKey> = {
   people: "list.nothing.people",
   families: "list.nothing.families",
   sources: "list.nothing.sources",
   places: "list.nothing.places",
+  events: "list.nothing.events",
 };
 const NONE: Record<ListKind, MessageKey> = {
   people: "list.none.people",
   families: "list.none.families",
   sources: "list.none.sources",
   places: "list.none.places",
+  events: "list.none.events",
 };
 const COUNT: Record<ListKind, MessageKey> = {
   people: "list.count.people",
   families: "list.count.families",
   sources: "list.count.sources",
   places: "list.count.places",
+  events: "list.count.events",
 };
 const COUNT_OF: Record<ListKind, MessageKey> = {
   people: "list.countOf.people",
   families: "list.countOf.families",
   sources: "list.countOf.sources",
   places: "list.countOf.places",
+  events: "list.countOf.events",
 };
 
 let boards = 0;
@@ -74,7 +83,7 @@ let boards = 0;
 const canonical = (state: ListState): string =>
   JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
 
-const keyOf = (row: ListRow): string => row.xref ?? (row as PlaceRow).key;
+const keyOf = (row: ListRow): string => ("key" in row ? row.key : (row.xref ?? ""));
 
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
@@ -102,6 +111,7 @@ export class ListBoard {
   private positions = new Map<string, number>();
   private totals = { people: 0 };
   private marked: string | null = null;
+  private markedFact: FactKey | null = null;
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
@@ -211,15 +221,16 @@ export class ListBoard {
     this.refresh(true);
   }
 
-  select(xref: string | null, reveal: boolean): void {
+  select(xref: string | null, reveal: boolean, fact: FactKey | null = null): void {
     const before = canonical(this.state());
-    this.place(xref, reveal);
+    this.place(xref, reveal, fact);
     if (canonical(this.state()) !== before) {
       this.host.changed(this.state());
     }
   }
 
-  private place(xref: string | null, reveal: boolean): void {
+  private place(xref: string | null, reveal: boolean, fact: FactKey | null): void {
+    this.markedFact = fact;
     const index = this.index;
     const kind = index !== null && xref !== null ? recordKind(index, xref) : null;
     if (xref === null || kind === null) {
@@ -230,7 +241,7 @@ export class ListBoard {
     const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
-    if (this.kind === "places" && kind !== "places") {
+    if ((this.kind === "places" || this.kind === "events") && kind !== "places") {
       this.applyMarks();
       return;
     }
@@ -439,6 +450,9 @@ export class ListBoard {
     if (this.kind === "places") {
       return placesOf(index).length;
     }
+    if (this.kind === "events") {
+      return eventsOf(index).length;
+    }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;
   }
@@ -529,7 +543,7 @@ export class ListBoard {
     const el = createDiv({ cls: `gedcom-list-row is-${this.kind}` });
     el.id = this.rowId(at);
     if (row.xref !== undefined) {
-      el.dataset.xref = key;
+      el.dataset.xref = "fact" in row ? row.xref : key;
     }
     el.dataset.key = key;
     el.dataset.pos = String(at);
@@ -566,7 +580,16 @@ export class ListBoard {
   }
 
   private markedKey(): string | null {
-    return this.kind === "places" && this.marked !== null ? placeKeyOf(this.marked) : this.marked;
+    if (this.marked === null) {
+      return null;
+    }
+    if (this.kind === "places") {
+      return placeKeyOf(this.marked);
+    }
+    if (this.kind === "events") {
+      return this.markedFact === null ? null : `${this.marked}|${this.markedFact}`;
+    }
+    return this.marked;
   }
 
   private rowId(at: number): string {
@@ -644,8 +667,16 @@ export class ListBoard {
     if (row === undefined) {
       return;
     }
+    if ("fact" in row) {
+      this.marked = row.xref;
+      this.markedFact = row.fact;
+      this.setActive(at, scrollTo);
+      this.host.selectEvent(row.xref, row.fact);
+      return;
+    }
     const xref = row.xref ?? placeId((row as PlaceRow).key);
     this.marked = xref;
+    this.markedFact = null;
     this.setActive(at, scrollTo);
     this.host.select(xref);
   }

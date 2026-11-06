@@ -725,7 +725,7 @@ for (const viewport of [WIDE, PHONE]) {
     test("has no button in the row of the kinds but the kinds", async ({ page }) => {
       await mountPlaces(page);
 
-      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(4);
+      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(5);
       await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
     });
 
@@ -741,6 +741,96 @@ for (const viewport of [WIDE, PHONE]) {
       await mountPlaces(page);
 
       expect(await sidewaysOverflow(page)).toBe(false);
+    });
+  });
+}
+
+for (const viewport of [WIDE, PHONE]) {
+  const phone = viewport.width < 400;
+
+  test.describe(`the events of the list at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    const mountEvents = (page: Page, options: TabOptions = {}) =>
+      mountList(page, { events: true, phone, touch: phone, memory: { list: { kind: "events" } }, ...options });
+    const event = (page: Page, key: string) => page.locator(`.gedcom-list-row[data-key="${key}"]`);
+    const calls = (page: Page) => page.evaluate(() => window.tab.calls.selectedEvent);
+
+    test("lists the events with the record, the date and the place", async ({ page }) => {
+      await mountEvents(page);
+
+      await expect(page.locator(".gedcom-list-count")).toHaveText("61 events");
+      const cells = await event(page, "@I1@|p:0").locator(".gedcom-list-cell").allInnerTexts();
+      expect(cells.map((cell) => cell.trim())).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    });
+
+    test("tells the awards apart by their text", async ({ page }) => {
+      await mountEvents(page);
+      await searchFor(page, "nobel prize in physics");
+
+      expect(await names(page)).toEqual(["Award · Nobel Prize in Physics", "Award · Nobel Prize in Physics"]);
+    });
+
+    test("sorts by each column in three presses", async ({ page }) => {
+      test.skip(phone, "the headers are a menu on a phone");
+      await mountEvents(page);
+      const order = await names(page);
+
+      await header(page, "Record").click();
+      await header(page, "Record").click();
+      await header(page, "Record").click();
+
+      expect(await names(page)).toEqual(order);
+      await header(page, "Date").click();
+      expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ events: { by: "date", dir: "asc" } });
+    });
+
+    test("selects the record and the event of a row, and marks only that row", async ({ page }) => {
+      await mountEvents(page);
+      await event(page, "@I1@|p:1").click();
+
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
+      await expect(event(page, "@I1@|p:1")).toHaveAttribute("aria-selected", "true");
+      expect(await calls(page)).toEqual([{ xref: "@I1@", fact: "p:1" }]);
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Events");
+    });
+
+    test("selects by Enter after moving with the arrows", async ({ page }) => {
+      await mountEvents(page);
+      await page.locator(".gedcom-list-scroll").focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
+      expect(await calls(page)).toHaveLength(1);
+    });
+
+    test("stays on the events and marks no row for a record selected elsewhere", async ({ page }) => {
+      await mountEvents(page);
+      await page.evaluate(() => window.tab.select("@I2@", true));
+
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Events");
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(0);
+    });
+
+    test("has five kind buttons, no action and no sideways scroll", async ({ page }) => {
+      await mountEvents(page);
+
+      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(5);
+      await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
+      expect(await sidewaysOverflow(page)).toBe(false);
+    });
+
+    test("takes two lines of a finger's height on a phone, the event and its date over the record and the place", async ({ page }) => {
+      test.skip(!phone, "a wide tab keeps one line");
+      await mountEvents(page);
+
+      const row = event(page, "@I1@|p:0");
+      const [first, second, third, fourth] = await row.locator(".gedcom-list-cell").evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect()));
+      expect((await row.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+      expect(Math.abs((third?.top ?? 0) - (first?.top ?? 100))).toBeLessThan(3);
+      expect(Math.abs((second?.top ?? 0) - (fourth?.top ?? 100))).toBeLessThan(3);
+      expect(second?.top ?? 0).toBeGreaterThan(first?.top ?? 0);
     });
   });
 }

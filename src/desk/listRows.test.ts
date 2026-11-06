@@ -106,6 +106,7 @@ describe("what a row counts", () => {
   });
 
   it("has four columns for each kind", () => {
+    expect(columnsOf("events").map((column) => column.key)).toEqual(["event", "record", "date", "place"]);
     expect(columnsOf("people").map((column) => column.key)).toEqual(["name", "years", "place", "sources"]);
     expect(columnsOf("families").map((column) => column.key)).toEqual(["spouses", "marriage", "place", "children"]);
     expect(columnsOf("sources").map((column) => column.key)).toEqual(["title", "author", "repository", "citedBy"]);
@@ -224,6 +225,11 @@ describe("reading a saved list state", () => {
       kind: "sources",
       sort: { sources: desc("citedBy") },
     });
+  });
+
+  it("keeps the events as a kind and its sort", () => {
+    expect(readListState({ kind: "events", sort: { events: desc("date") } })).toEqual({ kind: "events", sort: { events: desc("date") } });
+    expect(readListState({ kind: "events", sort: { events: { by: "years", dir: "asc" } } })).toEqual({ kind: "events" });
   });
 
   it("reads a value that is not an object as empty", () => {

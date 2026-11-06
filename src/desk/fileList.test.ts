@@ -2,7 +2,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generated } from "../../tests/generated";
-import { resetLanguage } from "../i18n";
+import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
@@ -41,6 +41,7 @@ let parent: HTMLElement;
 let coarse = false;
 let host: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
+  selectEvent: ReturnType<typeof vi.fn<ListHost["selectEvent"]>>;
   changed: ReturnType<typeof vi.fn<ListHost["changed"]>>;
   scrolled: ReturnType<typeof vi.fn<ListHost["scrolled"]>>;
   setIcon: ReturnType<typeof vi.fn<ListHost["setIcon"]>>;
@@ -55,6 +56,7 @@ beforeEach(() => {
   document.body.replaceChildren(parent);
   host = {
     select: vi.fn(),
+    selectEvent: vi.fn(),
     changed: vi.fn(),
     scrolled: vi.fn(),
     setIcon: vi.fn(),
@@ -779,7 +781,7 @@ describe("the places", () => {
   it("is the fourth kind, after the sources", () => {
     board();
 
-    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places", "Events"]);
   });
 
   it("lists every place of the file, alphabetically, with its events and years", () => {
@@ -880,7 +882,7 @@ describe("the places", () => {
   it("has no button but the kinds on the places", () => {
     open();
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Events"]);
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
@@ -896,5 +898,154 @@ describe("the places", () => {
     board({ kind: "places" }, indexOf("0 HEAD\n0 TRLR"));
 
     expect(text(".gedcom-list-none")).toBe("The file names no places.");
+  });
+});
+
+describe("the events", () => {
+  const withEvents = indexOf(curieWithEvents());
+  const open = (state = {}, source = index) => board({ kind: "events", ...state }, source);
+  const eventRow = (xref: string, fact: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === `${xref}|${fact}`);
+  const marked = (): string[] => rows().filter((one) => one.getAttribute("aria-selected") === "true").map((one) => one.dataset.key ?? "");
+  const column = (at: number): (string | undefined)[] => rows().map((one) => cell(one, at));
+
+  it("is the fifth kind and lists every event of the file with the columns of the kind", () => {
+    open();
+
+    expect(text(".gedcom-list-count")).toBe("51 events");
+    expect(all(".gedcom-list-headcell:not([hidden])").map((one) => one.textContent?.replace(/[↑↓]/u, ""))).toEqual(["Event", "Record", "Date", "Place"]);
+  });
+
+  it("reads Marie's birth with her record, its date and its place", () => {
+    open();
+
+    expect([0, 1, 2, 3].map((at) => cell(eventRow("@I1@", "p:0"), at))).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+  });
+
+  it("tells an occupation by its text and keeps the name of an event that has none", () => {
+    open();
+
+    expect(column(0)).toContain("Occupation · Physicist");
+    expect(column(0)).toContain("Birth");
+  });
+
+  it("narrows by an event, a record, a date or a place, without marks, and counts what is left", () => {
+    open();
+
+    type("PHYSICIST");
+
+    expect(column(0).every((one) => one?.toLowerCase().includes("physicist"))).toBe(true);
+    expect(text(".gedcom-list-count")).toBe(`${rows().length} of 51 events`);
+  });
+
+  it("says so when nothing matches", () => {
+    open();
+    type("zzz");
+
+    expect(text(".gedcom-list-none")).toBe("Nothing matches “zzz”. Search covers events, records, dates and places.");
+  });
+
+  it("says so when the file holds no events", () => {
+    open({}, indexOf("0 HEAD\n0 TRLR"));
+
+    expect(text(".gedcom-list-none")).toBe("The file holds no events.");
+  });
+
+  it("sorts by the first year of the date and puts the undated last", () => {
+    open();
+
+    click(button(".gedcom-list-sort", "Date"));
+
+    const years = column(2).map((one) => (one ? Number(/\d{4}/u.exec(one)?.[0]) : null));
+    const dated = years.filter((one): one is number => one !== null && !Number.isNaN(one));
+    expect(dated).toEqual([...dated].sort((a, b) => a - b));
+  });
+
+  it("returns to the order of the file on the third press", () => {
+    open();
+    const order = rows().map((one) => one.dataset.key);
+
+    click(button(".gedcom-list-sort", "Record"));
+    click(button(".gedcom-list-sort", "Record"));
+    click(button(".gedcom-list-sort", "Record"));
+
+    expect(rows().map((one) => one.dataset.key)).toEqual(order);
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "events" });
+  });
+
+  it("selects the record and the event of a clicked row, and marks only that row", () => {
+    open();
+
+    click(eventRow("@I1@", "p:0"));
+
+    expect(host.selectEvent).toHaveBeenCalledWith("@I1@", "p:0");
+    expect(host.select).not.toHaveBeenCalled();
+    expect(marked()).toEqual(["@I1@|p:0"]);
+  });
+
+  it("keeps the record of a row in data-xref", () => {
+    open();
+
+    expect(eventRow("@I1@", "p:0")?.dataset.xref).toBe("@I1@");
+  });
+
+  it("selects the focused row with Enter", () => {
+    open();
+    scroller().focus();
+    press("ArrowDown");
+    press("Enter");
+
+    expect(host.selectEvent).toHaveBeenCalledTimes(1);
+    expect(marked()).toHaveLength(1);
+  });
+
+  it("marks the event a view selected, and no row for a record without an event", () => {
+    const made = open();
+
+    made.select("@I1@", true, "p:1");
+    expect(marked()).toEqual(["@I1@|p:1"]);
+
+    made.select("@I1@", true);
+    expect(marked()).toEqual([]);
+  });
+
+  it("marks no row for an event of a family pressed in a person's card", () => {
+    const made = open();
+
+    made.select("@I1@", true, "u:0:0");
+
+    expect(marked()).toEqual([]);
+  });
+
+  it("stays on the events when a record or a source is selected elsewhere", () => {
+    const made = open();
+
+    made.select("@I2@", true);
+    made.select("@S1@", true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
+    expect(marked()).toEqual([]);
+  });
+
+  it("switches to the places when a place is selected elsewhere", () => {
+    const made = open({}, withEvents);
+
+    made.select("place:paris, france", true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
+  });
+
+  it("has no button but the kinds on the events", () => {
+    open();
+
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Events"]);
+    expect(all(".gedcom-list-action")).toHaveLength(0);
+  });
+
+  it("reads the same rows in Russian", () => {
+    setLanguage("ru");
+    open();
+
+    expect(text(".gedcom-list-count")).toBe("51 событие");
+    expect(cell(eventRow("@I1@", "p:0"), 0)).toBe("Рождение");
   });
 });

@@ -242,7 +242,7 @@ least 44 CSS pixels tall on a touch device.
 
 #### Scenario: Filtering the events by what they carry
 - **WHEN** the reader types `physicist` among the events of `curie.ged`
-- **THEN** the occupations whose text is Physicist are listed
+- **THEN** the occupations whose text contains `physicist`, in any case, are listed
 
 ### Requirement: Sorting by a column
 

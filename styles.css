@@ -773,6 +773,11 @@ button.gedcom-list-direction:disabled {
   grid-template-columns: minmax(0, 3.4fr) minmax(0, 5.5em) minmax(0, 1.4fr);
 }
 
+.gedcom-list-head.is-events,
+.gedcom-list-row.is-events {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr) minmax(0, 1.3fr) minmax(0, 2.4fr);
+}
+
 .gedcom-list-headcell,
 .gedcom-list-cell {
   min-width: 0;
@@ -920,6 +925,14 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
 
 .gedcom-list.is-compact .gedcom-list-cell:nth-child(4) {
   grid-area: c4;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-events .gedcom-list-cell:nth-child(2) {
+  grid-area: c3;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-events .gedcom-list-cell:nth-child(3) {
+  grid-area: c2;
 }
 
 .gedcom-list.is-compact .gedcom-list-count {
