@@ -15,8 +15,10 @@ approximate or uncertain — `ABT`, `CAL`, `EST`, `BEF`, `AFT`, `BET` — SHALL 
 soft, so that it cannot be taken for an exact date, while a date stating only a year
 SHALL be drawn as an exact one.
 
-A name that does not fit inside the part of its bar that is not faded SHALL be written
-just beyond the bar's end, and SHALL stay readable over the rows' background. Marks
+A name wider than the part of its bar that is not faded SHALL be cut, with an ellipsis,
+so that it ends inside that part, and SHALL never be written beyond the bar; where not
+even an ellipsis fits, no name SHALL be written on the bar. The whole name SHALL be in the
+tooltip of the bar. Marks
 and spans of events SHALL be drawn along the bar's lower edge and SHALL NOT cover the
 name. The timeline SHALL NOT draw a column of names.
 
@@ -41,8 +43,12 @@ A person with no dated event at all SHALL have no row and no bar, and the timeli
 - **THEN** the bar's start is drawn soft, while a birth dated `1860` starts it sharp
 
 #### Scenario: A name longer than its bar
-- **WHEN** a person lived two years and their name is wider than two years of the axis
-- **THEN** the name is written beyond the end of the bar and not cut off
+- **WHEN** a person lived twenty years and their name is wider than twenty years of the axis
+- **THEN** the name ends in an ellipsis inside the bar, and nothing is written beyond the bar
+
+#### Scenario: A bar too short for any name
+- **WHEN** a person lived two years and not even an ellipsis fits in two years of the axis
+- **THEN** their bar has no name written on it, and its tooltip gives the whole name
 
 #### Scenario: Marks beside the name
 - **WHEN** Marie's bar carries the marks of her births, marriage and Nobel prizes
@@ -93,7 +99,7 @@ included, is written in the bar or beside it.
 
 ### Requirement: Pointing at a bar shows the person's name
 
-Pointing at a bar, or at a name written beyond it, with a mouse or a pen SHALL show a
+Pointing at a bar, or at the name on it, with a mouse or a pen SHALL show a
 tooltip with the person's full name — given names and surname as the record writes
 them — and nothing else. A first touch on a phone SHALL show the same, as `The timeline
 on a phone` says, and nothing in the timeline SHALL depend on pointing: a name is
@@ -104,9 +110,9 @@ SHALL be shown and not the bar's.
 - **WHEN** the pointer rests on Marie's bar in the timeline of `curie.ged`
 - **THEN** the tooltip reads `Marie Skłodowska-Curie` and nothing else
 
-#### Scenario: A name too long to fit
-- **WHEN** a person's name is written beyond their bar and the pointer rests on either
-- **THEN** the same tooltip is shown
+#### Scenario: A name cut short
+- **WHEN** a person's name is cut with an ellipsis on their bar and the pointer rests on the bar
+- **THEN** the tooltip reads the whole name
 
 #### Scenario: On a mark
 - **WHEN** the pointer rests on the mark of Marie's birth

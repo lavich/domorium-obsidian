@@ -142,9 +142,7 @@ the surname — `Лобанов` and `Лобанова` look alike, `Лобан�
 not — and a person with no surname is grey. A soft end means the date is
 approximate; a bar with no recorded death fades out a hundred years after it
 begins, while one that begins at a birth in the last hundred years runs to the
-present in a straight cut edge, as the bar of a person who may be alive. A name
-too long for its bar is written just beyond it, and pointing at a bar shows the
-person's name. Dated events are marks along the bar's lower edge, an approximate
+present in a straight cut edge, as the bar of a person who may be alive. A name too long for its bar is cut with an ellipsis inside it, and pointing at a bar shows the whole name. Dated events are marks along the bar's lower edge, an approximate
 date is drawn dashed and a period as a span; a person with no dated event has no
 bar. Clicking a bar selects the person and picks out their parents, spouses and
 children, with a line and an arrowhead from each parent down to the person and

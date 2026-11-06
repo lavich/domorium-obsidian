@@ -23,7 +23,7 @@ The model already holds what the links need: `FileTimeline.families` has `spouse
 
 ### D1. A row per person, in the rows' own order
 
-`layout.y` stays what it is: a map from xref to the centre of the person's row, from the place of the person in `model.rows` (generation and family). Nothing is packed. A person with no bar is not in `shown`, so rows close up over them. The width of a name written beyond a bar needs no room from neighbours, since the row is the person's own; it only widens the plot where it runs past the last year.
+`layout.y` stays what it is: a map from xref to the centre of the person's row, from the place of the person in `model.rows` (generation and family). Nothing is packed. A person with no bar is not in `shown`, so rows close up over them. A name never leaves its bar, so a row needs nothing from its name.
 
 *Alternative, tried and withdrawn.* Packing people with disjoint lives into shared rows: it saved height but a row's neighbours meant nothing and the sight of relatives together was lost; the user asked for a row each.
 
@@ -31,7 +31,7 @@ The model already holds what the links need: `FileTimeline.families` has `spouse
 
 The layout takes a `measure(text)` from the view, which is `nameMeasure(root)` from `src/desk/cardRender.ts` — a canvas `measureText` in the interface font, with the try/catch fallback to a character count and a per-name memo it already has. No second measure is written. Under Vitest there is no canvas, so unit tests inject a `measure` of their own; whether a real name fits a real bar is checked in the Playwright spec. A change of font or of the interface zoom makes a new `nameMeasure`, since the view builds one per layout.
 
-The name is `personName`. A name narrower than the part of the bar that is not faded is written inside; otherwise it is written beyond the end of the bar, and D1 counts it. *Alternative:* clipping with an ellipsis, rejected by the user's decision.
+The name is `personName`. A name that fits the part of the bar that is not faded is written whole; a longer one is cut at the longest prefix that, with an ellipsis, fits that part (a binary search on `measure`); where not even an ellipsis fits, no name is written. Nothing is written beyond a bar, so a row's width needs nothing from its name. The user chose this over writing the name beyond the bar («пусть наружу не выходит, а просто обрезается красиво внутри»); the whole name is in the tooltip and in the bar's `aria-label`.
 
 ### D3. The bar keeps its element; the name is its own item
 
@@ -111,6 +111,7 @@ Where the code differed from the plan above, or the plan left a choice open:
 - The command lives in `src/commands.ts`, not `src/desk/commands.ts`. `CommandView` gains `canBranchSelected()` and `branchSelected()`, the string is `command.branchOfSelected`, and the command is offered in Timeline mode while the selected person has a bar.
 - `fileTimelineOf` does not take `now`; `buildFileTimeline(index, now)` already did, and the tests build the model with it.
 - `initialFocus` is unchanged for the graph, which draws people with no dated event. The timeline asks `initialTimelineFocus`, which takes the first person with a bar and refuses a named person who has none.
+- A name too long for its bar is cut with an ellipsis inside the unfaded part, and left out where not even that fits; at first it was written beyond the bar, which the user then ruled out. `Layout.reach` keeps the bar's right edge or its last mark, and no longer a name's.
 - The ink on a bar is chosen per hue and scheme, white or near-black, whichever has the higher contrast, and the fill and ink reach the bar as custom properties set on the element (`--gedcom-ft-fill-light`, `--gedcom-ft-fill-dark`, `--gedcom-ft-ink-light`, `--gedcom-ft-ink-dark`), so the tones live in `src/desk/surnameHue.ts` only. A unit test holds 4.5:1 for all 360 hues in both schemes. A dimmed bar fades as a whole, ink included, by design, so the spec checks the ink against the fill for a dimmed and a ringed bar, not against the page.
 - A soft or fading end is drawn with one of five masks in the board's defs, whose stops are fractions of the bar's width (`SOFT` 0.15, `FADE_AT` 0.6). The label is written inside only where it fits the unfaded part.
 - The tooltip of a mark no longer names the person (`Placed.who` is gone), as `On a mark` says; the tooltip of a bar is the name alone.

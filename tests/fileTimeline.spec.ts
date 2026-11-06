@@ -65,10 +65,7 @@ test.describe("the timeline of a file", () => {
 
   test("colours the bars of one family alike and of two families differently", async ({ page }) => {
     await mountTimeline(page);
-    const fill = async (text: string) => {
-      const xref = await page.locator(".gedcom-ft-label", { hasText: text }).getAttribute("data-p");
-      return fillOf(life(page, xref ?? ""));
-    };
+    const fill = (name: string) => fillOf(page.locator(`.gedcom-ft-life[aria-label="${name}"]`));
 
     expect(await fill("Zofia Skłodowska")).toBe(await fill("Józef Skłodowski"));
     expect(await fill("Zofia Skłodowska")).not.toBe(await fill("Pierre Curie"));
@@ -229,7 +226,7 @@ test.describe("the timeline of a file", () => {
       await life(page, "@H3@").click();
       await page.locator(".gedcom-ft-find-toggle").click();
       await page.locator(".gedcom-ft-search").fill("kuznetsov");
-      const pairs = await page.locator(".gedcom-ft-label.is-inside").evaluateAll((nodes) =>
+      const pairs = await page.locator(".gedcom-ft-label").evaluateAll((nodes) =>
         nodes.map((node) => {
           const bar = document.querySelector(`.gedcom-ft-life[data-p="${node.getAttribute("data-p")}"]`);
           return { ink: getComputedStyle(node).fill, fill: bar ? getComputedStyle(bar).fill : "" };
@@ -244,10 +241,10 @@ test.describe("the timeline of a file", () => {
     expect(fills[0]).not.toBe(fills[1]);
   });
 
-  test("writes a name wider than a short bar beyond it, readable on the rows' background", async ({ page }) => {
+  test("cuts a name wider than its bar inside the bar, and shows the whole name on the bar's tooltip", async ({ page }) => {
     const doc = [
       "0 HEAD", "1 GEDC", "2 VERS 7.0",
-      "0 @A@ INDI", "1 NAME Alexandra Maria Theresia /Habsburg-Lothringen/", "1 BIRT", "2 DATE 1899", "1 DEAT", "2 DATE 1901",
+      "0 @A@ INDI", "1 NAME Alexandra Maria Theresia /Habsburg-Lothringen/", "1 BIRT", "2 DATE 1899", "1 DEAT", "2 DATE 1920",
       "0 @B@ INDI", "1 NAME Boris /Beta/", "1 BIRT", "2 DATE 1905", "1 DEAT", "2 DATE 1990",
       "0 TRLR", "",
     ].join("\n");
@@ -256,14 +253,13 @@ test.describe("the timeline of a file", () => {
 
       const bar = await life(page, "@A@").boundingBox();
       const name = await label(page, "@A@").boundingBox();
-      expect(name?.x ?? 0).toBeGreaterThanOrEqual((bar?.x ?? 0) + (bar?.width ?? 0));
-      await label(page, "@A@").hover();
-    await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Alexandra Maria Theresia Habsburg-Lothringen");
-    await label(page, "@A@").click();
-    expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@A@"]);
-    const ink = await fillOf(label(page, "@A@"));
-      const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-      expect(contrast(ink, background)).toBeGreaterThanOrEqual(4.5);
+      expect(name?.x ?? 0).toBeGreaterThanOrEqual(bar?.x ?? 0);
+      expect((name?.x ?? 0) + (name?.width ?? 0)).toBeLessThanOrEqual((bar?.x ?? 0) + (bar?.width ?? 0));
+      expect(await label(page, "@A@").textContent()).toMatch(/…$/u);
+      await life(page, "@A@").hover();
+      await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Alexandra Maria Theresia Habsburg-Lothringen");
+      await life(page, "@A@").click();
+      expect(await page.evaluate(() => window.timeline.calls.opened)).toContain("@A@");
       const other = await life(page, "@B@").boundingBox();
       expect(Math.abs((other?.y ?? 0) - (bar?.y ?? 0))).toBeGreaterThan(1);
     }
@@ -876,7 +872,7 @@ for (const viewport of [{ width: 1400, height: 700 }, { width: 390, height: 844 
   test.describe(`the bars of the timeline at ${viewport.width} px`, () => {
     test.use({ viewport });
 
-    test("keep each name inside its bar or beyond it, and no mark across a name", async ({ page }) => {
+    test("keep each name inside its bar, and no mark across a name", async ({ page }) => {
       await mountTimeline(page, { phone: viewport.width < 600 });
 
       const found = await page.evaluate(() => {
@@ -888,16 +884,14 @@ for (const viewport of [{ width: 1400, height: 700 }, { width: 390, height: 844 
           const own = box(bar);
           const text = name ? box(name) : null;
           return {
-            left: own.left,
-            right: Math.max(own.right, text?.right ?? 0),
+            named: text !== null,
             inside: text !== null && text.left >= own.left - 0.5 && text.right <= own.right + 0.5,
-            beyond: text !== null && text.left >= own.right - 0.5,
             clear: marks.every((mark) => text === null || mark.top >= text.bottom - 0.5 || mark.left >= text.right || mark.right <= text.left),
           };
         });
       });
       expect(found).toHaveLength(17);
-      expect(found.every((bar) => bar.inside || bar.beyond)).toBe(true);
+      expect(found.every((bar) => bar.inside || !bar.named)).toBe(true);
       expect(found.every((bar) => bar.clear)).toBe(true);
     });
 

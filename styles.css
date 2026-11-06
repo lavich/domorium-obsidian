@@ -1729,19 +1729,11 @@ button.gedcom-ft-branch:focus-visible {
   fill: var(--text-normal);
   font-size: 12px;
   font-weight: var(--font-semibold);
-  cursor: pointer;
-}
-
-.gedcom-ft svg text.gedcom-ft-label.is-inside {
   fill: var(--gedcom-ft-ink-light);
   pointer-events: none;
 }
 
-.gedcom-ft svg text.gedcom-ft-label.is-beyond:hover {
-  text-decoration: underline;
-}
-
-.theme-dark .gedcom-ft svg text.gedcom-ft-label.is-inside {
+.theme-dark .gedcom-ft svg text.gedcom-ft-label {
   fill: var(--gedcom-ft-ink-dark);
 }
 

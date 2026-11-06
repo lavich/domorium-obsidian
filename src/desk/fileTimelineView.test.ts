@@ -90,7 +90,6 @@ describe("drawing the timeline of a file", () => {
     expect(container.querySelector(".gedcom-ft-names, .gedcom-ft-name, .gedcom-ft-axis-pad")).toBeNull();
     expect(bars()).toHaveLength(17);
     expect(label("@I1@")?.textContent).toBe("Marie Skłodowska-Curie");
-    expect(label("@I1@")?.getAttribute("class")).toContain("is-inside");
     expect(container.querySelector(".gedcom-ft-board")?.textContent).not.toContain("1867–1934");
     expect(Number(bar("@I1@")?.getAttribute("width"))).toBe((1934 - 1867) * ZOOM.initial);
     expect(Number(bar("@I1@")?.getAttribute("x"))).toBe((1867 - 1820) * ZOOM.initial + 12);
@@ -111,13 +110,21 @@ describe("drawing the timeline of a file", () => {
     expect(bar("@I1@")?.hasAttribute("mask")).toBe(false);
   });
 
-  it("writes a name wider than its bar just beyond the bar, whole", () => {
+  it("cuts a name wider than its bar with an ellipsis inside the bar", () => {
+    board(fromLines(...lived("@I1@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1920)));
+
+    const text = label("@I1@")?.textContent ?? "";
+    expect(text.endsWith("…")).toBe(true);
+    expect(text.length).toBeLessThan("Alexandra Maria Theresia Habsburg-Lothringen".length);
+    expect("Alexandra Maria Theresia Habsburg-Lothringen".startsWith(text.slice(0, -1))).toBe(true);
+    expect(bar("@I1@")?.getAttribute("aria-label")).toBe("Alexandra Maria Theresia Habsburg-Lothringen");
+  });
+
+  it("writes no name on a bar too short for even an ellipsis", () => {
     board(fromLines(...lived("@I1@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901)));
 
-    const end = Number(bar("@I1@")?.getAttribute("x")) + Number(bar("@I1@")?.getAttribute("width"));
-    expect(label("@I1@")?.getAttribute("class")).toContain("is-beyond");
-    expect(Number(label("@I1@")?.getAttribute("x"))).toBeGreaterThan(end);
-    expect(label("@I1@")?.textContent).toBe("Alexandra Maria Theresia Habsburg-Lothringen");
+    expect(label("@I1@")).toBeNull();
+    expect(bar("@I1@")).not.toBeNull();
   });
 
   it("gives each person a row of their own, even where two lives never meet", () => {
@@ -128,12 +135,6 @@ describe("drawing the timeline of a file", () => {
 
     expect(rowOf("@A@")).not.toBe(rowOf("@B@"));
     expect(container.querySelector<SVGElement>(".gedcom-ft-chart")?.getAttribute("height")).toBe(String(2 * ROW));
-  });
-
-  it("writes a name too long for its bar beyond the bar's end", () => {
-    board(fromLines(...lived("@A@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901)));
-
-    expect(label("@A@")?.getAttribute("class")).toContain("is-beyond");
   });
 
   it("stands the rows of a file in the order of its generations", () => {
@@ -1107,11 +1108,10 @@ describe("the tooltip of a bar", () => {
     expect(tip()?.classList.contains("is-shown")).toBe(false);
   });
 
-  it("is the same on a name written beyond its bar", () => {
-    board(fromLines(...lived("@I1@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901)));
-    point(label("@I1@"));
+  it("is the whole name on a bar that cuts it", () => {
+    board(fromLines(...lived("@I1@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1920)));
+    point(bar("@I1@"));
 
-    expect(label("@I1@")?.getAttribute("class")).toContain("is-beyond");
     expect(tip()?.textContent).toBe("Alexandra Maria Theresia Habsburg-Lothringen");
   });
 

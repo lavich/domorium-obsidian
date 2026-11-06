@@ -55,7 +55,7 @@ export interface Layout {
   /** The people the whole file holds who have a bar. */
   total: number;
   y: Map<string, number>;
-  /** The right edge of each bar or of the name written beyond it, whichever is further. */
+  /** The right edge of each bar or of its last mark, whichever is further. */
   reach: Map<string, number>;
   lo: number;
   hi: number;
@@ -140,9 +140,29 @@ interface BarBox {
   right: number;
   reach: number;
   name: string;
-  inside: boolean;
+  text: string;
   labelX: number;
   labelWidth: number;
+}
+
+const ELLIPSIS = "…";
+
+function fitText(name: string, room: number, measure: (text: string) => number): string {
+  if (measure(name) <= room) {
+    return name;
+  }
+  let low = 0;
+  let high = name.length - 1;
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if (measure(name.slice(0, middle).trimEnd() + ELLIPSIS) <= room) {
+      low = middle;
+    } else {
+      high = middle - 1;
+    }
+  }
+  const fitted = name.slice(0, low).trimEnd() + ELLIPSIS;
+  return low > 0 && measure(fitted) <= room ? fitted : "";
 }
 
 function barBox(person: TimelinePerson, x: (year: number) => number, measure: (text: string) => number): BarBox {
@@ -150,17 +170,17 @@ function barBox(person: TimelinePerson, x: (year: number) => number, measure: (t
   const left = line ? x(line.start) : 0;
   const right = line ? left + Math.max(2, x(line.end) - left) : 0;
   const name = personName(person.row);
-  const labelWidth = measure(name);
   const end = line ? barEndOf(line) : "cut";
   const from = line?.startUncertain ? SOFT : 0;
   const to = end === "fade" ? FADE_AT : end === "soft" ? 1 - SOFT : 1;
-  const inside = labelWidth + 2 * LABEL_PAD <= (right - left) * (to - from);
-  const labelX = inside ? left + (right - left) * from + LABEL_PAD : right + LABEL_PAD;
+  const text = fitText(name, (right - left) * (to - from) - 2 * LABEL_PAD, measure);
+  const labelWidth = text === "" ? 0 : measure(text);
+  const labelX = left + (right - left) * from + LABEL_PAD;
   const marked = person.marks.reduce(
     (far, mark) => Math.max(far, x(mark.until ?? mark.year) + MARK_RADIUS[mark.kind === "other" ? "other" : "plain"]),
     0,
   );
-  return { left, right, reach: Math.max(right, labelX + labelWidth, marked), name, inside, labelX, labelWidth };
+  return { left, right, reach: Math.max(right, marked), name, text, labelX, labelWidth };
 }
 
 function paintOf(person: TimelinePerson): string {
@@ -209,23 +229,25 @@ function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>,
         return bar;
       },
     });
-    labels.push({
-      ...row(cy),
-      left: box.labelX,
-      right: box.labelX + box.labelWidth,
-      ids: [xref],
-      make: () => {
-        const label = svg(doc, "text", `gedcom-ft-label ${box.inside ? "is-inside" : "is-beyond"}`, {
-          x: box.labelX,
-          y: cy,
-          style: paint,
-          "aria-hidden": "true",
-          "data-p": xref,
-        });
-        label.textContent = box.name;
-        return label;
-      },
-    });
+    if (box.text !== "") {
+      labels.push({
+        ...row(cy),
+        left: box.labelX,
+        right: box.labelX + box.labelWidth,
+        ids: [xref],
+        make: () => {
+          const label = svg(doc, "text", "gedcom-ft-label", {
+            x: box.labelX,
+            y: cy,
+            style: paint,
+            "aria-hidden": "true",
+            "data-p": xref,
+          });
+          label.textContent = box.text;
+          return label;
+        },
+      });
+    }
     for (const mark of person.marks) {
       if (mark.until !== undefined) {
         const left = x(mark.year);
