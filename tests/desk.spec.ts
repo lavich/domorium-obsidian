@@ -72,6 +72,12 @@ for (const size of SIZES) {
       expect(inside).toBe(true);
     });
 
+    test("sets a fold's heading at the start of its line", async ({ page }) => {
+      const justify = await page.locator(".gedcom-desk-fold-button").first().evaluate((node) => getComputedStyle(node).justifyContent);
+
+      expect(justify).toBe("flex-start");
+    });
+
     test("keeps the timeline inside the card once its fold is opened", async ({ page }) => {
       await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
       const inside = await page.evaluate(() => {

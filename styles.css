@@ -625,6 +625,7 @@ h2.gedcom-desk-fold-heading {
 button.gedcom-desk-fold-button {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: var(--size-2-3);
   width: 100%;
   height: auto;
