@@ -113,27 +113,27 @@ The card's heading names the source or the file and offers Show in source.
 
 ### Requirement: The evidence section closes the card and follows the selection
 
-The last section of a person card and of a family card SHALL be **Evidence**: what
-the selected fact, or else the whole record, rests on in the file, kept apart so
-that a source of the person is never mistaken for a source of a fact. It SHALL show
-the fact selected on the card the tab holds, or the whole record when no fact is
-selected. Its heading SHALL name what it shows — the fact with its date and place,
-or *Whole record* with the person's or family's name — and SHALL offer *Whole
-record* when a fact is selected and Show in source always. Selecting a fact on the
-card, in the timeline section or in the list of facts, SHALL change the section at
-once and SHALL NOT scroll the card.
+The last section of a person card, of a family card and of an event card SHALL be **Evidence**.
+On a person card and on a family card it SHALL show what the whole record rests on in the file:
+the sources the record cites of itself, and the notes in the vault that link to it, under the
+heading *Evidence* alone, without a head that repeats the record's name. On an event card it SHALL show what the event rests on — *Sources of this fact*
+— and, kept apart under *Whole record*, what the whole record rests on, so that a source of the
+person is never mistaken for a source of the event. On an event card the section SHALL NOT open
+with a head that repeats the name and the detail of the event, SHALL NOT offer *Show in source*
+a second time and SHALL NOT offer a link back to the whole record beside the record link at the
+top of the card. Choosing a fact on a person's or a family's card, or an entry of a timeline,
+SHALL show the card of its event and its Evidence at once.
 
 There SHALL be no Evidence view in the sidebar and no command that opens one.
 
 #### Scenario: Selecting a birth
-- **WHEN** the reader selects Marie's birth on her card
-- **THEN** the section's heading names the birth with `7 NOV 1867` and `Warsaw,
-  Congress Poland`
+- **WHEN** the reader chooses Marie's birth on her card
+- **THEN** the event card of the birth is shown, and its Evidence section lists the sources of
+  the birth under *Sources of this fact* and has no head naming the birth
 
 #### Scenario: Back to the whole record
-- **WHEN** a fact is selected and the reader chooses Whole record in the section
-- **THEN** the section shows Marie's whole record and the fact is no longer
-  selected on the card
+- **WHEN** the event card of Marie's birth is shown and the reader presses the record at its top
+- **THEN** Marie's card is shown, and its Evidence section shows her whole record
 
 #### Scenario: A person selected in the graph
 - **WHEN** the active GEDCOM tab is in Graph mode and the reader activates Pierre
