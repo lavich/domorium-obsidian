@@ -12,8 +12,8 @@ export { curve, fitText } from "./cardRender";
 export const ZOOM = { min: 0.05, max: 3, fit: 1.4, readable: 0.6, opens: 0.55, far: 0.5 } as const;
 const MARGIN = 20;
 const BUTTON_STEP = 1.2;
-export const GLIDE_MS = 400;
-export const GLIDE_REACH = 2.5;
+const GLIDE_MS = 400;
+const GLIDE_REACH = 2.5;
 
 /** Where the view looks: the graph point at the centre of the canvas, and the scale. */
 export interface GraphView {
@@ -168,7 +168,6 @@ export class GraphCanvas {
       transform: () => this.transform,
       apply: (at) => this.apply(at),
       stopGlide: () => this.stopGlide(),
-      limits: () => ZOOM,
       zoomAt: (factor, cx, cy) => this.zoomAt(factor, cx, cy),
       panBy: (dx, dy) => this.panBy(dx, dy),
       hideTip: () => this.hideTip(),
