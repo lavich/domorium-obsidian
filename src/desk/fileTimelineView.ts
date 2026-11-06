@@ -9,7 +9,7 @@ import { nameMeasure } from "./cardRender";
 import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
 import { BAR, FADE_AT, layoutOf, maskName, PAD, ROW, SOFT, SOFT_OPACITY, svg, type BarEnd, type Layout, type Placed } from "./timelineLayout";
 import { listenTimeline } from "./timelineEvents";
-import { markOf, missesQuery, personOf, yearAtX } from "./timelineHits";
+import { barOf, markOf, missesQuery, personOf, yearAtX } from "./timelineHits";
 import { eventName, personName, yearText } from "./labels";
 
 const AXIS = 26;
@@ -117,6 +117,7 @@ export class FileTimelineBoard {
   private highlighted: string | null = null;
   private year: number | null = null;
   private pointer = "mouse";
+  private pinchAt = 0;
   /** The person a first touch lit, whom a second touch opens. */
   private armed: string | null = null;
 
@@ -408,6 +409,21 @@ export class FileTimelineBoard {
     }
   }
 
+  canBranch(): boolean {
+    return this.selected !== null && this.model?.people.get(this.selected)?.lifeline != null;
+  }
+
+  branchOfSelected(): void {
+    if (this.selected !== null && this.canBranch()) {
+      this.branchOf(this.selected);
+    }
+  }
+
+  private branchOf(xref: string): void {
+    this.closePop();
+    this.setScope({ focus: xref === this.scope.focus ? undefined : xref });
+  }
+
   openSearch(): void {
     if (this.find.isOpen()) {
       this.find.focus();
@@ -421,6 +437,9 @@ export class FileTimelineBoard {
       element.classList.toggle("is-selected", this.selected !== null && ids[0] === this.selected && element.classList.contains("gedcom-ft-life"));
     }
     this.drawBranch();
+    if (this.year !== null) {
+      this.drawCursor();
+    }
   }
 
   private drawBranch(): void {
@@ -503,7 +522,42 @@ export class FileTimelineBoard {
     }
   }
 
-  private setScope(change: Partial<TimelineScope>): void {
+  private pinchedZoom(scale: number): number {
+    return clampZoom(this.scope.zoom * scale);
+  }
+
+  private pinchShow(scale: number): void {
+    const origin = `${this.plot.scrollLeft + this.pinchAt}px 0`;
+    const factor = this.pinchedZoom(scale) / this.scope.zoom;
+    for (const element of [this.chart, this.cursor, this.axis, this.overlay]) {
+      element.style.transformOrigin = origin;
+      element.style.transform = factor === 1 ? "" : `scaleX(${factor})`;
+    }
+  }
+
+  private pinchEnd(scale: number): void {
+    this.pinchShow(1);
+    const layout = this.layout;
+    const zoom = this.pinchedZoom(scale);
+    if (!layout || zoom === this.scope.zoom) {
+      return;
+    }
+    const year = layout.lo + (this.plot.scrollLeft + this.pinchAt - PAD) / this.scope.zoom;
+    const lane = this.laneUnder(layout, year, this.plot.scrollTop + this.measure().height / 2);
+    this.setScope({ zoom }, { year, at: this.pinchAt, ...(lane ? { lane } : {}) });
+  }
+
+  private laneUnder(layout: Layout, year: number, y: number): { xref: string; offset: number } | null {
+    const xref =
+      layout.shown.find((one) => {
+        const line = this.model?.people.get(one)?.lifeline;
+        return line !== undefined && line !== null && line.start <= year && year <= line.end && Math.abs((layout.y.get(one) ?? 0) - y) < ROW;
+      }) ?? this.selected;
+    const at = xref === null ? undefined : layout.y.get(xref);
+    return xref === null || at === undefined ? null : { xref, offset: at - this.plot.scrollTop };
+  }
+
+  private setScope(change: Partial<TimelineScope>, hold?: Hold): void {
     const next: TimelineScope = { ...this.scope, ...change };
     if (!next.focus) {
       delete next.focus;
@@ -516,7 +570,7 @@ export class FileTimelineBoard {
     const centre = this.centreYear();
     this.highlight(null);
     this.scope = next;
-    this.relayout(branchChanged && person !== undefined ? { person } : centre);
+    this.relayout(hold ?? (branchChanged && person !== undefined ? { person } : centre));
     this.host.scopeChanged(scopeOf(next));
   }
 
@@ -529,7 +583,7 @@ export class FileTimelineBoard {
     return layout.lo + (view.left + view.width / 2 - PAD) / this.scope.zoom;
   }
 
-  private relayout(keep: { person: string } | number | null = null): void {
+  private relayout(keep: { person: string } | Hold | number | null = null): void {
     const model = this.model;
     if (!model) {
       return;
@@ -552,8 +606,14 @@ export class FileTimelineBoard {
     this.cursor.setAttribute("height", String(Math.max(layout.height, 1)));
     this.fitGutters();
     this.drawGrid(layout);
-    if (typeof keep === "object" && keep !== null) {
+    if (typeof keep === "object" && keep !== null && "person" in keep) {
       this.glideTo(Math.max(0, (layout.y.get(keep.person) ?? 0) - this.plot.clientHeight / 2));
+    } else if (typeof keep === "object" && keep !== null) {
+      this.plot.scrollLeft = Math.max(0, layout.x(keep.year) - keep.at);
+      const held = keep.lane ? layout.y.get(keep.lane.xref) : undefined;
+      if (keep.lane && held !== undefined) {
+        this.plot.scrollTop = Math.max(0, held - keep.lane.offset);
+      }
     } else if (typeof keep === "number") {
       this.plot.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
     }
@@ -669,9 +729,13 @@ export class FileTimelineBoard {
       this.cursor.append(pill);
     }
     const flag = svg(this.doc, "g", "gedcom-ft-axis-cursor");
-    flag.append(svg(this.doc, "rect", null, { x: at - 20, y: 4, width: 40, height: 18, rx: 9 }));
+    const ruler = alive.find((one) => one.xref === this.selected);
+    const text =
+      ruler?.age === undefined ? yearText(year) : `${yearText(year)} · ${ruler.approximate ? "≈" : ""}${ruler.age}`;
+    const half = Math.max(20, text.length * 3.4 + 9);
+    flag.append(svg(this.doc, "rect", null, { x: at - half, y: 4, width: 2 * half, height: 18, rx: 9 }));
     const label = svg(this.doc, "text", null, { x: at, y: 17, "text-anchor": "middle" });
-    label.textContent = yearText(year);
+    label.textContent = text;
     flag.append(label);
     this.axis.append(flag);
   }
@@ -779,7 +843,7 @@ export class FileTimelineBoard {
         pointer: (kind) => {
           this.pointer = kind;
         },
-        tip: (target, event) => this.showTip(markOf(target, this.marks), event),
+        tip: (target, event) => this.showTip(markOf(target, this.marks), barOf(target), event),
         year: (clientX) => this.setYear(clientX === null ? null : this.yearAt(clientX)),
         plotScrolled: () => {
           this.follow(this.axisClip, this.plot, "scrollLeft");
@@ -791,6 +855,11 @@ export class FileTimelineBoard {
           }
         },
         axisScrolled: () => this.pull(this.plot, this.axisClip, "scrollLeft"),
+        pinchStart: (clientX) => {
+          this.pinchAt = clientX - this.plot.getBoundingClientRect().left;
+        },
+        pinchMove: (scale) => this.pinchShow(scale),
+        pinchEnd: (scale) => this.pinchEnd(scale),
         bar: (xref) => {
           this.armed = null;
           this.closePop();
@@ -813,8 +882,7 @@ export class FileTimelineBoard {
     const target = event.target instanceof Element ? event.target : null;
     const branch = target?.closest("[data-branch]")?.getAttribute("data-branch");
     if (branch) {
-      this.closePop();
-      this.setScope({ focus: branch === this.scope.focus ? undefined : branch });
+      this.branchOf(branch);
       return;
     }
     // A click from the keyboard has no pointer, and is no touch whatever pointer came before it.
@@ -835,6 +903,7 @@ export class FileTimelineBoard {
     const xref = personOf(target);
     if (xref === null) {
       this.armed = null;
+      this.tip.removeClass("is-shown");
       this.highlight(null);
       if (touch) {
         this.setYear(null);
@@ -844,6 +913,7 @@ export class FileTimelineBoard {
     if (touch && this.armed !== xref) {
       this.armed = xref;
       this.highlight(xref);
+      this.showTip(null, xref, event);
       const onPlot = target !== null && (this.plot.contains(target) || this.axisClip.contains(target));
       this.setYear(onPlot ? this.yearAt(event.clientX) : null);
       return;
@@ -856,20 +926,25 @@ export class FileTimelineBoard {
   private describe(parent: HTMLElement, placed: Placed): void {
     const { event } = placed.mark;
     const value = event.value && event.value !== "Y" ? `: ${event.value}` : "";
-    parent.createDiv({ cls: "gedcom-ft-tip-what", text: `${eventName(event)}${value} · ${placed.who}` });
+    parent.createDiv({ cls: "gedcom-ft-tip-what", text: `${eventName(event)}${value}` });
     const detail = parent.createDiv({ cls: "gedcom-ft-tip-when", text: event.date?.text ?? "" });
     if (event.place) {
       detail.createSpan({ cls: "gedcom-ft-tip-where", text: ` · ${event.place}` });
     }
   }
 
-  private showTip(placed: Placed | null, event: MouseEvent): void {
-    if (!placed) {
+  private showTip(placed: Placed | null, xref: string | null, event: MouseEvent): void {
+    const person = xref === null ? undefined : this.model?.people.get(xref);
+    if (!placed && !person) {
       this.tip.removeClass("is-shown");
       return;
     }
     this.tip.empty();
-    this.describe(this.tip, placed);
+    if (placed) {
+      this.describe(this.tip, placed);
+    } else if (person) {
+      this.tip.createDiv({ cls: "gedcom-ft-tip-what", text: personName(person.row) });
+    }
     this.tip.addClass("is-shown");
     placeInside(this.root, this.tip, event);
   }
@@ -892,6 +967,12 @@ export class FileTimelineBoard {
   private closePop(): void {
     this.pop.removeClass("is-shown");
   }
+}
+
+interface Hold {
+  year: number;
+  at: number;
+  lane?: { xref: string; offset: number };
 }
 
 function scopeOf({ focus, up, down, zoom }: TimelineScope): TimelineScope {

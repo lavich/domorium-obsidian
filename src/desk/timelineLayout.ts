@@ -37,7 +37,6 @@ export function svg<K extends keyof SVGElementTagNameMap>(
 export interface Placed {
   mark: TimelineMark;
   xref: string;
-  who: string;
 }
 
 export interface Item {
@@ -266,23 +265,12 @@ function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>,
         left: at - 7,
         right: at + 7,
         ids: [xref],
-        placed: { mark, xref, who: whoOf(model, mark, person) },
+        placed: { mark, xref },
         make: () => markShape(doc, mark, at, cy + MARK_DROP, xref),
       });
     }
   }
   return [...lines, ...labels, ...marks];
-}
-
-function whoOf(model: FileTimeline, mark: TimelineMark, person: TimelinePerson): string {
-  if (!mark.family) {
-    return personName(person.row);
-  }
-  return (model.families.get(mark.family)?.spouses ?? [person.xref])
-    .map((xref) => model.people.get(xref))
-    .filter((one): one is TimelinePerson => one !== undefined)
-    .map((one) => personName(one.row))
-    .join(" & ");
 }
 
 function markShape(doc: Document, mark: TimelineMark, at: number, cy: number, xref: string): SVGElement {

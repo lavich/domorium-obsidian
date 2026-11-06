@@ -16,6 +16,9 @@ export interface TimelineReactions {
   plotScrolled(): void;
   redrawIfNeeded(): void;
   bar(xref: string): void;
+  pinchStart(clientX: number): void;
+  pinchMove(scale: number): void;
+  pinchEnd(scale: number): void;
   axisScrolled(): void;
   activate(event: MouseEvent): void;
   escape(): void;
@@ -58,6 +61,7 @@ export function listenTimeline(surface: TimelineSurface, react: TimelineReaction
   });
   axisClip.addEventListener("scroll", () => react.axisScrolled());
   board.addEventListener("click", (event) => react.activate(event));
+  listenPinch(plot, react);
   root.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       react.escape();
@@ -76,4 +80,50 @@ export function listenTimeline(surface: TimelineSurface, react: TimelineReaction
       }
     }
   });
+}
+
+function listenPinch(plot: HTMLElement, react: TimelineReactions): void {
+  let pinching = false;
+  let scale = 1;
+  const read = (touches: TouchList): { distance: number; mid: number } | null => {
+    const [a, b] = [touches[0], touches[1]];
+    return a && b
+      ? { distance: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), mid: (a.clientX + b.clientX) / 2 }
+      : null;
+  };
+  let distance = 1;
+  plot.addEventListener(
+    "touchstart",
+    (event) => {
+      const fingers = read(event.touches);
+      if (fingers && !pinching) {
+        event.preventDefault();
+        pinching = true;
+        distance = Math.max(1, fingers.distance);
+        scale = 1;
+        react.pinchStart(fingers.mid);
+      }
+    },
+    { passive: false },
+  );
+  plot.addEventListener(
+    "touchmove",
+    (event) => {
+      const fingers = read(event.touches);
+      if (pinching && fingers) {
+        event.preventDefault();
+        scale = fingers.distance / distance;
+        react.pinchMove(scale);
+      }
+    },
+    { passive: false },
+  );
+  const lift = (event: TouchEvent): void => {
+    if (pinching && event.touches.length < 2) {
+      pinching = false;
+      react.pinchEnd(scale);
+    }
+  };
+  plot.addEventListener("touchend", lift);
+  plot.addEventListener("touchcancel", lift);
 }

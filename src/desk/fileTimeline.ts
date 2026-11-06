@@ -502,7 +502,7 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
 }
 
 /**
- * The person a new timeline opens on: none for a file that can be read whole,
+ * The person a new view opens on: none for a file that can be read whole,
  * else `around` where it names a person, else the first person declared.
  */
 export function initialFocus(index: GenealogyIndex, around: string | undefined): string | undefined {
@@ -514,6 +514,17 @@ export function initialFocus(index: GenealogyIndex, around: string | undefined):
 }
 
 const held = new WeakMap<GenealogyIndex, FileTimeline>();
+
+/** `initialFocus` for a timeline, which draws only the people who have a bar. */
+export function initialTimelineFocus(index: GenealogyIndex, around: string | undefined): string | undefined {
+  if (initialFocus(index, around) === undefined) {
+    return undefined;
+  }
+  const people = fileTimelineOf(index).people;
+  return around !== undefined && people.get(around)?.lifeline
+    ? around
+    : [...people.values()].find((person) => person.lifeline)?.xref;
+}
 
 /** Built once per reading of the file: a hover or a scroll asks again, an edit makes a new index. */
 export function fileTimelineOf(index: GenealogyIndex): FileTimeline {

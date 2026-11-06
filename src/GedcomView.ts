@@ -655,6 +655,14 @@ export class GedcomView extends TextFileView implements CardTab {
     }
   }
 
+  canBranchSelected(): boolean {
+    return this.views.canBranchSelected();
+  }
+
+  branchSelected(): void {
+    this.views.branchSelected();
+  }
+
   canRenameReference(): boolean {
     return canRenameReference(this.editor.state, this.language);
   }

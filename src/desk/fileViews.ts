@@ -112,6 +112,14 @@ export class FileViews {
     }
   }
 
+  canBranchSelected(): boolean {
+    return this.timeline?.canBranch() ?? false;
+  }
+
+  branchSelected(): void {
+    this.timeline?.branchOfSelected();
+  }
+
   hide(): void {
     this.parkOthers(null);
     this.shownKind = null;

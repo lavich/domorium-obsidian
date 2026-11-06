@@ -983,6 +983,240 @@ describe("the selected bar", () => {
   });
 });
 
+describe("the people a search and a scope count", () => {
+  it("does not find a person with no bar, and says so", () => {
+    board(withEvents());
+    container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
+    const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
+    if (input) {
+      input.value = "żorawski";
+      input.dispatchEvent(new Event("input"));
+    }
+
+    expect(container.querySelector(".gedcom-ft-find-count")?.textContent).toBe("No results");
+  });
+
+  it("counts the people with a bar in the scope line", () => {
+    board(withEvents(), { focus: "@I12@" });
+
+    expect(scopeText()).toContain("of 17 people");
+  });
+});
+
+describe("Branch on the selected bar", () => {
+  it("is offered on the selected person's bar and on no other", () => {
+    const drawn = board();
+    drawn.select("@I1@", false);
+
+    expect(branchButtons().map((button) => button.getAttribute("data-branch"))).toEqual(["@I1@"]);
+    drawn.select("@I2@", false);
+    expect(branchButtons().map((button) => button.getAttribute("data-branch"))).toEqual(["@I2@"]);
+  });
+
+  it("stands just past the end of the bar, level with it", () => {
+    const drawn = board();
+    drawn.select("@I1@", false);
+
+    const button = container.querySelector<HTMLElement>("[data-branch]");
+    const end = Number(bar("@I1@")?.getAttribute("x")) + Number(bar("@I1@")?.getAttribute("width"));
+    expect(Number.parseFloat(button?.style.left ?? "0")).toBeGreaterThan(end);
+    expect(Number.parseFloat(button?.style.top ?? "-1")).toBe(Number(bar("@I1@")?.getAttribute("y")));
+  });
+
+  it("shows the branch from the command with the bar out of the part drawn, and again returns to the whole file", () => {
+    const drawn = board(crowd(40));
+    drawn.select("@C1@", false);
+    drawn.draw({ top: 30 * ROW, left: 0, width: 2000, height: ROW });
+    expect(bar("@C1@")).toBeNull();
+
+    expect(drawn.canBranch()).toBe(true);
+    drawn.branchOfSelected();
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ focus: "@C1@" }));
+    drawn.branchOfSelected();
+    expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
+  });
+
+  it("is not available with nobody selected or a person with no bar selected", () => {
+    const drawn = board(withEvents());
+
+    expect(drawn.canBranch()).toBe(false);
+    drawn.select("@I18@", false);
+    expect(drawn.canBranch()).toBe(false);
+    drawn.branchOfSelected();
+    expect(host.scopeChanged).not.toHaveBeenCalled();
+  });
+});
+
+describe("the tooltip of a bar", () => {
+  const tip = () => container.querySelector<HTMLElement>(".gedcom-ft-tip");
+  const point = (target: Element | null | undefined) =>
+    target?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+
+  it("holds the person's name and nothing else", () => {
+    board();
+    point(bar("@I1@"));
+
+    expect(tip()?.classList.contains("is-shown")).toBe(true);
+    expect(tip()?.textContent).toBe("Marie Skłodowska-Curie");
+    point(container.querySelector(".gedcom-ft-chart"));
+    expect(tip()?.classList.contains("is-shown")).toBe(false);
+  });
+
+  it("is the same on a name written beyond its bar", () => {
+    board(fromLines(...lived("@I1@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901)));
+    point(label("@I1@"));
+
+    expect(label("@I1@")?.getAttribute("class")).toContain("is-beyond");
+    expect(tip()?.textContent).toBe("Alexandra Maria Theresia Habsburg-Lothringen");
+  });
+
+  it("gives way to the tooltip of a mark, which has no name in it", () => {
+    board();
+    point(container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"] circle'));
+
+    expect(tip()?.textContent).toContain("7 NOV 1867");
+    expect(tip()?.textContent).not.toContain("Marie");
+  });
+
+  it("is shown by a first touch and closed by a touch on empty space", () => {
+    board();
+    tap(bar("@I1@"));
+    expect(tip()?.classList.contains("is-shown")).toBe(true);
+    expect(tip()?.textContent).toBe("Marie Skłodowska-Curie");
+
+    tap(container.querySelector(".gedcom-ft-chart"));
+    expect(tip()?.classList.contains("is-shown")).toBe(false);
+  });
+});
+
+describe("the age ruler of the selected person", () => {
+  const flag = () => container.querySelector(".gedcom-ft-axis-cursor text")?.textContent;
+
+  it("gives the selected person's age on the cursor's label, and the year alone before the birth", () => {
+    const drawn = board();
+    drawn.select("@I1@", false);
+    drawn.setYear(1906);
+    expect(flag()).toBe("1906 · 39");
+
+    drawn.setYear(1850);
+    expect(flag()).toBe("1850");
+    drawn.setYear(1950);
+    expect(flag()).toBe("1950");
+  });
+
+  it("gives an approximate age for an approximate birth, and none where the bar begins at another event", () => {
+    const drawn = board(withEvents());
+    drawn.select("@I3@", false);
+    drawn.setYear(1900);
+    expect(flag()).toBe("1900 · ≈68");
+
+    const other = board(fromLines("0 @I1@ INDI", "1 NAME Mill /Er/", "1 RESI", "2 DATE 1850"));
+    other.select("@I1@", false);
+    other.setYear(1860);
+    expect(container.querySelectorAll(".gedcom-ft-axis-cursor text")[1]?.textContent).toBe("1860");
+  });
+
+  it("stays after Escape and goes with the selection", () => {
+    const drawn = board();
+    drawn.select("@I1@", false);
+    drawn.setYear(1906);
+    click(bar("@I1@"));
+    press(bar("@I1@"), "Escape");
+    expect(flag()).toBe("1906 · 39");
+
+    drawn.select("@I2@", false);
+    expect(flag()).toBe("1906 · 47");
+    drawn.select(null, false);
+    expect(flag()).toBe("1906");
+  });
+
+  it("names no one but the selected person", () => {
+    const drawn = board();
+    drawn.select("@I1@", false);
+    drawn.setYear(1906);
+
+    expect(flag()).not.toContain("Marie");
+  });
+});
+
+describe("a pinch", () => {
+  const fingers = (...touches: [number, number][]) =>
+    touches.map(([clientX, clientY]) => ({ clientX, clientY }));
+  const touch = (target: Element | null, type: string, ...touches: [number, number][]) => {
+    const event = Object.assign(new Event(type, { bubbles: true, cancelable: true }), { touches: fingers(...touches) });
+    target?.dispatchEvent(event);
+    return event;
+  };
+  const plot = () => container.querySelector<HTMLElement>(".gedcom-ft-plot");
+  const pinch = (from: number, to: number) => {
+    touch(plot(), "touchstart", [100, 50], [100 + from, 50]);
+    touch(plot(), "touchmove", [100, 50], [100 + (from + to) / 2, 50]);
+    touch(plot(), "touchmove", [100, 50], [100 + to, 50]);
+    touch(plot(), "touchend", [100, 50]);
+  };
+
+  it("takes the page's own handling away once a second finger is down, and not for one finger", () => {
+    board();
+
+    expect(touch(plot(), "touchstart", [100, 50]).defaultPrevented).toBe(false);
+    touch(plot(), "touchend");
+    expect(touch(plot(), "touchstart", [100, 50], [200, 50]).defaultPrevented).toBe(true);
+    expect(touch(plot(), "touchmove", [100, 50], [250, 50]).defaultPrevented).toBe(true);
+    touch(plot(), "touchend");
+  });
+
+  it("widens the axis once as the fingers lift, not while they move", () => {
+    board();
+    host.scopeChanged.mockClear();
+    touch(plot(), "touchstart", [100, 50], [200, 50]);
+    touch(plot(), "touchmove", [100, 50], [250, 50]);
+    touch(plot(), "touchmove", [100, 50], [300, 50]);
+
+    expect(host.scopeChanged).not.toHaveBeenCalled();
+    expect(container.querySelector<SVGElement>(".gedcom-ft-chart")?.style.transform).toBe("scaleX(2)");
+    touch(plot(), "touchend", [100, 50]);
+    expect(host.scopeChanged).toHaveBeenCalledTimes(1);
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.initial * 2 }));
+    expect(container.querySelector<SVGElement>(".gedcom-ft-chart")?.style.transform).toBe("");
+  });
+
+  it("narrows the axis as the fingers come together", () => {
+    board();
+    pinch(200, 100);
+
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.initial / 2 }));
+  });
+
+  it("stops where the zoom buttons would", () => {
+    board();
+    pinch(10, 1000);
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.max }));
+    pinch(1000, 10);
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ zoom: ZOOM.min }));
+  });
+
+  it("keeps the year under the midpoint under it", () => {
+    board();
+    const view = plot();
+    if (view) {
+      view.scrollLeft = 120;
+    }
+    const before = (120 + 150 - 12) / ZOOM.initial;
+    pinch(100, 200);
+
+    const zoom = ZOOM.initial * 2;
+    expect((Number(view?.scrollLeft) + 150 - 12) / zoom).toBeCloseTo(before, 5);
+  });
+
+  it("does nothing for a pinch that changes nothing", () => {
+    board();
+    host.scopeChanged.mockClear();
+    pinch(100, 100);
+
+    expect(host.scopeChanged).not.toHaveBeenCalled();
+  });
+});
+
 describe("the search of the timeline, opened from outside", () => {
   it("replaces the icon with a focused field", () => {
     const drawn = board();

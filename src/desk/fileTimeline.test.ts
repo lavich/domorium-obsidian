@@ -5,6 +5,7 @@ import {
   buildFileTimeline,
   fileTimelineOf,
   initialFocus,
+  initialTimelineFocus,
   LARGE_FILE,
   OPEN_SPAN,
   type FileTimeline,
@@ -319,5 +320,23 @@ describe("what a new timeline opens on", () => {
 
     expect(initialFocus(index, undefined)).toBe("@P1@");
     expect(initialFocus(index, "@F1@")).toBe("@P1@");
+  });
+
+  it("opens a large timeline on the first person with a bar, and on a named person only where they have one", () => {
+    const dated = (at: number): string[] =>
+      at === 3 ? [`1 BIRT`, `2 DATE 1900`] : [];
+    const index = indexOf(
+      [
+        "0 HEAD", "1 GEDC", "2 VERS 7.0",
+        ...Array.from({ length: LARGE_FILE + 1 }, (_, at) => [`0 @P${at + 1}@ INDI`, `1 NAME Person /${at + 1}/`, ...dated(at + 1)]).flat(),
+        "0 TRLR", "",
+      ].join("\n"),
+    );
+
+    expect(initialTimelineFocus(index, undefined)).toBe("@P3@");
+    expect(initialTimelineFocus(index, "@P7@")).toBe("@P3@");
+    expect(initialTimelineFocus(index, "@P3@")).toBe("@P3@");
+    expect(initialFocus(index, "@P7@")).toBe("@P7@");
+    expect(initialTimelineFocus(indexOf(people(LARGE_FILE)), "@P7@")).toBeUndefined();
   });
 });
