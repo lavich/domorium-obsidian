@@ -26,15 +26,15 @@ Every group ends with `npm run check` exiting 0.
 
 ## 4. Strings and styles
 
-- [ ] 4.1 `src/i18n/en.json` and `ru.json`: the Branch command, the bar's focus label, any tooltip label. Test in `src/i18n/i18n.test.ts`: parity and sentence case.
-- [ ] 4.2 `styles.css`: remove the `gedcom-ft-name*` rules and the names variable; bar, label, soft end, cut end, ring, links, tooltip and the Branch overlay, in the light and the dark scheme; `touch-action` on the plot. Check by eye on `demo-vault/` in both schemes.
+- [x] 4.1 `src/i18n/en.json` and `ru.json`: the Branch command, the bar's focus label, any tooltip label. Test in `src/i18n/i18n.test.ts`: parity and sentence case.
+- [x] 4.2 `styles.css`: remove the `gedcom-ft-name*` rules and the names variable; bar, label, soft end, cut end, ring, links, tooltip and the Branch overlay, in the light and the dark scheme; `touch-action` on the plot. Check by eye on `demo-vault/` in both schemes.
 
 ## 5. Browser specs and documents
 
-- [ ] 5.1 `tests/fileTimeline.spec.ts`, `tests/fileViews.spec.ts` and `tests/fileList.spec.ts`: rewrite the specs that name the column, the corner, `is-focus`, `.gedcom-ft-name` or a count of 17 people; add specs for shared lanes (fewer lanes than people), a name beyond a short bar, marks not across the name, the contrast of the name on the bar in both schemes for a spread of hues (yellow-green included, dimmed and ringed too), the lit person's links, the Branch overlay and command, a pinch, and a 10 000-person file's drawn-bar count and scroll without a blank frame. At 1400 and 390 px.
-- [ ] 5.2 `README.md` and `demo-vault/Start here.md` say what the bars, the colour, the cut end of a living person and the links mean. Test: none.
+- [x] 5.1 `tests/fileTimeline.spec.ts`, `tests/fileViews.spec.ts` and `tests/fileList.spec.ts`: rewrite the specs that name the column, the corner, `is-focus`, `.gedcom-ft-name` or a count of 17 people; add specs for shared lanes (fewer lanes than people), a name beyond a short bar, marks not across the name, the contrast of the name on the bar in both schemes for a spread of hues (yellow-green included, dimmed and ringed too), the lit person's links, the Branch overlay and command, a pinch, and a 10 000-person file's drawn-bar count and scroll without a blank frame. At 1400 and 390 px.
+- [x] 5.2 `README.md` and `demo-vault/Start here.md` say what the bars, the colour, the cut end of a living person and the links mean. Test: none.
 
 ## 6. Verify
 
-- [ ] 6.1 `npm run check`, `npm run test:browser` (three runs) and `npm run openspec:validate` pass.
+- [x] 6.1 `npm run check`, `npm run test:browser` (three runs) and `npm run openspec:validate` pass.
 - [ ] 6.2 By hand in Obsidian on `demo-vault/`, desktop and phone (leave unticked until someone has done it): no column of names, shared lanes on the demo file, surname colours in both schemes with legible names, a click lighting a family with its links and the dashed marriage, a living person's bar running to today, the age ruler, the tooltip, Branch on the selected bar and the command, a pinch and one-finger scroll on a phone, the Russian text.

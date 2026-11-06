@@ -121,8 +121,8 @@ never writes to it. **Show in source** on a card, a fact or a missing relative
 switches to Source with exactly those lines selected, which is where a
 correction is made.
 
-What selects a record: a click or tap on a card or a node in Graph, or a name or
-a lifeline in Timeline, marks the person and shows the card without moving the
+What selects a record: a click or tap on a card or a node in Graph, or a bar in
+Timeline, marks the person and shows the card without moving the
 view, and a click on a row in List marks the row; a link to a record and **Go to
 record** also glide to the person or bring the row into view; a relative, a
 citation or a tile in the card selects that record. In
@@ -135,22 +135,32 @@ The command **Open the list of the GEDCOM file** brings the GEDCOM tab
 you used last to the front as a list, wherever it is; with no GEDCOM tab open it
 says so.
 
-In **Timeline** mode the tab shows one row per person, ordered by generation and
-family, and a lifeline from birth to death — pink for a woman, blue for a man,
-grey where the record states no sex — with the person's dated events on it; an
-approximate date is drawn dashed and a period as a span. Clicking a person
-selects them and picks out their parents, spouses and children with arrows from
-parent to child, and a year cursor gives the age everyone alive reached that year. A search icon
-over the board opens into a field that fades everyone else and steps from match
-to match with arrows, and the zoom buttons widen, narrow or fit the years.
-**Branch** on a row narrows it to one person's ancestors and descendants, and a
-file of more than 500 people opens on the branch of the person selected. A
-person's name or lifeline selects them; an event shows its lines in Source. On a
-phone the first touch picks a person out and places the year cursor, and a
-second touch selects them.
+In **Timeline** mode the tab shows each person as a bar on an axis of years, from
+birth to death, with their name written inside it and no years on it. Lives that
+never meet share a lane, so the board stays short. A bar takes its colour from
+the surname — `Лобанов` and `Лобанова` look alike, `Лобанов` and `Сидорова` do
+not — and a person with no surname is grey. A soft end means the date is
+approximate; a bar with no recorded death fades out a hundred years after it
+begins, while one that begins at a birth in the last hundred years runs to the
+present in a straight cut edge, as the bar of a person who may be alive. A name
+too long for its bar is written just beyond it, and pointing at a bar shows the
+person's name. Dated events are marks along the bar's lower edge, an approximate
+date is drawn dashed and a period as a span; a person with no dated event has no
+bar. Clicking a bar selects the person and picks out their parents, spouses and
+children, with a line and an arrowhead from each parent down to the person and
+from the person down to each child, and a dashed line with a dot at each end to a
+spouse at the year of the marriage. A year cursor gives the age everyone alive
+reached that year, and the selected person's age on the axis. A search icon over
+the board opens into a field that fades everyone else and steps from match to
+match with arrows, and the zoom buttons widen, narrow or fit the years; on a
+phone a pinch zooms the axis. **Branch**, on the selected bar or from the command
+**Branch of the selected person**, narrows the board to one person's ancestors
+and descendants, and a file of more than 500 people opens on the branch of the
+person selected. An event shows its lines in Source. On a phone the first touch
+picks a person out and places the year cursor, and a second touch selects them.
 
 In **Graph** mode the tab shows a card per person, generations from top to
-bottom and coloured as in the timeline. Spouses stand side by side, a husband to
+bottom and coloured by sex. Spouses stand side by side, a husband to
 the left of his wife, joined by a node with the year of their marriage — hollow
 where it is undated — from which curved lines run to their children; the
 husband's family tends to stand on the left and the wife's on the right, and the

@@ -103,3 +103,22 @@ A person with no dated event has no `lifeline`, so no box. `layout.shown` is fil
 ## Migration Plan
 
 None. No persisted state names a row or a column: the saved scope, zoom and scroll are read as before. A saved scroll offset in `y` lands on a lane that may hold other people, which is harmless, and `scrollTop` is clamped as it already is.
+
+## Implementation
+
+Where the code differed from the plan above, or the plan left a choice open:
+
+- `lifelineYears` stays in `src/desk/labels.ts`. D3 says only the name column used it; `src/desk/fileGraphView.ts` uses it too, so it and its tests are kept.
+- The names column could not stand beside the new layout, so task 3.1 (the deletion of `drawNames`, the names element, its scroll wiring, the corner and the grid column, and the focusable bars) landed in the same commit as group 2.
+- The command lives in `src/commands.ts`, not `src/desk/commands.ts`. `CommandView` gains `canBranchSelected()` and `branchSelected()`, the string is `command.branchOfSelected`, and the command is offered in Timeline mode while the selected person has a bar.
+- `fileTimelineOf` does not take `now`; `buildFileTimeline(index, now)` already did, and the tests build the model with it.
+- `initialFocus` is unchanged for the graph, which draws people with no dated event. The timeline asks `initialTimelineFocus`, which takes the first person with a bar and refuses a named person who has none.
+- The ink on a bar is chosen per hue and scheme, white or near-black, whichever has the higher contrast, and the fill and ink reach the bar as custom properties set on the element (`--gedcom-ft-fill-light`, `--gedcom-ft-fill-dark`, `--gedcom-ft-ink-light`, `--gedcom-ft-ink-dark`), so the tones live in `src/desk/surnameHue.ts` only. A unit test holds 4.5:1 for all 360 hues in both schemes. A dimmed bar fades as a whole, ink included, by design, so the spec checks the ink against the fill for a dimmed and a ringed bar, not against the page.
+- A soft or fading end is drawn with one of five masks in the board's defs, whose stops are fractions of the bar's width (`SOFT` 0.15, `FADE_AT` 0.6). The label is written inside only where it fits the unfaded part.
+- The tooltip of a mark no longer names the person (`Placed.who` is gone), as `On a mark` says; the tooltip of a bar is the name alone.
+- The hover layer sits between the gridlines and the bars, so links run under the bars. A link between two bars in one lane is not drawn, there being no vertical to draw.
+- The Branch button follows the plot's scroll and, where the end of the selected bar lies beyond the right edge of the view, stands at the edge of the view over the bar, so it stays reachable on a phone; where the view has room it stands 8 px past the end of the bar or its name.
+- During a pinch only the axis is scaled (`scaleX` on the chart, the cursor, the axis and the Branch layer). When the fingers lift, the year under their midpoint and the lane of the bar under it, or else of the selected bar, keep their place in the view.
+- The age ruler writes `1906 · 39` on the axis flag, with `≈` before an approximate age; the flag widens with the text.
+- The harness's `select` host callback now selects on the board, as the tab does, and the harness exposes `window.timeline.select` and `window.timeline.branchOfSelected` for the specs. Pinch specs send real touch events by the Chrome DevTools protocol.
+- `src/desk/timelineHits.ts` has no test file of its own; `barOf` is covered through `src/desk/fileTimelineView.test.ts`.

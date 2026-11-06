@@ -32,6 +32,8 @@ declare global {
   interface Window {
     timeline: {
       mount(options: TimelineOptions): number;
+      select(xref: string | null, reveal?: boolean): void;
+      branchOfSelected(): void;
       calls: TimelineCalls;
     };
   }
@@ -40,6 +42,7 @@ declare global {
 installObsidianDom();
 
 const calls: TimelineCalls = { opened: [], shownInSource: [], scopes: [] };
+let shown: FileTimelineBoard | null = null;
 
 function mount(options: TimelineOptions): number {
   const started = performance.now();
@@ -67,6 +70,7 @@ function mount(options: TimelineOptions): number {
   const board = new FileTimelineBoard(parent, {
     select: (xref) => {
       calls.opened.push(xref);
+      board.select(xref, false);
     },
     showInSource: (range) => {
       calls.shownInSource.push(range);
@@ -77,7 +81,13 @@ function mount(options: TimelineOptions): number {
     setIcon: stubSetIcon,
   });
   board.show(fileTimelineOf(index), scope);
+  shown = board;
   return performance.now() - started;
 }
 
-window.timeline = { mount, calls };
+window.timeline = {
+  mount,
+  select: (xref, reveal = false) => shown?.select(xref, reveal),
+  branchOfSelected: () => shown?.branchOfSelected(),
+  calls,
+};

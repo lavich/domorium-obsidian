@@ -12,7 +12,7 @@ export const SOFT = 0.15;
 export const SOFT_OPACITY = 0.15;
 
 const LABEL_PAD = 6;
-const MARK_DROP = 8;
+const MARK_DROP = 9;
 const MARK_RADIUS = { plain: 3.5, other: 4.5 } as const;
 const SPAN_HEIGHT = 4;
 

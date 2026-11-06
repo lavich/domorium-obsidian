@@ -15,6 +15,8 @@ import { eventName, personName, yearText } from "./labels";
 const AXIS = 26;
 const TICK_HEIGHT = { minor: 3, medium: 5, major: 7 } as const;
 const GLIDE_REACH = 1.5;
+const BRANCH_WIDTH = 56;
+const BRANCH_MARGIN = 8;
 
 export const ZOOM = { min: 2, max: 16, initial: 6, step: 1.2 } as const;
 
@@ -465,8 +467,22 @@ export class FileTimelineBoard {
         "aria-label": t("fileGraph.branchOf", { name }),
       },
     });
-    button.setCssProps({ left: `${reach + 8}px`, top: `${cy - BAR / 2}px` });
+    button.setCssProps({ top: `${cy - BAR / 2}px` });
     tipPlace(button, "right");
+    this.placeBranch();
+  }
+
+  private placeBranch(): void {
+    const button = this.overlay.querySelector<HTMLElement>("[data-branch]");
+    const xref = button?.getAttribute("data-branch");
+    const reach = xref ? this.layout?.reach.get(xref) : undefined;
+    const line = xref ? this.model?.people.get(xref)?.lifeline : undefined;
+    if (!button || reach === undefined || !line || !this.layout) {
+      return;
+    }
+    const room = this.plot.scrollLeft + this.plot.clientWidth - (button.offsetWidth || BRANCH_WIDTH) - BRANCH_MARGIN;
+    const left = Math.max(this.layout.x(line.start) + BRANCH_MARGIN, Math.min(reach + BRANCH_MARGIN, room));
+    button.setCssProps({ left: `${left}px` });
   }
 
   private markCurrent(): void {
@@ -847,6 +863,7 @@ export class FileTimelineBoard {
         year: (clientX) => this.setYear(clientX === null ? null : this.yearAt(clientX)),
         plotScrolled: () => {
           this.follow(this.axisClip, this.plot, "scrollLeft");
+          this.placeBranch();
         },
         redrawIfNeeded: () => {
           const view = this.measure();

@@ -1013,14 +1013,28 @@ describe("Branch on the selected bar", () => {
     expect(branchButtons().map((button) => button.getAttribute("data-branch"))).toEqual(["@I2@"]);
   });
 
-  it("stands just past the end of the bar, level with it", () => {
+  it("stands just past the end of the bar, level with it, where the view has room", () => {
     const drawn = board();
+    const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
+    Object.defineProperty(plot, "clientWidth", { value: 2000, configurable: true });
     drawn.select("@I1@", false);
 
     const button = container.querySelector<HTMLElement>("[data-branch]");
     const end = Number(bar("@I1@")?.getAttribute("x")) + Number(bar("@I1@")?.getAttribute("width"));
-    expect(Number.parseFloat(button?.style.left ?? "0")).toBeGreaterThan(end);
+    expect(Number.parseFloat(button?.style.left ?? "0")).toBe(end + 8);
     expect(Number.parseFloat(button?.style.top ?? "-1")).toBe(Number(bar("@I1@")?.getAttribute("y")));
+  });
+
+  it("stays inside the view, over the end of the bar, where the view ends before the bar does", () => {
+    const drawn = board();
+    const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
+    Object.defineProperty(plot, "clientWidth", { value: 300, configurable: true });
+    drawn.select("@I1@", false);
+
+    const left = Number.parseFloat(container.querySelector<HTMLElement>("[data-branch]")?.style.left ?? "0");
+    const start = Number(bar("@I1@")?.getAttribute("x"));
+    expect(left).toBeGreaterThanOrEqual(start + 8);
+    expect(left).toBeLessThan(start + Number(bar("@I1@")?.getAttribute("width")));
   });
 
   it("shows the branch from the command with the bar out of the part drawn, and again returns to the whole file", () => {

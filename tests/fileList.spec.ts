@@ -618,7 +618,7 @@ test.describe("hover tooltips", () => {
     test(`no large element of the ${mode} carries an aria-label`, async ({ page }) => {
       await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
       await page.evaluate((shown) => window.tab.mount({ mode: shown }), mode);
-      await page.waitForSelector(mode === "list" ? ".gedcom-list-row" : mode === "graph" ? ".gedcom-fg-person" : ".gedcom-ft-name");
+      await page.waitForSelector(mode === "list" ? ".gedcom-list-row" : mode === "graph" ? ".gedcom-fg-person" : ".gedcom-ft-life");
 
       expect(await page.evaluate(large)).toEqual([]);
     });
