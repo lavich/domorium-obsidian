@@ -84,7 +84,7 @@ describe("the rows of the events kind", () => {
     expect(keys(collectEvents(twice))).toEqual(["event:@I1@:DEAT:0"]);
   });
 
-  it("finds the event an id names in O(1) and no other", () => {
+  it("finds the event an id names, and no other", () => {
     expect(eventAt(index, eventId("@I1@", "BIRT", 0))?.event.tag).toBe("BIRT");
     expect(eventAt(index, "event:@I1@:BIRT:9999")).toBeUndefined();
     expect(eventAt(index, "event:@I1@:MARR:0")).toBeUndefined();
@@ -105,6 +105,16 @@ describe("the rows of the events kind", () => {
     expect(eventAt(doc(...base.slice(1), "1 DEAT"), id)?.event.tag).toBe("DEAT");
     expect(eventAt(doc(...base.slice(1), "1 BIRT", "1 OCCU Cooper", "1 DEAT"), id)?.event.tag).toBe("DEAT");
     expect(eventAt(doc(...base.slice(1), "1 BIRT"), id)).toBeUndefined();
+  });
+
+  it("moves the later events of a tag up when an earlier one of that tag goes", () => {
+    const two = ["0 @I1@ INDI", "1 NAME A /B/", "1 RESI", "2 PLAC One", "1 RESI", "2 PLAC Two"];
+    const first = doc(...two);
+    const without = doc(...two.slice(0, 2), ...two.slice(4));
+
+    expect(eventAt(first, "event:@I1@:RESI:1")?.event.place).toBe("Two");
+    expect(eventAt(without, "event:@I1@:RESI:1")).toBeUndefined();
+    expect(eventAt(without, "event:@I1@:RESI:0")?.event.place).toBe("Two");
   });
 
   it("numbers events of one tag among themselves", () => {

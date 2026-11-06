@@ -55,7 +55,7 @@ function recordName(index: GenealogyIndex, xref: string): string {
   }
   const media = index.media(xref);
   const event = eventAt(index, xref);
-  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? (event ? eventTitle(event.event) : t("desk.media"));
+  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? (event ? `${eventTitle(event.event)} · ${recordName(index, event.owner)}` : t("desk.media"));
 }
 
 export function renderRecordCard(

@@ -162,6 +162,15 @@ describe("the selected record", () => {
     expect(modes.selected).toBeNull();
   });
 
+  it("drops the second of two events of a tag when the first is removed, since its number now names nothing", () => {
+    const modes = tab("graph");
+    const two = ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 RESI", "2 PLAC One", "1 RESI", "2 PLAC Two"];
+    modes.select("event:@I1@:RESI:1", indexOf(two.join("\n")));
+
+    expect(modes.textChanged(indexOf([...two.slice(0, 3), ...two.slice(5)].join("\n"))).selectionCleared).toBe(true);
+    expect(modes.selected).toBeNull();
+  });
+
   it("ends when a text change leaves its record undeclared, and is reported", () => {
     const modes = tab("graph");
     modes.select("@I1@", index);

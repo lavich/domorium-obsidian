@@ -179,7 +179,7 @@ describe("the page of each kind of record, with its evidence", () => {
     links[1]?.click();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
-    expect(texts(".gedcom-card-head-name")).toEqual(["Birth"]);
+    expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-event-value")).toEqual(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
     expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
     expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
@@ -216,6 +216,15 @@ describe("the page of each kind of record, with its evidence", () => {
 
     expect(texts(".gedcom-desk-event-sources > *")).toEqual(["Parish registers", "An inline note"]);
     expect(calls.select).toHaveBeenCalledWith("@S1@");
+  });
+
+  it("draws no heading for a citation that names nothing", () => {
+    index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 DEAT", "2 SOUR", "0 TRLR"].join("\n"));
+    state.record = "event:@I1@:DEAT:0";
+    draw();
+
+    expect(container.querySelector(".gedcom-desk-event-sources")).toBeNull();
+    expect(texts(".gedcom-desk-none")).toEqual(["This event states no date, place or source."]);
   });
 
   it("shows a citation of a source the file does not declare as text", () => {

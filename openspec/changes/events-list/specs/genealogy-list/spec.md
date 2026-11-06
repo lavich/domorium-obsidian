@@ -355,7 +355,7 @@ to record*; and SHALL stay across sorting, filtering and switching the kind, and
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
 list. A row of the Places SHALL select its place, which has no xref and is selected under the id
 `place:` and its key: the record card shows the place, with its events, each linking to the person
-or family it belongs to. A row of the Events SHALL select its event, which has no xref and is selected under the id `event:`, the identifier of its record, the tag of the event, and the number of events of that tag before it on the record: the record card shows the event, with its name and the text it carries, its date, its place, and the sources it cites, the record linking to that record, the place to the place and each source to the source, and with *Show in source*. Only the row of the selected event SHALL be marked, though other events belong to the same record. An edit that removes the event SHALL drop the selection. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+or family it belongs to. A row of the Events SHALL select its event, which has no xref and is selected under the id `event:`, the identifier of its record, the tag of the event, and the number of events of that tag before it on the record: the record card shows the event, with its name and the text it carries, its date, its place, and the sources it cites, the record linking to that record, the place to the place and each source to the source, and with *Show in source*. Only the row of the selected event SHALL be marked, though other events belong to the same record. An edit that leaves no event with that tag and that number SHALL drop the selection: the removal of the only event of its tag on the record, or of the last of them, or of its record. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -470,8 +470,12 @@ derived from that text size, so that it follows the reader's font size.
 - **THEN** the card shows Marie, and no row of the events is marked
 
 #### Scenario: An event that an edit removes
-- **WHEN** the row of Marie's birth is marked and the reader deletes that event in Source mode
+- **WHEN** the row of Marie's birth is marked, her record states one birth, and the reader deletes that event in Source mode
 - **THEN** no row is marked and the card shows nothing selected
+
+#### Scenario: An earlier event of the same tag removed
+- **WHEN** the row of a person's second residence is marked and the reader deletes the first residence in Source mode
+- **THEN** the id of the second residence now names no event, and the selection is dropped
 
 ### Requirement: The selected row is brought into view
 

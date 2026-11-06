@@ -845,6 +845,24 @@ for (const viewport of [WIDE, PHONE]) {
       expect(await sidewaysOverflow(page)).toBe(false);
     });
 
+    test("keeps every kind label whole on a narrow phone, in Russian", async ({ page }) => {
+      test.skip(!phone, "the kind bar is only this narrow on a phone");
+      await page.setViewportSize({ width: 360, height: 800 });
+      await mountEvents(page, { language: "ru" });
+
+      const clipped = await page.locator(".gedcom-list-seg-button").evaluateAll((buttons) => buttons.filter((one) => one.scrollWidth > one.clientWidth).length);
+      expect(clipped).toBe(0);
+    });
+
+    test("selects an event with Space", async ({ page }) => {
+      await mountEvents(page);
+      await page.locator(".gedcom-list-scroll").focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Space");
+
+      expect(await selected(page)).toEqual(["event:@I1@:DEAT:0"]);
+    });
+
     test("takes two lines of a finger's height on a phone, the event and its date over the record and the place", async ({ page }) => {
       test.skip(!phone, "a wide tab keeps one line");
       await mountEvents(page);

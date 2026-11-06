@@ -77,13 +77,14 @@ how many sources the record cites, with a mark where it cites none; families
 show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
 them; places lists each place the file names once, however it is spelt in case or
-spacing, with its number of events and their years; events lists every event of the people and
-families, an occupation or an award with its text, with its record, date and place, and sorts by the year of the date. A click on a column header sorts by it, a second click reverses the order
+spacing, with its number of events and their years; events lists every event of the
+people and families, an occupation or an award with its text, with its record, date
+and place. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter
-or Space on it, selects that record, and on a place shows its card with its events; on an event shows its card, with
-its record, date, place and sources. The row of the selected record is marked
+or Space on it, selects that record; on a place it shows its card with its events, and on an event
+its card with its record, date, place and sources. The row of the selected record is marked
 and brought into view when it was selected elsewhere. The arrow keys, Home,
 End and the page keys move through the rows. A file of twenty thousand people
 draws only the rows in view. On a phone, and in a tab narrower than
@@ -109,7 +110,7 @@ relatives', and the **places** it names; and last the **evidence** — what the
 selected fact, or else the whole record, rests on, kept apart from the sources
 of the whole record so that one is never mistaken for the other. Tapping a fact
 unfolds its sources beneath it, with a way down to the evidence. A family, a
-source and a media record have cards of their own, and **Back** and **Forward** in
+source, a place, an event and a media record have cards of their own, and **Back** and **Forward** in
 the card's header go between the records it showed. The card reads the file and
 never writes to it. **Show in source** on a card, a fact or a missing relative
 switches to Source with exactly those lines selected, which is where a

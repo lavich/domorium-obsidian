@@ -76,6 +76,7 @@ import {
   type Origin,
   type ViewKind,
 } from "./desk/deskState";
+import { eventAt, eventOwner } from "./desk/eventRows";
 import { listSelection } from "./desk/listRows";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
@@ -476,9 +477,9 @@ export class GedcomView extends TextFileView implements CardTab {
     }
     this.markInViews(rules.revealsView);
     if (this.modes.shown === "source" && rules.cursorToRecord) {
-      const record = this.records().find((entry) => entry.identifier === xref);
-      if (record) {
-        this.placeCursor(positionToOffset(this.editor.state.doc, record.start), rules.editorFocus);
+      const start = eventAt(this.genealogy(), xref)?.event.range.start ?? this.records().find((entry) => entry.identifier === xref)?.start;
+      if (start) {
+        this.placeCursor(positionToOffset(this.editor.state.doc, start), rules.editorFocus);
       }
     }
     this.app.workspace.requestSaveLayout();
@@ -744,7 +745,7 @@ export class GedcomView extends TextFileView implements CardTab {
     if (!isViewMode(mode) || !this.modes.needsDraw(this.containerEl.isShown() && this.viewsEl.isShown())) {
       return;
     }
-    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), this.modes.selected ?? undefined);
+    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), eventOwner(this.modes.selected) ?? this.modes.selected ?? undefined);
   }
 
   onResize(): void {
