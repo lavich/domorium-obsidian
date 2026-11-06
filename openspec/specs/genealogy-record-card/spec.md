@@ -254,7 +254,7 @@ tag, in this order:
 - their **media**;
 - their **timeline** and their **places**, each a section of the card below the
   one before it, not a tab;
-- the **evidence**: what the selected fact, or else the whole record, rests on.
+- the **evidence**: what the whole record rests on; what an event rests on is on the card of that event.
 
 Every relative shown SHALL select that person. A relative the file points at but
 does not declare SHALL be shown as a pointer to a record that is not in the file,
@@ -332,7 +332,11 @@ the person's own entries SHALL select that fact.
 
 #### Scenario: Selecting an entry
 - **WHEN** the reader activates the entry for Marie's birth in the timeline section
-- **THEN** her birth is the selected fact, and the Evidence section shows it
+- **THEN** the card of her birth is shown, with its evidence
+
+#### Scenario: A place in an entry
+- **WHEN** the reader activates the place of an entry in the timeline section
+- **THEN** the card of that place is shown
 
 ### Requirement: The places of a person
 
@@ -487,10 +491,9 @@ in the file the selection ends, as the requirement on the selected record says.
 The card SHALL be readable and usable in one column at the width a sidebar has,
 from 320 pixels up, and at a phone's width, without horizontal scrolling of the
 card. The card as a whole SHALL scroll beneath a header carrying Back and Forward,
-which stays at the top. Selecting a fact SHALL unfold beneath it the titles of the
-sources the fact cites, with an action that takes the reader
-to the Evidence section. Redrawing the card for the same record — selecting a fact,
-or the file changing — SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record SHALL scroll the card to
+which stays at the top. Choosing a fact SHALL open the card of its event, as the
+requirement on the event card says, and a place named in a fact or an entry SHALL open the card of that place. Redrawing the card for the same record — the file changing —
+SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record, an event or a place SHALL scroll the card to
 the top.
 
 #### Scenario: A person card at a sidebar's width
@@ -503,13 +506,16 @@ the top.
 
 #### Scenario: Tapping a fact
 - **WHEN** the reader taps Marie's birth
-- **THEN** beneath it the card lists the sources the fact cites, none here, and offers to go
-  to the Evidence section
+- **THEN** the card of her birth is shown, with its evidence, and the list, where it is in view, shows the events with her birth marked
+
+#### Scenario: Tapping a place in a fact
+- **WHEN** the reader taps `Warsaw, Congress Poland` in Marie's birth
+- **THEN** the card of that place is shown, and the card of her birth is not
 
 #### Scenario: Selecting a fact in a scrolled card
 - **WHEN** the card is scrolled to Marie's family section and the reader selects her
   marriage
-- **THEN** the card stays scrolled where it was
+- **THEN** the card of the marriage is shown from its top
 
 #### Scenario: Another record
 - **WHEN** the card is scrolled to the end of Marie's card and the reader activates
@@ -523,7 +529,7 @@ the top.
 ### Requirement: A tab holds one selected record
 
 A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
-source or a multimedia record of its file. It SHALL be selected by activating a
+source or a multimedia record of its file, or a place or an event that the file names. It SHALL be selected by activating a
 person's card, a family node, a name or a lifeline in Graph or Timeline; by
 activating a row of the list; by activating a relative, a citation, a person, a
 family, a source or a media record in the card; by following a link into the file
@@ -539,10 +545,9 @@ reopened. It SHALL end when the record no longer exists in the file and when the
 A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected or shown, and a saved selection SHALL be kept in the tab's state unused, to come back when the interface is turned on. A state handed to a tab for the same file that names no selection SHALL leave the selection as it is. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
 
 While a record is selected the list SHALL mark its row as selected in List mode. A
-fact of a person or a family SHALL be selectable on its card, which makes it the
-selection the Evidence section shows; selecting it again, or choosing *Whole
-record*, SHALL return the selection to the whole record, and selecting another
-record SHALL end the fact's selection.
+fact of a person or a family SHALL be selectable on its card, and selecting it SHALL select
+its event, whose card shows the Evidence section for that event; choosing *Whole
+record* there SHALL select the record it belongs to.
 
 In Graph and Timeline mode a selected person SHALL be marked in the view, as the
 requirements of those views say. In List mode the row of a selected person, family
@@ -619,6 +624,69 @@ is selected nobody is marked there; a media record has no row in the list.
 
 #### Scenario: Selecting a fact and going back
 - **WHEN** the reader selects Marie's birth on her card and then chooses Whole
-  record
-- **THEN** the Evidence section shows Marie's whole record and the birth is no
-  longer selected
+  record in the Evidence section of the card of her birth
+- **THEN** the card shows Marie, with the Evidence section of her whole record
+
+### Requirement: The event card
+
+Selecting an event, which a row of the Events in the List does, SHALL show its **event card**: the
+name of the event as the person card names it, a custom event by its type, and the text the event
+carries other than `Y`; the record it belongs to, as a link that selects that record; the date as
+the file writes it; and the place as the file writes it, as a link that selects the place. Below them
+the card SHALL show the **Evidence** section for the event: the sources the event cites, each a link
+that selects the source, and what the whole record rests on, as the person card shows it for a
+selected fact. The card SHALL have a *Show in source* that moves to the lines of the event, and it SHALL show
+nothing the file does not hold. Choosing a fact on a person's or a family's card, or an entry of a
+person's timeline, SHALL open this card. Selecting a link on it SHALL NOT write to the file. An event that
+carries nothing to show beyond its name SHALL still have a card, which says that the event states no
+date, place or source.
+
+#### Scenario: A birth
+- **WHEN** the event card of Marie's birth is shown
+- **THEN** it reads `Birth`, links `Marie Skłodowska-Curie`, and shows `7 NOV 1867` and a link
+  `Warsaw, Congress Poland`
+
+#### Scenario: An occupation
+- **WHEN** the event card of an occupation `Physicist` with no date and no place is shown
+- **THEN** it reads `Occupation · Physicist` and says the event states no date, place or source
+
+#### Scenario: A cited source
+- **WHEN** the event card of an event that cites a source record is shown, and the reader presses the source in its Evidence section
+- **THEN** the card shows that source
+
+#### Scenario: Chosen on a person's card
+- **WHEN** the reader chooses Marie's birth in the Facts of her card
+- **THEN** the event card of her birth is shown, and a list in view shows the events with that birth marked
+
+#### Scenario: Show in source
+- **WHEN** the reader presses *Show in source* on the event card of Marie's birth
+- **THEN** the tab shows the Source mode with the lines of that birth selected
+
+#### Scenario: A record pressed
+- **WHEN** the reader presses the record on the event card of Marie's birth
+- **THEN** the card shows Marie
+
+#### Scenario: A source the file does not declare
+- **WHEN** an event cites `@S9@` and the file declares no such record
+- **THEN** its Evidence section says the source is missing, with the way to its line
+
+### Requirement: An event stays selected while the cursor is in its record
+
+While an event is selected, the cursor being in the record that event belongs to SHALL count as the
+same selection, in Source mode and on leaving it: switching to Source mode moves the cursor to the
+lines of the event, and the event SHALL stay selected there and after switching back, and a click
+inside its record SHALL NOT replace it with the record. The cursor resting in another record SHALL
+select that record, as it does for any selection. Selecting an event SHALL NOT write to the file.
+
+#### Scenario: To Source and back
+- **WHEN** the event card of Marie's birth is shown in Graph mode, the reader switches to Source mode
+  and then back to Graph mode without moving the cursor out of her record
+- **THEN** the card still shows her birth
+
+#### Scenario: A click inside the record
+- **WHEN** the event card of Marie's birth is shown in Source mode and the reader clicks in her death
+- **THEN** the card still shows her birth
+
+#### Scenario: A click in another record
+- **WHEN** the event card of Marie's birth is shown in Source mode and the reader clicks in Pierre's record
+- **THEN** the card shows Pierre

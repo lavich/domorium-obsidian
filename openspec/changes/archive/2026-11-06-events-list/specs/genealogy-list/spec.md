@@ -126,7 +126,7 @@ since it cannot be selected. A kind with no record SHALL say that the file holds
 - **WHEN** a person record is declared as `0 INDI` with no identifier
 - **THEN** it is not listed
 
-#### Scenario: Five kinds
+#### Scenario: Four kinds
 - **WHEN** the list is shown
 - **THEN** its kind buttons read **People**, **Families**, **Sources**, **Places** and **Events**, in that
   order, and one of them is marked as active
