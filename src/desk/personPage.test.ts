@@ -6,7 +6,7 @@ import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
-import { factsOf, renderPersonPage, type FactKey, type PageHost } from "./personPage";
+import { factsOf, renderFactList, renderPersonPage, type FactKey, type PageHost } from "./personPage";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -16,7 +16,6 @@ function pageHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
@@ -145,15 +144,43 @@ describe("the person card", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I2@");
   });
 
-  it("selects a fact, and lets go of it when it is chosen again", () => {
+  it("opens the card of an event when its fact is chosen, by the row and by its name", () => {
     draw("@I1@");
-    container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
-    expect(host.select).toHaveBeenCalledWith("p:0");
+    const rows = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-fact")];
+    rows[0]?.click();
+    rows[1]?.querySelector<HTMLElement>(".gedcom-desk-fact-name")?.click();
 
-    draw("@I1@", { selected: "p:0" });
-    const selected = container.querySelector<HTMLElement>(".gedcom-desk-fact.is-selected");
-    selected?.click();
-    expect(host.select).toHaveBeenLastCalledWith(null);
+    expect(host.openRecord.mock.calls).toEqual([["event:@I1@:BIRT:0"], ["event:@I1@:DEAT:0"]]);
+    expect(host.select).not.toHaveBeenCalled();
+  });
+
+  it("opens the card of an event of a family the person married into, under the family", () => {
+    draw("@I1@");
+    const marriage = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-fact")].find((row) => row.textContent?.includes("Marriage"));
+    marriage?.click();
+
+    expect(host.openRecord).toHaveBeenCalledWith("event:@F3@:MARR:0");
+  });
+
+  it("opens the place of a fact, and not the event, when the place is pressed", () => {
+    draw("@I1@");
+    container.querySelector<HTMLElement>(".gedcom-desk-fact .gedcom-desk-fact-value .gedcom-desk-link")?.click();
+
+    expect(host.openRecord.mock.calls).toEqual([["place:warsaw, congress poland"]]);
+  });
+
+  it("gives a fact of a record with no identifier an inert row and a disabled name", () => {
+    const index = buildIndex(new GedcomLanguageService(["0 HEAD", "0 INDI", "1 NAME A /B/", "1 BIRT", "0 TRLR", ""].join("\n")));
+    const person = index.people[0];
+    container.empty();
+    if (person) {
+      renderFactList(container, [{ key: "p:0", event: { tag: "BIRT", citations: [], range: { start: { line: 3, character: 0 }, end: { line: 3, character: 6 } } } }], index, { selected: null }, host);
+    }
+
+    expect(container.querySelector(".gedcom-desk-fact")?.classList.contains("is-inert")).toBe(true);
+    expect(container.querySelector(".gedcom-desk-fact-name")?.hasAttribute("disabled")).toBe(true);
+    container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
+    expect(host.openRecord).not.toHaveBeenCalled();
   });
 
   it("shows in source the selected fact, or else the whole record", () => {
@@ -166,18 +193,6 @@ describe("the person card", () => {
     draw("@I1@", { index, selected: "p:0" });
     container.querySelector<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")?.click();
     expect(host.showInSource).toHaveBeenLastCalledWith(marie?.events[0]?.range);
-  });
-
-  it("unfolds the selected fact's sources beneath it, and its All evidence scrolls to the section", () => {
-    draw("@I1@");
-    expect(container.querySelector(".gedcom-desk-unfold")).toBeNull();
-
-    draw("@I1@", { selected: "p:0" });
-    expect(container.querySelector(".gedcom-desk-unfold")).not.toBeNull();
-    expect(container.textContent).not.toContain("No source of its own");
-    const [allEvidence] = container.querySelectorAll<HTMLElement>(".gedcom-desk-unfold .gedcom-desk-link");
-    allEvidence?.click();
-    expect(host.scrollToEvidence).toHaveBeenCalled();
   });
 
   it("shows a parent the file does not declare, with the way to its line", () => {
@@ -258,13 +273,19 @@ describe("the sections of a person card", () => {
     ]);
   });
 
-  it("selects a fact from the timeline, and a relative's entry opens the relative", () => {
+  it("opens the card of an event from the timeline, and a relative's entry opens the relative", () => {
     draw("@I1@");
     const entries = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
     entries.find((node) => node.textContent === "Birth")?.click();
     entries.find((node) => node.textContent === "Death of husband Pierre Curie")?.click();
 
-    expect(host.select).toHaveBeenCalledWith("p:0");
-    expect(host.openRecord).toHaveBeenCalledWith("@I2@");
+    expect(host.openRecord.mock.calls).toEqual([["event:@I1@:BIRT:0"], ["@I2@"]]);
+  });
+
+  it("opens the place of a timeline entry", () => {
+    draw("@I1@");
+    container.querySelector<HTMLElement>(".gedcom-desk-moment-detail .gedcom-desk-link")?.click();
+
+    expect(host.openRecord).toHaveBeenCalledWith(expect.stringMatching(/^place:/u));
   });
 });

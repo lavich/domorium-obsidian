@@ -12,6 +12,7 @@ import {
   nextSort,
   peopleShown,
   readListState,
+  recordKind,
   sourcesCited,
   type ListKind,
   type ListSort,
@@ -106,6 +107,7 @@ describe("what a row counts", () => {
   });
 
   it("has four columns for each kind", () => {
+    expect(columnsOf("events").map((column) => column.key)).toEqual(["event", "record", "date", "place"]);
     expect(columnsOf("people").map((column) => column.key)).toEqual(["name", "years", "place", "sources"]);
     expect(columnsOf("families").map((column) => column.key)).toEqual(["spouses", "marriage", "place", "children"]);
     expect(columnsOf("sources").map((column) => column.key)).toEqual(["title", "author", "repository", "citedBy"]);
@@ -226,6 +228,11 @@ describe("reading a saved list state", () => {
     });
   });
 
+  it("keeps the events as a kind and its sort", () => {
+    expect(readListState({ kind: "events", sort: { events: desc("date") } })).toEqual({ kind: "events", sort: { events: desc("date") } });
+    expect(readListState({ kind: "events", sort: { events: { by: "years", dir: "asc" } } })).toEqual({ kind: "events" });
+  });
+
   it("reads a value that is not an object as empty", () => {
     for (const value of [undefined, null, "list", ["people"], 3]) {
       expect(readListState(value)).toEqual({});
@@ -237,5 +244,11 @@ describe("which selection the list can show", () => {
   it("is a person, a family or a source, and nothing for a media record, a note or nobody", () => {
     expect(["@I1@", "@F3@", "@S2@"].map((xref) => listSelection(index, xref))).toEqual(["@I1@", "@F3@", "@S2@"]);
     expect(["@O5@", "@N1@", null].map((xref) => listSelection(index, xref))).toEqual([null, null, null]);
+  });
+
+  it("is an event the file names, which the list shows among the events", () => {
+    expect(recordKind(index, "event:@I1@:BIRT:0")).toBe("events");
+    expect(listSelection(index, "event:@I1@:BIRT:0")).toBe("event:@I1@:BIRT:0");
+    expect(listSelection(index, "event:@I1@:BIRT:999")).toBeNull();
   });
 });

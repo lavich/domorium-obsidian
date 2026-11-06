@@ -9,6 +9,9 @@ import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
 import type { NoteHit } from "./noteLinks";
+import { pageKind } from "./deskState";
+import { eventAt, eventTitle } from "./eventRows";
+import { renderEventPage } from "./eventPage";
 import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type FactKey, type PageHost } from "./personPage";
@@ -51,7 +54,8 @@ function recordName(index: GenealogyIndex, xref: string): string {
     return sourceTitle(source.title);
   }
   const media = index.media(xref);
-  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? t("desk.media");
+  const event = eventAt(index, xref);
+  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? (event ? `${eventTitle(event.event)} · ${recordName(index, event.owner)}` : t("desk.media"));
 }
 
 export function renderRecordCard(
@@ -115,10 +119,6 @@ export function renderRecordCard(
   }
 }
 
-function pageKind(index: GenealogyIndex, xref: string): boolean {
-  return Boolean(index.person(xref) ?? index.family(xref) ?? index.source(xref) ?? index.media(xref) ?? placeAt(index, xref));
-}
-
 function makeRoot(container: HTMLElement): HTMLElement {
   container.empty();
   const root = container.createDiv({ cls: "gedcom-card" });
@@ -163,7 +163,6 @@ function drawRecord(
     openRecord: (xref) => tab.select(xref),
     select: (key) => tab.selectFact(key),
     showInSource: (range) => tab.showInSource(range),
-    scrollToEvidence: () => scrollToEvidence(body),
     openFile: (path) => tab.openFile(path),
     setIcon: (element, icon) => view.setIcon(element, icon),
     portrait: (xref) => tab.portrait(xref),
@@ -173,6 +172,7 @@ function drawRecord(
   const source = person || family ? undefined : index.source(record);
   const media = person || family || source ? undefined : index.media(record);
   const place = person || family || source || media ? undefined : placeAt(index, record);
+  const event = person || family || source || media || place ? undefined : eventAt(index, record);
   if (person) {
     renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media) }, host);
   } else if (family) {
@@ -191,14 +191,16 @@ function drawRecord(
   } else if (place) {
     renderPlacePage(body, place, index, host);
     return;
+  } else if (event) {
+    renderEventPage(body, event, index, host);
   }
   renderEvidenceSection(
     body,
-    { index, record, fact: person || family ? fact : null, notes },
+    event ? { index, record: event.owner, fact: event.fact, notes } : { index, record, fact: person || family ? fact : null, notes },
     {
       openRecord: (xref) => tab.select(xref),
       showInSource: (range) => tab.showInSource(range),
-      wholeRecord: () => tab.selectFact(null),
+      wholeRecord: () => (event ? tab.select(event.owner) : tab.selectFact(null)),
       openNote: (path, line) => view.openNote(path, line),
     },
   );
@@ -206,10 +208,4 @@ function drawRecord(
 
 function missingAt(at: Position): MediaItem {
   return { content: { kind: "missing", target: "" }, at };
-}
-
-function scrollToEvidence(body: HTMLElement): void {
-  const heading = body.querySelector<HTMLElement>(".gedcom-card-evidence > h2");
-  const reduced = body.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-  heading?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
 }

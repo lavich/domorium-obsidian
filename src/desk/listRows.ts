@@ -1,13 +1,14 @@
 import type { FamilyRow, GenealogyIndex, PersonRow, SourceRow } from "../genealogy";
-import { UNNAMED, UNTITLED } from "../genealogy";
+import { UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
-import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
+import { familySortKey, familyTitle, personName, personSortKey, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
+import { eventAt, eventCells, eventRows, type EventRow } from "./eventRows";
 import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
-export type ListKind = "people" | "families" | "sources" | "places";
+export type ListKind = "people" | "families" | "sources" | "places" | "events";
 
-export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places"];
+export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places", "events"];
 
 export type SortKey =
   | "name"
@@ -21,7 +22,10 @@ export type SortKey =
   | "author"
   | "repository"
   | "citedBy"
-  | "events";
+  | "events"
+  | "event"
+  | "record"
+  | "date";
 
 export interface ListSort {
   by: SortKey;
@@ -33,7 +37,7 @@ export interface ListState {
   sort?: Partial<Record<ListKind, ListSort>>;
 }
 
-export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow;
+export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow | EventRow;
 
 export interface Column {
   key: SortKey;
@@ -64,6 +68,12 @@ const COLUMNS: Record<ListKind, Column[]> = {
     { key: "place", label: "list.column.place", numeric: false },
     { key: "events", label: "list.column.events", numeric: true },
     { key: "years", label: "list.column.years", numeric: false },
+  ],
+  events: [
+    { key: "event", label: "list.column.event", numeric: false },
+    { key: "record", label: "list.column.record", numeric: false },
+    { key: "date", label: "list.column.date", numeric: false },
+    { key: "place", label: "list.column.place", numeric: false },
   ],
 };
 
@@ -163,6 +173,9 @@ export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Ce
     const place = row as PlaceRow;
     return { texts: [place.name, String(place.events), yearsText(place)], gap: false };
   }
+  if (kind === "events") {
+    return { texts: eventCells(row as EventRow), gap: false };
+  }
   const source = row as SourceRow;
   return {
     texts: [
@@ -194,12 +207,7 @@ function sortValue(kind: ListKind, by: SortKey, row: ListRow, index: GenealogyIn
     const person = row as PersonRow;
     switch (by) {
       case "name":
-        if (person.name === UNNAMED) {
-          return undefined;
-        }
-        return person.surname !== undefined || person.given !== undefined
-          ? [person.surname ?? "", person.given ?? ""]
-          : [person.name];
+        return personSortKey(person);
       case "years":
         return person.birth?.year;
       case "place":
@@ -212,7 +220,7 @@ function sortValue(kind: ListKind, by: SortKey, row: ListRow, index: GenealogyIn
     const family = row as FamilyRow;
     switch (by) {
       case "spouses":
-        return family.spouseNames.length === 0 ? undefined : [familyTitle(family.spouseNames)];
+        return familySortKey(family.spouseNames);
       case "marriage":
         return family.marriage?.year;
       case "place":
@@ -247,6 +255,9 @@ export interface ListQuery {
 export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
   if (kind === "places") {
     return placeRows(index, { query, sort }, collator);
+  }
+  if (kind === "events") {
+    return eventRows(index, { query, sort }, collator);
   }
   const rows: ListRow[] =
     kind === "people" ? peopleShown(index, query) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);
@@ -296,7 +307,10 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   if (index.source(xref)) {
     return "sources";
   }
-  return placeAt(index, xref) ? "places" : null;
+  if (placeAt(index, xref)) {
+    return "places";
+  }
+  return eventAt(index, xref) ? "events" : null;
 }
 
 export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>

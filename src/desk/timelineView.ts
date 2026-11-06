@@ -1,5 +1,6 @@
 import { plural, t } from "../i18n";
 import { linkButton } from "./dom";
+import { renderEventDetail } from "./eventDetail";
 import { yearText } from "./labels";
 import { placeId } from "./placeRows";
 import type { PageHost } from "./personPage";
@@ -12,20 +13,20 @@ function renderEntry(list: HTMLElement, entry: TimelineEntry, host: PageHost): v
   const text = row.createDiv({ cls: "gedcom-desk-moment-text" });
   const what = text.createEl("button", { cls: "gedcom-desk-moment-what", text: entry.label });
   what.setAttribute("type", "button");
-  const fact = entry.fact;
+  const eventId = entry.eventId;
   const relative = entry.relative;
-  if (fact) {
-    what.addEventListener("click", () => host.select(fact));
+  if (eventId) {
+    what.addEventListener("click", () => host.openRecord(eventId));
   } else if (relative) {
     what.addEventListener("click", () => host.openRecord(relative.xref));
   } else {
     what.setAttribute("disabled", "");
   }
-  const detail = [entry.event.date?.text, entry.event.value, entry.event.place]
-    .filter(Boolean)
-    .join(" · ");
-  if (detail) {
-    text.createDiv({ cls: "gedcom-desk-moment-detail", text: detail });
+  const detail = text.createDiv({ cls: "gedcom-desk-moment-detail" });
+  const { date, place, value } = entry.event;
+  const shown = renderEventDetail(detail, { ...(date?.text ? { date: date.text } : {}), ...(place ? { place } : {}), ...(value ? { text: value } : {}) }, host);
+  if (!shown) {
+    detail.remove();
   }
 }
 

@@ -76,6 +76,7 @@ import {
   type Origin,
   type ViewKind,
 } from "./desk/deskState";
+import { eventAt, eventOwner } from "./desk/eventRows";
 import { listSelection } from "./desk/listRows";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
@@ -474,11 +475,11 @@ export class GedcomView extends TextFileView implements CardTab {
     } else if (rules.addsStep === "follow") {
       this.recordHistory.follow(xref);
     }
-    this.markInViews(rules.revealsView);
+    this.markInViews(rules.revealsView, origin === "card");
     if (this.modes.shown === "source" && rules.cursorToRecord) {
-      const record = this.records().find((entry) => entry.identifier === xref);
-      if (record) {
-        this.placeCursor(positionToOffset(this.editor.state.doc, record.start), rules.editorFocus);
+      const start = eventAt(this.genealogy(), xref)?.event.range.start ?? this.records().find((entry) => entry.identifier === xref)?.start;
+      if (start) {
+        this.placeCursor(positionToOffset(this.editor.state.doc, start), rules.editorFocus);
       }
     }
     this.app.workspace.requestSaveLayout();
@@ -569,12 +570,12 @@ export class GedcomView extends TextFileView implements CardTab {
     }
   }
 
-  private markInViews(reveal: boolean): void {
+  private markInViews(reveal: boolean, fromCard = false): void {
     const selected = this.modes.shownRecord();
     const person = selected !== null && this.genealogy().person(selected) ? selected : null;
     this.views.select("graph", person, reveal);
     this.views.select("timeline", person, reveal);
-    this.views.select("list", listSelection(this.genealogy(), selected), reveal);
+    this.views.select("list", listSelection(this.genealogy(), selected), reveal, fromCard);
   }
 
   followMove(move: Move, documentPath: string): Outcome {
@@ -744,7 +745,7 @@ export class GedcomView extends TextFileView implements CardTab {
     if (!isViewMode(mode) || !this.modes.needsDraw(this.containerEl.isShown() && this.viewsEl.isShown())) {
       return;
     }
-    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), this.modes.selected ?? undefined);
+    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), eventOwner(this.modes.selected) ?? this.modes.selected ?? undefined);
   }
 
   onResize(): void {

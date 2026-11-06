@@ -1,5 +1,6 @@
 import type { GenealogyIndex, PersonEvent } from "../genealogy";
 import { least, most } from "./fileTimeline";
+import { foldText } from "./foldText";
 import { yearText } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
 import type { ListSort } from "./listRows";
@@ -13,20 +14,10 @@ export interface PlaceRow {
 }
 
 const LINE_WIDTH = 100_000;
-const TRANSLITERATION: Record<string, string> = { ł: "l", ß: "ss", ø: "o", đ: "d", æ: "ae", œ: "oe", ı: "i" };
-
 const PLACE_PREFIX = "place:";
 
 function placeKey(text: string): string {
   return text.trim().replace(/\s+/gu, " ").normalize("NFC").toLowerCase();
-}
-
-function foldText(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[łßøđæœı]/gu, (letter) => TRANSLITERATION[letter] ?? letter);
 }
 
 const held = new WeakMap<GenealogyIndex, PlaceRow[]>();

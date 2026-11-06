@@ -633,6 +633,18 @@ describe("the list of a tab", () => {
     expect(host.select).toHaveBeenNthCalledWith(2, "@S2@");
   });
 
+  it("carries a selection made from the card to a list that is drawn later", () => {
+    const tab = views();
+    tab.show("list", index, { list: { kind: "places" } });
+    tab.show("graph", index, {});
+    tab.select("list", "@I2@", true, true);
+
+    tab.show("list", index, tab.memory());
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["People"]);
+    expect(row("@I2@")?.classList.contains("is-selected")).toBe(true);
+  });
+
   it("keeps the kind a selection from outside switched through a later show with the memory the tab holds", () => {
     let memory: ViewMemory = {};
     const tab = views();

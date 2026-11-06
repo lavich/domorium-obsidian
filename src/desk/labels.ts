@@ -10,6 +10,17 @@ export function personName(row: { name: string }): string {
   return row.name === UNNAMED ? t("desk.unnamed") : row.name;
 }
 
+export function personSortKey(row: Pick<PersonRow, "name" | "given" | "surname">): string[] | undefined {
+  if (row.name === UNNAMED) {
+    return undefined;
+  }
+  return row.surname !== undefined || row.given !== undefined ? [row.surname ?? "", row.given ?? ""] : [row.name];
+}
+
+export function familySortKey(spouseNames: string[]): string[] | undefined {
+  return spouseNames.length === 0 ? undefined : [familyTitle(spouseNames)];
+}
+
 export function sourceTitle(title: string): string {
   return title === UNTITLED ? t("desk.untitled") : title;
 }

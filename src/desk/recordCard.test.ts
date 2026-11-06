@@ -171,6 +171,79 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(calls.select).toHaveBeenCalledTimes(1);
   });
 
+  it("shows an event with its record, date and place as links, and its evidence below", () => {
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+    const links = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-event-detail .gedcom-desk-link")];
+    links[0]?.click();
+    links[1]?.click();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
+    expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
+    expect(texts(".gedcom-desk-event-value")).toEqual(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    expect(texts(".gedcom-card-evidence .gedcom-desk-evidence-context > div")).toEqual(["Birth", "7 NOV 1867 · Warsaw, Congress Poland"]);
+    expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
+  });
+
+  it("opens the lines of an event through the tab", () => {
+    const show = vi.fn<(range: unknown) => void>();
+    tab.showInSource = (range) => {
+      show(range);
+    };
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")].find((node) => node.textContent === "Show in source")?.click();
+
+    expect(show).toHaveBeenCalledWith(index.person("@I1@")?.events[0]?.range);
+  });
+
+  it("says an event with no date, place or source states none", () => {
+    index = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 OCCU Cooper\n0 TRLR");
+    state.record = "event:@I1@:OCCU:0";
+    draw();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Occupation · Cooper"]);
+    expect(texts(".gedcom-desk-none")).toContain("This event states no date, place or source.");
+  });
+
+  it("links a cited source record, and shows an inline citation as text", () => {
+    index = indexOf(
+      ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S1@", "2 SOUR An inline note", "0 @S1@ SOUR", "1 TITL Parish registers", "0 TRLR"].join("\n"),
+    );
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+    container.querySelector<HTMLElement>("button.gedcom-desk-cite")?.click();
+
+    expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish registers"]);
+    expect(texts(".gedcom-desk-cite-inline")).toEqual(["An inline note"]);
+    expect(calls.select).toHaveBeenCalledWith("@S1@");
+  });
+
+  it("marks a citation of a source the file does not declare as missing", () => {
+    index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S9@", "0 TRLR"].join("\n"));
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+
+    expect(container.querySelectorAll(".gedcom-desk-missing")).toHaveLength(1);
+  });
+
+  it("goes back from the evidence of an event to its whole record", () => {
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-card-evidence .gedcom-desk-link")].find((node) => node.textContent?.startsWith("←"))?.click();
+
+    expect(calls.select).toHaveBeenCalledWith("@I1@");
+  });
+
+  it("speaks Russian on an event's card", () => {
+    setLanguage("ru");
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Рождение"]);
+    expect(texts(".gedcom-desk-event-label")).toEqual(["Запись", "Дата", "Место"]);
+  });
+
   it("selects a relative through the tab", () => {
     draw();
     [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]
@@ -250,19 +323,6 @@ describe("redrawing the card", () => {
     draw();
 
     expect(document.activeElement).toBe(outside);
-  });
-});
-
-describe("All evidence and selecting a fact", () => {
-  it("scrolls the Evidence heading into view, and selecting a fact does not", () => {
-    state.fact = "p:0";
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
-    expect(scrollIntoView).not.toHaveBeenCalled();
-    expect(calls.selectFact).toHaveBeenCalled();
-
-    container.querySelector<HTMLElement>(".gedcom-desk-unfold .gedcom-desk-link")?.click();
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 });
 

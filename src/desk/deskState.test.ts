@@ -119,6 +119,14 @@ describe("which records have a card", () => {
     expect(pageKind(named, "place:paris, france")).toBe("place");
     expect(pageKind(index(), "place:atlantis")).toBeNull();
   });
+
+  it("gives an event the file names a card, and one it does not name none", () => {
+    const curie = curieIndex();
+
+    expect(pageKind(curie, "event:@I1@:BIRT:0")).toBe("event");
+    expect(pageKind(curie, "event:@F3@:MARR:0")).toBe("event");
+    expect(pageKind(curie, "event:@I1@:BIRT:999")).toBeNull();
+  });
 });
 
 describe("where a link into a record lands", () => {
@@ -157,6 +165,11 @@ describe("where the source opens when the tab switches to it", () => {
     expect(shownRange(curie, "@F3@", "f:0")).toEqual(curie.family("@F3@")?.events[0]?.range);
     expect(shownRange(curie, "@S1@", null)).toEqual(curie.source("@S1@")?.range);
     expect(shownRange(curie, "@O5@", null)).toEqual(curie.media("@O5@")?.range);
+  });
+
+  it("opens on the lines of an event", () => {
+    expect(shownRange(curie, "event:@I1@:BIRT:0", null)).toEqual(marie?.events[0]?.range);
+    expect(shownRange(curie, "event:@F3@:MARR:0", null)).toEqual(curie.family("@F3@")?.events[0]?.range);
   });
 
   it("leaves a cursor already inside the lines where it is", () => {

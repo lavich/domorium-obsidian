@@ -15,7 +15,6 @@ function deskHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost & MediaHost;
 }

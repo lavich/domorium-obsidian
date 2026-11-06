@@ -10,6 +10,11 @@ describe("when the cursor's record is selected", () => {
     expect(shouldFollowCursor(rest)).toBe(true);
   });
 
+  it("is not for the record of the selected event", () => {
+    expect(shouldFollowCursor({ ...rest, selected: "event:@I1@:BIRT:0", atCursor: "@I1@" })).toBe(false);
+    expect(shouldFollowCursor({ ...rest, selected: "event:@I1@:BIRT:0", atCursor: "@I2@" })).toBe(true);
+  });
+
   it("is not for the selected record, a record with no card, or no record", () => {
     expect(shouldFollowCursor({ ...rest, atCursor: "@I1@" })).toBe(false);
     expect(shouldFollowCursor({ ...rest, hasCard: false })).toBe(false);

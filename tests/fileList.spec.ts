@@ -712,6 +712,14 @@ for (const viewport of [WIDE, PHONE]) {
       await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
     });
 
+    test("switches to the people for a person chosen in the card of a place", async ({ page }) => {
+      await mountPlaces(page);
+      await page.evaluate(() => window.tab.select("@I2@", true, true));
+
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("People");
+      await expect(rowOf(page, "@I2@")).toHaveAttribute("aria-selected", "true");
+    });
+
     test("is reached by keyboard and selects by Enter", async ({ page }) => {
       await mountPlaces(page);
       await page.locator(".gedcom-list-scroll").focus();
@@ -725,7 +733,7 @@ for (const viewport of [WIDE, PHONE]) {
     test("has no button in the row of the kinds but the kinds", async ({ page }) => {
       await mountPlaces(page);
 
-      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(4);
+      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(5);
       await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
     });
 
@@ -741,6 +749,138 @@ for (const viewport of [WIDE, PHONE]) {
       await mountPlaces(page);
 
       expect(await sidewaysOverflow(page)).toBe(false);
+    });
+  });
+}
+
+for (const viewport of [WIDE, PHONE]) {
+  const phone = viewport.width < 400;
+
+  test.describe(`the events of the list at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    const mountEvents = (page: Page, options: TabOptions = {}) =>
+      mountList(page, { events: true, phone, touch: phone, memory: { list: { kind: "events" } }, ...options });
+    const event = (page: Page, owner: string, tag: string) => page.locator(`.gedcom-list-row[data-key="event:${owner}:${tag}:0"]`);
+    const cellsOfColumn = (page: Page, position: number) =>
+      rows(page).evaluateAll((all, at) => all.map((row) => row.querySelectorAll(".gedcom-list-cell")[at]?.textContent ?? ""), position);
+
+    test("lists the events with the record, the date and the place", async ({ page }) => {
+      await mountEvents(page);
+
+      await expect(page.locator(".gedcom-list-count")).toHaveText("61 events");
+      const cells = await event(page, "@I1@", "BIRT").locator(".gedcom-list-cell").allInnerTexts();
+      expect(cells.map((cell) => cell.trim())).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    });
+
+    test("tells the awards apart by their text", async ({ page }) => {
+      await mountEvents(page);
+      await searchFor(page, "nobel prize in physics");
+
+      expect(await names(page)).toEqual(["Award · Nobel Prize in Physics", "Award · Nobel Prize in Physics"]);
+    });
+
+    test("sorts by each column in three presses", async ({ page }) => {
+      test.skip(phone, "the headers are a menu on a phone");
+      await mountEvents(page);
+      const order = await names(page);
+
+      await header(page, "Record").click();
+      await header(page, "Record").click();
+      await header(page, "Record").click();
+
+      expect(await names(page)).toEqual(order);
+      await header(page, "Date").click();
+      expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ events: { by: "date", dir: "asc" } });
+      expect((await cellsOfColumn(page, 2)).filter(Boolean)[0]).toBe("28 AUG 1827");
+      await header(page, "Event").click();
+      expect((await names(page))[0]).toBe("Award · Nobel Prize in Chemistry");
+      await header(page, "Place").click();
+      expect((await cellsOfColumn(page, 3))[0]).toBe("Montpellier, France");
+    });
+
+    test("selects the record and the event of a row, and marks only that row", async ({ page }) => {
+      await mountEvents(page);
+      await event(page, "@I1@", "DEAT").click();
+
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
+      await expect(event(page, "@I1@", "DEAT")).toHaveAttribute("aria-selected", "true");
+      expect(await selected(page)).toEqual(["event:@I1@:DEAT:0"]);
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Events");
+    });
+
+    test("selects by Enter after moving with the arrows", async ({ page }) => {
+      await mountEvents(page);
+      await page.locator(".gedcom-list-scroll").focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
+      expect(await selected(page)).toEqual(["event:@I1@:DEAT:0"]);
+    });
+
+    test("brings an event selected from outside into view and marks it", async ({ page }) => {
+      await mountEvents(page, { doc: generated(500) });
+      await page.evaluate(() => window.tab.select("event:@I400@:BIRT:0", true));
+
+      const row = event(page, "@I400@", "BIRT");
+      await expect(row).toHaveAttribute("aria-selected", "true");
+      const top = (await row.boundingBox())?.y ?? -1;
+      expect(top).toBeGreaterThan(0);
+      expect(top).toBeLessThan(viewport.height);
+    });
+
+    test("says so when nothing matches", async ({ page }) => {
+      await mountEvents(page);
+      await searchFor(page, "zzz");
+
+      await expect(page.locator(".gedcom-list-none")).toHaveText("Nothing matches “zzz”. Search covers events, records, dates and places.");
+    });
+
+    test("stays on the events and marks no row for a record selected elsewhere", async ({ page }) => {
+      await mountEvents(page);
+      await page.evaluate(() => window.tab.select("@I2@", true));
+
+      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Events");
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(0);
+    });
+
+    test("has five kind buttons, no action and no sideways scroll", async ({ page }) => {
+      await mountEvents(page);
+
+      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(5);
+      await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
+      expect(await sidewaysOverflow(page)).toBe(false);
+    });
+
+    test("keeps every kind label whole on a narrow phone, in Russian", async ({ page }) => {
+      test.skip(!phone, "the kind bar is only this narrow on a phone");
+      await page.setViewportSize({ width: 360, height: 800 });
+      await mountEvents(page, { language: "ru" });
+
+      const clipped = await page.locator(".gedcom-list-seg-button").evaluateAll((buttons) => buttons.filter((one) => one.scrollWidth > one.clientWidth).length);
+      expect(clipped).toBe(0);
+    });
+
+    test("selects an event with Space", async ({ page }) => {
+      await mountEvents(page);
+      await page.locator(".gedcom-list-scroll").focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Space");
+
+      expect(await selected(page)).toEqual(["event:@I1@:DEAT:0"]);
+    });
+
+    test("takes two lines of a finger's height on a phone, the event and its date over the record and the place", async ({ page }) => {
+      test.skip(!phone, "a wide tab keeps one line");
+      await mountEvents(page);
+
+      const row = event(page, "@I1@", "BIRT");
+      const [first, second, third, fourth] = await row.locator(".gedcom-list-cell").evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect()));
+      expect((await row.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+      expect(Math.abs((third?.top ?? 0) - (first?.top ?? 100))).toBeLessThan(3);
+      expect(Math.abs((second?.top ?? 0) - (fourth?.top ?? 100))).toBeLessThan(3);
+      expect(second?.top ?? 0).toBeGreaterThan(first?.top ?? 0);
     });
   });
 }

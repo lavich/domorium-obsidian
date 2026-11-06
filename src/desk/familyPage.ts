@@ -1,3 +1,4 @@
+import { eventIdOf } from "./eventRows";
 import type { Family, GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
 import { familyTitle, shortPlace } from "./labels";
@@ -15,7 +16,12 @@ import {
 } from "./personPage";
 
 export function familyFacts(family: Family): Fact[] {
-  return family.events.map((event, at) => ({ key: `f:${at}`, event }));
+  const owner = family.xref;
+  return family.events.map((event, at) => ({
+    key: `f:${at}`,
+    ...(owner === undefined ? {} : { eventId: eventIdOf(owner, family.events, event) }),
+    event,
+  }));
 }
 
 export function familyFactByKey(family: Family, key: FactKey | null): Fact | undefined {
