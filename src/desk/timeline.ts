@@ -19,11 +19,6 @@ export interface Timeline {
   undated: TimelineEntry[];
 }
 
-export interface PlaceEntry {
-  place: string;
-  events: string[];
-}
-
 type Relation = "parent" | "sibling" | "spouse" | "child" | "grandchild";
 
 function relationKey(relation: Relation, sex: string | undefined): MessageKey {
@@ -144,18 +139,4 @@ export function timelineOf(person: Person, index: GenealogyIndex): Timeline {
   const order = new Map(dated.map((entry, at) => [entry, at]));
   dated.sort((a, b) => (a.year ?? 0) - (b.year ?? 0) || (order.get(a) ?? 0) - (order.get(b) ?? 0));
   return { entries: dated, undated: own.filter((entry) => entry.year === undefined) };
-}
-
-export function placesOf(timeline: Timeline): PlaceEntry[] {
-  const places = new Map<string, string[]>();
-  for (const entry of [...timeline.entries, ...timeline.undated]) {
-    const place = entry.event.place;
-    if (!place) {
-      continue;
-    }
-    const events = places.get(place) ?? [];
-    events.push(entry.label);
-    places.set(place, events);
-  }
-  return [...places].map(([place, events]) => ({ place, events }));
 }

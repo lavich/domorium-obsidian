@@ -21,7 +21,7 @@ adapted per editor.
 - An optional genealogy interface, off until you turn it on: a graph and a
   timeline of the whole file, a sortable list of its people, families,
   sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
-  record with their facts, names, family, timeline, places and what each fact
+  record with their facts, names, family, timeline and what each fact
   rests on
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
@@ -103,12 +103,12 @@ right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a tap on a
 row of the list, opens. A person's card lists their facts in the order the record states
-them, each marked with how many sources it cites itself, or that it cites none;
-their other names; their parents, siblings, spouses and children, each of whom
-selects that person; their media; a **timeline** of their events and their close
-relatives', and the **places** it names, each folded under its heading, which
-shows how many it holds, and closed when a card opens; and last the **evidence** — what the
-whole record rests on. Tapping a fact, or
+them, each marked with how many sources it cites itself where it cites any, and
+a line above them saying how many have none; their other names; their parents,
+siblings, spouses and children, each of whom selects that person; their media; a
+**timeline** of their events and their close relatives', folded under its heading,
+which shows how many it holds, and closed when a card opens; and last the
+**evidence** — what the whole record rests on. Tapping a fact, or
 an entry of the timeline, opens the card of its event: the person or the family it
 belongs to as a link above its name, its date and place under it, and the evidence
 that is its own below; a place named there opens the card of that place, which lists

@@ -115,7 +115,7 @@ describe("the page of each kind of record, with its evidence", () => {
   it("shows Marie's sections in order, ending with Evidence", () => {
     draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Facts", "Other names", "Family", "Timeline", "Places", "Evidence"]);
+    expect(texts(".gedcom-card-body h2")).toEqual(["Facts", "Other names", "Family", "Timeline", "Evidence"]);
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
@@ -158,6 +158,15 @@ describe("the page of each kind of record, with its evidence", () => {
 
     expect(texts(".gedcom-desk-note-name")).toEqual(["Radium"]);
     expect(view.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
+  });
+
+  it("lists no note and none of the record's sources on the card of an event", () => {
+    state.record = "event:@I1@:BIRT:0";
+    draw([{ path: "Notes/Radium.md", name: "Radium", lines: [{ line: 1, before: "by ", link: "Marie", after: "" }] }]);
+
+    expect(container.querySelector(".gedcom-desk-note")).toBeNull();
+    expect(container.querySelector(".gedcom-desk-cite")).toBeNull();
+    expect(texts(".gedcom-card-body h2")).toEqual(["Evidence"]);
   });
 
   it("opens the card of an event from a place's card", () => {

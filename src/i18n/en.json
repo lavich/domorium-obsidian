@@ -113,7 +113,7 @@
   "desk.notRecorded": "Not recorded",
   "desk.married": "Married {when}",
   "desk.with": "with {name}",
-  "desk.noSource": "No source",
+  "desk.unsourced": "Facts without a source: {count} of {total}",
   "desk.noDetails": "Recorded, no details",
   "desk.born": "b. {year}",
   "desk.yearBce": "{year} BCE",
@@ -130,7 +130,7 @@
   "evidence.title": "Evidence",
   "evidence.factSources": "Sources of this fact",
   "evidence.recordSources": "Sources of the record",
-  "evidence.belowBelong": "The sources below belong to the whole record and may not support this fact.",
+  "evidence.recordOnItsCard": "The sources of the whole record are on its card.",
   "evidence.recordNone": "The record cites nothing either.",
   "evidence.recordEmpty": "The record cites no source.",
   "evidence.inline": "Described in the record, not as a source record",
@@ -217,7 +217,6 @@
   "timeline.ofParents": "{event} of parents",
   "timeline.undated": "Undated",
   "timeline.empty": "No event has a year to place it by.",
-  "places.empty": "No event names a place.",
   "places.count": {
     "one": "{count} event",
     "other": "{count} events"
@@ -280,7 +279,6 @@
   "card.nothing": "Select a record in the graph, the timeline or the list.",
   "card.empty": "The file holds nothing to show.",
   "desk.timeline": "Timeline",
-  "desk.places": "Places",
   "desk.eventStatesNothing": "This event states no date, place or source.",
   "desk.placeEvents": "Events",
   "card.announce": "Shown: {name}",

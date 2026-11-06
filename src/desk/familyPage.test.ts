@@ -51,12 +51,11 @@ describe("the family page", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
-  it("lists the family's facts with their source state", () => {
+  it("lists the family's facts, with no mark on one that cites no source, and says so above them", () => {
     draw("@F3@");
 
-    expect(texts(".gedcom-desk-fact")).toEqual([
-      "Marriage26 JUL 1895 · Sceaux, FranceNo source",
-    ]);
+    expect(texts(".gedcom-desk-fact")).toEqual(["Marriage26 JUL 1895 · Sceaux, France"]);
+    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 1 of 1"]);
   });
 
   it("has a Facts section and a Family section", () => {

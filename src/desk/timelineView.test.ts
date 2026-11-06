@@ -6,8 +6,8 @@ import { buildIndex } from "../genealogy";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import type { PageHost } from "./personPage";
-import { placesOf, timelineOf } from "./timeline";
-import { renderPlaces, renderTimeline } from "./timelineView";
+import { timelineOf } from "./timeline";
+import { renderTimeline } from "./timelineView";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -90,27 +90,12 @@ describe("the timeline", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I2@");
     expect(host.openRecord).toHaveBeenCalledWith("event:@I1@:BIRT:0");
   });
-});
 
-describe("the places", () => {
-  it("lists each place with its events and their count", () => {
-    const marie = index.person("@I1@");
-    if (marie) {
-      renderPlaces(container, placesOf(timelineOf(marie, index)), host);
-    }
-
-    expect(texts(".gedcom-desk-place-name")).toEqual([
-      "Warsaw, Congress Poland", "Sceaux, France", "Paris, France", "Passy, Haute-Savoie, France",
-    ]);
-    expect(texts(".gedcom-desk-place-count")[1]).toBe("1 event");
-  });
-
-  it("opens the place of a row", () => {
-    const marie = index.person("@I1@");
-    if (marie) {
-      renderPlaces(container, placesOf(timelineOf(marie, index)), host);
-    }
-    container.querySelectorAll<HTMLElement>(".gedcom-desk-place-name")[1]?.click();
+  it("opens the place of an entry", () => {
+    draw();
+    const link = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-detail .gedcom-desk-link")]
+      .find((one) => one.textContent === "Sceaux, France");
+    link?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith("place:sceaux, france");
   });

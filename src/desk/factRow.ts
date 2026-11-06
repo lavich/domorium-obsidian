@@ -43,8 +43,7 @@ export function renderEventRow(list: HTMLElement, content: EventRowContent, host
     value.setText(t("desk.noDetails"));
   }
   value.toggleClass("is-empty", !shown && !record);
-  row.createSpan({
-    cls: ["gedcom-desk-chip", citations > 0 ? "has-source" : "no-source"],
-    text: citations > 0 ? plural("desk.sources", citations) : t("desk.noSource"),
-  });
+  if (citations > 0) {
+    row.createSpan({ cls: ["gedcom-desk-chip", "has-source"], text: plural("desk.sources", citations) });
+  }
 }

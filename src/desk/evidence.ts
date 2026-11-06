@@ -46,13 +46,10 @@ export function renderEvidenceSection(
       const notice = body.createDiv({ cls: "gedcom-desk-notice" });
       notice.createDiv({ cls: "gedcom-desk-notice-title", text: t("desk.noOwnSource") });
       notice.createDiv({
-        text: t(ofRecord.length > 0 ? "evidence.belowBelong" : "evidence.recordNone"),
+        text: t(ofRecord.length > 0 ? "evidence.recordOnItsCard" : "evidence.recordNone"),
       });
     }
-    body.createEl("h3", {
-      cls: ["gedcom-desk-subsection", "gedcom-desk-scope"],
-      text: t("desk.wholeRecord"),
-    });
+    return;
   }
 
   body.createEl("h3", {

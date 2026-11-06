@@ -319,7 +319,7 @@ test.describe("the Obsidian theme", () => {
 });
 
 test.describe("the research desk in the Obsidian theme", () => {
-  test("draws its text, borders and the no-source mark from Obsidian's variables", async ({
+  test("draws its text, borders and the line about facts without a source from Obsidian's variables", async ({
     page,
   }) => {
     await page.goto(pathToFileURL(resolve("harness/desk.html")).href);
@@ -333,7 +333,7 @@ test.describe("the research desk in the Obsidian theme", () => {
       );
 
     expect(await style(".gedcom-desk-title", "color")).toBe(DARK_DESK.normal);
-    expect(await style(".gedcom-desk-chip.no-source", "color")).toBe(DARK_DESK.muted);
+    expect(await style(".gedcom-desk-unsourced", "color")).toBe(DARK_DESK.muted);
     expect(await style(".gedcom-desk-facts", "border-top-color")).toBe(DARK_DESK.border);
     expect(await style(".gedcom-desk-person", "color")).toBe(DARK_DESK.link);
   });

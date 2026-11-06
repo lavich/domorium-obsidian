@@ -44,10 +44,10 @@ for (const size of SIZES) {
       await mountDesk(page, { width: size.width, phone: size.phone });
     });
 
-    test("runs Facts, Other names, Family, Media, Timeline, Places and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
+    test("runs Facts, Other names, Family, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
       await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-        "Facts", "Other names", "Family", "Media", "Timeline", "Places", "Evidence",
+        "Facts", "Other names", "Family", "Media", "Timeline", "Evidence",
       ]);
       const tops = await page
         .locator(".gedcom-card-body h2.gedcom-desk-section")
@@ -106,7 +106,7 @@ for (const size of SIZES) {
     });
 
     test("opens the card of an event when a fact is tapped, and Back returns to her card", async ({ page }) => {
-      await factNamed(page, "Birth").click();
+      await factNamed(page, "Birth").locator(".gedcom-desk-fact-name").click();
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
       await expect(page.locator(".gedcom-card-evidence")).toBeVisible();
@@ -146,13 +146,15 @@ for (const size of SIZES) {
     });
 
     test("shows the evidence of her birth on its card, and returns to her by the record at its top", async ({ page }) => {
-      await factNamed(page, "Birth").click();
+      await factNamed(page, "Birth").locator(".gedcom-desk-fact-name").click();
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-      await expect(page.locator(".gedcom-card-evidence .gedcom-desk-subsection").first()).toHaveText("Sources of this fact");
+      await expect(page.locator(".gedcom-card-evidence .gedcom-desk-subsection")).toHaveText(["Sources of this fact"]);
       await expect(page.locator(".gedcom-desk-evidence-head")).toHaveCount(0);
+      await expect(page.locator(".gedcom-desk-note, .gedcom-desk-cite")).toHaveCount(0);
 
       await page.locator(".gedcom-desk-event-owner .gedcom-desk-link").click();
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
+      await expect(page.locator(".gedcom-card-evidence .gedcom-desk-subsection").first()).toContainText("Sources of the record");
     });
   });
 }
@@ -351,7 +353,7 @@ test.describe("the controls of a card", () => {
     await page.mouse.up();
   });
 
-  test("are muted, and the mark of a fact without a source is not orange", async ({ page }) => {
+  test("are muted, and the line about facts without a source is muted, not orange", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page);
     const colour = (selector: string, property: "color" | "backgroundColor") =>
@@ -359,7 +361,9 @@ test.describe("the controls of a card", () => {
     const muted = await colour(".gedcom-desk-subtitle", "color");
 
     expect(await colour("h2.gedcom-desk-section", "color")).toBe(muted);
-    expect(await colour(".gedcom-desk-chip.no-source", "backgroundColor")).toBe("rgba(0, 0, 0, 0)");
+    expect(await colour(".gedcom-desk-unsourced", "color")).toBe(muted);
+    expect(await colour(".gedcom-desk-unsourced", "backgroundColor")).toBe("rgba(0, 0, 0, 0)");
+    await expect(page.locator(".gedcom-desk-unsourced + .gedcom-desk-facts")).toHaveCount(1);
   });
 });
 
