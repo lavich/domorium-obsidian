@@ -17,6 +17,8 @@ Every group ends with `npm run check` exiting 0.
 - [x] 2.3 The cursor in the record of the selected event keeps the event: `eventOwner` in `TabModes.setMode` and `shouldFollowCursor`. Test in `src/desk/followRules.test.ts` and `src/desk/tabModes.test.ts`.
 - [x] 2.4 The harness of the desk asks `pageKind` in `exists`, so Back and Forward reach events and places; the event card in `tests/desk.spec.ts` (its content, a link to the record, Back to the event, no sideways scroll in a narrow column and on a phone); the card's styles in `styles.css`.
 
+- [x] 2.6 A fact opens its event: `eventIdOf`, the fact rows and entries carrying ids, the place as a link (`src/desk/eventDetail.ts`), no unfold, the Evidence section on the event card, the notes of an event's record. Test in `src/desk/personPage.test.ts`, `src/desk/familyPage.test.ts`, `src/desk/timelineView.test.ts`, `src/desk/recordCard.test.ts` and `tests/desk.spec.ts` (a fact, a family's fact, a timeline entry and a place open the right card; Back returns; the row's look).
+
 ## 3. Documents
 
 - [x] 3.1 `README.md` and `demo-vault/Start here.md` say what the Events kind lists and what a click opens. Test: none.

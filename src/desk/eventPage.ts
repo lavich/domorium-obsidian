@@ -2,7 +2,7 @@ import type { GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
 import { linkButton } from "./dom";
 import { eventTitle, type EventTarget } from "./eventRows";
-import { familyTitle, personName, sourceTitle } from "./labels";
+import { familyTitle, personName } from "./labels";
 import type { PageHost } from "./personPage";
 import { placeId } from "./placeRows";
 
@@ -35,20 +35,7 @@ export function renderEventPage(container: HTMLElement, target: EventTarget, ind
     linkButton(detail(t("desk.eventPlace")), place, () => host.openRecord(placeId(place)));
   }
 
-  const cited = event.citations.filter((citation) => citation.source !== undefined || Boolean(citation.inline));
-  if (cited.length > 0) {
-    container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.eventSources") });
-    const sources = container.createDiv({ cls: "gedcom-desk-event-sources" });
-    for (const citation of cited) {
-      const record = citation.source;
-      if (record !== undefined && index.source(record) !== undefined) {
-        linkButton(sources, sourceTitle(index.source(record)?.title ?? record), () => host.openRecord(record));
-      } else {
-        sources.createDiv({ cls: "gedcom-desk-unfold-source", text: citation.inline ?? record ?? "" });
-      }
-    }
-  }
-  if (!event.date?.text && !place && cited.length === 0) {
+  if (!event.date?.text && !place && event.citations.length === 0) {
     container.createDiv({ cls: "gedcom-desk-none", text: t("desk.eventStatesNothing") });
   }
 }

@@ -86,30 +86,25 @@ for (const size of SIZES) {
       await expect(back(page)).toBeInViewport();
     });
 
-    test("unfolds a tapped fact, and All evidence brings the Evidence heading into view", async ({ page }) => {
-      const heading = page.locator(".gedcom-card-evidence > h2");
-      await expect(heading).not.toBeInViewport();
+    test("opens the card of an event when a fact is tapped, and Back returns to her card", async ({ page }) => {
       await factNamed(page, "Birth").click();
 
-      await expect(page.locator(".gedcom-desk-unfold")).toBeVisible();
-      await expect(page.getByText("No source of its own")).toHaveCount(1);
-      await expect(heading).not.toBeInViewport();
-      await page.locator(".gedcom-desk-unfold .gedcom-desk-link", { hasText: "All evidence" }).click();
-      await expect(heading).toBeInViewport();
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
+      await expect(page.locator(".gedcom-card-evidence")).toBeVisible();
+      await back(page).click();
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     });
 
-    test("leaves the card scrolled where it was when a fact is selected in it", async ({ page }) => {
-      await page.locator(".gedcom-card-body").evaluate((body) => {
-        const timeline = [...body.querySelectorAll("h2")].find((one) => one.textContent === "Timeline");
-        body.scrollTop = (timeline as HTMLElement).offsetTop - 40;
-      });
-      const before = await scrollTopOf(page);
-      await page
-        .locator(".gedcom-desk-moment-what", { hasText: "Marriage with Pierre Curie" })
-        .evaluate((entry) => (entry as HTMLElement).click());
+    test("opens the place of a fact, not the event", async ({ page }) => {
+      await factNamed(page, "Birth").locator(".gedcom-desk-link").click();
 
-      await expect(page.locator(".gedcom-desk-fact.is-selected")).toHaveCount(1);
-      expect(await scrollTopOf(page)).toBe(before);
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
+    });
+
+    test("opens the card of an event from the timeline", async ({ page }) => {
+      await page.locator(".gedcom-desk-moment-what", { hasText: "Marriage with Pierre Curie" }).evaluate((entry) => (entry as HTMLElement).click());
+
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
     });
 
     test("shows Pierre Curie from his top, and Back and Forward return by the buttons", async ({ page }) => {
@@ -131,15 +126,14 @@ for (const size of SIZES) {
       await expect(forward(page)).toBeDisabled();
     });
 
-    test("shows the evidence of her birth, and returns to the whole record", async ({ page }) => {
+    test("shows the evidence of her birth on its card, and returns to the whole record", async ({ page }) => {
       const context = page.locator(".gedcom-desk-evidence-context div").first();
       await expect(context).toHaveText("Whole record");
       await factNamed(page, "Birth").click();
       await expect(context).toHaveText("Birth");
 
       await page.locator(".gedcom-card-evidence .gedcom-desk-link", { hasText: "Whole record" }).click();
-      await expect(context).toHaveText("Whole record");
-      await expect(page.locator(".gedcom-desk-fact.is-selected")).toHaveCount(0);
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     });
   });
 }
@@ -156,7 +150,7 @@ test.describe("Obsidian's own button styling", () => {
     for (const selector of [
       ".gedcom-desk-person",
       ".gedcom-desk-link",
-      ".gedcom-desk-fact:not(.is-selected)",
+      ".gedcom-desk-fact-name",
       ".gedcom-desk-cite",
     ]) {
       expect(await look(selector), selector).toEqual({
@@ -230,8 +224,10 @@ test.describe("the family card", () => {
     ]);
     await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toHaveText("Evidence");
     await factNamed(page, "Marriage").click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
     await expect(page.locator(".gedcom-desk-evidence-context div").first()).toHaveText("Marriage");
 
+    await back(page).click();
     await page.locator(".gedcom-desk-person", { hasText: "Ève Curie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
   });

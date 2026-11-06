@@ -16,6 +16,7 @@ In Russian: «я так же хочу чтобы была таблица Events�
 - **Records elsewhere leave the list alone, but a click in the card follows.** On the Events, as on the Places, selecting a record or a source from a link, the graph, the timeline or the cursor neither switches the kind nor marks a row; a place switches the list to the Places and an event to the Events. A record chosen in the record card, a person on the card of a place or of an event, for one, switches the list to its kind and marks its row. The user asked for this on the card of a place; it is applied to every selection made in a card, the event card's record link included, as one rule.
 - **One correction to the Places text.** The restated *keyboard* requirement fixes the scenario *Enter on a place*, which still said that no record is selected; the card shows the place, as the merged code does.
 - **The same list machinery.** Virtual window, keyboard, ARIA grid, and the phone and narrow-tab layout.
+- **A fact in a card opens the card of its event.** Choosing a fact on a person's or a family's card, or an entry of a person's timeline, selects its event: its card opens and a list in view switches to the Events and marks its row. Choosing a place named in a fact or an entry opens the card of that place and marks it in the Places. The unfolding of a fact beneath its row, with its *All evidence* link, goes; the Evidence section moves to the event card. The user asked for both on 2026-11-06 and confirmed that the unfold is replaced.
 - **Read-only.** No actions, and nothing written to the file, a note or the vault.
 
 Repository or upstream: **this repository only.** The read model already carries the events of a person and a family (`PersonEvent`); it is not touched.
@@ -30,7 +31,7 @@ None.
 
 ### Modified Capabilities
 
-- `genealogy-record-card`: an **event card** is added. A requirement is added for the selection to survive the cursor staying in the record of the event. The requirement that a tab holds one selected record, which names a person, a family, a source or a multimedia record, is left as it stands, as `places-list` left it for a place; that gap is recorded in `design.md`.
+- `genealogy-record-card`: an **event card** is added, with the Evidence section of the event; the requirements on the narrow card, the timeline of a person and the selected record are restated, since a fact no longer unfolds but opens its event. A requirement is added for the selection to survive the cursor staying in the record of the event. The requirement that a tab holds one selected record, which names a person, a family, a source or a multimedia record, is left as it stands, as `places-list` left it for a place; that gap is recorded in `design.md`.
 - `genealogy-list`: a fifth kind, **Events**, its rows, search, sorts, selection and card; the card is described in `genealogy-record-card`; in `genealogy-list` every requirement that names the kinds of the list is restated with it: the list itself, the kinds, the search, the sort, the selected row, the row brought into view, the keyboard and the Places' no-actions rule.
 
 ## Non-goals
@@ -45,6 +46,7 @@ None.
 ## Impact
 
 - **List**: `src/desk/listRows.ts` (the kind, its columns, `recordKind`), new `src/desk/eventRows.ts`, `src/desk/fileList.ts` (the kind, the row id, the selection), their tests beside them.
+- **Cards of people and families**: `src/desk/personPage.ts` and `src/desk/familyPage.ts` (the fact rows, which are no longer buttons, and carry the event's id), `src/desk/timeline.ts` and `src/desk/timelineView.ts`, new `src/desk/eventDetail.ts` (the date, place and text of an event with the place as a link), `src/desk/DeskViews.ts` (the notes of an event are its record's).
 - **Card**: new `src/desk/eventPage.ts`, `src/desk/recordCard.ts` (its own `pageKind`, `recordName` and the branch that draws it), `src/desk/deskState.ts` (the `event` page kind and the lines *Show in source* moves to), `src/desk/tabModes.ts` and `src/desk/followRules.ts` (the cursor in the record of the event keeps the event), `styles.css` (the card).
 - **Strings**: `src/i18n/en.json`, `src/i18n/ru.json`.
 - **Styles**: `styles.css` (the Events grid).

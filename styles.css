@@ -421,40 +421,40 @@ button.gedcom-desk-link:hover {
   overflow: hidden;
 }
 
-button.gedcom-desk-fact {
+.gedcom-desk-fact {
   display: grid;
   grid-template-columns: 130px 1fr auto;
   gap: var(--size-4-3);
   align-items: center;
   width: 100%;
-  height: auto;
+  box-sizing: border-box;
   padding: var(--size-4-2) var(--size-4-3);
-  background: none;
-  border: 0;
   border-top: 1px solid var(--background-modifier-border);
-  border-radius: 0;
-  box-shadow: none;
   text-align: start;
-  white-space: normal;
-  font-weight: normal;
   color: var(--text-normal);
   cursor: pointer;
 }
 
-button.gedcom-desk-fact:first-child {
+.gedcom-desk-fact:first-child {
   border-top: 0;
 }
 
-button.gedcom-desk-fact:hover {
+.gedcom-desk-fact:hover {
   background: var(--background-modifier-hover);
 }
 
-button.gedcom-desk-fact.is-selected {
-  background: var(--background-modifier-active-hover);
-}
-
-.gedcom-desk-fact-name {
+button.gedcom-desk-fact-name {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-align: start;
+  white-space: normal;
+  font: inherit;
   color: var(--text-muted);
+  cursor: pointer;
 }
 
 .gedcom-desk-fact-value {
@@ -574,7 +574,7 @@ button.gedcom-desk-person:hover {
 }
 
 @container gedcom-card (max-width: 560px) {
-  button.gedcom-desk-fact {
+  .gedcom-desk-fact {
     grid-template-columns: 1fr auto;
   }
 

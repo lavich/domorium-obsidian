@@ -17,7 +17,6 @@ function pageHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
@@ -82,14 +81,14 @@ describe("the timeline", () => {
       .toBe("Physicist and chemist");
   });
 
-  it("opens a relative, and selects one of the person's facts", () => {
+  it("opens a relative, and the card of one of the person's events", () => {
     draw();
     const whats = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
     whats.find((node) => node.textContent?.startsWith("Death of husband"))?.click();
     whats.find((node) => node.textContent === "Birth")?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith("@I2@");
-    expect(host.select).toHaveBeenCalledWith("p:0");
+    expect(host.openRecord).toHaveBeenCalledWith("event:@I1@:BIRT:0");
   });
 });
 

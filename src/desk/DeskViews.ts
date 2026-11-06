@@ -1,3 +1,4 @@
+import { eventOwner } from "./eventRows";
 import { ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
 
 import type { GedcomView } from "../GedcomView";
@@ -61,7 +62,7 @@ export class RecordCardView extends ItemView {
     if (key && this.notes?.key !== key && path && record) {
       const asked = { key, hits: null as NoteHit[] | null };
       this.notes = asked;
-      void this.host.notesFor(path, record).then((hits) => {
+      void this.host.notesFor(path, eventOwner(record) ?? record).then((hits) => {
         if (this.notes === asked) {
           asked.hits = hits;
           this.redraw();
@@ -86,7 +87,7 @@ export class RecordCardView extends ItemView {
     if (!asked || !path || !record) {
       return;
     }
-    void this.host.notesFor(path, record).then((hits) => {
+    void this.host.notesFor(path, eventOwner(record) ?? record).then((hits) => {
       if (this.notes === asked && JSON.stringify(hits) !== JSON.stringify(asked.hits)) {
         asked.hits = hits;
         this.redraw();

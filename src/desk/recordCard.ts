@@ -163,7 +163,6 @@ function drawRecord(
     openRecord: (xref) => tab.select(xref),
     select: (key) => tab.selectFact(key),
     showInSource: (range) => tab.showInSource(range),
-    scrollToEvidence: () => scrollToEvidence(body),
     openFile: (path) => tab.openFile(path),
     setIcon: (element, icon) => view.setIcon(element, icon),
     portrait: (xref) => tab.portrait(xref),
@@ -194,15 +193,14 @@ function drawRecord(
     return;
   } else if (event) {
     renderEventPage(body, event, index, host);
-    return;
   }
   renderEvidenceSection(
     body,
-    { index, record, fact: person || family ? fact : null, notes },
+    event ? { index, record: event.owner, fact: event.fact, notes } : { index, record, fact: person || family ? fact : null, notes },
     {
       openRecord: (xref) => tab.select(xref),
       showInSource: (range) => tab.showInSource(range),
-      wholeRecord: () => tab.selectFact(null),
+      wholeRecord: () => (event ? tab.select(event.owner) : tab.selectFact(null)),
       openNote: (path, line) => view.openNote(path, line),
     },
   );
@@ -210,10 +208,4 @@ function drawRecord(
 
 function missingAt(at: Position): MediaItem {
   return { content: { kind: "missing", target: "" }, at };
-}
-
-function scrollToEvidence(body: HTMLElement): void {
-  const heading = body.querySelector<HTMLElement>(".gedcom-card-evidence > h2");
-  const reduced = body.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-  heading?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
 }

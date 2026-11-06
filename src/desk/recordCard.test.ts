@@ -171,7 +171,7 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(calls.select).toHaveBeenCalledTimes(1);
   });
 
-  it("shows an event with its record, date, place and sources, each a link through the tab", () => {
+  it("shows an event with its record, date and place as links, and its evidence below", () => {
     state.record = "event:@I1@:BIRT:0";
     draw();
     const links = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-event-detail .gedcom-desk-link")];
@@ -181,7 +181,7 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
     expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-event-value")).toEqual(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
-    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
+    expect(texts(".gedcom-card-evidence .gedcom-desk-evidence-context > div")).toEqual(["Birth", "7 NOV 1867 · Warsaw, Congress Poland"]);
     expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
   });
 
@@ -203,7 +203,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Occupation · Cooper"]);
-    expect(texts(".gedcom-desk-none")).toEqual(["This event states no date, place or source."]);
+    expect(texts(".gedcom-desk-none")).toContain("This event states no date, place or source.");
   });
 
   it("links a cited source record, and shows an inline citation as text", () => {
@@ -212,28 +212,27 @@ describe("the page of each kind of record, with its evidence", () => {
     );
     state.record = "event:@I1@:BIRT:0";
     draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-event-sources .gedcom-desk-link")?.click();
+    container.querySelector<HTMLElement>("button.gedcom-desk-cite")?.click();
 
-    expect(texts(".gedcom-desk-event-sources > *")).toEqual(["Parish registers", "An inline note"]);
+    expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish registers"]);
+    expect(texts(".gedcom-desk-cite-inline")).toEqual(["An inline note"]);
     expect(calls.select).toHaveBeenCalledWith("@S1@");
   });
 
-  it("draws no heading for a citation that names nothing", () => {
-    index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 DEAT", "2 SOUR", "0 TRLR"].join("\n"));
-    state.record = "event:@I1@:DEAT:0";
-    draw();
-
-    expect(container.querySelector(".gedcom-desk-event-sources")).toBeNull();
-    expect(texts(".gedcom-desk-none")).toEqual(["This event states no date, place or source."]);
-  });
-
-  it("shows a citation of a source the file does not declare as text", () => {
+  it("marks a citation of a source the file does not declare as missing", () => {
     index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S9@", "0 TRLR"].join("\n"));
     state.record = "event:@I1@:BIRT:0";
     draw();
 
-    expect(container.querySelector(".gedcom-desk-event-sources .gedcom-desk-link")).toBeNull();
-    expect(texts(".gedcom-desk-event-sources > *")).toEqual(["@S9@"]);
+    expect(container.querySelectorAll(".gedcom-desk-missing")).toHaveLength(1);
+  });
+
+  it("goes back from the evidence of an event to its whole record", () => {
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-card-evidence .gedcom-desk-link")].find((node) => node.textContent?.startsWith("←"))?.click();
+
+    expect(calls.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("speaks Russian on an event's card", () => {
@@ -324,19 +323,6 @@ describe("redrawing the card", () => {
     draw();
 
     expect(document.activeElement).toBe(outside);
-  });
-});
-
-describe("All evidence and selecting a fact", () => {
-  it("scrolls the Evidence heading into view, and selecting a fact does not", () => {
-    state.fact = "p:0";
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
-    expect(scrollIntoView).not.toHaveBeenCalled();
-    expect(calls.selectFact).toHaveBeenCalled();
-
-    container.querySelector<HTMLElement>(".gedcom-desk-unfold .gedcom-desk-link")?.click();
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 });
 

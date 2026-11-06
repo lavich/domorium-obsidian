@@ -17,7 +17,6 @@ function pageHost() {
     openRecord: vi.fn<PageHost["openRecord"]>(),
     select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
-    scrollToEvidence: vi.fn<PageHost["scrollToEvidence"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
 }
@@ -84,11 +83,11 @@ describe("the family page", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I13@");
   });
 
-  it("selects a family fact, and shows it in the source", () => {
+  it("opens the card of a family's event, and shows the selected one in the source", () => {
     const index = curieIndex();
     draw("@F3@", { index });
     container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
-    expect(host.select).toHaveBeenCalledWith("f:0");
+    expect(host.openRecord).toHaveBeenCalledWith("event:@F3@:MARR:0");
 
     draw("@F3@", { index, selected: "f:0" });
     container.querySelector<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")?.click();

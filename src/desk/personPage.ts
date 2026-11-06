@@ -8,8 +8,10 @@ import type {
   PersonRow,
 } from "../genealogy";
 import { plural, t } from "../i18n";
-import { eventName, personName, shortPlace, sourceTitle, yearsOf } from "./labels";
+import { eventName, personName, shortPlace, yearsOf } from "./labels";
 import { linkButton } from "./dom";
+import { renderEventDetail } from "./eventDetail";
+import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
@@ -23,6 +25,8 @@ export type FactKey = string;
 
 export interface Fact {
   key: FactKey;
+  /** The id the event is selected by; none where its record has no identifier. */
+  eventId?: string;
   event: PersonEvent;
   /** The other spouse, for an event of a family the person married into. */
   spouse?: PersonRow;
@@ -32,7 +36,6 @@ export interface PageHost {
   openRecord(xref: string): void;
   select(key: FactKey | null): void;
   showInSource(range: Range): void;
-  scrollToEvidence(): void;
   openFile(path: string): void;
   setIcon?(element: HTMLElement, icon: string): void;
   portrait?(xref: string): PortraitContent | null;
@@ -45,10 +48,16 @@ export interface PersonPageOptions {
 }
 
 export function factsOf(person: Person): Fact[] {
-  const own = person.events.map((event, at) => ({ key: `p:${at}`, event }));
+  const owner = person.xref;
+  const own = person.events.map((event, at) => ({
+    key: `p:${at}`,
+    ...(owner === undefined ? {} : { eventId: eventIdOf(owner, person.events, event) }),
+    event,
+  }));
   const married = person.unions.flatMap((union, u) =>
     union.events.map((event, at) => ({
       key: `u:${u}:${at}`,
+      ...(union.family.xref === undefined ? {} : { eventId: eventIdOf(union.family.xref, union.events, event) }),
       event,
       ...(union.spouse === undefined ? {} : { spouse: union.spouse }),
     })),
@@ -121,57 +130,45 @@ export function renderFactList(
     list.createDiv({ cls: "gedcom-desk-none", text: t("desk.noFacts") });
   }
   for (const fact of facts) {
-    const selected = fact.key === options.selected;
-    const row = list.createEl("button", { cls: "gedcom-desk-fact" });
-    row.setAttribute("type", "button");
-    row.setAttribute("aria-pressed", String(selected));
-    row.toggleClass("is-selected", selected);
-    row.setAttribute("data-focus-key", fact.key);
-    row.addEventListener("click", () => {
-      host.select(selected ? null : fact.key);
-    });
-    row.createSpan({ cls: "gedcom-desk-fact-name", text: eventName(fact.event) });
-    renderFactValue(row.createSpan({ cls: "gedcom-desk-fact-value" }), fact);
+    const row = list.createDiv({ cls: "gedcom-desk-fact" });
+    const id = fact.eventId;
+    const name = row.createEl("button", { cls: "gedcom-desk-fact-name", text: eventName(fact.event) });
+    name.setAttribute("type", "button");
+    name.setAttribute("data-focus-key", fact.key);
+    if (id !== undefined) {
+      row.addEventListener("click", (click) => {
+        if (!(click.target as HTMLElement).closest(".gedcom-desk-link")) {
+          host.openRecord(id);
+        }
+      });
+    } else {
+      name.setAttribute("disabled", "");
+    }
+    renderFactValue(row.createSpan({ cls: "gedcom-desk-fact-value" }), fact, host);
     const count = fact.event.citations.length;
     row.createSpan({
       cls: ["gedcom-desk-chip", count > 0 ? "has-source" : "no-source"],
       text: count > 0 ? plural("desk.sources", count) : t("desk.noSource"),
     });
-    if (selected) {
-      renderUnfold(list, fact, index, host);
-    }
   }
 }
 
-function renderFactValue(value: HTMLElement, fact: Fact): void {
+function renderFactValue(value: HTMLElement, fact: Fact, host: PageHost): void {
   const { date, place, value: own } = fact.event;
-  const parts = [
-    date?.text,
-    place,
-    own,
-    fact.spouse ? t("desk.with", { name: personName(fact.spouse) }) : undefined,
-  ].filter((part): part is string => Boolean(part));
-  value.setText(parts.length > 0 ? parts.join(" · ") : t("desk.noDetails"));
-  value.toggleClass("is-empty", parts.length === 0);
-}
-
-function renderUnfold(
-  list: HTMLElement,
-  fact: Fact,
-  index: GenealogyIndex,
-  host: PageHost,
-): void {
-  const unfold = list.createDiv({ cls: "gedcom-desk-unfold" });
-  const citations = fact.event.citations;
-  for (const citation of citations) {
-    const title = citation.source
-      ? sourceTitle(index.source(citation.source)?.title ?? citation.source)
-      : (citation.inline ?? "");
-    unfold.createDiv({ cls: "gedcom-desk-unfold-source", text: title });
+  const shown = renderEventDetail(
+    value,
+    {
+      ...(date?.text ? { date: date.text } : {}),
+      ...(place ? { place } : {}),
+      ...(own ? { text: own } : {}),
+      ...(fact.spouse ? { spouse: t("desk.with", { name: personName(fact.spouse) }) } : {}),
+    },
+    host,
+  );
+  if (!shown) {
+    value.setText(t("desk.noDetails"));
   }
-  const actions = unfold.createDiv({ cls: "gedcom-desk-actions" });
-  linkButton(actions, t("desk.allEvidence"), () => host.scrollToEvidence());
-  linkButton(actions, t("desk.showInSource"), () => host.showInSource(fact.event.range));
+  value.toggleClass("is-empty", !shown);
 }
 
 function renderFamily(page: HTMLElement, person: Person, host: PageHost): void {
