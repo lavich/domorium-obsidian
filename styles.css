@@ -716,7 +716,7 @@ button.gedcom-card-nav:focus-visible {
   button.gedcom-desk-link::after {
     content: "";
     position: absolute;
-    inset: -11px 0;
+    inset: -13px 0;
   }
 }
 
@@ -756,7 +756,7 @@ button.gedcom-card-nav:focus-visible {
 .is-mobile button.gedcom-desk-link::after {
   content: "";
   position: absolute;
-  inset: -11px 0;
+  inset: -13px 0;
 }
 
 .gedcom-list {
