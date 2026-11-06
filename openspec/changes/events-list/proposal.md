@@ -12,7 +12,7 @@ In Russian: «я так же хочу чтобы была таблица Events�
 - **Every event, once.** Dated or not, placed or not; the order is the file's. A custom event (`EVEN`, `FACT`) is named by its type, as the card names it.
 - **Search.** The list's expanding search narrows the events by event name, record name, date, place and the text the event carries, ignoring case and marks on letters, with the table the Places search uses.
 - **Sort.** Each column sorts with the list's three-press cycle; Date by its first year; a missing value comes last in both directions; ties keep the file's order.
-- **An event is selected like a place.** A click or Enter on a row selects the event (`event:<xref>:<fact>`, an id no xref can have, `<fact>` being `p:<n>` or `f:<n>` as the card already names the events of a record), marks its row only and shows the **event card** in the right panel: the name and the text of the event, its record, date, place and sources, each a link, and *Show in source*. The selection is the tab's, so history, Back and Forward, the restart and *Show in source* in the Source mode carry it, and an edit that removes the event drops it.
+- **An event is selected like a place.** A click or Enter on a row selects the event (`event:<xref>:<TAG>:<n>`, the record, the tag of the event and its place among the events of that tag on the record, so that an event of another tag inserted or removed does not move it), marks its row only and shows the **event card** in the right panel: the name and the text of the event, its record, date, place and sources, each a link, and *Show in source*. The selection is the tab's, so history, Back and Forward and the restart carry it, an edit that removes the event drops it, and *Show in source* moves to its lines without losing it: while the cursor is in the record of the selected event, the event stays selected, in Source mode and on leaving it.
 - **Records elsewhere leave the list alone.** On the Events, as on the Places, selecting a record or a source elsewhere neither switches the kind nor marks a row; a place switches the list to the Places and an event to the Events.
 - **One correction to the Places text.** The restated *keyboard* requirement fixes the scenario *Enter on a place*, which still said that no record is selected; the card shows the place, as the merged code does.
 - **The same list machinery.** Virtual window, keyboard, ARIA grid, and the phone and narrow-tab layout.
@@ -30,7 +30,7 @@ None.
 
 ### Modified Capabilities
 
-- `genealogy-record-card`: an **event card** is added. The requirement that a tab holds one selected record, which names a person, a family, a source or a multimedia record, is left as it stands, as `places-list` left it for a place; that gap is recorded in `design.md`.
+- `genealogy-record-card`: an **event card** is added. A requirement is added for the selection to survive the cursor staying in the record of the event. The requirement that a tab holds one selected record, which names a person, a family, a source or a multimedia record, is left as it stands, as `places-list` left it for a place; that gap is recorded in `design.md`.
 - `genealogy-list`: a fifth kind, **Events**, its rows, search, sorts, selection and card; the card is described in `genealogy-record-card`; in `genealogy-list` every requirement that names the kinds of the list is restated with it: the list itself, the kinds, the search, the sort, the selected row, the row brought into view, the keyboard and the Places' no-actions rule.
 
 ## Non-goals
@@ -45,7 +45,7 @@ None.
 ## Impact
 
 - **List**: `src/desk/listRows.ts` (the kind, its columns, `recordKind`), new `src/desk/eventRows.ts`, `src/desk/fileList.ts` (the kind, the row id, the selection), their tests beside them.
-- **Card**: new `src/desk/eventPage.ts`, `src/desk/recordCard.ts` (its own `pageKind`, `recordName` and the branch that draws it), `src/desk/deskState.ts` (the `event` page kind and the lines *Show in source* moves to).
+- **Card**: new `src/desk/eventPage.ts`, `src/desk/recordCard.ts` (its own `pageKind`, `recordName` and the branch that draws it), `src/desk/deskState.ts` (the `event` page kind and the lines *Show in source* moves to), `src/desk/tabModes.ts` and `src/desk/followRules.ts` (the cursor in the record of the event keeps the event), `styles.css` (the card).
 - **Strings**: `src/i18n/en.json`, `src/i18n/ru.json`.
 - **Styles**: `styles.css` (the Events grid).
 - **Specs and documents**: `tests/fileList.spec.ts`, `README.md`, `demo-vault/Start here.md`.

@@ -123,9 +123,9 @@ describe("which records have a card", () => {
   it("gives an event the file names a card, and one it does not name none", () => {
     const curie = curieIndex();
 
-    expect(pageKind(curie, "event:@I1@:p:0")).toBe("event");
-    expect(pageKind(curie, "event:@F3@:f:0")).toBe("event");
-    expect(pageKind(curie, "event:@I1@:p:999")).toBeNull();
+    expect(pageKind(curie, "event:@I1@:BIRT:0")).toBe("event");
+    expect(pageKind(curie, "event:@F3@:MARR:0")).toBe("event");
+    expect(pageKind(curie, "event:@I1@:BIRT:999")).toBeNull();
   });
 });
 
@@ -168,8 +168,8 @@ describe("where the source opens when the tab switches to it", () => {
   });
 
   it("opens on the lines of an event", () => {
-    expect(shownRange(curie, "event:@I1@:p:0", null)).toEqual(marie?.events[0]?.range);
-    expect(shownRange(curie, "event:@F3@:f:0", null)).toEqual(curie.family("@F3@")?.events[0]?.range);
+    expect(shownRange(curie, "event:@I1@:BIRT:0", null)).toEqual(marie?.events[0]?.range);
+    expect(shownRange(curie, "event:@F3@:MARR:0", null)).toEqual(curie.family("@F3@")?.events[0]?.range);
   });
 
   it("leaves a cursor already inside the lines where it is", () => {

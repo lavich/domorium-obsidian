@@ -167,8 +167,23 @@ test.describe("Obsidian's own button styling", () => {
   });
 });
 
+test.describe("the card of an event", () => {
+  test("shows the event, links to its record, and Back returns to it", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { record: "event:@I1@:BIRT:0" });
+
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
+    await expect(page.locator(".gedcom-desk-event-value")).toHaveText(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    await page.locator(".gedcom-desk-event-detail .gedcom-desk-link", { hasText: "Marie" }).click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
+    await expect(back(page)).toBeEnabled();
+    await back(page).click();
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
+  });
+});
+
 test.describe("every kind of card in a narrow column", () => {
-  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "event:@I1@:p:0"]) {
+  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "event:@I1@:BIRT:0"]) {
     for (const [width, phone, language] of [[320, false, "en"], [320, false, "ru"], [390, true, "ru"]] as const) {
       test(`${record} at ${width} pixels in ${language} has nothing to scroll sideways`, async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 760 });

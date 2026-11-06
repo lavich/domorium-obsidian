@@ -32,3 +32,28 @@ date, place or source.
 #### Scenario: A record pressed
 - **WHEN** the reader presses the record on the event card of Marie's birth
 - **THEN** the card shows Marie
+
+#### Scenario: A source the file does not declare
+- **WHEN** an event cites `@S9@` and the file declares no such record
+- **THEN** the card shows `@S9@` as text, not as a link
+
+### Requirement: An event stays selected while the cursor is in its record
+
+While an event is selected, the cursor being in the record that event belongs to SHALL count as the
+same selection, in Source mode and on leaving it: switching to Source mode moves the cursor to the
+lines of the event, and the event SHALL stay selected there and after switching back, and a click
+inside its record SHALL NOT replace it with the record. The cursor resting in another record SHALL
+select that record, as it does for any selection. Selecting an event SHALL NOT write to the file.
+
+#### Scenario: To Source and back
+- **WHEN** the event card of Marie's birth is shown in Graph mode, the reader switches to Source mode
+  and then back to Graph mode without moving the cursor out of her record
+- **THEN** the card still shows her birth
+
+#### Scenario: A click inside the record
+- **WHEN** the event card of Marie's birth is shown in Source mode and the reader clicks in her death
+- **THEN** the card still shows her birth
+
+#### Scenario: A click in another record
+- **WHEN** the event card of Marie's birth is shown in Source mode and the reader clicks in Pierre's record
+- **THEN** the card shows Pierre

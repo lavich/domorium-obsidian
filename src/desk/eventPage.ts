@@ -40,10 +40,10 @@ export function renderEventPage(container: HTMLElement, target: EventTarget, ind
     const sources = container.createDiv({ cls: "gedcom-desk-event-sources" });
     for (const citation of event.citations) {
       const record = citation.source;
-      if (record !== undefined) {
+      if (record !== undefined && index.source(record) !== undefined) {
         linkButton(sources, sourceTitle(index.source(record)?.title ?? record), () => host.openRecord(record));
       } else {
-        sources.createDiv({ cls: "gedcom-desk-unfold-source", text: citation.inline ?? "" });
+        sources.createDiv({ cls: "gedcom-desk-unfold-source", text: citation.inline ?? record ?? "" });
       }
     }
   }

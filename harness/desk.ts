@@ -4,6 +4,7 @@ import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
 import type { NoteHit } from "../src/desk/noteLinks";
+import { pageKind } from "../src/desk/deskState";
 import type { FactKey } from "../src/desk/personPage";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
 import { RecordHistory } from "../src/desk/recordHistory";
@@ -82,11 +83,7 @@ function element(id: string): HTMLElement {
   return found;
 }
 
-const exists = (xref: string): boolean =>
-  index.person(xref) !== undefined ||
-  index.family(xref) !== undefined ||
-  index.source(xref) !== undefined ||
-  index.media(xref) !== undefined;
+const exists = (xref: string): boolean => pageKind(index, xref) !== null;
 
 function mediaItem(at: Position): MediaItem | null {
   const reference = service.getMediaAt(at);

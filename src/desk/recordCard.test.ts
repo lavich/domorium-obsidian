@@ -172,7 +172,7 @@ describe("the page of each kind of record, with its evidence", () => {
   });
 
   it("shows an event with its record, date, place and sources, each a link through the tab", () => {
-    state.record = "event:@I1@:p:0";
+    state.record = "event:@I1@:BIRT:0";
     draw();
     const links = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-event-detail .gedcom-desk-link")];
     links[0]?.click();
@@ -190,7 +190,7 @@ describe("the page of each kind of record, with its evidence", () => {
     tab.showInSource = (range) => {
       show(range);
     };
-    state.record = "event:@I1@:p:0";
+    state.record = "event:@I1@:BIRT:0";
     draw();
     [...container.querySelectorAll<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")].find((node) => node.textContent === "Show in source")?.click();
 
@@ -199,7 +199,7 @@ describe("the page of each kind of record, with its evidence", () => {
 
   it("says an event with no date, place or source states none", () => {
     index = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 OCCU Cooper\n0 TRLR");
-    state.record = "event:@I1@:p:0";
+    state.record = "event:@I1@:OCCU:0";
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Occupation · Cooper"]);
@@ -210,7 +210,7 @@ describe("the page of each kind of record, with its evidence", () => {
     index = indexOf(
       ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S1@", "2 SOUR An inline note", "0 @S1@ SOUR", "1 TITL Parish registers", "0 TRLR"].join("\n"),
     );
-    state.record = "event:@I1@:p:0";
+    state.record = "event:@I1@:BIRT:0";
     draw();
     container.querySelector<HTMLElement>(".gedcom-desk-event-sources .gedcom-desk-link")?.click();
 
@@ -218,9 +218,18 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(calls.select).toHaveBeenCalledWith("@S1@");
   });
 
+  it("shows a citation of a source the file does not declare as text", () => {
+    index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S9@", "0 TRLR"].join("\n"));
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+
+    expect(container.querySelector(".gedcom-desk-event-sources .gedcom-desk-link")).toBeNull();
+    expect(texts(".gedcom-desk-event-sources > *")).toEqual(["@S9@"]);
+  });
+
   it("speaks Russian on an event's card", () => {
     setLanguage("ru");
-    state.record = "event:@I1@:p:0";
+    state.record = "event:@I1@:BIRT:0";
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Рождение"]);

@@ -16,7 +16,7 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
-import { eventsOf } from "./eventRows";
+import { collectEvents } from "./eventRows";
 import { placeId, placeKeyOf, placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
@@ -447,7 +447,7 @@ export class ListBoard {
       return placesOf(index).length;
     }
     if (this.kind === "events") {
-      return eventsOf(index).length;
+      return collectEvents(index).length;
     }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;

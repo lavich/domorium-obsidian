@@ -753,7 +753,7 @@ for (const viewport of [WIDE, PHONE]) {
 
     const mountEvents = (page: Page, options: TabOptions = {}) =>
       mountList(page, { events: true, phone, touch: phone, memory: { list: { kind: "events" } }, ...options });
-    const event = (page: Page, owner: string, fact: string) => page.locator(`.gedcom-list-row[data-key="event:${owner}:${fact}"]`);
+    const event = (page: Page, owner: string, tag: string) => page.locator(`.gedcom-list-row[data-key="event:${owner}:${tag}:0"]`);
     const cellsOfColumn = (page: Page, position: number) =>
       rows(page).evaluateAll((all, at) => all.map((row) => row.querySelectorAll(".gedcom-list-cell")[at]?.textContent ?? ""), position);
 
@@ -761,7 +761,7 @@ for (const viewport of [WIDE, PHONE]) {
       await mountEvents(page);
 
       await expect(page.locator(".gedcom-list-count")).toHaveText("61 events");
-      const cells = await event(page, "@I1@", "p:0").locator(".gedcom-list-cell").allInnerTexts();
+      const cells = await event(page, "@I1@", "BIRT").locator(".gedcom-list-cell").allInnerTexts();
       expect(cells.map((cell) => cell.trim())).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
     });
 
@@ -793,11 +793,11 @@ for (const viewport of [WIDE, PHONE]) {
 
     test("selects the record and the event of a row, and marks only that row", async ({ page }) => {
       await mountEvents(page);
-      await event(page, "@I1@", "p:1").click();
+      await event(page, "@I1@", "DEAT").click();
 
       await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
-      await expect(event(page, "@I1@", "p:1")).toHaveAttribute("aria-selected", "true");
-      expect(await selected(page)).toEqual(["event:@I1@:p:1"]);
+      await expect(event(page, "@I1@", "DEAT")).toHaveAttribute("aria-selected", "true");
+      expect(await selected(page)).toEqual(["event:@I1@:DEAT:0"]);
       await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Events");
     });
 
@@ -808,14 +808,14 @@ for (const viewport of [WIDE, PHONE]) {
       await page.keyboard.press("Enter");
 
       await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
-      expect(await selected(page)).toEqual(["event:@I1@:p:1"]);
+      expect(await selected(page)).toEqual(["event:@I1@:DEAT:0"]);
     });
 
     test("brings an event selected from outside into view and marks it", async ({ page }) => {
       await mountEvents(page, { doc: generated(500) });
-      await page.evaluate(() => window.tab.select("event:@I400@:p:0", true));
+      await page.evaluate(() => window.tab.select("event:@I400@:BIRT:0", true));
 
-      const row = event(page, "@I400@", "p:0");
+      const row = event(page, "@I400@", "BIRT");
       await expect(row).toHaveAttribute("aria-selected", "true");
       const top = (await row.boundingBox())?.y ?? -1;
       expect(top).toBeGreaterThan(0);
@@ -849,7 +849,7 @@ for (const viewport of [WIDE, PHONE]) {
       test.skip(!phone, "a wide tab keeps one line");
       await mountEvents(page);
 
-      const row = event(page, "@I1@", "p:0");
+      const row = event(page, "@I1@", "BIRT");
       const [first, second, third, fourth] = await row.locator(".gedcom-list-cell").evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect()));
       expect((await row.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
       expect(Math.abs((third?.top ?? 0) - (first?.top ?? 100))).toBeLessThan(3);

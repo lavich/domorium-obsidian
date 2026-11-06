@@ -247,8 +247,8 @@ describe("which selection the list can show", () => {
   });
 
   it("is an event the file names, which the list shows among the events", () => {
-    expect(recordKind(index, "event:@I1@:p:0")).toBe("events");
-    expect(listSelection(index, "event:@I1@:p:0")).toBe("event:@I1@:p:0");
-    expect(listSelection(index, "event:@I1@:p:999")).toBeNull();
+    expect(recordKind(index, "event:@I1@:BIRT:0")).toBe("events");
+    expect(listSelection(index, "event:@I1@:BIRT:0")).toBe("event:@I1@:BIRT:0");
+    expect(listSelection(index, "event:@I1@:BIRT:999")).toBeNull();
   });
 });

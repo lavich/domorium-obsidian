@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
-import { eventAt, eventCells, eventId, eventRows, eventsOf, eventTitle, type EventRow } from "./eventRows";
+import { collectEvents, eventAt, eventCells, eventId, eventOwner, eventRows, eventTitle, type EventRow } from "./eventRows";
 import { collatorFor, listRows, type ListSort } from "./listRows";
 
 afterEach(resetLanguage);
@@ -16,38 +16,38 @@ const doc = (...lines: string[]) => indexOf(["0 HEAD", ...lines, "0 TRLR"].join(
 
 describe("the rows of the events kind", () => {
   it("holds every event of the people and the families of the file once", () => {
-    expect(eventsOf(index)).toHaveLength(51);
-    expect(new Set(keys(eventsOf(index))).size).toBe(51);
+    expect(collectEvents(index)).toHaveLength(51);
+    expect(new Set(keys(collectEvents(index))).size).toBe(51);
   });
 
   it("lists them in the order the file writes them, the families among the people", () => {
-    const lines = eventsOf(index).map((row) => row.event.range.start.line);
+    const lines = collectEvents(index).map((row) => row.event.range.start.line);
 
     expect(lines).toEqual([...lines].sort((a, b) => a - b));
-    expect(eventsOf(index).some((row) => row.fact.startsWith("f:"))).toBe(true);
+    expect(collectEvents(index).some((row) => row.family !== undefined)).toBe(true);
   });
 
-  it("keys a person's event p:<n> and a family's f:<n>, with the record's xref", () => {
-    const row = eventsOf(index).find((one) => one.owner === "@I1@");
+  it("keys an event by its record, its tag and its place among the events of that tag", () => {
+    const row = collectEvents(index).find((one) => one.owner === "@I1@");
 
-    expect(row).toMatchObject({ fact: "p:0", key: "event:@I1@:p:0" });
-    expect(eventsOf(index).find((one) => one.fact.startsWith("f:"))?.owner.startsWith("@F")).toBe(true);
+    expect(row).toMatchObject({ key: "event:@I1@:BIRT:0" });
+    expect(collectEvents(index).find((one) => one.family !== undefined)?.owner.startsWith("@F")).toBe(true);
   });
 
   it("reads a birth as the card names it, with its record, date and place", () => {
-    const birth = eventsOf(index).find((row) => row.key === "event:@I1@:p:0") as EventRow;
+    const birth = collectEvents(index).find((row) => row.key === "event:@I1@:BIRT:0") as EventRow;
 
     expect(eventCells(birth)).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
   });
 
   it("names the events of a family after the family", () => {
-    const marriages = eventsOf(index).filter((row) => row.fact.startsWith("f:")).map((row) => eventCells(row));
+    const marriages = collectEvents(index).filter((row) => row.family !== undefined).map((row) => eventCells(row));
 
     expect(marriages).toContainEqual(["Marriage", "Pierre Curie and Marie Skłodowska-Curie", "26 JUL 1895", "Sceaux, France"]);
   });
 
   it("follows an occupation with its text and tells the awards apart", () => {
-    const titles = eventsOf(withEvents).map((row) => eventTitle(row.event));
+    const titles = collectEvents(withEvents).map((row) => eventTitle(row.event));
 
     expect(titles).toContain("Occupation · Physicist");
     expect(titles).toContain("Award · Nobel Prize in Physics");
@@ -57,53 +57,77 @@ describe("the rows of the events kind", () => {
   it("drops a value of Y, which is not text", () => {
     const only = doc("0 @I1@ INDI", "1 NAME A /B/", "1 DEAT Y");
 
-    expect(eventCells(eventsOf(only)[0])).toEqual(["Death", "A B", "", ""]);
+    expect(eventCells(collectEvents(only)[0])).toEqual(["Death", "A B", "", ""]);
   });
 
   it("lists an event that has no date and no place", () => {
     const only = doc("0 @I1@ INDI", "1 NAME A /B/", "1 OCCU Cooper");
 
-    expect(eventCells(eventsOf(only)[0])).toEqual(["Occupation · Cooper", "A B", "", ""]);
+    expect(eventCells(collectEvents(only)[0])).toEqual(["Occupation · Cooper", "A B", "", ""]);
   });
 
   it("names a custom event by its type", () => {
     const only = doc("0 @I1@ INDI", "1 NAME A /B/", "1 EVEN", "2 TYPE Pilgrimage");
 
-    expect(eventCells(eventsOf(only)[0])[0]).toBe("Pilgrimage");
+    expect(eventCells(collectEvents(only)[0])[0]).toBe("Pilgrimage");
   });
 
   it("lists nothing for a record with no identifier", () => {
     const only = doc("0 INDI", "1 NAME A /B/", "1 BIRT", "2 DATE 1900");
 
-    expect(eventsOf(only)).toHaveLength(0);
+    expect(collectEvents(only)).toHaveLength(0);
   });
 
   it("lists the events of a record declared twice once", () => {
     const twice = doc("0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "0 @I1@ INDI", "1 NAME C /D/", "1 DEAT");
 
-    expect(keys(eventsOf(twice))).toEqual(["event:@I1@:p:0"]);
+    expect(keys(collectEvents(twice))).toEqual(["event:@I1@:DEAT:0"]);
   });
 
   it("finds the event an id names in O(1) and no other", () => {
-    expect(eventAt(index, eventId("@I1@", "p:0"))?.event.tag).toBe("BIRT");
-    expect(eventAt(index, "event:@I1@:p:9999")).toBeUndefined();
-    expect(eventAt(index, "event:@I1@:f:0")).toBeUndefined();
-    expect(eventAt(index, "event:@F3@:f:0")?.owner).toBe("@F3@");
+    expect(eventAt(index, eventId("@I1@", "BIRT", 0))?.event.tag).toBe("BIRT");
+    expect(eventAt(index, "event:@I1@:BIRT:9999")).toBeUndefined();
+    expect(eventAt(index, "event:@I1@:MARR:0")).toBeUndefined();
+    expect(eventAt(index, "event:@F3@:MARR:0")?.owner).toBe("@F3@");
     expect(eventAt(index, "event:@I1@")).toBeUndefined();
+    expect(eventAt(index, "event:@I1@:BIRT:00")).toBeUndefined();
+    expect(eventAt(index, "event:@I1@:BIRT:1e0")).toBeUndefined();
     expect(eventAt(index, "event:@I1@:u:0:0")).toBeUndefined();
-    expect(eventAt(index, "event:nobody:p:0")).toBeUndefined();
+    expect(eventAt(index, "event:nobody:BIRT:0")).toBeUndefined();
     expect(eventAt(index, "@I1@")).toBeUndefined();
     expect(eventAt(index, "place:paris, france")).toBeUndefined();
   });
 
+  it("keeps the id of an event when events of other tags come before it, and drops it when its own goes", () => {
+    const base = ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/"];
+    const id = "event:@I1@:DEAT:0";
+
+    expect(eventAt(doc(...base.slice(1), "1 DEAT"), id)?.event.tag).toBe("DEAT");
+    expect(eventAt(doc(...base.slice(1), "1 BIRT", "1 OCCU Cooper", "1 DEAT"), id)?.event.tag).toBe("DEAT");
+    expect(eventAt(doc(...base.slice(1), "1 BIRT"), id)).toBeUndefined();
+  });
+
+  it("numbers events of one tag among themselves", () => {
+    const two = doc("0 @I1@ INDI", "1 NAME A /B/", "1 RESI", "2 PLAC One", "1 OCCU Cooper", "1 RESI", "2 PLAC Two");
+
+    expect(eventAt(two, "event:@I1@:RESI:1")?.event.place).toBe("Two");
+    expect(keys(collectEvents(two))).toEqual(["event:@I1@:RESI:0", "event:@I1@:OCCU:0", "event:@I1@:RESI:1"]);
+  });
+
+  it("reads an owner whose xref holds a colon", () => {
+    expect(eventOwner("event:@a:b@:BIRT:0")).toBe("@a:b@");
+    expect(eventOwner("@I1@")).toBeNull();
+    expect(eventOwner(null)).toBeNull();
+  });
+
   it("names every row by an id eventAt reads back", () => {
-    for (const row of eventsOf(index)) {
-      expect(eventAt(index, row.key)).toMatchObject({ owner: row.owner, fact: row.fact });
+    for (const row of collectEvents(index)) {
+      expect(eventAt(index, row.key)).toMatchObject({ owner: row.owner, event: row.event });
     }
   });
 
   it("is built once for one reading of the file", () => {
-    expect(eventsOf(index)).toBe(eventsOf(index));
+    expect(collectEvents(index)).toBe(collectEvents(index));
   });
 
   it("is reached by the list as a kind", () => {
@@ -149,7 +173,7 @@ describe("ordering the events", () => {
   const dated = (rows: EventRow[]): (number | undefined)[] => rows.map((row) => row.event.date?.year);
 
   it("is the order of the file until a column is chosen", () => {
-    expect(keys(rowsOf())).toEqual(keys(eventsOf(index)));
+    expect(keys(rowsOf())).toEqual(keys(collectEvents(index)));
   });
 
   it("sorts by the first year of the date, the undated last in both directions, ties in file order", () => {

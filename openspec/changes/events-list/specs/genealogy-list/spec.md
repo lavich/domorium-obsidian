@@ -355,7 +355,7 @@ to record*; and SHALL stay across sorting, filtering and switching the kind, and
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
 list. A row of the Places SHALL select its place, which has no xref and is selected under the id
 `place:` and its key: the record card shows the place, with its events, each linking to the person
-or family it belongs to. A row of the Events SHALL select its event, which has no xref and is selected under the id `event:`, the identifier of its record and the position of the event among those of the record, `p:<n>` for a person's and `f:<n>` for a family's: the record card shows the event, with its name and the text it carries, its date, its place, and the sources it cites, the record linking to that record, the place to the place and each source to the source, and with *Show in source*. Only the row of the selected event SHALL be marked, though other events belong to the same record. An edit that removes the event SHALL drop the selection. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+or family it belongs to. A row of the Events SHALL select its event, which has no xref and is selected under the id `event:`, the identifier of its record, the tag of the event, and the number of events of that tag before it on the record: the record card shows the event, with its name and the text it carries, its date, its place, and the sources it cites, the record linking to that record, the place to the place and each source to the source, and with *Show in source*. Only the row of the selected event SHALL be marked, though other events belong to the same record. An edit that removes the event SHALL drop the selection. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -555,11 +555,11 @@ record or a source SHALL NOT switch the list away from them, while the selection
   marked once the reader chooses People
 
 #### Scenario: An event selected from outside, out of view
-- **WHEN** the list shows the events of a file of 500 people, scrolled to the top, and the reader steps Back in the history to the birth of the 400th person
+- **WHEN** the list shows the events of a file of 500 people, scrolled to the top, the reader having selected the birth of the 400th person and then another record, and steps Back in the history to that birth
 - **THEN** the row of that birth is marked and in view
 
 #### Scenario: An event selected from outside, hidden by the filter
-- **WHEN** the filter of the events hides the row of the event the reader steps Back to
+- **WHEN** the reader selected an event, then another record, typed a filter that hides that event's row, and steps Back to the event
 - **THEN** the filter is cleared and the row is marked and in view
 
 #### Scenario: The events stay
@@ -571,7 +571,7 @@ record or a source SHALL NOT switch the list away from them, while the selection
 - **THEN** the list shows the places with the row of `Paris, France` marked and in view
 
 #### Scenario: An event selected among the places
-- **WHEN** the list shows the places and the reader steps Back in the history to Marie's birth
+- **WHEN** the reader selected Marie's birth, then `Paris, France` in the card, so that the list shows the places, and steps Back in the history
 - **THEN** the list shows the events with the row of Marie's birth marked and in view
 
 ### Requirement: The list is reachable with the keyboard

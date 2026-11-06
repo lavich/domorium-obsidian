@@ -4,42 +4,39 @@ import { foldText } from "./foldText";
 import { eventName, familySortKey, familyTitle, personName, personSortKey } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
 import type { ListSort } from "./listRows";
-import type { FactKey } from "./personPage";
 
 export interface EventRow {
   xref?: undefined;
   key: string;
   owner: string;
-  fact: FactKey;
   event: PersonEvent;
   person?: PersonRow;
   family?: FamilyRow;
 }
 
 const EVENT_PREFIX = "event:";
+const EVENT_ID = /^event:(.+):([A-Za-z0-9_]+):(0|[1-9]\d*)$/u;
 
-export const eventId = (owner: string, fact: FactKey): string => `${EVENT_PREFIX}${owner}:${fact}`;
+export const eventId = (owner: string, tag: string, nth: number): string => `${EVENT_PREFIX}${owner}:${tag}:${nth}`;
 
 export interface EventTarget {
   owner: string;
-  fact: FactKey;
   event: PersonEvent;
 }
 
 export function eventAt(index: GenealogyIndex, id: string): EventTarget | undefined {
-  if (!id.startsWith(EVENT_PREFIX)) {
+  const found = EVENT_ID.exec(id);
+  if (found === null) {
     return undefined;
   }
-  const rest = id.slice(EVENT_PREFIX.length);
-  const colon = rest.indexOf(":");
-  const found = /^([pf]):(\d+)$/u.exec(rest.slice(colon + 1));
-  if (colon < 0 || found === null) {
-    return undefined;
-  }
-  const owner = rest.slice(0, colon);
-  const events = found[1] === "p" ? index.person(owner)?.events : index.family(owner)?.events;
-  const event = events?.[Number(found[2])];
-  return event === undefined ? undefined : { owner, fact: `${found[1]}:${found[2]}`, event };
+  const [, owner = "", tag, nth] = found;
+  const events = (index.person(owner) ?? index.family(owner))?.events ?? [];
+  const event = events.filter((one) => one.tag === tag)[Number(nth)];
+  return event === undefined ? undefined : { owner, event };
+}
+
+export function eventOwner(id: string | null): string | null {
+  return id === null ? null : (EVENT_ID.exec(id)?.[1] ?? null);
 }
 
 const LINE_WIDTH = 100_000;
@@ -57,31 +54,33 @@ export const recordName = ({ person, family }: EventRow): string =>
 
 const held = new WeakMap<GenealogyIndex, EventRow[]>();
 
-export function eventsOf(index: GenealogyIndex): EventRow[] {
+export function collectEvents(index: GenealogyIndex): EventRow[] {
   let rows = held.get(index);
   if (rows === undefined) {
     const found: EventRow[] = [];
     const seen = new Set<string>();
-    const take = (xref: string, prefix: "p" | "f", events: PersonEvent[], record: Pick<EventRow, "person" | "family">): void => {
-      if (seen.has(xref)) {
+    const take = (owner: string, events: PersonEvent[], record: Pick<EventRow, "person" | "family">): void => {
+      if (seen.has(owner)) {
         return;
       }
-      seen.add(xref);
-      events.forEach((event, at) => {
-        const fact = `${prefix}:${at}`;
-        found.push({ owner: xref, fact, key: eventId(xref, fact), event, ...record });
-      });
+      seen.add(owner);
+      const counted = new Map<string, number>();
+      for (const event of events) {
+        const nth = counted.get(event.tag) ?? 0;
+        counted.set(event.tag, nth + 1);
+        found.push({ owner, key: eventId(owner, event.tag, nth), event, ...record });
+      }
     };
     for (const row of index.people) {
       const person = row.xref === undefined ? undefined : index.person(row.xref);
       if (row.xref !== undefined && person !== undefined) {
-        take(row.xref, "p", person.events, { person: row });
+        take(row.xref, person.events, { person: row });
       }
     }
     for (const row of index.families) {
       const family = row.xref === undefined ? undefined : index.family(row.xref);
       if (row.xref !== undefined && family !== undefined) {
-        take(row.xref, "f", family.events, { family: row });
+        take(row.xref, family.events, { family: row });
       }
     }
     rows = found.sort((a, b) => position(a.event) - position(b.event));
@@ -124,7 +123,7 @@ function sortValue(row: EventRow, by: ListSort["by"]): SortValue {
 
 export function eventRows(index: GenealogyIndex, { query, sort }: { query: string; sort: ListSort | undefined }, collator: Intl.Collator): EventRow[] {
   const wanted = foldText(query.trim());
-  const shown = eventsOf(index).filter((row) => wanted === "" || searchText(row).includes(wanted));
+  const shown = collectEvents(index).filter((row) => wanted === "" || searchText(row).includes(wanted));
   return sort === undefined ? shown : orderRows(shown, shown.map((row) => sortValue(row, sort.by)), sort.dir, collator);
 }
 

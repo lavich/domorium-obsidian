@@ -9,6 +9,7 @@ import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
 import type { NoteHit } from "./noteLinks";
+import { pageKind } from "./deskState";
 import { eventAt, eventTitle } from "./eventRows";
 import { renderEventPage } from "./eventPage";
 import { placeAt } from "./placeRows";
@@ -116,10 +117,6 @@ export function renderRecordCard(
         : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`)].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
     (same ?? body).focus({ preventScroll: true });
   }
-}
-
-function pageKind(index: GenealogyIndex, xref: string): boolean {
-  return Boolean(index.person(xref) ?? index.family(xref) ?? index.source(xref) ?? index.media(xref) ?? placeAt(index, xref) ?? eventAt(index, xref));
 }
 
 function makeRoot(container: HTMLElement): HTMLElement {

@@ -46,6 +46,19 @@ describe("the record a tab selects on leaving Source", () => {
     expect(modes.selected).toBe("@I3@");
   });
 
+  it("keeps the event it shows while the cursor is in its record, and leaves it for another record", () => {
+    const modes = tab("graph");
+    modes.select("event:@I1@:BIRT:0", index);
+    modes.setMode("source", at());
+
+    expect(modes.setMode("graph", at("@I1@"))).toMatchObject({ changed: true, selectionChanged: false });
+    expect(modes.selected).toBe("event:@I1@:BIRT:0");
+
+    modes.setMode("source", at());
+    expect(modes.setMode("graph", at("@I2@")).selectionChanged).toBe(true);
+    expect(modes.selected).toBe("@I2@");
+  });
+
   it("leaves the selection alone for a record that has no card", () => {
     const modes = tab("source");
     modes.select("@I1@", index);
@@ -139,7 +152,7 @@ describe("the selected record", () => {
 
   it("ends when a text change removes the event it shows, and keeps it while the event stays", () => {
     const modes = tab("graph");
-    const event = "event:@I1@:p:0";
+    const event = "event:@I1@:BIRT:0";
     const kept = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n1 BIRT\n2 DATE 1867\n0 TRLR\n");
     const gone = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n0 TRLR\n");
 

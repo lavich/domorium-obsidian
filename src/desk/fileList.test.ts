@@ -902,8 +902,8 @@ describe("the places", () => {
 describe("the events", () => {
   const withEvents = indexOf(curieWithEvents());
   const open = (state = {}, source = index) => board({ kind: "events", ...state }, source);
-  const id = (owner: string, fact: string): string => `event:${owner}:${fact}`;
-  const eventRow = (owner: string, fact: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === id(owner, fact));
+  const id = (owner: string, tag: string): string => `event:${owner}:${tag}:0`;
+  const eventRow = (owner: string, tag: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === id(owner, tag));
   const marked = (): string[] => rows().filter((one) => one.getAttribute("aria-selected") === "true").map((one) => one.dataset.key ?? "");
   const column = (at: number): (string | undefined)[] => rows().map((one) => cell(one, at));
 
@@ -917,7 +917,7 @@ describe("the events", () => {
   it("reads Marie's birth with her record, its date and its place", () => {
     open();
 
-    expect([0, 1, 2, 3].map((at) => cell(eventRow("@I1@", "p:0"), at))).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    expect([0, 1, 2, 3].map((at) => cell(eventRow("@I1@", "BIRT"), at))).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
   });
 
   it("tells an occupation by its text and keeps the name of an event that has none", () => {
@@ -974,10 +974,10 @@ describe("the events", () => {
   it("selects the event of a clicked row under its id, and marks only that row", () => {
     open();
 
-    click(eventRow("@I1@", "p:0"));
+    click(eventRow("@I1@", "BIRT"));
 
-    expect(host.select).toHaveBeenCalledWith(id("@I1@", "p:0"));
-    expect(marked()).toEqual([id("@I1@", "p:0")]);
+    expect(host.select).toHaveBeenCalledWith(id("@I1@", "BIRT"));
+    expect(marked()).toEqual([id("@I1@", "BIRT")]);
   });
 
   it("selects the focused row with Enter", () => {
@@ -986,15 +986,15 @@ describe("the events", () => {
     press("ArrowDown");
     press("Enter");
 
-    expect(host.select).toHaveBeenCalledWith(id("@I1@", "p:1"));
+    expect(host.select).toHaveBeenCalledWith(id("@I1@", "DEAT"));
     expect(marked()).toHaveLength(1);
   });
 
   it("marks the event selected elsewhere, and no row for a record", () => {
     const made = open();
 
-    made.select(id("@I1@", "p:1"), true);
-    expect(marked()).toEqual([id("@I1@", "p:1")]);
+    made.select(id("@I1@", "DEAT"), true);
+    expect(marked()).toEqual([id("@I1@", "DEAT")]);
 
     made.select("@I1@", true);
     expect(marked()).toEqual([]);
@@ -1016,18 +1016,18 @@ describe("the events", () => {
     made.select("place:paris, france", true);
     expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
 
-    made.select(id("@I1@", "p:0"), true);
+    made.select(id("@I1@", "BIRT"), true);
     expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
-    expect(marked()).toEqual([id("@I1@", "p:0")]);
+    expect(marked()).toEqual([id("@I1@", "BIRT")]);
   });
 
   it("switches from the people to the events for an event selected elsewhere", () => {
     const made = board({}, index);
 
-    made.select(id("@I1@", "p:0"), true);
+    made.select(id("@I1@", "BIRT"), true);
 
     expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
-    expect(marked()).toEqual([id("@I1@", "p:0")]);
+    expect(marked()).toEqual([id("@I1@", "BIRT")]);
   });
 
   describe("bringing an event into view", () => {
@@ -1038,10 +1038,10 @@ describe("the events", () => {
       const made = open({}, large);
       scroller().scrollTop = 0;
 
-      made.select(id("@I400@", "p:0"), true);
+      made.select(id("@I400@", "BIRT"), true);
 
-      expect(marked()).toEqual([id("@I400@", "p:0")]);
-      const top = position(made, id("@I400@", "p:0")) * box.wide - scroller().scrollTop;
+      expect(marked()).toEqual([id("@I400@", "BIRT")]);
+      const top = position(made, id("@I400@", "BIRT")) * box.wide - scroller().scrollTop;
       expect(top).toBeGreaterThanOrEqual(0);
       expect(top).toBeLessThan(box.height);
     });
@@ -1051,17 +1051,17 @@ describe("the events", () => {
       type("zzzzzz");
       expect(rows()).toHaveLength(0);
 
-      made.select(id("@I400@", "p:0"), true);
+      made.select(id("@I400@", "BIRT"), true);
 
       expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
-      expect(marked()).toEqual([id("@I400@", "p:0")]);
+      expect(marked()).toEqual([id("@I400@", "BIRT")]);
     });
 
     it("leaves the scroll alone for a selection made from the list", () => {
       const made = open({}, large);
       scroller().scrollTop = 90;
 
-      made.select(id("@I400@", "p:0"), false);
+      made.select(id("@I400@", "BIRT"), false);
 
       expect(scroller().scrollTop).toBe(90);
     });
@@ -1079,6 +1079,6 @@ describe("the events", () => {
     open();
 
     expect(text(".gedcom-list-count")).toBe("51 событие");
-    expect(cell(eventRow("@I1@", "p:0"), 0)).toBe("Рождение");
+    expect(cell(eventRow("@I1@", "BIRT"), 0)).toBe("Рождение");
   });
 });
