@@ -97,7 +97,7 @@ test.describe("the list on a wide tab", () => {
     await mountList(page);
 
     await seg(page, "Families").click();
-    expect(await cellTexts(page, "@F3@")).toEqual(["Pierre Curie + Marie Skłodowska-Curie", "1895", "Sceaux, France", "2"]);
+    expect(await cellTexts(page, "@F3@")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie", "1895", "Sceaux, France", "2"]);
     await expect(page.locator(".gedcom-list-count")).toHaveText("5 families");
     await seg(page, "Sources").click();
     expect(await cellTexts(page, "@S2@")).toEqual(["Parish registers of Warsaw", "", "State Archive in Warsaw", "2"]);

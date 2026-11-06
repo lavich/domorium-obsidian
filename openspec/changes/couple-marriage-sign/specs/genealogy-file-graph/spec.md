@@ -24,5 +24,5 @@ it has no date, and how many children the family has.
 
 #### Scenario: Pointing at the Curies' family node
 - **WHEN** the reader points at the node between Pierre Curie and Marie
-- **THEN** it shows Pierre Curie + Marie Skłodowska-Curie, married
+- **THEN** it shows Pierre Curie ⚭ Marie Skłodowska-Curie, married
   `26 JUL 1895` in Sceaux, France, and 2 children

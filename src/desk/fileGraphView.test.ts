@@ -313,7 +313,7 @@ describe("drawing the graph of a file", () => {
     const tip = container.querySelector(".gedcom-fg-tip");
 
     expect(tip?.classList.contains("is-shown")).toBe(true);
-    expect(tip?.textContent).toContain("Pierre Curie + Marie Skłodowska-Curie");
+    expect(tip?.textContent).toContain("Pierre Curie ⚭ Marie Skłodowska-Curie");
     expect(tip?.textContent).toContain("Married 26 JUL 1895");
     expect(tip?.textContent).toContain("Sceaux, France");
     expect(tip?.textContent).toContain("2 children");
@@ -848,10 +848,10 @@ describe("the keyboard", () => {
     expect(card("@I1@")?.getAttribute("aria-label")).toBe("Marie Skłodowska-Curie, 1867–1934");
     expect(card("@I1@")?.getAttribute("role")).toBe("button");
     expect(node("@F3@")?.getAttribute("aria-label")).toBe(
-      "Family of Pierre Curie + Marie Skłodowska-Curie, married in 1895",
+      "Family of Pierre Curie ⚭ Marie Skłodowska-Curie, married in 1895",
     );
     expect(node("@F2@")?.getAttribute("aria-label")).toBe(
-      "Family of Eugène Curie + Sophie-Claire Depouilly, no marriage date",
+      "Family of Eugène Curie ⚭ Sophie-Claire Depouilly, no marriage date",
     );
   });
 

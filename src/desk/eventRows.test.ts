@@ -43,7 +43,7 @@ describe("the rows of the events kind", () => {
   it("names the events of a family after the family", () => {
     const marriages = collectEvents(index).filter((row) => row.family !== undefined).map((row) => eventCells(row));
 
-    expect(marriages).toContainEqual(["Marriage", "Pierre Curie + Marie Skłodowska-Curie", "26 JUL 1895", "Sceaux, France"]);
+    expect(marriages).toContainEqual(["Marriage", "Pierre Curie ⚭ Marie Skłodowska-Curie", "26 JUL 1895", "Sceaux, France"]);
   });
 
   it("follows an occupation with its text and tells the awards apart", () => {

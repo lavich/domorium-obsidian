@@ -99,7 +99,7 @@ describe("what a row counts", () => {
     expect(cellsOf("people", zofia!, index).gap).toBe(true);
     const family = index.families.find((row) => row.xref === "@F3@");
     expect(cellsOf("families", family!, index).texts).toEqual([
-      "Pierre Curie + Marie Skłodowska-Curie",
+      "Pierre Curie ⚭ Marie Skłodowska-Curie",
       "1895",
       "Sceaux, France",
       "2",

@@ -238,7 +238,7 @@ test.describe("the family card", () => {
     await mountDesk(page);
     await page.locator(".gedcom-desk-link", { hasText: "Family card" }).click();
 
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie + Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie ⚭ Marie Skłodowska-Curie");
     await expect(page.locator(".gedcom-desk-person-name")).toHaveText([
       "Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie",
     ]);

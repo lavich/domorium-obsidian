@@ -128,7 +128,7 @@ describe("the kinds", () => {
     click(button(".gedcom-list-seg-button", "Families"));
     expect(button(".gedcom-list-seg-button", "Families")?.getAttribute("aria-pressed")).toBe("true");
     expect(button(".gedcom-list-seg-button", "People")?.getAttribute("aria-pressed")).toBe("false");
-    expect(rows().find((one) => one.dataset.xref === "@F3@")?.textContent).toContain("Pierre Curie + Marie Skłodowska-Curie");
+    expect(rows().find((one) => one.dataset.xref === "@F3@")?.textContent).toContain("Pierre Curie ⚭ Marie Skłodowska-Curie");
     expect([1, 2, 3].map((at) => cell(row("@F3@"), at))).toEqual(["1895", "Sceaux, France", "2"]);
     expect(text(".gedcom-list-count")).toBe("5 families");
 
