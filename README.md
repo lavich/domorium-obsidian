@@ -20,7 +20,7 @@ adapted per editor.
 
 - An optional genealogy interface, off until you turn it on: a graph and a
   timeline of the whole file, a sortable list of its people, families,
-  sources and places, a map of its places, and a record card in the right sidebar that shows the selected person, family, source or media
+  sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
   record with their facts, names, family, timeline, places and what each fact
   rests on
 - Context-aware GEDCOM tag autocomplete
@@ -51,73 +51,37 @@ to a remote service.
 3. To read the file as people and sources, turn on **Genealogy interface (beta)**
    in the plugin settings; it is still a beta and may change. Files then open in
    **Graph** mode, and the mode buttons in the view header, with the commands
-   **Show as graph**, **Show as timeline**, **Show as list**, **Show as map** and
-   **Show as source**, go between its five modes.
+   **Show as graph**, **Show as timeline**, **Show as list** and **Show as
+   source**, go between its four modes.
 
 The next paragraphs — the modes of a tab and the record card — are
 part of the genealogy interface and appear only while it is on; turning it off
 hides it again and closes its panels without losing the mode a tab was in. The
 editor features after them need no setting.
 
-A GEDCOM tab shows its file in five modes — **Graph**, **Timeline**, **List**,
-**Map** and **Source** — which the five buttons in the tab's header choose, left to
+A GEDCOM tab shows its file in four modes — **Graph**, **Timeline**, **List**
+and **Source** — which the four buttons in the tab's header choose, left to
 right in that order, the current mode's in the accent colour. The commands
-**Show as graph**, **Show as timeline**, **Show as list**, **Show as map** and **Show as
+**Show as graph**, **Show as timeline**, **Show as list** and **Show as
 source**, from the command palette or the tab's menu, do the same, and **Switch
 between source and the last view** goes back and forth between Source and the
-mode before it. The graph, the timeline, the list and the map read the tab's own text, so
+mode before it. The graph, the timeline and the list read the tab's own text, so
 what is typed and not yet saved is already in them. **Find**, and its key, opens
 the search of the mode the tab is in: the editor's panel in Source, the search
-over the board in Graph and Timeline, the search over places in Map, and the filter field in List;
+over the board in Graph and Timeline, and the filter field in List;
 **Replace** stays in Source.
-
-In **Map** mode the tab draws the places of the file as points on an outline of the
-world that the plugin carries. A point is a place, as large as the events there and
-coloured by their kind, or grey with a number where the kinds differ, labelled with the
-place and its years where the label fits; points that overlap are one ring that a click
-opens up. A click on a point selects the record whose events are there, or lists the
-records in a popup. Select a person or a family and a numbered line runs through their
-places in the order of their years, and the rest dims. A chip at the bottom left,
-**Years: all**, expands into a range that filters the points and never touches the
-selection. **Branch of** narrows the map to a person's relatives, the search finds a
-place by name, and the count of places with no coordinates opens them in the **Places** of
-the list. The map steps through its places with the arrow keys, for keyboard and screen
-reader. The map opens fitted to its places;
-**Fit** and the key `0` do it again. A tab remembers where it was across a restart, and
-the map is not remembered as the mode another file opens in.
-
-A place gets its position from the `MAP` structure under its `PLAC` in the file —
-`LATI` and `LONG`, as `N52.2297` and `E21.0122`, with a point or a comma, a sign or a
-letter. The file is the only source: nothing looks a place up by its name, and the
-plugin creates and edits no other note. When no place has coordinates the map says so
-and shows the lines to add, in the **Source** mode:
-
-```
-2 PLAC Paris, France
-3 MAP
-4 LATI N48.8566
-4 LONG E2.3522
-```
-
-Map tiles are off. **Load map tiles from the web** with a **Tile server address** — a
-template such as `https://tiles.example/{z}/{x}/{y}.png`; the plugin ships no server — draws the tiles of the part of the world in view under the outline, with
-the **Tile attribution** you give in the corner. The address is saved as typed, with any key
-it holds, in the plugin's data.
 
 In **List** mode the tab shows the file's people, families, sources or places as a
 table, switched by the buttons at its top. People show name, years, place and
 how many sources the record cites, with a mark where it cites none; families
 show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
-them; places show every place of the file, mapped or not, with the number of events there,
-their years and the coordinates, or a mark with the label *No coordinates* where it has
-none. Places are in alphabetical order until
-a column is chosen, and a click on a place only marks its row: no record is selected and the
-map does not move. A click on a column header sorts by it, a second click reverses the order
+them; places lists each place the file names once, however it is spelt in case or
+spacing, with its number of events and their years. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter
-or Space on it, selects that record; the row of the selected record is marked
+or Space on it, selects that record, except in places, where it only marks the row; the row of the selected record is marked
 and brought into view when it was selected elsewhere. The arrow keys, Home,
 End and the page keys move through the rows. A file of twenty thousand people
 draws only the rows in view. On a phone, and in a tab narrower than
@@ -191,7 +155,7 @@ work as in the timeline. A card selects the person, a node the family, and every
 card and node can be reached and activated from the keyboard.
 
 Each tab remembers its mode and its selected record, and the branch, position and
-zoom of its graph, its timeline and its map, across a restart. A file
+zoom of its graph and its timeline, across a restart. A file
 opened in a new tab, or a tab navigated to another file, starts in the mode you last
 chose in a GEDCOM tab with the header buttons or a **Show as** command — Graph the
 first time — so working in Source or in Timeline carries over from file to file.
@@ -267,17 +231,13 @@ GEDCOM by Domorium works locally inside the vault. It does not require an accoun
 files outside the vault, show advertisements, or collect analytics or
 telemetry.
 
-It makes no network request until you ask it to. There are two things you can
-ask for. **Load images from the web**, off until you turn it on, lets the
+It makes no network request until you ask it to. There is one thing you can
+ask for: **Load images from the web**, off until you turn it on, which lets the
 media preview draw a `FILE` payload naming an `https` address. Until then the
 preview says the file is remote and fetches nothing, and offers to draw it —
-this one, or every one from now on. **Load map tiles from the web**, off until you
-turn it on and name a server, lets the map ask that server for the images of the part of
-the world in view: the server learns the tile numbers, which say what part of the world you
-are looking at, and your network address, as any website does. No place name, person or
-date is sent, and nothing is sent while the setting is off or the address is empty. Nothing
-else reaches the network, an unencrypted `http` address is refused whatever the setting
-says, and no photograph or tile is copied into the vault.
+this one, or every one from now on. Nothing else reaches the network, an
+unencrypted `http` address is refused whatever the setting says, and no
+photograph is copied into the vault.
 
 ## Installation
 
@@ -307,11 +267,6 @@ npm run check
 
 The packaged plugin is written to `dist/`.
 
-The land outline of the map is generated, not drawn: download Natural Earth's
-`ne_110m_land` (version 4.1.0, `https://naciscdn.org/naturalearth/110m/physical/ne_110m_land.zip`),
-unzip it and run `node scripts/outline.mjs <path to ne_110m_land.shp>`; the script checks the
-file's checksum and writes `src/desk/mapOutlineData.ts`.
-
 The shared GEDCOM parser and editor-independent language service are maintained in the main
 [Domorium repository](https://github.com/lavich/domorium) and consumed as
 versioned public npm packages.
@@ -319,9 +274,6 @@ versioned public npm packages.
 ## License
 
 MIT © 2026 Andrei Lobanov
-
-The land outline of the map is from [Natural Earth](https://www.naturalearthdata.com/)
-(`ne_110m_land`, version 4.1.0), which is in the public domain.
 
 Domorium is an independent project and is not affiliated with or endorsed by
 FamilySearch or Intellectual Reserve, Inc. FAMILYSEARCH GEDCOM™ and FAMILYSEARCH®

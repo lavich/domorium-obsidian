@@ -13,9 +13,8 @@ reading has shipped.
 ### Decide
 
 - [x] **Map.** No basemap in this stage: Places is a list of the places in a
-      life, as in the mockup. The map is its own slice and is decided: `MAP`
-      coordinates of the file alone on a bundled outline, tiles only from a server
-      the reader names (openspec change `map-view`).
+      life, as in the mockup. A map, from `MAP` coordinates or tiles behind
+      explicit permission, is a later slice of its own.
 - [x] **Format tabs on a phone.** They scroll sideways, as Obsidian's own panels
       do. Check against the real app when the phone part is compared.
 - [x] **`feat/person-browser`.** Its read model (`src/genealogy/`, with its tests

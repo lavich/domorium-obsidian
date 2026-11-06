@@ -61,8 +61,7 @@ Constraints:
 - No Node built-ins under `src/`; must run on Obsidian mobile.
 - Minimum app version 1.8.7; newer APIs are declined unless the floor moves.
 - Every string follows the app's language (English and Russian today).
-- No network request unless the user explicitly allows it: remote images, or map
-  tiles from a server the user names. No place name or other vault data is ever sent.
+- No network request unless the user explicitly allows remote images.
 
 The work on branch `feat/person-browser` (sidebar panel, person, family and
 source pages, read-only) is a draft. The genealogy interface is being rethought
