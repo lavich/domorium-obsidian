@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.18.0
+
+- **A person's card is shorter.** The **Places** section is gone: a place is
+  already a link in every fact and every entry of the timeline, and the card of
+  a place is one tap away. A fact shows how many sources it cites only where it
+  cites any, and one line above the facts of a person and of a family says how
+  many have none (`Facts without a source: 3 of 4`).
+- **The card of an event holds what the event rests on.** Its Evidence section
+  lists the sources the event cites, or says it has none of its own; the sources
+  of the whole record and the notes that link to it are on the card of the
+  record, one link above.
+- **The graph's cards have no picture.** Every card is one height and the graph
+  loads no photograph; the record card keeps its portrait. Surnames that fall on
+  one hue by chance are told apart by a tone, on the cards of the graph and on
+  the bars of the timeline alike.
+- **The zoom buttons sit beside the search icon.** On the graph and the timeline
+  the zoom out, zoom in and Fit buttons stand in one row at the top corner, right
+  after the search icon; the search field opens away from them and never covers
+  them, on a phone too.
+- **A person with no parents stands one row above their children.** A man whose
+  daughter married into a family two generations down no longer stands in the
+  top row with that family's oldest ancestor, and brothers and sisters stand
+  eldest first where it costs no crossing. The rows of the timeline follow the
+  generations of the graph.
+
 ## 1.17.0
 
 - **The timeline is drawn in bars.** The column of names is gone: each person is a
