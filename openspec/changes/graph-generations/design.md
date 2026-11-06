@@ -26,9 +26,9 @@ The advice the user agreed to said «на ряд выше своего само�
 
 *Alternatives.* Placing by year of birth: rejected, Mikhail has no dates and most roots of real files have none. Lowering every ancestor, not only roots: not needed, an ancestor with parents already stands one below them.
 
-### D2. A couple moves as a block in the order search
+### D2. A couple moves as a block in the order search — tried, not taken
 
-`transpose` swaps two neighbouring units, which for a couple next to a brother is already a block move; what it cannot do is a move over two or more units or a move that crosses more before it crosses fewer. A new step, after `transpose` and while the budget lasts, takes each unit that shares a parent family with another and tries it at every position among those siblings, keeping the position with the fewest crossings to the rows above and below (ties: keep). The count is `crossed` as it is today, so the step is `O(k²)` per family of `k` units, bounded by the budget. It needs a measurement before it is trusted: tasks 1.2 and 2.3 reproduce the example and count crossings on `demo-vault/2020.11.08.ged` and the committed fixtures, and the step ships only if it lowers the count on the first and raises it on none.
+`transpose` swaps two neighbouring units, which for a couple next to a brother is already a block move; what it cannot do is a move over two or more units or a move that crosses more before it crosses fewer. A new step, after `transpose` and while the budget lasts, takes each unit that shares a parent family with another and tries it at every position among those siblings, keeping the position with the fewest crossings to the rows above and below (ties: keep). The count is `crossed` as it is today, so the step is `O(k²)` per family of `k` units. It needed a measurement before it was trusted, and the measurement said no: see `## Implementation`.
 
 *Alternative.* Treating siblings as a group and permuting the group: rejected as `O(k!)`.
 
@@ -46,6 +46,16 @@ Where two orders cross the same number of lines, `transpose` and the new step pr
 - [The sibling move step costs time on a file with a very large family] → The step is bounded by the same time budget as the sweeps and skipped when the budget is gone; a test with one family of 200 children checks the time.
 - [Another file reorders in a way that is worse] → The step ships only where the measurement on the committed fixtures and on the demo file lowers or keeps the count; otherwise the change keeps D1 and D3 and drops D2.
 
-## Open Questions
+## Implementation
 
-- Whether D2 earns its place after D1 alone; D1 may remove the crossing in the example by itself. Task 2.3 decides on numbers.
+Measured with a throwaway test that loaded each file, laid out the whole graph and read `crossings` (the file is not committed, nor is the test).
+
+| File | main | roots lowered and eldest first | with the sibling move too |
+| --- | --- | --- | --- |
+| `curie.ged` (17 people) | 0 | 0 | 0 |
+| `demo-vault/2020.11.08.ged` (111) | 18 | 17 | 17 |
+| `demo-vault/gramps-web-export-20261106084651.ged` (4 679) | 4 261 | 3 923 | 4 108 |
+
+- Mikhail `@I0072@` stands in row 1 with Pyotr `@I0005@`, no longer in row 0 with Naum `@I0000@`; Vasily `@I0064@` and Fekla `@I0071@` stand to the right of Mikhail's family, Ivan `@I0067@` under Pyotr at the left, so no line of Mikhail's crosses Pyotr's. Lowering the root alone removed the crossing of the example.
+- The sibling move (D2) changed nothing on the 111-person file and added 185 crossings on the 4 679-person one, a part of the time budget going to it; it is not in the code. Tasks 2.2 and 2.3 are closed on that evidence.
+- The year of a person that the graph compares is the year the timeline's lifeline begins at a birth or christening (`lifeline.age.from`); a person who has none sorts after.

@@ -56,7 +56,7 @@ the child's own card. Lines SHALL be curves. A line to a child more than one
 generation below SHALL pass through the rows between in a lane of its own,
 where no card stands.
 
-The order of the cards in each row SHALL be chosen to cross as few lines as the graph can find within the time budget the requirement on size gives it, a couple standing as one block that may stand on either side of the brothers and sisters of its spouses and be moved past them where that crosses fewer lines, and brothers and sisters standing from the eldest at the left to the youngest at the right wherever that crosses no more lines than any other order the graph found; the cards are then placed as close above their children and below their parents as that order and the room between cards allow. No two cards SHALL overlap.
+The order of the cards in each row SHALL be chosen to cross as few lines as the graph can find within the time budget the requirement on size gives it, brothers and sisters standing from the eldest at the left to the youngest at the right wherever that crosses no more lines than any other order the graph found; the cards are then placed as close above their children and below their parents as that order and the room between cards allow. No two cards SHALL overlap.
 
 #### Scenario: The Curie file
 - **WHEN** the graph of `curie.ged` is shown whole
@@ -69,9 +69,7 @@ The order of the cards in each row SHALL be chosen to cross as few lines as the 
 - **THEN** the line from his parents' family reaches his card through a lane in
   his sister's row, and no card stands in that lane
 
-#### Scenario: A wife between her husband and his brother
-- **WHEN** two brothers of one family stand in the third row, the elder married to a woman whose father stands in the first row, and the younger unmarried
-- **THEN** the younger brother stands to the left of the couple or the couple stands to the left of both, and the line from the woman's father crosses no line from the brothers' parents
+
 
 #### Scenario: A crossing that cannot be avoided
 - **WHEN** no order of a row crosses fewer lines than the order shown
