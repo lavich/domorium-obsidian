@@ -1,9 +1,20 @@
-import { least, most, type FileTimeline, type TimelineMark, type TimelinePerson } from "./fileTimeline";
+import type { FileTimeline, TimelineMark, TimelinePerson } from "./fileTimeline";
 import { personName } from "./labels";
 import type { TimelineScope } from "./fileTimelineView";
+import { barPaint } from "./surnameHue";
+import { packLanes } from "./timelineLanes";
 
-export const ROW = 27;
+export const ROW = 32;
+export const BAR = 22;
 export const PAD = 12;
+export const FADE_AT = 0.6;
+export const SOFT = 0.15;
+export const SOFT_OPACITY = 0.15;
+
+const LABEL_PAD = 6;
+const MARK_DROP = 8;
+const MARK_RADIUS = { plain: 3.5, other: 4.5 } as const;
+const SPAN_HEIGHT = 4;
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -43,7 +54,12 @@ export interface Layout {
   shown: string[];
   shownSet: Set<string>;
   branch: boolean;
+  /** The people the whole file holds who have a bar. */
+  total: number;
+  lanes: number;
   y: Map<string, number>;
+  /** The right edge of each bar or of the name written beyond it, whichever is further. */
+  reach: Map<string, number>;
   lo: number;
   hi: number;
   width: number;
@@ -53,12 +69,31 @@ export interface Layout {
 }
 
 
-export function layoutOf(model: FileTimeline, scope: TimelineScope, doc: Document, id: number): Layout {
+export type BarEnd = "cut" | "soft" | "fade";
+
+export const barEndOf = (line: NonNullable<TimelinePerson["lifeline"]>): BarEnd =>
+  line.living ? "cut" : line.open ? "fade" : line.endUncertain ? "soft" : "cut";
+
+export const maskName = (soft: boolean, end: BarEnd, id: number): string => `gedcom-ft-mask-${soft ? "s" : "c"}${end}-${id}`;
+
+export function layoutOf(
+  model: FileTimeline,
+  scope: TimelineScope,
+  doc: Document,
+  id: number,
+  measure: (text: string) => number,
+): Layout {
   const keep = scope.focus && model.people.has(scope.focus)
     ? model.branch(scope.focus, scope.up, scope.down)
     : null;
-  const shown = keep ? model.rows.filter((xref) => keep.has(xref)) : [...model.rows];
-  const y = new Map(shown.map((xref, at) => [xref, at * ROW + ROW / 2]));
+  const barred = (xref: string): boolean => model.people.get(xref)?.lifeline != null;
+  const total = [...model.people.keys()].filter(barred).length;
+  const startOf = (xref: string): number => model.people.get(xref)?.lifeline?.start ?? 0;
+  const shown = [...model.people.keys()]
+    .filter((xref) => barred(xref) && (keep === null || keep.has(xref)))
+    .map((xref, at) => ({ xref, at }))
+    .sort((a, b) => startOf(a.xref) - startOf(b.xref) || a.at - b.at)
+    .map(({ xref }) => xref);
   let lo = Infinity;
   let hi = -Infinity;
   for (const xref of shown) {
@@ -80,58 +115,129 @@ export function layoutOf(model: FileTimeline, scope: TimelineScope, doc: Documen
   hi = Math.ceil((hi + 5) / 10) * 10;
   const k = scope.zoom;
   const x = (year: number): number => (year - lo) * k + PAD;
+  const bars = new Map<string, BarBox>();
+  for (const xref of shown) {
+    const person = model.people.get(xref);
+    if (person) {
+      bars.set(xref, barBox(person, x, measure));
+    }
+  }
+  const lanes = packLanes(
+    shown.map((xref) => ({ xref, left: bars.get(xref)?.left ?? 0, right: bars.get(xref)?.reach ?? 0 })),
+    (xref) => {
+      const person = model.people.get(xref);
+      return person ? [...person.parents, ...person.spouses] : [];
+    },
+  );
+  const y = new Map(shown.map((xref) => [xref, (lanes.get(xref) ?? 0) * ROW + ROW / 2]));
+  const reach = new Map(shown.map((xref) => [xref, bars.get(xref)?.reach ?? 0]));
+  const rightmost = shown.reduce((far, xref) => Math.max(far, reach.get(xref) ?? 0), 0);
+  const laneCount = shown.reduce((count, xref) => Math.max(count, (lanes.get(xref) ?? 0) + 1), 0);
   const layout: Layout = {
     shown,
     shownSet: new Set(shown),
     branch: keep !== null,
+    total,
+    lanes: laneCount,
     y,
+    reach,
     lo,
     hi,
-    width: (hi - lo) * k + 2 * PAD,
-    height: shown.length * ROW,
+    width: Math.max((hi - lo) * k + 2 * PAD, rightmost + PAD),
+    height: laneCount * ROW,
     items: [],
     x,
   };
-  layout.items = itemsOf(model, layout, doc, id);
+  layout.items = itemsOf(model, layout, bars, doc, id);
   return layout;
 }
 
-function itemsOf(model: FileTimeline, layout: Layout, doc: Document, id: number): Item[] {
+interface BarBox {
+  left: number;
+  right: number;
+  reach: number;
+  name: string;
+  inside: boolean;
+  labelX: number;
+  labelWidth: number;
+}
+
+function barBox(person: TimelinePerson, x: (year: number) => number, measure: (text: string) => number): BarBox {
+  const line = person.lifeline;
+  const left = line ? x(line.start) : 0;
+  const right = line ? left + Math.max(2, x(line.end) - left) : 0;
+  const name = personName(person.row);
+  const labelWidth = measure(name);
+  const end = line ? barEndOf(line) : "cut";
+  const from = line?.startUncertain ? SOFT : 0;
+  const to = end === "fade" ? FADE_AT : end === "soft" ? 1 - SOFT : 1;
+  const inside = labelWidth + 2 * LABEL_PAD <= (right - left) * (to - from);
+  const labelX = inside ? left + (right - left) * from + LABEL_PAD : right + LABEL_PAD;
+  return { left, right, reach: Math.max(right, labelX + labelWidth), name, inside, labelX, labelWidth };
+}
+
+function paintOf(person: TimelinePerson): string {
+  return Object.entries(barPaint(person.surname))
+    .map(([name, value]) => `${name}:${value}`)
+    .join(";");
+}
+
+function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>, doc: Document, id: number): Item[] {
   const { x, y } = layout;
   const lines: Item[] = [];
+  const labels: Item[] = [];
   const marks: Item[] = [];
   const row = (cy: number) => ({ top: cy - ROW / 2, bottom: cy + ROW / 2 });
   for (const xref of layout.shown) {
     const person = model.people.get(xref);
+    const box = bars.get(xref);
     const cy = y.get(xref) ?? 0;
-    if (!person) {
+    const line = person?.lifeline;
+    if (!person || !line || !box) {
       continue;
     }
-    const line = person.lifeline;
-    if (line) {
-      const left = x(line.start);
-      const right = x(line.end);
-      lines.push({
-        ...row(cy),
-        left,
-        right,
-        ids: [xref],
-        make: () => {
-          const bar = svg(doc, "rect", `gedcom-ft-life is-${person.sex.toLowerCase()}${line.open ? " is-open" : ""}`, {
-            x: left,
-            y: cy - 9,
-            width: Math.max(2, right - left),
-            height: 18,
-            rx: 5,
-            "data-p": xref,
-          });
-          if (line.open) {
-            bar.setAttribute("mask", `url(#gedcom-ft-fade-${id})`);
-          }
-          return bar;
-        },
-      });
-    }
+    const paint = paintOf(person);
+    const end = barEndOf(line);
+    lines.push({
+      ...row(cy),
+      left: box.left,
+      right: box.right,
+      ids: [xref],
+      make: () => {
+        const bar = svg(doc, "rect", `gedcom-ft-life${line.open && !line.living ? " is-open" : ""}${line.living ? " is-living" : ""}`, {
+          x: box.left,
+          y: cy - BAR / 2,
+          width: box.right - box.left,
+          height: BAR,
+          rx: 5,
+          style: paint,
+          tabindex: 0,
+          role: "button",
+          "aria-label": box.name,
+          "data-p": xref,
+        });
+        if (line.startUncertain || end !== "cut") {
+          bar.setAttribute("mask", `url(#${maskName(line.startUncertain, end, id)})`);
+        }
+        return bar;
+      },
+    });
+    labels.push({
+      ...row(cy),
+      left: box.labelX,
+      right: box.labelX + box.labelWidth,
+      ids: [xref],
+      make: () => {
+        const label = svg(doc, "text", `gedcom-ft-label ${box.inside ? "is-inside" : "is-beyond"}`, {
+          x: box.labelX,
+          y: cy,
+          style: paint,
+          "data-p": xref,
+        });
+        label.textContent = box.name;
+        return label;
+      },
+    });
     for (const mark of person.marks) {
       if (mark.until !== undefined) {
         const left = x(mark.year);
@@ -144,9 +250,9 @@ function itemsOf(model: FileTimeline, layout: Layout, doc: Document, id: number)
           make: () =>
             svg(doc, "rect", `gedcom-ft-span is-${mark.kind}`, {
               x: left,
-              y: cy - 3,
+              y: cy + BAR / 2 - SPAN_HEIGHT,
               width: Math.max(2, right - left),
-              height: 6,
+              height: SPAN_HEIGHT,
               rx: 2,
               "data-p": xref,
             }),
@@ -161,31 +267,11 @@ function itemsOf(model: FileTimeline, layout: Layout, doc: Document, id: number)
         right: at + 7,
         ids: [xref],
         placed: { mark, xref, who: whoOf(model, mark, person) },
-        make: () => markShape(doc, mark, at, cy, xref),
+        make: () => markShape(doc, mark, at, cy + MARK_DROP, xref),
       });
     }
   }
-  const couples: Item[] = [];
-  for (const family of model.families.values()) {
-    const marriage = family.marriage;
-    const ends = family.spouses.filter((spouse) => y.has(spouse));
-    if (!marriage || ends.length < 2) {
-      continue;
-    }
-    const ys = ends.map((spouse) => y.get(spouse) ?? 0);
-    const top = least(ys);
-    const bottom = most(ys);
-    const at = x(marriage.year);
-    couples.push({
-      top,
-      bottom,
-      left: at,
-      right: at,
-      ids: ends,
-      make: () => svg(doc, "line", "gedcom-ft-marriage", { x1: at, x2: at, y1: top, y2: bottom }),
-    });
-  }
-  return [...lines, ...couples, ...marks];
+  return [...lines, ...labels, ...marks];
 }
 
 function whoOf(model: FileTimeline, mark: TimelineMark, person: TimelinePerson): string {
@@ -204,7 +290,7 @@ function markShape(doc: Document, mark: TimelineMark, at: number, cy: number, xr
     "data-p": xref,
     "data-year": mark.year,
   });
-  group.append(svg(doc, "circle", null, { cx: at, cy, r: mark.kind === "other" ? 6.5 : 4.5 }));
+  group.append(svg(doc, "circle", null, { cx: at, cy, r: mark.kind === "other" ? MARK_RADIUS.other : MARK_RADIUS.plain }));
   if (mark.sign) {
     const sign = svg(doc, "text", "gedcom-ft-sign", { x: at, y: cy + 0.5 });
     sign.textContent = mark.sign;

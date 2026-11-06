@@ -5,7 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
-import { fileTimelineOf, type FileTimeline } from "./fileTimeline";
+import { buildFileTimeline, type FileTimeline } from "./fileTimeline";
 import {
   FileTimelineBoard,
   readTimelineState,
@@ -15,8 +15,22 @@ import {
   type TimelineScope,
 } from "./fileTimelineView";
 
+const NOW = 2026;
+const BAR_HEIGHT = 22;
 const SCOPE: TimelineScope = { up: 2, down: 2, zoom: ZOOM.initial };
 const WHOLE = { top: 0, left: 0, width: 2000, height: 20 * ROW };
+
+const curie = (): FileTimeline => buildFileTimeline(curieIndex(), NOW);
+const withEvents = (): FileTimeline => buildFileTimeline(indexOf(curieWithEvents()), NOW);
+const fromLines = (...lines: string[]): FileTimeline =>
+  buildFileTimeline(indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n")), NOW);
+const lived = (xref: string, name: string, born: number, died?: number): string[] => [
+  `0 ${xref} INDI`,
+  `1 NAME ${name}`,
+  "1 BIRT",
+  `2 DATE ${born}`,
+  ...(died === undefined ? [] : ["1 DEAT", `2 DATE ${died}`]),
+];
 
 let container: HTMLElement;
 let host: {
@@ -41,20 +55,27 @@ beforeEach(() => {
   };
 });
 
-function board(model: FileTimeline = fileTimelineOf(curieIndex()), scope: Partial<TimelineScope> = {}) {
+function board(model: FileTimeline = curie(), scope: Partial<TimelineScope> = {}) {
   const drawn = new FileTimelineBoard(container, host satisfies FileTimelineHost);
   drawn.show(model, { ...SCOPE, ...scope });
   drawn.draw(WHOLE);
   return drawn;
 }
 
-const names = (): string[] =>
-  [...container.querySelectorAll(".gedcom-ft-name")].map((row) => row.getAttribute("data-p") ?? "");
 const all = (selector: string) => [...container.querySelectorAll(selector)];
 const of = (selector: string, xref: string) => all(`${selector}[data-p="${xref}"]`);
-const nameRow = (xref: string) => container.querySelector<HTMLElement>(`.gedcom-ft-name[data-p="${xref}"]`);
+const bars = (): string[] => all(".gedcom-ft-life").map((bar) => bar.getAttribute("data-p") ?? "");
+const bar = (xref: string) => container.querySelector<SVGElement>(`.gedcom-ft-life[data-p="${xref}"]`);
+const label = (xref: string) => container.querySelector<SVGElement>(`.gedcom-ft-label[data-p="${xref}"]`);
+const laneOf = (xref: string) => (Number(bar(xref)?.getAttribute("y")) - (ROW - BAR_HEIGHT) / 2) / ROW;
+const branchButtons = () => all("[data-branch]");
+const press = (target: Element | null | undefined, key: string) =>
+  target?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+const click = (target: Element | null | undefined) =>
+  target?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+const crowd = (count: number): FileTimeline =>
+  fromLines(...Array.from({ length: count }, (_, at) => lived(`@C${at}@`, `Person /Crowd${at}/`, 1900, 1950)).flat());
 const scopeText = () => container.querySelector(".gedcom-ft-scope")?.textContent ?? "";
-const openButton = (xref: string) => nameRow(xref)?.querySelector<HTMLElement>(".gedcom-ft-name-open");
 
 function tap(target: Element | null | undefined): void {
   target?.dispatchEvent(Object.assign(new MouseEvent("pointerdown", { bubbles: true }), { pointerType: "touch" }));
@@ -62,30 +83,147 @@ function tap(target: Element | null | undefined): void {
 }
 
 describe("drawing the timeline of a file", () => {
-  it("draws a row for each person, a lifeline coloured by sex, and the years", () => {
+  it("draws a bar for each person with the name written in it, no years and no column of names", () => {
     board();
 
     expect(container.querySelector('[class*="legend"]')).toBeNull();
-    expect(names()).toHaveLength(17);
-    expect(nameRow("@I1@")?.textContent).toContain("Marie Skłodowska-Curie");
-    expect(nameRow("@I1@")?.querySelector(".gedcom-ft-name-years")?.textContent).toBe("1867–1934");
-    expect(of(".gedcom-ft-life", "@I1@")[0]?.getAttribute("class")).toContain("is-f");
-    expect(of(".gedcom-ft-life", "@I2@")[0]?.getAttribute("class")).toContain("is-m");
-    expect(of(".gedcom-ft-life", "@I16@")[0]?.getAttribute("class")).toContain("is-open");
-    expect(nameRow("@I16@")?.querySelector(".gedcom-ft-name-years")?.textContent).toBe("1927–");
+    expect(container.querySelector(".gedcom-ft-names, .gedcom-ft-name, .gedcom-ft-axis-pad")).toBeNull();
+    expect(bars()).toHaveLength(17);
+    expect(label("@I1@")?.textContent).toBe("Marie Skłodowska-Curie");
+    expect(label("@I1@")?.getAttribute("class")).toContain("is-inside");
+    expect(container.querySelector(".gedcom-ft-board")?.textContent).not.toContain("1867–1934");
+    expect(Number(bar("@I1@")?.getAttribute("width"))).toBe((1934 - 1867) * ZOOM.initial);
+    expect(Number(bar("@I1@")?.getAttribute("x"))).toBe((1867 - 1820) * ZOOM.initial + 12);
   });
 
-  it("joins Pierre's and Marie's rows at their marriage", () => {
+  it("draws a person who may be alive to the present with a straight end, and a lost death fading", () => {
+    board(fromLines(...lived("@I1@", "Zoe /Young/", 1990), ...lived("@I2@", "Old /Man/", 1850)));
+
+    expect(bar("@I1@")?.getAttribute("class")).toContain("is-living");
+    expect(bar("@I1@")?.hasAttribute("mask")).toBe(false);
+    expect(bar("@I1@")?.getAttribute("width")).toBe(String((2026 - 1990) * ZOOM.initial));
+    expect(bar("@I2@")?.getAttribute("class")).toContain("is-open");
+    expect(bar("@I2@")?.getAttribute("class")).not.toContain("is-living");
+    expect(bar("@I2@")?.getAttribute("mask")).toContain("cfade");
+  });
+
+  it("draws an approximate start soft and an exact one sharp", () => {
+    board(withEvents());
+
+    expect(bar("@I3@")?.getAttribute("mask")).toContain("scut");
+    expect(bar("@I1@")?.hasAttribute("mask")).toBe(false);
+  });
+
+  it("writes a name wider than its bar just beyond the bar, whole", () => {
+    board(fromLines(...lived("@I1@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901)));
+
+    const end = Number(bar("@I1@")?.getAttribute("x")) + Number(bar("@I1@")?.getAttribute("width"));
+    expect(label("@I1@")?.getAttribute("class")).toContain("is-beyond");
+    expect(Number(label("@I1@")?.getAttribute("x"))).toBeGreaterThan(end);
+    expect(label("@I1@")?.textContent).toBe("Alexandra Maria Theresia Habsburg-Lothringen");
+  });
+
+  it("puts two lives that never meet in one lane and two that do in two", () => {
+    board(fromLines(
+      ...lived("@A@", "Anna /Alpha/", 1840, 1905),
+      ...lived("@B@", "Boris /Beta/", 1950, 2023),
+      ...lived("@C@", "Clara /Gamma/", 1868, 1941),
+    ));
+
+    expect(laneOf("@A@")).toBe(laneOf("@B@"));
+    expect(laneOf("@C@")).not.toBe(laneOf("@A@"));
+    expect(container.querySelector<SVGElement>(".gedcom-ft-chart")?.getAttribute("height")).toBe(String(2 * ROW));
+  });
+
+  it("gives a long name room: the person after it is placed in another lane", () => {
+    board(fromLines(
+      ...lived("@A@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901),
+      ...lived("@B@", "Boris /Beta/", 1905, 1990),
+    ));
+
+    expect(laneOf("@B@")).not.toBe(laneOf("@A@"));
+  });
+
+  it("has fewer lanes than people where lives follow one another", () => {
     board();
 
-    const marie = container.querySelector('.gedcom-ft-mark.is-marriage[data-p="@I1@"] circle')?.getAttribute("cx");
-    const marriage = all(".gedcom-ft-marriage").find((line) => line.getAttribute("x1") === marie);
-    expect(marie).toBe(String((1895 - 1820) * ZOOM.initial + 12));
-    expect(Number(marriage?.getAttribute("y2")) - Number(marriage?.getAttribute("y1"))).toBe(ROW);
+    const lanes = new Set(bars().map((xref) => laneOf(xref)));
+    expect(lanes.size).toBeLessThan(17);
+  });
+
+  it("never lets two bars, or a name beyond a bar, overlap in a lane", () => {
+    board(withEvents());
+
+    const byLane = new Map<number, { left: number; right: number }[]>();
+    for (const xref of bars()) {
+      const left = Number(bar(xref)?.getAttribute("x"));
+      const beyond = label(xref)?.getAttribute("class")?.includes("is-beyond") === true;
+      const right = beyond ? Number(label(xref)?.getAttribute("x")) : left + Number(bar(xref)?.getAttribute("width"));
+      byLane.set(laneOf(xref), [...(byLane.get(laneOf(xref)) ?? []), { left, right }]);
+    }
+    for (const held of byLane.values()) {
+      const sorted = [...held].sort((a, b) => a.left - b.left);
+      sorted.slice(1).forEach((next, at) => expect(next.left).toBeGreaterThan(sorted[at]?.right ?? 0));
+    }
+  });
+
+  it("draws marks along the lower edge of the bar, below the name", () => {
+    board(withEvents());
+
+    const marks = of(".gedcom-ft-mark", "@I1@");
+    expect(marks.length).toBeGreaterThan(3);
+    const baseline = Number(label("@I1@")?.getAttribute("y"));
+    for (const mark of marks) {
+      const circle = mark.querySelector("circle");
+      expect(Number(circle?.getAttribute("cy")) - Number(circle?.getAttribute("r"))).toBeGreaterThan(baseline);
+      expect(Number(circle?.getAttribute("cy"))).toBeLessThanOrEqual(baseline + BAR_HEIGHT / 2);
+    }
+  });
+
+  it("centres a person's lane where y says, the lane being a multiple of the row", () => {
+    board();
+
+    for (const xref of bars()) {
+      const centre = Number(bar(xref)?.getAttribute("y")) + BAR_HEIGHT / 2;
+      expect((centre - ROW / 2) % ROW).toBe(0);
+    }
+  });
+
+  it("colours a bar by its surname and the same surname alike", () => {
+    board(fromLines(
+      ...lived("@A@", "Ivan /Лобанов/", 1900, 1950),
+      ...lived("@B@", "Anna /Лобанова/", 1960, 2000),
+      ...lived("@C@", "Nobody", 1900, 1950),
+    ));
+    const fill = (xref: string) => bar(xref)?.getAttribute("style") ?? "";
+
+    expect(fill("@A@")).toContain("--gedcom-ft-fill-light:hsl(");
+    expect(fill("@A@").split(";")[0]?.split(" ")[0]).toBe(fill("@B@").split(";")[0]?.split(" ")[0]);
+    expect(fill("@C@")).toContain(" 0% ");
+    expect(label("@A@")?.getAttribute("style")).toBe(fill("@A@"));
+  });
+
+  it("gives a person no bar and no mention where no event is dated", () => {
+    board(withEvents());
+
+    expect(withEvents().people.size).toBe(18);
+    expect(bars()).toHaveLength(17);
+    expect(container.textContent).not.toContain("Kazimierz Żorawski");
+    expect(all("[data-p]").some((element) => element.getAttribute("data-p") === "@I18@")).toBe(false);
+  });
+
+  it("marks the marriage on each spouse's bar and joins no two bars while nobody is lit", () => {
+    board();
+
+    const at = String((1895 - 1820) * ZOOM.initial + 12);
+    for (const xref of ["@I1@", "@I2@"]) {
+      expect(container.querySelector(`.gedcom-ft-mark.is-marriage[data-p="${xref}"] circle`)?.getAttribute("cx")).toBe(at);
+    }
+    expect(all(".gedcom-ft-marriage")).toHaveLength(0);
   });
 
   it("draws a period as a span, and an approximate birth as uncertain", () => {
-    board(fileTimelineOf(indexOf(curieWithEvents())));
+    board(withEvents());
 
     const residence = of(".gedcom-ft-span", "@I2@")[0];
     expect(Number(residence?.getAttribute("width"))).toBe((1906 - 1895) * ZOOM.initial);
@@ -97,34 +235,23 @@ describe("drawing the timeline of a file", () => {
     );
   });
 
-  it("gives a person with no dated event a row", () => {
-    board(fileTimelineOf(indexOf(curieWithEvents())));
-
-    expect(names()).toHaveLength(18);
-    const kazimierz = [...container.querySelectorAll(".gedcom-ft-name")].find((row) =>
-      row.textContent?.includes("Kazimierz Żorawski"),
-    );
-    expect(kazimierz).toBeDefined();
-    expect(of(".gedcom-ft-life", kazimierz?.getAttribute("data-p") ?? "")).toHaveLength(0);
-  });
-
-  it("draws only the rows in the window and one window around it", () => {
-    const drawn = board();
+  it("draws only the lanes in the window and one window around it", () => {
+    const drawn = board(crowd(40));
     drawn.draw({ top: 0, left: 0, width: 2000, height: 2 * ROW });
 
-    expect(names()).toHaveLength(4);
-    expect(all(".gedcom-ft-life")).toHaveLength(4);
+    expect(bars()).toHaveLength(4);
+    expect(all(".gedcom-ft-label")).toHaveLength(4);
   });
 
-  it("draws the next rows for a window past the drawn one, and nothing more", () => {
-    const drawn = board();
+  it("draws the next lanes for a window past the drawn one, and nothing more", () => {
+    const drawn = board(crowd(40));
     drawn.draw({ top: 0, left: 0, width: 2000, height: 2 * ROW });
     const past = { top: 10 * ROW, left: 0, width: 2000, height: 2 * ROW };
 
     expect(drawn.needsDraw(past)).toBe(true);
     drawn.draw(past);
-    expect(names()).toHaveLength(6);
-    expect(names()).not.toContain(fileTimelineOf(curieIndex()).rows[0]);
+    expect(bars()).toHaveLength(6);
+    expect(bars()).not.toContain("@C0@");
     expect(drawn.needsDraw({ ...past, top: 9 * ROW })).toBe(false);
   });
 
@@ -142,11 +269,11 @@ describe("lighting a person", () => {
     const before = all(".gedcom-ft-items > *");
     drawn.highlight("@I1@");
 
-    const lit = new Set(all(".gedcom-ft-name.is-on").map((row) => row.getAttribute("data-p")));
+    const lit = new Set(all(".gedcom-ft-life.is-on").map((bar) => bar.getAttribute("data-p")));
     expect([...lit].sort()).toEqual(["@I1@", "@I12@", "@I13@", "@I2@", "@I3@", "@I4@"].sort());
-    expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(true);
-    expect(of(".gedcom-ft-life", "@I2@")[0]?.classList.contains("is-on")).toBe(true);
-    expect(of(".gedcom-ft-life", "@I11@")[0]?.classList.contains("is-on")).toBe(false);
+    expect(bar("@I1@")?.classList.contains("is-hl")).toBe(true);
+    expect(label("@I2@")?.classList.contains("is-on")).toBe(true);
+    expect(bar("@I11@")?.classList.contains("is-on")).toBe(false);
     expect(container.querySelector(".gedcom-ft-board")?.classList.contains("has-hl")).toBe(true);
     expect(all(".gedcom-ft-items > *")).toEqual(before);
   });
@@ -164,19 +291,49 @@ describe("lighting a person", () => {
     expect(arrows.some(([from]) => from === "@I2@")).toBe(false);
   });
 
+  it("draws a dashed marriage line with a dot at each end, at the year of the marriage, for the lit person only", () => {
+    board().highlight("@I1@");
+
+    const lines = all(".gedcom-ft-marriage");
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.getAttribute("x1")).toBe(String((1895 - 1820) * ZOOM.initial + 12));
+    expect(lines[0]?.getAttribute("y1")).not.toBe(lines[0]?.getAttribute("y2"));
+    expect(all(".gedcom-ft-marriage-dot")).toHaveLength(2);
+    expect(lines[0]?.getAttribute("marker-end")).toBeNull();
+  });
+
+  it("puts a marriage line at the first child's bar where the marriage is undated", () => {
+    const undated = fromLines(
+      "0 @I1@ INDI", "1 NAME Han /Solo/", "1 BIRT", "2 DATE 1870", "1 FAMS @F1@",
+      "0 @I2@ INDI", "1 NAME Leia /Organa/", "1 BIRT", "2 DATE 1872", "1 FAMS @F1@",
+      "0 @I3@ INDI", "1 NAME Ben /Solo/", "1 BIRT", "2 DATE 1900", "1 FAMC @F1@",
+      "0 @F1@ FAM", "1 HUSB @I1@", "1 WIFE @I2@", "1 CHIL @I3@",
+    );
+    board(undated).highlight("@I2@");
+
+    expect(all(".gedcom-ft-marriage")[0]?.getAttribute("x1")).toBe(String((1900 - 1860) * ZOOM.initial + 12));
+  });
+
+  it("tells the lines apart by more than colour: the kin solid with an arrowhead, the marriage dashed with dots", () => {
+    board().highlight("@I1@");
+
+    expect(all(".gedcom-ft-kin").every((line) => line.getAttribute("marker-end") !== null)).toBe(true);
+    expect(all(".gedcom-ft-marriage").every((line) => line.getAttribute("marker-end") === null)).toBe(true);
+    expect(all(".gedcom-ft-marriage-dot").length).toBeGreaterThan(0);
+  });
+
   it("clears the arrows and the light when the light is put out", () => {
     const drawn = board();
     drawn.highlight("@I1@");
     drawn.unlight();
 
-    expect(all(".gedcom-ft-kin")).toHaveLength(0);
+    expect(all(".gedcom-ft-kin, .gedcom-ft-marriage, .gedcom-ft-marriage-dot")).toHaveLength(0);
     expect(all(".is-on")).toHaveLength(0);
-    expect(container.querySelector(".gedcom-ft-row-hl")).toBeNull();
   });
 });
 
 describe("the light of a click", () => {
-  const lit = () => all(".is-hl").map((element) => element.getAttribute("data-p"));
+  const lit = () => all(".gedcom-ft-life.is-hl").map((element) => element.getAttribute("data-p"));
   const litBoard = () => container.querySelector(".gedcom-ft-board")?.classList.contains("has-hl");
 
   it("is not lit by the pointer, however long it rests", () => {
@@ -184,94 +341,103 @@ describe("the light of a click", () => {
     try {
       board();
       for (const xref of ["@I1@", "@I2@"]) {
-        nameRow(xref)?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
-        of(".gedcom-ft-life", xref)[0]?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+        label(xref)?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
+        bar(xref)?.dispatchEvent(new MouseEvent("pointermove", { bubbles: true }));
       }
       vi.advanceTimersByTime(1000);
 
-      expect(all(".is-on, .is-hl, .gedcom-ft-kin, .gedcom-ft-row-hl")).toHaveLength(0);
+      expect(all(".is-on, .is-hl, .gedcom-ft-kin, .gedcom-ft-marriage")).toHaveLength(0);
       expect(litBoard()).toBe(false);
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("is not lit by the focus arriving on a name", () => {
+  it("is not lit by the focus arriving on a bar", () => {
     board();
-    openButton("@I2@")?.focus();
+    bar("@I2@")?.focus();
 
     expect(all(".is-on, .is-hl")).toHaveLength(0);
     expect(litBoard()).toBe(false);
   });
 
-  it("is lit at once by a click on a name, and the person is selected", () => {
+  it("is lit at once by a click on a bar or its name, and the person is selected", () => {
     board();
-    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    click(label("@I1@"));
 
-    expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(true);
-    expect(nameRow("@I2@")?.classList.contains("is-on")).toBe(true);
-    expect(nameRow("@I11@")?.classList.contains("is-on")).toBe(false);
+    expect(bar("@I1@")?.classList.contains("is-hl")).toBe(true);
+    expect(bar("@I2@")?.classList.contains("is-on")).toBe(true);
+    expect(bar("@I11@")?.classList.contains("is-on")).toBe(false);
     expect(litBoard()).toBe(true);
     expect(all(".gedcom-ft-kin")).toHaveLength(4);
+    expect(all(".gedcom-ft-marriage")).toHaveLength(1);
     expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
-  it("is lit by a click on a lifeline, and moves to the next person clicked", () => {
+  it("moves to the next person clicked", () => {
     board();
-    of(".gedcom-ft-life", "@I1@")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
-    of(".gedcom-ft-life", "@I12@")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    click(bar("@I1@"));
+    click(bar("@I12@"));
 
-    expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
-    expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(false);
-    expect(nameRow("@I1@")?.classList.contains("is-on")).toBe(true);
+    expect(bar("@I12@")?.classList.contains("is-hl")).toBe(true);
+    expect(bar("@I1@")?.classList.contains("is-hl")).toBe(false);
+    expect(bar("@I1@")?.classList.contains("is-on")).toBe(true);
   });
 
-  it("is lit from the keyboard by Enter or Space on a name's button", () => {
+  it("is lit from the keyboard by Enter or Space on a focused bar, and Tab alone lights no one", () => {
     board();
-    openButton("@I12@")?.click();
-
-    expect(nameRow("@I12@")?.classList.contains("is-hl")).toBe(true);
+    press(bar("@I12@"), "Enter");
+    expect(bar("@I12@")?.classList.contains("is-hl")).toBe(true);
     expect(host.select).toHaveBeenCalledWith("@I12@");
+
+    bar("@I1@")?.focus();
+    expect(lit()).toEqual(["@I12@"]);
+    press(bar("@I1@"), " ");
+    expect(lit()).toEqual(["@I1@"]);
+    expect(host.select).toHaveBeenLastCalledWith("@I1@");
   });
 
   it("is put out by a click on empty space, and leaves the host's selection alone", () => {
     board();
-    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    click(bar("@I1@"));
     host.select.mockClear();
     container.querySelector(".gedcom-ft-chart")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
 
-    expect(all(".is-on, .is-hl, .gedcom-ft-kin")).toHaveLength(0);
+    expect(all(".is-on, .is-hl, .gedcom-ft-kin, .gedcom-ft-marriage")).toHaveLength(0);
     expect(litBoard()).toBe(false);
     expect(host.select).not.toHaveBeenCalled();
   });
 
-  it("is put out by Escape, and Escape with nothing lit does nothing", () => {
-    board();
-    const escape = () =>
-      openButton("@I1@")?.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  it("is put out by Escape, which leaves the selection and Branch, and Escape with nothing lit does nothing", () => {
+    const drawn = board();
+    const escape = () => press(bar("@I1@"), "Escape");
     escape();
-    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    click(bar("@I1@"));
+    drawn.select("@I1@", false);
     expect(litBoard()).toBe(true);
     escape();
 
     expect(litBoard()).toBe(false);
-    expect(all(".is-on, .gedcom-ft-kin")).toHaveLength(0);
+    expect(all(".is-on, .gedcom-ft-kin, .gedcom-ft-marriage")).toHaveLength(0);
+    expect(bar("@I1@")?.classList.contains("is-selected")).toBe(true);
+    expect(branchButtons()).toHaveLength(1);
   });
 
-  it("stays through a redraw of the rows, and is put out by a scope change", () => {
+  it("stays through a redraw of the lanes, and is put out by a scope change", () => {
     const drawn = board();
-    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    click(bar("@I1@"));
     drawn.draw({ ...WHOLE, top: 1 });
     expect(lit()).toContain("@I1@");
 
-    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+    drawn.select("@I12@", false);
+    click(container.querySelector("[data-branch]"));
     expect(all(".is-on, .is-hl")).toHaveLength(0);
     expect(litBoard()).toBe(false);
   });
 
   it("is put out by the selection of another person and kept by that of the lit one", () => {
     const drawn = board();
-    nameRow("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    click(bar("@I1@"));
     drawn.select("@I1@", false);
     expect(litBoard()).toBe(true);
 
@@ -294,7 +460,7 @@ describe("the year cursor", () => {
   });
 
   it("marks an age from an approximate birth as approximate", () => {
-    board(fileTimelineOf(indexOf(curieWithEvents()))).setYear(1900);
+    board(withEvents()).setYear(1900);
 
     expect(container.querySelector('.gedcom-ft-age[data-p="@I3@"] text')?.textContent).toBe("≈68");
   });
@@ -310,24 +476,24 @@ describe("the year cursor", () => {
 
 describe("the timeline without a toolbar", () => {
   it("draws the events other than births, marriages and deaths, with no switch for them", () => {
-    board(fileTimelineOf(indexOf(curieWithEvents())));
+    board(withEvents());
 
     expect(all(".gedcom-ft-mark.is-other").length).toBeGreaterThan(0);
     expect(all(".gedcom-ft-span").length).toBeGreaterThan(0);
     expect(container.querySelector(".gedcom-ft-chip, .gedcom-ft-tools, .gedcom-ft-alive")).toBeNull();
   });
 
-  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the rows and the group", () => {
-    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+  it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the bars and the group", () => {
+    board(curie(), { focus: "@I12@" }).select("@I12@", false);
     const places: Record<string, string> = {
       "gedcom-ft-controls": "top",
       "gedcom-ft-find": "bottom",
-      "gedcom-ft-name": "right",
+      "gedcom-ft-overlay": "right",
       "gedcom-ft-scope": "bottom",
     };
     const buttons = [...container.querySelectorAll("button")].filter((one) => one.getAttribute("aria-label"));
 
-    expect(buttons.length).toBeGreaterThan(20);
+    expect(buttons.length).toBeGreaterThan(8);
     for (const button of buttons) {
       expect(button.hasAttribute("title"), button.className).toBe(false);
       const group = Object.keys(places).find((cls) => button.closest(`.${cls}`));
@@ -381,15 +547,15 @@ describe("the timeline without a toolbar", () => {
     container.querySelector<HTMLElement>(".gedcom-ft-find-clear")?.click();
     expect(input?.value).toBe("");
     expect(find?.classList.contains("is-open")).toBe(true);
-    expect(all(".gedcom-ft-name.is-dim")).toHaveLength(0);
+    expect(all(".gedcom-ft-life.is-dim")).toHaveLength(0);
     input?.dispatchEvent(new KeyboardEvent("keydown", { bubbles: true, key: "Escape" }));
     expect(find?.classList.contains("is-open")).toBe(false);
   });
 
-  it("steps through the matches in row order with the arrows, marks the current row and wraps", () => {
+  it("steps through the matches in the order the bars begin with the arrows, marks the current bar and wraps", () => {
     board();
     const count = () => container.querySelector(".gedcom-ft-find-count")?.textContent;
-    const current = () => all(".gedcom-ft-name.is-current").map((row) => row.getAttribute("data-p"));
+    const current = () => all(".gedcom-ft-life.is-current").map((row) => row.getAttribute("data-p"));
     container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
     const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
     if (input) {
@@ -412,8 +578,7 @@ describe("the timeline without a toolbar", () => {
     expect(count()).toBe("1 / 4");
     previous?.click();
     expect(current()).toEqual(["@I17@"]);
-    expect(of(".gedcom-ft-life.is-current", "@I17@")).toHaveLength(1);
-    expect(all(".gedcom-ft-name:not(.is-dim)")).toHaveLength(4);
+    expect(all(".gedcom-ft-life:not(.is-dim)")).toHaveLength(4);
     if (input) {
       input.value = "zzz";
       input.dispatchEvent(new Event("input"));
@@ -422,7 +587,7 @@ describe("the timeline without a toolbar", () => {
     expect(current()).toEqual([]);
   });
 
-  it("fades the rows that do not match a search", () => {
+  it("fades the bars that do not match a search", () => {
     board();
     const search = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
     if (search) {
@@ -430,55 +595,56 @@ describe("the timeline without a toolbar", () => {
       search.dispatchEvent(new Event("input"));
     }
 
-    const standing = all(".gedcom-ft-name:not(.is-dim)").map((row) => row.getAttribute("data-p")).sort();
+    const standing = all(".gedcom-ft-life:not(.is-dim)").map((row) => row.getAttribute("data-p")).sort();
     expect(standing).toEqual(["@I12@", "@I14@", "@I16@", "@I17@"].sort());
-    expect(of(".gedcom-ft-life", "@I1@")[0]?.classList.contains("is-dim")).toBe(true);
-    expect(of(".gedcom-ft-life", "@I14@")[0]?.classList.contains("is-dim")).toBe(false);
+    expect(bar("@I1@")?.classList.contains("is-dim")).toBe(true);
+    expect(bar("@I14@")?.classList.contains("is-dim")).toBe(false);
   });
 
-  it("shows one person's branch, widens and narrows it, and returns to the whole file", () => {
-    board();
-    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+  it("shows one person's branch from their Branch button, widens and narrows it, and returns to the whole file", () => {
+    const drawn = board();
+    drawn.select("@I12@", false);
+    click(container.querySelector("[data-branch]"));
 
-    expect(names()).toHaveLength(10);
+    expect(bars()).toHaveLength(10);
     expect(scopeText()).toContain("Irène Joliot-Curie");
     expect(scopeText()).toContain("10 of 17 people");
     expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ focus: "@I12@", up: 2 }));
 
     container.querySelector<HTMLElement>('[data-step="up:-1"]')?.click();
-    expect(names()).toHaveLength(6);
+    expect(bars()).toHaveLength(6);
     expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ up: 1 }));
     container.querySelector<HTMLElement>('[data-step="down:-1"]')?.click();
-    expect(names()).toHaveLength(6);
+    expect(bars()).toHaveLength(6);
     container.querySelector<HTMLElement>('[data-step="down:-1"]')?.click();
-    expect(names()).toHaveLength(4);
+    expect(bars()).toHaveLength(4);
     expect(container.querySelector('[data-step="down:-1"]')?.hasAttribute("disabled")).toBe(true);
     expect(container.querySelector('[data-step="up:-1"]')?.getAttribute("data-icon")).toBe("minus");
 
     container.querySelector<HTMLElement>(".gedcom-ft-whole")?.click();
-    expect(names()).toHaveLength(17);
+    expect(bars()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
   });
 
   it("opens on the branch a scope names", () => {
-    board(fileTimelineOf(curieIndex()), { focus: "@I12@" }).setYear(1930);
+    board(curie(), { focus: "@I12@" }).setYear(1930);
 
-    expect(names()).toHaveLength(10);
+    expect(bars()).toHaveLength(10);
   });
 });
 
 describe("activating", () => {
-  it("selects a person from their name or their lifeline, and moves nothing", () => {
+  it("selects a person from their name or their bar, and moves nothing", () => {
     board();
-    nameRow("@I12@")?.click();
-    of(".gedcom-ft-life", "@I1@")[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    label("@I12@")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    bar("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(host.select.mock.calls).toEqual([["@I12@"], ["@I1@"]]);
     expect(container.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollTop).toBe(0);
   });
 
   it("shows a mark's event in the source", () => {
-    const model = fileTimelineOf(curieIndex());
+    const model = curie();
     board(model);
     container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"] circle')?.dispatchEvent(
       new MouseEvent("click", { bubbles: true }),
@@ -489,11 +655,10 @@ describe("activating", () => {
 
   it("on a touch, lights the person first and opens them on the second", () => {
     board();
-    const life = of(".gedcom-ft-life", "@I1@")[0];
-    const touch = () => tap(life);
+    const touch = () => tap(bar("@I1@"));
     touch();
     expect(host.select).not.toHaveBeenCalled();
-    expect(nameRow("@I1@")?.classList.contains("is-hl")).toBe(true);
+    expect(bar("@I1@")?.classList.contains("is-hl")).toBe(true);
 
     touch();
     expect(host.select).toHaveBeenCalledWith("@I1@");
@@ -502,16 +667,16 @@ describe("activating", () => {
   it("on a touch after a mark's, lights the person rather than opening them", () => {
     board();
     tap(container.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]'));
-    tap(of(".gedcom-ft-life", "@I1@")[0]);
+    tap(bar("@I1@"));
 
     expect(host.select).not.toHaveBeenCalled();
-    tap(of(".gedcom-ft-life", "@I1@")[0]);
+    tap(bar("@I1@"));
     expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
   it("on a touch of empty space, puts the light out", () => {
     board();
-    tap(of(".gedcom-ft-life", "@I1@")[0]);
+    tap(bar("@I1@"));
     tap(container.querySelector(".gedcom-ft-chart"));
 
     expect(all(".is-hl")).toHaveLength(0);
@@ -520,8 +685,8 @@ describe("activating", () => {
 
   it("opens a person from the keyboard even after a touch", () => {
     board();
-    tap(of(".gedcom-ft-life", "@I2@")[0]);
-    openButton("@I1@")?.click();
+    tap(bar("@I2@"));
+    press(bar("@I1@"), "Enter");
 
     expect(host.select).toHaveBeenCalledWith("@I1@");
   });
@@ -568,7 +733,7 @@ describe("the state a timeline keeps", () => {
 
 describe("a file with very many dated events", () => {
   it("still draws it", () => {
-    const base = fileTimelineOf(curieIndex());
+    const base = curie();
     const marie = base.people.get("@I1@");
     if (!marie) {
       throw new Error("no Marie");
@@ -588,7 +753,7 @@ describe("a file with very many dated events", () => {
     };
     board(model);
 
-    expect(names()).toHaveLength(17);
+    expect(bars()).toHaveLength(17);
   });
 });
 
@@ -607,28 +772,31 @@ describe("drawing only what is near the window, sideways", () => {
 });
 
 describe("the keyboard", () => {
-  it("opens a person from a real button, with the branch beside it rather than inside", () => {
+  it("gives each bar a place in the tab order, a role and the person's name, in the order the bars begin", () => {
     board();
-    const open = openButton("@I1@");
 
-    expect(open?.tagName).toBe("BUTTON");
-    expect(open?.querySelector("button")).toBeNull();
-    expect(nameRow("@I1@")?.hasAttribute("role")).toBe(false);
-    open?.click();
-    expect(host.select).toHaveBeenCalledWith("@I1@");
+    expect(bar("@I1@")?.getAttribute("tabindex")).toBe("0");
+    expect(bar("@I1@")?.getAttribute("role")).toBe("button");
+    expect(bar("@I1@")?.getAttribute("aria-label")).toBe("Marie Skłodowska-Curie");
+    expect(bar("@I1@")?.querySelector("button")).toBeNull();
+    const begun = bars().map((xref) => curie().people.get(xref)?.lifeline?.start ?? 0);
+    expect(begun).toEqual([...begun].sort((a, b) => a - b));
   });
 
-  it("keeps the focus on a row through a redraw", () => {
+  it("keeps the focus on a bar through a redraw, and on Branch", () => {
     const drawn = board();
-    nameRow("@I1@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.focus();
+    bar("@I1@")?.focus();
     drawn.draw({ ...WHOLE, top: 1 });
+    expect(document.activeElement?.getAttribute("data-p")).toBe("@I1@");
 
-    expect(document.activeElement?.closest(".gedcom-ft-name")?.getAttribute("data-p")).toBe("@I1@");
+    drawn.select("@I1@", false);
+    container.querySelector<HTMLElement>("[data-branch]")?.focus();
+    drawn.draw({ ...WHOLE, top: 2 });
     expect(document.activeElement?.hasAttribute("data-branch")).toBe(true);
   });
 
   it("keeps the focus on a stepper as it steps, and on its other button at the end", () => {
-    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    board(curie(), { focus: "@I12@" });
     const step = (which: string) => container.querySelector<HTMLElement>(`[data-step="${which}"]`);
     step("up:-1")?.focus();
     step("up:-1")?.click();
@@ -642,10 +810,10 @@ describe("the keyboard", () => {
     board();
     expect(scopeText()).toBe("");
     expect(container.querySelector<HTMLElement>(".gedcom-ft-scope")?.style.display).toBe("none");
-    expect(names()).toHaveLength(17);
+    expect(bars()).toHaveLength(17);
 
     container.replaceChildren();
-    board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 9, down: 0 });
+    board(curie(), { focus: "@I12@", up: 9, down: 0 });
     const disabled = (which: string) => container.querySelector(`[data-step="${which}"]`)?.hasAttribute("disabled");
     expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 8 of 17 people");
     expect([disabled("up:1"), disabled("up:-1"), disabled("down:-1"), disabled("down:1")]).toEqual([
@@ -657,21 +825,22 @@ describe("the keyboard", () => {
   });
 
   it("returns to the whole file on Branch again, the button pressed while the branch is shown", () => {
-    board();
-    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
+    const drawn = board();
+    drawn.select("@I12@", false);
+    expect(branchButtons()[0]?.getAttribute("aria-pressed")).toBe("false");
+    click(branchButtons()[0]);
 
-    expect(names()).toHaveLength(10);
-    expect(nameRow("@I12@")?.querySelector(".gedcom-ft-branch")?.getAttribute("aria-pressed")).toBe("true");
-    expect(nameRow("@I14@")?.querySelector(".gedcom-ft-branch")?.getAttribute("aria-pressed")).toBe("false");
-    nameRow("@I12@")?.querySelector<HTMLElement>(".gedcom-ft-branch")?.click();
-    expect(names()).toHaveLength(17);
+    expect(bars()).toHaveLength(10);
+    expect(branchButtons()).toHaveLength(1);
+    expect(branchButtons()[0]?.getAttribute("aria-pressed")).toBe("true");
+    click(branchButtons()[0]);
+    expect(bars()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
-    const irene = fileTimelineOf(curieIndex()).rows.indexOf("@I12@");
-    expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(irene * ROW + ROW / 2);
+    expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(laneOf("@I12@") * ROW + ROW / 2);
   });
 
   it("names each stepper's buttons for what they widen or narrow", () => {
-    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    board(curie(), { focus: "@I12@" });
     const labels = all("[data-step]").map((button) => button.getAttribute("aria-label"));
 
     expect(new Set(labels).size).toBe(4);
@@ -681,7 +850,7 @@ describe("the keyboard", () => {
 describe("the timeline in Russian", () => {
   it("counts the branch's people in the form the number takes", () => {
     setLanguage("ru");
-    board(fileTimelineOf(curieIndex()), { focus: "@I12@" });
+    board(curie(), { focus: "@I12@" });
 
     expect(scopeText()).toContain("10 из 17 человек");
     expect(scopeText()).not.toContain("человека");
@@ -699,31 +868,28 @@ describe("the ages under the cursor and a search", () => {
   });
 });
 
-describe("the selected row", () => {
-  const selectedNames = () => all(".gedcom-ft-name.is-selected").map((row) => row.getAttribute("data-p"));
+describe("the selected bar", () => {
   const selectedLives = () => all(".gedcom-ft-life.is-selected").map((life) => life.getAttribute("data-p"));
-  const bands = () => all(".gedcom-ft-row-selected");
 
-  it("marks one person's row, lifeline and band, and no other", () => {
+  it("marks one person's bar and no other, with no band across the lane", () => {
     const drawn = board();
     drawn.select("@I12@", true);
 
-    expect(selectedNames()).toEqual(["@I12@"]);
     expect(selectedLives()).toEqual(["@I12@"]);
-    expect(bands()).toHaveLength(1);
+    expect(container.querySelector(".gedcom-ft-row-selected, .gedcom-ft-row-hl")).toBeNull();
   });
 
-  it("marks a row and leaves the scroll of the plot where it was when asked not to reveal", () => {
+  it("leaves the scroll of the plot where it was when asked not to reveal", () => {
     const drawn = board();
     const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
     drawn.setScroll({ top: 0, left: 0 });
     drawn.select("@I12@", false);
 
-    expect(selectedNames()).toEqual(["@I12@"]);
+    expect(selectedLives()).toEqual(["@I12@"]);
     expect(plot?.scrollTop).toBe(0);
   });
 
-  it("brings the row into view when asked to reveal", () => {
+  it("brings the lane into view when asked to reveal", () => {
     const drawn = board();
     const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
     drawn.setScroll({ top: 0, left: 0 });
@@ -733,7 +899,7 @@ describe("the selected row", () => {
   });
 
   it("changes no scope for a person outside it when asked not to reveal", () => {
-    const drawn = board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 0, down: 0 });
+    const drawn = board(curie(), { focus: "@I12@", up: 0, down: 0 });
     host.scopeChanged.mockClear();
 
     drawn.select("@I2@", false);
@@ -747,51 +913,63 @@ describe("the selected row", () => {
     drawn.highlight("@I1@");
     drawn.setQuery("curie");
     drawn.stepMatch(1);
-    expect(selectedNames()).toEqual(["@I12@"]);
+    expect(selectedLives()).toEqual(["@I12@"]);
 
     drawn.select("@I2@", true);
-    expect(selectedNames()).toEqual(["@I2@"]);
     expect(selectedLives()).toEqual(["@I2@"]);
-    expect(bands()).toHaveLength(1);
 
     drawn.select(null, true);
-    expect(selectedNames()).toEqual([]);
-    expect(bands()).toHaveLength(0);
+    expect(selectedLives()).toEqual([]);
+    expect(branchButtons()).toHaveLength(0);
   });
 
-  it("is on a row that leaves the drawn rows and comes back", () => {
-    const drawn = board();
-    drawn.select("@I2@", true);
-    drawn.draw({ top: 18 * ROW, left: 0, width: 2000, height: ROW });
-    expect(nameRow("@I2@")).toBeNull();
+  it("is on a bar that leaves the drawn lanes and comes back", () => {
+    const drawn = board(crowd(40));
+    drawn.select("@C1@", true);
+    drawn.draw({ top: 30 * ROW, left: 0, width: 2000, height: ROW });
+    expect(bar("@C1@")).toBeNull();
+    expect(branchButtons()).toHaveLength(0);
 
     drawn.draw(WHOLE);
-    expect(selectedNames()).toEqual(["@I2@"]);
+    expect(selectedLives()).toEqual(["@C1@"]);
+    expect(branchButtons()).toHaveLength(1);
   });
 
-  it("is on the row after a new reading of the file and after a scope narrowed and widened", () => {
+  it("is on the bar after a new reading of the file and after a scope narrowed and widened", () => {
     const drawn = board();
     drawn.select("@I2@", true);
-    drawn.show(fileTimelineOf(curieIndex()), SCOPE);
+    drawn.show(curie(), SCOPE);
     drawn.draw(WHOLE);
-    expect(selectedNames()).toEqual(["@I2@"]);
+    expect(selectedLives()).toEqual(["@I2@"]);
 
-    drawn.show(fileTimelineOf(curieIndex()), { ...SCOPE, focus: "@I12@", up: 0, down: 0 });
+    drawn.show(curie(), { ...SCOPE, focus: "@I12@", up: 0, down: 0 });
     drawn.draw(WHOLE);
-    expect(selectedNames()).toEqual([]);
-    drawn.show(fileTimelineOf(curieIndex()), SCOPE);
+    expect(selectedLives()).toEqual([]);
+    drawn.show(curie(), SCOPE);
     drawn.draw(WHOLE);
-    expect(selectedNames()).toEqual(["@I2@"]);
+    expect(selectedLives()).toEqual(["@I2@"]);
   });
 
   it("changes the scope to the person's own branch where the branch shown does not hold them", () => {
-    const drawn = board(fileTimelineOf(curieIndex()), { focus: "@I12@", up: 0, down: 0 });
-    expect(nameRow("@I2@")).toBeNull();
+    const drawn = board(curie(), { focus: "@I12@", up: 0, down: 0 });
+    expect(bar("@I2@")).toBeNull();
 
     drawn.select("@I2@", true);
 
     expect(host.scopeChanged.mock.lastCall?.[0].focus).toBe("@I2@");
-    expect(selectedNames()).toEqual(["@I2@"]);
+    expect(selectedLives()).toEqual(["@I2@"]);
+  });
+
+  it("marks nothing and moves nothing for a person with no bar", () => {
+    const drawn = board(withEvents());
+    host.scopeChanged.mockClear();
+    drawn.setScroll({ top: 0, left: 0 });
+    drawn.select("@I18@", true);
+
+    expect(selectedLives()).toEqual([]);
+    expect(branchButtons()).toHaveLength(0);
+    expect(container.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollTop).toBe(0);
+    expect(host.scopeChanged).not.toHaveBeenCalled();
   });
 
   it("reads the scroll of the plot and puts it back", () => {

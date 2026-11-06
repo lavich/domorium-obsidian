@@ -5,11 +5,12 @@ import { ticksBetween } from "./axisTicks";
 import { BranchScopeBar, readBranchScope, type BranchScope } from "./branchScope";
 import type { FileTimeline } from "./fileTimeline";
 import { FloatingSearch } from "./floatingSearch";
-import { nameBy, placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
-import { layoutOf, PAD, ROW, svg, type Layout, type Placed } from "./timelineLayout";
+import { nameMeasure } from "./cardRender";
+import { placeInside, prefersReducedMotion, tipPlace, zoomControls } from "./dom";
+import { BAR, FADE_AT, layoutOf, maskName, PAD, ROW, SOFT, SOFT_OPACITY, svg, type BarEnd, type Layout, type Placed } from "./timelineLayout";
 import { listenTimeline } from "./timelineEvents";
 import { markOf, missesQuery, personOf, yearAtX } from "./timelineHits";
-import { eventName, lifelineYears, personName, yearText } from "./labels";
+import { eventName, personName, yearText } from "./labels";
 
 const AXIS = 26;
 const TICK_HEIGHT = { minor: 3, medium: 5, major: 7 } as const;
@@ -32,7 +33,7 @@ export interface TimelineState extends TimelineScope {
   scroll?: TimelineScroll;
 }
 
-/** The part of the board in view: scroll offsets, and the size of the plot beside the names. */
+/** The part of the board in view: scroll offsets, and the size of the plot. */
 export interface TimelineWindow {
   top: number;
   left: number;
@@ -87,11 +88,12 @@ export class FileTimelineBoard {
   private readonly find: FloatingSearch;
   private readonly scopeBar: BranchScopeBar;
   private readonly board: HTMLElement;
-  private readonly names: HTMLElement;
+  private readonly echo = new WeakMap<HTMLElement, number>();
   private readonly stage: HTMLElement;
   private readonly plot: HTMLElement;
   private readonly axisClip: HTMLElement;
   private readonly axis: SVGSVGElement;
+  private readonly overlay: HTMLElement;
   private readonly chart: SVGSVGElement;
   private readonly grid: SVGGElement;
   private readonly items: SVGGElement;
@@ -106,13 +108,11 @@ export class FileTimelineBoard {
   private query = "";
   private current: string | null = null;
   private selected: string | null = null;
-  private readonly echo = new WeakMap<HTMLElement, number>();
   private searchText = new Map<string, string>();
   private drawn: Span = { top: 0, bottom: 0, left: 0, right: 0 };
   private readonly elements = new Map<Element, string[]>();
   private readonly marks = new Map<Element, Placed>();
   private byPerson = new Map<string, Element[]>();
-  private byName = new Map<string, HTMLElement>();
   private lit: Element[] = [];
   private highlighted: string | null = null;
   private year: number | null = null;
@@ -146,21 +146,19 @@ export class FileTimelineBoard {
       fit: () => this.fit(),
     });
     this.board = this.stage.createDiv({ cls: "gedcom-ft-board" });
-    this.board.createDiv({ cls: "gedcom-ft-axis-pad" });
     this.axisClip = this.board.createDiv({ cls: "gedcom-ft-axis-band" }).createDiv({ cls: "gedcom-ft-axis-clip" });
-    this.names = this.board.createDiv({ cls: "gedcom-ft-names" });
-    this.names.setCssProps({ "--gedcom-ft-row": `${ROW}px` });
     this.plot = this.board.createDiv({ cls: "gedcom-ft-plot" });
     this.axis = svg(this.doc, "svg", "gedcom-ft-axis", { height: AXIS });
     this.chart = svg(this.doc, "svg", "gedcom-ft-chart");
     this.cursor = svg(this.doc, "svg", "gedcom-ft-cursor");
     this.axisClip.append(this.axis);
-    this.plot.append(this.chart, this.cursor);
+    this.overlay = this.plot.createDiv({ cls: "gedcom-ft-overlay" });
+    this.plot.append(this.chart, this.cursor, this.overlay);
     this.chart.append(this.definitions());
     this.grid = svg(this.doc, "g", "gedcom-ft-grid");
     this.items = svg(this.doc, "g", "gedcom-ft-items");
     this.hover = svg(this.doc, "g", "gedcom-ft-hover");
-    this.chart.append(this.grid, this.items, this.hover);
+    this.chart.append(this.grid, this.hover, this.items);
 
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
@@ -197,6 +195,11 @@ export class FileTimelineBoard {
       right: view.left + 2 * width,
     };
     const span = this.drawn;
+    const active = this.doc.activeElement;
+    const focused =
+      active instanceof Element && this.plot.contains(active) && (personOf(active) !== null || active.hasAttribute("data-branch"))
+        ? { xref: personOf(active), branch: active.hasAttribute("data-branch") }
+        : null;
     this.elements.clear();
     this.marks.clear();
     this.byPerson = new Map();
@@ -220,17 +223,16 @@ export class FileTimelineBoard {
         this.byPerson.set(xref, held);
       }
     }
-    const focused = this.drawNames(layout);
-    this.drawSelectedBand(layout);
     this.lit = [];
     this.highlight(this.highlighted, true);
     this.drawTicks(layout);
     this.drawCursor();
-    if (focused?.xref) {
-      this.byName
-        .get(focused.xref)
-        ?.querySelector<HTMLElement>(focused.branch ? "[data-branch]" : ".gedcom-ft-name-open")
-        ?.focus({ preventScroll: true });
+    this.drawBranch();
+    if (focused !== null) {
+      const again = focused.branch
+        ? this.overlay.querySelector<HTMLElement>("[data-branch]")
+        : this.items.querySelector<HTMLElement>(`.gedcom-ft-life[data-p="${focused.xref}"]`);
+      again?.focus({ preventScroll: true });
     }
   }
 
@@ -273,7 +275,6 @@ export class FileTimelineBoard {
     }
     this.lit = [];
     this.hover.replaceChildren();
-    this.chart.querySelector(".gedcom-ft-row-hl")?.remove();
     const layout = this.layout;
     const model = this.model;
     const shown = xref !== null && layout !== null && layout.y.has(xref);
@@ -292,16 +293,7 @@ export class FileTimelineBoard {
       for (const element of this.byPerson.get(relative) ?? []) {
         light(element, relative === xref);
       }
-      const name = this.byName.get(relative);
-      if (name) {
-        light(name, relative === xref);
-      }
     }
-    const cy = layout.y.get(xref) ?? 0;
-    this.chart.insertBefore(
-      svg(this.doc, "rect", "gedcom-ft-row-hl", { x: 0, y: cy - ROW / 2, width: layout.width, height: ROW }),
-      this.items,
-    );
     this.drawArrows(layout, model, xref);
     if (this.year !== null) {
       this.drawCursor();
@@ -345,19 +337,19 @@ export class FileTimelineBoard {
     return id;
   }
 
-  /** The row to the middle, and the lifeline into view where it lies out of it. */
+  /** The lane to the middle, and the bar into view where it lies out of it. */
   private reveal(id: string): void {
     const layout = this.layout;
-    if (!layout) {
+    const line = this.model?.people.get(id)?.lifeline;
+    const cy = layout?.y.get(id);
+    if (!layout || cy === undefined) {
       return;
     }
-    const cy = layout.y.get(id) ?? 0;
     let left: number | undefined;
-    const line = this.model?.people.get(id)?.lifeline;
     if (line) {
       const view = this.measure();
       const from = layout.x(line.start);
-      const to = layout.x(line.end);
+      const to = layout.reach.get(id) ?? from;
       if (to < view.left || from > view.left + view.width) {
         left = Math.max(0, from - 40);
       }
@@ -367,7 +359,7 @@ export class FileTimelineBoard {
 
   /**
    * The plot scrolls smoothly to a place the reader did not scroll to, unless they ask for reduced
-   * motion or it is further than a smooth scroll can show without leaving blank rows, which jumps.
+   * motion or it is further than a smooth scroll can show without leaving blank lanes, which jumps.
    */
   private glideTo(top: number, left?: number): void {
     const plot = this.plot;
@@ -386,14 +378,14 @@ export class FileTimelineBoard {
     plot.scrollTo({ top, ...(left === undefined ? {} : { left }), behavior: "smooth" });
   }
 
-  /** Marks a person selected, and with `reveal` brings their row into view, in their own branch where this one does not hold them; `null` ends it. */
+  /** Marks a person selected, and with `reveal` brings their bar into view, in their own branch where this one does not hold them; `null` ends it. */
   select(xref: string | null, reveal: boolean): void {
     this.selected = xref;
     if (xref !== this.highlighted) {
       this.highlight(null);
     }
     const layout = this.layout;
-    if (reveal && xref !== null && layout && this.model?.people.has(xref)) {
+    if (reveal && xref !== null && layout && this.model?.people.get(xref)?.lifeline) {
       if (layout.shownSet.has(xref)) {
         this.reveal(xref);
       } else {
@@ -410,7 +402,6 @@ export class FileTimelineBoard {
   setScroll({ top, left }: TimelineScroll): void {
     this.plot.scrollTop = top;
     this.plot.scrollLeft = left;
-    this.follow(this.names, this.plot, "scrollTop");
     this.follow(this.axisClip, this.plot, "scrollLeft");
     if (this.layout && this.needsDraw(this.measure())) {
       this.draw(this.measure());
@@ -429,32 +420,39 @@ export class FileTimelineBoard {
     for (const [element, ids] of this.elements) {
       element.classList.toggle("is-selected", this.selected !== null && ids[0] === this.selected && element.classList.contains("gedcom-ft-life"));
     }
-    for (const [xref, name] of this.byName) {
-      name.toggleClass("is-selected", xref === this.selected);
-    }
-    if (this.layout) {
-      this.drawSelectedBand(this.layout);
-    }
+    this.drawBranch();
   }
 
-  private drawSelectedBand(layout: Layout): void {
-    this.chart.querySelector(".gedcom-ft-row-selected")?.remove();
-    const cy = this.selected === null ? undefined : layout.y.get(this.selected);
-    if (cy === undefined) {
+  private drawBranch(): void {
+    this.overlay.replaceChildren();
+    const layout = this.layout;
+    const xref = this.selected;
+    const cy = xref === null ? undefined : layout?.y.get(xref);
+    const reach = xref === null ? undefined : layout?.reach.get(xref);
+    if (xref === null || !layout || cy === undefined || reach === undefined) {
       return;
     }
-    this.chart.insertBefore(
-      svg(this.doc, "rect", "gedcom-ft-row-selected", { x: 0, y: cy - ROW / 2, width: layout.width, height: ROW }),
-      this.items,
-    );
+    if (!(this.byPerson.get(xref) ?? []).some((element) => element.classList.contains("gedcom-ft-life"))) {
+      return;
+    }
+    const name = personName(this.model?.people.get(xref)?.row ?? { name: "" });
+    const button = this.overlay.createEl("button", {
+      cls: "gedcom-ft-branch",
+      text: t("overview.branch"),
+      attr: {
+        type: "button",
+        "data-branch": xref,
+        "aria-pressed": String(xref === this.scope.focus),
+        "aria-label": t("fileGraph.branchOf", { name }),
+      },
+    });
+    button.setCssProps({ left: `${reach + 8}px`, top: `${cy - BAR / 2}px` });
+    tipPlace(button, "right");
   }
 
   private markCurrent(): void {
     for (const [element, ids] of this.elements) {
       element.classList.toggle("is-current", this.current !== null && ids[0] === this.current && element.classList.contains("gedcom-ft-life"));
-    }
-    for (const [xref, name] of this.byName) {
-      name.toggleClass("is-current", xref === this.current);
     }
   }
 
@@ -465,15 +463,12 @@ export class FileTimelineBoard {
     for (const [element, ids] of this.elements) {
       element.classList.toggle("is-dim", this.misses(ids));
     }
-    for (const [xref, name] of this.byName) {
-      name.toggleClass("is-dim", this.misses([xref]));
-    }
     if (this.year !== null) {
       this.drawCursor();
     }
   }
 
-  /** The names and the axis sit outside the scroller, so its bars never run over them; they keep its place. */
+  /** The axis sits outside the scroller, so its ticks never run over the bars; it keeps the plot's place. */
   private follow(to: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
     if (to[axis] !== from[axis]) {
       to[axis] = from[axis];
@@ -481,7 +476,7 @@ export class FileTimelineBoard {
     this.echo.set(to, to[axis]);
   }
 
-  /** What the names or the axis scroll by themselves moves the plot too, but not their echo of the plot, which would cut a smooth scroll short. */
+  /** What the axis scrolls by itself moves the plot too, but not its echo of the plot, which would cut a smooth scroll short. */
   private pull(plot: HTMLElement, from: HTMLElement, axis: "scrollTop" | "scrollLeft"): void {
     const echo = this.echo.get(from);
     if (echo === undefined || Math.abs(from[axis] - echo) >= 1.5) {
@@ -539,14 +534,14 @@ export class FileTimelineBoard {
     if (!model) {
       return;
     }
-    this.layout = layoutOf(model, this.scope, this.doc, this.id);
+    this.layout = layoutOf(model, this.scope, this.doc, this.id, nameMeasure(this.root));
     const layout = this.layout;
     if (this.current !== null && !layout.shownSet.has(this.current)) {
       this.current = null;
     }
     const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
     this.scopeBar.draw(this.scope, {
-      total: model.rows.length,
+      total: layout.total,
       shown: layout.shown.length,
       focusName: focus && layout.branch ? personName(focus.row) : null,
     });
@@ -581,9 +576,12 @@ export class FileTimelineBoard {
       const fromY = layout.y.get(from) ?? 0;
       const toY = layout.y.get(to) ?? 0;
       const down = toY > fromY;
+      if (toY === fromY) {
+        return;
+      }
       this.hover.append(
         svg(this.doc, "path", "gedcom-ft-kin", {
-          d: `M${at} ${fromY + (down ? 10 : -10)} V${toY + (down ? -11 : 11)}`,
+          d: `M${at} ${fromY + (down ? BAR / 2 : -BAR / 2)} V${toY + (down ? -BAR / 2 : BAR / 2)}`,
           "marker-end": `url(#gedcom-ft-arrow-${this.id})`,
           "data-from": from,
           "data-to": to,
@@ -602,6 +600,22 @@ export class FileTimelineBoard {
       if (line && layout.y.has(child)) {
         arrow(xref, child, layout.x(line.start));
       }
+    }
+    for (const family of model.families.values()) {
+      if (!family.spouses.includes(xref) || family.linkYear === undefined) {
+        continue;
+      }
+      const ends = family.spouses.filter((spouse) => layout.y.has(spouse));
+      const [first, second] = ends.map((spouse) => layout.y.get(spouse) ?? 0);
+      if (ends.length < 2 || first === undefined || second === undefined) {
+        continue;
+      }
+      const at = layout.x(family.linkYear);
+      this.hover.append(
+        svg(this.doc, "line", "gedcom-ft-marriage", { x1: at, x2: at, y1: first, y2: second }),
+        svg(this.doc, "circle", "gedcom-ft-marriage-dot", { cx: at, cy: first, r: 3 }),
+        svg(this.doc, "circle", "gedcom-ft-marriage-dot", { cx: at, cy: second, r: 3 }),
+      );
     }
   }
 
@@ -687,53 +701,6 @@ export class FileTimelineBoard {
     this.axis.replaceChildren(...labels);
   }
 
-  private drawNames(layout: Layout): { xref: string | null; branch: boolean } | null {
-    const model = this.model;
-    const first = Math.max(0, Math.floor(this.drawn.top / ROW));
-    const last = Math.min(layout.shown.length, Math.ceil(this.drawn.bottom / ROW));
-    const active = this.doc.activeElement;
-    const focused = active && this.names.contains(active)
-      ? { xref: personOf(active), branch: active.hasAttribute("data-branch") }
-      : null;
-    this.names.empty();
-    this.byName = new Map();
-    this.names.createDiv({ cls: "gedcom-ft-spacer" }).setCssProps({ height: `${first * ROW}px` });
-    for (const xref of layout.shown.slice(first, last)) {
-      const person = model?.people.get(xref);
-      if (!person) {
-        continue;
-      }
-      const name = personName(person.row);
-      const row = this.names.createDiv({ cls: "gedcom-ft-name", attr: { "data-p": xref } });
-      row.toggleClass("is-focus", xref === this.scope.focus);
-      row.toggleClass("is-dim", this.misses([xref]));
-      row.toggleClass("is-current", xref === this.current);
-      row.toggleClass("is-selected", xref === this.selected);
-      const years = lifelineYears(person.lifeline);
-      const open = row.createEl("button", { cls: "gedcom-ft-name-open", attr: { type: "button" } });
-      nameBy(open, row, years ? `${name}, ${years}` : name);
-      open.createSpan({ cls: "gedcom-ft-name-text", text: name });
-      open.createSpan({ cls: "gedcom-ft-name-years", text: years });
-      const branch = row.createEl("button", {
-        cls: "gedcom-ft-branch",
-        text: t("overview.branch"),
-        attr: {
-          type: "button",
-          "data-branch": xref,
-          "aria-pressed": String(xref === this.scope.focus),
-          "aria-label": t("fileGraph.branchOf", { name }),
-        },
-      });
-      tipPlace(branch, "right");
-      this.byName.set(xref, row);
-    }
-    this.names
-      .createDiv({ cls: "gedcom-ft-spacer" })
-      .setCssProps({ height: `${(layout.shown.length - last) * ROW}px` });
-    this.follow(this.names, this.plot, "scrollTop");
-    return focused;
-  }
-
   private definitions(): SVGDefsElement {
     const defs = svg(this.doc, "defs", null);
     const marker = svg(this.doc, "marker", null, {
@@ -746,18 +713,41 @@ export class FileTimelineBoard {
       orient: "auto",
     });
     marker.append(svg(this.doc, "path", "gedcom-ft-arrowhead", { d: "M0 0L6 3L0 6z" }));
-    const gradient = svg(this.doc, "linearGradient", null, { id: `gedcom-ft-fade-g-${this.id}` });
-    gradient.append(
-      svg(this.doc, "stop", null, { offset: 0.6, "stop-color": "#fff" }),
-      svg(this.doc, "stop", null, { offset: 1, "stop-color": "#fff", "stop-opacity": 0 }),
-    );
-    const mask = svg(this.doc, "mask", null, {
-      id: `gedcom-ft-fade-${this.id}`,
-      maskContentUnits: "objectBoundingBox",
-    });
-    mask.append(svg(this.doc, "rect", null, { width: 1, height: 1, fill: `url(#gedcom-ft-fade-g-${this.id})` }));
-    defs.append(marker, gradient, mask);
+    defs.append(marker);
+    for (const soft of [false, true]) {
+      for (const end of ["cut", "soft", "fade"] as const) {
+        if (soft || end !== "cut") {
+          defs.append(this.maskOf(soft, end));
+        }
+      }
+    }
     return defs;
+  }
+
+  private maskOf(soft: boolean, end: BarEnd): SVGMaskElement {
+    const key = `${soft ? "s" : "c"}${end}`;
+    const stops: [number, number][] = [];
+    if (soft) {
+      stops.push([0, SOFT_OPACITY], [SOFT, 1]);
+    } else {
+      stops.push([0, 1]);
+    }
+    if (end === "soft") {
+      stops.push([1 - SOFT, 1], [1, SOFT_OPACITY]);
+    } else if (end === "fade") {
+      stops.push([FADE_AT, 1], [1, 0]);
+    } else {
+      stops.push([1, 1]);
+    }
+    const gradient = svg(this.doc, "linearGradient", null, { id: `gedcom-ft-fade-g-${key}-${this.id}` });
+    gradient.append(
+      ...stops.map(([offset, opacity]) =>
+        svg(this.doc, "stop", null, { offset, "stop-color": "#fff", "stop-opacity": opacity }),
+      ),
+    );
+    const mask = svg(this.doc, "mask", null, { id: maskName(soft, end, this.id), maskContentUnits: "objectBoundingBox" });
+    mask.append(gradient, svg(this.doc, "rect", null, { width: 1, height: 1, fill: `url(#gedcom-ft-fade-g-${key}-${this.id})` }));
+    return mask;
   }
 
   private misses(ids: string[]): boolean {
@@ -782,7 +772,6 @@ export class FileTimelineBoard {
         root: this.root,
         board: this.board,
         plot: this.plot,
-        names: this.names,
         axisClip: this.axisClip,
         pop: this.pop,
       },
@@ -793,7 +782,6 @@ export class FileTimelineBoard {
         tip: (target, event) => this.showTip(markOf(target, this.marks), event),
         year: (clientX) => this.setYear(clientX === null ? null : this.yearAt(clientX)),
         plotScrolled: () => {
-          this.follow(this.names, this.plot, "scrollTop");
           this.follow(this.axisClip, this.plot, "scrollLeft");
         },
         redrawIfNeeded: () => {
@@ -802,8 +790,13 @@ export class FileTimelineBoard {
             this.draw(view);
           }
         },
-        namesScrolled: () => this.pull(this.plot, this.names, "scrollTop"),
         axisScrolled: () => this.pull(this.plot, this.axisClip, "scrollLeft"),
+        bar: (xref) => {
+          this.armed = null;
+          this.closePop();
+          this.highlight(xref);
+          this.host.select(xref);
+        },
         activate: (event) => this.activate(event),
         escape: () => {
           if (this.highlighted !== null) {

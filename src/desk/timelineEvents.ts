@@ -1,9 +1,10 @@
+import { personOf } from "./timelineHits";
+
 export interface TimelineSurface {
   doc: Document;
   root: HTMLElement;
   board: HTMLElement;
   plot: HTMLElement;
-  names: HTMLElement;
   axisClip: HTMLElement;
   pop: HTMLElement;
 }
@@ -14,7 +15,7 @@ export interface TimelineReactions {
   year(clientX: number | null): void;
   plotScrolled(): void;
   redrawIfNeeded(): void;
-  namesScrolled(): void;
+  bar(xref: string): void;
   axisScrolled(): void;
   activate(event: MouseEvent): void;
   escape(): void;
@@ -22,7 +23,7 @@ export interface TimelineReactions {
 }
 
 export function listenTimeline(surface: TimelineSurface, react: TimelineReactions): void {
-  const { doc, root, board, plot, names, axisClip, pop } = surface;
+  const { doc, root, board, plot, axisClip, pop } = surface;
   let pending = false;
 
   board.addEventListener("pointerdown", (event) => {
@@ -55,12 +56,17 @@ export function listenTimeline(surface: TimelineSurface, react: TimelineReaction
       react.redrawIfNeeded();
     });
   });
-  names.addEventListener("scroll", () => react.namesScrolled());
   axisClip.addEventListener("scroll", () => react.axisScrolled());
   board.addEventListener("click", (event) => react.activate(event));
   root.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       react.escape();
+      return;
+    }
+    const bar = event.target instanceof Element ? event.target.closest(".gedcom-ft-life") : null;
+    if ((event.key === "Enter" || event.key === " ") && bar !== null && personOf(bar) !== null) {
+      event.preventDefault();
+      react.bar(personOf(bar) ?? "");
     }
   });
   root.addEventListener("click", (event) => {
