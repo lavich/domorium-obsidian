@@ -130,6 +130,107 @@ SHALL still have a card, which says that the event states no date, place or sour
 - **WHEN** an event cites `@S9@` and the file declares no such record
 - **THEN** its Evidence section says the source is missing, with the way to its line
 
+### Requirement: A tab holds one selected record
+
+A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
+source or a multimedia record of its file, or a place or an event that the file names. It SHALL be selected by activating a
+person's card, a family node, a name or a lifeline in Graph or Timeline; by
+activating a row of the list; by activating a relative, a citation, a person, a
+family, a source or a media record in the card; by following a link into the file
+and by choosing a record with **Go to record**, where the record is of one of those
+four kinds; and in Source mode by the cursor, as the requirement on Source says.
+Selecting another record SHALL replace the first. Selecting SHALL show the record in
+the card, SHALL NOT change the tab's mode, SHALL NOT open another tab and SHALL NOT
+write to the file.
+
+The selection SHALL belong to the tab and to the record, not to what is drawn. It
+SHALL be kept when the tab changes mode, and when the workspace is closed and
+reopened. It SHALL end when the record no longer exists in the file and when the tab is navigated to another file, and SHALL NOT be shown while the Genealogy interface is off.
+A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected or shown, and a saved selection SHALL be kept in the tab's state unused, to come back when the interface is turned on. A state handed to a tab for the same file that names no selection SHALL leave the selection as it is. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
+
+While a record is selected the list SHALL mark its row as selected in List mode. A
+fact of a person or a family SHALL be selectable on its card, and selecting it SHALL select
+its event, whose card shows the Evidence section for that event; choosing *Whole
+record* there SHALL select the record it belongs to.
+
+In Graph and Timeline mode a selected person SHALL be marked in the view, as the
+requirements of those views say. In List mode the row of a selected person, family
+or source SHALL be marked, as the requirements of the list say. A selected family,
+source or media record has no card or row to mark in Graph or Timeline, and while one
+is selected nobody is marked there; a media record has no row in the list.
+
+#### Scenario: From a card in the graph
+- **WHEN** the tab is in Graph mode and the reader activates Irène's card
+- **THEN** the tab stays in Graph mode, Irène's card is marked selected, the card
+  shows Irène Joliot-Curie, and no other tab is open
+
+#### Scenario: From a row in the timeline
+- **WHEN** the tab is in Timeline mode and the reader activates Marie's lifeline
+- **THEN** the tab stays in Timeline mode, her row is marked selected, and the
+  card shows Marie Skłodowska-Curie
+
+#### Scenario: From a family node
+- **WHEN** the tab is in Graph mode and the reader activates the node between
+  Pierre Curie and Marie
+- **THEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie,
+  and no card of the graph is marked selected
+
+#### Scenario: From the list
+- **WHEN** the tab is in List mode and the reader activates Marie's row
+- **THEN** the tab stays in List mode, her row is marked selected, and the card shows
+  her
+
+#### Scenario: A family row in the list
+- **WHEN** the tab is in List mode and the reader activates the Curies' row among
+  the families
+- **THEN** the tab stays in List mode, the card shows the Curies' family, and
+  that row is marked selected
+
+#### Scenario: Kept across the modes
+- **WHEN** Marie is selected in Graph mode and the reader switches to Timeline
+  mode
+- **THEN** her row is marked selected, the card still shows her, and the list,
+  when shown, marks her row
+
+#### Scenario: Kept by the workspace
+- **WHEN** Marie is selected in a tab in Graph mode, zoomed in and moved, and
+  Obsidian is restarted
+- **THEN** the tab is in Graph mode at that zoom and position with Marie's card
+  marked selected, and the card shows Marie
+
+#### Scenario: A record with no card
+- **WHEN** Marie is selected and the reader follows `[[curie.ged#@N1@]]`
+- **THEN** the tab switches to Source mode at that note's record, and the card
+  still shows Marie
+
+#### Scenario: The record goes
+- **WHEN** Marie is selected in Graph mode and her record is removed from the file
+  on disk
+- **THEN** nobody is selected, the card says to select a record, and no row of
+  the list is marked
+
+#### Scenario: The interface is turned off
+- **WHEN** Marie is selected in Graph mode and the reader turns the Genealogy
+  interface off
+- **THEN** the tab shows the source, the card is closed, and no row of the list is
+  marked; turning the interface on again shows Marie selected
+
+#### Scenario: Another file
+- **WHEN** Marie is selected in a tab and the same tab is navigated to another
+  GEDCOM file
+- **THEN** nothing is selected in the tab
+
+#### Scenario: A saved record the file no longer has
+- **WHEN** a tab was saved with `@I99@` selected, which the file does not declare,
+  and Obsidian is restarted
+- **THEN** nothing is selected, the card says to select a record, and no row of the
+  list is marked
+
+#### Scenario: Selecting a fact and going back
+- **WHEN** the reader selects Marie's birth on her card and then presses her name at the
+  top of the card of her birth
+- **THEN** the card shows Marie, with the Evidence section of her whole record
+
 ## ADDED Requirements
 
 ### Requirement: An event is one row wherever a card lists it

@@ -6,7 +6,9 @@ The cards are drawn by `src/desk/*Page.ts` into one scrolling column (`gedcom-ca
 
 ### D1. A hit area, not a bigger look
 
-On a coarse pointer (`@media (pointer: coarse)`) and in the mobile app (`.is-mobile`, the same condition the list uses), block controls — the person button, the citation, the note line, the fact name, the timeline label, Back and Forward — get `min-height: 44px` and padding that keeps their text where it was. A control that sits inside a line of text, the `gedcom-desk-link` for a place or *Show in source*, cannot grow without breaking the line, so it gets an `::after` that extends its activation area by 14 pixels above and below. The two together give every control a 44-pixel area. A fact row is a grid of name, value and mark; its name is the block control.
+On a coarse pointer (`@media (pointer: coarse)`) and in the mobile app (`.is-mobile`, the same condition the list uses; the harness sets it for a phone), block controls — the person button, the citation, the note line, the fact name, the timeline label, Back and Forward — get `min-height: 44px` and padding that keeps their text where it was. A control that sits inside a line of text, the `gedcom-desk-link` for a place or *Show in source*, cannot grow without breaking the line, so it gets an `::after`, with `position: relative` on the link, that extends its activation area by 14 pixels above and below. The two together give every control a 44-pixel area. A fact row is a grid of name, value and mark; its name is the block control, and in the narrow layout, where the value sits under the name, the name has `z-index: 1` so that a link's area does not take its taps.
+
+`.gedcom-desk-facts` has `overflow: hidden` to round the corners of its rows, which would clip an area that reaches outside the first or the last row. The overflow goes, and the first and the last row take the corner radius themselves.
 
 Rejected: raising font sizes (changes the look on desktop), `touch-action` tricks (do not enlarge targets).
 
@@ -29,24 +31,26 @@ EVIDENCE
 
 `eventPage.ts` draws the owner line, the title, and a subtitle through `renderEventDetail` with the date and place only, since the title already carries the text. The owner line says *Person* or *Family*; the label is chosen by whether the owner is a person. An event with no date and no place draws no subtitle and keeps the line saying the event states nothing.
 
-`renderEvidenceSection` with an event draws no `gedcom-desk-evidence-head`: no context, no *Show in source*, no *← Whole record*. The heading above it is `Evidence`; the groups are *Sources of this fact* and *Whole record · n* as before. A person's or a family's card, which has no selected fact in the card, draws as before.
+`renderEvidenceSection` takes the event of an event card (or none) in place of a fact key. It draws no `gedcom-desk-evidence-head`: no context, no *Show in source*, no *← Whole record*; the branch for a fact selected on a person's or a family's card, which nothing selects since a fact opens its own card, is deleted, with `EvidenceHost.wholeRecord` and the `fact` of `EvidenceSelection`. The heading is `Evidence`; the groups are *Sources of this fact* and *Whole record · n* as before. A person's or a family's card draws the whole record. The label *family event* that the old head carried goes with it.
+
+The owner line says *Person* or *Family*: `desk.family` is reused and `desk.person` is new if the file has no such key.
 
 ### D5. One event row
 
-`factRow.ts` exports `renderEventRow(list, row)` with the name of the event, an optional handler that opens its card, the detail (date, place link, text, and the other spouse), the count of citations, and an optional trailing link. `renderFactList` (person, family) and the place card use it. On a person's or a family's card the row is as now. On a place's card the name opens the card of the event, the detail carries the date and the text, and the record is a link in the detail, as it was on the old row (`Birth · Marie` selected the record). The timeline's own form stays: it is a chronology, a year column and a dot, and the same function draws only its detail.
+`factRow.ts` exports `renderEventRow(list, row)` with the name of the event, an optional handler that opens its card, the detail (date, place link, text, and the other spouse), the count of citations, and an optional trailing link. `renderFactList` (person, family) and the place card use it. On a person's or a family's card the row is as now. On a place's card the name opens the card of the event, the detail carries the date and the text, and the record is a link in the detail, as it was on the old row (`Birth · Marie` selected the record). The name button keeps `data-focus-key`, which restores focus after a redraw (a place row takes the event's id), and the row keeps the only click handler, with its existing guard for a link inside the row, so that Enter on the name fires once. The id of an event on a place's card comes from `eventIdOf` over the owner's events; `occurrencesAt` returns it with the event. The timeline's own form stays: it is a chronology, a year column and a dot, and the same function draws only its detail.
 
 ### D6. Folding
 
-A fold is a `details` with a `summary` that holds the section's `h2`, styled as the other section headings, so that the heading outline is unchanged and the summary is keyboard-operable by the browser. *Timeline* and *Places* are closed on opening a card; *Other names* stays open because it is one or two lines. The sections the reader has opened are written on the card's root as `data-open` while `data-shown` is unchanged, and a redraw of the same record restores them; showing another record resets them. The focus is kept by the existing `data-focus-key`.
+A fold is the accordion pattern, not `details`: the section's `h2` holds a `button` with `aria-expanded` and `aria-controls`, and the content is a block with the `hidden` attribute while closed. The heading keeps its role and the heading outline is unchanged; the marker is a CSS chevron, with no dependence on the browser's `summary` marker, which differs on iOS. The button's label is the heading's text, with the number of entries or places in a muted `span` beside it (`gedcom-desk-fold-count`), so no string changes and the headings that tests read stay as they are. *Timeline* and *Places* are closed on opening a card; *Other names* stays open because it is one or two lines. The sections the reader has opened are written on the card's root as `data-open` while `data-shown` is unchanged, and a redraw of the same record restores them; showing another record resets them. The focus is kept by the existing `data-focus-key`.
 
-Rejected: merging *Places* into the facts, which changes what the card contains and would drop the order in which places first appear.
+Rejected: `details` and `summary`, which turn the heading into the summary's content and lose its role in assistive technology; merging *Places* into the facts, which changes what the card contains and would drop the order in which places first appear.
 
 ### D7. What is left alone
 
-The order of sections in each card; the source card's notes (a place has no identifier a note can link to, so a place card has no notes section); the list; the timeline mode. The unused selected-fact code (`selectedFact`, `selectFact`, `PageHost.select`) is not touched.
+The order of sections in each card; the source card's notes (a place has no identifier a note can link to, so a place card has no notes section); the list; the timeline mode. The tab's selected-fact code (`selectedFact`, `selectFact`, `PageHost.select`) is not touched; the evidence branch that used it is deleted (D4). The requirements of `genealogy-evidence` that speak of a *fact selected* keep their meaning: the fact is the event whose card is shown.
 
 ## Risks
 
 - A folded timeline hides the main narrative of a person from a reader who does not see the heading; the heading shows the count of entries so the fold announces what it holds.
+- The contrast of the faint and muted colours depends on the theme; the harness's default palette has a faint colour darker than its muted one, so the unit and browser tests assert which variable is used, not a ratio.
 - The 44-pixel areas of two adjacent inline links can overlap; the later in the document wins, and links in a line are separated by text.
-- `details` in a container query layout: the fold's content is an ordinary block, so the 560-pixel rule is not affected.
