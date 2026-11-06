@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.17.0
+
+- **The timeline is drawn in bars.** The column of names is gone: each person is a
+  bar from birth to death, with the name written inside it, cut with an ellipsis
+  where it is too long, and the whole name in the tooltip. Every person keeps a
+  row of their own, in the order of the generations. A bar takes its colour from
+  the person's surname — `Лобанов` and `Лобанова` look alike, unlike surnames do
+  not — and a person with no surname is grey. A person who may still be alive,
+  with no death recorded and born in the last hundred years, runs to today in a
+  straight edge; an older bar with no death fades out. People with no dated event
+  are not drawn.
+- **A click lights a person's links.** A line with an arrowhead falls from each
+  parent's bar to the person's birth and from the person to each child, and a
+  dashed line joins the spouses at the year of their marriage. The age the
+  person reached shows on the year cursor. **Branch** moves onto the selected
+  bar, and the command **Branch of the selected person** reaches it from the
+  keyboard. One bar is a stop for Tab, and the arrows step between bars; a pinch
+  zooms the axis on a phone.
+- **The graph's cards are tinted by surname,** in the same colours as the bars,
+  in place of pink and blue for sex, with the lines of a card written in an ink
+  that reads on its tint in the light and the dark scheme.
+- **A family is named with the marriage sign.** `Pierre Curie ⚭ Marie
+  Skłodowska-Curie` in the card, the list, the graph and the commands, in place
+  of the word between the names.
+- **The list shows places and events.** Two more kinds join People, Families and
+  Sources. **Places** lists the places of the file with their events and years;
+  **Events** lists every event of every person and family with its record, date
+  and place. Both search, sort and open a card like the other kinds.
+- **The cards are easier to read and reach.** Controls have a larger touch area
+  and a visible focus ring, secondary text is no longer faint, and an event has
+  one row wherever a card lists it. A person's **Timeline** and **Places**
+  sections are folded under headings that count what they hold.
+
 ## 1.16.0
 
 - **The list is a mode of the tab.** A GEDCOM tab has four modes, **Graph**,
