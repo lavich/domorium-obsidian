@@ -1,5 +1,4 @@
 import { plural, t } from "../i18n";
-import type { MediaPreviewContent } from "../editor/media";
 import { cardShape, nameMeasure, svg } from "./cardRender";
 import { HoverDelay, placeInside, prefersReducedMotion, zoomControls } from "./dom";
 import { CARD, type FileGraphLayout, type GraphCard, type Point } from "./fileGraph";
@@ -38,11 +37,7 @@ export interface CanvasCard {
   /** Set where the name has both, each then on its own line. */
   given?: string;
   surname?: string;
-  /** Asked as the card is drawn, so only cards near the view load a picture. */
-  portrait?(): PortraitContent | null;
 }
-
-export type PortraitContent = Extract<MediaPreviewContent, { kind: "image" }>;
 
 export interface CanvasFamily {
   couple: string;

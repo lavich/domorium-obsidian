@@ -71,9 +71,7 @@ SHALL be coloured almost alike, and surnames with little in common — `Лоба
 `Сидорова` — SHALL be coloured far apart. A surname written with a hyphen is one
 surname: `Skłodowska-Curie` and `Joliot-Curie` are two surnames. Case and marks on
 letters SHALL NOT change the colour. Two surnames that fall on almost one hue by chance — `Кобзаренко` and
-`Лобанов` — SHALL still be told apart by the lightness and the saturation of the colour, which
-SHALL depend on the surname's stem alone, so that the two genders of a surname, and one
-surname written in two scripts, are the same in every respect. A person with no surname SHALL
+`Лобанов` — SHALL still be told apart by the lightness and the saturation of the colour, which SHALL depend on the first letters of the surname's stem, as the hue does, so that the forms of a surname that begin alike — its two genders, its spelling in two scripts, its endings in a language the plugin has no table for — are the same in every respect. A person with no surname SHALL
 be grey. The colour SHALL be drawn in the theme's light and dark
 schemes alike, with the name inside the bar readable on it in both.
 

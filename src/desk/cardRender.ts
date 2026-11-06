@@ -1,12 +1,10 @@
 import { t } from "../i18n";
 import { CARD, marriageDigits, type GraphCard, type GraphNode, type Point } from "./fileGraph";
 import { yearText } from "./labels";
-import { drawPicture } from "./media";
 import type { CanvasCard, CanvasFamily } from "./graphCanvas";
 
 const NAME_ROOM = 22;
 const NAME_WIDTH = CARD.width - 2 * 6;
-const AVATAR = { width: 36, height: 44 } as const;
 const SVG = "http://www.w3.org/2000/svg";
 
 export function svg<K extends keyof SVGElementTagNameMap>(
@@ -97,7 +95,6 @@ export interface CardMarks {
 export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, far: boolean, marks: CardMarks): SVGElement {
   const { id, x, y, height } = placed;
   const { name, years } = shown;
-  const text = height - CARD.height;
   const group = svg(doc, "g", "gedcom-fg-person", {
     "data-p": id,
     style: shown.paint,
@@ -119,11 +116,8 @@ export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, f
   if (far) {
     return group;
   }
-  if (text > 0) {
-    avatar(doc, card, shown);
-  }
   const line = (cls: string, at: number, content: string): void => {
-    const written = svg(doc, "text", cls, { x: CARD.width / 2, y: text + at, "text-anchor": "middle" });
+    const written = svg(doc, "text", cls, { x: CARD.width / 2, y: at, "text-anchor": "middle" });
     written.textContent = fitText(content, NAME_WIDTH, marks.measure);
     card.append(written);
   };
@@ -153,27 +147,6 @@ export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, f
   );
   group.append(pill);
   return group;
-}
-
-function avatar(doc: Document, card: SVGGElement, shown: CanvasCard): void {
-  const content = shown.portrait?.() ?? null;
-  if (!content) {
-    return;
-  }
-  const holder = svg(doc, "foreignObject", "gedcom-fg-avatar-holder", {
-    x: (CARD.width - AVATAR.width) / 2,
-    y: 6,
-    width: AVATAR.width,
-    height: AVATAR.height,
-  });
-  const frame = doc.createElementNS("http://www.w3.org/1999/xhtml", "div") as HTMLDivElement;
-  frame.className = "gedcom-desk-portrait gedcom-fg-avatar";
-  holder.append(frame);
-  const picture = drawPicture(frame, content, AVATAR.width, AVATAR.height);
-  const image = picture.querySelector("img");
-  image?.setAttribute("draggable", "false");
-  image?.addEventListener("error", () => holder.remove());
-  card.append(holder);
 }
 
 export function nodeShape(doc: Document, node: GraphNode, family: CanvasFamily, far: boolean): SVGElement {

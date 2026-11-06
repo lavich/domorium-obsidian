@@ -16,7 +16,7 @@ import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
 import { renderPlaces, renderTimeline } from "./timelineView";
-import type { PortraitContent } from "./graphCanvas";
+import type { PortraitContent } from "./media";
 
 /**
  * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family

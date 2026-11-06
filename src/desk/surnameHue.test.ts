@@ -86,6 +86,24 @@ describe("the shade of a surname", () => {
     expect(fills("Жуков")).toEqual(fills("Zhukov"));
   });
 
+  it("is one for the forms of a surname that begin alike, in any of the languages the table does not know", () => {
+    const pairs = [
+      ["Kowalski", "Kowalska"],
+      ["Novák", "Nováková"],
+      ["Černý", "Černá"],
+      ["Kalinauskas", "Kalinauskienė"],
+      ["Bērziņš", "Bērziņa"],
+      ["Papadopoulos", "Papadopoulou"],
+      ["Nowak", "Nowakowa"],
+      ["Ibáñez", "Ibanez"],
+      ["Petrović", "Petrovic"],
+    ] as const;
+
+    for (const [one, other] of pairs) {
+      expect(fills(one), `${one} and ${other}`).toEqual(fills(other));
+    }
+  });
+
   it("tells apart two surnames that fall on one hue", () => {
     expect(apart("Кобзаренко", "Лобанов")).toBeLessThan(3);
     expect(fills("Кобзаренко")).not.toEqual(fills("Лобанов"));

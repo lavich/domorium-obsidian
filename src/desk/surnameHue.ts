@@ -68,9 +68,9 @@ export function surnameHue(surname: string): number {
 }
 
 export function surnameShade(surname: string): number {
-  const stem = stemOf(surname) || surname;
+  const start = [...(stemOf(surname) || surname)].slice(0, DEPTH);
   let hash = 2166136261;
-  for (const letter of stem) {
+  for (const letter of start) {
     hash = Math.imul(hash ^ (letter.codePointAt(0) ?? 0), 16777619) >>> 0;
   }
   return (hash >>> 8) % SHADES;

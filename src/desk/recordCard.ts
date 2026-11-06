@@ -4,7 +4,7 @@ import type { GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
 import { renderEvidenceSection } from "./evidence";
 import { renderFamilyPage } from "./familyPage";
-import type { PortraitContent } from "./graphCanvas";
+import type { PortraitContent } from "./media";
 import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";

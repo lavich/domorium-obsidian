@@ -94,7 +94,7 @@ import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
-import type { PortraitContent } from "./desk/graphCanvas";
+import type { PortraitContent } from "./desk/media";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -150,7 +150,6 @@ export class GedcomView extends TextFileView implements CardTab {
         this.selectRecord(xref, "view");
       },
       showInSource: (range) => this.showInSource(range),
-      portrait: (xref) => this.portrait(xref),
       changed: () => {
         this.memory = { ...this.memory, ...this.views.memory() };
         this.app.workspace.requestSaveLayout();

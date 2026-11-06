@@ -7,7 +7,6 @@ import { FileGraphBoard, type GraphState } from "./fileGraphView";
 import { FileTimelineBoard, type TimelineState } from "./fileTimelineView";
 import { ListBoard } from "./fileList";
 import type { ListState } from "./listRows";
-import type { PortraitContent } from "./graphCanvas";
 
 export type { ViewKind } from "./deskState";
 
@@ -21,7 +20,6 @@ export interface FileViewsHost {
   /** A person, a family or a source. */
   select(xref: string): void;
   showInSource(range: Range): void;
-  portrait(xref: string): PortraitContent | null;
   /** The memory changed, so the layout wants saving. */
   changed(): void;
   setIcon(element: HTMLElement, icon: string): void;
@@ -249,7 +247,6 @@ export class FileViews {
   private makeGraph(): FileGraphBoard {
     return new FileGraphBoard(this.rootOf("graph"), {
       select: (xref) => this.host.select(xref),
-      portrait: (xref) => this.host.portrait(xref),
       stateChanged: ({ scope, view }) => {
         const held = view ?? this.kept.graph?.view;
         this.kept.graph = { ...scope, ...(held ? { view: held } : {}) };

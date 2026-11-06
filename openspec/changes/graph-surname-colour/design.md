@@ -20,3 +20,7 @@ The background is the fill; the name lines and the years are the ink of that hue
 
 - [Losing sex as a tint on the graph] → The user asked for the surname method, and the timeline already dropped sex; sex stays in the card, the list and the file.
 - [The years are no longer muted, flattening the card's hierarchy] → The years are smaller and the names bolder; contrast comes first.
+
+### D4. The portrait leaves the graph, not the record card
+
+The graph's card drew a `foreignObject` with the person's first image and grew taller by `CARD.portrait` for it. Both go: `CARD` is `{ width, height }`, a row is one card tall, `stackBands` and `placeCards` take no set of portraits, and the cards stand on the top of their band. `FileViewsHost` and `FileGraphHost` lose `portrait`, and `GedcomView.portrait` stays for the record card, whose page host still asks for it, so `PortraitContent` moves from `graphCanvas.ts` to `media.ts`, where the picture drawing is. `TimelinePerson.portrait` was read only by the graph and goes.

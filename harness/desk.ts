@@ -11,7 +11,7 @@ import { RecordHistory } from "../src/desk/recordHistory";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
 import { installObsidianDom } from "../src/testing/obsidianDom";
-import type { PortraitContent } from "../src/desk/graphCanvas";
+import type { PortraitContent } from "../src/desk/media";
 import { stubSetIcon } from "./icons";
 
 export interface DeskOptions {

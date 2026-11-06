@@ -42,22 +42,18 @@ test.describe("the graph of a file", () => {
     await expect(page.locator(".gedcom-fg")).not.toContainText("Generation");
   });
 
-  test("shows Marie's portrait over her given name, her surname and her years, and none for Jacques", async ({ page }) => {
+  test("shows Marie's given name, her surname and her years in that order, with no picture on any card", async ({ page }) => {
     await mountGraph(page);
     const marie = card(page, "@I1@");
-    const picture = marie.locator(".gedcom-fg-avatar img");
-    await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
-    const [given, surname] = await marie.locator(".gedcom-fg-card-name").all();
     await expectNameLines(marie, "Marie", "Skłodowska");
+    const [given, surname] = await marie.locator(".gedcom-fg-card-name").all();
     const tops = await Promise.all(
-      [picture, given, surname, marie.locator(".gedcom-fg-card-years")].map(async (part) => (await part?.boundingBox())?.y ?? NaN),
+      [given, surname, marie.locator(".gedcom-fg-card-years")].map(async (part) => (await part?.boundingBox())?.y ?? NaN),
     );
     expect([...tops].sort((a, b) => a - b)).toEqual(tops);
-    await expect(card(page, "@I11@").locator(".gedcom-fg-avatar")).toHaveCount(0);
-    const jacques = await card(page, "@I11@").locator(".gedcom-fg-card-bg").boundingBox();
-    const pierre = await card(page, "@I2@").locator(".gedcom-fg-card-bg").boundingBox();
-    expect((jacques?.y ?? 0) + (jacques?.height ?? 0)).toBeCloseTo((pierre?.y ?? 0) + (pierre?.height ?? 0), 0);
-    expect(jacques?.height ?? 0).toBeLessThan(pierre?.height ?? 0);
+    await expect(page.locator(".gedcom-fg-avatar, .gedcom-fg-card img")).toHaveCount(0);
+    const heights = await page.locator(".gedcom-fg-card-bg").evaluateAll((shapes) => shapes.map((shape) => shape.getBoundingClientRect().height));
+    expect(new Set(heights.map((height) => Math.round(height))).size).toBe(1);
   });
 
   test("cuts a long name to the width of its card", async ({ page }) => {

@@ -2393,20 +2393,8 @@ button.gedcom-fg-pop-open {
   opacity: 0.25;
 }
 
-.gedcom-fg-avatar.gedcom-desk-portrait {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-}
 
-.gedcom-fg-avatar .gedcom-desk-picture:not(.is-cropped) {
-  width: 100%;
-  height: 100%;
-}
 
-.gedcom-fg-avatar-holder {
-  pointer-events: none;
-}
 
 .gedcom-fg-person,
 .gedcom-fg-line,

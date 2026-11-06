@@ -25,7 +25,6 @@ const WHOLE: BranchScope = { up: 2, down: 2 };
 
 let container: HTMLElement;
 let host: {
-  portrait?: FileGraphHost["portrait"];
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   stateChanged: ReturnType<typeof vi.fn<FileGraphHost["stateChanged"]>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
@@ -119,28 +118,11 @@ describe("drawing the graph of a file", () => {
     expect(container.querySelector(".gedcom-fg-title, .gedcom-fg-summary, .gedcom-fg-head")).toBeNull();
   });
 
-  it("draws a portrait at the top of a card whose person has one, and none for the others or far out", () => {
-    const asked: string[] = [];
-    host.portrait = (xref) => {
-      asked.push(xref);
-      return xref === "@I2@" ? null : { kind: "image", url: `media/${xref}.svg`, name: xref, title: xref };
-    };
+  it("draws no picture on a card, whatever media the person has", () => {
     board();
 
-    expect(card("@I1@")?.querySelector(".gedcom-fg-avatar img")?.getAttribute("src")).toBe("media/@I1@.svg");
-    expect(card("@I11@")?.querySelector(".gedcom-fg-avatar")).toBeNull();
-    expect(card("@I2@")?.querySelector(".gedcom-fg-avatar")).toBeNull();
-    expect(asked.sort()).toEqual(["@I1@", "@I12@", "@I2@"].sort());
-    expect(Number(card("@I1@")?.querySelector(".gedcom-fg-card-bg")?.getAttribute("height"))).toBe(CARD.height + CARD.portrait);
-
-    card("@I1@")?.querySelector(".gedcom-fg-avatar img")?.dispatchEvent(new Event("error"));
-    expect(card("@I1@")?.querySelector(".gedcom-fg-avatar")).toBeNull();
-
-    container.replaceChildren();
-    asked.length = 0;
-    board(curie(), { view: { x: 900, y: 200, k: 0.2 } });
-    expect(container.querySelector(".gedcom-fg-avatar")).toBeNull();
-    expect(asked).toEqual([]);
+    expect(container.querySelector(".gedcom-fg-avatar, .gedcom-fg-avatar-holder, .gedcom-fg-card img")).toBeNull();
+    expect(Number(card("@I1@")?.querySelector(".gedcom-fg-card-bg")?.getAttribute("height"))).toBe(CARD.height);
   });
 
   it("floats −, + and Fit over the canvas, right after the search, without starting a drag or a touch", () => {
