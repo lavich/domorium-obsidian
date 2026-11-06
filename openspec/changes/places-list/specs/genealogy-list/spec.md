@@ -142,7 +142,7 @@ the repository; for places the name of the place. A year before the common era S
 writes it, not by the mark of the era shown beside it, so the same filter finds it in any
 language. Case SHALL NOT matter, nor, for places, the marks on letters and the letters that do not
 decompose — `ł`, `ß`, `ø`, `đ`, `æ`, `œ` and `ı` match `l`, `ss`, `o`, `d`, `ae`, `oe` and `i`
-— as in the search of the map. A search matching nothing SHALL say so and say what it
+— so that a name typed without its marks finds the place. A search matching nothing SHALL say so and say what it
 searches. While it holds text it SHALL show how many rows remain of how many there are,
 spelt by the plural rules of the language shown, as `4 of 17 people`. Switching the kind
 SHALL clear the text and leave the search as open as it was. A cross in the open search
@@ -234,8 +234,7 @@ descending too, and places the order in which the file first names them. Names S
 column by the collation of the language shown, numbers inside a text counted as numbers,
 so that a letter with a mark sorts with its base letter. Years SHALL be compared by the
 year of birth, or, for places, by the first year of an event there, Marriage by the year of
-the marriage, Sources, Children, Cited by and Events as numbers, and Coordinates by
-whether the place has any, those with none coming first when ascending. A row whose value is missing — no birth year, no marriage, no place, no
+the marriage, Sources, Children, Cited by and Events as numbers. A row whose value is missing — no birth year, no marriage, no place, no
 author, an unnamed person, an untitled source, a place with no dated event — SHALL come last in either direction. The
 sort of each kind SHALL be kept with the kind, SHALL combine with the filter, and SHALL
 NOT change which record is selected.
@@ -313,10 +312,6 @@ NOT change which record is selected.
 - **WHEN** the reader presses Events three times among the places
 - **THEN** the places are in alphabetical order and no header says it sorts
 
-#### Scenario: Sorting the places by coordinates
-- **WHEN** the reader presses Coordinates among the places of `curie.ged`
-- **THEN** the six places with no coordinates come first and the four with coordinates last
-
 ### Requirement: A row selects a record, and the selected row is marked
 
 Activating a row of the list, by a click, a tap, or Enter or Space on a row with the
@@ -330,8 +325,8 @@ to record*; and SHALL stay across sorting, filtering and switching the kind, and
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
 list. A row of the Places SHALL NOT select a record, since a place is not one: activating it
 SHALL mark that row, and as selected to assistive technology, and nothing else, so that the
-tab stays in List mode, the selection and the record card are as they were, the map does not
-move and no panel is opened; with another row marked, that one SHALL be marked no more. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+tab stays in List mode, the selection and the record card are as they were, no panel is
+opened; with another row marked, that one SHALL be marked no more. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -416,7 +411,7 @@ derived from that text size, so that it follows the reader's font size.
 - **THEN** only the row of `Warsaw, Congress Poland` is marked
 
 #### Scenario: The place is kept across the modes
-- **WHEN** `Paris, France` is marked, and the reader switches to Map mode and back
+- **WHEN** `Paris, France` is marked, and the reader switches to Graph mode and back
 - **THEN** the row of `Paris, France` is marked again
 
 #### Scenario: The place is let go with the kind
@@ -551,33 +546,20 @@ The kind buttons, the headers and the search SHALL be reachable with the keyboar
 ### Requirement: Places
 
 The **Places** kind SHALL list every place the file names in an event of a person or a family, once
-each, whether the place has coordinates or not, each named as its first occurrence in the
-file writes it: two spellings that differ only in case, in the space between words or in
-the form of a letter are one place. Its columns SHALL be **Place**, **Events**, the number
-of events at the place, **Years**, the years of those events as `1855–1958`, or the one year, or nothing
-where none is dated, and **Coordinates**, the coordinates the file gives the place in a `MAP` under its
-`PLAC`, the ones the map draws the place at, in degrees as `48.8566, 2.3522`. A place with no coordinates SHALL show, in place of the coordinates, a mark that is a shape with a
-text alternative **No coordinates**, the mark of the people who cite no source, and not colour
-alone; on a phone and in a narrow tab the label SHALL be written out beside the shape. Every row
-SHALL be built from the file alone, and the Places SHALL have no button, no action and no control
-that creates, opens or writes a note or a file. Without a sort the places SHALL be in alphabetical order by the collation of the language shown. The
-count above the rows SHALL be of places, spelt by the plural rules of the language shown, and each
-row SHALL be a row of the grid of the list, and a place SHALL be one row however many events it has.
+each, each named as its first occurrence in the file writes it: two spellings that differ only in
+case or in the space between words are one place, and a place SHALL be one row however many events
+it has. Its columns SHALL be **Place**, **Events**, the number of events at the place, and
+**Years**, the years of those events as `1855–1958`, or the one year, or nothing where none is dated.
+Every row SHALL be built from the file alone, and the Places SHALL have no button, no action and no
+control that creates, opens or writes a note or a file. Without a sort the places SHALL be in
+alphabetical order by the collation of the language shown. The count above the rows SHALL be of
+places, spelt by the plural rules of the language shown, and each row SHALL be a row of the grid of
+the list.
 
 #### Scenario: The places of a file
-- **WHEN** the list shows the places of `curie.ged` with `MAP`s on Warsaw, Paris and Passy in the file
-- **THEN** ten places are listed alphabetically, the count reads `10 places`, the row of `Paris, France`
-  reads `11`, `1855–1958` and `48.8566, 2.3522`, and the row of `Mulhouse, France` reads `1`, `1827`
-  and the mark **No coordinates**
-
-#### Scenario: A mark that is not colour alone
-- **WHEN** a place has no coordinates
-- **THEN** its row carries a shape of its own with the text alternative **No coordinates**, and the
-  shape is the same whatever the theme
-
-#### Scenario: A place with no MAP
-- **WHEN** `Sceaux, France` has no `MAP` in the file
-- **THEN** its row shows the mark **No coordinates**, whatever other notes the vault holds
+- **WHEN** the list shows the places of `curie.ged`
+- **THEN** ten places are listed alphabetically, the count reads `10 places`, the row of
+  `Paris, France` reads `11` and `1855–1958`, and the row of `Mulhouse, France` reads `1` and `1827`
 
 #### Scenario: Two spellings
 - **WHEN** the file names `Paris, France` and `paris,  france`
@@ -586,7 +568,7 @@ row SHALL be a row of the grid of the list, and a place SHALL be one row however
 #### Scenario: A phone
 - **WHEN** the reader opens the places on a phone, 390 pixels wide
 - **THEN** each row takes two lines of at least 44 pixels, the place and its events on the first,
-  the years and the coordinates, or the mark and **No coordinates**, on the second
+  the years on the second
 
 ### Requirement: The Places has no actions
 
@@ -595,23 +577,9 @@ search and nothing else: no button that creates, opens, appends to or otherwise 
 table or a file. The Places SHALL be read-only.
 
 #### Scenario: The row of the kinds
-- **WHEN** the list shows the places of a file in which some places have no coordinates
+- **WHEN** the list shows the places of a file
 - **THEN** the row of the kind buttons holds the four kinds and the search, and no other button
 
 #### Scenario: Nothing is written
 - **WHEN** the reader sorts, searches, marks a row and leaves the Places
 - **THEN** no note or file in the vault has been created or changed
-
-### Requirement: The map's counter opens the Places
-
-Where the tab is switched to the list by the counter of the places with no coordinates in the map's scope row,
-the list SHALL show the Places with its search empty and no place marked, the sort of each kind as it was. The list SHALL show every place of the file, not only those of the map's branch or years range.
-
-#### Scenario: From the map
-- **WHEN** the reader presses `6 places have no coordinates` in the map, and the list had the sources
-  filtered by `nobel`
-- **THEN** the tab shows the list on the Places, with an empty search and ten places
-
-#### Scenario: A search left in the places
-- **WHEN** the list shows the places filtered by `paris`, the reader goes to the map and presses the counter
-- **THEN** the list shows ten places with the search empty
