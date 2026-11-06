@@ -70,8 +70,11 @@ alike, a surname written in Cyrillic and in Latin letters — `Жуков` and `
 SHALL be coloured almost alike, and surnames with little in common — `Лобанов` and
 `Сидорова` — SHALL be coloured far apart. A surname written with a hyphen is one
 surname: `Skłodowska-Curie` and `Joliot-Curie` are two surnames. Case and marks on
-letters SHALL NOT change the colour. A person with no
-surname SHALL be grey. The colour SHALL be drawn in the theme's light and dark
+letters SHALL NOT change the colour. Two surnames that fall on almost one hue by chance — `Кобзаренко` and
+`Лобанов` — SHALL still be told apart by the lightness and the saturation of the colour, which
+SHALL depend on the surname's stem alone, so that the two genders of a surname, and one
+surname written in two scripts, are the same in every respect. A person with no surname SHALL
+be grey. The colour SHALL be drawn in the theme's light and dark
 schemes alike, with the name inside the bar readable on it in both.
 
 Colour SHALL never be the only carrier of a fact: the person's name, the surname
@@ -84,6 +87,10 @@ included, is written in the bar or beside it.
 #### Scenario: Two families
 - **WHEN** a file has `Лобанов` and `Сидорова`
 - **THEN** their bars are drawn in hues far apart
+
+#### Scenario: Two surnames on one hue
+- **WHEN** a file has `Кобзаренко` and `Лобанов`, whose hues differ by less than three degrees
+- **THEN** their bars are drawn in colours that differ in lightness or saturation
 
 #### Scenario: Two spellings
 - **WHEN** a file has `Жуков` and `Zhukov`

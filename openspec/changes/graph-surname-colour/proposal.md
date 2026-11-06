@@ -10,6 +10,7 @@ In Russian: «и этот же метод раскраски я хочу что�
 
 - **A card is tinted by its person's surname**, in place of sex, in the same colours as the person's bar in the timeline, in the light and the dark scheme. **BREAKING:** sex no longer tints the card.
 - **The lines of a card** — the given names, the surname and the years — are written in the ink chosen for that tint, so they stay readable at 4.5:1 in both schemes.
+- The tone of a card, as of a bar, has a lightness and a saturation from the whole stem of the surname beside its hue, so that two surnames on one hue differ.
 - The colour helper (`surnameHue.ts`) and its custom properties are shared by both views, so the properties are named for the surname and not for the timeline.
 
 Repository or upstream: **this repository only.**
