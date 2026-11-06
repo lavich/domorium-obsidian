@@ -216,7 +216,7 @@ function drawRecord(
   }
   renderEvidenceSection(
     body,
-    event ? { index, record: event.owner, event: event.event, notes } : { index, record, notes },
+    event ? { index, record: event.owner, event: event.event } : { index, record, notes },
     {
       openRecord: (xref) => tab.select(xref),
       showInSource: (range) => tab.showInSource(range),

@@ -1,10 +1,8 @@
-import { plural, t } from "../i18n";
-import { linkButton } from "./dom";
+import { t } from "../i18n";
 import { renderEventDetail } from "./eventDetail";
 import { yearText } from "./labels";
-import { placeId } from "./placeRows";
 import type { PageHost } from "./personPage";
-import type { PlaceEntry, Timeline, TimelineEntry } from "./timeline";
+import type { Timeline, TimelineEntry } from "./timeline";
 
 function renderEntry(list: HTMLElement, entry: TimelineEntry, host: PageHost): void {
   const row = list.createDiv({ cls: ["gedcom-desk-moment", entry.own ? "is-own" : "is-kin"] });
@@ -44,19 +42,5 @@ export function renderTimeline(parent: HTMLElement, timeline: Timeline, host: Pa
     for (const entry of timeline.undated) {
       renderEntry(undated, entry, host);
     }
-  }
-}
-
-export function renderPlaces(parent: HTMLElement, places: PlaceEntry[], host: PageHost): void {
-  const list = parent.createDiv({ cls: "gedcom-desk-places" });
-  if (places.length === 0) {
-    list.createDiv({ cls: "gedcom-desk-none", text: t("places.empty") });
-  }
-  for (const place of places) {
-    const row = list.createDiv({ cls: "gedcom-desk-place" });
-    const text = row.createDiv({ cls: "gedcom-desk-place-text" });
-    linkButton(text, place.place, () => host.openRecord(placeId(place.place))).addClass("gedcom-desk-place-name");
-    text.createDiv({ cls: "gedcom-desk-place-events", text: place.events.join(" · ") });
-    row.createDiv({ cls: "gedcom-desk-place-count", text: plural("places.count", place.events.length) });
   }
 }

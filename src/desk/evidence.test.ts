@@ -82,11 +82,19 @@ describe("the evidence of an event", () => {
     expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
     expect(texts(".gedcom-desk-notice div")).toEqual([
       "No source of its own",
-      "The sources below belong to the whole record and may not support this fact.",
+      "The sources of the whole record are on its card.",
     ]);
-    expect(texts(".gedcom-desk-subsection")).toEqual([
-      "Sources of this fact", "Whole record", "Sources of the record · 2",
-    ]);
+    expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of this fact"]);
+    expect(container.querySelector(".gedcom-desk-cite")).toBeNull();
+  });
+
+  it("lists nothing of the whole record, and no note, on the card of an event", () => {
+    const index = curieIndex();
+    const hit = { path: "Radium.md", name: "Radium", lines: [{ before: "by ", link: "Marie", after: "", line: 3 }] };
+    drawSelection({ index, record: "@I1@", event: eventOf(index, "@I1@", 0), notes: [hit] });
+
+    expect(container.querySelector(".gedcom-desk-note")).toBeNull();
+    expect(texts("h2, h3")).toEqual(["Evidence", "Sources of this fact"]);
   });
 
   it("says when the record cites nothing either", () => {
@@ -99,7 +107,7 @@ describe("the evidence of an event", () => {
   it("lists the fact's own source above the record's, with page and quality", () => {
     draw("@I1@", eventOf(OWN_SOURCE, "@I1@", 0), OWN_SOURCE);
 
-    expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish register", "Census of 1891"]);
+    expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish register"]);
     expect(texts(".gedcom-desk-cite-page")[0]).toBe("entry 88");
     expect(texts(".gedcom-desk-cite-meta")[0]).toBe("Primary evidence · Holy Cross · Warsaw");
   });
@@ -119,11 +127,12 @@ describe("the evidence of an event", () => {
     expect(container.querySelector(".gedcom-desk-actions")).toBeNull();
   });
 
-  it("shows a family event's own citations, keeping the person as the whole record", () => {
+  it("shows a family event's own citations alone", () => {
     const index = curieIndex();
     draw("@I1@", index.person("@I1@")?.unions[0]?.events[0], index);
 
-    expect(texts(".gedcom-desk-subsection")).toContain("Sources of the record · 2");
+    expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of this fact"]);
+    expect(texts(".gedcom-desk-notice div")[0]).toBe("No source of its own");
   });
 
   it("shows a source described in the record", () => {

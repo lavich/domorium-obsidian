@@ -47,7 +47,8 @@ describe("the card of a place", () => {
     expect(row?.querySelector(".gedcom-desk-fact-name")?.textContent).toBe("Birth");
     expect(row?.querySelector(".gedcom-desk-fact-value")?.textContent).toContain("7 NOV 1867");
     expect(row?.querySelector(".gedcom-desk-fact-value .gedcom-desk-link")?.textContent).toBe("Marie Skłodowska-Curie");
-    expect(row?.querySelector(".gedcom-desk-chip")?.textContent).toBe("No source");
+    expect(row?.querySelector(".gedcom-desk-chip")).toBeNull();
+    expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
   });
 
   it("opens the card of the event from its name, and the record from its link", () => {

@@ -22,7 +22,7 @@ Rejected: keeping the section unfolded under the timeline (still a second copy);
 
 `desk.unsourced`, one string with the count of facts without a source and the total — en *Facts without a source: {count} of {total}*; ru *Фактов без источника: {count} из {total}*. No noun follows a numeral, so no plural form is needed in either language, and a single fact reads *1 of 1*.
 
-The total is the number of facts the card lists: for a person, the facts of the record and the events of the families they are a spouse of, so a marriage is counted on the person's card and again on the family's. A fact whose record has no identifier, drawn with a name that does not act, is counted like the others.
+The total is the number of facts the card lists: for a person, the facts of the record and the events of the families they are a spouse of, so a marriage is counted on the person's card and again on the family's. A fact whose record has no identifier is counted like the others; the count reads `event.citations` and nothing else.
 
 The line is not a heading and not a control. It is drawn for a person and for a family, which share `renderFactList`; a place card lists events of many records and gets none. A card with no facts keeps its *No facts* line and draws no summary. The colour is a theme variable (`--text-muted`), as the rest of the card's secondary text; no orange.
 
@@ -45,3 +45,7 @@ The order of the remaining sections; the timeline and what it lists, folded as n
 ## Open for review
 
 The wording of the line (D3), the notice's second line, and that the notes leave the event card (D4).
+
+## Implementation
+
+- The two specs that tapped the middle of a fact row (`tests/desk.spec.ts`, *opens the card of an event when a fact is tapped* and *shows the evidence of her birth*) now tap the name of the fact. On a phone, with no mark in the row, the middle of the row is covered by the 44-pixel area of the place link under the date, so a tap there opens the place; the name is the control that opens the event, and a tap on it does.

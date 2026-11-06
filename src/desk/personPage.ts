@@ -14,8 +14,8 @@ import { renderEventRow } from "./factRow";
 import { renderFold } from "./fold";
 import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
-import { placesOf, timelineOf } from "./timeline";
-import { renderPlaces, renderTimeline } from "./timelineView";
+import { timelineOf } from "./timeline";
+import { renderTimeline } from "./timelineView";
 import type { PortraitContent } from "./media";
 
 /**
@@ -101,8 +101,6 @@ export function renderPersonPage(
       toggled: (open) => options.folded?.(id, open),
     });
   renderTimeline(fold("timeline", t("desk.timeline"), timeline.entries.length + timeline.undated.length), timeline, host);
-  const places = placesOf(timeline);
-  renderPlaces(fold("places", t("desk.places"), places.length), places, host);
 }
 
 function renderHeading(
@@ -136,6 +134,13 @@ export function renderFactList(
   host: PageHost,
 ): void {
   page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.facts") });
+  const unsourced = facts.filter((fact) => fact.event.citations.length === 0).length;
+  if (unsourced > 0) {
+    page.createDiv({
+      cls: "gedcom-desk-unsourced",
+      text: t("desk.unsourced", { count: unsourced, total: facts.length }),
+    });
+  }
   const list = page.createDiv({ cls: "gedcom-desk-facts" });
   if (facts.length === 0) {
     list.createDiv({ cls: "gedcom-desk-none", text: t("desk.noFacts") });

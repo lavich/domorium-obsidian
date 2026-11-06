@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
-import { placesOf, timelineOf } from "./timeline";
+import { timelineOf } from "./timeline";
 
 afterEach(resetLanguage);
 
@@ -88,20 +88,5 @@ describe("a person's timeline", () => {
     const entry = of("@I1@").entries.find((one) => one.label.startsWith("Death of husband"));
 
     expect(entry?.relative).toEqual({ xref: "@I2@", name: "Pierre Curie" });
-  });
-});
-
-describe("a person's places", () => {
-  it("lists each place once, with what happened there", () => {
-    const places = placesOf(of("@I1@"));
-
-    expect(places.map((one) => one.place)).toEqual([
-      "Warsaw, Congress Poland",
-      "Sceaux, France",
-      "Paris, France",
-      "Passy, Haute-Savoie, France",
-    ]);
-    expect(places[0]?.events).toContain("Birth");
-    expect(places[1]?.events).toEqual(["Marriage with Pierre Curie"]);
   });
 });

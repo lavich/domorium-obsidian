@@ -487,15 +487,15 @@ button.gedcom-desk-fact-name {
   white-space: nowrap;
 }
 
-.gedcom-desk-chip.no-source {
-  color: var(--text-muted);
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--background-modifier-border);
-}
-
 .gedcom-desk-chip.has-source {
   color: var(--text-muted);
   background: var(--background-secondary);
+}
+
+.gedcom-desk-unsourced {
+  margin-bottom: var(--size-2-3);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
 }
 
 .gedcom-desk-name {
@@ -1116,12 +1116,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
   min-height: 44px;
 }
 
-.gedcom-desk-scope {
-  color: var(--text-muted);
-  border-top: 1px solid var(--background-modifier-border);
-  padding-top: var(--size-4-3);
-}
-
 .gedcom-desk-notice {
   padding: var(--size-4-2) var(--size-4-3);
   border-radius: var(--radius-m);
@@ -1446,29 +1440,6 @@ button.gedcom-desk-moment-what:disabled {
 .gedcom-desk-moment-detail {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
-}
-
-.gedcom-desk-place {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--size-4-3);
-  padding: var(--size-4-2) 0;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-place-name {
-  font-weight: var(--font-medium);
-}
-
-.gedcom-desk-place-events,
-.gedcom-desk-place-count {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-desk-place-count {
-  align-self: center;
-  white-space: nowrap;
 }
 
 /* ── The timeline of a file ──────────────────────────────────────────────

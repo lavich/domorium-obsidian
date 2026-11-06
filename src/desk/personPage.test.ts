@@ -47,6 +47,23 @@ const bornIn = (date: string): GenealogyIndex =>
     "0 TRLR", "",
   ].join("\n")));
 
+const gedcom = (...lines: string[]): GenealogyIndex =>
+  buildIndex(new GedcomLanguageService(["0 HEAD", "1 GEDC", "2 VERS 7.0", ...lines, "0 TRLR", ""].join("\n")));
+
+const citedBirth = gedcom(
+  "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@", "1 DEAT", "1 OCCU Teacher", "1 BURI",
+  "0 @S2@ SOUR", "1 TITL Register",
+);
+const citedEvery = gedcom(
+  "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@", "1 DEAT", "2 SOUR @S2@",
+  "0 @S2@ SOUR", "1 TITL Register",
+);
+const marriedPerson = gedcom(
+  "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 FAMS @F1@", "1 BIRT",
+  "0 @I2@ INDI", "1 NAME Jan /Nowak/", "1 FAMS @F1@",
+  "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I1@", "1 MARR",
+);
+
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
@@ -76,15 +93,43 @@ describe("the person card", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["≈1401 до н. э.–?"]);
   });
 
-  it("lists Marie's facts, her marriage among them, none citing a source", () => {
+  it("lists Marie's facts, her marriage among them, with no mark on any, and says none cites a source", () => {
     draw("@I1@");
 
     expect(facts()).toEqual([
-      ["Birth", "7 NOV 1867 · Warsaw, Congress Poland", "No source"],
-      ["Death", "4 JUL 1934 · Passy, Haute-Savoie, France", "No source"],
-      ["Occupation", "Physicist and chemist", "No source"],
-      ["Marriage", "26 JUL 1895 · Sceaux, France · with Pierre Curie", "No source"],
+      ["Birth", "7 NOV 1867 · Warsaw, Congress Poland"],
+      ["Death", "4 JUL 1934 · Passy, Haute-Savoie, France"],
+      ["Occupation", "Physicist and chemist"],
+      ["Marriage", "26 JUL 1895 · Sceaux, France · with Pierre Curie"],
     ]);
+    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 4 of 4"]);
+  });
+
+  it("counts the facts without a source and marks only those that cite one", () => {
+    draw("@I1@", { index: citedBirth });
+
+    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 3 of 4"]);
+    expect(facts().map((row) => row.length)).toEqual([3, 2, 2, 2]);
+  });
+
+  it("draws no line where every fact cites a source", () => {
+    draw("@I1@", { index: citedEvery });
+
+    expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
+  });
+
+  it("counts a fact of a family the person married into", () => {
+    draw("@I1@", { index: marriedPerson });
+
+    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 2 of 2"]);
+  });
+
+  it("puts the line above the facts, not in the list", () => {
+    draw("@I1@");
+    const line = container.querySelector(".gedcom-desk-unsourced");
+
+    expect(line?.closest(".gedcom-desk-facts")).toBeNull();
+    expect(line?.nextElementSibling?.classList.contains("gedcom-desk-facts")).toBe(true);
   });
 
   it("counts the sources a fact cites itself", () => {
@@ -217,7 +262,8 @@ describe("the person card", () => {
     setLanguage("ru");
     draw("@I1@");
 
-    expect(facts()[0]).toEqual(["Рождение", "7 NOV 1867 · Warsaw, Congress Poland", "Без источника"]);
+    expect(facts()[0]).toEqual(["Рождение", "7 NOV 1867 · Warsaw, Congress Poland"]);
+    expect(texts(".gedcom-desk-unsourced")).toEqual(["Фактов без источника: 4 из 4"]);
     expect(texts(".gedcom-desk-kin-label")[0]).toBe("Родители");
   });
 
@@ -230,7 +276,7 @@ describe("the person card", () => {
 });
 
 describe("the sections of a person card", () => {
-  it("run Facts, Other names, Family, Media, Timeline and Places, with no tab bar and no tree", () => {
+  it("run Facts, Other names, Family, Media and Timeline, with no tab bar and no tree", () => {
     const person = curieIndex().person("@I1@");
     if (!person) {
       throw new Error("no Marie");
@@ -243,18 +289,18 @@ describe("the sections of a person card", () => {
       host,
     );
 
-    expect(texts("h2")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline", "Places"]);
+    expect(texts("h2")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline"]);
     expect(container.querySelector(".gedcom-fg-canvas")).toBeNull();
   });
 
-  it("folds the timeline and the places, closed, each with its count", () => {
+  it("folds the timeline, closed, with its count", () => {
     draw("@I1@");
     const buttons = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-fold-button")];
 
-    expect(buttons.map((button) => button.textContent)).toEqual(["Timeline", "Places"]);
-    expect(buttons.map((button) => button.getAttribute("data-count"))).toEqual(["18", "4"]);
-    expect(buttons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
-    expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true, true]);
+    expect(buttons.map((button) => button.textContent)).toEqual(["Timeline"]);
+    expect(buttons.map((button) => button.getAttribute("data-count"))).toEqual(["18"]);
+    expect(buttons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false"]);
+    expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true]);
     expect(container.querySelector(".gedcom-desk-names")?.closest("[hidden]")).toBeNull();
   });
 
@@ -279,9 +325,9 @@ describe("the sections of a person card", () => {
     if (!person) {
       throw new Error("no Marie");
     }
-    renderPersonPage(container, person, index, { selected: null, open: new Set(["places"]) }, host);
+    renderPersonPage(container, person, index, { selected: null, open: new Set(["timeline"]) }, host);
 
-    expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true, false]);
+    expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([false]);
   });
 
   it("lists seventeen dated entries from 1860 to 1934 and the undated Occupation in the timeline", () => {
@@ -296,17 +342,6 @@ describe("the sections of a person card", () => {
     const undated = [...container.querySelectorAll(".gedcom-desk-timeline")][1];
     expect([...(undated?.querySelectorAll(".gedcom-desk-moment-what") ?? [])].map((node) => node.textContent)).toEqual([
       "Occupation",
-    ]);
-  });
-
-  it("lists the four places in order", () => {
-    draw("@I1@");
-
-    expect(texts(".gedcom-desk-place-name")).toEqual([
-      "Warsaw, Congress Poland",
-      "Sceaux, France",
-      "Paris, France",
-      "Passy, Haute-Savoie, France",
     ]);
   });
 
