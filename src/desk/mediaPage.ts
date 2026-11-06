@@ -43,10 +43,12 @@ export function renderMediaPage(
 
   const whole = items.whole;
   if (whole?.content.kind === "image") {
-    const stage = page.createDiv({ cls: "gedcom-desk-media-stage" });
-    drawPicture(stage, whole.content, 640, 480);
     const path = whole.path;
+    const stage = page.createEl(path ? "button" : "div", { cls: "gedcom-desk-media-stage" });
+    drawPicture(stage, whole.content, 640, 480);
     if (path) {
+      stage.setAttribute("type", "button");
+      stage.setAttribute("aria-label", media.title ?? media.file ?? t("desk.media"));
       stage.addEventListener("click", () => host.openFile(path));
     }
   } else if (whole) {

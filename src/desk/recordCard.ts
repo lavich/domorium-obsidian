@@ -14,7 +14,7 @@ import { eventAt, eventTitle } from "./eventRows";
 import { renderEventPage } from "./eventPage";
 import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
-import { renderPersonPage, type FactKey, type PageHost } from "./personPage";
+import { renderPersonPage, type FactKey, type PageHost, type PersonPageOptions } from "./personPage";
 import { renderSourcePage } from "./sourcePage";
 
 export interface CardTab {
@@ -39,6 +39,22 @@ export interface CardView {
 }
 
 const FOCUS_KEY = "data-focus-key";
+const OPEN_KEY = "data-open";
+
+function foldsOf(root: HTMLElement): Pick<PersonPageOptions, "open" | "folded"> {
+  const open = new Set((root.getAttribute(OPEN_KEY) ?? "").split(" ").filter(Boolean));
+  return {
+    open,
+    folded: (id, now) => {
+      if (now) {
+        open.add(id);
+      } else {
+        open.delete(id);
+      }
+      root.setAttribute(OPEN_KEY, [...open].join(" "));
+    },
+  };
+}
 
 function recordName(index: GenealogyIndex, xref: string): string {
   const person = index.person(xref);
@@ -100,7 +116,10 @@ export function renderRecordCard(
       text: t(holdsNothing ? "card.empty" : "card.nothing"),
     });
   } else {
-    drawRecord(body, tab, index, record, selection.fact, notes, view);
+    if (shown !== previous) {
+      root.removeAttribute(OPEN_KEY);
+    }
+    drawRecord(body, tab, index, record, selection.fact, notes, view, foldsOf(root));
   }
 
   root.setAttribute("data-shown", shown);
@@ -158,6 +177,7 @@ function drawRecord(
   fact: FactKey | null,
   notes: NoteHit[] | null,
   view: CardView,
+  folds: Pick<PersonPageOptions, "open" | "folded">,
 ): void {
   const host: PageHost & { openFile(path: string): void } = {
     openRecord: (xref) => tab.select(xref),
@@ -174,7 +194,7 @@ function drawRecord(
   const place = person || family || source || media ? undefined : placeAt(index, record);
   const event = person || family || source || media || place ? undefined : eventAt(index, record);
   if (person) {
-    renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media) }, host);
+    renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media), ...folds }, host);
   } else if (family) {
     renderFamilyPage(body, family, index, { selected: fact, media: tab.mediaItems(family.media) }, host);
   } else if (source) {
@@ -196,11 +216,10 @@ function drawRecord(
   }
   renderEvidenceSection(
     body,
-    event ? { index, record: event.owner, fact: event.fact, notes } : { index, record, fact: person || family ? fact : null, notes },
+    event ? { index, record: event.owner, event: event.event, notes } : { index, record, notes },
     {
       openRecord: (xref) => tab.select(xref),
       showInSource: (range) => tab.showInSource(range),
-      wholeRecord: () => (event ? tab.select(event.owner) : tab.selectFact(null)),
       openNote: (path, line) => view.openNote(path, line),
     },
   );

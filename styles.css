@@ -386,7 +386,7 @@ button.gedcom-card-nav:disabled {
 .gedcom-desk-section {
   font-size: var(--font-ui-smaller);
   font-weight: var(--font-semibold);
-  color: var(--text-faint);
+  color: var(--text-muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin: var(--size-4-6) 0 var(--size-2-3);
@@ -418,7 +418,6 @@ button.gedcom-desk-link:hover {
 .gedcom-desk-facts {
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-m);
-  overflow: hidden;
 }
 
 .gedcom-desk-fact {
@@ -437,6 +436,13 @@ button.gedcom-desk-link:hover {
 
 .gedcom-desk-fact:first-child {
   border-top: 0;
+  border-start-start-radius: var(--radius-m);
+  border-start-end-radius: var(--radius-m);
+}
+
+.gedcom-desk-fact:last-child {
+  border-end-start-radius: var(--radius-m);
+  border-end-end-radius: var(--radius-m);
 }
 
 .gedcom-desk-fact.is-inert {
@@ -466,8 +472,12 @@ button.gedcom-desk-fact-name {
   overflow-wrap: anywhere;
 }
 
+.gedcom-desk-fact-value .gedcom-desk-link {
+  text-align: start;
+}
+
 .gedcom-desk-fact-value.is-empty {
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .gedcom-desk-chip {
@@ -478,20 +488,14 @@ button.gedcom-desk-fact-name {
 }
 
 .gedcom-desk-chip.no-source {
-  color: var(--text-warning);
-  background: rgba(var(--color-orange-rgb), 0.12);
+  color: var(--text-muted);
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--background-modifier-border);
 }
 
 .gedcom-desk-chip.has-source {
   color: var(--text-muted);
   background: var(--background-secondary);
-}
-
-.gedcom-desk-unfold {
-  padding: var(--size-4-2) var(--size-4-3);
-  background: var(--background-secondary);
-  font-size: var(--font-ui-small);
-  color: var(--text-muted);
 }
 
 .gedcom-desk-name {
@@ -539,12 +543,12 @@ button.gedcom-desk-person:hover {
 
 .gedcom-desk-person-years,
 .gedcom-desk-person-note {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-size: var(--font-ui-small);
 }
 
 .gedcom-desk-none {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-size: var(--font-ui-small);
   padding: var(--size-2-3) 0;
 }
@@ -564,7 +568,7 @@ button.gedcom-desk-person:hover {
 }
 
 .gedcom-desk-repository div + div {
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .gedcom-desk-citer {
@@ -595,6 +599,164 @@ button.gedcom-desk-person:hover {
     padding-bottom: 0;
     font-size: var(--font-ui-smaller);
   }
+}
+
+.gedcom-desk-event-owner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2-3);
+  margin-bottom: var(--size-2-3);
+  font-size: var(--font-ui-small);
+}
+
+.gedcom-desk-event-owner .gedcom-desk-link {
+  text-align: start;
+}
+
+.gedcom-desk-event-kind {
+  color: var(--text-muted);
+}
+
+h2.gedcom-desk-fold-heading {
+  margin: var(--size-4-6) 0 var(--size-2-3);
+}
+
+button.gedcom-desk-fold-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--size-2-3);
+  width: 100%;
+  height: auto;
+  padding: var(--size-2-2) 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  text-align: start;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.gedcom-desk-fold-button::before {
+  content: "";
+  flex: none;
+  width: 0;
+  height: 0;
+  border-block: 4px solid transparent;
+  border-inline-start: 6px solid currentcolor;
+  transition: transform 0.12s ease;
+}
+
+button.gedcom-desk-fold-button[aria-expanded="true"]::before {
+  transform: rotate(90deg);
+}
+
+button.gedcom-desk-fold-button::after {
+  content: attr(data-count);
+  font-weight: normal;
+  letter-spacing: 0;
+}
+
+.gedcom-desk-fold-body[hidden] {
+  display: none;
+}
+
+button.gedcom-desk-link:focus-visible,
+button.gedcom-desk-person:focus-visible,
+button.gedcom-desk-cite:focus-visible,
+button.gedcom-desk-fact-name:focus-visible,
+button.gedcom-desk-moment-what:focus-visible,
+button.gedcom-desk-note-line:focus-visible,
+button.gedcom-desk-fold-button:focus-visible,
+button.gedcom-desk-media-stage:focus-visible,
+button.gedcom-desk-tile-face:focus-visible,
+button.gedcom-card-nav:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+@media (pointer: coarse) {
+  .gedcom-desk-event-owner {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  button.gedcom-card-nav {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  button.gedcom-desk-person,
+  button.gedcom-desk-cite,
+  button.gedcom-desk-note-line,
+  button.gedcom-desk-moment-what,
+  button.gedcom-desk-fold-button {
+    min-height: 44px;
+  }
+
+  .gedcom-desk-fact {
+    position: relative;
+  }
+
+  button.gedcom-desk-fact-name::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  button.gedcom-desk-link {
+    position: relative;
+    z-index: 2;
+  }
+
+  button.gedcom-desk-link::after {
+    content: "";
+    position: absolute;
+    inset: -13px 0;
+  }
+}
+
+.is-mobile .gedcom-desk-event-owner {
+  min-height: 44px;
+  align-items: center;
+}
+
+.is-mobile button.gedcom-card-nav {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.is-mobile button.gedcom-desk-person,
+.is-mobile button.gedcom-desk-cite,
+.is-mobile button.gedcom-desk-note-line,
+.is-mobile button.gedcom-desk-moment-what,
+.is-mobile button.gedcom-desk-fold-button {
+  min-height: 44px;
+}
+
+.is-mobile .gedcom-desk-fact {
+  position: relative;
+}
+
+.is-mobile button.gedcom-desk-fact-name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.is-mobile button.gedcom-desk-link {
+  position: relative;
+  z-index: 2;
+}
+
+.is-mobile button.gedcom-desk-link::after {
+  content: "";
+  position: absolute;
+  inset: -13px 0;
 }
 
 .gedcom-list {
@@ -954,22 +1116,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
   min-height: 44px;
 }
 
-.gedcom-desk-evidence-head {
-  padding-bottom: var(--size-4-2);
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-evidence-context {
-  margin-top: var(--size-2-3);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-desk-evidence-sub {
-  font-weight: normal;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
 .gedcom-desk-scope {
   color: var(--text-muted);
   border-top: 1px solid var(--background-modifier-border);
@@ -986,7 +1132,7 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
 }
 
 .gedcom-desk-notice-title {
-  color: var(--text-warning);
+  color: var(--text-normal);
   font-weight: var(--font-semibold);
 }
 
@@ -1022,7 +1168,7 @@ button.gedcom-desk-cite:hover {
 }
 
 .gedcom-desk-cite-meta {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
 
@@ -1127,6 +1273,13 @@ button.gedcom-desk-tile-face:disabled {
 
 .gedcom-desk-tile .gedcom-desk-actions {
   margin-top: var(--size-2-1);
+}
+
+button.gedcom-desk-media-stage {
+  width: 100%;
+  height: auto;
+  border: 0;
+  box-shadow: none;
 }
 
 .gedcom-desk-media-stage {
@@ -1291,7 +1444,7 @@ button.gedcom-desk-moment-what:disabled {
 }
 
 .gedcom-desk-moment-detail {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
 
@@ -1307,49 +1460,9 @@ button.gedcom-desk-moment-what:disabled {
   font-weight: var(--font-medium);
 }
 
-.gedcom-desk-place-occurrence {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--size-4-3);
-  padding: var(--size-4-2) 0;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-event-detail {
-  display: grid;
-  grid-template-columns: 5em minmax(0, 1fr);
-  gap: var(--size-4-3);
-  padding: var(--size-4-2) 0;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-event-value {
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-event-value .gedcom-desk-link {
-  text-align: start;
-}
-
-.gedcom-desk-event-label {
-  color: var(--text-faint);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-desk-event-sources {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--size-4-1);
-}
-
-.gedcom-desk-place-when,
 .gedcom-desk-place-events,
 .gedcom-desk-place-count {
-  color: var(--text-faint);
+  color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
 

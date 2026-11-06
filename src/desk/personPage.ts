@@ -7,10 +7,11 @@ import type {
   PersonEvent,
   PersonRow,
 } from "../genealogy";
-import { plural, t } from "../i18n";
+import { t } from "../i18n";
 import { eventName, personName, shortPlace, yearsOf } from "./labels";
 import { linkButton } from "./dom";
-import { renderEventDetail } from "./eventDetail";
+import { renderEventRow } from "./factRow";
+import { renderFold } from "./fold";
 import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { placesOf, timelineOf } from "./timeline";
@@ -45,6 +46,9 @@ export interface PersonPageOptions {
   selected: FactKey | null;
   /** The files the record links, resolved by the host; none where omitted. */
   media?: MediaItem[];
+  /** The folded sections the reader has opened, and where a change of one is told. */
+  open?: ReadonlySet<string>;
+  folded?(id: string, open: boolean): void;
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -88,10 +92,17 @@ export function renderPersonPage(
   renderFamily(container, person, host);
   renderGallery(container, options.media ?? [], host);
   const timeline = timelineOf(person, index);
-  container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.timeline") });
-  renderTimeline(container, timeline, host);
-  container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.places") });
-  renderPlaces(container, placesOf(timeline), host);
+  const fold = (id: string, title: string, count: number): HTMLElement =>
+    renderFold(container, {
+      id,
+      title,
+      count,
+      open: options.open?.has(id) ?? false,
+      toggled: (open) => options.folded?.(id, open),
+    });
+  renderTimeline(fold("timeline", t("desk.timeline"), timeline.entries.length + timeline.undated.length), timeline, host);
+  const places = placesOf(timeline);
+  renderPlaces(fold("places", t("desk.places"), places.length), places, host);
 }
 
 function renderHeading(
@@ -130,46 +141,24 @@ export function renderFactList(
     list.createDiv({ cls: "gedcom-desk-none", text: t("desk.noFacts") });
   }
   for (const fact of facts) {
-    const row = list.createDiv({ cls: "gedcom-desk-fact" });
-    const id = fact.eventId;
-    const name = row.createEl("button", { cls: "gedcom-desk-fact-name", text: eventName(fact.event) });
-    name.setAttribute("type", "button");
-    name.setAttribute("data-focus-key", fact.key);
-    if (id !== undefined) {
-      row.addEventListener("click", (click) => {
-        if (!(click.target as HTMLElement).closest(".gedcom-desk-link")) {
-          host.openRecord(id);
-        }
-      });
-    } else {
-      row.addClass("is-inert");
-      name.setAttribute("disabled", "");
-    }
-    renderFactValue(row.createSpan({ cls: "gedcom-desk-fact-value" }), fact, host);
-    const count = fact.event.citations.length;
-    row.createSpan({
-      cls: ["gedcom-desk-chip", count > 0 ? "has-source" : "no-source"],
-      text: count > 0 ? plural("desk.sources", count) : t("desk.noSource"),
-    });
+    const { date, place, value } = fact.event;
+    renderEventRow(
+      list,
+      {
+        name: eventName(fact.event),
+        focusKey: fact.key,
+        ...(fact.eventId === undefined ? {} : { open: fact.eventId }),
+        detail: {
+          ...(date?.text ? { date: date.text } : {}),
+          ...(place ? { place } : {}),
+          ...(value ? { text: value } : {}),
+          ...(fact.spouse ? { spouse: t("desk.with", { name: personName(fact.spouse) }) } : {}),
+        },
+        citations: fact.event.citations.length,
+      },
+      host,
+    );
   }
-}
-
-function renderFactValue(value: HTMLElement, fact: Fact, host: PageHost): void {
-  const { date, place, value: own } = fact.event;
-  const shown = renderEventDetail(
-    value,
-    {
-      ...(date?.text ? { date: date.text } : {}),
-      ...(place ? { place } : {}),
-      ...(own ? { text: own } : {}),
-      ...(fact.spouse ? { spouse: t("desk.with", { name: personName(fact.spouse) }) } : {}),
-    },
-    host,
-  );
-  if (!shown) {
-    value.setText(t("desk.noDetails"));
-  }
-  value.toggleClass("is-empty", !shown);
 }
 
 function renderFamily(page: HTMLElement, person: Person, host: PageHost): void {

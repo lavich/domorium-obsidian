@@ -123,6 +123,14 @@ describe("a place as a selectable record", () => {
     const years = found.map(({ event }) => event.date?.year ?? Infinity);
     expect(years).toEqual([...years].sort((a, b) => a - b));
   });
+
+  it("lists a record the file declares twice once", () => {
+    const twice = indexOf(
+      ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 PLAC Paris, France", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 PLAC Paris, France", "0 TRLR"].join("\n"),
+    );
+
+    expect(occurrencesAt(twice, "paris, france")).toHaveLength(1);
+  });
 });
 
 describe("the places kind in the shared model of the list", () => {

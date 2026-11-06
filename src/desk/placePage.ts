@@ -1,6 +1,7 @@
 import type { GenealogyIndex } from "../genealogy";
 import { plural, t } from "../i18n";
-import { linkButton } from "./dom";
+import { eventIdOf } from "./eventRows";
+import { renderEventRow } from "./factRow";
 import { eventName, familyTitle, personName } from "./labels";
 import { occurrencesAt, yearsText, type PlaceRow } from "./placeRows";
 import type { PageHost } from "./personPage";
@@ -15,15 +16,26 @@ export function renderPlacePage(container: HTMLElement, place: PlaceRow, index: 
   });
 
   container.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.placeEvents") });
-  const list = container.createDiv({ cls: "gedcom-desk-place-occurrences" });
+  const list = container.createDiv({ cls: "gedcom-desk-place-occurrences gedcom-desk-facts" });
   for (const { event, record } of occurrencesAt(index, place.key)) {
     const person = index.person(record);
     const family = person ? undefined : index.family(record);
     const who = person ? personName(person) : family ? familyTitle(family.spouseNames) : record;
-    const row = list.createDiv({ cls: "gedcom-desk-place-occurrence" });
-    linkButton(row, `${eventName(event)} · ${who}`, () => host.openRecord(record));
-    if (event.date?.text) {
-      row.createSpan({ cls: "gedcom-desk-place-when", text: event.date.text });
-    }
+    const id = eventIdOf(record, (person ?? family)?.events ?? [], event);
+    renderEventRow(
+      list,
+      {
+        name: eventName(event),
+        focusKey: id,
+        open: id,
+        detail: {
+          ...(event.date?.text ? { date: event.date.text } : {}),
+          ...(event.value ? { text: event.value } : {}),
+        },
+        citations: event.citations.length,
+        record: { name: who, xref: record },
+      },
+      host,
+    );
   }
 }

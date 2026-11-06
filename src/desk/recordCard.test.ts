@@ -160,10 +160,18 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(view.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
   });
 
+  it("opens the card of an event from a place's card", () => {
+    state.record = "place:paris, france";
+    draw();
+    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-name")?.click();
+
+    expect(calls.select.mock.calls[0]?.[0]).toMatch(/^event:/u);
+  });
+
   it("shows a place with its events, and opens the record of an event through the tab", () => {
     state.record = "place:paris, france";
     draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrence .gedcom-desk-link")?.click();
+    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-value .gedcom-desk-link")?.click();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Paris, France"]);
     expect(texts(".gedcom-card-head-name")).toEqual(["Paris, France"]);
@@ -174,14 +182,16 @@ describe("the page of each kind of record, with its evidence", () => {
   it("shows an event with its record, date and place as links, and its evidence below", () => {
     state.record = "event:@I1@:BIRT:0";
     draw();
-    const links = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-event-detail .gedcom-desk-link")];
-    links[0]?.click();
-    links[1]?.click();
+    container.querySelector<HTMLElement>(".gedcom-desk-event-owner .gedcom-desk-link")?.click();
+    container.querySelector<HTMLElement>(".gedcom-desk-subtitle .gedcom-desk-link")?.click();
 
+    expect(texts(".gedcom-desk-event-kind")).toEqual(["Person"]);
+    expect(texts(".gedcom-desk-event-owner .gedcom-desk-link")).toEqual(["Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
     expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-desk-event-value")).toEqual(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
-    expect(texts(".gedcom-card-evidence .gedcom-desk-evidence-context > div")).toEqual(["Birth", "7 NOV 1867 · Warsaw, Congress Poland"]);
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["7 NOV 1867 · Warsaw, Congress Poland"]);
+    expect(container.querySelector(".gedcom-desk-event-details")).toBeNull();
+    expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
     expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
   });
 
@@ -227,12 +237,19 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(container.querySelectorAll(".gedcom-desk-missing")).toHaveLength(1);
   });
 
-  it("goes back from the evidence of an event to its whole record", () => {
-    state.record = "event:@I1@:BIRT:0";
+  it("names a family as the owner of a family event", () => {
+    state.record = "event:@F3@:MARR:0";
     draw();
-    [...container.querySelectorAll<HTMLElement>(".gedcom-card-evidence .gedcom-desk-link")].find((node) => node.textContent?.startsWith("←"))?.click();
 
-    expect(calls.select).toHaveBeenCalledWith("@I1@");
+    expect(texts(".gedcom-desk-event-kind")).toEqual(["Family"]);
+  });
+
+  it("draws no date and place line for an event that states neither", () => {
+    index = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 OCCU Cooper\n0 TRLR");
+    state.record = "event:@I1@:OCCU:0";
+    draw();
+
+    expect(container.querySelector(".gedcom-desk-subtitle")).toBeNull();
   });
 
   it("speaks Russian on an event's card", () => {
@@ -241,7 +258,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Рождение"]);
-    expect(texts(".gedcom-desk-event-label")).toEqual(["Запись", "Дата", "Место"]);
+    expect(texts(".gedcom-desk-event-kind")).toEqual(["Человек"]);
   });
 
   it("selects a relative through the tab", () => {
@@ -251,6 +268,34 @@ describe("the page of each kind of record, with its evidence", () => {
       ?.click();
 
     expect(calls.select).toHaveBeenCalledWith("@I2@");
+  });
+});
+
+describe("the folds of a person card", () => {
+  const timelineOpen = (): string | null | undefined =>
+    container.querySelector(".gedcom-desk-fold-button")?.getAttribute("aria-expanded");
+
+  it("stay open while the card shows the same record, and close for another", () => {
+    draw();
+    container.querySelector<HTMLElement>(".gedcom-desk-fold-button")?.click();
+    draw();
+    expect(timelineOpen()).toBe("true");
+
+    state.record = "@I2@";
+    draw();
+    state.record = "@I1@";
+    draw();
+    expect(timelineOpen()).toBe("false");
+  });
+
+  it("keep the focus on the heading that was pressed", () => {
+    draw();
+    const button = container.querySelector<HTMLElement>(".gedcom-desk-fold-button");
+    button?.focus();
+    button?.click();
+    draw();
+
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("fold:timeline");
   });
 });
 

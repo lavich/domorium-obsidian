@@ -62,7 +62,7 @@ for (const size of SIZES) {
       await expect(page.locator(".gedcom-desk-kin-label")).toHaveText(["Parents", "Siblings", "Husband", "Children"]);
       const inside = await page.evaluate(() => {
         const body = document.querySelector(".gedcom-card-body")?.getBoundingClientRect();
-        return [...document.querySelectorAll(".gedcom-desk-fact, .gedcom-desk-person, .gedcom-desk-moment")].every(
+        return [...document.querySelectorAll(".gedcom-desk-fact, .gedcom-desk-person")].every(
           (row) => {
             const box = row.getBoundingClientRect();
             return body !== undefined && box.left >= body.left - 0.5 && box.right <= body.right + 0.5;
@@ -70,6 +70,25 @@ for (const size of SIZES) {
         );
       });
       expect(inside).toBe(true);
+    });
+
+    test("sets a fold's heading at the start of its line", async ({ page }) => {
+      const justify = await page.locator(".gedcom-desk-fold-button").first().evaluate((node) => getComputedStyle(node).justifyContent);
+
+      expect(justify).toBe("flex-start");
+    });
+
+    test("keeps the timeline inside the card once its fold is opened", async ({ page }) => {
+      await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
+      const inside = await page.evaluate(() => {
+        const body = document.querySelector(".gedcom-card-body")?.getBoundingClientRect();
+        return [...document.querySelectorAll(".gedcom-desk-moment")].every((row) => {
+          const box = row.getBoundingClientRect();
+          return body !== undefined && box.width > 0 && box.left >= body.left - 0.5 && box.right <= body.right + 0.5;
+        });
+      });
+      expect(inside).toBe(true);
+      expect(await overflowsSideways(page)).toBe(false);
     });
 
     test("keeps the header at the top while the body scrolls to the end", async ({ page }) => {
@@ -126,13 +145,13 @@ for (const size of SIZES) {
       await expect(forward(page)).toBeDisabled();
     });
 
-    test("shows the evidence of her birth on its card, and returns to the whole record", async ({ page }) => {
-      const context = page.locator(".gedcom-desk-evidence-context div").first();
-      await expect(context).toHaveText("Whole record");
+    test("shows the evidence of her birth on its card, and returns to her by the record at its top", async ({ page }) => {
       await factNamed(page, "Birth").click();
-      await expect(context).toHaveText("Birth");
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
+      await expect(page.locator(".gedcom-card-evidence .gedcom-desk-subsection").first()).toHaveText("Sources of this fact");
+      await expect(page.locator(".gedcom-desk-evidence-head")).toHaveCount(0);
 
-      await page.locator(".gedcom-card-evidence .gedcom-desk-link", { hasText: "Whole record" }).click();
+      await page.locator(".gedcom-desk-event-owner .gedcom-desk-link").click();
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     });
   });
@@ -167,8 +186,9 @@ test.describe("the card of an event", () => {
     await mountDesk(page, { record: "event:@I1@:BIRT:0" });
 
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-    await expect(page.locator(".gedcom-desk-event-value")).toHaveText(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
-    await page.locator(".gedcom-desk-event-detail .gedcom-desk-link", { hasText: "Marie" }).click();
+    await expect(page.locator(".gedcom-desk-event-owner")).toHaveText("PersonMarie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-desk-subtitle")).toHaveText("7 NOV 1867 · Warsaw, Congress Poland");
+    await page.locator(".gedcom-desk-event-owner .gedcom-desk-link", { hasText: "Marie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     await expect(back(page)).toBeEnabled();
     await back(page).click();
@@ -225,7 +245,6 @@ test.describe("the family card", () => {
     await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toHaveText("Evidence");
     await factNamed(page, "Marriage").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
-    await expect(page.locator(".gedcom-desk-evidence-context div").first()).toHaveText("Marriage");
 
     await back(page).click();
     await page.locator(".gedcom-desk-person", { hasText: "Ève Curie" }).click();
@@ -309,5 +328,71 @@ test.describe("media", () => {
     expect(await page.evaluate(() => window.desk.calls.notesOpened)).toEqual([
       { path: "Notes/Radium.md", line: 6 },
     ]);
+  });
+});
+
+test.describe("the controls of a card", () => {
+  test("show a focus ring for the keyboard and none for the pointer", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page);
+    const pierre = page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" });
+    const ring = () => pierre.evaluate((node) => getComputedStyle(node).outlineStyle);
+
+    await pierre.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    expect(await ring()).toBe("solid");
+
+    await page.mouse.click(5, 5);
+    await pierre.hover();
+    await page.mouse.down();
+    expect(await pierre.evaluate((node) => node.matches(":focus-visible"))).toBe(false);
+    expect(await ring()).toBe("none");
+    await page.mouse.up();
+  });
+
+  test("are muted, and the mark of a fact without a source is not orange", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page);
+    const colour = (selector: string, property: "color" | "backgroundColor") =>
+      page.locator(selector).first().evaluate((node, name) => getComputedStyle(node)[name], property);
+    const muted = await colour(".gedcom-desk-subtitle", "color");
+
+    expect(await colour("h2.gedcom-desk-section", "color")).toBe(muted);
+    expect(await colour(".gedcom-desk-chip.no-source", "backgroundColor")).toBe("rgba(0, 0, 0, 0)");
+  });
+});
+
+test.describe("the controls of a card on a phone", () => {
+  test.use({ hasTouch: true });
+
+  test("can be hit over a height of at least 32 pixels", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    for (const record of ["@I1@", "@F3@", "@S3@", "place:warsaw, congress poland", "event:@I1@:BIRT:0"]) {
+      await mountDesk(page, { record, phone: true });
+      const misses = await page.evaluate(() => {
+        const missed: string[] = [];
+        const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
+        for (const control of document.querySelectorAll<HTMLElement>(selectors)) {
+          control.scrollIntoView({ block: "center" });
+          const box = control.getBoundingClientRect();
+          if (box.width === 0) {
+            continue;
+          }
+          const x = box.left + Math.min(box.width / 2, 6);
+          const hits: number[] = [];
+          for (let y = box.top - 30; y <= box.bottom + 30; y += 2) {
+            if (document.elementFromPoint(x, y)?.closest("button") === control) {
+              hits.push(y);
+            }
+          }
+          if (Math.max(...hits) - Math.min(...hits) < 32) {
+            missed.push(`${control.className} ${control.textContent ?? ""}`);
+          }
+        }
+        return missed;
+      });
+      expect(misses, record).toEqual([]);
+    }
   });
 });

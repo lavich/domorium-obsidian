@@ -2,7 +2,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GedcomLanguageService } from "@domorium/language-service";
-import { buildIndex, type GenealogyIndex } from "../genealogy";
+import { buildIndex, type GenealogyIndex, type PersonEvent } from "../genealogy";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { renderEvidenceSection, type EvidenceHost, type EvidenceSelection } from "./evidence";
@@ -14,7 +14,6 @@ function evidenceHost() {
   return {
     openRecord: vi.fn<EvidenceHost["openRecord"]>(),
     showInSource: vi.fn<EvidenceHost["showInSource"]>(),
-    wholeRecord: vi.fn<EvidenceHost["wholeRecord"]>(),
     openNote: vi.fn<EvidenceHost["openNote"]>(),
   } satisfies EvidenceHost;
 }
@@ -30,9 +29,12 @@ function drawSelection(selection: EvidenceSelection): void {
   renderEvidenceSection(container, selection, host);
 }
 
-function draw(record: string, fact: string | null, index: GenealogyIndex = curieIndex()): void {
-  drawSelection({ index, record, fact });
+function draw(record: string, event?: PersonEvent, index: GenealogyIndex = curieIndex()): void {
+  drawSelection({ index, record, ...(event ? { event } : {}) });
 }
+
+const eventOf = (index: GenealogyIndex, record: string, at: number): PersonEvent | undefined =>
+  (index.person(record) ?? index.family(record))?.events[at];
 
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
@@ -49,12 +51,10 @@ const OWN_SOURCE = buildIndex(new GedcomLanguageService([
 ].join("\n")));
 
 describe("the evidence of a whole record", () => {
-  it("names the record and lists the sources it cites itself", () => {
-    draw("@I1@", null);
+  it("lists the sources it cites itself, under no head of its own", () => {
+    draw("@I1@");
 
-    expect(texts(".gedcom-desk-evidence-context div")).toEqual([
-      "Whole record", "Marie Skłodowska-Curie · 1867–1934",
-    ]);
+    expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
     expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of the record · 2"]);
     expect(texts(".gedcom-desk-cite-title")).toEqual([
       "The Nobel Prize in Physics 1903",
@@ -67,20 +67,19 @@ describe("the evidence of a whole record", () => {
   });
 
   it("opens the page of a source it lists", () => {
-    draw("@I1@", null);
+    draw("@I1@");
     container.querySelector<HTMLElement>(".gedcom-desk-cite")?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith("@S1@");
   });
 });
 
-describe("the evidence of a fact", () => {
+describe("the evidence of an event", () => {
   it("says a fact with no source of its own rests on nothing of its own", () => {
-    draw("@I1@", "p:0");
+    const index = curieIndex();
+    draw("@I1@", eventOf(index, "@I1@", 0), index);
 
-    expect(texts(".gedcom-desk-evidence-context div")).toEqual([
-      "Birth", "7 NOV 1867 · Warsaw, Congress Poland",
-    ]);
+    expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
     expect(texts(".gedcom-desk-notice div")).toEqual([
       "No source of its own",
       "The sources below belong to the whole record and may not support this fact.",
@@ -91,13 +90,14 @@ describe("the evidence of a fact", () => {
   });
 
   it("says when the record cites nothing either", () => {
-    draw("@I5@", "p:0");
+    const index = curieIndex();
+    draw("@I5@", eventOf(index, "@I5@", 0), index);
 
     expect(texts(".gedcom-desk-notice div")[1]).toBe("The record cites nothing either.");
   });
 
   it("lists the fact's own source above the record's, with page and quality", () => {
-    draw("@I1@", "p:0", OWN_SOURCE);
+    draw("@I1@", eventOf(OWN_SOURCE, "@I1@", 0), OWN_SOURCE);
 
     expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish register", "Census of 1891"]);
     expect(texts(".gedcom-desk-cite-page")[0]).toBe("entry 88");
@@ -105,28 +105,24 @@ describe("the evidence of a fact", () => {
   });
 
   it("says a cited source is not in the file, with the way to its line", () => {
-    draw("@I1@", "p:1", OWN_SOURCE);
+    draw("@I1@", eventOf(OWN_SOURCE, "@I1@", 1), OWN_SOURCE);
     container.querySelector<HTMLElement>(".gedcom-desk-missing .gedcom-desk-link")?.click();
 
     expect(texts(".gedcom-desk-missing span")).toEqual(["Points to a source that is not in the file"]);
     expect(host.showInSource.mock.calls[0]?.[0].start.line).toBe(12);
   });
 
-  it("goes back to the whole record, and shows the fact in the source", () => {
+  it("offers neither a way back to the whole record nor a second Show in source", () => {
     const index = curieIndex();
-    draw("@I1@", "p:0", index);
-    const [whole, source] = container.querySelectorAll<HTMLElement>(".gedcom-desk-actions .gedcom-desk-link");
-    whole?.click();
-    source?.click();
+    draw("@I1@", eventOf(index, "@I1@", 0), index);
 
-    expect(host.wholeRecord).toHaveBeenCalled();
-    expect(host.showInSource).toHaveBeenCalledWith(index.person("@I1@")?.events[0]?.range);
+    expect(container.querySelector(".gedcom-desk-actions")).toBeNull();
   });
 
   it("shows a family event's own citations, keeping the person as the whole record", () => {
-    draw("@I1@", "u:0:0");
+    const index = curieIndex();
+    draw("@I1@", index.person("@I1@")?.unions[0]?.events[0], index);
 
-    expect(texts(".gedcom-desk-evidence-context div")[0]).toBe("Marriage · family event");
     expect(texts(".gedcom-desk-subsection")).toContain("Sources of the record · 2");
   });
 
@@ -135,7 +131,7 @@ describe("the evidence of a fact", () => {
       "0 HEAD", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8",
       "0 @I1@ INDI", "1 BIRT", "2 SOUR Family Bible", "0 TRLR", "",
     ].join("\n")));
-    draw("@I1@", "p:0", index);
+    draw("@I1@", eventOf(index, "@I1@", 0), index);
 
     expect(texts(".gedcom-desk-cite-inline")).toEqual(["Family Bible"]);
     expect(texts(".gedcom-desk-cite-meta")).toContain(
@@ -145,19 +141,16 @@ describe("the evidence of a fact", () => {
 });
 
 describe("the evidence of a family", () => {
-  it("names the family as the whole record", () => {
-    draw("@F3@", null);
+  it("lists the sources of the family record", () => {
+    draw("@F3@");
 
-    expect(texts(".gedcom-desk-evidence-context div")).toEqual([
-      "Whole record", "Pierre Curie and Marie Skłodowska-Curie",
-    ]);
     expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of the record · 0"]);
   });
 
   it("says the Curies' marriage rests on nothing, nor does the family record", () => {
-    draw("@F3@", "f:0");
+    const index = curieIndex();
+    draw("@F3@", eventOf(index, "@F3@", 0), index);
 
-    expect(texts(".gedcom-desk-evidence-context div")[0]).toBe("Marriage");
     expect(texts(".gedcom-desk-notice div")).toEqual([
       "No source of its own", "The record cites nothing either.",
     ]);
@@ -165,15 +158,15 @@ describe("the evidence of a family", () => {
 });
 
 describe("the section of a person and of a family", () => {
-  it("is headed Evidence, with the whole record as its context", () => {
-    draw("@I1@", null);
+  it("is headed Evidence", () => {
+    draw("@I1@");
 
     expect(texts(".gedcom-card-evidence > h2")).toEqual(["Evidence"]);
   });
 
   it("appends to what is there instead of emptying it", () => {
     container.createDiv({ cls: "earlier" });
-    renderEvidenceSection(container, { index: curieIndex(), record: "@I1@", fact: null }, host);
+    renderEvidenceSection(container, { index: curieIndex(), record: "@I1@" }, host);
 
     expect(container.querySelector(".earlier")).not.toBeNull();
     expect(container.querySelector(".gedcom-card-evidence")).not.toBeNull();
@@ -182,7 +175,7 @@ describe("the section of a person and of a family", () => {
 
 describe("the evidence of a source and of a multimedia record", () => {
   it("is the notes alone, with no citations and no Evidence heading", () => {
-    drawSelection({ index: curieIndex(), record: "@S2@", fact: null, notes: [] });
+    drawSelection({ index: curieIndex(), record: "@S2@", notes: [] });
 
     expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
     expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
@@ -199,7 +192,7 @@ describe("notes in the vault", () => {
   };
 
   it("lists the notes linking the record below its sources, the link marked", () => {
-    drawSelection({ index: curieIndex(), record: "@I1@", fact: null, notes: [RADIUM] });
+    drawSelection({ index: curieIndex(), record: "@I1@", notes: [RADIUM] });
 
     expect(texts(".gedcom-desk-subsection")).toEqual([
       "Sources of the record · 2", "Notes in the vault · 1",
@@ -213,33 +206,33 @@ describe("notes in the vault", () => {
 
   it("lists six notes when the host hands six", () => {
     const six = Array.from({ length: 6 }, (_, at) => ({ ...RADIUM, path: `Notes/${at}.md`, name: `Note ${at}` }));
-    drawSelection({ index: curieIndex(), record: "@I1@", fact: null, notes: six });
+    drawSelection({ index: curieIndex(), record: "@I1@", notes: six });
 
     expect(texts(".gedcom-desk-note-name")).toHaveLength(6);
     expect(texts(".gedcom-desk-subsection")).toContain("Notes in the vault · 6");
   });
 
   it("opens a note at the line", () => {
-    drawSelection({ index: curieIndex(), record: "@I1@", fact: null, notes: [RADIUM] });
+    drawSelection({ index: curieIndex(), record: "@I1@", notes: [RADIUM] });
     container.querySelector<HTMLElement>(".gedcom-desk-note-line")?.click();
 
     expect(host.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
   });
 
   it("says when no note links the record, and waits while the vault is asked", () => {
-    drawSelection({ index: curieIndex(), record: "@I10@", fact: null, notes: [] });
+    drawSelection({ index: curieIndex(), record: "@I10@", notes: [] });
     expect(texts(".gedcom-desk-none")).toContain("No note links to this record.");
 
-    drawSelection({ index: curieIndex(), record: "@I10@", fact: null, notes: null });
+    drawSelection({ index: curieIndex(), record: "@I10@", notes: null });
     expect(texts(".gedcom-desk-subsection")).toContain("Notes in the vault");
     expect(texts(".gedcom-desk-none")).not.toContain("No note links to this record.");
   });
 
   it("lists them beside a source and a multimedia record too", () => {
-    drawSelection({ index: curieIndex(), record: "@S1@", fact: null, notes: [] });
+    drawSelection({ index: curieIndex(), record: "@S1@", notes: [] });
     expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
 
-    drawSelection({ index: curieIndex(), record: "@O5@", fact: null, notes: [] });
+    drawSelection({ index: curieIndex(), record: "@O5@", notes: [] });
     expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
   });
 });

@@ -1,24 +1,22 @@
 import type { Range } from "@domorium/language-service";
 
-import type { Citation, GenealogyIndex } from "../genealogy";
+import type { Citation, GenealogyIndex, PersonEvent } from "../genealogy";
 import { t, type MessageKey } from "../i18n";
-import { familyFactByKey } from "./familyPage";
-import { eventName, familyTitle, personName, sourceTitle, yearsOf } from "./labels";
 import { linkButton } from "./dom";
+import { sourceTitle } from "./labels";
 import type { NoteHit } from "./noteLinks";
-import { factByKey, type FactKey } from "./personPage";
 
 export interface EvidenceHost {
   openRecord(xref: string): void;
   showInSource(range: Range): void;
-  wholeRecord(): void;
   openNote(path: string, line: number): void;
 }
 
 export interface EvidenceSelection {
   index: GenealogyIndex;
   record: string;
-  fact: FactKey | null;
+  /** The event of an event card; none for the whole record of a person or a family. */
+  event?: PersonEvent;
   /** Null while the vault is still being asked. */
   notes?: NoteHit[] | null;
 }
@@ -28,58 +26,20 @@ export function renderEvidenceSection(
   selection: EvidenceSelection,
   host: EvidenceHost,
 ): void {
-  const { index, record, fact: key } = selection;
-  const person = index.person(record);
-  const family = person ? undefined : index.family(record);
-  if (!person && !family) {
+  const { index, record, event } = selection;
+  if (!index.person(record) && !index.family(record)) {
     renderNotes(parent, selection.notes, host, "h2");
     return;
   }
   const root = parent.createDiv({ cls: "gedcom-card-evidence" });
   root.createEl("h2", { cls: "gedcom-desk-section", text: t("evidence.title") });
-  const head = root.createDiv({ cls: "gedcom-desk-evidence-head" });
-  const context = head.createDiv({ cls: "gedcom-desk-evidence-context" });
-  const actions = head.createDiv({ cls: "gedcom-desk-actions" });
-  const subject = person
-    ? {
-        fact: factByKey(person, key),
-        name: [personName(person), yearsOf(person)].filter(Boolean).join(" · "),
-        range: person.range,
-      }
-    : family
-      ? {
-          fact: familyFactByKey(family, key),
-          name: familyTitle(family.spouseNames),
-          range: family.range,
-        }
-      : null;
-  if (!subject) {
-    return;
-  }
-
-  const fact = subject.fact;
   const body = root.createDiv({ cls: "gedcom-desk-evidence-body" });
   const ofRecord = index.citesBy(record).filter((citation) => citation.event === undefined);
 
-  if (fact) {
-    context.createDiv({
-      text: fact.key.startsWith("u:")
-        ? `${eventName(fact.event)} · ${t("evidence.familyEvent").toLowerCase()}`
-        : eventName(fact.event),
-    });
-    const detail = [fact.event.date?.text, fact.event.value, fact.event.place]
-      .filter(Boolean)
-      .join(" · ");
-    context.createDiv({
-      cls: "gedcom-desk-evidence-sub",
-      text: detail || t("desk.noDetails"),
-    });
-    linkButton(actions, `← ${t("desk.wholeRecord")}`, () => host.wholeRecord());
-    linkButton(actions, t("desk.showInSource"), () => host.showInSource(fact.event.range));
-
+  if (event) {
     body.createEl("h3", { cls: "gedcom-desk-subsection", text: t("evidence.factSources") });
-    if (fact.event.citations.length > 0) {
-      for (const citation of fact.event.citations) {
+    if (event.citations.length > 0) {
+      for (const citation of event.citations) {
         renderCitation(body, citation, index, host);
       }
     } else {
@@ -93,10 +53,6 @@ export function renderEvidenceSection(
       cls: ["gedcom-desk-subsection", "gedcom-desk-scope"],
       text: t("desk.wholeRecord"),
     });
-  } else {
-    context.createDiv({ text: t("desk.wholeRecord") });
-    context.createDiv({ cls: "gedcom-desk-evidence-sub", text: subject.name });
-    linkButton(actions, t("desk.showInSource"), () => host.showInSource(subject.range));
   }
 
   body.createEl("h3", {
