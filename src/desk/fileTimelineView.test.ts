@@ -469,7 +469,7 @@ describe("the timeline without a toolbar", () => {
   it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the bars and the group", () => {
     board(curie(), { focus: "@I12@" }).select("@I12@", false);
     const places: Record<string, string> = {
-      "gedcom-ft-controls": "top",
+      "gedcom-ft-controls": "bottom",
       "gedcom-ft-find": "bottom",
       "gedcom-ft-overlay": "right",
       "gedcom-ft-scope": "bottom",
@@ -519,7 +519,7 @@ describe("the timeline without a toolbar", () => {
     const find = container.querySelector<HTMLElement>(".gedcom-ft-find");
     const input = container.querySelector<HTMLInputElement>(".gedcom-ft-search");
 
-    expect(find?.parentElement?.classList.contains("gedcom-ft-stage")).toBe(true);
+    expect(find?.parentElement?.parentElement?.classList.contains("gedcom-ft-stage")).toBe(true);
     expect(find?.classList.contains("is-open")).toBe(false);
     container.querySelector<HTMLElement>(".gedcom-ft-find-toggle")?.click();
     expect(find?.classList.contains("is-open")).toBe(true);

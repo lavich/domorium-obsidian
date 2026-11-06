@@ -1568,11 +1568,6 @@ button.gedcom-fg-whole {
   min-height: 0;
 }
 
-.gedcom-ft-stage > .gedcom-ft-controls {
-  inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
-  bottom: calc(var(--size-4-2) + var(--gedcom-ft-hbar, 0px) + env(safe-area-inset-bottom, 0px));
-}
-
 .gedcom-ft-board {
   position: relative;
   flex: 1;
@@ -2010,9 +2005,33 @@ button.gedcom-fg-pop-open {
   align-items: center;
 }
 
-.gedcom-ft-stage > .gedcom-ft-find {
+.gedcom-fg-dock,
+.gedcom-ft-dock {
+  position: absolute;
+  z-index: 1;
+  top: var(--size-4-2);
+  inset-inline-end: var(--size-4-2);
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  max-width: calc(100% - 2 * var(--size-4-2));
+  cursor: default;
+}
+
+.gedcom-ft-dock {
   top: calc(var(--gedcom-ft-axis) + var(--size-4-2));
   inset-inline-end: calc(var(--size-4-2) + var(--gedcom-ft-vbar, 0px));
+  max-width: calc(100% - 2 * var(--size-4-2) - var(--gedcom-ft-vbar, 0px));
+}
+
+:is(.gedcom-fg-dock, .gedcom-ft-dock) > :is(.gedcom-fg-find, .gedcom-ft-find, .gedcom-fg-controls, .gedcom-ft-controls) {
+  position: static;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(.gedcom-fg-dock, .gedcom-ft-dock) > :is(.gedcom-fg-controls, .gedcom-ft-controls) {
+  flex: none;
 }
 
 .gedcom-fg-find input.gedcom-fg-search,
@@ -2071,10 +2090,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-list-find {
   max-width: calc(100% - 2 * var(--size-4-2));
-}
-
-.gedcom-ft-stage > .gedcom-ft-find {
-  max-width: calc(100% - 2 * var(--size-4-2) - var(--gedcom-ft-vbar, 0px));
 }
 
 .gedcom-fg-find-count,
