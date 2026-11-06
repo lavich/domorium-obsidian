@@ -349,14 +349,7 @@ test.describe("the controls of a card", () => {
     await mountDesk(page);
     const colour = (selector: string, property: "color" | "backgroundColor") =>
       page.locator(selector).first().evaluate((node, name) => getComputedStyle(node)[name], property);
-    const muted = await page.evaluate(() => {
-      const probe = document.createElement("span");
-      probe.setAttribute("style", "color: var(--text-muted)");
-      document.body.append(probe);
-      const value = getComputedStyle(probe).color;
-      probe.remove();
-      return value;
-    });
+    const muted = await colour(".gedcom-desk-subtitle", "color");
 
     expect(await colour("h2.gedcom-desk-section", "color")).toBe(muted);
     expect(await colour(".gedcom-desk-chip.no-source", "backgroundColor")).toBe("rgba(0, 0, 0, 0)");
