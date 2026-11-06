@@ -58,10 +58,10 @@ Nothing in the list SHALL write to the file, save it or mark it as changed.
   and Obsidian is restarted
 - **THEN** the tab shows the places with the row of `Paris, France` marked and its card in the right panel
 
-#### Scenario: An event selected, then Obsidian restarted
-- **WHEN** the tab is in List mode on the events of `curie.ged`, Marie's birth is selected, and
-  Obsidian is restarted
-- **THEN** the tab shows the events, Marie's card is in the right panel, and no row is marked
+#### Scenario: An event selected, restored with the workspace
+- **WHEN** the tab is in List mode on the events of `curie.ged`, Marie's birth is selected,
+  and Obsidian is restarted
+- **THEN** the tab shows the events with the row of Marie's birth marked and its card in the right panel
 
 ### Requirement: People, families and sources
 
@@ -346,16 +346,16 @@ NOT change which record is selected.
 
 Activating a row of the list, by a click, a tap, or Enter or Space on a row with the
 focus, SHALL select that record in the tab, as the requirement on the selected record
-says, and, on a row of the Events, the event of the row in that record: the record card shows it, the tab stays in List mode, and no page or other tab is
+says: the record card shows it, the tab stays in List mode, and no page or other tab is
 opened. The row of the selected record SHALL be marked as selected, and as selected to
-assistive technology, whichever kind but the Places and the Events is shown; with nothing selected, or a record that
-has no row — a multimedia record — no row SHALL be marked. Among the events, the row marked SHALL be that of the event selected in its record, and only that row, though other events belong to the same record; a record selected without an event, from the graph or a link, marks no row, nor does an event of a family pressed in a person's card. The mark SHALL follow the
+assistive technology, whichever kind is shown; with nothing selected, or a record that
+has no row — a multimedia record — no row SHALL be marked. The mark SHALL follow the
 selection however it was made: from the list, from the record card, by a link or by *Go
 to record*; and SHALL stay across sorting, filtering and switching the kind, and be
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
 list. A row of the Places SHALL select its place, which has no xref and is selected under the id
 `place:` and its key: the record card shows the place, with its events, each linking to the person
-or family it belongs to. A row of the Events SHALL select the person or the family the event belongs to, with the event shown unfolded in its card as the card shows an event pressed there, with its sources and *Show in source*. The event is kept while its record stays selected and nothing selects a record anew; Back, Forward, a link, the cursor in Source mode and a restart return to the record with no event. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+or family it belongs to. A row of the Events SHALL select its event, which has no xref and is selected under the id `event:`, the identifier of its record and the position of the event among those of the record, `p:<n>` for a person's and `f:<n>` for a family's: the record card shows the event, with its name and the text it carries, its date, its place, and the sources it cites, the record linking to that record, the place to the place and each source to the source, and with *Show in source*. Only the row of the selected event SHALL be marked, though other events belong to the same record. An edit that removes the event SHALL drop the selection. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -450,20 +450,28 @@ derived from that text size, so that it follows the reader's font size.
 
 #### Scenario: An event row
 - **WHEN** the reader chooses Events, and clicks the row of Marie's birth, with Pierre selected
-- **THEN** only that row is marked selected, the record card shows Marie with her birth unfolded
-  and the tab is still in List mode
+- **THEN** only that row is marked selected, the record card shows the birth with its date,
+  `Warsaw, Congress Poland` and the record `Marie Skłodowska-Curie`, and the tab is still in List mode
 
 #### Scenario: Two events of one record
 - **WHEN** the row of Marie's birth is marked and the reader clicks the row of her death
-- **THEN** only the row of her death is marked, and the card shows her death unfolded
+- **THEN** only the row of her death is marked, and the card shows her death
 
-#### Scenario: A record selected without an event
+#### Scenario: The event is kept across the modes
+- **WHEN** the row of Marie's birth is marked, and the reader switches to Graph mode and back
+- **THEN** the row of Marie's birth is marked again
+
+#### Scenario: A record selected elsewhere
 - **WHEN** the list shows the events and Marie is selected in the graph
 - **THEN** no row of the events is marked
 
-#### Scenario: An event pressed in the card
-- **WHEN** the list shows the events and the reader presses her birth in Marie's card
-- **THEN** the row of her birth is marked
+#### Scenario: A link in the card of an event
+- **WHEN** the reader presses the record in the card of Marie's birth
+- **THEN** the card shows Marie, and no row of the events is marked
+
+#### Scenario: An event that an edit removes
+- **WHEN** the row of Marie's birth is marked and the reader deletes that event in Source mode
+- **THEN** no row is marked and the card shows nothing selected
 
 ### Requirement: The selected row is brought into view
 
@@ -483,9 +491,9 @@ shown but is not wholly within the visible rows, it SHALL be scrolled to the mid
 above, because the reader has just chosen this view. A filter the reader typed
 SHALL NOT be cleared by returning to the list with the selection
 unchanged. A selection made by activating a row of the list SHALL change neither the
-scroll position, the kind nor the filter. On the Events the row of an event selected from outside the list, by pressing it in the record card, SHALL be brought into view in the same way, without a change of kind, and a filter that hides it SHALL be cleared; a record selected without an event SHALL NOT. Where the record has no row, the list SHALL
+scroll position, the kind nor the filter. Where the record has no row, the list SHALL
 be left as it is, and so it SHALL be on the Places and the Events, where no record has a row of its own: the selection of a
-record or a source SHALL NOT switch the list away from them, while the selection of a place SHALL switch the list from the Events to the Places and bring the row of the place into view.
+record or a source SHALL NOT switch the list away from them, while the selection of a place or of an event SHALL switch the list to the Places or the Events, and bring its row into view.
 
 #### Scenario: Entering the list with a selection
 - **WHEN** a file of 500 people has its 400th person selected in Graph mode and the
@@ -546,13 +554,12 @@ record or a source SHALL NOT switch the list away from them, while the selection
 - **THEN** the list still shows the places and no row of them is marked, and Marie's row is
   marked once the reader chooses People
 
-#### Scenario: An event pressed in the card, out of view
-- **WHEN** the list shows the events of a file of 500 people, scrolled to the top, and the reader presses
-  the birth of the 400th person in that person's card
-- **THEN** the row of that birth is marked and in view, and the list still shows the events
+#### Scenario: An event selected from outside, out of view
+- **WHEN** the list shows the events of a file of 500 people, scrolled to the top, and the reader steps Back in the history to the birth of the 400th person
+- **THEN** the row of that birth is marked and in view
 
-#### Scenario: An event pressed in the card, hidden by the filter
-- **WHEN** the filter of the events hides the row of the event the reader presses in the card
+#### Scenario: An event selected from outside, hidden by the filter
+- **WHEN** the filter of the events hides the row of the event the reader steps Back to
 - **THEN** the filter is cleared and the row is marked and in view
 
 #### Scenario: The events stay
@@ -563,6 +570,10 @@ record or a source SHALL NOT switch the list away from them, while the selection
 - **WHEN** the list shows the events and the reader presses `Paris, France` in the Places section of Marie's card
 - **THEN** the list shows the places with the row of `Paris, France` marked and in view
 
+#### Scenario: An event selected among the places
+- **WHEN** the list shows the places and the reader steps Back in the history to Marie's birth
+- **THEN** the list shows the events with the row of Marie's birth marked and in view
+
 ### Requirement: The list is reachable with the keyboard
 
 The rows of the list SHALL be one stop in the order of the tab key, after the kind
@@ -570,7 +581,7 @@ buttons, the search and the headers. With the focus on a row, the Up and Down ar
 SHALL move it to the previous and next row of the rows shown, Home and End to the first
 and the last, and Page Up and Page Down by what the list shows at once; the row given the
 focus SHALL be drawn and brought into view, also where only a window of rows is drawn.
-Enter or Space SHALL select the record, the place, or the event and its record, of the row with the focus, and the focus SHALL stay on the row. Moving the focus SHALL NOT select. The list SHALL be a grid to assistive
+Enter or Space SHALL select the record, the place or the event of the row with the focus, and the focus SHALL stay on the row. Moving the focus SHALL NOT select. The list SHALL be a grid to assistive
 technology: a header row of column headers, each saying its sort, and rows of cells, each
 row saying its position among all the rows, including those not drawn. The row that has
 the focus SHALL always be one that is drawn. A
@@ -605,7 +616,7 @@ The kind buttons, the headers and the search SHALL be reachable with the keyboar
 
 #### Scenario: Enter on an event
 - **WHEN** the focus is on the row of Marie's birth among the events and the reader presses Enter
-- **THEN** the row is marked, the focus is still on it, and the card shows Marie with her birth unfolded
+- **THEN** the row is marked, the focus is still on it, and the card shows the birth
 
 ### Requirement: The Places has no actions
 
