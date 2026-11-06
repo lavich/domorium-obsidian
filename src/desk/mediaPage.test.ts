@@ -68,6 +68,14 @@ describe("the media page", () => {
     expect(container.querySelectorAll(".gedcom-desk-user .is-cropped")).toHaveLength(2);
   });
 
+  it("draws the whole picture as a button a keyboard can reach", () => {
+    renderMediaPage(container, photo, { whole: picture(), links: [] }, index, host);
+    const stage = container.querySelector(".gedcom-desk-media-stage");
+
+    expect(stage?.tagName).toBe("BUTTON");
+    expect(stage?.getAttribute("aria-label")).toBe("The Curie family, about 1908");
+  });
+
   it("selects a user, and opens the file itself", () => {
     renderMediaPage(container, photo, { whole: picture(), links: [] }, index, host);
     container.querySelector<HTMLElement>(".gedcom-desk-user .gedcom-desk-person")?.click();

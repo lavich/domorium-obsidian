@@ -6,7 +6,7 @@ The cards are drawn by `src/desk/*Page.ts` into one scrolling column (`gedcom-ca
 
 ### D1. A hit area, not a bigger look
 
-On a coarse pointer (`@media (pointer: coarse)`) and in the mobile app (`.is-mobile`, the same condition the list uses; the harness sets it for a phone), block controls — the person button, the citation, the note line, the fact name, the timeline label, Back and Forward — get `min-height: 44px` and padding that keeps their text where it was. A control that sits inside a line of text, the `gedcom-desk-link` for a place or *Show in source*, cannot grow without breaking the line, so it gets an `::after`, with `position: relative` on the link, that extends its activation area by 14 pixels above and below. The two together give every control a 44-pixel area. A fact row is a grid of name, value and mark; its name is the block control, and in the narrow layout, where the value sits under the name, the name has `z-index: 1` so that a link's area does not take its taps.
+On a coarse pointer (`@media (pointer: coarse)`) and in the mobile app (`.is-mobile`, the same condition the list uses; the harness sets it for a phone), block controls — the person button, the citation, the note line, the fact name, the timeline label, Back and Forward — get `min-height: 44px` and padding that keeps their text where it was. A control that sits inside a line of text, the `gedcom-desk-link` for a place or *Show in source*, cannot grow without breaking the line, so it gets an `::after`, with `position: relative` on the link, that extends its activation area by 11 pixels above and below. The two together give every control a 44-pixel area; the name in a fact row takes the whole row as its area, as a stretched link does, and the links inside the row sit above it, so that the space between the name and a link in the same row is shared and neither has less than 36 pixels (a link of 16 pixels and 11 more on each side). A fact row is a grid of name, value and mark; its name is the block control.
 
 `.gedcom-desk-facts` has `overflow: hidden` to round the corners of its rows, which would clip an area that reaches outside the first or the last row. The overflow goes, and the first and the last row take the corner radius themselves.
 
@@ -54,3 +54,12 @@ The order of sections in each card; the source card's notes (a place has no iden
 - A folded timeline hides the main narrative of a person from a reader who does not see the heading; the heading shows the count of entries so the fold announces what it holds.
 - The contrast of the faint and muted colours depends on the theme; the harness's default palette has a faint colour darker than its muted one, so the unit and browser tests assert which variable is used, not a ratio.
 - The 44-pixel areas of two adjacent inline links can overlap; the later in the document wins, and links in a line are separated by text.
+
+## Implementation
+
+- The fold is a `button` in the `h2` with `aria-expanded` (D6), the count shown from `data-count` by CSS so that the heading's text stays *Timeline* and *Places*.
+- The evidence head is removed from a person's and a family's card as well, not only from the event card: it repeated the card's own title and *Show in source*, which the heading of the card already offers.
+- The name in a fact row takes the whole row as its area (D1), because padding on the name alone made every row 44 pixels taller on a phone. A link in the row sits above it, so the two share the row.
+- Inline links extend by 11 pixels (not 14): 16 pixels of text and 22 give 38, and the name beside a link keeps at least 36.
+- `EventTarget.fact` is left in `eventRows.ts` though the evidence no longer reads it.
+- The theme spec for the desk reads the *No source* mark as the muted colour.

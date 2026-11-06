@@ -106,11 +106,15 @@ row of the list, opens. A person's card lists their facts in the order the recor
 them, each marked with how many sources it cites itself, or that it cites none;
 their other names; their parents, siblings, spouses and children, each of whom
 selects that person; their media; a **timeline** of their events and their close
-relatives', and the **places** it names; and last the **evidence** — what the
+relatives', and the **places** it names, each folded under its heading, which
+shows how many it holds, and closed when a card opens; and last the **evidence** — what the
 whole record rests on. Tapping a fact, or
-an entry of the timeline, opens the card of its event, which ends with its own
-evidence; a place named there opens the card of that place, and a list in view
-shows the event or the place. A family, a
+an entry of the timeline, opens the card of its event: the person or the family it
+belongs to as a link above its name, its date and place under it, and the evidence
+that is its own below; a place named there opens the card of that place, which lists
+the events held there as the facts of a person are listed, and a list in view
+shows the event or the place. Every control of a card shows a focus ring for the
+keyboard and, on a phone, can be hit within 44 pixels. A family, a
 source, a place, an event and a media record have cards of their own, and **Back** and **Forward** in
 the card's header go between the records it showed. The card reads the file and
 never writes to it. **Show in source** on a card, a fact or a missing relative

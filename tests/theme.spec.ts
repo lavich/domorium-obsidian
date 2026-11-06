@@ -8,7 +8,7 @@ import { LINKS, mount, PROBLEMS, SAMPLE } from "./harness";
 /** harness/palette.css, dark: what the desk takes from each variable. */
 const DARK_DESK = {
   normal: "rgb(255, 255, 255)",
-  warning: "rgb(255, 200, 100)",
+  muted: "rgb(179, 179, 179)",
   border: "rgb(60, 60, 60)",
   link: "rgb(150, 150, 255)",
 };
@@ -333,7 +333,7 @@ test.describe("the research desk in the Obsidian theme", () => {
       );
 
     expect(await style(".gedcom-desk-title", "color")).toBe(DARK_DESK.normal);
-    expect(await style(".gedcom-desk-chip.no-source", "color")).toBe(DARK_DESK.warning);
+    expect(await style(".gedcom-desk-chip.no-source", "color")).toBe(DARK_DESK.muted);
     expect(await style(".gedcom-desk-facts", "border-top-color")).toBe(DARK_DESK.border);
     expect(await style(".gedcom-desk-person", "color")).toBe(DARK_DESK.link);
   });

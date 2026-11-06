@@ -4,8 +4,8 @@
 
 The last section of a person card, of a family card and of an event card SHALL be **Evidence**.
 On a person card and on a family card it SHALL show what the whole record rests on in the file:
-the sources the record cites of itself, and the notes in the vault that link to it, headed with
-the record's name. On an event card it SHALL show what the event rests on — *Sources of this fact*
+the sources the record cites of itself, and the notes in the vault that link to it, under the
+heading *Evidence* alone, without a head that repeats the record's name. On an event card it SHALL show what the event rests on — *Sources of this fact*
 — and, kept apart under *Whole record*, what the whole record rests on, so that a source of the
 person is never mistaken for a source of the event. On an event card the section SHALL NOT open
 with a head that repeats the name and the detail of the event, SHALL NOT offer *Show in source*

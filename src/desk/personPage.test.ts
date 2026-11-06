@@ -247,6 +247,43 @@ describe("the sections of a person card", () => {
     expect(container.querySelector(".gedcom-fg-canvas")).toBeNull();
   });
 
+  it("folds the timeline and the places, closed, each with its count", () => {
+    draw("@I1@");
+    const buttons = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-fold-button")];
+
+    expect(buttons.map((button) => button.textContent)).toEqual(["Timeline", "Places"]);
+    expect(buttons.map((button) => button.getAttribute("data-count"))).toEqual(["18", "4"]);
+    expect(buttons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
+    expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true, true]);
+    expect(container.querySelector(".gedcom-desk-names")?.closest("[hidden]")).toBeNull();
+  });
+
+  it("opens a fold on its heading, and tells which one", () => {
+    const folded = vi.fn<(id: string, open: boolean) => void>();
+    const index = curieIndex();
+    const person = index.person("@I1@");
+    if (!person) {
+      throw new Error("no Marie");
+    }
+    renderPersonPage(container, person, index, { selected: null, folded }, host);
+    container.querySelector<HTMLElement>(".gedcom-desk-fold-button")?.click();
+
+    expect(container.querySelector(".gedcom-desk-fold-body")?.hasAttribute("hidden")).toBe(false);
+    expect(container.querySelector(".gedcom-desk-fold-button")?.getAttribute("aria-expanded")).toBe("true");
+    expect(folded).toHaveBeenCalledWith("timeline", true);
+  });
+
+  it("draws a fold open where the reader had opened it", () => {
+    const index = curieIndex();
+    const person = index.person("@I1@");
+    if (!person) {
+      throw new Error("no Marie");
+    }
+    renderPersonPage(container, person, index, { selected: null, open: new Set(["places"]) }, host);
+
+    expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true, false]);
+  });
+
   it("lists seventeen dated entries from 1860 to 1934 and the undated Occupation in the timeline", () => {
     draw("@I1@");
     const dated = [...container.querySelectorAll(".gedcom-desk-timeline")][0];
