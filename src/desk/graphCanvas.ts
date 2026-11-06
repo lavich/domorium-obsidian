@@ -3,7 +3,6 @@ import type { MediaPreviewContent } from "../editor/media";
 import { cardShape, nameMeasure, svg } from "./cardRender";
 import { HoverDelay, placeInside, prefersReducedMotion, zoomControls } from "./dom";
 import { CARD, type FileGraphLayout, type GraphCard, type Point } from "./fileGraph";
-import type { Sex } from "./fileTimeline";
 import { GraphInput } from "./graphInput";
 import { buildItems, type Item } from "./sceneItems";
 
@@ -33,7 +32,7 @@ export interface GraphWindow {
 export interface CanvasCard {
   name: string;
   years: string;
-  sex: Sex;
+  paint: string;
   focus?: boolean;
   branch?: boolean;
   /** Set where the name has both, each then on its own line. */

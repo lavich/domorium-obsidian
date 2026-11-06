@@ -43,6 +43,17 @@ its record, date and place: an occupation or an award reads with its text. Sort 
 Date to order them by year. Click a row and the card of the event opens in the
 right panel, with its record, date, place and sources.
 
+## Read the timeline
+
+Switch [[curie.ged]] to **Timeline**. Each person is a bar from birth to death
+with the name inside it, in a row of its own. The colour comes
+from the surname, so the Curies look alike. Someone born in the last hundred years
+with no death recorded, such as Pierre Joliot, runs on to today in a straight
+edge; an older bar with no death fades out instead. Click a bar and
+that person's parents and children are joined to it by lines with arrowheads and
+the spouse by a dashed line at the year of the marriage, and **Branch** appears
+at the end of the bar.
+
 ## Write one yourself
 
 Type `[[curie.ged#` on the line below and the records of that file are offered by

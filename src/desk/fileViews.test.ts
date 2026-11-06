@@ -119,7 +119,7 @@ describe("the views of a tab", () => {
     expect(shown("graph")).toBe(true);
     expect(shown("timeline")).toBe(false);
     expect(tab.memory().graph).toEqual(graph);
-    expect(all(".gedcom-ft-name")).toHaveLength(17);
+    expect(all(".gedcom-ft-life")).toHaveLength(17);
   });
 
   it("lays the graph out once for one reading of the file", () => {
@@ -324,7 +324,7 @@ describe("the timeline's light while the views come and go", () => {
     const tab = views();
     tab.show("timeline", index, {});
     root("timeline")
-      ?.querySelector('.gedcom-ft-name[data-p="@I1@"]')
+      ?.querySelector('.gedcom-ft-life[data-p="@I1@"]')
       ?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
     expect(root("timeline")?.querySelectorAll(".is-hl").length).toBeGreaterThan(0);
     tab.hide();
@@ -427,12 +427,12 @@ describe("selecting in a view", () => {
     });
   });
 
-  it("is on the timeline's row too", () => {
+  it("is on the timeline's bar too", () => {
     const tab = views();
     tab.select("timeline", "@I2@", true);
     tab.show("timeline", index, {});
 
-    expect(all(".gedcom-ft-name.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I2@"]);
+    expect(all(".gedcom-ft-life.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I2@"]);
   });
 });
 
@@ -478,10 +478,10 @@ describe("what a click in a view asks of the tab", () => {
     expect([range?.start.line, range?.end.line]).toEqual([21, 23]);
   });
 
-  it("selects the person of a timeline row", () => {
+  it("selects the person of a timeline bar", () => {
     const tab = views();
     tab.show("timeline", index, {});
-    click(parent.querySelector('.gedcom-ft-name[data-p="@I12@"] .gedcom-ft-name-open'));
+    click(parent.querySelector('.gedcom-ft-life[data-p="@I12@"]'));
 
     expect(host.select).toHaveBeenCalledWith("@I12@");
   });

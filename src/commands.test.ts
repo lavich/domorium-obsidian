@@ -30,6 +30,8 @@ function view(overrides: Partial<CommandView> = {}): CommandView {
     goToPreviousProblem: vi.fn(() => true),
     toggleProblemsPanel: vi.fn(),
     showSearch: vi.fn<(replace: boolean) => void>(),
+    canBranchSelected: () => true,
+    branchSelected: vi.fn(),
     inSource: () => true,
     mode: () => "source",
     showMode: vi.fn(),
@@ -205,6 +207,29 @@ describe("what a command offers in Graph with a family selected", () => {
     command("toggle-gedcom-mode").run(host().host, view({ toggleMode }));
 
     expect(toggleMode).toHaveBeenCalled();
+  });
+});
+
+describe("the branch of the selected person", () => {
+  it("is offered in Timeline mode, while a person with a bar is selected", () => {
+    const branch = command("branch-of-selected-gedcom-person");
+
+    expect(branch.isAvailable(view({ mode: () => "timeline" }))).toBe(true);
+    expect(branch.isAvailable(view({ mode: () => "timeline", canBranchSelected: () => false }))).toBe(false);
+    for (const mode of ["graph", "list", "source"] as const) {
+      expect(branch.isAvailable(view({ mode: () => mode }))).toBe(false);
+    }
+  });
+
+  it("shows the branch as pressing Branch on the bar does, with its icon and no key", () => {
+    const branchSelected = vi.fn();
+    const branch = command("branch-of-selected-gedcom-person");
+    branch.run(host().host, view({ branchSelected, mode: () => "timeline" }));
+
+    expect(branchSelected).toHaveBeenCalled();
+    expect(branch.icon).toBe("git-branch");
+    expect(branch.hotkeys).toBeUndefined();
+    expect(t(branch.name)).toBe("Branch of the selected person");
   });
 });
 

@@ -14,6 +14,11 @@ export function personOf(target: EventTarget | null): string | null {
   return found?.getAttribute("data-p") ?? null;
 }
 
+export function barOf(target: EventTarget | null): string | null {
+  const found = target instanceof Element ? target.closest(".gedcom-ft-life, .gedcom-ft-label") : null;
+  return found?.getAttribute("data-p") ?? null;
+}
+
 export function markOf<T>(target: EventTarget | null, marks: ReadonlyMap<Element, T>): T | null {
   const found = target instanceof Element ? target.closest(".gedcom-ft-mark") : null;
   return found ? (marks.get(found) ?? null) : null;

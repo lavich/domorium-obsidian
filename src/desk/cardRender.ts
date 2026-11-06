@@ -98,8 +98,9 @@ export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, f
   const { id, x, y, height } = placed;
   const { name, years } = shown;
   const text = height - CARD.height;
-  const group = svg(doc, "g", `gedcom-fg-person is-${shown.sex.toLowerCase()}`, {
+  const group = svg(doc, "g", "gedcom-fg-person", {
     "data-p": id,
+    style: shown.paint,
     transform: `translate(${x},${y})`,
   });
   group.classList.toggle("is-focus", shown.focus === true);

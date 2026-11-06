@@ -97,6 +97,7 @@
   "mode.source": "Source",
   "command.showGraph": "Show as graph",
   "command.showTimeline": "Show as timeline",
+  "command.branchOfSelected": "Branch of the selected person",
   "command.showSource": "Show as source",
   "command.toggleMode": "Switch between source and the last view",
   "desk.facts": "Facts",

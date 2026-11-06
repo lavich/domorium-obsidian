@@ -92,7 +92,7 @@ for (const viewport of [
       expect(await transform(page)).toBe(before);
     });
 
-    test("keeps the timeline's scroll through the source and back, its names and years in line with the rows", async ({
+    test("keeps the timeline's scroll through the source and back, its years in line with the bars", async ({
       page,
     }) => {
       await mountTab(page, { mode: "timeline", memory: { timeline: { up: 2, down: 2, zoom: 16 } } });
@@ -108,9 +108,6 @@ for (const viewport of [
       await page.click("#show-timeline");
 
       await expect.poll(() => plot.evaluate((element) => [element.scrollTop, element.scrollLeft])).toEqual(scrolled);
-      await expect
-        .poll(() => page.locator(".gedcom-ft-names").evaluate((element) => element.scrollTop))
-        .toBe(scrolled[0]);
       await expect
         .poll(() => page.locator(".gedcom-ft-axis-clip").evaluate((element) => element.scrollLeft))
         .toBe(scrolled[1]);
@@ -177,19 +174,19 @@ for (const viewport of [
       await mountTab(page, { mode: "graph" });
       await page.click("#select-pierre");
       await page.click("#show-timeline");
-      await expect(page.locator(".gedcom-ft-name.is-selected")).toHaveCount(1);
-      await expect(page.locator(".gedcom-ft-name.is-selected")).toHaveAttribute("data-p", "@I2@");
+      await expect(page.locator(".gedcom-ft-life.is-selected")).toHaveCount(1);
+      await expect(page.locator(".gedcom-ft-life.is-selected")).toHaveAttribute("data-p", "@I2@");
       await page.click("#select-irene");
-      await expect(page.locator(".gedcom-ft-name.is-selected")).toHaveAttribute("data-p", "@I12@");
+      await expect(page.locator(".gedcom-ft-life.is-selected")).toHaveAttribute("data-p", "@I12@");
       await page.click("#show-graph");
 
       expect(await selectedCards(page)).toEqual(["@I12@"]);
       await page.evaluate(() => {
         window.tab.select(null, false);
       });
-      await expect(page.locator(".is-selected, .gedcom-ft-row-selected")).toHaveCount(0);
+      await expect(page.locator(".is-selected")).toHaveCount(0);
       await page.click("#show-timeline");
-      await expect(page.locator(".is-selected, .gedcom-ft-row-selected")).toHaveCount(0);
+      await expect(page.locator(".is-selected")).toHaveCount(0);
     });
 
     test("opens the search expanded and focused from outside", async ({ page }) => {
@@ -266,10 +263,6 @@ for (const viewport of [
         return { stroke: style.stroke, outline: style.outlineColor };
       });
       expect(line).toEqual({ stroke: colours.text, outline: colours.accent });
-      const row = await page
-        .locator('.gedcom-ft-name[data-p="@I2@"]')
-        .evaluate((element) => getComputedStyle(element).boxShadow);
-      expect(row).toContain(colours.accent);
 
       await page.locator(".gedcom-ft-search").fill("joliot");
       const opacity = (xref: string) =>

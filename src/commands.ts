@@ -23,6 +23,8 @@ export interface CommandView {
   goToPreviousProblem(): boolean;
   toggleProblemsPanel(): void;
   showSearch(replace: boolean): void;
+  canBranchSelected(): boolean;
+  branchSelected(): void;
   /** Editor commands answer only here; no other mode has an editor to act on. */
   inSource(): boolean;
   mode(): DeskMode;
@@ -149,6 +151,15 @@ export const COMMANDS: GedcomCommand[] = [
       copyRecordLink(host, view, (path, identifier) =>
         gedcomLinkUrl(host.vaultName(), path, identifier),
       ),
+  },
+  {
+    id: "branch-of-selected-gedcom-person",
+    name: "command.branchOfSelected",
+    icon: "git-branch",
+    isAvailable: (view) => view.mode() === "timeline" && view.canBranchSelected(),
+    run: (_host, view) => {
+      view.branchSelected();
+    },
   },
   {
     id: "go-to-gedcom-definition",

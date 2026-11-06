@@ -1,7 +1,7 @@
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import type { TimelineOptions } from "../harness/fileTimeline";
 import { generated } from "./generated";
@@ -15,12 +15,27 @@ const FIRST_DECADE = 1820;
 async function mountTimeline(page: Page, options: TimelineOptions = {}): Promise<number> {
   await page.goto(pathToFileURL(resolve("harness/fileTimeline.html")).href);
   const took = await page.evaluate((timelineOptions) => window.timeline.mount(timelineOptions), options);
-  await page.waitForSelector(".gedcom-ft-name");
+  await page.waitForSelector(".gedcom-ft-life");
   return took;
 }
 
-const name = (page: Page, xref: string) => page.locator(`.gedcom-ft-name[data-p="${xref}"]`);
+const label = (page: Page, xref: string) => page.locator(`.gedcom-ft-label[data-p="${xref}"]`);
 const life = (page: Page, xref: string) => page.locator(`.gedcom-ft-life[data-p="${xref}"]`);
+
+const rgb = (value: string): number[] => (value.match(/[\d.]+/gu) ?? []).slice(0, 3).map(Number);
+const luminance = ([r = 0, g = 0, b = 0]: number[]): number => {
+  const linear = (channel: number) => {
+    const unit = channel / 255;
+    return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+};
+const contrast = (a: string, b: string): number => {
+  const [light = 0, dark = 0] = [luminance(rgb(a)), luminance(rgb(b))].sort((x, y) => y - x);
+  return (light + 0.05) / (dark + 0.05);
+};
+const fillOf = (locator: Locator) => locator.evaluate((node) => getComputedStyle(node).fill);
+const opacityOf = (locator: Locator) => locator.evaluate((node) => getComputedStyle(node).opacity);
 
 async function yearX(page: Page, year: number): Promise<number> {
   const chart = await page.locator(".gedcom-ft-chart").boundingBox();
@@ -32,93 +47,114 @@ test.describe("the timeline of a file", () => {
     await page.setViewportSize({ width: 1400, height: 900 });
   });
 
-  test("names Marie with her years, on a lifeline in the theme's colour for a woman", async ({ page }) => {
+  test("writes Marie's name inside her bar, with no years and no column of names", async ({ page }) => {
     await mountTimeline(page);
 
-    await expect(name(page, "@I1@").locator(".gedcom-ft-name-years")).toHaveText("1867–1934");
-    expect(await life(page, "@I1@").evaluate((node) => getComputedStyle(node).fill)).toBe("rgb(255, 0, 128)");
-    expect(await life(page, "@I2@").evaluate((node) => getComputedStyle(node).fill)).toBe("rgb(0, 0, 255)");
+    await expect(page.locator(".gedcom-ft-names, .gedcom-ft-name, .gedcom-ft-axis-pad")).toHaveCount(0);
+    await expect(label(page, "@I1@")).toHaveText("Marie Skłodowska-Curie");
+    expect(await page.locator(".gedcom-ft-board").innerText()).not.toContain("1867–1934");
     const bar = await life(page, "@I1@").boundingBox();
+    const name = await label(page, "@I1@").boundingBox();
     expect(bar?.x).toBeCloseTo(await yearX(page, 1867), 0);
     expect((bar?.x ?? 0) + (bar?.width ?? 0)).toBeCloseTo(await yearX(page, 1934), 0);
+    expect(name?.x ?? 0).toBeGreaterThanOrEqual(bar?.x ?? 0);
+    expect((name?.x ?? 0) + (name?.width ?? 0)).toBeLessThanOrEqual((bar?.x ?? 0) + (bar?.width ?? 0));
+    expect(name?.y ?? 0).toBeGreaterThanOrEqual((bar?.y ?? 0) - 2);
+    expect((name?.y ?? 0) + (name?.height ?? 0)).toBeLessThanOrEqual((bar?.y ?? 0) + (bar?.height ?? 0));
   });
 
-  test("joins Pierre and Marie at their marriage, and draws his residence as a span", async ({ page }) => {
+  test("colours the bars of one family alike and of two families differently", async ({ page }) => {
+    await mountTimeline(page);
+    const fill = (name: string) => fillOf(page.locator(`.gedcom-ft-life[aria-label="${name}"]`));
+
+    expect(await fill("Zofia Skłodowska")).toBe(await fill("Józef Skłodowski"));
+    expect(await fill("Zofia Skłodowska")).not.toBe(await fill("Pierre Curie"));
+  });
+
+  test("marks the marriage on both bars, and draws the dashed line only when Marie is clicked", async ({ page }) => {
     await mountTimeline(page);
 
+    await expect(page.locator(".gedcom-ft-marriage")).toHaveCount(0);
+    await life(page, "@I1@").click();
     const at = await yearX(page, 1895);
     const lines = await page.locator(".gedcom-ft-marriage").evaluateAll((nodes) =>
       nodes.map((node) => node.getBoundingClientRect()).map((box) => ({ x: box.x, height: box.height })),
     );
-    expect(lines.some((line) => Math.abs(line.x - at) < 2 && Math.abs(line.height - 27) < 2)).toBe(true);
+    expect(lines).toHaveLength(1);
+    expect(Math.abs((lines[0]?.x ?? 0) - at)).toBeLessThan(2);
+    expect(await page.locator(".gedcom-ft-marriage").evaluate((line) => getComputedStyle(line).strokeDasharray)).not.toBe("none");
+    await expect(page.locator(".gedcom-ft-marriage-dot")).toHaveCount(2);
+    await page.addStyleTag({ content: ".gedcom-ft-marriage-dot { pointer-events: auto !important; }" });
+    const seen = await page.locator(".gedcom-ft-marriage-dot").evaluateAll((dots) => {
+      const centres = dots
+        .map((dot) => dot.getBoundingClientRect())
+        .map((box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 }))
+        .sort((a, b) => a.y - b.y);
+      return centres.map((centre, at) => {
+        const hit = document.elementFromPoint(centre.x, centre.y + (at === 0 ? 2.5 : -1.5));
+        return { dot: hit?.classList.contains("gedcom-ft-marriage-dot") === true, bar: hit?.classList.contains("gedcom-ft-life") === true };
+      });
+    });
+    expect(seen).toEqual([{ dot: true, bar: false }, { dot: true, bar: false }]);
     const span = await page.locator('.gedcom-ft-span[data-p="@I2@"]').boundingBox();
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
   });
 
-  test("keeps the name and the years of a row where they are under the pointer and when selected", async ({ page }) => {
+  test("keeps a name where it is under the pointer and when selected", async ({ page }) => {
     await mountTimeline(page);
-    const place = () =>
-      name(page, "@I2@").evaluate((row) => {
-        const box = (selector: string) => {
-          const rect = row.querySelector(selector)?.getBoundingClientRect();
-          return [rect?.left, rect?.top, rect?.width];
-        };
-        return { text: box(".gedcom-ft-name-text"), years: box(".gedcom-ft-name-years") };
-      });
+    const place = () => label(page, "@I2@").boundingBox();
     const before = await place();
 
-    await name(page, "@I2@").hover();
+    await life(page, "@I2@").hover();
     expect(await place()).toEqual(before);
 
     await page.mouse.move(2, 2);
-    await name(page, "@I2@").evaluate((row) => row.classList.add("is-selected", "is-focus"));
+    await life(page, "@I2@").evaluate((bar) => bar.classList.add("is-selected"));
     expect(await place()).toEqual(before);
   });
 
-  test("names a row's button for a reader without a tooltip over it", async ({ page }) => {
+  test("names a bar for a reader without a tooltip over it", async ({ page }) => {
     await mountTimeline(page);
 
-    const open = name(page, "@I1@").locator(".gedcom-ft-name-open");
-    await expect(open).not.toHaveAttribute("aria-label", /.*/);
-    await expect(open).toHaveAccessibleName("Marie Skłodowska-Curie, 1867–1934");
+    await expect(life(page, "@I1@")).toHaveAttribute("role", "button");
+    await expect(life(page, "@I1@")).toHaveAccessibleName("Marie Skłodowska-Curie");
   });
 
-  test("fades no one when the pointer is on Marie, and moves over the rows", async ({ page }) => {
+  test("fades no one when the pointer is on Marie, and moves over the bars", async ({ page }) => {
     await mountTimeline(page);
-    const opacity = (xref: string) => name(page, xref).evaluate((node) => getComputedStyle(node).opacity);
-    await name(page, "@I1@").hover();
+    await life(page, "@I1@").hover();
     await life(page, "@I11@").hover();
     await page.waitForTimeout(400);
 
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(0);
     await expect(page.locator(".gedcom-ft-board.has-hl")).toHaveCount(0);
-    expect(await opacity("@I11@")).toBe("1");
-    expect(await opacity("@I2@")).toBe("1");
-    expect(await life(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.35");
+    expect(await opacityOf(life(page, "@I11@"))).toBe("1");
+    expect(await opacityOf(life(page, "@I2@"))).toBe("1");
   });
 
-  test("picks out Marie's family with arrows when she is clicked, and puts the light out on empty space and on Escape", async ({ page }) => {
+  test("picks out Marie's family with links when she is clicked, and puts the light out on empty space and on Escape", async ({ page }) => {
     await mountTimeline(page);
-    const opacity = (xref: string) => name(page, xref).evaluate((node) => getComputedStyle(node).opacity);
-    await name(page, "@I1@").locator(".gedcom-ft-name-open").click();
+    await life(page, "@I1@").click();
 
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
     expect(await page.locator('.gedcom-ft-kin[data-from="@I2@"]').count()).toBe(0);
-    await expect.poll(() => opacity("@I11@")).toBe("0.18");
-    expect(await opacity("@I2@")).toBe("1");
+    await expect.poll(() => opacityOf(life(page, "@I11@"))).toBe("0.18");
+    expect(await opacityOf(life(page, "@I2@"))).toBe("1");
+    expect(await page.locator(".gedcom-ft-kin").first().getAttribute("marker-end")).toContain("gedcom-ft-arrow");
 
-    await name(page, "@I12@").locator(".gedcom-ft-name-open").click();
-    await expect(name(page, "@I12@")).toHaveClass(/is-hl/);
-    await expect(name(page, "@I1@")).not.toHaveClass(/is-hl/);
+    await life(page, "@I12@").click();
+    await expect(life(page, "@I12@")).toHaveClass(/is-hl/);
+    await expect(life(page, "@I1@")).not.toHaveClass(/is-hl/);
 
     await page.locator(".gedcom-ft-chart").click({ position: { x: 2, y: 2 } });
-    await expect.poll(() => opacity("@I11@")).toBe("1");
+    await expect.poll(() => opacityOf(life(page, "@I11@"))).toBe("1");
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(0);
 
-    await name(page, "@I1@").locator(".gedcom-ft-name-open").click();
-    await expect.poll(() => opacity("@I11@")).toBe("0.18");
+    await life(page, "@I1@").click();
+    await expect.poll(() => opacityOf(life(page, "@I11@"))).toBe("0.18");
     await page.keyboard.press("Escape");
-    await expect.poll(() => opacity("@I11@")).toBe("1");
+    await expect.poll(() => opacityOf(life(page, "@I11@"))).toBe("1");
+    await expect(life(page, "@I1@")).toHaveClass(/is-selected/);
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I1@", "@I12@", "@I1@"]);
   });
 
@@ -131,18 +167,35 @@ test.describe("the timeline of a file", () => {
     await expect(page.locator(".gedcom-ft-tip.is-shown")).toContainText("Warsaw, Congress Poland");
     await birth.click();
     expect(await page.evaluate(() => window.timeline.calls.shownInSource.length)).toBe(1);
-    await name(page, "@I12@").click();
+    await life(page, "@I12@").click();
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I12@"]);
   });
 
-  test("puts a year cursor at 1906 with Marie at 39 and Irène at 9", async ({ page }) => {
+  test("shows the person's name and nothing else over a bar, and a mark's event over a mark", async ({ page }) => {
+    await mountTimeline(page);
+    await life(page, "@I1@").hover({ position: { x: 40, y: 8 } });
+
+    await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Marie Skłodowska-Curie");
+    expect(await life(page, "@I1@").evaluate((bar) => getComputedStyle(bar).stroke)).not.toBe("none");
+    await page.locator('.gedcom-ft-mark.is-birth[data-p="@I1@"]').hover();
+    await expect(page.locator(".gedcom-ft-tip.is-shown")).not.toContainText("Marie");
+  });
+
+  test("puts a year cursor at 1906 with Marie at 39 and Irène at 9, and the selected person's age on the axis", async ({ page }) => {
     await mountTimeline(page);
     const row = await life(page, "@I13@").boundingBox();
-    await page.mouse.move(await yearX(page, 1906), (row?.y ?? 0) + 30);
+    const middle = (row?.y ?? 0) + (row?.height ?? 0) / 2;
+    await page.mouse.move(await yearX(page, 1906), middle);
 
     await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText("1906");
     await expect(page.locator('.gedcom-ft-age[data-p="@I1@"]')).toHaveText("39");
     await expect(page.locator('.gedcom-ft-age[data-p="@I12@"]')).toHaveText("9");
+
+    await life(page, "@I1@").click();
+    await page.mouse.move(await yearX(page, 1906), middle);
+    await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText("1906 · 39");
+    await page.mouse.move(await yearX(page, 1850), middle);
+    await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText("1850");
   });
 
   test("colours each kind of mark from the theme", async ({ page }) => {
@@ -156,54 +209,134 @@ test.describe("the timeline of a file", () => {
     expect(await fill('.gedcom-ft-mark.is-other[data-p="@I1@"]')).toBe("rgb(255, 128, 0)");
   });
 
-  test("takes its colours from a dark theme too", async ({ page }) => {
-    await mountTimeline(page, { dark: true });
-
-    expect(await life(page, "@I1@").evaluate((node) => getComputedStyle(node).fill)).toBe("rgb(255, 100, 180)");
-    expect(
-      await page.locator('.gedcom-ft-mark.is-death[data-p="@I1@"] circle').evaluate((node) => getComputedStyle(node).fill),
-    ).toBe("rgb(255, 255, 255)");
+  test("takes the bar's fill from the scheme, and a name 4.5:1 on it across the hues, ringed or dimmed", async ({ page }) => {
+    const surnames = [
+      "Abramov", "Belov", "Volkov", "Gromov", "Dmitriev", "Egorov", "Zhukov", "Ivanov", "Kuznetsov", "Lobanov",
+      "Morozov", "Nikitin", "Orlov", "Petrov", "Romanov", "Sidorov", "Titov", "Ulanov", "Fedorov", "Kharitonov",
+      "Tsvetkov", "Chernov", "Sharov", "Shchukin", "Yakovlev", "Zaytsev", "Квасов", "Мартынов",
+    ];
+    const doc = [
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      ...surnames.flatMap((surname, at) => [`0 @H${at}@ INDI`, `1 NAME Name /${surname}/`, "1 BIRT", "2 DATE 1900", "1 DEAT", "2 DATE 1960"]),
+      "0 TRLR", "",
+    ].join("\n");
+    const fills: string[] = [];
+    for (const dark of [false, true]) {
+      await mountTimeline(page, { doc, dark });
+      await life(page, "@H3@").click();
+      await page.locator(".gedcom-ft-find-toggle").click();
+      await page.locator(".gedcom-ft-search").fill("kuznetsov");
+      const pairs = await page.locator(".gedcom-ft-label").evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const bar = document.querySelector(`.gedcom-ft-life[data-p="${node.getAttribute("data-p")}"]`);
+          return { ink: getComputedStyle(node).fill, fill: bar ? getComputedStyle(bar).fill : "" };
+        }),
+      );
+      expect(pairs).toHaveLength(surnames.length);
+      for (const pair of pairs) {
+        expect(contrast(pair.ink, pair.fill), `${pair.ink} on ${pair.fill} (${dark ? "dark" : "light"})`).toBeGreaterThanOrEqual(4.5);
+      }
+      fills.push(await fillOf(life(page, "@H0@")));
+    }
+    expect(fills[0]).not.toBe(fills[1]);
   });
 
-  test("opens a person and their branch from the keyboard", async ({ page }) => {
+  test("cuts a name wider than its bar inside the bar, and shows the whole name on the bar's tooltip", async ({ page }) => {
+    const doc = [
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @A@ INDI", "1 NAME Alexandra Maria Theresia /Habsburg-Lothringen/", "1 BIRT", "2 DATE 1899", "1 DEAT", "2 DATE 1920",
+      "0 @B@ INDI", "1 NAME Boris /Beta/", "1 BIRT", "2 DATE 1905", "1 DEAT", "2 DATE 1990",
+      "0 TRLR", "",
+    ].join("\n");
+    for (const dark of [false, true]) {
+      await mountTimeline(page, { doc, dark });
+
+      const bar = await life(page, "@A@").boundingBox();
+      const name = await label(page, "@A@").boundingBox();
+      expect(name?.x ?? 0).toBeGreaterThanOrEqual(bar?.x ?? 0);
+      expect((name?.x ?? 0) + (name?.width ?? 0)).toBeLessThanOrEqual((bar?.x ?? 0) + (bar?.width ?? 0));
+      expect(await label(page, "@A@").textContent()).toMatch(/…$/u);
+      await life(page, "@A@").hover();
+      await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Alexandra Maria Theresia Habsburg-Lothringen");
+      await life(page, "@A@").click();
+      expect(await page.evaluate(() => window.timeline.calls.opened)).toContain("@A@");
+      const other = await life(page, "@B@").boundingBox();
+      expect(Math.abs((other?.y ?? 0) - (bar?.y ?? 0))).toBeGreaterThan(1);
+    }
+  });
+
+  test("draws the marks of Marie's events along her bar's lower edge, below her name", async ({ page }) => {
     await mountTimeline(page);
-    await name(page, "@I12@").locator(".gedcom-ft-name-open").focus();
+
+    const name = await label(page, "@I1@").boundingBox();
+    const marks = await page.locator('.gedcom-ft-mark[data-p="@I1@"] circle').evaluateAll((nodes) =>
+      nodes.map((node) => node.getBoundingClientRect()).map((box) => ({ top: box.top, bottom: box.bottom })),
+    );
+    expect(marks.length).toBeGreaterThan(2);
+    for (const mark of marks) {
+      expect(mark.top).toBeGreaterThanOrEqual((name?.y ?? 0) + (name?.height ?? 0) - 0.5);
+    }
+  });
+
+  test("gives each of the 17 people a row of their own, and none to a person with no date", async ({ page }) => {
+    await mountTimeline(page);
+
+    const rows = await page.locator(".gedcom-ft-life").evaluateAll((nodes) =>
+      nodes.map((node) => Math.round(node.getBoundingClientRect().y)),
+    );
+    expect(rows).toHaveLength(17);
+    expect(new Set(rows).size).toBe(17);
+    await expect(page.locator('.gedcom-ft-label[data-p="@I18@"]')).toHaveCount(0);
+  });
+
+  test("opens a person from the keyboard, and Branch from the command, which reads pressed while the branch is shown", async ({ page }) => {
+    await mountTimeline(page);
+    await life(page, "@I12@").focus();
     await expect(page.locator(".gedcom-ft-board.has-hl")).toHaveCount(0);
     await page.keyboard.press("Space");
-    await expect(name(page, "@I12@")).toHaveClass(/is-hl/);
+    await expect(life(page, "@I12@")).toHaveClass(/is-hl/);
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I12@"]);
-
     await page.keyboard.press("Tab");
-    await expect(name(page, "@I12@").locator(".gedcom-ft-branch")).toBeFocused();
-    await expect(name(page, "@I12@").locator(".gedcom-ft-branch")).toBeVisible();
+    await expect(page.locator(".gedcom-ft-board.has-hl")).toHaveCount(1);
+    await expect(life(page, "@I12@")).toHaveClass(/is-hl/);
+
+    const branch = page.locator("[data-branch]");
+    await expect(branch).toHaveCount(1);
+    await expect(branch).toHaveAttribute("data-branch", "@I12@");
+    await branch.focus();
     await page.keyboard.press("Enter");
-    await expect(page.locator(".gedcom-ft-name")).toHaveCount(10);
-    await expect(name(page, "@I12@").locator(".gedcom-ft-branch")).toBeFocused();
-  });
-
-  test("shows Irène's branch, ten of the file's eighteen, and returns to the whole file", async ({ page }) => {
-    await mountTimeline(page);
-    await name(page, "@I12@").hover();
-    await name(page, "@I12@").locator(".gedcom-ft-branch").click();
-
-    await expect(page.locator(".gedcom-ft-name")).toHaveCount(10);
-    await expect(page.locator(".gedcom-ft-scope")).toContainText("Branch of Irène Joliot-Curie · 10 of 18 people");
-    await page.locator(".gedcom-ft-whole").click();
-    await expect(page.locator(".gedcom-ft-name")).toHaveCount(18);
-  });
-
-  test("returns to the whole file on Branch again, which reads pressed while the branch is shown", async ({ page }) => {
-    await mountTimeline(page);
-    await name(page, "@I12@").hover();
-    await name(page, "@I12@").locator(".gedcom-ft-branch").click();
-    await page.mouse.move(0, 0);
-
-    const branch = name(page, "@I12@").locator(".gedcom-ft-branch");
-    await expect(branch).toBeVisible();
-    await expect(branch).toHaveAttribute("aria-pressed", "true");
-    await branch.click();
-    await expect(page.locator(".gedcom-ft-name")).toHaveCount(18);
+    await expect(page.locator(".gedcom-ft-life")).toHaveCount(10);
+    await expect(page.locator("[data-branch]")).toHaveAttribute("aria-pressed", "true");
+    await page.evaluate(() => window.timeline.branchOfSelected());
+    await expect(page.locator(".gedcom-ft-life")).toHaveCount(17);
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
+  });
+
+  test("offers Branch on the selected bar alone, beyond its end, and keeps it after Escape", async ({ page }) => {
+    await mountTimeline(page);
+    await life(page, "@I1@").click();
+    const branch = page.locator("[data-branch]");
+
+    await expect(branch).toHaveCount(1);
+    await expect(branch).toHaveAttribute("data-branch", "@I1@");
+    const bar = await life(page, "@I1@").boundingBox();
+    const button = await branch.boundingBox();
+    expect(button?.x ?? 0).toBeGreaterThan((bar?.x ?? 0) + (bar?.width ?? 0));
+    await page.keyboard.press("Escape");
+    await expect(branch).toBeVisible();
+    await life(page, "@I2@").click();
+    await expect(page.locator("[data-branch]")).toHaveAttribute("data-branch", "@I2@");
+  });
+
+  test("shows Irène's branch, ten of the file's seventeen people with a bar, and returns to the whole file", async ({ page }) => {
+    await mountTimeline(page);
+    await life(page, "@I12@").click();
+    await page.locator("[data-branch]").click();
+
+    await expect(page.locator(".gedcom-ft-life")).toHaveCount(10);
+    await expect(page.locator(".gedcom-ft-scope")).toContainText("Branch of Irène Joliot-Curie · 10 of 17 people");
+    await page.locator(".gedcom-ft-whole").click();
+    await expect(page.locator(".gedcom-ft-life")).toHaveCount(17);
   });
 
   test("fades and lights smoothly, and at once where the reader asks for less motion", async ({ page }) => {
@@ -213,22 +346,20 @@ test.describe("the timeline of a file", () => {
     expect(await transition()).toContain("opacity");
     await page.emulateMedia({ reducedMotion: "reduce" });
     expect(await transition()).toBe("none");
-    await name(page, "@I1@").locator(".gedcom-ft-name-open").click();
-    expect(await name(page, "@I11@").evaluate((node) => getComputedStyle(node).opacity)).toBe("0.18");
+    await life(page, "@I1@").click();
+    expect(await opacityOf(life(page, "@I11@"))).toBe("0.18");
   });
 
-    test("keeps the names and the years in place while the board scrolls", async ({ page }) => {
+  test("keeps the years in place while the board scrolls", async ({ page }) => {
     await page.setViewportSize({ width: 900, height: 500 });
     await mountTimeline(page);
     const before = await page.locator(".gedcom-ft-axis").boundingBox();
-    const column = await page.locator(".gedcom-ft-names").boundingBox();
     await page.locator(".gedcom-ft-plot").evaluate((board) => {
       board.scrollTop = 200;
       board.scrollLeft = 300;
     });
 
     expect((await page.locator(".gedcom-ft-axis").boundingBox())?.y).toBeCloseTo(before?.y ?? 0, 0);
-    expect((await page.locator(".gedcom-ft-names").boundingBox())?.x).toBeCloseTo(column?.x ?? 0, 0);
   });
 });
 
@@ -258,16 +389,16 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
       await expect(page.locator(".gedcom-ft-search")).toBeFocused();
       await expect(page.locator(".gedcom-ft-find-toggle")).toBeHidden();
       await page.locator(".gedcom-ft-search").fill("joliot");
-      await expect(page.locator(".gedcom-ft-name:not(.is-dim)")).toHaveCount(4);
+      await expect(page.locator(".gedcom-ft-life:not(.is-dim)")).toHaveCount(4);
       await expect(page.locator(".gedcom-ft-find-count")).toHaveText("4 matches");
       await page.locator(".gedcom-ft-find-next").click();
       await expect(page.locator(".gedcom-ft-find-count")).toHaveText("1 / 4");
-      await expect(name(page, "@I12@")).toHaveClass(/is-current/);
+      await expect(life(page, "@I12@")).toHaveClass(/is-current/);
       await expect(page.locator(".gedcom-ft-search")).toBeFocused();
       await expect
         .poll(async () => {
           const plot = await box(".gedcom-ft-plot");
-          const row = await name(page, "@I12@").boundingBox();
+          const row = await life(page, "@I12@").boundingBox();
           return (
             plot !== null &&
             row !== null &&
@@ -278,7 +409,7 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
         .toBe(true);
       await page.locator(".gedcom-ft-find-prev").click();
       await expect(page.locator(".gedcom-ft-find-count")).toHaveText("4 / 4");
-      await expect(name(page, "@I17@")).toHaveClass(/is-current/);
+      await expect(life(page, "@I17@")).toHaveClass(/is-current/);
       const filled = await box(".gedcom-ft-find");
       expect((filled?.x ?? 0) + (filled?.width ?? 0)).toBeLessThanOrEqual((board?.x ?? 0) + (board?.width ?? 0));
       expect(filled?.x ?? 0).toBeGreaterThanOrEqual(board?.x ?? 0);
@@ -288,7 +419,7 @@ for (const viewport of [{ width: 1400, height: 600 }, { width: 390, height: 844 
       await expect(page.locator(".gedcom-ft-find")).toHaveClass(/is-open/);
       await expect.poll(async () => (await box(".gedcom-ft-search"))?.width ?? 0).toBeGreaterThan(100);
       await page.locator(".gedcom-ft-find-clear").click();
-      await expect(page.locator(".gedcom-ft-name.is-dim")).toHaveCount(0);
+      await expect(page.locator(".gedcom-ft-life.is-dim")).toHaveCount(0);
       await page.keyboard.press("Escape");
       await expect(page.locator(".gedcom-ft-find")).not.toHaveClass(/is-open/);
       await expect(page.locator(".gedcom-ft-find-toggle")).toBeVisible();
@@ -303,8 +434,16 @@ test.describe("the glide of the timeline to a match", () => {
     await page.setViewportSize({ width: 1400, height: 300 });
   });
 
+  const rows = [
+    "0 HEAD", "1 GEDC", "2 VERS 7.0",
+    "0 @A@ INDI", "1 NAME Joliot First", "1 BIRT", "2 DATE 1900", "1 DEAT", "2 DATE 1960",
+    ...Array.from({ length: 12 }, (_, at) => [`0 @F${at}@ INDI`, `1 NAME Other ${at}`, "1 BIRT", "2 DATE 1900", "1 DEAT", "2 DATE 1960"]).flat(),
+    "0 @Z@ INDI", "1 NAME Joliot Last", "1 BIRT", "2 DATE 1900", "1 DEAT", "2 DATE 1960",
+    "0 TRLR", "",
+  ].join("\n");
+
   async function step(page: Page): Promise<{ tops: number[]; blank: number }> {
-    await mountTimeline(page);
+    await mountTimeline(page, { doc: rows });
     await page.locator(".gedcom-ft-find-toggle").click();
     await page.locator(".gedcom-ft-search").fill("joliot");
     const sampling = page.evaluate(
@@ -335,14 +474,14 @@ test.describe("the glide of the timeline to a match", () => {
     return sampling;
   }
 
-  test("scrolls through intermediate positions to the current row, with no blank frame on the way", async ({ page }) => {
+  test("scrolls through intermediate positions to the current bar, with no blank frame on the way", async ({ page }) => {
     const { tops, blank } = await step(page);
 
     const final = tops[tops.length - 1] ?? 0;
     expect(final).toBeGreaterThan(0);
     expect(tops.filter((top) => top > 0 && top < final).length).toBeGreaterThanOrEqual(2);
     expect(blank).toBe(0);
-    await expect(name(page, "@I17@")).toHaveClass(/is-current/);
+    await expect(life(page, "@Z@")).toHaveClass(/is-current/);
   });
 
   test("jumps when the reader asks for reduced motion", async ({ page }) => {
@@ -364,36 +503,24 @@ test.describe("the axis of years of the timeline", () => {
   });
 
   for (const dark of [false, true]) {
-    test(`is set apart from the corner and the rows by lines in the theme's border colour (${dark ? "dark" : "light"})`, async ({ page }) => {
+    test(`is set apart from the rows by a line in the theme's border colour, with no corner at its left (${dark ? "dark" : "light"})`, async ({ page }) => {
       await mountTimeline(page, { dark });
 
       const lines = await page.evaluate(() => {
         const style = (selector: string) => getComputedStyle(document.querySelector(selector) as Element);
-        const border = style(".gedcom-ft-names").borderInlineEndColor;
+        const box = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
         return {
-          border,
-          cornerEnd: style(".gedcom-ft-axis-pad").borderInlineEndWidth,
-          cornerEndColor: style(".gedcom-ft-axis-pad").borderInlineEndColor,
-          namesEnd: style(".gedcom-ft-names").borderInlineEndWidth,
-          bandEnd: style(".gedcom-ft-axis-band").borderInlineEndWidth,
-          plotEnd: style(".gedcom-ft-plot").borderInlineEndWidth,
-          cornerBottom: style(".gedcom-ft-axis-pad").borderBottomWidth,
+          border: style(".gedcom-ft-axis-band").borderBottomColor,
           bandBottom: style(".gedcom-ft-axis-band").borderBottomWidth,
-          bandBottomColor: style(".gedcom-ft-axis-band").borderBottomColor,
           plotBottom: style(".gedcom-ft-plot").borderBottomWidth,
           tick: style(".gedcom-ft-tick.is-major").stroke,
-          text: style(".gedcom-ft-names").color,
+          bandLeft: box(".gedcom-ft-axis-band")?.left,
+          boardLeft: box(".gedcom-ft-board")?.left,
         };
       });
-      expect(lines.cornerEnd).toBe("1px");
-      expect(lines.cornerEnd).toBe(lines.namesEnd);
-      expect(lines.cornerEndColor).toBe(lines.border);
-      expect(lines.bandEnd).toBe("0px");
-      expect(lines.plotEnd).toBe("0px");
-      expect(lines.cornerBottom).toBe("1px");
       expect(lines.bandBottom).toBe("1px");
-      expect(lines.bandBottomColor).toBe(lines.border);
       expect(lines.plotBottom).toBe("0px");
+      expect(lines.bandLeft).toBe(lines.boardLeft);
       expect(lines.tick).not.toBe(lines.border);
       expect(lines.tick).not.toBe("none");
     });
@@ -501,9 +628,11 @@ test.describe("the zoom buttons of the timeline", () => {
     await page.locator(".gedcom-ft-zoom-out").click();
     expect(await width()).toBeLessThan(start);
     await page.locator(".gedcom-ft-fit").click();
-    const board = await page.locator(".gedcom-ft-board").boundingBox();
-    const names = await page.locator(".gedcom-ft-names").boundingBox();
-    expect(await width()).toBeLessThanOrEqual((board?.width ?? 0) - (names?.width ?? 0) + 2);
+    const fitted = await page.evaluate(() => {
+      const lines = [...document.querySelectorAll(".gedcom-ft-gridline")].map((line) => Number(line.getAttribute("x1")));
+      return { span: Math.max(...lines) - Math.min(...lines) + 24, room: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.clientWidth ?? 0 };
+    });
+    expect(Math.abs(fitted.span - fitted.room)).toBeLessThan(12);
   });
 });
 
@@ -511,7 +640,7 @@ for (const viewport of [{ width: 1400, height: 380 }, { width: 390, height: 500 
   test.describe(`the scrollbars of the timeline at ${viewport.width} px`, () => {
     test.use({ viewport });
 
-    test("belong to the rows and years only, and leave the axis, the names and the corner alone", async ({ page }) => {
+    test("belong to the rows and years only, and leave the axis alone", async ({ page }) => {
       await mountTimeline(page, { phone: viewport.width < 600 });
       await page.addStyleTag({ content: ".gedcom-ft-plot::-webkit-scrollbar { width: 15px; height: 15px; } .gedcom-ft-plot::-webkit-scrollbar-thumb { background: #888; border-radius: 6px; }" });
       await page.locator(".gedcom-ft-zoom-in").click();
@@ -520,45 +649,27 @@ for (const viewport of [{ width: 1400, height: 380 }, { width: 390, height: 500 
         const box = (selector: string) => document.querySelector(selector)?.getBoundingClientRect();
         const plot = document.querySelector<HTMLElement>(".gedcom-ft-plot");
         return {
-          names: box(".gedcom-ft-names"),
           axis: box(".gedcom-ft-axis-band"),
-          corner: box(".gedcom-ft-axis-pad"),
           plot: box(".gedcom-ft-plot"),
-          verticalBar: (plot?.offsetWidth ?? 0) - (plot?.clientWidth ?? 0),
           horizontalBar: (plot?.offsetHeight ?? 0) - (plot?.clientHeight ?? 0),
-          namesBar: (document.querySelector<HTMLElement>(".gedcom-ft-names")?.offsetWidth ?? 0) - (document.querySelector<HTMLElement>(".gedcom-ft-names")?.clientWidth ?? 0),
         };
       });
-      expect(m.verticalBar).toBeGreaterThan(0);
       expect(m.horizontalBar).toBeGreaterThan(0);
-      expect(m.namesBar).toBeLessThanOrEqual(1);
-      expect(m.names?.right ?? Infinity).toBeLessThanOrEqual((m.plot?.left ?? 0) + 0.5);
       expect(m.axis?.bottom ?? Infinity).toBeLessThanOrEqual((m.plot?.top ?? 0) + 0.5);
-      expect(m.corner?.bottom ?? Infinity).toBeLessThanOrEqual((m.plot?.top ?? 0) + 0.5);
-      expect(m.corner?.right ?? Infinity).toBeLessThanOrEqual((m.plot?.left ?? 0) + 0.5);
-      expect((m.names?.bottom ?? Infinity)).toBeLessThanOrEqual((m.plot?.bottom ?? 0) - m.horizontalBar + 0.5);
-      expect((m.axis?.right ?? 0)).toBeLessThanOrEqual((m.plot?.right ?? 0) + 0.5);
+      expect(m.axis?.right ?? 0).toBeLessThanOrEqual((m.plot?.right ?? 0) + 0.5);
 
       await page.locator(".gedcom-ft-plot").evaluate((plot) => {
         plot.scrollTop = plot.scrollHeight;
         plot.scrollLeft = plot.scrollWidth;
       });
-      await expect
-        .poll(() => page.evaluate(() => document.querySelector<HTMLElement>(".gedcom-ft-names")?.scrollTop ?? 0))
-        .toBeGreaterThan(0);
-      await expect
-        .poll(() => page.evaluate(() => document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft ?? 0))
-        .toBeGreaterThan(0);
-      const synced = await page.evaluate(() => ({
-        plotTop: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollTop,
-        namesTop: document.querySelector<HTMLElement>(".gedcom-ft-names")?.scrollTop,
-        plotLeft: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollLeft,
-        axisLeft: document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft,
-      }));
-      expect(synced.plotTop).toBeGreaterThan(0);
-      expect(synced.namesTop).toBe(synced.plotTop);
-      expect(synced.plotLeft).toBeGreaterThan(0);
-      expect(synced.axisLeft).toBe(synced.plotLeft);
+      const offset = () =>
+        page.evaluate(
+          () =>
+            (document.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollLeft ?? 0) -
+            (document.querySelector<HTMLElement>(".gedcom-ft-axis-clip")?.scrollLeft ?? 0),
+        );
+      await expect.poll(offset).toBe(0);
+      expect(await page.locator(".gedcom-ft-plot").evaluate((plot) => plot.scrollLeft)).toBeGreaterThan(0);
     });
   });
 }
@@ -572,11 +683,11 @@ test.describe("the timeline of a file on a phone", () => {
     const page_ = await page.evaluate(() => ({
       document: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
       board: document.querySelector(".gedcom-ft-plot")?.scrollWidth ?? 0,
-      names: document.querySelector<HTMLElement>(".gedcom-ft-names")?.offsetWidth ?? 0,
+      view: document.querySelector<HTMLElement>(".gedcom-ft-plot")?.clientWidth ?? 0,
     }));
     expect(page_.document).toBe(true);
     expect(page_.board).toBeGreaterThan(390);
-    expect(page_.names).toBe(120);
+    expect(page_.view).toBeGreaterThanOrEqual(375);
   });
 
   test("gives the board the whole height, from the top, with nothing above or below it", async ({ page }) => {
@@ -613,15 +724,21 @@ test.describe("the timeline of a file on a phone", () => {
     const at = { x: (bar?.x ?? 0) + 60, y: (bar?.y ?? 0) + (bar?.height ?? 0) / 2 };
     await page.touchscreen.tap(at.x, at.y);
 
-    await expect(name(page, "@I1@")).toHaveClass(/is-hl/);
+    await expect(life(page, "@I1@")).toHaveClass(/is-hl/);
     await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
+    await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Marie Skłodowska-Curie");
     const touched = Math.round(FIRST_DECADE + (at.x - (await yearX(page, FIRST_DECADE))) / ZOOM);
     await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText(String(touched));
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual([]);
 
     await page.touchscreen.tap(at.x, at.y);
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I1@"]);
-    await expect(name(page, "@I1@")).toHaveClass(/is-hl/);
+    await expect(life(page, "@I1@")).toHaveClass(/is-hl/);
+    await expect(life(page, "@I1@")).toHaveClass(/is-selected/);
+
+    await page.touchscreen.tap(at.x, 2);
+    await expect(page.locator(".gedcom-ft-board.has-hl")).toHaveCount(0);
+    await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveCount(0);
   });
 
   test("shows a touched mark's event, with the way to its lines", async ({ page }) => {
@@ -644,6 +761,7 @@ test.describe("the timeline of a file on a phone", () => {
       board.scrollLeft = 520;
     });
     await page.waitForTimeout(50);
+    await page.locator('.gedcom-ft-mark.is-birth[data-p="@I17@"]').scrollIntoViewIfNeeded();
     const mark = await page.locator('.gedcom-ft-mark.is-birth[data-p="@I17@"]').boundingBox();
     await page.touchscreen.tap((mark?.x ?? 0) + (mark?.width ?? 0) / 2, (mark?.y ?? 0) + (mark?.height ?? 0) / 2);
 
@@ -659,46 +777,76 @@ test.describe("a large file", () => {
     await mountTimeline(page, { doc: generated(2_000), around: "@I500@" });
 
     await expect(page.locator(".gedcom-ft-scope")).toContainText("Branch of Person 500 Generated");
-    await expect(page.locator(".gedcom-ft-name.is-focus")).toHaveAttribute("data-p", "@I500@");
+    await expect(life(page, "@I500@")).toHaveCount(1);
     await page.locator(".gedcom-ft-whole").click();
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
   });
 });
 
 test.describe("the timeline of a file of 10 000 people", () => {
-  test("draws only the rows near the view while scrolling, and follows the pointer", async ({ page }) => {
-    test.setTimeout(60_000);
+  test("draws only the bars near the view while scrolling, scrolls without a blank frame, and follows the pointer", async ({ page }) => {
+    test.setTimeout(90_000);
     await page.setViewportSize({ width: 1400, height: 900 });
     await mountTimeline(page, { doc: generated(10_000), whole: true });
 
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
     expect(await page.locator(".gedcom-ft-axis .gedcom-ft-tick").count()).toBeLessThanOrEqual(3);
-    const drawn = () => page.locator(".gedcom-ft-name").count();
-    expect(await drawn()).toBeLessThan(300);
+    expect(await page.locator('.gedcom-ft-life[tabindex="0"]').count()).toBe(1);
+    const drawn = () => page.locator(".gedcom-ft-life").count();
+    expect(await drawn()).toBeLessThan(600);
 
-    for (const top of [50_000, 150_000, 250_000]) {
-      await page.locator(".gedcom-ft-plot").evaluate((board, to) => {
-        board.scrollTop = to;
-      }, top);
-      await page.waitForFunction(
-        (to) => {
-          const first = document.querySelector<HTMLElement>(".gedcom-ft-name");
-          const board = document.querySelector<HTMLElement>(".gedcom-ft-board");
-          return first !== null && board !== null && first.offsetTop <= to && first.offsetTop + 2000 > to;
-        },
-        top,
-      );
-      expect(await drawn()).toBeLessThan(300);
-      expect(await page.locator(".gedcom-ft-items > *").count()).toBeLessThan(2000);
+    const room = await page.locator(".gedcom-ft-plot").evaluate((plot) => plot.scrollHeight - plot.clientHeight);
+    expect(room).toBeGreaterThan(5_000);
+    for (const share of [0.2, 0.5, 0.9]) {
+      await page.locator(".gedcom-ft-plot").evaluate((plot, to) => {
+        plot.scrollTop = to;
+      }, room * share);
+      await page.waitForFunction(() => {
+        const box = document.querySelector(".gedcom-ft-plot")?.getBoundingClientRect();
+        return [...document.querySelectorAll(".gedcom-ft-life")].some((bar) => {
+          const rect = bar.getBoundingClientRect();
+          return rect.bottom > (box?.top ?? 0) && rect.top < (box?.bottom ?? 0);
+        });
+      });
+      expect(await drawn()).toBeLessThan(600);
+      expect(await page.locator(".gedcom-ft-items > *").count()).toBeLessThan(3000);
     }
 
-    const row = page.locator(".gedcom-ft-name").nth(40);
-    const took = await row.evaluate((node) => {
+    const blank = await page.evaluate(
+      () =>
+        new Promise<number>((done) => {
+          const plot = document.querySelector<HTMLElement>(".gedcom-ft-plot");
+          let missed = 0;
+          let step = 0;
+          const tick = () => {
+            if (plot) {
+              plot.scrollTop = Math.max(0, plot.scrollTop - 700);
+            }
+            const box = plot?.getBoundingClientRect();
+            const seen = [...document.querySelectorAll(".gedcom-ft-life")].some((bar) => {
+              const rect = bar.getBoundingClientRect();
+              return rect.bottom > (box?.top ?? 0) && rect.top < (box?.bottom ?? 0);
+            });
+            missed += seen ? 0 : 1;
+            step += 1;
+            if (step < 40) {
+              window.requestAnimationFrame(tick);
+            } else {
+              done(missed);
+            }
+          };
+          tick();
+        }),
+    );
+    expect(blank).toBe(0);
+
+    const bar = page.locator(".gedcom-ft-life").nth(40);
+    const took = await bar.evaluate((node) => {
       const started = performance.now();
       node.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
       return performance.now() - started;
     });
-    await expect(row).toHaveClass(/is-hl/);
+    await expect(bar).toHaveClass(/is-hl/);
     expect(took).toBeLessThan(50);
 
     const slowest = await page.locator(".gedcom-ft-chart").evaluate((chart) => {
@@ -716,5 +864,107 @@ test.describe("the timeline of a file of 10 000 people", () => {
       return worst;
     });
     expect(slowest).toBeLessThan(50);
+  });
+});
+
+for (const viewport of [{ width: 1400, height: 700 }, { width: 390, height: 844 }]) {
+  test.describe(`the bars of the timeline at ${viewport.width} px`, () => {
+    test.use({ viewport });
+
+    test("keep each name inside its bar, and no mark across a name", async ({ page }) => {
+      await mountTimeline(page, { phone: viewport.width < 600 });
+
+      const found = await page.evaluate(() => {
+        const box = (node: Element) => node.getBoundingClientRect();
+        return [...document.querySelectorAll<SVGElement>(".gedcom-ft-life")].map((bar) => {
+          const xref = bar.getAttribute("data-p");
+          const name = document.querySelector(`.gedcom-ft-label[data-p="${xref}"]`);
+          const marks = [...document.querySelectorAll(`.gedcom-ft-mark[data-p="${xref}"] circle`)].map((mark) => box(mark));
+          const own = box(bar);
+          const text = name ? box(name) : null;
+          return {
+            named: text !== null,
+            inside: text !== null && text.left >= own.left - 0.5 && text.right <= own.right + 0.5,
+            clear: marks.every((mark) => text === null || mark.top >= text.bottom - 0.5 || mark.left >= text.right || mark.right <= text.left),
+          };
+        });
+      });
+      expect(found).toHaveLength(17);
+      expect(found.every((bar) => bar.inside || !bar.named)).toBe(true);
+      expect(found.every((bar) => bar.clear)).toBe(true);
+    });
+
+    test("carry Branch on the selected bar, inside the board and out of the way of the name", async ({ page }) => {
+      await mountTimeline(page, { phone: viewport.width < 600 });
+      await page.evaluate(() => window.timeline.select("@I12@", true));
+
+      const branch = page.locator("[data-branch]");
+      await expect(branch).toHaveCount(1);
+      const end = await life(page, "@I12@").evaluate((bar) => Number(bar.getAttribute("x")) + Number(bar.getAttribute("width")));
+      await page.locator(".gedcom-ft-plot").evaluate((plot, to) => {
+        plot.scrollLeft = Math.max(0, to - plot.clientWidth / 2);
+      }, end);
+      await expect(branch).toBeVisible();
+      await page.waitForTimeout(100);
+      const button = await branch.boundingBox();
+      const name = await label(page, "@I12@").boundingBox();
+      const plot = await page.locator(".gedcom-ft-plot").boundingBox();
+      expect(button?.x ?? 0).toBeGreaterThanOrEqual((name?.x ?? 0) + (name?.width ?? 0));
+      expect((button?.x ?? 0) + (button?.width ?? 0)).toBeLessThanOrEqual((plot?.x ?? 0) + (plot?.width ?? 0) + 1);
+      await branch.click();
+      await expect(page.locator(".gedcom-ft-life")).toHaveCount(10);
+    });
+  });
+}
+
+test.describe("a pinch on the timeline", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("widens the axis about the point between the fingers, once, and does not zoom the page", async ({ page }) => {
+    await mountTimeline(page, { phone: true });
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: "touchStart" | "touchMove" | "touchEnd", points: [number, number][]) =>
+      cdp.send("Input.dispatchTouchEvent", {
+        type,
+        touchPoints: points.map(([x, y], id) => ({ x, y, id })),
+      });
+    const width = () => page.locator(".gedcom-ft-chart").evaluate((chart) => chart.getBoundingClientRect().width);
+    const scopes = () => page.evaluate(() => window.timeline.calls.scopes);
+    const yearUnder = (x: number, zoom: number) =>
+      page.locator(".gedcom-ft-plot").evaluate((plot, args) => 1820 + (plot.scrollLeft + args.x - 12) / args.zoom, { x, zoom });
+    await page.locator(".gedcom-ft-plot").evaluate((plot) => {
+      plot.scrollLeft = 150;
+    });
+    const before = await width();
+    const year = await yearUnder(200, ZOOM);
+
+    await touch("touchStart", [[150, 400], [250, 400]]);
+    for (const spread of [120, 160, 200]) {
+      await touch("touchMove", [[200 - spread / 2, 400], [200 + spread / 2, 400]]);
+    }
+    expect(await page.locator(".gedcom-ft-chart").evaluate((chart) => (chart as SVGElement).style.transform)).toBe("scaleX(2)");
+    expect(await scopes()).toHaveLength(0);
+    await touch("touchEnd", []);
+
+    const [changed] = await scopes();
+    expect(await scopes()).toHaveLength(1);
+    expect(changed?.zoom).toBeCloseTo(ZOOM * 2, 5);
+    expect(await width()).toBeGreaterThan(before * 1.5);
+    expect(await yearUnder(200, changed?.zoom ?? ZOOM)).toBeCloseTo(year, 0);
+    expect(await page.evaluate(() => window.visualViewport?.scale)).toBe(1);
+    expect(await page.locator(".gedcom-ft-chart").evaluate((chart) => (chart as SVGElement).style.transform)).toBe("");
+  });
+
+  test("stops where the zoom buttons would", async ({ page }) => {
+    await mountTimeline(page, { phone: true });
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: "touchStart" | "touchMove" | "touchEnd", points: [number, number][]) =>
+      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: points.map(([x, y], id) => ({ x, y, id })) });
+    await touch("touchStart", [[195, 400], [205, 400]]);
+    await touch("touchMove", [[20, 400], [370, 400]]);
+    await touch("touchEnd", []);
+
+    const scopes = await page.evaluate(() => window.timeline.calls.scopes);
+    expect(scopes[scopes.length - 1]?.zoom).toBe(16);
   });
 });
