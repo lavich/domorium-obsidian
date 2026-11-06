@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { generated } from "../../tests/generated";
 import { resetLanguage } from "../i18n";
-import { curieIndex, indexOf } from "../testing/curie";
+import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
 
@@ -770,3 +770,131 @@ describe("the scroll the board reports", () => {
   });
 });
 
+
+describe("the places", () => {
+  const events = indexOf(curieWithEvents());
+  const place = (key: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === key);
+  const open = (state = {}) => board({ kind: "places", ...state }, events);
+
+  it("is the fourth kind, after the sources", () => {
+    board();
+
+    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places"]);
+  });
+
+  it("lists every place of the file, alphabetically, with its events and years", () => {
+    open();
+
+    expect(rows()).toHaveLength(10);
+    expect(names()[0]).toBe("Montpellier, France");
+    expect(text(".gedcom-list-count")).toBe("10 places");
+    expect([1, 2].map((at) => cell(place("paris, france"), at))).toEqual(["11", "1855–1958"]);
+    expect(all(".gedcom-list-headcell:not([hidden])").map((one) => one.textContent?.replace(/[↑↓]/u, ""))).toEqual(["Place", "Events", "Years"]);
+  });
+
+  it("keeps the order a column gives and cycles it in three presses", () => {
+    open();
+
+    click(button(".gedcom-list-sort", "Events"));
+    expect(cell(rows()[0], 1)).toBe("1");
+    click(button(".gedcom-list-sort", "Events"));
+    expect(names()[0]).toBe("Warsaw, Congress Poland");
+    click(button(".gedcom-list-sort", "Events"));
+    expect(names()[0]).toBe("Montpellier, France");
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "places" });
+  });
+
+  it("offers alphabetical in place of file order in the sort menu", () => {
+    open();
+
+    expect(query<HTMLSelectElement>(".gedcom-list-sort-select").options[0]?.textContent).toBe("Alphabetical");
+  });
+
+  it("narrows by place name in any case, without accents, and counts what is left", () => {
+    open();
+
+    type("PARIS");
+    expect(names()).toEqual(["Paris, France"]);
+    expect(text(".gedcom-list-count")).toBe("1 of 10 places");
+    type("zzz");
+    expect(text(".gedcom-list-none")).toBe("Nothing matches “zzz”. Search covers place names.");
+    type("");
+    expect(rows()).toHaveLength(10);
+  });
+
+  it("selects the place of a clicked row, as it does a record", () => {
+    open();
+
+    click(place("paris, france"));
+
+    expect(place("paris, france")?.getAttribute("aria-selected")).toBe("true");
+    expect(place("paris, france")?.classList.contains("is-selected")).toBe(true);
+    expect(host.select).toHaveBeenCalledWith("place:paris, france");
+  });
+
+  it("selects the active row with Enter after moving with the arrows", () => {
+    open();
+    scroller().focus();
+    press("ArrowDown");
+    press("ArrowDown");
+    press("Enter");
+
+    expect(host.select).toHaveBeenCalledWith(`place:${rows()[2]?.dataset.key}`);
+  });
+
+  it("marks the selected place and keeps the sort of the saved state", () => {
+    const made = open({ sort: { places: { by: "events", dir: "desc" } } });
+    made.select("place:stockholm, sweden", true);
+
+    expect(place("stockholm, sweden")?.getAttribute("aria-selected")).toBe("true");
+    expect(names()[0]).toBe("Warsaw, Congress Poland");
+  });
+
+  it("switches from the people to the places to show a place selected elsewhere", () => {
+    const made = board({}, events);
+    made.select("place:paris, france", true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
+    expect(place("paris, france")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("unmarks the place when a record is selected elsewhere", () => {
+    const made = open();
+    made.select("place:paris, france", true);
+    made.select("@I2@", true);
+
+    expect(rows().some((one) => one.getAttribute("aria-selected") === "true")).toBe(false);
+  });
+
+  it("stays on the places when a record is selected, and marks that record for the people", () => {
+    const made = open();
+
+    made.select("@I2@", true);
+
+    expect(rows().every((one) => one.dataset.xref === undefined)).toBe(true);
+    expect(host.changed).not.toHaveBeenCalled();
+    click(button(".gedcom-list-seg-button", "People"));
+    expect(row("@I2@")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("has no button but the kinds on the places", () => {
+    open();
+
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-action")).toHaveLength(0);
+  });
+
+  it("spells out the events of a compact row", () => {
+    box.width = 500;
+    const made = open();
+    made.resized();
+
+    expect(cell(place("paris, france"), 1)).toBe("11 events");
+  });
+
+  it("says so when the file names no place", () => {
+    board({ kind: "places" }, indexOf("0 HEAD\n0 TRLR"));
+
+    expect(text(".gedcom-list-none")).toBe("The file names no places.");
+  });
+});

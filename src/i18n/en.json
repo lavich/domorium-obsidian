@@ -281,6 +281,7 @@
   "card.empty": "The file holds nothing to show.",
   "desk.timeline": "Timeline",
   "desk.places": "Places",
+  "desk.placeEvents": "Events",
   "card.announce": "Shown: {name}",
   "mode.list": "List",
   "command.showList": "Show as list",
@@ -289,6 +290,7 @@
   "list.people": "People",
   "list.families": "Families",
   "list.sources": "Sources",
+  "list.places": "Places",
   "list.column.name": "Name",
   "list.column.years": "Years",
   "list.column.place": "Place",
@@ -300,6 +302,7 @@
   "list.column.author": "Author",
   "list.column.repository": "Repository",
   "list.column.citedBy": "Cited by",
+  "list.column.events": "Events",
   "list.count.people": {
     "one": "{count} person",
     "other": "{count} people"
@@ -311,6 +314,10 @@
   "list.count.sources": {
     "one": "{count} source",
     "other": "{count} sources"
+  },
+  "list.count.places": {
+    "one": "{count} place",
+    "other": "{count} places"
   },
   "list.countOf.people": {
     "one": "{shown} of {count} person",
@@ -324,19 +331,27 @@
     "one": "{shown} of {count} source",
     "other": "{shown} of {count} sources"
   },
+  "list.countOf.places": {
+    "one": "{shown} of {count} place",
+    "other": "{shown} of {count} places"
+  },
   "list.search.people": "Name, year, place…",
   "list.search.families": "Names, year, place…",
   "list.search.sources": "Title, author, repository…",
+  "list.search.places": "Place name…",
   "list.nothing.people": "Nothing matches “{query}”. Search covers names, years and places.",
   "list.nothing.families": "Nothing matches “{query}”. Search covers names, years and places.",
   "list.nothing.sources": "Nothing matches “{query}”. Search covers titles, authors and repositories.",
+  "list.nothing.places": "Nothing matches “{query}”. Search covers place names.",
   "list.none.people": "The file holds no people.",
   "list.none.families": "The file holds no families.",
   "list.none.sources": "The file holds no sources.",
+  "list.none.places": "The file names no places.",
   "list.sortBy": "Sort by",
   "list.sortAscending": "Ascending",
   "list.sortDescending": "Descending",
   "list.fileOrder": "File order",
+  "list.alphabetical": "Alphabetical",
   "list.gapMark": "No sources at all",
   "list.label": "Records of the file",
   "list.compact.sources": {
@@ -347,5 +362,9 @@
     "one": "{count} child",
     "other": "{count} children"
   },
-  "list.compact.citedBy": "Cited by {count}"
+  "list.compact.citedBy": "Cited by {count}",
+  "list.compact.events": {
+    "one": "{count} event",
+    "other": "{count} events"
+  }
 }

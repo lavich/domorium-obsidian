@@ -768,6 +768,11 @@ button.gedcom-list-direction:disabled {
   grid-template-columns: minmax(0, 3.2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 5.5em);
 }
 
+.gedcom-list-head.is-places,
+.gedcom-list-row.is-places {
+  grid-template-columns: minmax(0, 3.4fr) minmax(0, 5.5em) minmax(0, 1.4fr);
+}
+
 .gedcom-list-headcell,
 .gedcom-list-cell {
   min-width: 0;
@@ -1278,6 +1283,16 @@ button.gedcom-desk-moment-what:disabled {
   font-weight: var(--font-medium);
 }
 
+.gedcom-desk-place-occurrence {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--size-4-3);
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-place-when,
 .gedcom-desk-place-events,
 .gedcom-desk-place-count {
   color: var(--text-faint);

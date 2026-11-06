@@ -2,10 +2,12 @@ import type { FamilyRow, GenealogyIndex, PersonRow, SourceRow } from "../genealo
 import { UNNAMED, UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
 import { familyTitle, personName, sourceTitle, year, yearsOf } from "./labels";
+import { orderRows, type SortValue } from "./listOrder";
+import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
-export type ListKind = "people" | "families" | "sources";
+export type ListKind = "people" | "families" | "sources" | "places";
 
-export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources"];
+export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places"];
 
 export type SortKey =
   | "name"
@@ -18,7 +20,8 @@ export type SortKey =
   | "title"
   | "author"
   | "repository"
-  | "citedBy";
+  | "citedBy"
+  | "events";
 
 export interface ListSort {
   by: SortKey;
@@ -30,7 +33,7 @@ export interface ListState {
   sort?: Partial<Record<ListKind, ListSort>>;
 }
 
-export type ListRow = PersonRow | FamilyRow | SourceRow;
+export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow;
 
 export interface Column {
   key: SortKey;
@@ -56,6 +59,11 @@ const COLUMNS: Record<ListKind, Column[]> = {
     { key: "author", label: "list.column.author", numeric: false },
     { key: "repository", label: "list.column.repository", numeric: false },
     { key: "citedBy", label: "list.column.citedBy", numeric: true },
+  ],
+  places: [
+    { key: "place", label: "list.column.place", numeric: false },
+    { key: "events", label: "list.column.events", numeric: true },
+    { key: "years", label: "list.column.years", numeric: false },
   ],
 };
 
@@ -151,6 +159,10 @@ export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Ce
       gap: false,
     };
   }
+  if (kind === "places") {
+    const place = row as PlaceRow;
+    return { texts: [place.name, String(place.events), yearsText(place)], gap: false };
+  }
   const source = row as SourceRow;
   return {
     texts: [
@@ -173,8 +185,6 @@ export function collatorFor(language: Language): Intl.Collator {
   }
   return collator;
 }
-
-type SortValue = number | string[] | undefined;
 
 const text = (value: string | undefined): SortValue => (value ? [value] : undefined);
 
@@ -224,38 +234,8 @@ function sortValue(kind: ListKind, by: SortKey, row: ListRow, index: GenealogyIn
   }
 }
 
-function compareValues(a: Exclude<SortValue, undefined>, b: Exclude<SortValue, undefined>, collator: Intl.Collator): number {
-  if (typeof a === "number" && typeof b === "number") {
-    return a - b;
-  }
-  const left = a as string[];
-  const right = b as string[];
-  for (let at = 0; at < Math.max(left.length, right.length); at += 1) {
-    const order = collator.compare(left[at] ?? "", right[at] ?? "");
-    if (order !== 0) {
-      return order;
-    }
-  }
-  return 0;
-}
-
-/** Ties keep the file's order in both directions, and a missing value comes last in both. */
 function sorted(kind: ListKind, rows: ListRow[], sort: ListSort, index: GenealogyIndex, collator: Intl.Collator): ListRow[] {
-  const values = rows.map((row) => sortValue(kind, sort.by, row, index));
-  const sign = sort.dir === "asc" ? 1 : -1;
-  const order = rows.map((_, at) => at);
-  order.sort((one, other) => {
-    const a = values[one];
-    const b = values[other];
-    if (a === undefined || b === undefined) {
-      if (a === b) {
-        return one - other;
-      }
-      return a === undefined ? 1 : -1;
-    }
-    return sign * compareValues(a, b, collator) || one - other;
-  });
-  return order.map((at) => rows[at]);
+  return orderRows(rows, rows.map((row) => sortValue(kind, sort.by, row, index)), sort.dir, collator);
 }
 
 export interface ListQuery {
@@ -265,6 +245,9 @@ export interface ListQuery {
 }
 
 export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
+  if (kind === "places") {
+    return placeRows(index, { query, sort }, collator);
+  }
   const rows: ListRow[] =
     kind === "people" ? peopleShown(index, query) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);
   return sort ? sorted(kind, rows, sort, index, collator) : rows;
@@ -310,7 +293,10 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   if (index.family(xref)) {
     return "families";
   }
-  return index.source(xref) ? "sources" : null;
+  if (index.source(xref)) {
+    return "sources";
+  }
+  return placeAt(index, xref) ? "places" : null;
 }
 
 export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>

@@ -1,5 +1,7 @@
 import { plural, t } from "../i18n";
+import { linkButton } from "./dom";
 import { yearText } from "./labels";
+import { placeId } from "./placeRows";
 import type { PageHost } from "./personPage";
 import type { PlaceEntry, Timeline, TimelineEntry } from "./timeline";
 
@@ -44,7 +46,7 @@ export function renderTimeline(parent: HTMLElement, timeline: Timeline, host: Pa
   }
 }
 
-export function renderPlaces(parent: HTMLElement, places: PlaceEntry[]): void {
+export function renderPlaces(parent: HTMLElement, places: PlaceEntry[], host: PageHost): void {
   const list = parent.createDiv({ cls: "gedcom-desk-places" });
   if (places.length === 0) {
     list.createDiv({ cls: "gedcom-desk-none", text: t("places.empty") });
@@ -52,7 +54,7 @@ export function renderPlaces(parent: HTMLElement, places: PlaceEntry[]): void {
   for (const place of places) {
     const row = list.createDiv({ cls: "gedcom-desk-place" });
     const text = row.createDiv({ cls: "gedcom-desk-place-text" });
-    text.createDiv({ cls: "gedcom-desk-place-name", text: place.place });
+    linkButton(text, place.place, () => host.openRecord(placeId(place.place))).addClass("gedcom-desk-place-name");
     text.createDiv({ cls: "gedcom-desk-place-events", text: place.events.join(" · ") });
     row.createDiv({ cls: "gedcom-desk-place-count", text: plural("places.count", place.events.length) });
   }

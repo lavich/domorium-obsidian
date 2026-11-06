@@ -19,8 +19,8 @@ adapted per editor.
 ## Features
 
 - An optional genealogy interface, off until you turn it on: a graph and a
-  timeline of the whole file, a sortable list of its people, families and
-  sources, and a record card in the right sidebar that shows the selected person, family, source or media
+  timeline of the whole file, a sortable list of its people, families,
+  sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
   record with their facts, names, family, timeline, places and what each fact
   rests on
 - Context-aware GEDCOM tag autocomplete
@@ -71,16 +71,17 @@ the search of the mode the tab is in: the editor's panel in Source, the search
 over the board in Graph and Timeline, and the filter field in List;
 **Replace** stays in Source.
 
-In **List** mode the tab shows the file's people, families or sources as a
+In **List** mode the tab shows the file's people, families, sources or places as a
 table, switched by the buttons at its top. People show name, years, place and
 how many sources the record cites, with a mark where it cites none; families
 show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
-them. A click on a column header sorts by it, a second click reverses the order
+them; places lists each place the file names once, however it is spelt in case or
+spacing, with its number of events and their years. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter
-or Space on it, selects that record; the row of the selected record is marked
+or Space on it, selects that record, and on a place shows its card with its events; the row of the selected record is marked
 and brought into view when it was selected elsewhere. The arrow keys, Home,
 End and the page keys move through the rows. A file of twenty thousand people
 draws only the rows in view. On a phone, and in a tab narrower than

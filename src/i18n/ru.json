@@ -301,6 +301,7 @@
   "card.empty": "В файле нечего показывать.",
   "desk.timeline": "Хронология",
   "desk.places": "Места",
+  "desk.placeEvents": "События",
   "card.announce": "Показано: {name}",
   "mode.list": "Список",
   "command.showList": "Показать как список",
@@ -309,6 +310,7 @@
   "list.people": "Люди",
   "list.families": "Семьи",
   "list.sources": "Источники",
+  "list.places": "Места",
   "list.column.name": "Имя",
   "list.column.years": "Годы",
   "list.column.place": "Место",
@@ -320,6 +322,7 @@
   "list.column.author": "Автор",
   "list.column.repository": "Хранилище",
   "list.column.citedBy": "Цитируют",
+  "list.column.events": "События",
   "list.count.people": {
     "one": "{count} человек",
     "few": "{count} человека",
@@ -337,6 +340,12 @@
     "few": "{count} источника",
     "many": "{count} источников",
     "other": "{count} источника"
+  },
+  "list.count.places": {
+    "one": "{count} место",
+    "few": "{count} места",
+    "many": "{count} мест",
+    "other": "{count} места"
   },
   "list.countOf.people": {
     "one": "{shown} из {count} человека",
@@ -356,19 +365,29 @@
     "many": "{shown} из {count} источников",
     "other": "{shown} из {count} источника"
   },
+  "list.countOf.places": {
+    "one": "{shown} из {count} места",
+    "few": "{shown} из {count} мест",
+    "many": "{shown} из {count} мест",
+    "other": "{shown} из {count} места"
+  },
   "list.search.people": "Имя, год, место…",
   "list.search.families": "Имена, год, место…",
   "list.search.sources": "Название, автор, хранилище…",
+  "list.search.places": "Название места…",
   "list.nothing.people": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.families": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.sources": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям, авторам и хранилищам.",
+  "list.nothing.places": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям мест.",
   "list.none.people": "В файле нет людей.",
   "list.none.families": "В файле нет семей.",
   "list.none.sources": "В файле нет источников.",
+  "list.none.places": "В файле нет мест.",
   "list.sortBy": "Сортировать по",
   "list.sortAscending": "По возрастанию",
   "list.sortDescending": "По убыванию",
   "list.fileOrder": "Порядок файла",
+  "list.alphabetical": "По алфавиту",
   "list.gapMark": "Ни одного источника",
   "list.label": "Записи файла",
   "list.compact.sources": {
@@ -383,5 +402,11 @@
     "many": "{count} детей",
     "other": "{count} ребёнка"
   },
-  "list.compact.citedBy": "Цитируют: {count}"
+  "list.compact.citedBy": "Цитируют: {count}",
+  "list.compact.events": {
+    "one": "{count} событие",
+    "few": "{count} события",
+    "many": "{count} событий",
+    "other": "{count} события"
+  }
 }

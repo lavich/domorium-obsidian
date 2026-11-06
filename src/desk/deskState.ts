@@ -9,11 +9,12 @@ import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
 import { familyFactByKey } from "./familyPage";
 import { readListState, type ListState } from "./listRows";
+import { placeAt } from "./placeRows";
 import { factByKey, type FactKey } from "./personPage";
 
 export type { DeskMode };
 
-export type PageKind = "person" | "family" | "source" | "media";
+export type PageKind = "person" | "family" | "source" | "media" | "place";
 
 export type ViewKind = "graph" | "timeline" | "list";
 
@@ -79,7 +80,10 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   if (index.source(xref)) {
     return "source";
   }
-  return index.media(xref) ? "media" : null;
+  if (index.media(xref)) {
+    return "media";
+  }
+  return placeAt(index, xref) ? "place" : null;
 }
 
 export type Origin = "view" | "card" | "link" | "history" | "cursor";
