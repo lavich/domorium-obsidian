@@ -82,8 +82,8 @@ families, an occupation or an award with its text, with its record, date and pla
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter
-or Space on it, selects that record, and on a place shows its card with its events; on an event it selects the person or
-family and shows that event in its card, with its sources. The row of the selected record is marked
+or Space on it, selects that record, and on a place shows its card with its events; on an event shows its card, with
+its record, date, place and sources. The row of the selected record is marked
 and brought into view when it was selected elsewhere. The arrow keys, Home,
 End and the page keys move through the rows. A file of twenty thousand people
 draws only the rows in view. On a phone, and in a tab narrower than

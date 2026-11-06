@@ -41,7 +41,6 @@ let parent: HTMLElement;
 let coarse = false;
 let host: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
-  selectEvent: ReturnType<typeof vi.fn<ListHost["selectEvent"]>>;
   changed: ReturnType<typeof vi.fn<ListHost["changed"]>>;
   scrolled: ReturnType<typeof vi.fn<ListHost["scrolled"]>>;
   setIcon: ReturnType<typeof vi.fn<ListHost["setIcon"]>>;
@@ -56,7 +55,6 @@ beforeEach(() => {
   document.body.replaceChildren(parent);
   host = {
     select: vi.fn(),
-    selectEvent: vi.fn(),
     changed: vi.fn(),
     scrolled: vi.fn(),
     setIcon: vi.fn(),
@@ -904,7 +902,8 @@ describe("the places", () => {
 describe("the events", () => {
   const withEvents = indexOf(curieWithEvents());
   const open = (state = {}, source = index) => board({ kind: "events", ...state }, source);
-  const eventRow = (xref: string, fact: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === `${xref}|${fact}`);
+  const id = (owner: string, fact: string): string => `event:${owner}:${fact}`;
+  const eventRow = (owner: string, fact: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === id(owner, fact));
   const marked = (): string[] => rows().filter((one) => one.getAttribute("aria-selected") === "true").map((one) => one.dataset.key ?? "");
   const column = (at: number): (string | undefined)[] => rows().map((one) => cell(one, at));
 
@@ -950,7 +949,7 @@ describe("the events", () => {
     expect(text(".gedcom-list-none")).toBe("The file holds no events.");
   });
 
-  it("sorts by the first year of the date and puts the undated last", () => {
+  it("sorts by the first year of the date", () => {
     open();
 
     click(button(".gedcom-list-sort", "Date"));
@@ -972,20 +971,13 @@ describe("the events", () => {
     expect(host.changed).toHaveBeenLastCalledWith({ kind: "events" });
   });
 
-  it("selects the record and the event of a clicked row, and marks only that row", () => {
+  it("selects the event of a clicked row under its id, and marks only that row", () => {
     open();
 
     click(eventRow("@I1@", "p:0"));
 
-    expect(host.selectEvent).toHaveBeenCalledWith("@I1@", "p:0");
-    expect(host.select).not.toHaveBeenCalled();
-    expect(marked()).toEqual(["@I1@|p:0"]);
-  });
-
-  it("keeps the record of a row in data-xref", () => {
-    open();
-
-    expect(eventRow("@I1@", "p:0")?.dataset.xref).toBe("@I1@");
+    expect(host.select).toHaveBeenCalledWith(id("@I1@", "p:0"));
+    expect(marked()).toEqual([id("@I1@", "p:0")]);
   });
 
   it("selects the focused row with Enter", () => {
@@ -994,25 +986,17 @@ describe("the events", () => {
     press("ArrowDown");
     press("Enter");
 
-    expect(host.selectEvent).toHaveBeenCalledTimes(1);
+    expect(host.select).toHaveBeenCalledWith(id("@I1@", "p:1"));
     expect(marked()).toHaveLength(1);
   });
 
-  it("marks the event a view selected, and no row for a record without an event", () => {
+  it("marks the event selected elsewhere, and no row for a record", () => {
     const made = open();
 
-    made.select("@I1@", true, "p:1");
-    expect(marked()).toEqual(["@I1@|p:1"]);
+    made.select(id("@I1@", "p:1"), true);
+    expect(marked()).toEqual([id("@I1@", "p:1")]);
 
     made.select("@I1@", true);
-    expect(marked()).toEqual([]);
-  });
-
-  it("marks no row for an event of a family pressed in a person's card", () => {
-    const made = open();
-
-    made.select("@I1@", true, "u:0:0");
-
     expect(marked()).toEqual([]);
   });
 
@@ -1026,26 +1010,38 @@ describe("the events", () => {
     expect(marked()).toEqual([]);
   });
 
-  it("switches to the places when a place is selected elsewhere", () => {
+  it("switches to the places when a place is selected elsewhere, and back to the events for an event", () => {
     const made = open({}, withEvents);
 
     made.select("place:paris, france", true);
-
     expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
+
+    made.select(id("@I1@", "p:0"), true);
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
+    expect(marked()).toEqual([id("@I1@", "p:0")]);
+  });
+
+  it("switches from the people to the events for an event selected elsewhere", () => {
+    const made = board({}, index);
+
+    made.select(id("@I1@", "p:0"), true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
+    expect(marked()).toEqual([id("@I1@", "p:0")]);
   });
 
   describe("bringing an event into view", () => {
     const large = indexOf(generated(500));
-    const key = (made: ListBoard, row: string): number => (made as unknown as { positions: Map<string, number> }).positions.get(row) as number;
+    const position = (made: ListBoard, key: string): number => (made as unknown as { positions: Map<string, number> }).positions.get(key) as number;
 
-    it("scrolls to the event pressed in the card, and marks it", () => {
+    it("scrolls to an event selected from outside, and marks it", () => {
       const made = open({}, large);
       scroller().scrollTop = 0;
 
-      made.select("@I400@", true, "p:0");
+      made.select(id("@I400@", "p:0"), true);
 
-      expect(marked()).toEqual(["@I400@|p:0"]);
-      const top = key(made, "@I400@|p:0") * box.wide - scroller().scrollTop;
+      expect(marked()).toEqual([id("@I400@", "p:0")]);
+      const top = position(made, id("@I400@", "p:0")) * box.wide - scroller().scrollTop;
       expect(top).toBeGreaterThanOrEqual(0);
       expect(top).toBeLessThan(box.height);
     });
@@ -1055,17 +1051,17 @@ describe("the events", () => {
       type("zzzzzz");
       expect(rows()).toHaveLength(0);
 
-      made.select("@I400@", true, "p:0");
+      made.select(id("@I400@", "p:0"), true);
 
       expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
-      expect(marked()).toEqual(["@I400@|p:0"]);
+      expect(marked()).toEqual([id("@I400@", "p:0")]);
     });
 
     it("leaves the scroll alone for a selection made from the list", () => {
       const made = open({}, large);
       scroller().scrollTop = 90;
 
-      made.select("@I400@", false, "p:0");
+      made.select(id("@I400@", "p:0"), false);
 
       expect(scroller().scrollTop).toBe(90);
     });

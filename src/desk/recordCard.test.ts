@@ -171,6 +171,62 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(calls.select).toHaveBeenCalledTimes(1);
   });
 
+  it("shows an event with its record, date, place and sources, each a link through the tab", () => {
+    state.record = "event:@I1@:p:0";
+    draw();
+    const links = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-event-detail .gedcom-desk-link")];
+    links[0]?.click();
+    links[1]?.click();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
+    expect(texts(".gedcom-card-head-name")).toEqual(["Birth"]);
+    expect(texts(".gedcom-desk-event-value")).toEqual(["Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
+    expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
+  });
+
+  it("opens the lines of an event through the tab", () => {
+    const show = vi.fn<(range: unknown) => void>();
+    tab.showInSource = (range) => {
+      show(range);
+    };
+    state.record = "event:@I1@:p:0";
+    draw();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")].find((node) => node.textContent === "Show in source")?.click();
+
+    expect(show).toHaveBeenCalledWith(index.person("@I1@")?.events[0]?.range);
+  });
+
+  it("says an event with no date, place or source states none", () => {
+    index = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 OCCU Cooper\n0 TRLR");
+    state.record = "event:@I1@:p:0";
+    draw();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Occupation · Cooper"]);
+    expect(texts(".gedcom-desk-none")).toEqual(["This event states no date, place or source."]);
+  });
+
+  it("links a cited source record, and shows an inline citation as text", () => {
+    index = indexOf(
+      ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S1@", "2 SOUR An inline note", "0 @S1@ SOUR", "1 TITL Parish registers", "0 TRLR"].join("\n"),
+    );
+    state.record = "event:@I1@:p:0";
+    draw();
+    container.querySelector<HTMLElement>(".gedcom-desk-event-sources .gedcom-desk-link")?.click();
+
+    expect(texts(".gedcom-desk-event-sources > *")).toEqual(["Parish registers", "An inline note"]);
+    expect(calls.select).toHaveBeenCalledWith("@S1@");
+  });
+
+  it("speaks Russian on an event's card", () => {
+    setLanguage("ru");
+    state.record = "event:@I1@:p:0";
+    draw();
+
+    expect(texts(".gedcom-desk-title")).toEqual(["Рождение"]);
+    expect(texts(".gedcom-desk-event-label")).toEqual(["Запись", "Дата", "Место"]);
+  });
+
   it("selects a relative through the tab", () => {
     draw();
     [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]

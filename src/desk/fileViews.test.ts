@@ -24,7 +24,6 @@ function boxed(element: HTMLElement): boolean {
 let parent: HTMLElement;
 let host: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
-  selectEvent: ReturnType<typeof vi.fn<FileViewsHost["selectEvent"]>>;
   showInSource: ReturnType<typeof vi.fn<(range: Range) => void>>;
   portrait: ReturnType<typeof vi.fn<FileViewsHost["portrait"]>>;
   changed: ReturnType<typeof vi.fn<() => void>>;
@@ -71,7 +70,6 @@ beforeEach(() => {
   document.body.replaceChildren(parent);
   host = {
     select: vi.fn(),
-    selectEvent: vi.fn(),
     showInSource: vi.fn(),
     portrait: vi.fn(() => null),
     changed: vi.fn(),
@@ -633,37 +631,6 @@ describe("the list of a tab", () => {
 
     expect(host.select).toHaveBeenNthCalledWith(1, "@F3@");
     expect(host.select).toHaveBeenNthCalledWith(2, "@S2@");
-  });
-
-  it("selects the record and the event of an event row through the host", () => {
-    const tab = views();
-    tab.show("list", index, { list: { kind: "events" } });
-    row("@I1@")?.click();
-
-    expect(host.selectEvent).toHaveBeenCalledWith("@I1@", "p:0");
-    expect(host.select).not.toHaveBeenCalled();
-  });
-
-  it("marks the event of a selection made while the list was hidden, on the next show", () => {
-    const tab = views();
-    tab.show("list", index, { list: { kind: "events" } });
-    tab.show("graph", index, {});
-    tab.select("list", "@I1@", false, "p:1");
-
-    tab.show("list", index, tab.memory());
-
-    expect(all(".gedcom-list-row.is-selected").map((one) => (one as HTMLElement).dataset.key)).toEqual(["@I1@|p:1"]);
-  });
-
-  it("marks the event at once where the list is in sight, and no row once the fact is gone", () => {
-    const tab = views();
-    tab.show("list", index, { list: { kind: "events" } });
-
-    tab.select("list", "@I1@", false, "p:0");
-    expect(all(".gedcom-list-row.is-selected")).toHaveLength(1);
-
-    tab.select("list", "@I1@", false);
-    expect(all(".gedcom-list-row.is-selected")).toHaveLength(0);
   });
 
   it("keeps the kind a selection from outside switched through a later show with the memory the tab holds", () => {

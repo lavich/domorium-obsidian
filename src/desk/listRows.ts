@@ -3,7 +3,7 @@ import { UNTITLED } from "../genealogy";
 import type { Language, MessageKey } from "../i18n";
 import { familySortKey, familyTitle, personName, personSortKey, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
-import { eventCells, eventRows, type EventRow } from "./eventRows";
+import { eventAt, eventCells, eventRows, type EventRow } from "./eventRows";
 import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
 export type ListKind = "people" | "families" | "sources" | "places" | "events";
@@ -307,7 +307,10 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   if (index.source(xref)) {
     return "sources";
   }
-  return placeAt(index, xref) ? "places" : null;
+  if (placeAt(index, xref)) {
+    return "places";
+  }
+  return eventAt(index, xref) ? "events" : null;
 }
 
 export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>

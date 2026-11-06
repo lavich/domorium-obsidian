@@ -9,6 +9,8 @@ import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
 import type { NoteHit } from "./noteLinks";
+import { eventAt, eventTitle } from "./eventRows";
+import { renderEventPage } from "./eventPage";
 import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type FactKey, type PageHost } from "./personPage";
@@ -51,7 +53,8 @@ function recordName(index: GenealogyIndex, xref: string): string {
     return sourceTitle(source.title);
   }
   const media = index.media(xref);
-  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? t("desk.media");
+  const event = eventAt(index, xref);
+  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? (event ? eventTitle(event.event) : t("desk.media"));
 }
 
 export function renderRecordCard(
@@ -116,7 +119,7 @@ export function renderRecordCard(
 }
 
 function pageKind(index: GenealogyIndex, xref: string): boolean {
-  return Boolean(index.person(xref) ?? index.family(xref) ?? index.source(xref) ?? index.media(xref) ?? placeAt(index, xref));
+  return Boolean(index.person(xref) ?? index.family(xref) ?? index.source(xref) ?? index.media(xref) ?? placeAt(index, xref) ?? eventAt(index, xref));
 }
 
 function makeRoot(container: HTMLElement): HTMLElement {
@@ -173,6 +176,7 @@ function drawRecord(
   const source = person || family ? undefined : index.source(record);
   const media = person || family || source ? undefined : index.media(record);
   const place = person || family || source || media ? undefined : placeAt(index, record);
+  const event = person || family || source || media || place ? undefined : eventAt(index, record);
   if (person) {
     renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media) }, host);
   } else if (family) {
@@ -190,6 +194,9 @@ function drawRecord(
     );
   } else if (place) {
     renderPlacePage(body, place, index, host);
+    return;
+  } else if (event) {
+    renderEventPage(body, event, index, host);
     return;
   }
   renderEvidenceSection(

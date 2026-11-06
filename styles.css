@@ -1305,6 +1305,27 @@ button.gedcom-desk-moment-what:disabled {
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
+.gedcom-desk-event-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-3);
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-desk-event-label {
+  min-width: 5em;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-desk-event-sources {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--size-4-1);
+}
+
 .gedcom-desk-place-when,
 .gedcom-desk-place-events,
 .gedcom-desk-place-count {

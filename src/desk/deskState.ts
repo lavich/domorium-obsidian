@@ -9,12 +9,13 @@ import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
 import { familyFactByKey } from "./familyPage";
 import { readListState, type ListState } from "./listRows";
+import { eventAt } from "./eventRows";
 import { placeAt } from "./placeRows";
 import { factByKey, type FactKey } from "./personPage";
 
 export type { DeskMode };
 
-export type PageKind = "person" | "family" | "source" | "media" | "place";
+export type PageKind = "person" | "family" | "source" | "media" | "place" | "event";
 
 export type ViewKind = "graph" | "timeline" | "list";
 
@@ -83,7 +84,10 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   if (index.media(xref)) {
     return "media";
   }
-  return placeAt(index, xref) ? "place" : null;
+  if (placeAt(index, xref)) {
+    return "place";
+  }
+  return eventAt(index, xref) ? "event" : null;
 }
 
 export type Origin = "view" | "card" | "link" | "history" | "cursor";
@@ -179,7 +183,7 @@ export function shownRange(
   if (family) {
     return familyFactByKey(family, fact)?.event.range ?? family.range;
   }
-  return index.source(record)?.range ?? index.media(record)?.range ?? null;
+  return index.source(record)?.range ?? index.media(record)?.range ?? eventAt(index, record)?.event.range ?? null;
 }
 
 /** Leaves a cursor already inside the lines alone, so switching back and forth does not move it. */

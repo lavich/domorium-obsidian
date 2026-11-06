@@ -7,12 +7,39 @@ import type { ListSort } from "./listRows";
 import type { FactKey } from "./personPage";
 
 export interface EventRow {
-  xref: string;
-  fact: FactKey;
+  xref?: undefined;
   key: string;
+  owner: string;
+  fact: FactKey;
   event: PersonEvent;
   person?: PersonRow;
   family?: FamilyRow;
+}
+
+const EVENT_PREFIX = "event:";
+
+export const eventId = (owner: string, fact: FactKey): string => `${EVENT_PREFIX}${owner}:${fact}`;
+
+export interface EventTarget {
+  owner: string;
+  fact: FactKey;
+  event: PersonEvent;
+}
+
+export function eventAt(index: GenealogyIndex, id: string): EventTarget | undefined {
+  if (!id.startsWith(EVENT_PREFIX)) {
+    return undefined;
+  }
+  const rest = id.slice(EVENT_PREFIX.length);
+  const colon = rest.indexOf(":");
+  const found = /^([pf]):(\d+)$/u.exec(rest.slice(colon + 1));
+  if (colon < 0 || found === null) {
+    return undefined;
+  }
+  const owner = rest.slice(0, colon);
+  const events = found[1] === "p" ? index.person(owner)?.events : index.family(owner)?.events;
+  const event = events?.[Number(found[2])];
+  return event === undefined ? undefined : { owner, fact: `${found[1]}:${found[2]}`, event };
 }
 
 const LINE_WIDTH = 100_000;
@@ -42,7 +69,7 @@ export function eventsOf(index: GenealogyIndex): EventRow[] {
       seen.add(xref);
       events.forEach((event, at) => {
         const fact = `${prefix}:${at}`;
-        found.push({ xref, fact, key: `${xref}|${fact}`, event, ...record });
+        found.push({ owner: xref, fact, key: eventId(xref, fact), event, ...record });
       });
     };
     for (const row of index.people) {

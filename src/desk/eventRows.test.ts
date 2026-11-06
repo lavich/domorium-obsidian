@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
-import { eventCells, eventRows, eventsOf, eventTitle, type EventRow } from "./eventRows";
+import { eventAt, eventCells, eventId, eventRows, eventsOf, eventTitle, type EventRow } from "./eventRows";
 import { collatorFor, listRows, type ListSort } from "./listRows";
 
 afterEach(resetLanguage);
@@ -28,14 +28,14 @@ describe("the rows of the events kind", () => {
   });
 
   it("keys a person's event p:<n> and a family's f:<n>, with the record's xref", () => {
-    const row = eventsOf(index).find((one) => one.xref === "@I1@");
+    const row = eventsOf(index).find((one) => one.owner === "@I1@");
 
-    expect(row).toMatchObject({ fact: "p:0", key: "@I1@|p:0" });
-    expect(eventsOf(index).find((one) => one.fact.startsWith("f:"))?.xref.startsWith("@F")).toBe(true);
+    expect(row).toMatchObject({ fact: "p:0", key: "event:@I1@:p:0" });
+    expect(eventsOf(index).find((one) => one.fact.startsWith("f:"))?.owner.startsWith("@F")).toBe(true);
   });
 
   it("reads a birth as the card names it, with its record, date and place", () => {
-    const birth = eventsOf(index).find((row) => row.key === "@I1@|p:0") as EventRow;
+    const birth = eventsOf(index).find((row) => row.key === "event:@I1@:p:0") as EventRow;
 
     expect(eventCells(birth)).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
   });
@@ -81,7 +81,25 @@ describe("the rows of the events kind", () => {
   it("lists the events of a record declared twice once", () => {
     const twice = doc("0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "0 @I1@ INDI", "1 NAME C /D/", "1 DEAT");
 
-    expect(keys(eventsOf(twice))).toEqual(["@I1@|p:0"]);
+    expect(keys(eventsOf(twice))).toEqual(["event:@I1@:p:0"]);
+  });
+
+  it("finds the event an id names in O(1) and no other", () => {
+    expect(eventAt(index, eventId("@I1@", "p:0"))?.event.tag).toBe("BIRT");
+    expect(eventAt(index, "event:@I1@:p:9999")).toBeUndefined();
+    expect(eventAt(index, "event:@I1@:f:0")).toBeUndefined();
+    expect(eventAt(index, "event:@F3@:f:0")?.owner).toBe("@F3@");
+    expect(eventAt(index, "event:@I1@")).toBeUndefined();
+    expect(eventAt(index, "event:@I1@:u:0:0")).toBeUndefined();
+    expect(eventAt(index, "event:nobody:p:0")).toBeUndefined();
+    expect(eventAt(index, "@I1@")).toBeUndefined();
+    expect(eventAt(index, "place:paris, france")).toBeUndefined();
+  });
+
+  it("names every row by an id eventAt reads back", () => {
+    for (const row of eventsOf(index)) {
+      expect(eventAt(index, row.key)).toMatchObject({ owner: row.owner, fact: row.fact });
+    }
   });
 
   it("is built once for one reading of the file", () => {
@@ -100,7 +118,7 @@ describe("searching the events", () => {
   });
 
   it("narrows by the record", () => {
-    expect(new Set(rowsOf("pierre curie").map((row) => row.xref))).toEqual(new Set(["@I2@", ...rowsOf("pierre curie").filter((row) => row.family).map((row) => row.xref)]));
+    expect(rowsOf("pierre curie").some((row) => row.owner === "@I2@")).toBe(true);
   });
 
   it("narrows by the date and by the place", () => {
@@ -158,7 +176,7 @@ describe("ordering the events", () => {
       "0 @I3@ INDI", "1 BIRT", "2 DATE 1902",
     );
 
-    expect(rowsOf("", { by: "record", dir: "asc" }, named).map((row) => row.xref)).toEqual(["@I1@", "@I2@", "@I3@"]);
-    expect(rowsOf("", { by: "record", dir: "desc" }, named).map((row) => row.xref)).toEqual(["@I2@", "@I1@", "@I3@"]);
+    expect(rowsOf("", { by: "record", dir: "asc" }, named).map((row) => row.owner)).toEqual(["@I1@", "@I2@", "@I3@"]);
+    expect(rowsOf("", { by: "record", dir: "desc" }, named).map((row) => row.owner)).toEqual(["@I2@", "@I1@", "@I3@"]);
   });
 });

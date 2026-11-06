@@ -12,6 +12,7 @@ import {
   nextSort,
   peopleShown,
   readListState,
+  recordKind,
   sourcesCited,
   type ListKind,
   type ListSort,
@@ -243,5 +244,11 @@ describe("which selection the list can show", () => {
   it("is a person, a family or a source, and nothing for a media record, a note or nobody", () => {
     expect(["@I1@", "@F3@", "@S2@"].map((xref) => listSelection(index, xref))).toEqual(["@I1@", "@F3@", "@S2@"]);
     expect(["@O5@", "@N1@", null].map((xref) => listSelection(index, xref))).toEqual([null, null, null]);
+  });
+
+  it("is an event the file names, which the list shows among the events", () => {
+    expect(recordKind(index, "event:@I1@:p:0")).toBe("events");
+    expect(listSelection(index, "event:@I1@:p:0")).toBe("event:@I1@:p:0");
+    expect(listSelection(index, "event:@I1@:p:999")).toBeNull();
   });
 });

@@ -7,7 +7,6 @@ import { FileGraphBoard, type GraphState } from "./fileGraphView";
 import { FileTimelineBoard, type TimelineState } from "./fileTimelineView";
 import { ListBoard } from "./fileList";
 import type { ListState } from "./listRows";
-import type { FactKey } from "./personPage";
 import type { PortraitContent } from "./graphCanvas";
 
 export type { ViewKind } from "./deskState";
@@ -21,8 +20,6 @@ export interface ViewMemory {
 export interface FileViewsHost {
   /** A person, a family or a source. */
   select(xref: string): void;
-  /** A person or a family, with one of its events shown. */
-  selectEvent(xref: string, fact: FactKey): void;
   showInSource(range: Range): void;
   portrait(xref: string): PortraitContent | null;
   /** The memory changed, so the layout wants saving. */
@@ -43,7 +40,7 @@ export class FileViews {
   private list: ListBoard | null = null;
   private listScroll: number | undefined;
   private kept: ViewMemory = {};
-  private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean; fact: FactKey | null }>> = {};
+  private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean }>> = {};
   private parked: Record<ViewKind, boolean> = { graph: false, timeline: false, list: false };
   private shownKind: ViewKind | null = null;
 
@@ -73,7 +70,7 @@ export class FileViews {
     const wanted = this.pending[kind];
     if (wanted !== undefined && (restore || this.displayed())) {
       delete this.pending[kind];
-      this.selectOn(kind, wanted.xref, wanted.reveal || (kind === "list" && restore), wanted.fact);
+      this.boardOf(kind)?.select(wanted.xref, wanted.reveal || (kind === "list" && restore));
     }
     if (JSON.stringify(this.kept[kind]) !== before) {
       this.host.changed();
@@ -81,7 +78,7 @@ export class FileViews {
   }
 
   /** Never fails and never needs a board: kept until one is drawn and shown, and moving only where a gesture that asked for it set it. */
-  select(kind: ViewKind, xref: string | null, reveal: boolean, fact: FactKey | null = null): void {
+  select(kind: ViewKind, xref: string | null, reveal: boolean): void {
     if (xref === null) {
       delete this.pending[kind];
       this.boardOf(kind)?.select(null, false);
@@ -89,20 +86,11 @@ export class FileViews {
     }
     if (this.shownKind === kind && this.displayed()) {
       delete this.pending[kind];
-      this.selectOn(kind, xref, reveal, fact);
+      this.boardOf(kind)?.select(xref, reveal);
       return;
     }
     const held = this.pending[kind];
-    this.pending[kind] = { xref, reveal: reveal || (held?.xref === xref && held.reveal), fact };
-  }
-
-  private selectOn(kind: ViewKind, xref: string, reveal: boolean, fact: FactKey | null): void {
-    const board = this.boardOf(kind);
-    if (board instanceof ListBoard) {
-      board.select(xref, reveal, fact);
-    } else {
-      board?.select(xref, reveal);
-    }
+    this.pending[kind] = { xref, reveal: reveal || (held?.xref === xref && held.reveal) };
   }
 
   /** Opens the search of a drawn board and focuses it, or only focuses it where it is open. */
@@ -270,7 +258,6 @@ export class FileViews {
   private makeList(): ListBoard {
     return new ListBoard(this.rootOf("list"), {
       select: (xref) => this.host.select(xref),
-      selectEvent: (xref, fact) => this.host.selectEvent(xref, fact),
       changed: (state) => {
         this.kept.list = state;
         this.host.changed();

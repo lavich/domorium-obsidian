@@ -148,9 +148,6 @@ export class GedcomView extends TextFileView implements CardTab {
       select: (xref) => {
         this.selectRecord(xref, "view");
       },
-      selectEvent: (xref, fact) => {
-        this.selectRecord(xref, "view", fact);
-      },
       showInSource: (range) => this.showInSource(range),
       portrait: (xref) => this.portrait(xref),
       changed: () => {
@@ -465,13 +462,13 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   /** The only way a record is selected: `origin` says where the gesture came from, and with it what the views, the editor and the card do. */
-  selectRecord(xref: string, origin: Origin, fact: FactKey | null = null): boolean {
+  selectRecord(xref: string, origin: Origin): boolean {
     if (!this.modes.select(xref, this.genealogy())) {
       return false;
     }
     this.followCursor.selected(origin);
     const rules = originRules(origin, Platform.isMobile);
-    this.selectedFact = fact;
+    this.selectedFact = null;
     if (rules.addsStep === "visit") {
       this.recordHistory.visit(xref);
     } else if (rules.addsStep === "follow") {
@@ -503,7 +500,6 @@ export class GedcomView extends TextFileView implements CardTab {
 
   selectFact(fact: FactKey | null): void {
     this.selectedFact = fact;
-    this.views.select("list", listSelection(this.genealogy(), this.modes.shownRecord()), false, fact);
     this.host.genealogyChanged(this);
   }
 
@@ -578,7 +574,7 @@ export class GedcomView extends TextFileView implements CardTab {
     const person = selected !== null && this.genealogy().person(selected) ? selected : null;
     this.views.select("graph", person, reveal);
     this.views.select("timeline", person, reveal);
-    this.views.select("list", listSelection(this.genealogy(), selected), reveal, this.selectedFact);
+    this.views.select("list", listSelection(this.genealogy(), selected), reveal);
   }
 
   followMove(move: Move, documentPath: string): Outcome {
@@ -763,7 +759,7 @@ export class GedcomView extends TextFileView implements CardTab {
         : selected !== null && this.genealogy().person(selected)
           ? selected
           : null;
-    this.views.select(mode, xref, reveal, mode === "list" ? this.selectedFact : null);
+    this.views.select(mode, xref, reveal);
   }
 
   private clearViewSelections(): void {

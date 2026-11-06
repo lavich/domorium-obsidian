@@ -137,6 +137,18 @@ describe("the selected record", () => {
     expect(modes.shownRecord()).toBeNull();
   });
 
+  it("ends when a text change removes the event it shows, and keeps it while the event stays", () => {
+    const modes = tab("graph");
+    const event = "event:@I1@:p:0";
+    const kept = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n1 BIRT\n2 DATE 1867\n0 TRLR\n");
+    const gone = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n0 TRLR\n");
+
+    expect(modes.select(event, kept)).toBe(true);
+    expect(modes.textChanged(kept).selectionCleared).toBe(false);
+    expect(modes.textChanged(gone).selectionCleared).toBe(true);
+    expect(modes.selected).toBeNull();
+  });
+
   it("ends when a text change leaves its record undeclared, and is reported", () => {
     const modes = tab("graph");
     modes.select("@I1@", index);
