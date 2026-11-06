@@ -1892,10 +1892,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-controls,
 .gedcom-ft-controls,
-.gedcom-map-controls,
 .gedcom-fg-find,
 .gedcom-ft-find,
-.gedcom-map-find,
 .gedcom-list-find {
   position: absolute;
   z-index: 1;
@@ -1913,10 +1911,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-controls button,
 .gedcom-ft-controls button,
-.gedcom-map-controls button,
 .gedcom-fg-find button,
 .gedcom-ft-find button,
-.gedcom-map-find button,
 
 
 .gedcom-list-find button {
@@ -1933,10 +1929,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-controls button:hover,
 .gedcom-ft-controls button:hover,
-.gedcom-map-controls button:hover,
 .gedcom-fg-find button:hover,
 .gedcom-ft-find button:hover,
-.gedcom-map-find button:hover,
 
 
 .gedcom-list-find button:hover {
@@ -1946,10 +1940,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-controls .svg-icon,
 .gedcom-ft-controls .svg-icon,
-.gedcom-map-controls .svg-icon,
 .gedcom-fg-find .svg-icon,
 .gedcom-ft-find .svg-icon,
-.gedcom-map-find .svg-icon,
 
 
 .gedcom-list-find .svg-icon {
@@ -1959,7 +1951,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find,
 .gedcom-ft-find,
-.gedcom-map-find,
 
 
 .gedcom-list-find {
@@ -1975,7 +1966,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find input.gedcom-fg-search,
 .gedcom-ft-find input.gedcom-ft-search,
-.gedcom-map-find input.gedcom-map-search,
 
 
 .gedcom-list-find input.gedcom-list-search {
@@ -1996,7 +1986,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find.is-open input.gedcom-fg-search,
 .gedcom-ft-find.is-open input.gedcom-ft-search,
-.gedcom-map-find.is-open input.gedcom-map-search,
 
 
 .gedcom-list-find.is-open input.gedcom-list-search {
@@ -2010,7 +1999,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-search::-webkit-search-cancel-button,
 .gedcom-ft-search::-webkit-search-cancel-button,
-.gedcom-map-search::-webkit-search-cancel-button,
 
 
 .gedcom-list-search::-webkit-search-cancel-button {
@@ -2020,7 +2008,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find:not(.is-open) :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
 .gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count),
-.gedcom-map-find:not(.is-open) :is(.gedcom-map-find-clear, .gedcom-map-find-prev, .gedcom-map-find-next, .gedcom-map-find-count),
 
 
 .gedcom-list-find:not(.is-open) :is(.gedcom-list-find-clear, .gedcom-list-find-prev, .gedcom-list-find-next, .gedcom-list-find-count) {
@@ -2029,7 +2016,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find,
 .gedcom-ft-find,
-.gedcom-map-find,
 
 
 .gedcom-list-find {
@@ -2042,7 +2028,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find-count,
 .gedcom-ft-find-count,
-.gedcom-map-find-count,
 
 
 .gedcom-list-find-count {
@@ -2056,7 +2041,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find button:disabled,
 .gedcom-ft-find button:disabled,
-.gedcom-map-find button:disabled,
 
 
 .gedcom-list-find button:disabled {
@@ -2112,7 +2096,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find,
 .gedcom-ft-find,
-.gedcom-map-find,
 
 
 .gedcom-list-find {
@@ -2122,7 +2105,6 @@ button.gedcom-fg-pop-open {
 
 .is-phone .gedcom-fg-find,
 .is-phone .gedcom-ft-find,
-.is-phone .gedcom-map-find,
 
 
 .is-phone .gedcom-list-find {
@@ -2131,7 +2113,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find button,
 .gedcom-ft-find button,
-.gedcom-map-find button,
 
 
 .gedcom-list-find button {
@@ -2148,7 +2129,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find .gedcom-fg-find-toggle,
 .gedcom-ft-find .gedcom-ft-find-toggle,
-.gedcom-map-find .gedcom-map-find-toggle,
 
 
 .gedcom-list-find .gedcom-list-find-toggle {
@@ -2163,7 +2143,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find.is-open .gedcom-fg-find-toggle,
 .gedcom-ft-find.is-open .gedcom-ft-find-toggle,
-.gedcom-map-find.is-open .gedcom-map-find-toggle,
 
 
 .gedcom-list-find.is-open .gedcom-list-find-toggle {
@@ -2180,8 +2159,6 @@ button.gedcom-fg-pop-open {
   .gedcom-ft-find input.gedcom-ft-search,
   .gedcom-fg-find .gedcom-fg-find-toggle,
   .gedcom-ft-find .gedcom-ft-find-toggle,
-  .gedcom-map-find input.gedcom-map-search,
-  .gedcom-map-find .gedcom-map-find-toggle,
 
   .gedcom-list-find input.gedcom-list-search,
 
@@ -2433,494 +2410,5 @@ button.gedcom-fg-pop-open {
   .gedcom-ft-name,
   .gedcom-ft-age {
     transition: none;
-  }
-}
-
-/* The map: a world outline in a plot, marks drawn over it in screen space. */
-.gedcom-map {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  color: var(--text-normal);
-}
-
-.is-mobile .gedcom-map {
-  padding-bottom: var(--navbar-height, 0px);
-}
-
-.gedcom-map-scope-row {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--size-2-2) var(--size-4-3);
-  padding: var(--size-4-2);
-  border-bottom: 1px solid var(--background-modifier-border);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-map-scope {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--size-2-2) var(--size-4-2);
-}
-
-.gedcom-map-scope-row button {
-  height: auto;
-  padding: var(--size-2-2) var(--size-2-3);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-map-counts {
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.gedcom-map-status {
-  color: var(--text-muted);
-}
-
-.gedcom-map-stage {
-  position: relative;
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  container-type: inline-size;
-}
-
-.gedcom-map-plot {
-  position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  background: var(--background-secondary);
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.gedcom-map-plot:focus-visible {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: -2px;
-}
-
-.gedcom-map-plot.is-dragging {
-  cursor: grabbing;
-}
-
-.gedcom-map-tiles {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-.gedcom-map-tile {
-  position: absolute;
-  max-width: none;
-  pointer-events: none;
-}
-
-.gedcom-map-tile.is-failed {
-  visibility: hidden;
-}
-
-.gedcom-map-svg {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.gedcom-map-land {
-  fill: var(--background-primary);
-  fill-rule: evenodd;
-  stroke: var(--background-modifier-border-hover);
-  stroke-width: 1px;
-  vector-effect: non-scaling-stroke;
-}
-
-.gedcom-map-plot.is-tiles .gedcom-map-land {
-  fill: none;
-  stroke: var(--text-muted);
-}
-
-.gedcom-map-marks,
-.gedcom-map-labels,
-.gedcom-map-route {
-  pointer-events: none;
-}
-
-.gedcom-map-disc {
-  fill: var(--color-orange);
-  stroke: var(--background-primary);
-  stroke-width: 1.5px;
-}
-
-.gedcom-map-mark.is-birth .gedcom-map-disc {
-  fill: var(--color-green);
-}
-
-.gedcom-map-mark.is-death .gedcom-map-disc {
-  fill: var(--text-normal);
-}
-
-.gedcom-map-mark.is-marriage .gedcom-map-disc {
-  fill: var(--interactive-accent);
-}
-
-.gedcom-map-mark.is-mixed .gedcom-map-disc {
-  fill: var(--text-muted);
-}
-
-.gedcom-map-mark.is-cluster .gedcom-map-disc {
-  fill: var(--background-primary);
-  stroke: var(--text-muted);
-  stroke-width: 3px;
-}
-
-.gedcom-map-ring {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 2px;
-}
-
-.gedcom-map-mark.is-highlighted .gedcom-map-ring {
-  stroke: var(--interactive-accent);
-  stroke-width: 2.5px;
-}
-
-.gedcom-map-mark.is-current .gedcom-map-ring {
-  stroke: var(--interactive-accent);
-  stroke-dasharray: 4 3;
-  stroke-width: 3px;
-}
-
-.gedcom-map-mark.is-focused .gedcom-map-ring {
-  stroke: var(--text-normal);
-  stroke-width: 3.5px;
-}
-
-.gedcom-map-mark.is-dimmed {
-  opacity: 0.3;
-}
-
-.gedcom-map-count {
-  fill: var(--background-primary);
-  font-size: 11px;
-  font-weight: var(--font-semibold);
-  text-anchor: middle;
-  dominant-baseline: central;
-}
-
-.gedcom-map-mark.is-cluster .gedcom-map-count {
-  fill: var(--text-normal);
-}
-
-.gedcom-map-svg text.gedcom-map-label {
-  fill: var(--text-normal);
-  font-size: 12px;
-  paint-order: stroke;
-  stroke: var(--background-primary);
-  stroke-width: 3px;
-  stroke-linejoin: round;
-}
-
-.gedcom-map-svg text.gedcom-map-label.is-left {
-  text-anchor: end;
-}
-
-.gedcom-map-svg text.gedcom-map-probe {
-  visibility: hidden;
-}
-
-.gedcom-map-route-line {
-  fill: none;
-  stroke: var(--interactive-accent);
-  stroke-width: 2px;
-  stroke-linejoin: round;
-}
-
-.gedcom-map-arrow {
-  fill: var(--interactive-accent);
-}
-
-.gedcom-map-svg text.gedcom-map-number {
-  fill: var(--interactive-accent);
-  font-size: 12px;
-  font-weight: var(--font-bold);
-  paint-order: stroke;
-  stroke: var(--background-primary);
-  stroke-width: 3px;
-}
-
-.gedcom-map-years {
-  position: absolute;
-  z-index: 1;
-  inset-inline-start: var(--size-4-2);
-  bottom: calc(var(--size-4-2) + env(safe-area-inset-bottom, 0px));
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2-2);
-  padding: var(--size-2-1);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-primary);
-  box-shadow: var(--shadow-s);
-}
-
-.is-mobile .gedcom-map-years,
-.is-mobile .gedcom-map-controls {
-  bottom: calc(var(--size-4-2) + env(safe-area-inset-bottom, 0px));
-}
-
-.gedcom-map-years-chip {
-  height: auto;
-  min-height: 28px;
-  padding: var(--size-2-2) var(--size-2-3);
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  white-space: nowrap;
-}
-
-.gedcom-map-years-panel {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-2);
-  padding: 0 var(--size-2-3);
-}
-
-.gedcom-map-years-readout {
-  min-width: 6.5em;
-  font-size: var(--font-ui-small);
-  font-variant-numeric: tabular-nums;
-}
-
-.gedcom-map-years-track {
-  position: relative;
-  width: 200px;
-  height: 28px;
-}
-
-.gedcom-map-years-track::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 50%;
-  height: 3px;
-  margin-top: -1.5px;
-  border-radius: 2px;
-  background: var(--background-modifier-border-hover);
-}
-
-.gedcom-map-years-handle {
-  position: absolute;
-  top: 50%;
-  inset-inline-start: var(--pos, 0%);
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  border: 2px solid var(--interactive-accent);
-  border-radius: 50%;
-  background: var(--background-primary);
-  cursor: pointer;
-  touch-action: none;
-}
-
-.gedcom-map-years-handle::after {
-  content: "";
-  position: absolute;
-  inset: -13px;
-}
-
-.gedcom-map-years-handle:focus-visible {
-  outline: 2px solid var(--text-normal);
-  outline-offset: 2px;
-}
-
-.gedcom-map-years-clear {
-  min-width: 28px;
-  min-height: 28px;
-}
-
-.gedcom-map-credit {
-  position: absolute;
-  z-index: 1;
-  inset-inline-start: var(--size-4-2);
-  top: var(--size-4-2);
-  max-width: 50%;
-  padding: 0 var(--size-2-2);
-  border-radius: var(--radius-s);
-  background: var(--background-primary);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: 0.85;
-}
-
-.gedcom-map-tip {
-  position: absolute;
-  z-index: 3;
-  padding: var(--size-2-1) var(--size-2-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  background: var(--background-primary);
-  box-shadow: var(--shadow-s);
-  font-size: var(--font-ui-smaller);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.gedcom-map-popup {
-  position: absolute;
-  z-index: 3;
-  width: min(320px, calc(100% - 2 * var(--size-4-2)));
-  max-height: min(60%, 360px);
-  overflow-y: auto;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-primary);
-  box-shadow: var(--shadow-l);
-  cursor: default;
-}
-
-.gedcom-map-popup-list {
-  margin: 0;
-  padding: var(--size-2-1);
-  list-style: none;
-}
-
-.gedcom-map-popup-place {
-  padding: var(--size-2-2) var(--size-2-3);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-semibold);
-}
-
-button.gedcom-map-popup-row {
-  display: flex;
-  align-items: baseline;
-  gap: var(--size-4-2);
-  width: 100%;
-  height: auto;
-  min-height: 28px;
-  padding: var(--size-2-2) var(--size-2-3);
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: var(--font-ui-small);
-  text-align: start;
-}
-
-button.gedcom-map-popup-row:hover,
-button.gedcom-map-popup-row:focus-visible {
-  background: var(--background-modifier-hover);
-}
-
-.gedcom-map-popup-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gedcom-map-popup-year,
-.gedcom-map-popup-kind {
-  flex: none;
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-map-empty {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--size-4-2);
-  padding: var(--size-4-4);
-  background: color-mix(in srgb, var(--background-primary) 82%, transparent);
-  text-align: center;
-}
-
-.gedcom-map-empty h3,
-.gedcom-map-empty p {
-  margin: 0;
-}
-
-.gedcom-map-empty p {
-  max-width: 32em;
-  color: var(--text-muted);
-}
-
-.gedcom-map-empty-example {
-  max-width: 100%;
-  margin: 0;
-  padding: var(--size-4-2) var(--size-4-4);
-  overflow-x: auto;
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  font-family: var(--font-monospace);
-  font-size: var(--font-ui-small);
-  text-align: start;
-}
-
-@container (max-width: 640px) {
-  .gedcom-map-years:has(.gedcom-map-years-chip[aria-expanded="true"]) {
-    inset-inline-end: var(--size-4-2);
-    bottom: calc(var(--size-4-2) + 52px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .gedcom-map-years-track {
-    flex: 1 1 auto;
-    width: auto;
-    min-width: 100px;
-  }
-}
-
-.is-phone .gedcom-map-scope-row button,
-.is-phone .gedcom-map-years-chip,
-.is-phone .gedcom-map-years-clear,
-.is-phone .gedcom-map-controls button,
-.is-phone button.gedcom-map-popup-row {
-  min-height: 44px;
-}
-
-.is-phone .gedcom-map-controls button,
-.is-phone .gedcom-map-years-clear {
-  min-width: 44px;
-}
-
-.is-phone .gedcom-map-years-track {
-  height: 44px;
-}
-
-@media (pointer: coarse) {
-  .gedcom-map-scope-row button,
-  .gedcom-map-years-chip,
-  .gedcom-map-years-clear,
-  .gedcom-map-controls button,
-  button.gedcom-map-popup-row {
-    min-height: 44px;
-  }
-
-  .gedcom-map-controls button,
-  .gedcom-map-years-clear {
-    min-width: 44px;
-  }
-
-  .gedcom-map-years-track {
-    height: 44px;
   }
 }
