@@ -158,7 +158,7 @@ person selected. An event shows its lines in Source. On a phone the first touch
 picks a person out and places the year cursor, and a second touch selects them.
 
 In **Graph** mode the tab shows a card per person, generations from top to
-bottom and coloured by sex. Spouses stand side by side, a husband to
+bottom and tinted by surname, as the bars of the timeline are. Spouses stand side by side, a husband to
 the left of his wife, joined by a node with the year of their marriage — hollow
 where it is undated — from which curved lines run to their children; the
 husband's family tends to stand on the left and the wife's on the right, and the

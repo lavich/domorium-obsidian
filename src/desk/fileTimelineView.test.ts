@@ -175,7 +175,7 @@ describe("drawing the timeline of a file", () => {
     ));
     const fill = (xref: string) => bar(xref)?.getAttribute("style") ?? "";
 
-    expect(fill("@A@")).toContain("--gedcom-ft-fill-light:hsl(");
+    expect(fill("@A@")).toContain("--gedcom-surname-fill-light:hsl(");
     expect(fill("@A@").split(";")[0]?.split(" ")[0]).toBe(fill("@B@").split(";")[0]?.split(" ")[0]);
     expect(fill("@C@")).toContain(" 0% ");
     expect(label("@A@")?.getAttribute("style")).toBe(fill("@A@"));

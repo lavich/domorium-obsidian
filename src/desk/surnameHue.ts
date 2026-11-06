@@ -93,7 +93,7 @@ export function contrastOnFill(hue: number, scheme: Scheme, grey = false): numbe
   return ratio(fillLuminance(hue, scheme, grey), INK_LUMINANCE[inkOf(hue, scheme, grey)]);
 }
 
-export function barPaint(surname: string | undefined): Record<string, string> {
+export function surnamePaint(surname: string | undefined): Record<string, string> {
   const grey = surname === undefined;
   const hue = grey ? 0 : Math.round(surnameHue(surname) * 10) / 10;
   const fill = (scheme: Scheme): string => {
@@ -101,9 +101,15 @@ export function barPaint(surname: string | undefined): Record<string, string> {
     return `hsl(${hue} ${grey ? 0 : saturation * 100}% ${lightness * 100}%)`;
   };
   return {
-    "--gedcom-ft-fill-light": fill("light"),
-    "--gedcom-ft-fill-dark": fill("dark"),
-    "--gedcom-ft-ink-light": INKS[inkOf(hue, "light", grey)],
-    "--gedcom-ft-ink-dark": INKS[inkOf(hue, "dark", grey)],
+    "--gedcom-surname-fill-light": fill("light"),
+    "--gedcom-surname-fill-dark": fill("dark"),
+    "--gedcom-surname-ink-light": INKS[inkOf(hue, "light", grey)],
+    "--gedcom-surname-ink-dark": INKS[inkOf(hue, "dark", grey)],
   };
+}
+
+export function paintStyle(surname: string | undefined): string {
+  return Object.entries(surnamePaint(surname))
+    .map(([name, value]) => `${name}:${value}`)
+    .join(";");
 }

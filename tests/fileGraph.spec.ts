@@ -30,15 +30,11 @@ test.describe("the graph of a file", () => {
     await page.setViewportSize({ width: 1400, height: 900 });
   });
 
-  test("names Marie with her years on a card in the theme's colour for a woman", async ({ page }) => {
+  test("names Marie with her years on a card, with no stripe on it", async ({ page }) => {
     await mountGraph(page);
 
     await expectNameLines(card(page, "@I1@"), "Marie", "Skłodowska");
     await expect(card(page, "@I1@").locator(".gedcom-fg-card-years")).toHaveText("1867–1934");
-    const fill = (xref: string, part: string) =>
-      person(page, xref).locator(part).evaluate((shape) => getComputedStyle(shape).fill);
-    expect(await fill("@I1@", ".gedcom-fg-card-bg")).toBe("rgba(255, 0, 128, 0.2)");
-    expect(await fill("@I2@", ".gedcom-fg-card-bg")).toBe("rgba(0, 0, 255, 0.18)");
     await expect(page.locator(".gedcom-fg-card-side")).toHaveCount(0);
     for (const xref of ["@I1@", "@I17@", "@I9@", "@I8@"]) {
       await expect(card(page, xref).locator(".gedcom-fg-card-name").first()).toBeInViewport();
@@ -79,15 +75,39 @@ test.describe("the graph of a file", () => {
     }
   });
 
-  test("takes its colours from a dark theme too", async ({ page }) => {
-    await mountGraph(page, { dark: true });
+  test("tints each card by its person's surname and keeps the lines readable on it, in both schemes", async ({ page }) => {
+    const fills: string[] = [];
+    for (const dark of [false, true]) {
+      await mountGraph(page, { dark });
 
-    expect(
-      await person(page, "@I1@").locator(".gedcom-fg-card-bg").evaluate((shape) => getComputedStyle(shape).fill),
-    ).toBe("rgba(255, 100, 180, 0.2)");
-    expect(
-      await person(page, "@I2@").locator(".gedcom-fg-card-bg").evaluate((shape) => getComputedStyle(shape).fill),
-    ).toBe("rgba(80, 160, 255, 0.18)");
+      const found = await page.locator(".gedcom-fg-person").evaluateAll((people) => {
+        const channels = (value: string) => (value.match(/[\d.]+/gu) ?? []).slice(0, 3).map(Number);
+        const luminance = ([r = 0, g = 0, b = 0]: number[]) => {
+          const linear = (channel: number) => {
+            const unit = channel / 255;
+            return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4;
+          };
+          return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+        };
+        return people.map((one) => {
+          const fill = getComputedStyle(one.querySelector(".gedcom-fg-card-bg") as Element).fill;
+          const ratios = [".gedcom-fg-card-name", ".gedcom-fg-card-years"].map((selector) => {
+            const ink = getComputedStyle(one.querySelector(selector) as Element).fill;
+            const [light = 0, deep = 0] = [luminance(channels(ink)), luminance(channels(fill))].sort((x, y) => y - x);
+            return (light + 0.05) / (deep + 0.05);
+          });
+          return { xref: one.getAttribute("data-p"), fill, worst: Math.min(...ratios) };
+        });
+      });
+      expect(found.length).toBeGreaterThan(10);
+      for (const one of found) {
+        expect(one.worst, `${one.xref} ${one.fill} (${dark ? "dark" : "light"})`).toBeGreaterThanOrEqual(4.5);
+      }
+      const fillOf = (xref: string) => found.find((one) => one.xref === xref)?.fill;
+      expect(fillOf("@I1@")).not.toBe(fillOf("@I2@"));
+      fills.push(fillOf("@I1@") ?? "");
+    }
+    expect(fills[0]).not.toBe(fills[1]);
   });
 
   test("stands Pierre Curie left of Marie with ’95 between them, and draws Eugène's marriage hollow", async ({ page }) => {

@@ -1,7 +1,7 @@
 import type { FileTimeline, TimelineMark, TimelinePerson } from "./fileTimeline";
 import { personName } from "./labels";
 import type { TimelineScope } from "./fileTimelineView";
-import { barPaint } from "./surnameHue";
+import { paintStyle } from "./surnameHue";
 
 export const ROW = 32;
 export const BAR = 22;
@@ -183,12 +183,6 @@ function barBox(person: TimelinePerson, x: (year: number) => number, measure: (t
   return { left, right, reach: Math.max(right, marked), name, text, labelX, labelWidth };
 }
 
-function paintOf(person: TimelinePerson): string {
-  return Object.entries(barPaint(person.surname))
-    .map(([name, value]) => `${name}:${value}`)
-    .join(";");
-}
-
 function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>, doc: Document, id: number): Item[] {
   const { x, y } = layout;
   const lines: Item[] = [];
@@ -203,7 +197,7 @@ function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>,
     if (!person || !line || !box) {
       continue;
     }
-    const paint = paintOf(person);
+    const paint = paintStyle(person.surname);
     const end = barEndOf(line);
     lines.push({
       ...row(cy),

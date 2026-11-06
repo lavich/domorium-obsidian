@@ -1702,11 +1702,11 @@ button.gedcom-ft-branch:focus-visible {
 
 .gedcom-ft-life {
   cursor: pointer;
-  fill: var(--gedcom-ft-fill-light);
+  fill: var(--gedcom-surname-fill-light);
 }
 
 .theme-dark .gedcom-ft-life {
-  fill: var(--gedcom-ft-fill-dark);
+  fill: var(--gedcom-surname-fill-dark);
 }
 
 .gedcom-ft-life:hover {
@@ -1729,12 +1729,12 @@ button.gedcom-ft-branch:focus-visible {
   fill: var(--text-normal);
   font-size: 12px;
   font-weight: var(--font-semibold);
-  fill: var(--gedcom-ft-ink-light);
+  fill: var(--gedcom-surname-ink-light);
   pointer-events: none;
 }
 
 .theme-dark .gedcom-ft svg text.gedcom-ft-label {
-  fill: var(--gedcom-ft-ink-dark);
+  fill: var(--gedcom-surname-ink-dark);
 }
 
 .gedcom-ft-span {
@@ -2253,31 +2253,28 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-fg-card-bg {
-  fill: var(--background-primary);
+  fill: var(--gedcom-surname-fill-light);
   stroke: var(--background-modifier-border);
   stroke-width: 1;
 }
 
-.gedcom-fg-person.is-f .gedcom-fg-card-bg {
-  fill: rgba(var(--color-pink-rgb), 0.2);
-}
-
-.gedcom-fg-person.is-m .gedcom-fg-card-bg {
-  fill: rgba(var(--color-blue-rgb), 0.18);
-}
-
-.gedcom-fg-person.is-u .gedcom-fg-card-bg {
-  fill: rgba(var(--mono-rgb-100), 0.1);
+.theme-dark .gedcom-fg-card-bg {
+  fill: var(--gedcom-surname-fill-dark);
 }
 
 .gedcom-fg-card-name {
-  fill: var(--text-normal);
+  fill: var(--gedcom-surname-ink-light);
   font-size: 12px;
   font-weight: 600;
 }
 
+.theme-dark .gedcom-fg-card-name,
+.theme-dark .gedcom-fg-card-years {
+  fill: var(--gedcom-surname-ink-dark);
+}
+
 .gedcom-fg-card-years {
-  fill: var(--text-muted);
+  fill: var(--gedcom-surname-ink-light);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }

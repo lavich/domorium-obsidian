@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { barPaint, contrastOnFill, hueDistance, surnameHue } from "./surnameHue";
+import { surnamePaint, contrastOnFill, hueDistance, surnameHue } from "./surnameHue";
 
 const apart = (a: string, b: string): number => hueDistance(surnameHue(a), surnameHue(b));
 
@@ -53,12 +53,12 @@ describe("the hue of a surname", () => {
 
 describe("the paint of a bar", () => {
   it("is grey where there is no surname, and coloured where there is", () => {
-    expect(barPaint(undefined)["--gedcom-ft-fill-light"]).toMatch(/ 0% /);
-    expect(barPaint("Curie")["--gedcom-ft-fill-light"]).not.toMatch(/ 0% /);
+    expect(surnamePaint(undefined)["--gedcom-surname-fill-light"]).toMatch(/ 0% /);
+    expect(surnamePaint("Curie")["--gedcom-surname-fill-light"]).not.toMatch(/ 0% /);
   });
 
   it("is the same for the same surname", () => {
-    expect(barPaint("Curie")).toEqual(barPaint("Curie"));
+    expect(surnamePaint("Curie")).toEqual(surnamePaint("Curie"));
   });
 
   it("gives a name 4.5:1 on every hue, in both schemes", () => {

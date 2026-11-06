@@ -2,6 +2,7 @@ import { searchOver, type FloatingSearch } from "./floatingSearch";
 import { BranchScopeBar, readBranchScope, sameBranch, type BranchScope } from "./branchScope";
 import { fileGraphOf } from "./fileGraph";
 import type { FileTimeline } from "./fileTimeline";
+import { paintStyle } from "./surnameHue";
 import {
   GraphCanvas,
   ZOOM,
@@ -218,7 +219,7 @@ function sceneOf(
         ? {
             name: personName(person.row),
             years: lifelineYears(person.lifeline),
-            sex: person.sex,
+            paint: paintStyle(person.surname),
             focus: xref === scope.focus,
             branch: true,
             ...(person.row.given && person.row.surname ? { given: person.row.given, surname: person.row.surname } : {}),

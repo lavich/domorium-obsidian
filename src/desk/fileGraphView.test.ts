@@ -104,12 +104,10 @@ function key(target: Element | null | undefined, which: string): KeyboardEvent {
 const frame = () => new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
 
 describe("drawing the graph of a file", () => {
-  it("draws a card for each person in view, coloured by sex, with the name and the years", () => {
+  it("draws a card for each person in view, with the name and the years", () => {
     board();
 
     expect(drawnPeople()).toHaveLength(17);
-    expect(person("@I1@")?.getAttribute("class")).toContain("is-f");
-    expect(person("@I2@")?.getAttribute("class")).toContain("is-m");
     expect([...(card("@I1@")?.querySelectorAll(".gedcom-fg-card-name") ?? [])].map((line) => line.textContent)).toEqual([
       "Marie",
       "Skłodowska-Curie",
@@ -166,7 +164,7 @@ describe("drawing the graph of a file", () => {
     expect(host.select).not.toHaveBeenCalled();
   });
 
-  it("tints a card by sex with no stripe, its lines centred", () => {
+  it("tints a card by its person's surname with no stripe, its lines centred", () => {
     board();
 
     expect(container.querySelector(".gedcom-fg-card-side")).toBeNull();
@@ -174,6 +172,20 @@ describe("drawing the graph of a file", () => {
     expect(lines.map((line) => [line.getAttribute("x"), line.getAttribute("text-anchor")])).toEqual(
       lines.map(() => [String(CARD.width / 2), "middle"]),
     );
+  });
+
+  it("gives the cards of one surname the same tint, and of unlike surnames different ones", () => {
+    board(fileTimelineOf(indexOf([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @A@ INDI", "1 NAME Ivan /Лобанов/", "0 @B@ INDI", "1 NAME Anna /Лобанова/", "0 @C@ INDI", "1 NAME Olga /Сидорова/",
+      "0 @D@ INDI", "1 NAME John", "0 TRLR", "",
+    ].join("\n"))));
+
+    const fill = (xref: string) => person(xref)?.getAttribute("style")?.match(/--gedcom-surname-fill-light:\s*hsl\(([\d.]+)/u)?.[1];
+    expect(Math.abs(Number(fill("@A@")) - Number(fill("@B@")))).toBeLessThan(3);
+    expect(Math.abs(Number(fill("@A@")) - Number(fill("@C@")))).toBeGreaterThan(50);
+    expect(person("@D@")?.getAttribute("style")).toContain("hsl(0 0%");
+    expect(person("@A@")?.getAttribute("class")).not.toMatch(/is-[fmu]\b/u);
   });
 
   it("writes a name with no surname on one line", () => {
@@ -1089,7 +1101,7 @@ describe("the selected card", () => {
       const layout = fileGraphOf(curie(), WHOLE);
       return {
         layout,
-        card: (id) => ({ name: id, years: "", sex: "M" }),
+        card: (id) => ({ name: id, years: "", paint: "" }),
         family: () => undefined,
         related: () => [],
         copies: (id) => (id === "@I2@" ? ["@I2@", "@I1@"] : [id]),
