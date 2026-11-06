@@ -8,35 +8,6 @@ never mistaken for a source of a fact.
 
 ## Requirements
 
-### Requirement: Sources of the fact, then of the whole record
-
-With a fact selected, the section SHALL first list the citations that fact
-itself makes. Below them, under a separate heading, it SHALL list the citations
-the person's or family's record makes on itself. With no fact selected it
-SHALL list only the latter.
-
-Where the selected fact cites nothing, the section SHALL say the fact has no
-source of its own, and SHALL say either that the sources below belong to the
-whole record and may not support this fact, or that the record cites nothing
-either.
-
-A fact of a family the person married into SHALL show that family event's own
-citations as its own; the whole record SHALL remain the person's.
-
-#### Scenario: A fact with no source of its own
-- **WHEN** Marie's birth is selected
-- **THEN** the section says the birth has no source of its own and that the two
-  sources below belong to the whole record, and lists those two below
-
-#### Scenario: A fact with its own source
-- **WHEN** a selected birth carries `2 SOUR @S2@` beneath it
-- **THEN** `@S2@`'s source is listed as the birth's own, above the record's
-
-#### Scenario: A record that cites nothing
-- **WHEN** a fact of Zofia Skłodowska is selected
-- **THEN** the section says the fact has no source of its own and that the record
-  cites nothing either
-
 ### Requirement: What a citation shows
 
 Each citation SHALL show the title of the source it names, which selects that
@@ -72,7 +43,8 @@ the line around the link, the link itself marked; a note linking more than once
 SHALL be listed once, with each of its lines. Activating a line SHALL open the
 note in a new tab at that line.
 
-A record no note links to SHALL say so. Nothing a note says SHALL be compared
+The section of an event card SHALL list no note: the notes that link to the record are on the
+card of the record. A record no note links to SHALL say so. Nothing a note says SHALL be compared
 with the record.
 
 #### Scenario: Notes linking to Marie
@@ -90,13 +62,12 @@ with the record.
 
 ### Requirement: The section on a family card
 
-On a family card the section SHALL treat the family as it treats a person: the
-selected family fact's own citations first, then those the family record makes
-on itself.
+On a family card the section SHALL show what the family record rests on, as a person card does: the
+sources the record cites of itself and the notes in the vault that link to it. The
+citations of a family event are on the card of that event.
 
 #### Scenario: The Curies' marriage selected
-- **WHEN** the family card of Pierre and Marie Curie is shown and the marriage
-  is selected
+- **WHEN** the event card of the marriage of Pierre and Marie Curie is shown
 - **THEN** the section says the marriage has no source of its own and that the
   family record cites nothing either
 
@@ -116,9 +87,9 @@ The card's heading names the source or the file and offers Show in source.
 The last section of a person card, of a family card and of an event card SHALL be **Evidence**.
 On a person card and on a family card it SHALL show what the whole record rests on in the file:
 the sources the record cites of itself, and the notes in the vault that link to it, under the
-heading *Evidence* alone, without a head that repeats the record's name. On an event card it SHALL show what the event rests on — *Sources of this fact*
-— and, kept apart under *Whole record*, what the whole record rests on, so that a source of the
-person is never mistaken for a source of the event. On an event card the section SHALL NOT open
+heading *Evidence* alone, without a head that repeats the record's name. On an event card it SHALL show only what the event rests on — *Sources of this fact* — and no
+source of the record and no note, so that a source of the person is never mistaken for a source of
+the event; the whole record is one link away, at the top of the card. On an event card the section SHALL NOT open
 with a head that repeats the name and the detail of the event, SHALL NOT offer *Show in source*
 a second time and SHALL NOT offer a link back to the whole record beside the record link at the
 top of the card. Choosing a fact on a person's or a family's card, or an entry of a timeline,
@@ -130,6 +101,10 @@ There SHALL be no Evidence view in the sidebar and no command that opens one.
 - **WHEN** the reader chooses Marie's birth on her card
 - **THEN** the event card of the birth is shown, and its Evidence section lists the sources of
   the birth under *Sources of this fact* and has no head naming the birth
+
+#### Scenario: An event card has no whole record
+- **WHEN** the event card of Marie's birth is shown
+- **THEN** its Evidence section has no heading *Whole record* and no heading *Sources of the record*
 
 #### Scenario: Back to the whole record
 - **WHEN** the event card of Marie's birth is shown and the reader presses the record at its top
@@ -144,3 +119,28 @@ There SHALL be no Evidence view in the sidebar and no command that opens one.
 #### Scenario: The interface is off
 - **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
 - **THEN** no card is placed and the palette offers no command to open evidence
+
+### Requirement: Sources of the fact
+
+On an event card the section SHALL list the citations that event itself makes, and no others.
+
+Where the event cites nothing, the section SHALL say the event has no source of its own, and SHALL
+say either that the sources of the whole record are on the card of the record, or that the record
+cites nothing either.
+
+An event of a family the person married into SHALL show that family event's own citations as its
+own.
+
+#### Scenario: A fact with no source of its own
+- **WHEN** Marie's birth is selected
+- **THEN** the section says the birth has no source of its own and that the sources of the whole
+  record are on Marie's card, and lists no source
+
+#### Scenario: A fact with its own source
+- **WHEN** a selected birth carries `2 SOUR @S2@` beneath it
+- **THEN** `@S2@`'s source is listed as the birth's own, and no source of the record is listed
+
+#### Scenario: A record that cites nothing
+- **WHEN** a fact of Zofia Skłodowska is selected
+- **THEN** the section says the fact has no source of its own and that the record
+  cites nothing either

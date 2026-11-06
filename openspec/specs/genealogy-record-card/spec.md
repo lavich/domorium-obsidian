@@ -245,19 +245,21 @@ tag, in this order:
   spouse of, named with the other spouse. Each fact SHALL show its name in the
   reader's language, its date as the file writes it, its place, and its own
   payload where it has one, and SHALL show how many sources the fact itself
-  cites, or that it cites none;
+  cites where it cites any, with no mark on a fact that cites none; one line above
+  the facts SHALL say how many of the facts listed, those of the families the person is
+  a spouse of included, cite no source, and SHALL be left out where every fact cites one;
 - their **other names**, where the record states more than one;
 - their **family**, as a list of people and not a drawing: parents; siblings; and
   for each family the person is a spouse of, the other spouse with that family's
   marriage date and place where stated, the children of that family, and a way to
   that family's card;
 - their **media**;
-- their **timeline** and their **places**, each a section of the card below the
-  one before it, not a tab, and each **folded** under its heading, which shows how
-  many entries or places it holds: both are closed when a card is opened, and a
-  section the reader opens stays open while the card shows the same record,
+- their **timeline**, a section of the card below the one before it, not a tab, and
+  **folded** under its heading, which shows how many entries it holds: it is closed
+  when a card is opened, and stays open while the card shows the same record,
   across a redraw of the card for a change of the file, and closes again when
-  another record is shown. The other names stay open;
+  another record is shown. The other names stay open. The card SHALL have no
+  section of places: a place is a link in a fact and in an entry of the timeline;
 - the **evidence**: what the whole record rests on; what an event rests on is on the card of that event.
 
 Every relative shown SHALL select that person. A relative the file points at but
@@ -270,18 +272,19 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 - **THEN** it lists her birth with `7 NOV 1867` and `Warsaw, Congress Poland`, her
   death with `4 JUL 1934` and `Passy, Haute-Savoie, France`, her occupation
   `Physicist and chemist`, and her marriage with Pierre Curie with `26 JUL 1895`
-  and `Sceaux, France`, each marked as citing no source of its own
+  and `Sceaux, France`, with no mark of sources on any of them and, above them, a line reading
+  `Facts without a source: 4 of 4`
 
 #### Scenario: The sections in order
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
 - **THEN** its section headings read, from the top, Facts, Other names, Family,
-  Media, Timeline, Places and Evidence, with her other name `Maria Salomea
+  Media, Timeline and Evidence, with her other name `Maria Salomea
   Skłodowska` under Other names, and no tab bar and no tree
 
 #### Scenario: Folded sections
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** Timeline and Places are folded, each heading shows its count, and pressing
-  the Timeline heading shows her entries
+- **THEN** Timeline is folded, its heading shows its count, and pressing it shows her
+  entries
 
 #### Scenario: A fold kept across a redraw
 - **WHEN** the reader has opened Marie's Timeline and the file changes on disk
@@ -297,6 +300,15 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 #### Scenario: A fact that cites a source
 - **WHEN** a person's `1 BIRT` carries `2 SOUR @S2@` beneath it
 - **THEN** the birth shows that it cites one source
+
+#### Scenario: Some facts without a source
+- **WHEN** a person's record states four facts and one of them carries `2 SOUR @S2@` beneath it
+- **THEN** the line above the facts reads `Facts without a source: 3 of 4`, and only the fact
+  that cites one carries a mark
+
+#### Scenario: Every fact cites a source
+- **WHEN** every fact of a person's record cites a source
+- **THEN** the card draws no line above the facts about facts without a source
 
 #### Scenario: Two marriages
 - **WHEN** a person is a spouse of two families
@@ -352,19 +364,6 @@ the person's own entries SHALL select that fact.
 - **WHEN** the reader activates the place of an entry in the timeline section
 - **THEN** the card of that place is shown
 
-### Requirement: The places of a person
-
-The places section of a person card SHALL list every place named by an entry of the
-person's timeline, in the order a place first appears there, each with the events
-that happened there and how many. A place SHALL be shown as the file writes it. No
-map SHALL be drawn and nothing SHALL be fetched.
-
-#### Scenario: Marie's places
-- **WHEN** Marie's card is shown
-- **THEN** its places section lists `Warsaw, Congress Poland`, `Sceaux, France`,
-  `Paris, France` and `Passy, Haute-Savoie, France`, in that order, with her birth
-  among the events of the first and her marriage the only event of the second
-
 ### Requirement: The family card
 
 A family card SHALL show, without any cross-reference identifier, level number or
@@ -375,8 +374,9 @@ tag:
   no spouse SHALL be headed by a stated placeholder;
 - the family's **facts** — marriage, divorce, engagement and the other family
   events the record states — in the order the record writes them, each with its
-  date as written, its place, and how many sources it cites itself, selectable as
-  a person's facts are;
+  date as written, its place, and how many sources it cites itself where it cites any,
+  selectable as a person's facts are, with the same line above them about the facts
+  that cite no source;
 - its **spouses**, each under the role the record names them in, and its
   **children**, each selecting their card; a spouse or child the file points at
   but does not declare SHALL be shown as a pointer to a record that is not in the
@@ -386,7 +386,8 @@ tag:
 #### Scenario: The Curies' family
 - **WHEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
 - **THEN** it is headed by both names with `26 JUL 1895` and Sceaux, lists the
-  marriage as a fact citing no source, Pierre Curie as husband and Marie as wife,
+  marriage as a fact with no mark of sources, under a line reading
+  `Facts without a source: 1 of 1`, Pierre Curie as husband and Marie as wife,
   and Irène Joliot-Curie and Ève Curie as children
 
 #### Scenario: From a person to their family
@@ -650,8 +651,8 @@ names it, a custom event by its type, and the text the event carries other than 
 in source* that moves to the lines of the event. Under the title, one line with the date as the
 file writes it and the place as the file writes it, the place a link that selects it; a part the
 event does not state is left out. Below them the card SHALL show the **Evidence** section for the
-event: the sources the event cites, each a link that selects the source, and what the whole record
-rests on, as the person card shows it for the record. The card SHALL show nothing the file does not
+event: the sources the event cites, each a link that selects the source. It SHALL NOT list what the whole record rests on: that is on the card of the record, whose link
+is at the top of the card. The card SHALL show nothing the file does not
 hold and SHALL NOT label the date, the place or the record with a row of its own. Choosing a fact on
 a person's or a family's card, or an entry of a person's timeline, SHALL open this card. Selecting
 a link on it SHALL NOT write to the file. An event that carries nothing to show beyond its name
@@ -666,6 +667,11 @@ SHALL still have a card, which says that the event states no date, place or sour
 - **WHEN** the event card of an occupation `Physicist` with no date and no place is shown
 - **THEN** its title reads `Occupation · Physicist`, it draws no line of date and place, and it
   says the event states no date, place or source
+
+#### Scenario: Nothing of the whole record
+- **WHEN** the event card of Marie's birth is shown
+- **THEN** its Evidence section lists no source of Marie's record, no note, and has no head *Whole
+  record*
 
 #### Scenario: A cited source
 - **WHEN** the event card of an event that cites a source record is shown, and the reader presses the source in its Evidence section
@@ -717,7 +723,8 @@ select that record, as it does for any selection. Selecting an event SHALL NOT w
 The facts of a person, the facts of a family and the events at a place on the card of that place
 SHALL each be drawn as one **event row**: the name of the event in the reader's language, which
 opens the card of the event; its date, its place as a link to the place, and its text where it has
-one; and the number of sources the event cites, or that it cites none, as a mark. On the card of a
+one; and, where it cites any, the number of sources it cites, as a mark; an event that cites none
+carries no mark. On the card of a
 place the row SHALL also name the record the event belongs to, as a link that selects that record.
 The timeline of a person SHALL keep its own form, a chronology, and SHALL show the same detail of an
 event. An event that states nothing SHALL be drawn as *recorded, no details*, and an event whose
@@ -725,7 +732,11 @@ record has no identifier SHALL be drawn with a name that does not act.
 
 #### Scenario: A fact on a person's card
 - **WHEN** Marie's card shows her birth
-- **THEN** its row names `Birth`, shows `7 NOV 1867` and `Warsaw, Congress Poland` as a link, and shows that it cites no source
+- **THEN** its row names `Birth`, shows `7 NOV 1867` and `Warsaw, Congress Poland` as a link, and carries no mark of sources
+
+#### Scenario: A fact that cites a source
+- **WHEN** a birth carries `2 SOUR @S2@` and a person's card shows it
+- **THEN** its row shows that it cites one source
 
 #### Scenario: An event at a place
 - **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
@@ -749,9 +760,9 @@ them SHALL have an activation area at least 32 pixels tall without changing the 
 and a control that is a block of its own — a relative, a source, a note's line, the heading of a
 fold, Back and Forward (44 by 44) — 44 pixels; where two controls stand closer together than that,
 the space between them is shared. The headings of the sections of a card and the secondary lines under
-them SHALL be set in the muted text colour of the theme, not the faint one. A fact or an event that
-cites no source SHALL be marked in a neutral colour, not a warning one; a notice that a source is
-missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
+them SHALL be set in the muted text colour of the theme, not the faint one. The line that says how many
+facts cite no source SHALL be set in the muted text colour, not a warning one; a notice that a
+source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
 
 #### Scenario: Keyboard focus
 - **WHEN** the reader reaches `Pierre Curie` in Marie's family section with the Tab key
@@ -766,8 +777,8 @@ missing keeps its warning colour. Nothing SHALL set a colour that is not one of 
 - **THEN** the area that activates a place link in her birth is at least 32 pixels tall, and the area that activates `Pierre Curie` and Back at least 44
 
 #### Scenario: A fact without a source
-- **WHEN** Marie's birth cites no source
-- **THEN** its mark reads that it cites none, in a neutral colour on a card with no orange mark
+- **WHEN** Marie's card is shown
+- **THEN** the line above her facts is in the muted text colour, on a card with no orange mark
 
 #### Scenario: A picture on a media card
 - **WHEN** the card of a photograph in the vault is shown
