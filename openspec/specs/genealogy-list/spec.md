@@ -473,7 +473,7 @@ derived from that text size, so that it follows the reader's font size.
 - **THEN** the row of `Paris, France` is marked again
 
 #### Scenario: A place in a person's card
-- **WHEN** the reader presses `Paris, France` in the Places section of Marie's card
+- **WHEN** the reader presses `Paris, France` in an entry of the opened timeline of Marie's card
 - **THEN** the list shows the places with the row of `Paris, France` marked and in view, and the
   card shows `Paris, France`
 
@@ -600,7 +600,7 @@ record or a source from a link, the graph, the timeline or the cursor SHALL NOT 
 - **THEN** the list still shows the events and no row of them is marked
 
 #### Scenario: A place selected among the events
-- **WHEN** the list shows the events and the reader presses `Paris, France` in the Places section of Marie's card
+- **WHEN** the list shows the events and the reader presses `Paris, France` in an entry of the opened timeline of Marie's card
 - **THEN** the list shows the places with the row of `Paris, France` marked and in view
 
 #### Scenario: A person pressed in the card of a place
