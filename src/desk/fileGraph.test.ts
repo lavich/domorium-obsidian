@@ -100,8 +100,7 @@ describe("the layout of curie.ged", () => {
     expect(layout.rows).toBe(4);
     layout.bands.slice(1).forEach((band, at) => expect(band.top - (layout.bands[at]?.bottom ?? 0)).toBe(ROW_GAP));
     expect(layout.cards.every((card) => card.y + card.height === layout.bands[card.row]?.bottom)).toBe(true);
-    expect(["@I1@", "@I2@", "@I12@"].map((xref) => at(layout, xref).height)).toEqual([1, 1, 1].map(() => CARD.height + CARD.portrait));
-    expect(at(layout, "@I11@").height).toBe(CARD.height);
+    expect(layout.cards.every((card) => card.height === CARD.height)).toBe(true);
     expect(overlapping(layout)).toEqual([]);
   });
 
@@ -262,10 +261,10 @@ describe("the families the Curies do not have", () => {
     expect(leftOf(layout, "@A@", "@B@")).toBe(true);
   });
 
-  it("makes a row as tall as its tallest card, its cards on its bottom edge, its nodes at the text's middle", () => {
+  it("makes every row one card tall, its nodes at the text's middle", () => {
     const layout = layoutGraph({
       cards: [
-        { id: "h", row: 0, sex: "M", portrait: true },
+        { id: "h", row: 0, sex: "M" },
         { id: "w", row: 0, sex: "F" },
         { id: "c", row: 1, sex: "F" },
       ],
@@ -274,13 +273,13 @@ describe("the families the Curies do not have", () => {
     });
     const [husband, wife, child] = ["h", "w", "c"].map((id) => layout.card.get(id));
 
-    expect(layout.bands[0]).toEqual({ top: 0, bottom: CARD.height + CARD.portrait });
-    expect(husband).toMatchObject({ y: 0, height: CARD.height + CARD.portrait });
-    expect(wife).toMatchObject({ y: CARD.portrait, height: CARD.height });
-    expect(child?.y).toBe(CARD.height + CARD.portrait + ROW_GAP);
-    expect(layout.node.get("f")?.y).toBe(CARD.portrait + CARD.height / 2);
+    expect(layout.bands[0]).toEqual({ top: 0, bottom: CARD.height });
+    expect(husband).toMatchObject({ y: 0, height: CARD.height });
+    expect(wife).toMatchObject({ y: 0, height: CARD.height });
+    expect(child?.y).toBe(CARD.height + ROW_GAP);
+    expect(layout.node.get("f")?.y).toBe(CARD.height / 2);
     expect(layout.lines[0]?.points.at(-1)).toEqual([(child?.x ?? 0) + CARD.width / 2, child?.y]);
-    expect(layout.height).toBe(2 * CARD.height + CARD.portrait + ROW_GAP);
+    expect(layout.height).toBe(2 * CARD.height + ROW_GAP);
   });
 
   it("stands siblings with no spouse closer to each other than to anyone else", () => {

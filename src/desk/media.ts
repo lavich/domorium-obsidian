@@ -9,6 +9,8 @@ import type { MediaPreviewContent } from "../editor/media";
 import { t, type MessageKey } from "../i18n";
 import { linkButton } from "./dom";
 
+export type PortraitContent = Extract<MediaPreviewContent, { kind: "image" }>;
+
 export interface MediaItem {
   content: MediaPreviewContent;
   path?: string;

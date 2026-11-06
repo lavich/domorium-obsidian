@@ -18,10 +18,21 @@ const MIN_STEM = 2;
 
 export type Scheme = "light" | "dark";
 
-const TONES: Record<Scheme, { saturation: number; lightness: number }> = {
-  light: { saturation: 0.55, lightness: 0.8 },
-  dark: { saturation: 0.45, lightness: 0.32 },
+const TONES: Record<Scheme, { saturations: number[]; lightnesses: number[] }> = {
+  light: { saturations: [0.45, 0.65], lightnesses: [0.68, 0.75, 0.82] },
+  dark: { saturations: [0.35, 0.5], lightnesses: [0.2, 0.25, 0.3] },
 };
+
+export const SHADES = 6;
+const PLAIN = 2;
+
+function toneOf(scheme: Scheme, shade: number): { saturation: number; lightness: number } {
+  const { saturations, lightnesses } = TONES[scheme];
+  return {
+    saturation: saturations[Math.floor(shade / lightnesses.length) % saturations.length] ?? 0,
+    lightness: lightnesses[shade % lightnesses.length] ?? 0,
+  };
+}
 
 const INKS = { white: "#ffffff", black: "#14110f" } as const;
 
@@ -56,6 +67,15 @@ export function surnameHue(surname: string): number {
   return ((fraction / total) * 360) % 360;
 }
 
+export function surnameShade(surname: string): number {
+  const start = [...(stemOf(surname) || surname)].slice(0, DEPTH);
+  let hash = 2166136261;
+  for (const letter of start) {
+    hash = Math.imul(hash ^ (letter.codePointAt(0) ?? 0), 16777619) >>> 0;
+  }
+  return (hash >>> 8) % SHADES;
+}
+
 export function hueDistance(a: number, b: number): number {
   const gap = Math.abs(a - b) % 360;
   return Math.min(gap, 360 - gap);
@@ -79,32 +99,33 @@ const INK_LUMINANCE = { white: 1, black: luminance([0.0784, 0.0667, 0.0588]) } a
 
 const ratio = (a: number, b: number): number => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 
-function fillLuminance(hue: number, scheme: Scheme, grey: boolean): number {
-  const { saturation, lightness } = TONES[scheme];
+function fillLuminance(hue: number, scheme: Scheme, grey: boolean, shade: number): number {
+  const { saturation, lightness } = toneOf(scheme, grey ? PLAIN : shade);
   return luminance(rgbOf(hue, grey ? 0 : saturation, lightness));
 }
 
-function inkOf(hue: number, scheme: Scheme, grey: boolean): keyof typeof INKS {
-  const fill = fillLuminance(hue, scheme, grey);
+function inkOf(hue: number, scheme: Scheme, grey: boolean, shade: number): keyof typeof INKS {
+  const fill = fillLuminance(hue, scheme, grey, shade);
   return ratio(fill, INK_LUMINANCE.black) >= ratio(fill, INK_LUMINANCE.white) ? "black" : "white";
 }
 
-export function contrastOnFill(hue: number, scheme: Scheme, grey = false): number {
-  return ratio(fillLuminance(hue, scheme, grey), INK_LUMINANCE[inkOf(hue, scheme, grey)]);
+export function contrastOnFill(hue: number, scheme: Scheme, grey = false, shade = PLAIN): number {
+  return ratio(fillLuminance(hue, scheme, grey, shade), INK_LUMINANCE[inkOf(hue, scheme, grey, shade)]);
 }
 
 export function surnamePaint(surname: string | undefined): Record<string, string> {
   const grey = surname === undefined;
   const hue = grey ? 0 : Math.round(surnameHue(surname) * 10) / 10;
+  const shade = grey ? PLAIN : surnameShade(surname);
   const fill = (scheme: Scheme): string => {
-    const { saturation, lightness } = TONES[scheme];
+    const { saturation, lightness } = toneOf(scheme, shade);
     return `hsl(${hue} ${grey ? 0 : saturation * 100}% ${lightness * 100}%)`;
   };
   return {
     "--gedcom-surname-fill-light": fill("light"),
     "--gedcom-surname-fill-dark": fill("dark"),
-    "--gedcom-surname-ink-light": INKS[inkOf(hue, "light", grey)],
-    "--gedcom-surname-ink-dark": INKS[inkOf(hue, "dark", grey)],
+    "--gedcom-surname-ink-light": INKS[inkOf(hue, "light", grey, shade)],
+    "--gedcom-surname-ink-dark": INKS[inkOf(hue, "dark", grey, shade)],
   };
 }
 

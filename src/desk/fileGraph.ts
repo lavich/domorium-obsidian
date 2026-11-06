@@ -1,8 +1,7 @@
 import type { BranchScope } from "./branchScope";
 import { least, most, type FileTimeline, type Sex } from "./fileTimeline";
 
-/** `height` is a card's text; a card with a portrait is `portrait` taller. */
-export const CARD = { width: 124, height: 58, portrait: 50 } as const;
+export const CARD = { width: 124, height: 58 } as const;
 const SPOUSE_GAP = 36;
 const BLOCK_GAP = 48;
 /** Between one row's bottom edge and the next row's top. */
@@ -461,7 +460,6 @@ export function layoutFileGraph(
         id: xref,
         row: model.generations.get(xref) ?? 0,
         sex: model.people.get(xref)?.sex ?? "U",
-        portrait: model.people.get(xref)?.portrait !== undefined,
       })),
       families: [...model.families.values()].map((family) => ({
         id: family.xref,
@@ -481,7 +479,6 @@ interface Indexed {
   rowIndex: Map<string, number>;
   generations: number[];
   layerOf: (id: string) => number;
-  portraits: Set<string>;
 }
 
 interface Marriages {
@@ -510,7 +507,6 @@ function indexCards(input: GraphInput): Indexed {
     rowIndex: new Map(shown.map((id, at) => [id, at])),
     generations,
     layerOf: (id) => layerOfGeneration.get(rowOf.get(id) ?? 0) ?? 0,
-    portraits: new Set(input.cards.filter((one) => one.portrait).map((one) => one.id)),
   };
 }
 
@@ -782,12 +778,11 @@ function pullTogether(layers: Unit[][], late: Late): void {
   }
 }
 
-function stackBands(layers: Unit[][], portraits: ReadonlySet<string>): GraphBand[] {
+function stackBands(layers: Unit[][]): GraphBand[] {
   const bands: GraphBand[] = [];
-  layers.forEach((layer, at) => {
+  layers.forEach((_, at) => {
     const top = at === 0 ? 0 : (bands[at - 1]?.bottom ?? 0) + ROW_GAP;
-    const tall = layer.some((unit) => unit.members.some((id) => portraits.has(id)));
-    bands.push({ top, bottom: top + CARD.height + (tall ? CARD.portrait : 0) });
+    bands.push({ top, bottom: top + CARD.height });
   });
   return bands;
 }
@@ -795,7 +790,6 @@ function stackBands(layers: Unit[][], portraits: ReadonlySet<string>): GraphBand
 function placeCards(
   layers: Unit[][],
   bands: readonly GraphBand[],
-  portraits: ReadonlySet<string>,
   minX: number,
 ): { cards: GraphCard[]; card: Map<string, GraphCard> } {
   const cards: GraphCard[] = [];
@@ -805,8 +799,7 @@ function placeCards(
     for (const unit of layer) {
       unit.cx -= minX;
       unit.members.forEach((id, at) => {
-        const height = CARD.height + (portraits.has(id) ? CARD.portrait : 0);
-        const placed = { id, row: unit.layer, x: leftOf(unit) + at * pitch, y: band.bottom - height, height };
+        const placed = { id, row: unit.layer, x: leftOf(unit) + at * pitch, y: band.top, height: CARD.height };
         cards.push(placed);
         card.set(id, placed);
       });
@@ -945,9 +938,9 @@ export function layoutGraph(input: GraphInput, clock: () => number = () => perfo
   pullTogether(layers, late);
   squeeze(units, MOST_GAP);
 
-  const bands = stackBands(layers, index.portraits);
+  const bands = stackBands(layers);
   const minX = units.length > 0 ? least(units.map(leftOf)) : 0;
-  const { cards, card } = placeCards(layers, bands, index.portraits, minX);
+  const { cards, card } = placeCards(layers, bands, minX);
   const { nodes, node } = joinSpouses(input.families, card);
   const lines = routeLines(edges, card, node, bands);
   bendApart(lines, bands);

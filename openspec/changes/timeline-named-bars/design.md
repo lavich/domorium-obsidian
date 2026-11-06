@@ -53,6 +53,8 @@ The result is that stems that begin alike are near and ones that do not are far.
 
 *Alternatives.* An edit distance among the surnames of the file laid out on the circle: better neighbours, but a surname's colour then depends on the file and changes as people are added; rejected. A plain string hash: rejected, near surnames would be far.
 
+The hue alone cannot tell every pair apart: `Кобзаренко` (`kobz`) and `Лобанов` (`loba`) differ by one letter at the front and by twenty-five at the fourth, and the two shifts cancel to under a degree. A second channel therefore comes from a hash of the first four letters of the stem, the letters the hue reads, six tones of two saturations and three lightnesses per scheme, kept inside the range in which the white or near-black ink still reads at 4.5:1. The same four letters give the same tone, so the two genders and the two scripts of a surname still agree, and so do the forms of one surname in languages the table of endings does not know (`Černý` and `Černá`, `Kalinauskas` and `Kalinauskienė`, `Bērziņš` and `Bērziņa`); unlike surnames that share a hue differ by a tone five times in six.
+
 The text colour (white or near-black) is chosen per hue so that it passes 4.5:1 on the bar's fill in each scheme; a Playwright spec computes the ratio for a spread of hues, the yellow-green band included, and for the dimmed and the ringed bar.
 
 ### D5. The lit person's links, as `drawArrows` does, plus the marriage

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { surnamePaint, contrastOnFill, hueDistance, surnameHue } from "./surnameHue";
+import { SHADES, surnamePaint, contrastOnFill, hueDistance, surnameHue } from "./surnameHue";
 
 const apart = (a: string, b: string): number => hueDistance(surnameHue(a), surnameHue(b));
 
@@ -61,13 +61,62 @@ describe("the paint of a bar", () => {
     expect(surnamePaint("Curie")).toEqual(surnamePaint("Curie"));
   });
 
-  it("gives a name 4.5:1 on every hue, in both schemes", () => {
+  it("gives a name 4.5:1 on every hue and every shade, in both schemes", () => {
     for (let hue = 0; hue < 360; hue += 1) {
-      for (const scheme of ["light", "dark"] as const) {
-        expect(contrastOnFill(hue, scheme), `${hue} ${scheme}`).toBeGreaterThanOrEqual(4.5);
+      for (let shade = 0; shade < SHADES; shade += 1) {
+        for (const scheme of ["light", "dark"] as const) {
+          expect(contrastOnFill(hue, scheme, false, shade), `${hue} ${shade} ${scheme}`).toBeGreaterThanOrEqual(4.5);
+        }
       }
     }
     expect(contrastOnFill(0, "light", true)).toBeGreaterThanOrEqual(4.5);
     expect(contrastOnFill(0, "dark", true)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("the shade of a surname", () => {
+  const fills = (surname: string) => {
+    const paint = surnamePaint(surname);
+    return [paint["--gedcom-surname-fill-light"], paint["--gedcom-surname-fill-dark"]];
+  };
+  const lightness = (surname: string) => fills(surname).map((fill) => fill?.match(/(\d+(?:\.\d+)?)%\)$/u)?.[1]);
+
+  it("is the same for the two genders of a surname and for the same stem", () => {
+    expect(fills("Лобанов")).toEqual(fills("Лобанова"));
+    expect(fills("Жуков")).toEqual(fills("Zhukov"));
+  });
+
+  it("is one for the forms of a surname that begin alike, in any of the languages the table does not know", () => {
+    const pairs = [
+      ["Kowalski", "Kowalska"],
+      ["Novák", "Nováková"],
+      ["Černý", "Černá"],
+      ["Kalinauskas", "Kalinauskienė"],
+      ["Bērziņš", "Bērziņa"],
+      ["Papadopoulos", "Papadopoulou"],
+      ["Nowak", "Nowakowa"],
+      ["Ibáñez", "Ibanez"],
+      ["Petrović", "Petrovic"],
+    ] as const;
+
+    for (const [one, other] of pairs) {
+      expect(fills(one), `${one} and ${other}`).toEqual(fills(other));
+    }
+  });
+
+  it("tells apart two surnames that fall on one hue", () => {
+    expect(apart("Кобзаренко", "Лобанов")).toBeLessThan(3);
+    expect(fills("Кобзаренко")).not.toEqual(fills("Лобанов"));
+  });
+
+  it("uses more than one shade over a spread of surnames", () => {
+    const names = ["Иванов", "Петров", "Сидоров", "Кузнецов", "Смирнов", "Попов", "Новиков", "Морозов", "Волков", "Соловьёв", "Васильев", "Зайцев"];
+
+    expect(new Set(names.map((name) => fills(name).join("|"))).size).toBeGreaterThan(SHADES - 1);
+    expect(new Set(names.map((name) => lightness(name).join("|"))).size).toBeGreaterThan(2);
+  });
+
+  it("is the shade of the first tone for a person with no surname", () => {
+    expect(surnamePaint(undefined)["--gedcom-surname-fill-light"]).toMatch(/ 0% /);
   });
 });

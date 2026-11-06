@@ -25,7 +25,6 @@ let parent: HTMLElement;
 let host: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   showInSource: ReturnType<typeof vi.fn<(range: Range) => void>>;
-  portrait: ReturnType<typeof vi.fn<FileViewsHost["portrait"]>>;
   changed: ReturnType<typeof vi.fn<() => void>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
   coarsePointer: ReturnType<typeof vi.fn<() => boolean>>;
@@ -71,7 +70,6 @@ beforeEach(() => {
   host = {
     select: vi.fn(),
     showInSource: vi.fn(),
-    portrait: vi.fn(() => null),
     changed: vi.fn(),
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
       element.setAttribute("data-icon", icon);

@@ -4,7 +4,7 @@ import type {
 } from "@domorium/language-service";
 
 import type { MediaItem } from "../desk/media";
-import type { PortraitContent } from "../desk/graphCanvas";
+import type { PortraitContent } from "../desk/media";
 import {
   mediaPreviewContent,
   mediaVaultPath,

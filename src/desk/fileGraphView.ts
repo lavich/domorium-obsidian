@@ -10,7 +10,6 @@ import {
   type GraphView,
   type GraphWindow,
   type Opening,
-  type PortraitContent,
 } from "./graphCanvas";
 import { familyTitle, lifelineYears, personName } from "./labels";
 
@@ -34,7 +33,6 @@ export interface FileGraphHost {
   stateChanged(settings: { scope: BranchScope; view?: GraphView }): void;
   setIcon(element: HTMLElement, icon: string): void;
   /** The picture the person's page shows, where it can be shown. */
-  portrait?(xref: string): PortraitContent | null;
 }
 
 const finite = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
@@ -194,7 +192,7 @@ export class FileGraphBoard {
       return;
     }
     this.shown = layout;
-    this.canvas.show(sceneOf(model, layout, this.scope, (xref) => this.host.portrait?.(xref) ?? null), opening);
+    this.canvas.show(sceneOf(model, layout, this.scope), opening);
   }
 
 }
@@ -203,7 +201,6 @@ function sceneOf(
   model: FileTimeline,
   layout: CanvasScene["layout"],
   scope: BranchScope,
-  portrait: (xref: string) => PortraitContent | null,
 ): CanvasScene {
   const search = new Map(
     [...model.people.values()].map((person) => [
@@ -223,7 +220,6 @@ function sceneOf(
             focus: xref === scope.focus,
             branch: true,
             ...(person.row.given && person.row.surname ? { given: person.row.given, surname: person.row.surname } : {}),
-            portrait: () => portrait(xref),
           }
         : undefined;
     },

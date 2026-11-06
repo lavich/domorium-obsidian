@@ -8,6 +8,8 @@ Every group ends with `npm run check` exiting 0.
 - [x] 1.2 `src/desk/graphCanvas.ts`, `src/desk/cardRender.ts`, `src/desk/fileGraphView.ts`: the card carries `paint` and no longer its sex. Test in `src/desk/fileGraphView.test.ts`: `Лобанов` and `Лобанова` within 3°, `Сидорова` over 50° away, no surname grey, no sex class.
 - [x] 1.3 `styles.css`: the card's background and the lines take the fill and the ink, in both schemes; the sex tints go. Spec in `tests/fileGraph.spec.ts`: every card's lines at 4.5:1 in both schemes, Marie's and Pierre's tints differ, light and dark differ.
 
+- [x] 1.4 The portrait leaves the graph's cards (D4): `src/desk/cardRender.ts`, `src/desk/fileGraph.ts`, `src/desk/graphCanvas.ts`, `src/desk/fileGraphView.ts`, `src/desk/fileViews.ts`, `src/GedcomView.ts`, `src/desk/fileTimeline.ts`, `src/desk/media.ts`, `styles.css`, `harness/fileGraph.ts`, `harness/fileViews.ts`. Tests in `src/desk/fileGraph.test.ts` (every row one card tall), `src/desk/fileGraphView.test.ts` (no picture on a card) and `src/desk/fileViews.test.ts`; spec in `tests/fileGraph.spec.ts` (no picture, one height).
+
 ## 2. Documents
 
 - [x] 2.1 `README.md` says the graph colours a card by surname. Test: none.
