@@ -8,7 +8,7 @@ In Russian, after the critique `/impeccable` of the cards: «проведи ре
 
 ## What Changes
 
-- **Controls are easy to hit.** On a touch device or in the mobile app, every control of a card has an activation area at least 44 pixels tall, without the text getting bigger; Back and Forward are 44 by 44.
+- **Controls are easy to hit.** On a touch device or in the mobile app, every control of a card has an activation area at least 36 pixels tall, a block button 44, without the text getting bigger; Back and Forward are 44 by 44.
 - **Keyboard focus is visible.** Every control of a card shows a focus ring in the accent colour when reached by keyboard. The picture on a media card, which was clickable by pointer only, becomes a button.
 - **Text is readable.** Section headings and the secondary text of a card use the muted text colour, not the faint one. The *No source* mark is a neutral outlined mark, not an orange one, since a fact without a source is the normal state of a family tree; the missing-source notice keeps its warning background and its title is set in the normal text colour.
 - **The event card leads with the event.** The record the event belongs to is a link above the title, labelled *Person* or *Family*; the title is the name of the event and its text; under it come the date and the place, the place as a link. The labelled detail rows (*Record*, *Date*, *Place*) go.

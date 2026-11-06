@@ -338,10 +338,11 @@ test.describe("the controls of a card", () => {
     expect(await ring()).toBe("solid");
 
     await page.mouse.click(5, 5);
-    await pierre.click({ position: { x: 4, y: 4 } });
-    await mountDesk(page);
-    await page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" }).hover();
-    expect(await page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" }).evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("none");
+    await pierre.hover();
+    await page.mouse.down();
+    expect(await pierre.evaluate((node) => node.matches(":focus-visible"))).toBe(false);
+    expect(await ring()).toBe("none");
+    await page.mouse.up();
   });
 
   test("are muted, and the mark of a fact without a source is not orange", async ({ page }) => {

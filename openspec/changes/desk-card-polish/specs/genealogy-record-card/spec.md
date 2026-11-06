@@ -266,9 +266,10 @@ Every control of a card — the buttons that select a relative, a source, an eve
 links *Show in source*, the notes' lines, the picture of a media card, and Back and Forward — SHALL
 show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
 when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
-them SHALL have an activation area at least 44 pixels tall (Back and Forward 44 by 44), without
-changing the size of its text; where two controls stand closer together than that, the space between
-them is shared, and neither has less than 36 pixels. The headings of the sections of a card and the secondary lines under
+them SHALL have an activation area at least 36 pixels tall without changing the size of its text,
+and a control that is a block of its own — a relative, a source, a note's line, the heading of a
+fold, Back and Forward (44 by 44) — 44 pixels; where two controls stand closer together than that,
+the space between them is shared. The headings of the sections of a card and the secondary lines under
 them SHALL be set in the muted text colour of the theme, not the faint one. A fact or an event that
 cites no source SHALL be marked in a neutral colour, not a warning one; a notice that a source is
 missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
@@ -283,7 +284,7 @@ missing keeps its warning colour. Nothing SHALL set a colour that is not one of 
 
 #### Scenario: A phone
 - **WHEN** Marie's card is shown 390 pixels wide on a phone
-- **THEN** the area that activates `Pierre Curie`, a place link in her birth and Back is at least 36 pixels tall, and 44 where no other control is beside it
+- **THEN** the area that activates a place link in her birth is at least 36 pixels tall, and the area that activates `Pierre Curie` and Back at least 44
 
 #### Scenario: A fact without a source
 - **WHEN** Marie's birth cites no source

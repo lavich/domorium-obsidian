@@ -610,6 +610,10 @@ button.gedcom-desk-person:hover {
   font-size: var(--font-ui-small);
 }
 
+.gedcom-desk-event-owner .gedcom-desk-link {
+  text-align: start;
+}
+
 .gedcom-desk-event-kind {
   color: var(--text-muted);
 }

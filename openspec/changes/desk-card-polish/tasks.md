@@ -30,4 +30,4 @@ Archive order: #233 (`places-list`, `events-list`) first, then this change.
 
 - [x] 5.1 `README.md`: the card sections and the folds where described.
 - [ ] 5.2 Browser check at 360 and 480 pixels, English and Russian, desktop and phone width; screenshots of the five cards; a look in Obsidian on the demo vault and on a phone remains for the reader.
-- [ ] 5.3 `npm run check` and `npm run test:browser`.
+- [x] 5.3 `npm run check` and `npm run test:browser`.
