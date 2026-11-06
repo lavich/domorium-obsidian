@@ -12,7 +12,6 @@ import {
   nextSort,
   peopleShown,
   readListState,
-  rowWindow,
   sourcesCited,
   type ListKind,
   type ListSort,
@@ -238,20 +237,5 @@ describe("which selection the list can show", () => {
   it("is a person, a family or a source, and nothing for a media record, a note or nobody", () => {
     expect(["@I1@", "@F3@", "@S2@"].map((xref) => listSelection(index, xref))).toEqual(["@I1@", "@F3@", "@S2@"]);
     expect(["@O5@", "@N1@", null].map((xref) => listSelection(index, xref))).toEqual([null, null, null]);
-  });
-});
-
-describe("the window of rows held in the document", () => {
-  it("is the first window before there is a height", () => {
-    expect(rowWindow(0, 0, 30, 20_000)).toEqual({ first: 0, last: 40 });
-  });
-
-  it("holds at most a screen and a margin each side at the top and the bottom of 20 000 rows", () => {
-    for (const top of [0, 30 * 19_900]) {
-      const { first, last } = rowWindow(top, 600, 30, 20_000, 10);
-
-      expect(last - first).toBeLessThanOrEqual(Math.ceil(600 / 30) + 2 * 10);
-      expect(last).toBeLessThanOrEqual(19_999);
-    }
   });
 });

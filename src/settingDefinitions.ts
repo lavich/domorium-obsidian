@@ -1,7 +1,6 @@
-import type { SettingDropdownControl, SettingTextControl, SettingToggleControl } from "obsidian";
+import type { SettingDropdownControl, SettingToggleControl } from "obsidian";
 
 import { t } from "./i18n";
-import { tileTemplate } from "./desk/mapProjection";
 import { DEFAULT_SETTINGS, type GedcomSettings } from "./settingsData";
 
 type SettingKey = keyof GedcomSettings;
@@ -9,10 +8,8 @@ type SettingKey = keyof GedcomSettings;
 export interface GedcomSettingDefinition {
   name: string;
   desc: string;
-  control: SettingToggleControl<SettingKey> | SettingDropdownControl<SettingKey> | SettingTextControl<SettingKey>;
+  control: SettingToggleControl<SettingKey> | SettingDropdownControl<SettingKey>;
 }
-
-export const TILE_PLACEHOLDER = "https://tiles.example/{z}/{x}/{y}.png";
 
 /** Functions, not constants: the language is known only once the plugin has loaded. */
 export function recordPreviewOptions(): Record<string, string> {
@@ -88,35 +85,6 @@ export function settingDefinitions(): GedcomSettingDefinition[] {
         type: "toggle",
         key: "remoteImages",
         defaultValue: DEFAULT_SETTINGS.remoteImages,
-      },
-    },
-    {
-      name: t("setting.mapTiles.name"),
-      desc: t("setting.mapTiles.desc"),
-      control: {
-        type: "toggle",
-        key: "mapTiles",
-        defaultValue: DEFAULT_SETTINGS.mapTiles,
-      },
-    },
-    {
-      name: t("setting.tileUrl.name"),
-      desc: t("setting.tileUrl.desc"),
-      control: {
-        type: "text",
-        key: "tileUrl",
-        placeholder: TILE_PLACEHOLDER,
-        defaultValue: DEFAULT_SETTINGS.tileUrl,
-        validate: (value) => (value.trim() === "" || tileTemplate(value) !== null ? undefined : t("map.tiles.invalid")),
-      },
-    },
-    {
-      name: t("setting.tileAttribution.name"),
-      desc: t("setting.tileAttribution.desc"),
-      control: {
-        type: "text",
-        key: "tileAttribution",
-        defaultValue: DEFAULT_SETTINGS.tileAttribution,
       },
     },
   ];

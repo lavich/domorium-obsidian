@@ -131,24 +131,6 @@ describe("spelling a count", () => {
     expect(plural("list.countOf.families", 21, { shown: 2 })).toBe("2 из 21 семьи");
   });
 
-  it("spells the counts of the map in both languages", () => {
-    expect(`${plural("map.places", 7)} · ${plural("map.events", 18)}`).toBe("7 places · 18 events");
-    expect([1, 3].map((count) => plural("map.noCoordinates", count))).toEqual([
-      "1 place has no coordinates",
-      "3 places have no coordinates",
-    ]);
-    setLanguage("ru");
-    expect([1, 2, 5, 21].map((count) => plural("map.places", count))).toEqual([
-      "1 место",
-      "2 места",
-      "5 мест",
-      "21 место",
-    ]);
-    expect(plural("map.noCoordinates", 21)).toBe("У 21 места нет координат");
-    expect(plural("map.noCoordinates", 5)).toBe("У 5 мест нет координат");
-    expect(plural("map.noCoordinates", 2)).toBe("У 2 мест нет координат");
-  });
-
   it("carries the other parameters through", () => {
     expect(
       plural("notice.references", 3),
@@ -192,8 +174,8 @@ describe("the two sides of the catalogue", () => {
     const options = {
       acronyms: ["GEDCOM", "LDS", "URL"],
       brands: ["Domorium", "Obsidian"],
-      // GEDCOM tags, and two modifier keys.
-      ignoreWords: ["FILE", "MAP", "LATI", "LONG", "PLAC", "Ctrl", "Cmd"],
+      // A GEDCOM tag, and two modifier keys.
+      ignoreWords: ["FILE", "Ctrl", "Cmd"],
       // A status-bar fragment, and three phrases CodeMirror looks up as it
       // spells them.
       ignoreRegex: ["^no problems$", "^close$", "^folded code$", "^unfold$"],

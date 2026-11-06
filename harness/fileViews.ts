@@ -1,12 +1,10 @@
 import type { Range } from "@domorium/language-service";
 
 import type { ViewKind } from "../src/desk/deskState";
-import { mapSelection } from "../src/desk/fileMap";
-import type { TileSettings } from "../src/desk/fileMapView";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
-import { CURIE, curieWithEvents, curieWithMap, indexOf, SCEAUX_MAP } from "../src/testing/curie";
+import { CURIE, curieWithEvents, indexOf } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
 import { stubSetIcon } from "./icons";
 
@@ -23,15 +21,12 @@ export interface TabOptions {
   touch?: boolean;
   language?: string;
   events?: boolean;
-  fixture?: "map" | "mapWithSceaux";
-  tiles?: TileSettings;
 }
 
 export interface TabCalls {
   selected: string[];
   shownInSource: Range[];
   changed: number;
-  shownPlaces: number;
 }
 
 declare global {
@@ -52,9 +47,7 @@ declare global {
 
 installObsidianDom();
 
-const calls: TabCalls = { selected: [], shownInSource: [], changed: 0, shownPlaces: 0 };
-const NO_TILES: TileSettings = { enabled: false, template: null, invalid: false, attribution: "" };
-let tiles: TileSettings = NO_TILES;
+const calls: TabCalls = { selected: [], shownInSource: [], changed: 0 };
 let views: FileViews | null = null;
 let memory: ViewMemory = {};
 let index = indexOf(CURIE);
@@ -68,7 +61,6 @@ function hand(xref: string | null, reveal: boolean): void {
     views?.select("graph", person, reveal);
   views?.select("timeline", person, reveal);
   views?.select("list", listSelection(index, xref), reveal);
-  views?.select("map", mapSelection(index, xref), reveal);
 }
 
 const element = (id: string): HTMLElement => {
@@ -99,7 +91,7 @@ function draw(): void {
 }
 
 function markActive(): void {
-  for (const each of ["graph", "timeline", "list", "map", "source"]) {
+  for (const each of ["graph", "timeline", "list", "source"]) {
     element(`show-${each}`).classList.toggle("gedcom-mode-active", each === mode);
     element(`show-${each}`).setAttribute("aria-pressed", String(each === mode));
   }
@@ -125,12 +117,7 @@ function mount(options: TabOptions): void {
   calls.selected = [];
   calls.shownInSource = [];
   calls.changed = 0;
-  calls.shownPlaces = 0;
-  tiles = options.tiles ?? NO_TILES;
-  index = indexOf(
-    options.doc ??
-      (options.events ? curieWithEvents() : options.fixture === "map" ? curieWithMap() : options.fixture === "mapWithSceaux" ? curieWithMap(SCEAUX_MAP) : CURIE),
-  );
+  index = indexOf(options.doc ?? (options.events ? curieWithEvents() : CURIE));
   memory = options.memory ?? {};
   around = options.around;
   selected = null;
@@ -152,16 +139,9 @@ function mount(options: TabOptions): void {
     portrait: () => null,
     changed: () => {
       calls.changed += 1;
-      memory = { ...memory, ...views?.memory() };
     },
     setIcon: stubSetIcon,
     coarsePointer: () => touch,
-    showPlaces: () => {
-      calls.shownPlaces += 1;
-      memory = { ...memory, list: views?.placesList() ?? {} };
-      showMode("list");
-    },
-    tiles: () => tiles,
   });
   window.tab.views = views;
   draw();
@@ -174,7 +154,6 @@ const wire = (id: string, run: () => void): void => {
 wire("show-graph", () => showMode("graph"));
 wire("show-timeline", () => showMode("timeline"));
 wire("show-list", () => showMode("list"));
-wire("show-map", () => showMode("map"));
 wire("show-source", () => showMode("source"));
 wire("select-pierre", () => window.tab.select("@I2@", true));
 wire("select-irene", () => window.tab.select("@I12@", true));

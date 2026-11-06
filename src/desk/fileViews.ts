@@ -6,7 +6,6 @@ import { fileTimelineOf } from "./fileTimeline";
 import { FileGraphBoard, type GraphState } from "./fileGraphView";
 import { FileTimelineBoard, type TimelineState } from "./fileTimelineView";
 import { ListBoard } from "./fileList";
-import { MapBoard, type MapState, type TileSettings } from "./fileMapView";
 import type { ListState } from "./listRows";
 import type { PortraitContent } from "./graphCanvas";
 
@@ -16,7 +15,6 @@ export interface ViewMemory {
   graph?: GraphState;
   timeline?: TimelineState;
   list?: ListState;
-  map?: MapState;
 }
 
 export interface FileViewsHost {
@@ -28,27 +26,22 @@ export interface FileViewsHost {
   changed(): void;
   setIcon(element: HTMLElement, icon: string): void;
   coarsePointer(): boolean;
-  /** The map's counter of places with no coordinates: the tab goes to its list, on the places. */
-  showPlaces(): void;
-  tiles(): TileSettings;
 }
 
 /** What a view is shown with: the tab's own memory over what the boards last reported. */
 export const memoryToShow = (reported: ViewMemory, tab: ViewMemory): ViewMemory => ({ ...reported, ...tab });
 
-const KINDS: readonly ViewKind[] = ["graph", "timeline", "list", "map"];
+const KINDS: readonly ViewKind[] = ["graph", "timeline", "list"];
 
 export class FileViews {
   private readonly roots: Partial<Record<ViewKind, HTMLElement>> = {};
   private graph: FileGraphBoard | null = null;
   private timeline: FileTimelineBoard | null = null;
   private list: ListBoard | null = null;
-  private map: MapBoard | null = null;
-  private mapIndex: GenealogyIndex | null = null;
   private listScroll: number | undefined;
   private kept: ViewMemory = {};
   private pending: Partial<Record<ViewKind, { xref: string; reveal: boolean }>> = {};
-  private parked: Record<ViewKind, boolean> = { graph: false, timeline: false, list: false, map: false };
+  private parked: Record<ViewKind, boolean> = { graph: false, timeline: false, list: false };
   private shownKind: ViewKind | null = null;
 
   constructor(
@@ -70,8 +63,6 @@ export class FileViews {
       this.showGraph(index, memory.graph, around);
     } else if (kind === "timeline") {
       this.showTimeline(index, memory.timeline, around, restore);
-    } else if (kind === "map") {
-      this.showMap(index, memory.map);
     } else {
       this.showList(index, memory.list);
     }
@@ -139,7 +130,6 @@ export class FileViews {
       ...(this.kept.graph ? { graph: { ...this.kept.graph } } : {}),
       ...(this.kept.timeline ? { timeline: { ...this.kept.timeline } } : {}),
       ...(this.kept.list ? { list: { ...this.kept.list } } : {}),
-      ...(this.kept.map ? { map: { ...this.kept.map } } : {}),
     };
   }
 
@@ -151,16 +141,13 @@ export class FileViews {
       delete this.roots[kind];
     }
     this.list?.dispose();
-    this.map?.dispose();
     this.graph = null;
     this.timeline = null;
     this.list = null;
-    this.map = null;
-    this.mapIndex = null;
     this.listScroll = undefined;
     this.kept = {};
     this.pending = {};
-    this.parked = { graph: false, timeline: false, list: false, map: false };
+    this.parked = { graph: false, timeline: false, list: false };
     this.shownKind = null;
   }
 
@@ -197,25 +184,6 @@ export class FileViews {
     }
   }
 
-  private showMap(index: GenealogyIndex, saved: MapState | undefined): void {
-    const board = (this.map ??= this.makeMap());
-    this.mapIndex = index;
-    board.show(index, openingMemory("map", saved ?? this.kept.map, index, undefined));
-    this.kept.map = board.state();
-  }
-
-  /** The list's memory with the places kind chosen and its search cleared, for the tab to show next. */
-  placesList(): ListState {
-    this.list?.clearSearch();
-    this.kept.list = { ...this.kept.list, kind: "places" };
-    delete this.kept.list.place;
-    return this.kept.list;
-  }
-
-  refreshTiles(): void {
-    this.map?.tilesChanged();
-  }
-
   private showList(index: GenealogyIndex, saved: ListState | undefined): void {
     const board = (this.list ??= this.makeList());
     board.show(index, saved ?? this.kept.list ?? {});
@@ -239,8 +207,6 @@ export class FileViews {
         board.cancelHover();
       } else if (board instanceof FileTimelineBoard) {
         board.unlight();
-      } else if (board instanceof MapBoard) {
-        board.cancelHover();
       }
       if (kind === "timeline" && this.timeline && this.kept.timeline && this.shownKind === kind) {
         this.kept.timeline = { ...this.kept.timeline, scroll: this.timeline.scroll() };
@@ -255,8 +221,8 @@ export class FileViews {
     }
   }
 
-  private boardOf(kind: ViewKind): FileGraphBoard | FileTimelineBoard | ListBoard | MapBoard | null {
-    return kind === "graph" ? this.graph : kind === "timeline" ? this.timeline : kind === "map" ? this.map : this.list;
+  private boardOf(kind: ViewKind): FileGraphBoard | FileTimelineBoard | ListBoard | null {
+    return kind === "graph" ? this.graph : kind === "timeline" ? this.timeline : this.list;
   }
 
   private rootOf(kind: ViewKind): HTMLElement {
@@ -286,20 +252,6 @@ export class FileViews {
         this.host.changed();
       },
       setIcon: (element, icon) => this.host.setIcon(element, icon),
-    });
-  }
-
-  private makeMap(): MapBoard {
-    return new MapBoard(this.rootOf("map"), {
-      select: (xref) => this.host.select(xref),
-      setIcon: (element, icon) => this.host.setIcon(element, icon),
-      coarsePointer: () => this.host.coarsePointer(),
-      stateChanged: (state) => {
-        this.kept.map = state;
-        this.host.changed();
-      },
-      showPlaces: () => this.host.showPlaces(),
-      tiles: () => this.host.tiles(),
     });
   }
 

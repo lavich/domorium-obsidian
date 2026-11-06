@@ -33,34 +33,6 @@ describe("a tab in List mode", () => {
   });
 });
 
-describe("a tab in Map mode", () => {
-  it("records Map as the mode to come back to from Source, and the toggle goes there and back", () => {
-    const modes = tab("source");
-    modes.setMode("map", at());
-    expect(modes.toggleTarget()).toBe("source");
-    modes.setMode("source", at());
-
-    expect(modes.lastMode).toBe("map");
-    expect(modes.toggleTarget()).toBe("map");
-  });
-
-  it("is a view, whose record is the selected one", () => {
-    const modes = tab("map");
-    modes.select("@F3@", index);
-
-    expect(modes.inView()).toBe(true);
-    expect(modes.recordAtCursorFor("map", "@I1@")).toBe("@F3@");
-  });
-
-  it("selects by a click on a point without moving the cursor, opening the card and the drawer", () => {
-    const rules = originRules("view", true);
-
-    expect(rules.cursorToRecord).toBe(false);
-    expect(rules.placesCard).toBe(true);
-    expect(rules.opensDrawer).toBe(true);
-  });
-});
-
 describe("the record a tab selects on leaving Source", () => {
   it("is the record under the cursor, going to Graph, and again going on to Timeline", () => {
     const modes = tab("source");

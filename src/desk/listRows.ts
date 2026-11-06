@@ -300,19 +300,3 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
 
 export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>
   xref !== null && recordKind(index, xref) !== null ? xref : null;
-
-export const WINDOW_MARGIN = 10;
-
-const FIRST_WINDOW = 40;
-
-export function rowWindow(
-  scrollTop: number,
-  height: number,
-  rowHeight: number,
-  total: number,
-  margin = WINDOW_MARGIN,
-): { first: number; last: number } {
-  const first = Math.max(0, Math.floor(scrollTop / rowHeight) - margin);
-  const count = height > 0 ? Math.ceil(height / rowHeight) + 2 * margin : FIRST_WINDOW;
-  return { first, last: Math.min(total - 1, first + count) };
-}

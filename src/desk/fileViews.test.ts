@@ -4,7 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { generated } from "../../tests/generated";
 import { resetLanguage } from "../i18n";
-import { curieIndex, curieWithMap, indexOf } from "../testing/curie";
+import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { HOVER_DELAY } from "./dom";
 import { FileViews, type FileViewsHost, type ViewMemory } from "./fileViews";
@@ -29,8 +29,6 @@ let host: {
   changed: ReturnType<typeof vi.fn<() => void>>;
   setIcon: ReturnType<typeof vi.fn<(element: HTMLElement, icon: string) => void>>;
   coarsePointer: ReturnType<typeof vi.fn<() => boolean>>;
-  showPlaces: ReturnType<typeof vi.fn<() => void>>;
-  tiles: ReturnType<typeof vi.fn<FileViewsHost["tiles"]>>;
 };
 
 beforeAll(() => {
@@ -79,15 +77,13 @@ beforeEach(() => {
       element.setAttribute("data-icon", icon);
     }),
     coarsePointer: vi.fn(() => false),
-    showPlaces: vi.fn(),
-    tiles: vi.fn(() => ({ enabled: false, template: null, invalid: false, attribution: "" })),
   };
 });
 
 const index = curieIndex();
 const views = (): FileViews => new FileViews(parent, host satisfies FileViewsHost);
-const root = (kind: "graph" | "timeline" | "list" | "map") => parent.querySelector<HTMLElement>(`.gedcom-views-root.is-${kind}`);
-const shown = (kind: "graph" | "timeline" | "list" | "map") => root(kind) !== null && root(kind)?.style.display !== "none";
+const root = (kind: "graph" | "timeline") => parent.querySelector<HTMLElement>(`.gedcom-views-root.is-${kind}`);
+const shown = (kind: "graph" | "timeline") => root(kind) !== null && root(kind)?.style.display !== "none";
 const all = (selector: string) => [...parent.querySelectorAll(selector)];
 const cards = () => all(".gedcom-fg-person").map((card) => card.getAttribute("data-p"));
 const selectedMarks = () => all(".is-selected");
@@ -291,66 +287,6 @@ describe("the views of a tab", () => {
   });
 });
 
-describe("the map among the views", () => {
-  const mapped = indexOf(curieWithMap());
-  const marks = () => all(".gedcom-map-mark");
-
-  it("is shown in a root of its own, one root at a time among the five kinds", () => {
-    const tab = views();
-    tab.show("graph", mapped, {});
-    tab.show("map", mapped, {});
-
-    expect(shown("map")).toBe(true);
-    expect(shown("graph")).toBe(false);
-    expect(marks().length).toBeGreaterThan(0);
-    tab.show("list", mapped, {});
-    expect(shown("map")).toBe(false);
-  });
-
-  it("keeps the map's scope, view and place across a switch away and back", () => {
-    const tab = views();
-    tab.show("map", mapped, { map: { up: 1, down: 3, view: { lat: 48.85, lon: 2.35, zoom: 9 } } });
-    const kept = tab.memory().map;
-    expect(kept).toEqual({ up: 1, down: 3, view: { lat: 48.85, lon: 2.35, zoom: 9 } });
-    const before = marks()[0];
-    tab.show("timeline", mapped, tab.memory());
-    tab.show("map", mapped, tab.memory());
-
-    expect(tab.memory().map).toEqual(kept);
-    expect(marks()[0]).toBe(before);
-  });
-
-  it("applies a selection made while hidden, with its reveal, on the next show", () => {
-    const tab = views();
-    tab.show("map", mapped, {});
-    tab.show("graph", mapped, {});
-    tab.select("map", "@I1@", true);
-    expect(all(".is-highlighted")).toHaveLength(0);
-    tab.show("map", mapped, tab.memory());
-
-    expect(all(".is-highlighted").length).toBeGreaterThan(0);
-  });
-
-  it("forgets the map on reset and carries it in the memory only once shown", () => {
-    const tab = views();
-    expect(tab.memory().map).toBeUndefined();
-    tab.show("map", mapped, {});
-    expect(tab.memory().map).toBeDefined();
-    tab.reset();
-
-    expect(tab.memory()).toEqual({});
-    expect(parent.children).toHaveLength(0);
-  });
-
-  it("opens the search of the map", () => {
-    const tab = views();
-    tab.show("map", mapped, {});
-    tab.openSearch("map");
-
-    expect(parent.querySelector(".gedcom-map-find.is-open")).not.toBeNull();
-  });
-});
-
 describe("hovering while the views come and go", () => {
   function restOn(xref: string): void {
     card(xref)?.dispatchEvent(
@@ -539,7 +475,7 @@ describe("what a click in a view asks of the tab", () => {
     click(parent.querySelector('.gedcom-ft-mark.is-birth[data-p="@I1@"]'));
 
     const range = host.showInSource.mock.lastCall?.[0];
-    expect([range?.start.line, range?.end.line]).toEqual([21, 26]);
+    expect([range?.start.line, range?.end.line]).toEqual([21, 23]);
   });
 
   it("selects the person of a timeline row", () => {
@@ -757,62 +693,3 @@ describe("the list of a tab", () => {
   });
 });
 
-
-describe("the places of the list of a tab", () => {
-  const mapped = indexOf(curieWithMap());
-  const keys = () => [...parent.querySelectorAll<HTMLElement>(".gedcom-list-row")].map((one) => one.dataset.key);
-  const type = (value: string) => {
-    const field = parent.querySelector<HTMLInputElement>(".gedcom-list-search") as HTMLInputElement;
-    field.value = value;
-    field.dispatchEvent(new Event("input"));
-  };
-
-  it("keeps the kind, the sort and the selected place with the list's memory", () => {
-    const tab = views();
-    tab.show("list", mapped, { list: { kind: "places", place: "paris, france" } });
-    parent.querySelectorAll<HTMLElement>(".gedcom-list-sort")[1]?.click();
-
-    expect(tab.memory().list).toEqual({ kind: "places", place: "paris, france", sort: { places: { by: "events", dir: "asc" } } });
-  });
-
-  it("is chosen with its search cleared by placesList, which hands back the memory to show", () => {
-    const tab = views();
-    tab.show("list", mapped, {});
-    type("anna");
-
-    const memory = tab.placesList();
-    tab.show("list", mapped, { list: memory });
-
-    expect(memory).toEqual({ kind: "places" });
-    expect(parent.querySelector<HTMLInputElement>(".gedcom-list-search")?.value).toBe("");
-    expect(keys()).toHaveLength(10);
-  });
-
-  it("clears a search that was already on the places", () => {
-    const tab = views();
-    tab.show("list", mapped, { list: { kind: "places", place: "paris, france" } });
-    type("paris");
-    expect(keys()).toEqual(["paris, france"]);
-
-    tab.show("list", mapped, { list: tab.placesList() });
-
-    expect(keys()).toHaveLength(10);
-    expect(tab.memory().list).toEqual({ kind: "places" });
-  });
-
-  it("stays on the places when the tab hands over a record selection", () => {
-    const tab = views();
-    tab.show("list", mapped, { list: { kind: "places" } });
-    tab.select("list", "@I2@", true);
-
-    expect(parent.querySelector(".gedcom-list-seg-button.is-active")?.textContent).toBe("Places");
-  });
-
-  it("asks the host to go to the places when the map's counter is pressed", () => {
-    const tab = views();
-    tab.show("map", mapped, {});
-    parent.querySelector<HTMLElement>(".gedcom-map-counter")?.click();
-
-    expect(host.showPlaces).toHaveBeenCalledOnce();
-  });
-});

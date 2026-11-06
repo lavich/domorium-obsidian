@@ -894,16 +894,6 @@ describe("the places", () => {
     expect(cell(place("paris, france"), 1)).toBe("11 events");
   });
 
-  it("empties the search when asked, and leaves a search that is already empty", () => {
-    const made = open();
-    type("paris");
-
-    made.clearSearch();
-
-    expect(rows()).toHaveLength(10);
-    expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
-  });
-
   it("says so when the file names no place", () => {
     board({ kind: "places" }, indexOf("0 HEAD\n0 TRLR"));
 

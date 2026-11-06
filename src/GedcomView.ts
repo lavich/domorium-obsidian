@@ -76,9 +76,7 @@ import {
   type Origin,
   type ViewKind,
 } from "./desk/deskState";
-import { mapSelection } from "./desk/fileMap";
 import { listSelection } from "./desk/listRows";
-import { tileTemplate } from "./desk/mapProjection";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
@@ -158,16 +156,6 @@ export class GedcomView extends TextFileView implements CardTab {
       },
       setIcon: (element, icon) => setIcon(element, icon),
       coarsePointer: () => Platform.isMobile || window.matchMedia("(pointer: coarse)").matches,
-      showPlaces: () => this.showPlaces(),
-      tiles: () => {
-        const template = tileTemplate(this.settings.tileUrl);
-        return {
-          enabled: this.settings.mapTiles,
-          template,
-          invalid: this.settings.tileUrl.trim() !== "" && template === null,
-          attribution: this.settings.tileAttribution,
-        };
-      },
     });
     this.popovers = new PreviewPopovers({
       open: (target) => new HoverPopover(this.leaf, target),
@@ -303,7 +291,6 @@ export class GedcomView extends TextFileView implements CardTab {
       ...(desk.graph ? { graph: desk.graph } : {}),
       ...(desk.timeline ? { timeline: desk.timeline } : {}),
       ...(desk.list ? { list: desk.list } : {}),
-      ...(desk.map ? { map: desk.map } : {}),
     };
     const restored = this.modes.applyState(desk).selectionChanged;
     if (restored) {
@@ -355,7 +342,6 @@ export class GedcomView extends TextFileView implements CardTab {
       settings.genealogyInterface !== this.settings.genealogyInterface;
     this.settings = settings;
     this.refresh();
-    this.views.refreshTiles();
     if (interfaceChanged) {
       if (this.modes.interfaceChanged(settings.genealogyInterface).selectionCleared) {
         this.selectedFact = null;
@@ -589,7 +575,6 @@ export class GedcomView extends TextFileView implements CardTab {
     this.views.select("graph", person, reveal);
     this.views.select("timeline", person, reveal);
     this.views.select("list", listSelection(this.genealogy(), selected), reveal);
-    this.views.select("map", mapSelection(this.genealogy(), selected), reveal);
   }
 
   followMove(move: Move, documentPath: string): Outcome {
@@ -754,11 +739,6 @@ export class GedcomView extends TextFileView implements CardTab {
     }
   }
 
-  private showPlaces(): void {
-    this.memory = { ...this.memory, list: this.views.placesList() };
-    this.setMode("list", "reader");
-  }
-
   private drawViews(): void {
     const mode = this.modes.shown;
     if (!isViewMode(mode) || !this.modes.needsDraw(this.containerEl.isShown() && this.viewsEl.isShown())) {
@@ -776,11 +756,9 @@ export class GedcomView extends TextFileView implements CardTab {
     const xref =
       mode === "list"
         ? listSelection(this.genealogy(), selected)
-        : mode === "map"
-          ? mapSelection(this.genealogy(), selected)
-          : selected !== null && this.genealogy().person(selected)
-            ? selected
-            : null;
+        : selected !== null && this.genealogy().person(selected)
+          ? selected
+          : null;
     this.views.select(mode, xref, reveal);
   }
 
@@ -788,7 +766,6 @@ export class GedcomView extends TextFileView implements CardTab {
     this.views.select("graph", null, false);
     this.views.select("timeline", null, false);
     this.views.select("list", null, false);
-    this.views.select("map", null, false);
   }
 
   private dropGoneSelection(): void {

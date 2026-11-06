@@ -213,7 +213,6 @@ describe("showing the file in a mode", () => {
     ["graph", "network"],
     ["timeline", "calendar-range"],
     ["list", "list"],
-    ["map", "map"],
     ["source", "code"],
   ];
 
@@ -286,37 +285,6 @@ describe("showing the file in a mode", () => {
     const showMode = vi.fn();
     list.run(host().host, view({ showMode, mode: () => "graph" }));
     expect(showMode).toHaveBeenCalledWith("list");
-  });
-});
-
-describe("Show as map", () => {
-  it("is named in both languages, offered in every mode but Map, and has no key", () => {
-    const map = command("show-gedcom-as-map");
-    expect(t(map.name)).toBe("Show as map");
-    for (const current of ["graph", "timeline", "list", "source"] as const) {
-      expect(map.isAvailable(view({ mode: () => current }))).toBe(true);
-    }
-    expect(map.isAvailable(view({ mode: () => "map" }))).toBe(false);
-    expect(map.isAvailable(view({ genealogyInterface: () => false }))).toBe(false);
-    expect(map.hotkeys).toBeUndefined();
-    setLanguage("ru");
-    expect(t(map.name)).toBe("Показать как карту");
-  });
-
-  it("offers find, which opens the search, and no replace", () => {
-    const inMap = view({ inSource: () => false, mode: () => "map", recordAtCursor: () => FAMILY });
-    const showSearch = vi.fn<(replace: boolean) => void>();
-    expect(command("search-in-gedcom-file").isAvailable(inMap)).toBe(true);
-    command("search-in-gedcom-file").run(host().host, view({ ...inMap, showSearch }));
-    expect(showSearch).toHaveBeenCalledWith(false);
-    expect(command("replace-in-gedcom-file").isAvailable(inMap)).toBe(false);
-  });
-
-  it("goes to Source and back with the toggle", () => {
-    const toggleMode = vi.fn();
-    command("toggle-gedcom-mode").run(host().host, view({ toggleMode, mode: () => "map" }));
-
-    expect(toggleMode).toHaveBeenCalled();
   });
 });
 

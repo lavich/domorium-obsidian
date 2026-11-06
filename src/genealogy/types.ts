@@ -11,17 +11,11 @@ export type IndexSource = Pick<GedcomLanguageService, "getDocumentSymbols" | "re
 
 export type DateOf = (payload: string) => DateReading;
 
-export interface Coordinates {
-  latitude: number;
-  longitude: number;
-}
-
 export interface PersonEvent {
   /** The tag as written. Naming it for a reader is the caller's. */
   tag: string;
   date?: DateReading;
   place?: string;
-  coordinates?: Coordinates;
   /** What the line itself carried, as an occupation does. */
   value?: string;
   type?: string;

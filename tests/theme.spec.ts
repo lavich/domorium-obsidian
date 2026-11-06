@@ -373,29 +373,3 @@ test.describe("the list in the Obsidian theme", () => {
     });
   }
 });
-
-test.describe("the map in the Obsidian theme", () => {
-  for (const dark of [false, true]) {
-    test(`draws land, points, labels and the line from the theme's variables in ${dark ? "dark" : "light"}`, async ({ page }) => {
-      await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
-      await page.evaluate(
-        (isDark) => {
-          window.tab.mount({ mode: "map", fixture: "map", dark: isDark });
-          window.tab.select("@I1@", false);
-        },
-        dark,
-      );
-      const variable = (name: string) => page.evaluate((one) => getComputedStyle(document.body).getPropertyValue(one).trim(), name);
-      const style = (selector: string, property: string) =>
-        page.locator(selector).first().evaluate((node, name) => getComputedStyle(node).getPropertyValue(name).trim(), property);
-
-      expect(await style(".gedcom-map-land", "fill")).toBe(await variable("--background-primary"));
-      expect(await style('.gedcom-map-mark[data-key="passy, haute-savoie, france"] .gedcom-map-disc', "fill")).toBe(await variable("--text-normal"));
-      expect(await style('.gedcom-map-mark[data-key="stockholm, sweden"] .gedcom-map-disc', "fill")).toBe(await variable("--color-orange"));
-      expect(await style(".gedcom-map-svg text.gedcom-map-label", "fill")).toBe(await variable("--text-normal"));
-      expect(await style(".gedcom-map-route-line", "stroke")).toBe(await variable("--interactive-accent"));
-      expect(await style(".gedcom-map-plot", "background-color")).toBe(await variable("--background-secondary"));
-    });
-  }
-});

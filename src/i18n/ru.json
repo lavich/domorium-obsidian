@@ -48,7 +48,7 @@
     "other": "{count} файлах"
   },
   "setting.genealogyInterface.name": "Генеалогический интерфейс (бета)",
-  "setting.genealogyInterface.desc": "Пока бета-версия: может меняться и работать с шероховатостями. Показывать карточку записи, а также граф, хронологию, список и карту файла, а также их команды. Выключено — файлы GEDCOM открываются как исходник.",
+  "setting.genealogyInterface.desc": "Пока бета-версия: может меняться и работать с шероховатостями. Показывать карточку записи, а также граф, хронологию и список файла, а также их команды. Выключено — файлы GEDCOM открываются как исходник.",
   "setting.openPanelsOnSelect.name": "Открывать карточку записи при выборе",
   "setting.openPanelsOnSelect.desc": "Выбор записи в графе, хронологии или списке показывает карточку записи справа, раскрывая свёрнутую боковую панель и не забирая фокус. Действует при включённом генеалогическом интерфейсе; на телефоне правая шторка открывается, как и раньше.",
   "setting.diagnostics.name": "Диагностика",
@@ -297,7 +297,7 @@
   "card.back": "Назад",
   "card.forward": "Вперёд",
   "card.noTab": "Откройте файл GEDCOM, чтобы увидеть его записи.",
-  "card.nothing": "Выберите запись на графе, в хронологии, в списке или на карте.",
+  "card.nothing": "Выберите запись на графе, в хронологии или в списке.",
   "card.empty": "В файле нечего показывать.",
   "desk.timeline": "Хронология",
   "desk.places": "Места",
@@ -407,70 +407,5 @@
     "few": "{count} события",
     "many": "{count} событий",
     "other": "{count} события"
-  },
-  "mode.map": "Карта",
-  "command.showMap": "Показать как карту",
-  "map.label": {
-    "one": "Карта мест, {count} место",
-    "few": "Карта мест, {count} места",
-    "many": "Карта мест, {count} мест",
-    "other": "Карта мест, {count} места"
-  },
-  "map.places": {
-    "one": "{count} место",
-    "few": "{count} места",
-    "many": "{count} мест",
-    "other": "{count} места"
-  },
-  "map.events": {
-    "one": "{count} событие",
-    "few": "{count} события",
-    "many": "{count} событий",
-    "other": "{count} события"
-  },
-  "map.noCoordinates": {
-    "one": "У {count} места нет координат",
-    "few": "У {count} мест нет координат",
-    "many": "У {count} мест нет координат",
-    "other": "У {count} места нет координат"
-  },
-  "map.branch": "Ветвь: {name}",
-  "map.fit": "Вписать карту",
-  "map.years.all": "Годы: все",
-  "map.years.range": "Годы: {from}–{to}",
-  "map.years.readout": "{from}–{to}",
-  "map.years.from": "Первый год",
-  "map.years.to": "Последний год",
-  "map.years.clear": "Сбросить годы",
-  "map.years.span": "{from} — {to}",
-  "map.search": "Найти место…",
-  "map.search.matches": {
-    "one": "{count} совпадение",
-    "few": "{count} совпадения",
-    "many": "{count} совпадений",
-    "other": "{count} совпадения"
-  },
-  "map.search.none": "Ничего не найдено",
-  "map.search.matchOf": "{current} / {total}",
-  "map.search.unmapped": "У места «{name}» нет координат",
-  "map.place.accessible": "{name}, {events}, {years}",
-  "map.place.tip": "{name} · {events}",
-  "map.cluster.accessible": "{places}, {events}: {names}",
-  "map.popup.label": "События: {name}",
-  "map.kind.birth": "Рождение",
-  "map.kind.death": "Смерть",
-  "map.kind.marriage": "Брак",
-  "map.kind.other": "Событие",
-  "map.empty.title": "Ни у одного места пока нет координат",
-  "map.empty.noMap": "Место получает положение из MAP с LATI и LONG под его PLAC в файле.",
-  "map.empty.noPlaces": "В файле нет ни одного места.",
-  "map.tiles.invalid": "Адрес сервера плиток недействителен",
-  "map.tiles.failed": "Плитки не удалось загрузить",
-  "map.status.noSelectionPlaces": "Ни одно место выбранной записи не на карте",
-  "setting.mapTiles.name": "Загружать плитки карты из сети",
-  "setting.mapTiles.desc": "Выключено — карта рисуется по встроенному контуру, ничего не запрашивается. Включено — названный вами сервер плиток узнаёт номера плиток, то есть какую часть мира вы смотрите, и ваш сетевой адрес. Названия мест не покидают хранилище.",
-  "setting.tileUrl.name": "Адрес сервера плиток",
-  "setting.tileUrl.desc": "Шаблон с {z}, {x} и {y}, начинающийся с https://. Действует, пока плитки загружаются. Сохраняется как введён, вместе с ключом, если он есть, в данных плагина.",
-  "setting.tileAttribution.name": "Указание авторства плиток",
-  "setting.tileAttribution.desc": "Текст в углу карты, пока загружаются плитки. Если пусто, карта показывает домен адреса."
+  }
 }

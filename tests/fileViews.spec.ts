@@ -55,21 +55,6 @@ for (const viewport of [
       expect(canvas?.height ?? 0).toBeGreaterThan((views?.height ?? 0) - 80);
     });
 
-    test("fills the view with the map and draws its points, after the map was hidden", async ({ page }) => {
-      await mountTab(page, { mode: "map", fixture: "map" });
-      await page.click("#show-source");
-      await expect(page.locator(".gedcom-views-root.is-map")).toBeHidden();
-      await page.click("#show-map");
-
-      await expect(page.locator(".gedcom-map-mark")).toHaveCount(4);
-      const views = await page.locator("#views").boundingBox();
-      const plot = await page.locator(".gedcom-map-plot").boundingBox();
-      expect(plot?.height ?? 0).toBeGreaterThan((views?.height ?? 0) - 120);
-      await page.click("#show-graph");
-      await expect(page.locator(".gedcom-views-root.is-map")).toBeHidden();
-      await expect(page.locator(".gedcom-fg-person")).toHaveCount(18);
-    });
-
     test("draws the graph of a tab that began behind another one, once it is shown and the resize is delivered", async ({
       page,
     }) => {

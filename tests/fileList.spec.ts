@@ -365,11 +365,11 @@ test.describe("the list on a wide tab", () => {
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(10);
   });
 
-  test("lists the header buttons of the stand-in tab as Graph, Timeline, List, Map, Source", async ({ page }) => {
+  test("lists the header buttons of the stand-in tab as Graph, Timeline, List, Source", async ({ page }) => {
     await mountList(page);
 
-    expect(await page.locator("#bar button").evaluateAll((all) => all.map((button) => button.getAttribute("aria-label")).slice(0, 5))).toEqual([
-      "Graph", "Timeline", "List", "Map", "Source",
+    expect(await page.locator("#bar button").evaluateAll((all) => all.map((button) => button.getAttribute("aria-label")).slice(0, 4))).toEqual([
+      "Graph", "Timeline", "List", "Source",
     ]);
   });
 
@@ -708,7 +708,7 @@ for (const viewport of [WIDE, PHONE]) {
     test("keeps the selected place across a visit to another view and drops it with the kind", async ({ page }) => {
       await mountPlaces(page);
       await place(page, "paris, france").click();
-      await page.evaluate(() => window.tab.showMode("map"));
+      await page.evaluate(() => window.tab.showMode("graph"));
       await page.evaluate(() => window.tab.showMode("list"));
       await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
 

@@ -10,7 +10,6 @@ import {
   listRows,
   nextSort,
   recordKind,
-  rowWindow,
   type ListKind,
   type ListRow,
   type ListSort,
@@ -30,6 +29,7 @@ export interface ListHost {
 const COMPACT_BELOW = 640;
 const WIDE_FROM = 680;
 const MARGIN = 10;
+const FIRST_WINDOW = 40;
 const FALLBACK_ROW = { wide: 36, compact: 56 } as const;
 
 const KIND_LABEL: Record<ListKind, MessageKey> = {
@@ -212,14 +212,6 @@ export class ListBoard {
     this.markedPlace = kind === "places" ? (state.place ?? null) : null;
     this.sorts = { ...state.sort };
     this.refresh(true);
-  }
-
-  clearSearch(): void {
-    if (this.query !== "") {
-      this.query = "";
-      this.find.reset();
-      this.refresh(false);
-    }
   }
 
   select(xref: string | null, reveal: boolean): void {
@@ -505,7 +497,9 @@ export class ListBoard {
       this.rowHeight = this.readRow();
     }
     const height = this.visibleHeight();
-    const { first, last } = rowWindow(this.scrollEl.scrollTop, height, this.rowHeight, total, MARGIN);
+    const first = Math.max(0, Math.floor(this.scrollEl.scrollTop / this.rowHeight) - MARGIN);
+    const count = height > 0 ? Math.ceil(height / this.rowHeight) + 2 * MARGIN : FIRST_WINDOW;
+    const last = Math.min(total - 1, first + count);
     this.spacerEl.setCssProps({ height: `${total * this.rowHeight}px` });
     const wanted = new Set<number>();
     for (let at = first; at <= last; at += 1) {

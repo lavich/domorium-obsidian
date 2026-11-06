@@ -144,24 +144,3 @@ export function tangled(count: number, { seed = 7, founders = 40 }: { seed?: num
   }
   return made.text(false);
 }
-
-export function placesFile(count: number): string {
-  const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
-  for (let i = 0; i < count; i += 1) {
-    const city = i % 40;
-    const lat = ((city * 37) % 110) - 40 + ((i * 7919) % 100) / 100;
-    const lon = ((city * 89) % 320) - 160 + ((i * 104729) % 100) / 100;
-    lines.push(
-      `0 @I${i + 1}@ INDI`,
-      `1 NAME Person ${i + 1} /Placed/`,
-      "1 BIRT",
-      `2 DATE ${1800 + (i % 150)}`,
-      `2 PLAC Place ${i + 1}`,
-      "3 MAP",
-      `4 LATI ${lat < 0 ? "S" : "N"}${Math.abs(lat).toFixed(3)}`,
-      `4 LONG ${lon < 0 ? "W" : "E"}${Math.abs(lon).toFixed(3)}`,
-    );
-  }
-  lines.push("0 TRLR", "");
-  return lines.join("\n");
-}

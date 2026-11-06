@@ -2,7 +2,7 @@ export const RECORD_PREVIEW_TRIGGERS = ["modifier", "hover", "off"] as const;
 
 export type RecordPreviewTrigger = (typeof RECORD_PREVIEW_TRIGGERS)[number];
 
-export const DESK_MODES = ["graph", "timeline", "list", "map", "source"] as const;
+export const DESK_MODES = ["graph", "timeline", "list", "source"] as const;
 
 export type DeskMode = (typeof DESK_MODES)[number];
 
@@ -12,9 +12,6 @@ export interface GedcomSettings {
   recordPreview: RecordPreviewTrigger;
   mediaPreview: RecordPreviewTrigger;
   remoteImages: boolean;
-  mapTiles: boolean;
-  tileUrl: string;
-  tileAttribution: string;
   lastMode: DeskMode;
   genealogyInterface: boolean;
   openPanelsOnSelect: boolean;
@@ -30,11 +27,6 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // Reaching a stranger's host is a statement about a family, not about a
   // plugin, so it waits to be asked.
   remoteImages: false,
-  // Tiles name the part of the world in view to a stranger's host, so no
-  // server is built in and the toggle waits to be asked for.
-  mapTiles: false,
-  tileUrl: "",
-  tileAttribution: "",
   lastMode: "graph",
   // The pages and panels are the plugin's largest surface; a reader who came
   // for the editor has not asked for them.
@@ -51,13 +43,6 @@ export function readDeskMode(value: unknown): DeskMode | undefined {
     return "graph";
   }
   return isDeskMode(value) ? value : undefined;
-}
-
-/** Kept as typed: a half-typed address is judged where it is used, not trimmed away here. */
-const MAX_TEXT = 2048;
-
-function readText(value: unknown, fallback: string): string {
-  return typeof value === "string" && value.length <= MAX_TEXT ? value : fallback;
 }
 
 function isRecordPreviewTrigger(value: unknown): value is RecordPreviewTrigger {
@@ -101,12 +86,6 @@ export function parseSettings(data: unknown): GedcomSettings {
       typeof settings.remoteImages === "boolean"
         ? settings.remoteImages
         : DEFAULT_SETTINGS.remoteImages,
-    mapTiles:
-      typeof settings.mapTiles === "boolean"
-        ? settings.mapTiles
-        : DEFAULT_SETTINGS.mapTiles,
-    tileUrl: readText(settings.tileUrl, DEFAULT_SETTINGS.tileUrl),
-    tileAttribution: readText(settings.tileAttribution, DEFAULT_SETTINGS.tileAttribution),
     lastMode: readDeskMode(settings.lastMode) ?? DEFAULT_SETTINGS.lastMode,
     genealogyInterface:
       typeof settings.genealogyInterface === "boolean"
