@@ -1,18 +1,19 @@
 const CYRILLIC: Record<string, string> = {
   а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ж: "zh", з: "z", и: "i", к: "k", л: "l", м: "m",
   н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch",
-  ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "", э: "e", ю: "iu", я: "ia", і: "i", ї: "i", є: "e", ґ: "g",
+  ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya", і: "i", ї: "i", є: "e", ґ: "g",
 };
 
 const LATIN: Record<string, string> = { ł: "l", ø: "o", đ: "d", ß: "ss", æ: "ae", œ: "oe", ð: "d", þ: "th" };
 
 const ENDINGS = [
-  "skaia", "skaya", "skii", "skiy", "skoi", "sky", "ski", "ska", "ske",
-  "ova", "ov", "eva", "ev", "ina", "in", "aia", "aya", "ii", "iy",
-];
+  "skaya", "skiy", "skoy", "sky", "ski", "ska", "ske",
+  "ova", "ov", "ieva", "iev", "eva", "ev", "ina", "in", "aya", "iy", "oy",
+].sort((a, b) => b.length - a.length);
 
 const LETTERS = 26;
 const DEPTH = 4;
+const DECAY = 0.35;
 const MIN_STEM = 2;
 
 export type Scheme = "light" | "dark";
@@ -25,7 +26,8 @@ const TONES: Record<Scheme, { saturation: number; lightness: number }> = {
 const INKS = { white: "#ffffff", black: "#14110f" } as const;
 
 export function foldSurname(surname: string): string {
-  const folded = surname.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const lower = surname.toLowerCase().replace(/й/gu, "y");
+  const folded = lower.normalize("NFD").replace(/\p{M}/gu, "");
   return [...folded].map((letter) => CYRILLIC[letter] ?? LATIN[letter] ?? letter).join("").replace(/[^a-z]/gu, "");
 }
 
@@ -45,12 +47,13 @@ export function surnameHue(surname: string): number {
     return hash;
   }
   let fraction = 0;
-  let weight = 1;
+  let total = 0;
   for (let at = 0; at < DEPTH; at += 1) {
-    weight /= LETTERS + 1;
-    fraction += ((stem.charCodeAt(at) || 96) - 96) * weight;
+    const weight = DECAY ** at;
+    fraction += (((stem.charCodeAt(at) || 96) - 96) / LETTERS) * weight;
+    total += weight;
   }
-  return fraction * 360;
+  return ((fraction / total) * 360) % 360;
 }
 
 export function hueDistance(a: number, b: number): number {

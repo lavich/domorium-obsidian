@@ -46,7 +46,7 @@ right panel, with its record, date, place and sources.
 ## Read the timeline
 
 Switch [[curie.ged]] to **Timeline**. Each person is a bar from birth to death
-with the name inside it, and lives that never meet share a lane. The colour comes
+with the name inside it, in a row of its own. The colour comes
 from the surname, so the Curies look alike. Someone born in the last hundred years
 with no death recorded, such as Pierre Joliot, runs on to today in a straight
 edge; an older bar with no death fades out instead. Click a bar and

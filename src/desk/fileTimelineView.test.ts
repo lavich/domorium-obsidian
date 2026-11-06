@@ -67,7 +67,7 @@ const of = (selector: string, xref: string) => all(`${selector}[data-p="${xref}"
 const bars = (): string[] => all(".gedcom-ft-life").map((bar) => bar.getAttribute("data-p") ?? "");
 const bar = (xref: string) => container.querySelector<SVGElement>(`.gedcom-ft-life[data-p="${xref}"]`);
 const label = (xref: string) => container.querySelector<SVGElement>(`.gedcom-ft-label[data-p="${xref}"]`);
-const laneOf = (xref: string) => (Number(bar(xref)?.getAttribute("y")) - (ROW - BAR_HEIGHT) / 2) / ROW;
+const rowOf = (xref: string) => (Number(bar(xref)?.getAttribute("y")) - (ROW - BAR_HEIGHT) / 2) / ROW;
 const branchButtons = () => all("[data-branch]");
 const press = (target: Element | null | undefined, key: string) =>
   target?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
@@ -99,11 +99,8 @@ describe("drawing the timeline of a file", () => {
   it("draws a person who may be alive to the present with a straight end, and a lost death fading", () => {
     board(fromLines(...lived("@I1@", "Zoe /Young/", 1990), ...lived("@I2@", "Old /Man/", 1850)));
 
-    expect(bar("@I1@")?.getAttribute("class")).toContain("is-living");
     expect(bar("@I1@")?.hasAttribute("mask")).toBe(false);
     expect(bar("@I1@")?.getAttribute("width")).toBe(String((2026 - 1990) * ZOOM.initial));
-    expect(bar("@I2@")?.getAttribute("class")).toContain("is-open");
-    expect(bar("@I2@")?.getAttribute("class")).not.toContain("is-living");
     expect(bar("@I2@")?.getAttribute("mask")).toContain("cfade");
   });
 
@@ -123,48 +120,28 @@ describe("drawing the timeline of a file", () => {
     expect(label("@I1@")?.textContent).toBe("Alexandra Maria Theresia Habsburg-Lothringen");
   });
 
-  it("puts two lives that never meet in one lane and two that do in two", () => {
+  it("gives each person a row of their own, even where two lives never meet", () => {
     board(fromLines(
       ...lived("@A@", "Anna /Alpha/", 1840, 1905),
       ...lived("@B@", "Boris /Beta/", 1950, 2023),
-      ...lived("@C@", "Clara /Gamma/", 1868, 1941),
     ));
 
-    expect(laneOf("@A@")).toBe(laneOf("@B@"));
-    expect(laneOf("@C@")).not.toBe(laneOf("@A@"));
+    expect(rowOf("@A@")).not.toBe(rowOf("@B@"));
     expect(container.querySelector<SVGElement>(".gedcom-ft-chart")?.getAttribute("height")).toBe(String(2 * ROW));
   });
 
-  it("gives a long name room: the person after it is placed in another lane", () => {
-    board(fromLines(
-      ...lived("@A@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901),
-      ...lived("@B@", "Boris /Beta/", 1905, 1990),
-    ));
+  it("writes a name too long for its bar beyond the bar's end", () => {
+    board(fromLines(...lived("@A@", "Alexandra Maria Theresia /Habsburg-Lothringen/", 1899, 1901)));
 
-    expect(laneOf("@B@")).not.toBe(laneOf("@A@"));
+    expect(label("@A@")?.getAttribute("class")).toContain("is-beyond");
   });
 
-  it("has fewer lanes than people where lives follow one another", () => {
+  it("stands the rows of a file in the order of its generations", () => {
     board();
 
-    const lanes = new Set(bars().map((xref) => laneOf(xref)));
-    expect(lanes.size).toBeLessThan(17);
-  });
-
-  it("never lets two bars, or a name beyond a bar, overlap in a lane", () => {
-    board(withEvents());
-
-    const byLane = new Map<number, { left: number; right: number }[]>();
-    for (const xref of bars()) {
-      const left = Number(bar(xref)?.getAttribute("x"));
-      const beyond = label(xref)?.getAttribute("class")?.includes("is-beyond") === true;
-      const right = beyond ? Number(label(xref)?.getAttribute("x")) : left + Number(bar(xref)?.getAttribute("width"));
-      byLane.set(laneOf(xref), [...(byLane.get(laneOf(xref)) ?? []), { left, right }]);
-    }
-    for (const held of byLane.values()) {
-      const sorted = [...held].sort((a, b) => a.left - b.left);
-      sorted.slice(1).forEach((next, at) => expect(next.left).toBeGreaterThan(sorted[at]?.right ?? 0));
-    }
+    const rows = bars().map((xref) => rowOf(xref));
+    expect(new Set(rows).size).toBe(rows.length);
+    expect(rowOf("@I12@")).toBeGreaterThan(rowOf("@I1@"));
   });
 
   it("draws marks along the lower edge of the bar, below the name", () => {
@@ -180,7 +157,7 @@ describe("drawing the timeline of a file", () => {
     }
   });
 
-  it("centres a person's lane where y says, the lane being a multiple of the row", () => {
+  it("centres a person's bar on their row", () => {
     board();
 
     for (const xref of bars()) {
@@ -235,7 +212,7 @@ describe("drawing the timeline of a file", () => {
     );
   });
 
-  it("draws only the lanes in the window and one window around it", () => {
+  it("draws only the rows in the window and one window around it", () => {
     const drawn = board(crowd(40));
     drawn.draw({ top: 0, left: 0, width: 2000, height: 2 * ROW });
 
@@ -243,7 +220,7 @@ describe("drawing the timeline of a file", () => {
     expect(all(".gedcom-ft-label")).toHaveLength(4);
   });
 
-  it("draws the next lanes for a window past the drawn one, and nothing more", () => {
+  it("draws the next rows for a window past the drawn one, and nothing more", () => {
     const drawn = board(crowd(40));
     drawn.draw({ top: 0, left: 0, width: 2000, height: 2 * ROW });
     const past = { top: 10 * ROW, left: 0, width: 2000, height: 2 * ROW };
@@ -300,6 +277,11 @@ describe("lighting a person", () => {
     expect(lines[0]?.getAttribute("y1")).not.toBe(lines[0]?.getAttribute("y2"));
     expect(all(".gedcom-ft-marriage-dot")).toHaveLength(2);
     expect(lines[0]?.getAttribute("marker-end")).toBeNull();
+    const edges = [bar("@I1@"), bar("@I2@")]
+      .map((one) => Number(one?.getAttribute("y")))
+      .sort((a, b) => a - b);
+    const dots = all(".gedcom-ft-marriage-dot").map((dot) => Number(dot.getAttribute("cy"))).sort((a, b) => a - b);
+    expect(dots).toEqual([edges[0] + BAR_HEIGHT, (edges[1] ?? 0)]);
   });
 
   it("puts a marriage line at the first child's bar where the marriage is undated", () => {
@@ -423,7 +405,7 @@ describe("the light of a click", () => {
     expect(branchButtons()).toHaveLength(1);
   });
 
-  it("stays through a redraw of the lanes, and is put out by a scope change", () => {
+  it("stays through a redraw of the rows, and is put out by a scope change", () => {
     const drawn = board();
     click(bar("@I1@"));
     drawn.draw({ ...WHOLE, top: 1 });
@@ -552,7 +534,7 @@ describe("the timeline without a toolbar", () => {
     expect(find?.classList.contains("is-open")).toBe(false);
   });
 
-  it("steps through the matches in the order the bars begin with the arrows, marks the current bar and wraps", () => {
+  it("steps through the matches in the order of the rows with the arrows, marks the current bar and wraps", () => {
     board();
     const count = () => container.querySelector(".gedcom-ft-find-count")?.textContent;
     const current = () => all(".gedcom-ft-life.is-current").map((row) => row.getAttribute("data-p"));
@@ -772,15 +754,64 @@ describe("drawing only what is near the window, sideways", () => {
 });
 
 describe("the keyboard", () => {
-  it("gives each bar a place in the tab order, a role and the person's name, in the order the bars begin", () => {
+  it("makes one bar the tab stop, the selected one else the first, and the rest reachable by arrows", () => {
+    const drawn = board();
+    const stops = () => all('.gedcom-ft-life[tabindex="0"]').map((one) => one.getAttribute("data-p"));
+    const first = bars()[0];
+
+    expect(stops()).toEqual([first]);
+    expect(all('.gedcom-ft-life[tabindex="-1"]')).toHaveLength(16);
+    drawn.select("@I12@", false);
+    expect(stops()).toEqual(["@I12@"]);
+    drawn.draw({ ...WHOLE, top: 1 });
+    expect(stops()).toEqual(["@I12@"]);
+  });
+
+  it("steps the focus to the next bar by the right and down arrows and to the previous by the left and up arrows, in the order of the rows", () => {
+    board();
+    const order = bars();
+    const focused = () => document.activeElement?.getAttribute("data-p");
+    bar(order[3] ?? "")?.focus();
+
+    press(bar(order[3] ?? ""), "ArrowRight");
+    expect(focused()).toBe(order[4]);
+    press(bar(order[4] ?? ""), "ArrowDown");
+    expect(focused()).toBe(order[5]);
+    press(bar(order[5] ?? ""), "ArrowLeft");
+    expect(focused()).toBe(order[4]);
+    press(bar(order[4] ?? ""), "ArrowUp");
+    expect(focused()).toBe(order[3]);
+    bar(order[0] ?? "")?.focus();
+    press(bar(order[0] ?? ""), "ArrowLeft");
+    expect(focused()).toBe(order[0]);
+    const last = order[order.length - 1] ?? "";
+    bar(last)?.focus();
+    press(bar(last), "ArrowRight");
+    expect(focused()).toBe(last);
+  });
+
+  it("steps the focus on to a bar that is not drawn, skipping no one, and the tab stop follows the focus", () => {
+    const drawn = board(crowd(40));
+    drawn.draw({ top: 0, left: 0, width: 2000, height: 2 * ROW });
+    expect(bars()).toHaveLength(4);
+    const fourth = bars()[3] ?? "";
+    bar(fourth)?.focus();
+    press(bar(fourth), "ArrowRight");
+
+    expect(document.activeElement?.getAttribute("data-p")).toBe("@C4@");
+    expect(all('.gedcom-ft-life[tabindex="0"]').map((one) => one.getAttribute("data-p"))).toEqual(["@C4@"]);
+  });
+
+  it("gives each bar a role and the person's name, in the order of the rows", () => {
     board();
 
-    expect(bar("@I1@")?.getAttribute("tabindex")).toBe("0");
+    expect(bar("@I1@")?.getAttribute("tabindex")).toBe("-1");
     expect(bar("@I1@")?.getAttribute("role")).toBe("button");
     expect(bar("@I1@")?.getAttribute("aria-label")).toBe("Marie Skłodowska-Curie");
+    expect(all(".gedcom-ft-label").every((name) => name.getAttribute("aria-hidden") === "true")).toBe(true);
     expect(bar("@I1@")?.querySelector("button")).toBeNull();
-    const begun = bars().map((xref) => curie().people.get(xref)?.lifeline?.start ?? 0);
-    expect(begun).toEqual([...begun].sort((a, b) => a - b));
+    const heights = bars().map((xref) => rowOf(xref));
+    expect(heights).toEqual([...heights].sort((a, b) => a - b));
   });
 
   it("keeps the focus on a bar through a redraw, and on Branch", () => {
@@ -836,7 +867,7 @@ describe("the keyboard", () => {
     click(branchButtons()[0]);
     expect(bars()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
-    expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(laneOf("@I12@") * ROW + ROW / 2);
+    expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(rowOf("@I12@") * ROW + ROW / 2);
   });
 
   it("names each stepper's buttons for what they widen or narrow", () => {
@@ -871,7 +902,7 @@ describe("the ages under the cursor and a search", () => {
 describe("the selected bar", () => {
   const selectedLives = () => all(".gedcom-ft-life.is-selected").map((life) => life.getAttribute("data-p"));
 
-  it("marks one person's bar and no other, with no band across the lane", () => {
+  it("marks one person's bar and no other, with no band across the row", () => {
     const drawn = board();
     drawn.select("@I12@", true);
 
@@ -889,7 +920,7 @@ describe("the selected bar", () => {
     expect(plot?.scrollTop).toBe(0);
   });
 
-  it("brings the lane into view when asked to reveal", () => {
+  it("brings the row into view when asked to reveal", () => {
     const drawn = board();
     const plot = container.querySelector<HTMLElement>(".gedcom-ft-plot");
     drawn.setScroll({ top: 0, left: 0 });
@@ -923,7 +954,7 @@ describe("the selected bar", () => {
     expect(branchButtons()).toHaveLength(0);
   });
 
-  it("is on a bar that leaves the drawn lanes and comes back", () => {
+  it("is on a bar that leaves the drawn rows and comes back", () => {
     const drawn = board(crowd(40));
     drawn.select("@C1@", true);
     drawn.draw({ top: 30 * ROW, left: 0, width: 2000, height: ROW });
@@ -1021,7 +1052,7 @@ describe("Branch on the selected bar", () => {
 
     const button = container.querySelector<HTMLElement>("[data-branch]");
     const end = Number(bar("@I1@")?.getAttribute("x")) + Number(bar("@I1@")?.getAttribute("width"));
-    expect(Number.parseFloat(button?.style.left ?? "0")).toBe(end + 8);
+    expect(Number.parseFloat(button?.style.left ?? "0")).toBe(end + 3.5 + 8);
     expect(Number.parseFloat(button?.style.top ?? "-1")).toBe(Number(bar("@I1@")?.getAttribute("y")));
   });
 

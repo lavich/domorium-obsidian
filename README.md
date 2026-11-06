@@ -136,8 +136,8 @@ you used last to the front as a list, wherever it is; with no GEDCOM tab open it
 says so.
 
 In **Timeline** mode the tab shows each person as a bar on an axis of years, from
-birth to death, with their name written inside it and no years on it. Lives that
-never meet share a lane, so the board stays short. A bar takes its colour from
+birth to death, with their name written inside it and no years on it. Each person has a row of their own, in the order of
+generations. A bar takes its colour from
 the surname — `Лобанов` and `Лобанова` look alike, `Лобанов` and `Сидорова` do
 not — and a person with no surname is grey. A soft end means the date is
 approximate; a bar with no recorded death fades out a hundred years after it

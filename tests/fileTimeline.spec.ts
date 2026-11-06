@@ -87,6 +87,18 @@ test.describe("the timeline of a file", () => {
     expect(Math.abs((lines[0]?.x ?? 0) - at)).toBeLessThan(2);
     expect(await page.locator(".gedcom-ft-marriage").evaluate((line) => getComputedStyle(line).strokeDasharray)).not.toBe("none");
     await expect(page.locator(".gedcom-ft-marriage-dot")).toHaveCount(2);
+    await page.addStyleTag({ content: ".gedcom-ft-marriage-dot { pointer-events: auto !important; }" });
+    const seen = await page.locator(".gedcom-ft-marriage-dot").evaluateAll((dots) => {
+      const centres = dots
+        .map((dot) => dot.getBoundingClientRect())
+        .map((box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 }))
+        .sort((a, b) => a.y - b.y);
+      return centres.map((centre, at) => {
+        const hit = document.elementFromPoint(centre.x, centre.y + (at === 0 ? 2.5 : -1.5));
+        return { dot: hit?.classList.contains("gedcom-ft-marriage-dot") === true, bar: hit?.classList.contains("gedcom-ft-life") === true };
+      });
+    });
+    expect(seen).toEqual([{ dot: true, bar: false }, { dot: true, bar: false }]);
     const span = await page.locator('.gedcom-ft-span[data-p="@I2@"]').boundingBox();
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
   });
@@ -158,15 +170,16 @@ test.describe("the timeline of a file", () => {
     await expect(page.locator(".gedcom-ft-tip.is-shown")).toContainText("Warsaw, Congress Poland");
     await birth.click();
     expect(await page.evaluate(() => window.timeline.calls.shownInSource.length)).toBe(1);
-    await label(page, "@I12@").click();
+    await life(page, "@I12@").click();
     expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@I12@"]);
   });
 
   test("shows the person's name and nothing else over a bar, and a mark's event over a mark", async ({ page }) => {
     await mountTimeline(page);
-    await life(page, "@I1@").hover({ position: { x: 4, y: 4 } });
+    await life(page, "@I1@").hover({ position: { x: 40, y: 8 } });
 
     await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Marie Skłodowska-Curie");
+    expect(await life(page, "@I1@").evaluate((bar) => getComputedStyle(bar).stroke)).not.toBe("none");
     await page.locator('.gedcom-ft-mark.is-birth[data-p="@I1@"]').hover();
     await expect(page.locator(".gedcom-ft-tip.is-shown")).not.toContainText("Marie");
   });
@@ -231,7 +244,7 @@ test.describe("the timeline of a file", () => {
     expect(fills[0]).not.toBe(fills[1]);
   });
 
-  test("writes a name wider than a short bar beyond it, readable on the lanes' background", async ({ page }) => {
+  test("writes a name wider than a short bar beyond it, readable on the rows' background", async ({ page }) => {
     const doc = [
       "0 HEAD", "1 GEDC", "2 VERS 7.0",
       "0 @A@ INDI", "1 NAME Alexandra Maria Theresia /Habsburg-Lothringen/", "1 BIRT", "2 DATE 1899", "1 DEAT", "2 DATE 1901",
@@ -244,7 +257,11 @@ test.describe("the timeline of a file", () => {
       const bar = await life(page, "@A@").boundingBox();
       const name = await label(page, "@A@").boundingBox();
       expect(name?.x ?? 0).toBeGreaterThanOrEqual((bar?.x ?? 0) + (bar?.width ?? 0));
-      const ink = await fillOf(label(page, "@A@"));
+      await label(page, "@A@").hover();
+    await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Alexandra Maria Theresia Habsburg-Lothringen");
+    await label(page, "@A@").click();
+    expect(await page.evaluate(() => window.timeline.calls.opened)).toEqual(["@A@"]);
+    const ink = await fillOf(label(page, "@A@"));
       const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
       expect(contrast(ink, background)).toBeGreaterThanOrEqual(4.5);
       const other = await life(page, "@B@").boundingBox();
@@ -265,22 +282,14 @@ test.describe("the timeline of a file", () => {
     }
   });
 
-  test("shares lanes: fewer lanes than people, and no two bars overlap in a lane", async ({ page }) => {
+  test("gives each of the 17 people a row of their own, and none to a person with no date", async ({ page }) => {
     await mountTimeline(page);
 
-    const bars = await page.locator(".gedcom-ft-life").evaluateAll((nodes) =>
-      nodes.map((node) => {
-        const box = node.getBoundingClientRect();
-        return { y: Math.round(box.y), left: box.left, right: box.right };
-      }),
+    const rows = await page.locator(".gedcom-ft-life").evaluateAll((nodes) =>
+      nodes.map((node) => Math.round(node.getBoundingClientRect().y)),
     );
-    const lanes = new Set(bars.map((bar) => bar.y));
-    expect(bars).toHaveLength(17);
-    expect(lanes.size).toBeLessThan(bars.length);
-    for (const lane of lanes) {
-      const held = bars.filter((bar) => bar.y === lane).sort((a, b) => a.left - b.left);
-      held.slice(1).forEach((next, at) => expect(next.left).toBeGreaterThan(held[at]?.right ?? 0));
-    }
+    expect(rows).toHaveLength(17);
+    expect(new Set(rows).size).toBe(17);
     await expect(page.locator('.gedcom-ft-label[data-p="@I18@"]')).toHaveCount(0);
   });
 
@@ -429,7 +438,7 @@ test.describe("the glide of the timeline to a match", () => {
     await page.setViewportSize({ width: 1400, height: 300 });
   });
 
-  const lanes = [
+  const rows = [
     "0 HEAD", "1 GEDC", "2 VERS 7.0",
     "0 @A@ INDI", "1 NAME Joliot First", "1 BIRT", "2 DATE 1900", "1 DEAT", "2 DATE 1960",
     ...Array.from({ length: 12 }, (_, at) => [`0 @F${at}@ INDI`, `1 NAME Other ${at}`, "1 BIRT", "2 DATE 1900", "1 DEAT", "2 DATE 1960"]).flat(),
@@ -438,7 +447,7 @@ test.describe("the glide of the timeline to a match", () => {
   ].join("\n");
 
   async function step(page: Page): Promise<{ tops: number[]; blank: number }> {
-    await mountTimeline(page, { doc: lanes });
+    await mountTimeline(page, { doc: rows });
     await page.locator(".gedcom-ft-find-toggle").click();
     await page.locator(".gedcom-ft-search").fill("joliot");
     const sampling = page.evaluate(
@@ -498,7 +507,7 @@ test.describe("the axis of years of the timeline", () => {
   });
 
   for (const dark of [false, true]) {
-    test(`is set apart from the lanes by a line in the theme's border colour, with no corner at its left (${dark ? "dark" : "light"})`, async ({ page }) => {
+    test(`is set apart from the rows by a line in the theme's border colour, with no corner at its left (${dark ? "dark" : "light"})`, async ({ page }) => {
       await mountTimeline(page, { dark });
 
       const lines = await page.evaluate(() => {
@@ -635,7 +644,7 @@ for (const viewport of [{ width: 1400, height: 380 }, { width: 390, height: 500 
   test.describe(`the scrollbars of the timeline at ${viewport.width} px`, () => {
     test.use({ viewport });
 
-    test("belong to the lanes and years only, and leave the axis alone", async ({ page }) => {
+    test("belong to the rows and years only, and leave the axis alone", async ({ page }) => {
       await mountTimeline(page, { phone: viewport.width < 600 });
       await page.addStyleTag({ content: ".gedcom-ft-plot::-webkit-scrollbar { width: 15px; height: 15px; } .gedcom-ft-plot::-webkit-scrollbar-thumb { background: #888; border-radius: 6px; }" });
       await page.locator(".gedcom-ft-zoom-in").click();
@@ -787,6 +796,7 @@ test.describe("the timeline of a file of 10 000 people", () => {
 
     await expect(page.locator(".gedcom-ft-scope")).toBeHidden();
     expect(await page.locator(".gedcom-ft-axis .gedcom-ft-tick").count()).toBeLessThanOrEqual(3);
+    expect(await page.locator('.gedcom-ft-life[tabindex="0"]').count()).toBe(1);
     const drawn = () => page.locator(".gedcom-ft-life").count();
     expect(await drawn()).toBeLessThan(600);
 
@@ -866,7 +876,7 @@ for (const viewport of [{ width: 1400, height: 700 }, { width: 390, height: 844 
   test.describe(`the bars of the timeline at ${viewport.width} px`, () => {
     test.use({ viewport });
 
-    test("share lanes without overlapping, with each name inside its bar or beyond it, and no mark across a name", async ({ page }) => {
+    test("keep each name inside its bar or beyond it, and no mark across a name", async ({ page }) => {
       await mountTimeline(page, { phone: viewport.width < 600 });
 
       const found = await page.evaluate(() => {
@@ -878,7 +888,6 @@ for (const viewport of [{ width: 1400, height: 700 }, { width: 390, height: 844 
           const own = box(bar);
           const text = name ? box(name) : null;
           return {
-            lane: Math.round(own.y),
             left: own.left,
             right: Math.max(own.right, text?.right ?? 0),
             inside: text !== null && text.left >= own.left - 0.5 && text.right <= own.right + 0.5,
@@ -888,13 +897,8 @@ for (const viewport of [{ width: 1400, height: 700 }, { width: 390, height: 844 
         });
       });
       expect(found).toHaveLength(17);
-      expect(new Set(found.map((bar) => bar.lane)).size).toBeLessThan(found.length);
       expect(found.every((bar) => bar.inside || bar.beyond)).toBe(true);
       expect(found.every((bar) => bar.clear)).toBe(true);
-      for (const lane of new Set(found.map((bar) => bar.lane))) {
-        const held = found.filter((bar) => bar.lane === lane).sort((a, b) => a.left - b.left);
-        held.slice(1).forEach((next, at) => expect(next.left).toBeGreaterThan(held[at]?.right ?? 0));
-      }
     });
 
     test("carry Branch on the selected bar, inside the board and out of the way of the name", async ({ page }) => {

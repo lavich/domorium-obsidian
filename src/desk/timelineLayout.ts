@@ -2,7 +2,6 @@ import type { FileTimeline, TimelineMark, TimelinePerson } from "./fileTimeline"
 import { personName } from "./labels";
 import type { TimelineScope } from "./fileTimelineView";
 import { barPaint } from "./surnameHue";
-import { packLanes } from "./timelineLanes";
 
 export const ROW = 32;
 export const BAR = 22;
@@ -55,7 +54,6 @@ export interface Layout {
   branch: boolean;
   /** The people the whole file holds who have a bar. */
   total: number;
-  lanes: number;
   y: Map<string, number>;
   /** The right edge of each bar or of the name written beyond it, whichever is further. */
   reach: Map<string, number>;
@@ -87,12 +85,7 @@ export function layoutOf(
     : null;
   const barred = (xref: string): boolean => model.people.get(xref)?.lifeline != null;
   const total = [...model.people.keys()].filter(barred).length;
-  const startOf = (xref: string): number => model.people.get(xref)?.lifeline?.start ?? 0;
-  const shown = [...model.people.keys()]
-    .filter((xref) => barred(xref) && (keep === null || keep.has(xref)))
-    .map((xref, at) => ({ xref, at }))
-    .sort((a, b) => startOf(a.xref) - startOf(b.xref) || a.at - b.at)
-    .map(({ xref }) => xref);
+  const shown = model.rows.filter((xref) => barred(xref) && (keep === null || keep.has(xref)));
   let lo = Infinity;
   let hi = -Infinity;
   for (const xref of shown) {
@@ -121,29 +114,20 @@ export function layoutOf(
       bars.set(xref, barBox(person, x, measure));
     }
   }
-  const lanes = packLanes(
-    shown.map((xref) => ({ xref, left: bars.get(xref)?.left ?? 0, right: bars.get(xref)?.reach ?? 0 })),
-    (xref) => {
-      const person = model.people.get(xref);
-      return person ? [...person.parents, ...person.spouses] : [];
-    },
-  );
-  const y = new Map(shown.map((xref) => [xref, (lanes.get(xref) ?? 0) * ROW + ROW / 2]));
+  const y = new Map(shown.map((xref, at) => [xref, at * ROW + ROW / 2]));
   const reach = new Map(shown.map((xref) => [xref, bars.get(xref)?.reach ?? 0]));
   const rightmost = shown.reduce((far, xref) => Math.max(far, reach.get(xref) ?? 0), 0);
-  const laneCount = shown.reduce((count, xref) => Math.max(count, (lanes.get(xref) ?? 0) + 1), 0);
   const layout: Layout = {
     shown,
     shownSet: new Set(shown),
     branch: keep !== null,
     total,
-    lanes: laneCount,
     y,
     reach,
     lo,
     hi,
     width: Math.max((hi - lo) * k + 2 * PAD, rightmost + PAD),
-    height: laneCount * ROW,
+    height: shown.length * ROW,
     items: [],
     x,
   };
@@ -172,7 +156,11 @@ function barBox(person: TimelinePerson, x: (year: number) => number, measure: (t
   const to = end === "fade" ? FADE_AT : end === "soft" ? 1 - SOFT : 1;
   const inside = labelWidth + 2 * LABEL_PAD <= (right - left) * (to - from);
   const labelX = inside ? left + (right - left) * from + LABEL_PAD : right + LABEL_PAD;
-  return { left, right, reach: Math.max(right, labelX + labelWidth), name, inside, labelX, labelWidth };
+  const marked = person.marks.reduce(
+    (far, mark) => Math.max(far, x(mark.until ?? mark.year) + MARK_RADIUS[mark.kind === "other" ? "other" : "plain"]),
+    0,
+  );
+  return { left, right, reach: Math.max(right, labelX + labelWidth, marked), name, inside, labelX, labelWidth };
 }
 
 function paintOf(person: TimelinePerson): string {
@@ -203,14 +191,14 @@ function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>,
       right: box.right,
       ids: [xref],
       make: () => {
-        const bar = svg(doc, "rect", `gedcom-ft-life${line.open && !line.living ? " is-open" : ""}${line.living ? " is-living" : ""}`, {
+        const bar = svg(doc, "rect", "gedcom-ft-life", {
           x: box.left,
           y: cy - BAR / 2,
           width: box.right - box.left,
           height: BAR,
           rx: 5,
           style: paint,
-          tabindex: 0,
+          tabindex: -1,
           role: "button",
           "aria-label": box.name,
           "data-p": xref,
@@ -231,6 +219,7 @@ function itemsOf(model: FileTimeline, layout: Layout, bars: Map<string, BarBox>,
           x: box.labelX,
           y: cy,
           style: paint,
+          "aria-hidden": "true",
           "data-p": xref,
         });
         label.textContent = box.name;

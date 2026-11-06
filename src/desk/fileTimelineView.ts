@@ -100,6 +100,7 @@ export class FileTimelineBoard {
   private readonly grid: SVGGElement;
   private readonly items: SVGGElement;
   private readonly hover: SVGGElement;
+  private readonly ends: SVGGElement;
   private readonly cursor: SVGSVGElement;
   private readonly tip: HTMLElement;
   private readonly pop: HTMLElement;
@@ -161,7 +162,8 @@ export class FileTimelineBoard {
     this.grid = svg(this.doc, "g", "gedcom-ft-grid");
     this.items = svg(this.doc, "g", "gedcom-ft-items");
     this.hover = svg(this.doc, "g", "gedcom-ft-hover");
-    this.chart.append(this.grid, this.hover, this.items);
+    this.ends = svg(this.doc, "g", "gedcom-ft-ends");
+    this.chart.append(this.grid, this.hover, this.items, this.ends);
 
     this.tip = this.root.createDiv({ cls: "gedcom-ft-tip" });
     this.pop = this.root.createDiv({ cls: "gedcom-ft-pop" });
@@ -231,6 +233,7 @@ export class FileTimelineBoard {
     this.drawTicks(layout);
     this.drawCursor();
     this.drawBranch();
+    this.rove();
     if (focused !== null) {
       const again = focused.branch
         ? this.overlay.querySelector<HTMLElement>("[data-branch]")
@@ -278,6 +281,7 @@ export class FileTimelineBoard {
     }
     this.lit = [];
     this.hover.replaceChildren();
+    this.ends.replaceChildren();
     const layout = this.layout;
     const model = this.model;
     const shown = xref !== null && layout !== null && layout.y.has(xref);
@@ -340,7 +344,7 @@ export class FileTimelineBoard {
     return id;
   }
 
-  /** The lane to the middle, and the bar into view where it lies out of it. */
+  /** The row to the middle, and the bar into view where it lies out of it. */
   private reveal(id: string): void {
     const layout = this.layout;
     const line = this.model?.people.get(id)?.lifeline;
@@ -362,7 +366,7 @@ export class FileTimelineBoard {
 
   /**
    * The plot scrolls smoothly to a place the reader did not scroll to, unless they ask for reduced
-   * motion or it is further than a smooth scroll can show without leaving blank lanes, which jumps.
+   * motion or it is further than a smooth scroll can show without leaving blank rows, which jumps.
    */
   private glideTo(top: number, left?: number): void {
     const plot = this.plot;
@@ -434,11 +438,42 @@ export class FileTimelineBoard {
     }
   }
 
+  private rove(): void {
+    const bars = [...this.items.querySelectorAll<SVGElement>(".gedcom-ft-life")];
+    const active = this.doc.activeElement;
+    const stop =
+      bars.find((one) => one === active) ??
+      bars.find((one) => one.getAttribute("data-p") === this.selected) ??
+      bars[0];
+    for (const one of bars) {
+      one.setAttribute("tabindex", one === stop ? "0" : "-1");
+    }
+  }
+
+  private stepFocus(xref: string, by: 1 | -1): void {
+    const layout = this.layout;
+    const next = layout?.shown[(layout?.shown.indexOf(xref) ?? -1) + by];
+    if (!layout || next === undefined) {
+      return;
+    }
+    const find = () => this.items.querySelector<SVGElement>(`.gedcom-ft-life[data-p="${next}"]`);
+    if (!find()) {
+      const view = this.measure();
+      const line = this.model?.people.get(next)?.lifeline;
+      this.plot.scrollTop = Math.max(0, (layout.y.get(next) ?? 0) - view.height / 2);
+      this.plot.scrollLeft = Math.max(0, layout.x(line?.start ?? layout.lo) - 40);
+      this.draw(this.measure());
+    }
+    find()?.focus();
+    this.rove();
+  }
+
   private markSelected(): void {
     for (const [element, ids] of this.elements) {
       element.classList.toggle("is-selected", this.selected !== null && ids[0] === this.selected && element.classList.contains("gedcom-ft-life"));
     }
     this.drawBranch();
+    this.rove();
     if (this.year !== null) {
       this.drawCursor();
     }
@@ -559,11 +594,11 @@ export class FileTimelineBoard {
       return;
     }
     const year = layout.lo + (this.plot.scrollLeft + this.pinchAt - PAD) / this.scope.zoom;
-    const lane = this.laneUnder(layout, year, this.plot.scrollTop + this.measure().height / 2);
-    this.setScope({ zoom }, { year, at: this.pinchAt, ...(lane ? { lane } : {}) });
+    const row = this.rowUnder(layout, year, this.plot.scrollTop + this.measure().height / 2);
+    this.setScope({ zoom }, { year, at: this.pinchAt, ...(row ? { row } : {}) });
   }
 
-  private laneUnder(layout: Layout, year: number, y: number): { xref: string; offset: number } | null {
+  private rowUnder(layout: Layout, year: number, y: number): { xref: string; offset: number } | null {
     const xref =
       layout.shown.find((one) => {
         const line = this.model?.people.get(one)?.lifeline;
@@ -626,9 +661,9 @@ export class FileTimelineBoard {
       this.glideTo(Math.max(0, (layout.y.get(keep.person) ?? 0) - this.plot.clientHeight / 2));
     } else if (typeof keep === "object" && keep !== null) {
       this.plot.scrollLeft = Math.max(0, layout.x(keep.year) - keep.at);
-      const held = keep.lane ? layout.y.get(keep.lane.xref) : undefined;
-      if (keep.lane && held !== undefined) {
-        this.plot.scrollTop = Math.max(0, held - keep.lane.offset);
+      const held = keep.row ? layout.y.get(keep.row.xref) : undefined;
+      if (keep.row && held !== undefined) {
+        this.plot.scrollTop = Math.max(0, held - keep.row.offset);
       }
     } else if (typeof keep === "number") {
       this.plot.scrollLeft = Math.max(0, layout.x(keep) - this.measure().width / 2);
@@ -682,15 +717,18 @@ export class FileTimelineBoard {
         continue;
       }
       const ends = family.spouses.filter((spouse) => layout.y.has(spouse));
-      const [first, second] = ends.map((spouse) => layout.y.get(spouse) ?? 0);
-      if (ends.length < 2 || first === undefined || second === undefined) {
+      const [upper, lower] = ends.map((spouse) => layout.y.get(spouse) ?? 0).sort((a, b) => a - b);
+      if (ends.length < 2 || upper === undefined || lower === undefined || upper === lower) {
         continue;
       }
       const at = layout.x(family.linkYear);
+      const [top, bottom] = [upper + BAR / 2, lower - BAR / 2];
       this.hover.append(
-        svg(this.doc, "line", "gedcom-ft-marriage", { x1: at, x2: at, y1: first, y2: second }),
-        svg(this.doc, "circle", "gedcom-ft-marriage-dot", { cx: at, cy: first, r: 3 }),
-        svg(this.doc, "circle", "gedcom-ft-marriage-dot", { cx: at, cy: second, r: 3 }),
+        svg(this.doc, "line", "gedcom-ft-marriage", { x1: at, x2: at, y1: top, y2: bottom }),
+      );
+      this.ends.append(
+        svg(this.doc, "circle", "gedcom-ft-marriage-dot", { cx: at, cy: top, r: 3 }),
+        svg(this.doc, "circle", "gedcom-ft-marriage-dot", { cx: at, cy: bottom, r: 3 }),
       );
     }
   }
@@ -877,6 +915,7 @@ export class FileTimelineBoard {
         },
         pinchMove: (scale) => this.pinchShow(scale),
         pinchEnd: (scale) => this.pinchEnd(scale),
+        step: (xref, by) => this.stepFocus(xref, by),
         bar: (xref) => {
           this.armed = null;
           this.closePop();
@@ -989,7 +1028,7 @@ export class FileTimelineBoard {
 interface Hold {
   year: number;
   at: number;
-  lane?: { xref: string; offset: number };
+  row?: { xref: string; offset: number };
 }
 
 function scopeOf({ focus, up, down, zoom }: TimelineScope): TimelineScope {

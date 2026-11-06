@@ -15,6 +15,17 @@ describe("the hue of a surname", () => {
     expect(apart("Жуков", "Zhukov")).toBeLessThan(3);
   });
 
+  it("reads я, ю and a leading й as ya, yu and y", () => {
+    expect(apart("Юрьев", "Yuriev")).toBeLessThan(3);
+    expect(apart("Яковлев", "Yakovlev")).toBeLessThan(3);
+    expect(apart("Йорк", "York")).toBeLessThan(3);
+  });
+
+  it("lets a different third letter move the hue by tens of degrees", () => {
+    expect(apart("Лобанов", "Lomonosov")).toBeGreaterThanOrEqual(10);
+    expect(apart("Smith", "Smyth")).toBeGreaterThanOrEqual(10);
+  });
+
   it("puts surnames with little in common far apart", () => {
     expect(apart("Лобанов", "Сидорова")).toBeGreaterThan(50);
     expect(apart("Abramov", "Eliseev")).toBeGreaterThan(50);

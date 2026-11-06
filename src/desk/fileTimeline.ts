@@ -23,7 +23,6 @@ export interface Lifeline {
   end: number;
   /** No death, burial or cremation is dated, so the line fades out at `end`. */
   open: boolean;
-  /** No death is recorded and the line begins at a birth, christening or baptism less than `OPEN_SPAN` years ago, so it runs to the present. */
   living: boolean;
   startUncertain: boolean;
   endUncertain: boolean;

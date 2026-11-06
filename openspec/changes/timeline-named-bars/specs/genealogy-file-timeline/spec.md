@@ -2,8 +2,8 @@
 
 ### Requirement: A person is a bar with their name inside it
 
-Each person the file declares with an identifier and a dated event SHALL be drawn
-as one **bar** on a horizontal axis of years, from their birth to their death, with
+Each person the file declares with an identifier and a dated event SHALL have a row
+of their own, in which they are drawn as one **bar** on a horizontal axis of years, from their birth to their death, with
 their name written inside it. The years of life SHALL NOT be written on the bar.
 Where no birth is dated, the bar SHALL begin at a dated christening or baptism,
 else at the person's earliest dated event; where no death is dated, it SHALL end at
@@ -16,12 +16,11 @@ soft, so that it cannot be taken for an exact date, while a date stating only a 
 SHALL be drawn as an exact one.
 
 A name that does not fit inside the part of its bar that is not faded SHALL be written
-just beyond the bar's end, and SHALL stay readable over the lanes' background. Marks
+just beyond the bar's end, and SHALL stay readable over the rows' background. Marks
 and spans of events SHALL be drawn along the bar's lower edge and SHALL NOT cover the
 name. The timeline SHALL NOT draw a column of names.
 
-A person with no dated event at all SHALL have no bar, and the timeline SHALL NOT
-mention them.
+A person with no dated event at all SHALL have no row and no bar, and the timeline SHALL NOT mention them.
 
 #### Scenario: Marie's bar
 - **WHEN** the timeline of `curie.ged` is shown
@@ -91,39 +90,6 @@ included, is written in the bar or beside it.
 #### Scenario: Without a surname
 - **WHEN** a person's name states no surname
 - **THEN** their bar is grey
-
-### Requirement: Bars share lanes
-
-Bars SHALL be placed in horizontal lanes, and a lane SHALL hold more than one
-person. The timeline SHALL take people in the order their bars begin, the order in
-which the file declares them breaking ties, and place each in a lane in which the
-person before has ended — the bar and any name written beyond it — at least a small
-gap before the new bar begins. Of the free lanes the person SHALL take the one nearest
-the lanes of their parents and of the spouse they married that are already placed, the
-topmost where none is placed, and a new lane SHALL be opened only where none is free. Two bars SHALL never overlap in a lane. Lanes SHALL
-NOT be labelled, and the timeline SHALL NOT group them by generation.
-
-#### Scenario: Two lives that never meet
-- **WHEN** one person lived 1840–1905 and another 1950–2023
-- **THEN** their bars stand in the same lane
-
-#### Scenario: Two lives that do
-- **WHEN** one person lived 1840–1905 and another 1868–1941
-- **THEN** their bars stand in different lanes
-
-#### Scenario: A long name takes room
-- **WHEN** a person lived 1899–1901 and their name written beyond the bar ends in
-  1925, and another person's bar begins in 1910
-- **THEN** the second person is placed in another lane
-
-#### Scenario: Near the parents
-- **WHEN** two lanes are free at the year a child is born and one of them is the
-  lane next to the child's mother
-- **THEN** the child's bar takes that lane
-
-#### Scenario: Fewer lanes than people
-- **WHEN** the timeline of a file whose people's lives follow one another is shown
-- **THEN** it has fewer lanes than the file has people with a bar
 
 ### Requirement: Pointing at a bar shows the person's name
 
@@ -305,22 +271,22 @@ bars faded.
 The open field SHALL show how many bars match — «4 matches», or «No results» where none
 does — and, once the reader has stepped, which match the view is on, as «3 / 4». Two
 buttons beside it, previous and next, and Enter and Shift+Enter in the field, SHALL
-move to the previous and the next match, in the order the bars begin, the order in which the file declares the people breaking ties: the first step forward goes to the first match and the first step back
+move to the previous and the next match, in the order of the rows: the first step forward goes to the first match and the first step back
 to the last, and each step past either end comes round to the other. The board SHALL
-scroll to bring that bar's lane to the middle of its height, and to bring the bar into
+scroll to bring that bar's row to the middle of its height, and to bring the bar into
 view sideways where it is out of it, and the bar SHALL be marked as the current match.
 The board SHALL scroll to it smoothly rather than jump, unless the reader has asked for
-reduced motion or the lane is further away than a smooth scroll can show without leaving
-lanes blank, when it SHALL jump; the reader's own scrolling SHALL stay as the platform
+reduced motion or the row is further away than a smooth scroll can show without leaving
+rows blank, when it SHALL jump; the reader's own scrolling SHALL stay as the platform
 has it. A person with no bar SHALL NOT match. The buttons SHALL be disabled where nothing matches, and pressing one with a
 mouse or a key SHALL leave the focus in the field.
 
 The timeline SHALL also offer a zoom that widens or narrows the axis of years. The zoom
 SHALL be a group of buttons — zoom out, zoom in and Fit — floating over a corner of the
-board and staying there while the lanes and years scroll beneath it, not a slider in the
+board and staying there while the rows and years scroll beneath it, not a slider in the
 toolbar; each press of zoom in or zoom out SHALL change the width of a year by a fifth,
 within a fixed range, and Fit SHALL narrow or widen the years to the width the board
-has. The axis of years SHALL stay in place while the lanes scroll beneath it and the
+has. The axis of years SHALL stay in place while the rows scroll beneath it and the
 years scroll along it.
 
 #### Scenario: Searching
@@ -338,7 +304,7 @@ years scroll along it.
 #### Scenario: Stepping through the matches
 - **WHEN** the reader types `joliot` and presses the next button four times
 - **THEN** the counter reads `4 matches`, and then `1 / 4` to `4 / 4` as the current bar
-  moves through Irène's, Frédéric's, Hélène's and Pierre's in the order they begin, each
+  moves from Irène's to Frédéric's, Hélène's and Pierre's, each
   scrolled into view
 
 #### Scenario: Gliding to a match
@@ -361,7 +327,7 @@ years scroll along it.
 #### Scenario: Zooming with the buttons
 - **WHEN** the reader presses zoom in, and then zoom out twice
 - **THEN** the axis of years is wider after the first press and narrower than it began
-  after the last two, and the buttons stay in the corner of the board while the lanes
+  after the last two, and the buttons stay in the corner of the board while the rows
   scroll
 
 #### Scenario: Fit
@@ -372,9 +338,9 @@ years scroll along it.
 ### Requirement: The timeline holds up at size
 
 The timeline SHALL keep up with the pointer and with scrolling for a file of 10 000
-people: the parts it draws SHALL be the lanes and the years in view and near them, a
+people: the parts it draws SHALL be the rows and the years in view and near them, a
 bar wholly outside them SHALL NOT be drawn, and lighting a person SHALL not redraw the
-lanes.
+rows.
 
 #### Scenario: A file of 10 000 people
 - **WHEN** a file of 10 000 people is shown whole, and the reader scrolls, points at
@@ -392,7 +358,7 @@ lanes.
 On a phone the timeline SHALL fit the screen's width, with the years scrolling sideways
 and the names written inside the bars, and SHALL NOT depend on pointing. A pinch with two
 fingers SHALL widen or narrow the axis of years about the point between them, within the
-range of the zoom buttons, without zooming the page; the axis SHALL follow the fingers while they move, and the lanes SHALL be arranged again once they lift. Touching a bar SHALL light that
+range of the zoom buttons, without zooming the page; the axis SHALL follow the fingers while they move, and settle where they lift. Touching a bar SHALL light that
 person and their family, as a click does, show the tooltip of the bar, and place the year
 cursor where it was touched, without selecting them; touching it again SHALL select the
 person as activating it does on a desktop, and open the right drawer on their card, the
@@ -485,7 +451,7 @@ tab leaves Timeline mode for Source mode with those lines selected and in view.
 ### Requirement: A click on a person lights their family
 
 Pointing at a person SHALL NOT light anyone or fade anyone: the pointer resting on a bar,
-moving over the lanes, or the keyboard's focus arriving on a bar SHALL leave every bar as
+moving over the rows, or the keyboard's focus arriving on a bar SHALL leave every bar as
 it is. The bar under the pointer MAY take the emphasis a bar takes under the pointer, and a
 mark its tooltip, and the year cursor and the ages SHALL follow the pointer as before; none
 of these fades anyone.
@@ -564,7 +530,7 @@ where the reader's system asks for reduced motion.
 
 ### Requirement: The axis of years is set apart from the board and carries ticks
 
-The band of years SHALL have a line under it separating it from the lanes, and SHALL use
+The band of years SHALL have a line under it separating it from the rows, and SHALL use
 the theme's colours only. There SHALL be no corner at its left, since no column of names
 stands there.
 
@@ -579,7 +545,7 @@ for a kind of tick of which there are more than a thousand there.
 
 #### Scenario: The header is not one smear
 - **WHEN** the timeline of `curie.ged` is shown
-- **THEN** a line runs under the axis, separating it from the lanes, and the axis begins at
+- **THEN** a line runs under the axis, separating it from the rows, and the axis begins at
   the board's left edge
 
 #### Scenario: Ticks at the initial zoom
@@ -605,15 +571,15 @@ for a kind of tick of which there are more than a thousand there.
 The timeline SHALL mark one person's bar as **selected** when the person is the tab's selected
 record, however it was selected: by activating a bar, from a row of the list, from the record
 card, by a link or by the cursor in Source mode. Where the selection came from outside the
-timeline, the bar's lane SHALL be brought to the middle of the board's height, and the bar into
+timeline, the bar's row SHALL be brought to the middle of the board's height, and the bar into
 view sideways where it is out of it, smoothly unless the reader has asked for reduced motion or
-the lane is further away than a smooth scroll can show without leaving lanes blank, as stepping
+the row is further away than a smooth scroll can show without leaving rows blank, as stepping
 to a match does; where it came from activating a bar of the timeline, the timeline SHALL NOT
 move. A selection made from outside the timeline while the tab was behind another tab, in
 another mode or not yet drawn SHALL, when the timeline is shown, scroll to the bar; one that the
 reader switched into the view with SHALL also scroll to the bar, as the reader has just chosen
 this view; one restored with the workspace SHALL mark the bar without moving a view that has a
-position. The mark SHALL be on the bar and not a band across its lane, since a lane holds other people; it SHALL be unlike the light of a click and unlike the ring of the search's current match, SHALL stay while the light is on another person, which only a phone's first touch
+position. The mark SHALL be on the bar and not a band across its row; it SHALL be unlike the light of a click and unlike the ring of the search's current match, SHALL stay while the light is on another person, which only a phone's first touch
 can cause, and while the reader searches, and SHALL stay until another record is selected or the
 selection ends. Where the person is not in the branch shown and the view is asked to move to
 them, the timeline SHALL show their branch, with the way back to the whole file. The selection
@@ -625,13 +591,13 @@ mode or write to the file.
 #### Scenario: Selecting Irène from the list
 - **WHEN** the tab is in List mode, the reader activates Irène's row, and then switches to
   Timeline mode
-- **THEN** Irène's bar is marked selected and its lane scrolled to the middle, and the record
+- **THEN** Irène's bar is marked selected and its row scrolled to the middle, and the record
   card shows her
 
 #### Scenario: Selecting from the record card
 - **WHEN** the tab is in Timeline mode and the reader activates Irène among Marie's children in
   the record card
-- **THEN** Irène's bar is marked selected and its lane scrolled to the middle
+- **THEN** Irène's bar is marked selected and its row scrolled to the middle
 
 #### Scenario: The mark outlasts hover and search
 - **WHEN** Irène is selected, the reader touches Marie's bar on a phone and types `joliot` and
@@ -656,7 +622,7 @@ mode or write to the file.
 #### Scenario: Selected while the tab is behind another
 - **WHEN** a tab in Timeline mode is behind another tab and the reader follows
   `[[curie.ged#@I12@]]`, and then brings the tab to the front
-- **THEN** Irène's bar is marked selected and its lane scrolled to the middle, and no page was
+- **THEN** Irène's bar is marked selected and its row scrolled to the middle, and no page was
   opened
 
 #### Scenario: Selected in Source and then shown
@@ -673,18 +639,9 @@ mode or write to the file.
 
 ### Requirement: A row is a person, and their lifeline is coloured by sex
 
-**Reason**: A person is no longer a row with a name column and a lifeline coloured by sex. The
-bar with the name inside it, its ends and its fade are restated in `A person is a bar with their
-name inside it`, and the colour is restated in `A bar is coloured by its person's surname`. The
-sex of a person moves to the tooltip.
+**Reason**: A row no longer has a column of names beside it, and a bar is no longer coloured by sex.
+The bar with the name inside it, its ends and its fade are restated in `A person is a bar with their
+name inside it`, and the colour is restated in `A bar is coloured by its person's surname`. The sex of
+a person is shown nowhere on the timeline.
 
-**Migration**: Read the bar for the lifeline, the surname for the colour, and the tooltip for the
-sex.
-
-### Requirement: Rows are ordered by generation and family
-
-**Reason**: People no longer stand one to a row, so there is no order of rows to keep. Lanes are
-packed by the years a person's bar begins, near the lanes of the person's parents and spouse, as
-`Bars share lanes` says.
-
-**Migration**: Read the links of a selected person for family; generations are no longer shown.
+**Migration**: Read the name inside the bar, and the surname for the colour.

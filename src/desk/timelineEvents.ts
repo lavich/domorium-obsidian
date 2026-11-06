@@ -16,6 +16,7 @@ export interface TimelineReactions {
   plotScrolled(): void;
   redrawIfNeeded(): void;
   bar(xref: string): void;
+  step(xref: string, by: 1 | -1): void;
   pinchStart(clientX: number): void;
   pinchMove(scale: number): void;
   pinchEnd(scale: number): void;
@@ -24,6 +25,8 @@ export interface TimelineReactions {
   escape(): void;
   closePop(): void;
 }
+
+const ARROWS: Record<string, 1 | -1> = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
 
 export function listenTimeline(surface: TimelineSurface, react: TimelineReactions): void {
   const { doc, root, board, plot, axisClip, pop } = surface;
@@ -68,6 +71,12 @@ export function listenTimeline(surface: TimelineSurface, react: TimelineReaction
       return;
     }
     const bar = event.target instanceof Element ? event.target.closest(".gedcom-ft-life") : null;
+    const by = ARROWS[event.key];
+    if (by !== undefined && bar !== null && personOf(bar) !== null) {
+      event.preventDefault();
+      react.step(personOf(bar) ?? "", by);
+      return;
+    }
     if ((event.key === "Enter" || event.key === " ") && bar !== null && personOf(bar) !== null) {
       event.preventDefault();
       react.bar(personOf(bar) ?? "");

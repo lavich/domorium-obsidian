@@ -1734,6 +1734,11 @@ button.gedcom-ft-branch:focus-visible {
 
 .gedcom-ft svg text.gedcom-ft-label.is-inside {
   fill: var(--gedcom-ft-ink-light);
+  pointer-events: none;
+}
+
+.gedcom-ft svg text.gedcom-ft-label.is-beyond:hover {
+  text-decoration: underline;
 }
 
 .theme-dark .gedcom-ft svg text.gedcom-ft-label.is-inside {
@@ -2121,6 +2126,15 @@ button.gedcom-fg-pop-open {
 .gedcom-ft-life.is-selected.is-current {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 2px;
+}
+
+.gedcom-ft-life.is-selected:focus-visible,
+.gedcom-ft-life.is-current:focus-visible,
+.gedcom-ft-life.is-hl:focus-visible {
+  stroke: var(--background-modifier-border-focus);
+  stroke-width: 3;
+  outline: 2px solid var(--background-modifier-border-focus);
+  outline-offset: 3px;
 }
 
 .gedcom-fg-find,

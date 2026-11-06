@@ -1,17 +1,17 @@
 ## Why
 
-The timeline gives every person a row of their own and writes the names in a column at the left. In a file of a few hundred people most of a row is empty: a man born in 1840 and a man born in 1950 never share a year, yet each takes a full row, so the board is tall and thin, and the column of names takes a fifth of the width that the years need. Sex is the only colour, so two branches of a family look alike.
+The timeline writes the names in a column at the left, which takes a fifth of the width that the years need, and the only colour is sex, so two branches of a family look alike. Rows are kept, one to a person, as they are now.
 
 ## The user's decisions (2026-11-06)
 
 Added later the same day, in Russian: «живой человек с полоской «до сегодня» тоже пусть отображается».
 
-In Russian: «убрать левую полоску с именами и писать имена прям внутри полосок, которые отображают время жизни», «одна строка не принадлежит одному человеку, а если есть свободное место, то там размещается полоска следующего человека». Then, after a mock-up of both: the colour comes from the surname, and the more the surnames differ the more the colours differ, «Лобанов и Лобанова — почти один и тот же цвет»; a click selects and lights a person's family; the years of life are not written inside the bar; the ends of a bar say how sure the dates are; events are marks on the bar; the tooltip holds the name and surname only («в подсказке только имя и фамилию оставь»); a double surname is one surname («это две разные фамилии же»); a person with no data is not drawn («в дереве без данных предок — может и не стоит»); the selected person gets an age ruler; the board is virtualised; the phone is kept. Recorded as given; none of it is open.
+In Russian: «убрать левую полоску с именами и писать имена прям внутри полосок, которые отображают время жизни». The second idea, packing several people into one row, was tried and withdrawn: «теряется визуальная связь между прямыми родственниками… я хочу чтобы не было такого, что занимается свободное место — пусть у каждой персоны своя строчка будет». Then, after a mock-up of both: the colour comes from the surname, and the more the surnames differ the more the colours differ, «Лобанов и Лобанова — почти один и тот же цвет»; a click selects and lights a person's family; the years of life are not written inside the bar; the ends of a bar say how sure the dates are; events are marks on the bar; the tooltip holds the name and surname only («в подсказке только имя и фамилию оставь»); a double surname is one surname («это две разные фамилии же»); a person with no data is not drawn («в дереве без данных предок — может и не стоит»); the selected person gets an age ruler; the board is virtualised; the phone is kept. Recorded as given; none of it is open.
 
 ## What Changes
 
 - **No column of names.** The board is the axis of years and the bars. A person's name is written inside their bar, in the bar's own colour family, without the years of life.
-- **Lanes, not one row per person.** A lane holds several people whose bars do not meet; the next person takes the first lane that is free at the year their bar begins (with a gap), preferring the lane nearest their parents' or spouse's. A name that does not fit its bar is written to its right and the lane keeps that room.
+- **A row per person, kept.** Every person keeps a row of their own, in the order the rows have now — by generation and family — so that relatives stay where a reader looks for them. A name that does not fit its bar is written to its right.
 - **Colour by surname.** A bar is coloured by the person's whole surname. Two surnames that read alike — `Лобанов` and `Лобанова`, `Жуков` and `Zhukov` — get almost the same hue and two that do not read alike get hues far apart; a double surname is one surname. A person without a surname is grey. **BREAKING:** sex no longer colours the bar, and the timeline shows it nowhere.
 - **Honest ends.** A start or an end dated as approximate is drawn soft. A person with no recorded death who could still be alive — born less than a hundred years ago — is drawn running to today, to the current year, and ends in a straight cut edge; a death not recorded for someone born longer ago fades out, as it does now.
 - **A tooltip with the name.** Pointing at a bar, or at a name written beyond it (a first touch on a phone), shows the person's full name and nothing else — for the name a short bar cannot hold.
@@ -20,7 +20,7 @@ In Russian: «убрать левую полоску с именами и пис
 - **Branch moves out of the names.** The names were where Branch lived; it becomes a button on the selected person's bar, and a command **Branch of the selected person** for the keyboard.
 - **People with no dated event are not drawn** and are not mentioned on the timeline; a search does not find them. The List and the card still hold them.
 - **Zoom.** Fit takes the whole board's width. On a phone a pinch zooms the axis.
-- **Virtual window.** Only the lanes and years in view are drawn, as the rows were.
+- **Virtual window.** Only the rows and years in view are drawn, as now.
 
 Repository or upstream: **this repository only.** The model already holds the families (`FileTimeline.families` with `spouses`, `children` and `marriage`) and `readNameParts` already splits a surname; nothing in the parser or the language service changes.
 
@@ -32,7 +32,7 @@ None.
 
 ### Modified Capabilities
 
-- `genealogy-file-timeline`: a person is a named bar in a shared lane instead of a row with a name column, coloured by surname; the order of rows becomes the packing of lanes; the tooltip, the age ruler and the selected person's links are restated; the requirements that name the column of names, the rows or the corner above it are restated for the bars.
+- `genealogy-file-timeline`: a person is a named bar in a row of their own with no column of names, coloured by surname; the tooltip, the age ruler and the lit person's links are restated; the requirements that name the column of names or the corner above it are restated for the bars.
 
 ## Non-goals
 
@@ -48,9 +48,9 @@ None.
 
 ## Impact
 
-- **Layout and drawing**: `src/desk/timelineLayout.ts` (lanes instead of `y` by row, the bar with its name, a living person's cut end), a new `src/desk/timelineLanes.ts` (packing) and `src/desk/surnameHue.ts` (colour), `src/desk/fileTimelineView.ts` (no names column, the Branch button on the bar, the tooltip, the age ruler, the pinch, the links), `src/desk/timelineEvents.ts` (the names' scroll wiring goes), `src/desk/timelineHits.ts` (a bar hit for the tooltip), `src/desk/commands.ts` (the Branch command), `src/desk/labels.ts` (`lifelineYears` goes), `src/desk/axisTicks.ts` only where the corner above the names goes.
-- **Model**: `src/desk/fileTimeline.ts` reads the surname of each person and the dated marriage or first shared child of each family; the order of `rows` stays for the lanes' tie-break.
+- **Layout and drawing**: `src/desk/timelineLayout.ts` (the bar with its name, a living person's cut end), a new `src/desk/surnameHue.ts` (colour), `src/desk/fileTimelineView.ts` (no names column, the Branch button on the bar, the tooltip, the age ruler, the pinch, the links), `src/desk/timelineEvents.ts` (the names' scroll wiring goes), `src/desk/timelineHits.ts` (a bar hit for the tooltip), `src/desk/commands.ts` (the Branch command), `src/desk/labels.ts` (`lifelineYears` goes), `src/desk/axisTicks.ts` only where the corner above the names goes.
+- **Model**: `src/desk/fileTimeline.ts` reads the surname of each person and the dated marriage or first shared child of each family.
 - **Strings and styles**: `src/i18n/en.json`, `src/i18n/ru.json`, `styles.css`.
-- **Tests**: `src/desk/fileTimeline.test.ts`, `src/desk/fileTimelineView.test.ts` (it also holds the layout tests), `src/desk/fileViews.test.ts`, `src/commands.test.ts`, new `src/desk/timelineLanes.test.ts` and `src/desk/surnameHue.test.ts`; `tests/fileTimeline.spec.ts`, `tests/fileViews.spec.ts`, `tests/fileList.spec.ts`.
+- **Tests**: `src/desk/fileTimeline.test.ts`, `src/desk/fileTimelineView.test.ts` (it also holds the layout tests), `src/desk/fileViews.test.ts`, `src/commands.test.ts`, new `src/desk/surnameHue.test.ts`; `tests/fileTimeline.spec.ts`, `tests/fileViews.spec.ts`, `tests/fileList.spec.ts`.
 - **Documents**: `README.md`, `demo-vault/Start here.md`.
 - **Dependencies and `minAppVersion`**: none changed.
