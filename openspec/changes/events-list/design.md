@@ -59,3 +59,5 @@ None. The saved list state accepts `events` as a kind (`LIST_KINDS`, `readListSt
 - The stand-in tab of the harness already takes an `events` option and `curieWithEvents()`; its host gains `selectEvent`, recorded as `calls.selectedEvent`.
 
 - The harness's `hand()`, `pending` and `select` take the fact as the real views do.
+- The rows keep the record and the event, not their texts: the name of an event and of a record depend on the language, and `eventsOf` is held per index. The folded text a search reads is kept per row and per language.
+- `GedcomView` has no unit test; its part of the selection (D2, D3) is covered by the wiring tests in `fileViews.test.ts` and by 4.2.
