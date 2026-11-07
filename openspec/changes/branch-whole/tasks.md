@@ -1,4 +1,4 @@
-Depends on `timeline-named-bars` and `couple-marriage-sign`: both archive first (the user's decision, 2026-11-07), and the delta specs here are rewritten on their archived text before this change is implemented — the timeline's row becomes a bar, and the rules for its links and for the marriage sign follow theirs.
+Independent of the other open changes: those that touched these requirements are archived.
 
 ## 1. The read model
 

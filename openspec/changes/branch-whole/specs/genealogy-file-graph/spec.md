@@ -5,8 +5,8 @@
 Pointing at a person's card, or giving it the keyboard focus, SHALL light that
 card, the cards of every person of their branch — their ancestors, their
 descendants and the spouses of everyone so shown — the lines between those people,
-and the family nodes they belong to, and SHALL fade everything else, until the
-pointer or the focus leaves. The pointer SHALL light a person
+and the family nodes they belong to, and SHALL fade everything
+else, until the pointer or the focus leaves. The pointer SHALL light a person
 only once it has rested on them a moment, and put the light out only once it
 has rested off them as long, so that a sweep across cards does not flicker; the
 keyboard's focus and a touch SHALL light at once. Lighting and fading SHALL be
@@ -22,17 +22,17 @@ it has no date, and how many children the family has.
 - **THEN** the cards of Marie, Władysław, Bronisława Boguska, Pierre Curie, Irène,
   Ève, Frédéric Joliot, Henry Richardson Labouisse, Hélène and Pierre Joliot are
   lit, with the lines between them, and the cards of her sisters and brothers, of
-  Eugène Curie and of Sophie-Claire fade
+  Eugène Curie and of Sophie-Claire fade, as do the lines to her sisters and brothers
 
 #### Scenario: Pointing at Hélène
 - **WHEN** the reader points at Hélène's card
-- **THEN** the cards of Hélène, her parents Frédéric and Irène, and Irène's parents
-  Pierre Curie and Marie, and theirs, Eugène, Sophie-Claire, Władysław and
-  Bronisława Boguska, are lit, and Ève fades
+- **THEN** the cards of Hélène, Frédéric and Irène, Pierre Curie and Marie, and
+  Eugène, Sophie-Claire, Władysław and Bronisława Boguska are lit, and Ève and the
+  line to her fade
 
 #### Scenario: Pointing at the Curies' family node
 - **WHEN** the reader points at the node between Pierre Curie and Marie
-- **THEN** it shows Pierre Curie and Marie Skłodowska-Curie, married
+- **THEN** it shows Pierre Curie ⚭ Marie Skłodowska-Curie, married
   `26 JUL 1895` in Sceaux, France, and 2 children
 
 ### Requirement: A branch scope shows one person's ancestors and descendants
@@ -62,26 +62,27 @@ leaves it on SHALL be kept, the whole file included.
   Boguska; Pierre Curie and Marie; Frédéric and Irène; Hélène and Pierre Joliot
   — and the graph says this is 10 of 17 people
 
+#### Scenario: Branch again
+- **WHEN** Irène's branch is shown and the reader chooses Branch on Irène's card
+- **THEN** the whole file is shown, centred on Irène's card, and no line about
+  the scope is shown
+
+#### Scenario: No ancestors and no descendants
+- **WHEN** the reader shows the branch of Henry Richardson Labouisse, who has no
+  parents and no children in the file
+- **THEN** one row shows him and Ève
+
 #### Scenario: Marie's branch
 - **WHEN** the reader chooses Marie's branch
 - **THEN** all her descendants down to Hélène and Pierre Joliot are shown, with
   their spouses, and the graph says this is 10 of 17 people, with no control for
   a number of generations
 
-#### Scenario: Branch again
-- **WHEN** Irène's branch is shown and the reader chooses Branch on Irène's card
-- **THEN** the whole file is shown, centred on Irène's card, and no line about
-  the scope is shown
-
 #### Scenario: A saved scope with numbers
 - **WHEN** a tab is restored whose saved graph scope names Marie with `up` 0 and
   `down` 0
-- **THEN** the graph shows Marie's whole branch
-
-#### Scenario: No ancestors and no descendants
-- **WHEN** the reader shows the branch of Henry Richardson Labouisse, who has no
-  parents and no children in the file
-- **THEN** one row shows him and Ève
+- **THEN** the graph shows Marie's whole branch, and the state it saves again has
+  no `up` or `down`
 
 #### Scenario: A large file
 - **WHEN** a file of 2 000 people is open in Source mode with the cursor inside one
