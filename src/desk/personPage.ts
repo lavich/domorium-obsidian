@@ -95,7 +95,7 @@ export function renderPersonPage(
     index,
     host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) },
     ...(options.open === undefined ? {} : { open: options.open }),
-    ...(options.folded === undefined ? {} : { folded: options.folded }),
+    ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
   renderHeading(container, person, lines, options, host);
   const names = lines ? nameLines(lines) : [];

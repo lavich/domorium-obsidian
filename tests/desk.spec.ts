@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
@@ -44,10 +45,10 @@ for (const size of SIZES) {
       await mountDesk(page, { width: size.width, phone: size.phone });
     });
 
-    test("runs Facts, Other names, Family, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
+    test("runs Names, Facts, Family, Notes, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
       await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-        "Facts", "Other names", "Family", "Media", "Timeline", "Evidence",
+        "Names", "Facts", "Family", "Notes", "Media", "Timeline", "Evidence",
       ]);
       const tops = await page
         .locator(".gedcom-card-body h2.gedcom-desk-section")
@@ -121,6 +122,7 @@ for (const size of SIZES) {
     });
 
     test("opens the card of an event from the timeline", async ({ page }) => {
+      await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
       await page.locator(".gedcom-desk-moment-what", { hasText: "Marriage with Pierre Curie" }).evaluate((entry) => (entry as HTMLElement).click());
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
@@ -399,4 +401,63 @@ test.describe("the controls of a card on a phone", () => {
       expect(misses, record).toEqual([]);
     }
   });
+});
+
+test.describe("the card of a record that states everything", () => {
+  const rich = () => readFileSync("demo-vault/rich-record.ged", "utf8");
+  for (const size of SIZES) {
+    test.describe(size.name, () => {
+      test.beforeEach(async ({ page }) => {
+        await page.setViewportSize(size.viewport);
+        await mountDesk(page, { doc: rich(), record: "@I1@", width: size.width, phone: size.phone });
+      });
+
+      test("runs its sections in order, ends with Evidence, folds the three it folds, and does not scroll sideways", async ({ page }) => {
+        await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
+          "Names", "Facts", "Family", "Notes", "Related people", "Media", "Timeline",
+          "Identifiers and record information", "Other data", "Evidence",
+        ]);
+        await expect(page.locator(".gedcom-desk-fold-button")).toHaveCount(3);
+        await expect(page.locator(".gedcom-desk-fold-body[hidden]")).toHaveCount(3);
+        expect(await overflowsSideways(page)).toBe(false);
+      });
+
+      test("shows every name with its type and the parts of it", async ({ page }) => {
+        await expect(page.locator(".gedcom-name-text")).toHaveText(["Maria Skłodowska", "Мария Склодовская", "Marie Curie"]);
+        await expect(page.locator(".gedcom-name-type")).toHaveText(["Birth", "Married"]);
+        await expect(page.locator(".gedcom-names .gedcom-detail-label").first()).toHaveText("Given names");
+      });
+
+      test("folds a long note and shows the rest on a press, and keeps what it shows inside the card", async ({ page }) => {
+        const more = page.locator(".gedcom-detail-more");
+        await expect(more).toHaveText("Show more");
+        await expect(page.getByText("Line 12 of a long note.")).toBeHidden();
+        await more.click();
+        await expect(page.getByText("Line 12 of a long note.")).toBeVisible();
+        await expect(more).toHaveText("Show less");
+        expect(await overflowsSideways(page)).toBe(false);
+        if (size.phone) {
+          expect((await more.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+        }
+      });
+
+      test("opens the folded sections and shows the custom line nested, without scrolling sideways", async ({ page }) => {
+        for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
+          await button.click();
+        }
+        await expect(page.locator(".gedcom-detail-label", { hasText: "_MILITARY" })).toBeVisible();
+        await expect(page.locator(".gedcom-detail-label", { hasText: "_SINCE" })).toBeVisible();
+        expect(await overflowsSideways(page)).toBe(false);
+      });
+
+      test("shows the age, the cause and the coordinates on the card of the birth", async ({ page }) => {
+        await page.locator(".gedcom-desk-fact-name", { hasText: "Birth" }).first().click();
+
+        await expect(page.locator(".gedcom-detail-label", { hasText: "Cause" })).toBeVisible();
+        await expect(page.locator(".gedcom-detail-label", { hasText: "Latitude" })).toBeVisible();
+        await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
+        expect(await overflowsSideways(page)).toBe(false);
+      });
+    });
+  }
 });

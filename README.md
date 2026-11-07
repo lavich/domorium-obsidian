@@ -102,16 +102,22 @@ nothing. With it off, the first selection in a session puts the card in the
 right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a tap on a
-row of the list, opens. A person's card lists their facts in the order the record states
-them, each marked with how many sources it cites itself where it cites any, and
-a line above them saying how many have none; their other names; their parents,
-siblings, spouses and children, each of whom selects that person; their media; a
-**timeline** of their events and their close relatives', folded under its heading,
-which shows how many it holds, and closed when a card opens; and last the
-**evidence** — what the whole record rests on. Tapping a fact, or
+row of the list, opens. A person's card shows everything the record says, in the
+reader's language: every name with its type and parts; their facts in the order the record
+states them, each a compact row marked with how many sources it cites itself where it cites
+any, and a line above them saying how many have none; their parents (marked adoptive, foster
+or sealing where the file says so), siblings, spouses and children, each of whom selects that
+person; their notes, folded where long; the people the record names as associated with them;
+their media; a **timeline** of their events and their close relatives'; their identifiers and
+the dates the record was created and changed; **other data**, every line no section above
+shows, a custom tag among them, so nothing the file states is hidden — these three folded under
+their headings, which show how many they hold, and closed when a card opens; and last the
+**evidence** — what the whole record rests on, each citation with everything it states.
+A family's card shows the same for the family; a section the record holds nothing for is left out. Tapping a fact, or
 an entry of the timeline, opens the card of its event: the person or the family it
-belongs to as a link above its name, its date and place under it, and the evidence
-that is its own below; a place named there opens the card of that place, which lists
+belongs to as a link above its name, its date and place under it, then everything else
+the event states — age, cause, agency, address, contacts, what the place states, notes,
+associates — and the evidence that is its own below; a place named there opens the card of that place, which lists
 the events held there as the facts of a person are listed, and a list in view
 shows the event or the place. Every control of a card shows a focus ring for the
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a

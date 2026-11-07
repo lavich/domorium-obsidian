@@ -63,7 +63,7 @@ export function renderFamilyPage(
     index,
     host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) },
     ...(options.open === undefined ? {} : { open: options.open }),
-    ...(options.folded === undefined ? {} : { folded: options.folded }),
+    ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
   const heading = page.createDiv({ cls: "gedcom-desk-heading" });
   heading.createEl("h1", { cls: "gedcom-desk-title", text: familyTitle(family.spouseNames) });

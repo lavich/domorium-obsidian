@@ -35,7 +35,7 @@ export function renderEventPage(
     index,
     host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) },
     ...(options.open === undefined ? {} : { open: options.open }),
-    ...(options.folded === undefined ? {} : { folded: options.folded }),
+    ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
   const lead = container.createDiv({ cls: "gedcom-desk-event-owner" });
   lead.createSpan({ cls: "gedcom-desk-event-kind", text: t(index.person(owner) ? "desk.person" : "desk.family") });

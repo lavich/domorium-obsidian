@@ -422,6 +422,73 @@ h3.gedcom-desk-subsection[data-count]::after {
   white-space: normal;
 }
 
+.gedcom-detail .gedcom-detail {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: var(--size-2-2);
+  padding-inline-start: var(--size-4-2);
+  border-inline-start: 2px solid var(--background-modifier-border);
+}
+
+.gedcom-detail .gedcom-detail .gedcom-detail-label {
+  padding: 0;
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-detail .gedcom-detail .gedcom-detail-value {
+  padding: 0 0 var(--size-2-2);
+}
+
+.gedcom-name-head,
+.gedcom-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2-2) var(--size-4-2);
+}
+
+.gedcom-related > .gedcom-detail {
+  flex-basis: 100%;
+}
+
+.gedcom-name {
+  margin-bottom: var(--size-4-3);
+}
+
+.gedcom-name-translation {
+  margin-top: var(--size-2-3);
+  margin-inline-start: var(--size-4-4);
+}
+
+.gedcom-name-type,
+.gedcom-related-kind,
+.gedcom-related-role,
+.gedcom-related-phrase {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-note + .gedcom-note {
+  margin-top: var(--size-4-3);
+  padding-top: var(--size-4-3);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-related + .gedcom-related {
+  margin-top: var(--size-2-3);
+}
+
+.gedcom-desk-kin-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.is-mobile button.gedcom-detail-more {
+  min-height: 44px;
+}
+
 .gedcom-detail-text-body {
   white-space: pre-line;
   overflow-wrap: anywhere;
@@ -531,10 +598,6 @@ button.gedcom-desk-fact-name {
   margin-bottom: var(--size-2-3);
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
-}
-
-.gedcom-desk-name {
-  padding: var(--size-2-2) 0;
 }
 
 .gedcom-desk-family {

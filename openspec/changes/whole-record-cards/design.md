@@ -176,3 +176,28 @@ existing tests. Rollback is `git revert` of the switch; the modules stay unused.
 
 - The shared header of the card repeats the record's name (the bar above the heading): left for the
   second step with the other cards.
+
+## Implementation
+
+Deviations from the design above, as built:
+
+- **Where the pieces live.** `src/genealogy/recordLines.ts` holds the converter; `record(xref)` is memoised
+  per revision inside `buildIndex`, so the cards and every citation of a record share one conversion.
+  `src/desk/detail/` has `labels`, `lineView`, `foldedText`, `section` (the heading with `data-count`), `lazyFold`,
+  `claims`, `names`, `notes`, `related`, `recordInfo`, `otherData`, `eventDetails`.
+- **Counts.** A heading's count is the `data-count` attribute shown by the stylesheet; the fold buttons already
+  did this. Evidence's «Sources of the record» and «Notes in the vault» count the same way and carry none at zero.
+- **Rows by `data-line`.** Every row a card draws carries the number of its line in the file (a space-separated list
+  where one row shows several); `src/desk/detail/wholeRecord.test.ts` compares those numbers with the lines of the
+  record, for a person and a family in 7.0 and in 5.5.1 and for each event, and fails if a line is not drawn
+  (checked by claiming a custom tag in a section that does not draw it).
+- **Gallery lines.** An `OBJE` line is the gallery's where a media item's position lies in the line's range; with no
+  media handed to the page every `OBJE` line is taken as the gallery's.
+- **Family-level `RESI`, `FACT`, 7.0 `NCHI`.** `NCHI` is a line under the facts (the number the record states);
+  `RESI` and `FACT` of a family go to Other data, as the design's risk said.
+- **Nested rows are stacked.** Rows inside a row (a latitude under a map, a time under a date) show the label above
+  the value, in a ruled indent: beside it they were squeezed to a few characters on a 360-pixel panel (seen in a
+  screenshot).
+- **A lazy fold needs the fold open to be seen**: the Timeline of a person is drawn only when opened, so a test
+  or a spec that reads it first presses its heading.
+- **The plan was reviewed before the code, but not again after its fixes** (they were corrections the review named).
