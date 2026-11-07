@@ -11,11 +11,16 @@ export interface EventRowContent {
   detail: EventDetail;
   citations: number;
   record?: { name: string; xref: string };
+  /** The number of the line of the event in the file, for the row to carry. */
+  line?: number;
 }
 
 export function renderEventRow(list: HTMLElement, content: EventRowContent, host: Pick<PageHost, "openRecord">): void {
-  const { name, focusKey, open, detail, citations, record } = content;
+  const { name, focusKey, open, detail, citations, record, line } = content;
   const row = list.createDiv({ cls: "gedcom-desk-fact" });
+  if (line !== undefined) {
+    row.setAttribute("data-line", String(line));
+  }
   const button = row.createEl("button", { cls: "gedcom-desk-fact-name", text: name });
   button.setAttribute("type", "button");
   if (focusKey !== undefined) {

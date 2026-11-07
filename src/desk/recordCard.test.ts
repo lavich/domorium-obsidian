@@ -36,7 +36,7 @@ beforeEach(() => {
     filePath: () => "curie.ged",
     index: () => index,
     selection: () => ({ record: state.record, fact: state.fact }),
-    mediaItems: () => [],
+    mediaItems: (media) => media.map(({ at }) => ({ content: { kind: "missing", target: "" }, at })),
     mediaItem: () => null,
     portrait: () => null,
     select: (xref) => {
@@ -115,7 +115,7 @@ describe("the page of each kind of record, with its evidence", () => {
   it("shows Marie's sections in order, ending with Evidence", () => {
     draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Facts", "Other names", "Family", "Timeline", "Evidence"]);
+    expect(texts(".gedcom-card-body h2")).toEqual(["Names", "Facts", "Family", "Notes", "Media", "Timeline", "Evidence"]);
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
@@ -140,7 +140,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw([]);
 
     expect(texts(".gedcom-desk-title")).toEqual(["The Nobel Prize in Chemistry 1911 and 1935"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault · 0");
+    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault");
     expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
   });
 
@@ -149,7 +149,7 @@ describe("the page of each kind of record, with its evidence", () => {
     draw([]);
 
     expect(texts(".gedcom-desk-title")).toEqual(["The Curie family, about 1908"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault · 0");
+    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault");
   });
 
   it("lists the notes of the vault in Marie's evidence", () => {

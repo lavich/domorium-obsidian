@@ -55,7 +55,7 @@ describe("the evidence of a whole record", () => {
     draw("@I1@");
 
     expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
-    expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of the record · 2"]);
+    expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of the record"]);
     expect(texts(".gedcom-desk-cite-title")).toEqual([
       "The Nobel Prize in Physics 1903",
       "The Nobel Prize in Chemistry 1911 and 1935",
@@ -153,7 +153,7 @@ describe("the evidence of a family", () => {
   it("lists the sources of the family record", () => {
     draw("@F3@");
 
-    expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of the record · 0"]);
+    expect(texts(".gedcom-desk-subsection")).toEqual(["Sources of the record"]);
   });
 
   it("says the Curies' marriage rests on nothing, nor does the family record", () => {
@@ -186,7 +186,7 @@ describe("the evidence of a source and of a multimedia record", () => {
   it("is the notes alone, with no citations and no Evidence heading", () => {
     drawSelection({ index: curieIndex(), record: "@S2@", notes: [] });
 
-    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
+    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault"]);
     expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
     expect(container.querySelector(".gedcom-desk-cite")).toBeNull();
     expect(container.querySelector(".gedcom-desk-link")).toBeNull();
@@ -204,7 +204,7 @@ describe("notes in the vault", () => {
     drawSelection({ index: curieIndex(), record: "@I1@", notes: [RADIUM] });
 
     expect(texts(".gedcom-desk-subsection")).toEqual([
-      "Sources of the record · 2", "Notes in the vault · 1",
+      "Sources of the record", "Notes in the vault",
     ]);
     expect(texts(".gedcom-desk-note-name")).toEqual(["Radium"]);
     expect(texts(".gedcom-desk-note-line mark")).toEqual(["Marie Skłodowska-Curie"]);
@@ -218,7 +218,7 @@ describe("notes in the vault", () => {
     drawSelection({ index: curieIndex(), record: "@I1@", notes: six });
 
     expect(texts(".gedcom-desk-note-name")).toHaveLength(6);
-    expect(texts(".gedcom-desk-subsection")).toContain("Notes in the vault · 6");
+    expect(texts(".gedcom-desk-subsection")).toContain("Notes in the vault");
   });
 
   it("opens a note at the line", () => {
@@ -239,9 +239,9 @@ describe("notes in the vault", () => {
 
   it("lists them beside a source and a multimedia record too", () => {
     drawSelection({ index: curieIndex(), record: "@S1@", notes: [] });
-    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
+    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault"]);
 
     drawSelection({ index: curieIndex(), record: "@O5@", notes: [] });
-    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault · 0"]);
+    expect(texts(".gedcom-desk-section")).toEqual(["Notes in the vault"]);
   });
 });

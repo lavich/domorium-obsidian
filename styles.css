@@ -392,7 +392,8 @@ button.gedcom-card-nav:disabled {
   margin: var(--size-4-6) 0 var(--size-2-3);
 }
 
-h2.gedcom-desk-section[data-count]::after {
+h2.gedcom-desk-section[data-count]::after,
+h3.gedcom-desk-subsection[data-count]::after {
   content: " " attr(data-count);
   font-weight: normal;
   letter-spacing: 0;

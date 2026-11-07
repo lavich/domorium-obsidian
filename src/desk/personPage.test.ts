@@ -29,15 +29,15 @@ afterEach(resetLanguage);
 
 function draw(
   xref: string,
-  { selected = null, index = curieIndex() }:
-    { selected?: FactKey | null; index?: GenealogyIndex } = {},
+  { selected = null, index = curieIndex(), open }:
+    { selected?: FactKey | null; index?: GenealogyIndex; open?: string[] } = {},
 ): void {
   const person = index.person(xref);
   if (!person) {
     throw new Error(`no person ${xref}`);
   }
   container.empty();
-  renderPersonPage(container, person, index, { selected }, host);
+  renderPersonPage(container, person, index, { selected, ...(open ? { open: new Set(open) } : {}) }, host);
 }
 
 const bornIn = (date: string): GenealogyIndex =>
@@ -77,7 +77,7 @@ describe("the person card", () => {
     draw("@I1@");
 
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-desk-subtitle")).toEqual(["1867–1934 · Warsaw → Passy"]);
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["Female · 1867–1934 · Warsaw → Passy"]);
   });
 
   it("heads the page with a year before the common era marked as one", () => {
@@ -159,7 +159,7 @@ describe("the person card", () => {
   it("lists her other name", () => {
     draw("@I1@");
 
-    expect(texts(".gedcom-desk-name")).toEqual(["Maria Salomea Skłodowska"]);
+    expect(texts(".gedcom-name-text")).toContain("Maria Salomea Skłodowska");
   });
 
   it("shows her parents, siblings, husband with the marriage, and children", () => {
@@ -282,7 +282,7 @@ describe("the person card", () => {
 });
 
 describe("the sections of a person card", () => {
-  it("run Facts, Other names, Family, Media and Timeline, with no tab bar and no tree", () => {
+  it("run Names, Facts, Family, Notes, Media and Timeline, with no tab bar and no tree", () => {
     const person = curieIndex().person("@I1@");
     if (!person) {
       throw new Error("no Marie");
@@ -291,11 +291,11 @@ describe("the sections of a person card", () => {
       container,
       person,
       curieIndex(),
-      { selected: null, media: [{ content: { kind: "missing", target: "marie.jpg" }, at: { line: 1, character: 0 } }] },
+      { selected: null, media: person.media.map(({ at }) => ({ content: { kind: "missing" as const, target: "marie.jpg" }, at })) },
       host,
     );
 
-    expect(texts("h2")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline"]);
+    expect(texts("h2")).toEqual(["Names", "Facts", "Family", "Notes", "Media", "Timeline"]);
     expect(container.querySelector(".gedcom-fg-canvas")).toBeNull();
   });
 
@@ -307,7 +307,7 @@ describe("the sections of a person card", () => {
     expect(buttons.map((button) => button.getAttribute("data-count"))).toEqual(["18"]);
     expect(buttons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false"]);
     expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true]);
-    expect(container.querySelector(".gedcom-desk-names")?.closest("[hidden]")).toBeNull();
+    expect(container.querySelector(".gedcom-names")?.closest("[hidden]")).toBeNull();
   });
 
   it("opens a fold on its heading, and tells which one", () => {
@@ -337,7 +337,7 @@ describe("the sections of a person card", () => {
   });
 
   it("lists seventeen dated entries from 1860 to 1934 and the undated Occupation in the timeline", () => {
-    draw("@I1@");
+    draw("@I1@", { open: ["timeline"] });
     const dated = [...container.querySelectorAll(".gedcom-desk-timeline")][0];
     const years = [...(dated?.querySelectorAll(".gedcom-desk-moment-year") ?? [])].map((node) => node.textContent);
 
@@ -352,7 +352,7 @@ describe("the sections of a person card", () => {
   });
 
   it("opens the card of an event from the timeline, and a relative's entry opens the relative", () => {
-    draw("@I1@");
+    draw("@I1@", { open: ["timeline"] });
     const entries = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
     entries.find((node) => node.textContent === "Birth")?.click();
     entries.find((node) => node.textContent === "Death of husband Pierre Curie")?.click();
@@ -361,7 +361,7 @@ describe("the sections of a person card", () => {
   });
 
   it("opens the place of a timeline entry", () => {
-    draw("@I1@");
+    draw("@I1@", { open: ["timeline"] });
     container.querySelector<HTMLElement>(".gedcom-desk-moment-detail .gedcom-desk-link")?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith(expect.stringMatching(/^place:/u));

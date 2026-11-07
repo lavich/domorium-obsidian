@@ -7,6 +7,7 @@ import {
 
 import type { MediaPreviewContent } from "../editor/media";
 import { t, type MessageKey } from "../i18n";
+import { sectionHeading } from "./detail/section";
 import { linkButton } from "./dom";
 
 export type PortraitContent = Extract<MediaPreviewContent, { kind: "image" }>;
@@ -90,7 +91,7 @@ export function renderGallery(
   if (items.length === 0) {
     return;
   }
-  parent.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.media") });
+  sectionHeading(parent, t("desk.media"), items.length);
   const gallery = parent.createDiv({ cls: "gedcom-desk-gallery" });
   for (const item of items) {
     renderTile(gallery, item, host);
