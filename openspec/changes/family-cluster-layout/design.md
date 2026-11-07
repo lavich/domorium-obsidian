@@ -10,17 +10,22 @@ See proposal.md for why. What exists, observed in the code on `main`:
   squeeze → stackBands → placeCards → joinSpouses → routeLines → bendApart`.
   `layoutFileGraph` (`:463`) maps a `FileTimeline` and a `BranchScope` onto
   `GraphInput`; `fileGraphOf` (`:998`) caches the last four layouts per model.
-- The renderer reads only `cards`, `card`, `nodes`, `node`, `lines[].points`,
-  `width`, `height`, `focus` (`graphCanvas.ts:91,235,364,493,559`,
-  `fileGraphView.ts:184-188`). `bands`, `rows`, `crossings*`, `sweeps` are read
-  by tests only. So a new engine that returns the same `FileGraphLayout` leaves
-  the renderer untouched.
+- The renderer reads `cards`, `card`, `nodes` (`spouses` as a pair, `joins`,
+  `kind`, `year`, `family`), `lines` (`family`, `child`, `parents`, `points`),
+  `width`, `height`, `focus` (`sceneItems.ts:27-79`, `cardRender.ts:153-167`,
+  `graphCanvas.ts:91,235,364,493,559`, `fileGraphView.ts:184-188`). `bands`,
+  `rows`, `lanes`, `crossings*`, `sweeps` are read by tests only. So an engine
+  that returns the same `FileGraphLayout` — nodes still keyed by a pair of
+  spouses, joins still arbitrary polylines — leaves the renderer untouched.
+- Today a family's node is made for its first two spouses only
+  (`fileGraph.ts:535-542`, `fileTimeline.ts:460`); a third partner gets no join
+  and a row from the input only.
 - The generation of a person is `FileTimeline.generations`, computed from
   relationships (`generationsOf`, `fileTimeline.ts:189-265`), not from dates;
   the focus of a branch is `BranchScope.focus`; `model.branch(focus, up, down)`
   is the set of a branch.
-- `FileTimeline` has no kind of parent–child link. `src/genealogy/build.ts:290`
-  (`familiesOf`) walks `FAMC` link nodes of a person's record (`childrenOf(record,
+- `FileTimeline` has no kind of parent–child link. `src/genealogy/build.ts:290-299`
+  (`familiesOf`; `:221` iterates the same FAMC link symbols) walks `FAMC` link nodes of a person's record (`childrenOf(record,
   tag)`), so the `PEDI` substructure of each `FAMC` is reachable there without
   any parser change (GEDCOM 5.5.1: `birth|adopted|foster|sealing`; 7.0:
   `BIRTH|ADOPTED|FOSTER|OTHER`, written upper-case).
@@ -65,6 +70,10 @@ See proposal.md for why. What exists, observed in the code on `main`:
   by root analysis, `convergence` (two paths from the root reach one person or
   cluster) and `branch` (a collateral cluster attached to the lineage at a
   person). A link keeps the xrefs and the relationship kind of both ends.
+- **Reference** — a link, found after placement, that the layout can only draw
+  as a long line: a descent or alternate-parents line that crosses more than one
+  generation, or that reaches a person already placed through a second cluster.
+  It names the person and the two clusters; there is still one card.
 - **Layer** — `0` for the root's lineage (ancestors, descendants, their
   spouses), `n` for a collateral branch `n` clusters away from it. The layer is
   carried in the result and tints nothing today; layout never forces a layer
@@ -108,6 +117,13 @@ family, is kept as the file writes it and reported in `ClusterGraph.anomalies`
 (`self-parent`, `duplicate-member`, `unknown-member`), never dropped silently.
 Anomalies are returned to the caller; nothing is written to the file.
 
+Every walk here (Tarjan, root analysis, path counting) is iterative: the chain
+of 5 000 people the present tests already lay out (`fileGraph.test.ts:424`) must
+not overflow the stack.
+
+A child listed under a `FAM` with `CHIL` but with no matching `FAMC` has kind
+`unstated`.
+
 Cycles and repeated ancestors: directed person graph `parent → child` over
 `descent` edges; Tarjan strongly connected components finds cycles (a person who
 is their own ancestor) and marks the clusters inside as `cyclic`. Pedigree
@@ -131,6 +147,14 @@ Traversal rules are explicit and direction-aware, so a cyclic graph terminates:
    Visited sets are per (cluster, direction) and the walk is iterative.
 5. Distance is the number of cluster hops from the root.
 
+The root matters for structure only where the file has more than the root's
+branch: `model.branch` already trims a focused graph to ancestors, descendants
+and spouses, and rows are `model.generations`, so in a focused graph the root
+changes layers and the order of traversal, not who stands in which row. In the
+whole file the root is the focus or, without one, the first card: collateral
+layers exist only there. A choice of root for the whole file beyond that is not
+part of this change.
+
 Generation is the input `row` (relationship-derived `model.generations`); it is
 never recomputed from dates. Where a person's parents, spouse and children give
 rows that disagree (a child at or above the row of a parent, found when checking
@@ -146,21 +170,30 @@ their own first card and sit in layer 0 after the main component.
 Coordinates are abstract: `u` along the generation axis, `v` across it, one
 card-size scale; direction (D7) maps `(u,v)` to `(x,y)` last.
 
-**Initial placement.** `u` of a block = its generation index × pitch (+ slack,
-D6). `v`: blocks of each generation are ordered by a deterministic traversal of
+**Initial placement.** `u` of a block = the edge of its generation's band (`bands` carry the real
+heights, cards are of unequal height only in tests) (+ slack, D6). `v`: blocks of each generation are ordered by a deterministic traversal of
 the cluster hierarchy from the root — each cluster's children in the file's
 order (eldest left where years allow, as the present spec says) and a block
 placed at the mean `v` of its partner clusters' parents and children, then
-compacted left to right with the spacing options. Ties are broken by xref, then by
-input index; no randomness, no `Math.random`, no object-key order dependence.
+compacted left to right with the spacing options. Siblings are ordered by year of birth where known, then by xref; the order of
+`CHIL` lines in the file is not used, so shuffling them changes nothing. Other
+ties break by xref. No `Math.random`, no object-key order dependence.
 
-**Optimisation.** Fixed iteration count (`optimizationIterations`) and the
-existing millisecond budget (`pulls`), whichever ends first, keeping the best
-state seen. Each iteration is a sweep, not a continuous simulation:
+**Optimisation.** The budget is counted in **work units** (one unit per link
+visited when a transposition or a position step is evaluated), derived from the
+number of blocks and `optimizationIterations`, so the result is identical on
+every machine. The millisecond budget (`SWEEPS.pulls`, from the injected clock)
+is only a safety net that stops the loop early on a slow machine and keeps the
+best state seen; the result of a run the safety net did not stop is the
+deterministic one. Determinism is therefore specified for runs that finish
+within their work budget, and the performance test asserts that at 10 000
+people the work budget finishes inside the time budget on the CI machine. Each iteration is a sweep, not a continuous simulation:
 
 - *Order* (affects `E_crossings`): per generation, an adjacent-block transposition
-  is kept when total energy falls (the present algorithm's "transpose", moved
-  here and driven by `energy.ts`).
+  is kept when the energy falls. The delta is computed **incrementally** from the
+  links of the two blocks only (`energy.ts` exposes `swapDelta` and
+  `moveDelta`, and a test proves each equals the difference of full recomputations);
+  a full recomputation per swap would be O(n) and miss the budget.
 - *Position* (affects the rest): `v` of each block moves toward the weighted mean
   of its neighbours' anchors (clamped step), then overlap is resolved by a
   left-to-right sweep per row that pushes blocks apart to `nodeSpacing` and
@@ -172,15 +205,19 @@ Energy, minimised, all weights in `LayoutOptions.weights`:
 | --- | --- | --- |
 | `E_distance` | related clusters far apart | Σ over links of the squared cross-axis offset between anchors, with a dead zone of one family width |
 | `E_crossings` | crossing lines | count of crossing segment pairs between adjacent generations (existing `countCrossings`, kept) |
-| `E_overlap` | overlap | Σ squared penetration of block boxes within a row, and of unrelated clusters' boxes |
+| `E_overlap` | overlap | Σ squared penetration of block boxes within a row (made zero by the row sweep and never traded away), plus a soft term for hulls of clusters that share no person, found with a spatial grid |
 | `E_generation` | generation order broken | Σ over non-ambiguous descent links of the squared amount a child's `u` fails to exceed its parent's by the pitch |
 | `E_cluster` | a family's members separated | Σ over clusters of the variance of children's `v` around the family anchor |
 | `E_displacement` | movement from start | Σ squared distance to the initial placement, or to `previous` where given |
 
-Default weights make crossings dominate, then overlap (hard, effectively
-infinite once the overlap sweep has run), then cluster, generation, distance,
-displacement. A compact graph that loses the order is therefore not a win: no
-term but `E_distance` rewards shortness, and it is bounded by the dead zone.
+Default weights make crossings dominate, then cluster, generation, distance,
+displacement; card overlap in a row is a hard constraint enforced by the sweep,
+not a weight. `E_distance` does reward shortness, bounded by its dead zone; that a
+compact graph does not beat a readable one holds because the order of
+generations and non-overlap are constraints, so the scenario that raises the
+distance weight stays correct at any weight. With `generationSlack = 0`,
+`E_generation` is constant for the graph (vestigial) and acts only in tests
+and callers that grant slack; this is deliberate, see D6.
 
 ### D6. Generation flexibility
 
@@ -207,7 +244,8 @@ control exists to change that.
 - `LayoutOptions.previous?: ReadonlyMap<id, {x,y}>` seeds `E_displacement` and
   the initial `v`; ids no longer present are ignored, new ids are placed by the
   initial rule. `LayoutOptions.pinned?: ReadonlySet<id>` holds those blocks at
-  their `previous` (or initial) position through every sweep. The graph passes
+  their `previous` (or initial) position through every sweep; where a pinned block
+  overlaps a neighbour, the neighbour moves. The graph passes
   neither: it lays out once per reading of the file and scope (spec), and layout
   never depends on UI state.
 - Caps for pedigree collapse: path counting and the optimisation limit work per
@@ -222,7 +260,11 @@ child's line drops from the bus to the child's card top, so siblings share the
 trunk. A cluster with one shown partner has no node and the trunk leaves that
 card. A line to a child more than one generation below uses a lane in each
 row between, one per cluster and row, placed at a free `v` between blocks (the
-present lane rule, kept so that "no card stands in the lane" holds). Bus levels
+present lane rule, kept so that "no card stands in the lane" holds). A cluster of three or more partners keeps `GraphNode.spouses` as its first two
+shown partners (the pair the renderer expects) and adds one more entry to
+`joins` for each further partner, plus `GraphNode.others` naming them; the
+renderer draws every join and needs no change. Fewer than two shown partners has
+no node, as today. Bus levels
 and lanes of different clusters in one gap are staggered by `BEND_STEP` as today.
 Several lines between the same two people (a person who is both child and spouse
 of one family, or two families linking the same pair) keep separate `id`s and
@@ -234,7 +276,9 @@ placement and never writes it.
 
 `FileGraphLayout` keeps every field and adds `clusters`, `links`, `layerOf`,
 `anomalies`, `energy` (the six terms at the start and at the end, for tests),
-and each `GraphLine` gains `relationship`. `crossingsAtStart` and `crossings`
+and each `GraphLine` gains `id` (unique; `family|child|relationship`, the key
+`sceneItems.ts:73` needs where two lines share a family) and `relationship`, and
+`GraphNode` gains `others`. `crossingsAtStart` and `crossings`
 stay (the initial placement versus the final). `sweeps` is replaced by
 `iterations`. `LayoutNode`/`LayoutEdge` of the brief map to `GraphCard` and
 `GraphLine`/`GraphNode`; no parallel model is introduced.

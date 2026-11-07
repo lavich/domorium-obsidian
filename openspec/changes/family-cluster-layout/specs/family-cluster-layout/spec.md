@@ -36,7 +36,7 @@ connection SHALL keep the xref of the person and the kind of each end.
 
 #### Scenario: Two partners of one sex, or three partners
 - **WHEN** a family has two husbands, or three partners
-- **THEN** the cluster holds all of them and no partner is dropped or assumed to be missing
+- **THEN** the cluster holds all of them, no partner is dropped or assumed to be missing, each stands beside the others, and the family's node is joined to every one of them
 
 #### Scenario: Unknown parents
 - **WHEN** a family names a child and no partner, or a person has no child-family
@@ -121,8 +121,10 @@ weighted terms: the distance between related clusters, the crossings of lines, t
 overlap of cards and clusters, a break in the order of generations, the
 separation of the members of a family, and the movement from the initial
 placement. The weights SHALL be given by the caller with defaults, and
-no term SHALL reward a shorter line alone: of two layouts the one that crosses
-fewer lines or overlaps fewer cards SHALL win over a shorter one. The result
+the order of generations and the non-overlap of cards in a row SHALL be
+constraints and not weights, so that no setting of a weight makes a shorter
+layout beat one that keeps them, and, at default weights, a layout that crosses
+fewer lines SHALL win over a shorter one. The result
 SHALL carry each term at the start and at the end.
 
 #### Scenario: Fewer crossings than the start
@@ -161,7 +163,10 @@ sizes, which the engine SHALL take from the real size of each card.
 ### Requirement: The layout is deterministic and stable
 
 The same input and options SHALL give the same layout, bit for bit, on every run
-and whatever order equal-keyed people or families come in. The layout SHALL NOT
+and machine, and whatever order the families, or the children of a family, come
+in, provided the layout finishes within the work the engine allots it; a machine
+too slow to finish it SHALL stop early at the best layout found, and SHALL NOT
+fail. The layout SHALL NOT
 depend on any state of the view. Where the caller gives the positions of an
 earlier layout, they SHALL pull the new one as a soft constraint, so that a small
 change to the file moves few cards. Where the caller pins cards, they SHALL stay
@@ -172,7 +177,7 @@ where the earlier layout, or the initial placement, put them.
 - **THEN** every card, node and line is at the same position both times
 
 #### Scenario: Shuffled input
-- **WHEN** the people and families of a file are given in another order
+- **WHEN** the families of a file, and the children inside each, are given in another order
 - **THEN** the layout places every card at the same position
 
 #### Scenario: A small edit
