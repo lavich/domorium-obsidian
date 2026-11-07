@@ -601,7 +601,7 @@ test.describe("the graph of a file of 10 000 people", () => {
       await page.locator(".gedcom-fg-fit").click();
       await page.waitForTimeout(100);
       expect(await zoom(page)).toBe(0.05);
-      expect(await page.locator(".gedcom-fg-view *").count()).toBeLessThan(10_000);
+      expect(await page.locator(".gedcom-fg-view *").count()).toBeLessThan(6_000);
     });
   }
 });

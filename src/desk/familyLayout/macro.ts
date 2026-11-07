@@ -128,10 +128,11 @@ export function stackLayers(blocks: Block[], count: number): Block[][] {
 }
 
 /**
- * How much a block's links to what hangs below it pull against those to what stands above. Near nothing: a couple
- * stands midway between its own parents, and only a block with no parents is drawn to its children.
+ * How much more a block's links to what hangs below it pull than those to what stands above (each row is
+ * solved exactly, so a moderate weight is enough). Higher keeps a line of descent straight; 1 weighs every link alike and lets a couple
+ * lean toward its own forebears instead of crowding the child's column.
  */
-const BELOW_PULL = 0.01;
+const BELOW_PULL = 1;
 
 /** Where a block would stand over its children, a little drawn to its parents, and how hard its links pull. */
 function pullOf(block: Block): { target: number; weight: number } {

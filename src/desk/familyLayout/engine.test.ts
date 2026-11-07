@@ -198,7 +198,7 @@ describe("a pedigree", () => {
 });
 
 describe("forebears of a person with many children", () => {
-  it("a couple stands midway between its own parents, not over its child", () => {
+  it("stand over the person, and not off to one side, however wide the fan of children below", () => {
     const ids = ["Vy:M", "An:F", "Anat:M", "Rai:F", "VL:M", "Fek:F", "VO:M", "ElO:F", "Pet:M", "Naum:M", "MikhB:M", "Sem:M", "Pav:M"];
     const kids = ["K1", "K2", "K3", "K4"];
     const model = modelOf([...ids, ...kids.map((k) => `${k}:M`), "W1:F", "W3:F", "W4:F", "C1:M", "C2:F", "C3:M", "C4:F", "C5:M", "C6:F"], [
@@ -219,15 +219,14 @@ describe("forebears of a person with many children", () => {
     const centre = (id: string) => (layout.card.get(id)?.x ?? NaN) + 62;
     const node = (family: string) => layout.node.get(family)?.x ?? NaN;
 
-    const between = (one: string, other: string) => (centre(one) + centre(other)) / 2;
-    expect(Math.abs(node("@F3@") - between("@Pet@", "@MikhB@"))).toBeLessThan(1);
-    expect(Math.abs(node("@F2@") - between("@VL@", "@VO@"))).toBeLessThan(80);
+    expect(Math.abs(node("@F2@") - centre("@Vy@"))).toBeLessThan(60);
+    expect(Math.abs(node("@F3@") - centre("@Anat@"))).toBeLessThan(60);
     expect(layout.crossings).toBe(0);
   });
 });
 
 describe("a branch whose children carry families of their own", () => {
-  it("keeps the whole not far wider than its widest row", () => {
+  it("hangs each family over its children and keeps the whole not far wider than its widest row", () => {
     const people = ["Naum:M", "Petr:M", "Varv:F", "Ivan:M", "Vas:M", "Fek:F", "Mikh:M", "Mar:F", "Lub:F", "Vlad:M", "Klav:F", "Anat:M", "Rai:F", "Vy:M", "An:F", "Nad:F", "Novik:M", "NN:U", "Nik:M", "Nad2:F", "Al:M", "Tat:F", "K1:M", "K2:M", "K3:M", "W1:F", "W3:F", "C1:M", "C2:F", "C3:M", "Sem:M", "Pav:M", "VO:M", "ElO:F"];
     const model = modelOf(people, [
       { id: "A1", husb: "Naum", children: ["Petr", "Varv"] },
@@ -246,7 +245,13 @@ describe("a branch whose children carry families of their own", () => {
       { id: "A10", husb: "K3", wife: "W3", children: ["C3"] },
     ]);
     const layout = runLayout(graphInputOf(model, {}));
+    const centre = (id: string) => (layout.card.get(id)?.x ?? NaN) + 62;
+    const over = (family: string, children: string[]) =>
+      Math.abs((layout.node.get(family)?.x ?? NaN) - children.map(centre).reduce((sum, x) => sum + x, 0) / children.length);
+
     expect(layout.crossings).toBe(0);
+    expect(over("@A4@", ["@Nad@", "@Nik@"])).toBeLessThan(80);
+    expect(over("@A6@", ["@Al@", "@Tat@"])).toBeLessThan(55);
     const widest = Math.max(...[...new Set(layout.cards.map((card) => card.row))].map((row) => layout.cards.filter((card) => card.row === row).length));
     expect(layout.width).toBeLessThan(widest * 172 * 1.25);
   });
