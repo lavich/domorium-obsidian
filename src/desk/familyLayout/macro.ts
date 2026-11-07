@@ -9,7 +9,7 @@ import {
   type Indexed,
   type Late,
 } from "./blocks";
-import { crossingsOf, swapDelta } from "./energy";
+import { crossingsBelow, crossingsOf, flipBlock, swapDelta } from "./energy";
 import { SWEEPS, type Geometry, type GraphInputFamily, type LayoutOptions } from "./types";
 
 /** Lanes are one per family and row; past this many per person shown, further lines go straight. */
@@ -128,12 +128,11 @@ export function stackLayers(blocks: Block[], count: number): Block[][] {
 }
 
 /**
- * How much more a block's links to what hangs below it pull than those to what
- * stands above (each row is solved exactly, so a moderate weight is enough): a block is centred over its children, and forebears follow their
- * child, so that a line of descent runs straight instead of leaning toward a
- * far-off crowd of forebears.
+ * How much more a block's links to what hangs below it pull than those to what stands above (each row is
+ * solved exactly, so a moderate weight is enough). Higher keeps a line of descent straight; 1 weighs every link alike and lets a couple
+ * lean toward its own forebears instead of crowding the child's column.
  */
-const BELOW_PULL = 8;
+const BELOW_PULL = 1;
 
 /** Where a block would stand over its children, a little drawn to its parents, and how hard its links pull. */
 function pullOf(block: Block): { target: number; weight: number } {
@@ -270,6 +269,58 @@ function transpose(g: Geometry, layer: Block[], charge: (work: number) => void):
     }
   }
   pack(g, layer);
+}
+
+/**
+ * Spouses stood the other way round wherever that crosses fewer lines to the rows above and below. The work is
+ * capped by the size of the layout alone, never by the clock, so that the result does not depend on the machine.
+ */
+function turnedSpouses(layers: Block[][], crossings: number): { found: number; turned: boolean } {
+  let found = crossings;
+  let turned = false;
+  let allowed = 40 * layers.reduce((sum, layer) => sum + layer.length, 0);
+  for (let round = 0, was = found + 1; round < 3 && found > 0 && found < was && allowed > 0; round += 1) {
+    was = found;
+    for (let at = 0; at < layers.length && found > 0 && allowed > 0; at += 1) {
+      const layer = layers[at] ?? [];
+      for (const block of layer) {
+        if (block.members.length < 2 || block.pinned || block.lane || block.up.length + block.down.length === 0) {
+          continue;
+        }
+        allowed -= 2 * layer.length + (layers[at - 1]?.length ?? 0) + (layers[at + 1]?.length ?? 0);
+        const around = (): number => crossingsBelow(layers, at - 1) + crossingsBelow(layers, at);
+        const before = around();
+        flipBlock(block);
+        const after = around();
+        if (after < before) {
+          found -= before - after;
+          turned = true;
+        } else {
+          flipBlock(block);
+        }
+        if (allowed <= 0 || found <= 0) {
+          break;
+        }
+      }
+    }
+  }
+  return { found, turned };
+}
+
+/** Turning couples pays only where a few lines cross; in a tangle it is work for nothing. */
+const FEW_CROSSINGS = 100;
+
+/** Once the order of the rows is settled and lines still cross, turns couples about where that removes crossings, and pulls the rows again. */
+export function turnSpouses(g: Geometry, layers: Block[][], options: LayoutOptions, budget: Budget, crossings: number): number {
+  const settled = crossingsOf(layers);
+  if (settled > FEW_CROSSINGS) {
+    return crossings;
+  }
+  const { found, turned } = turnedSpouses(layers, settled);
+  if (turned) {
+    pullTogether(g, layers, options, budget);
+  }
+  return Math.min(crossings, found);
 }
 
 export interface Optimised {

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Block } from "./blocks";
 import { buildClusters } from "./clusters";
-import { crossingsOf, energyOf, familiesOf, moveDelta, swapDelta, type EnergyInput } from "./energy";
+import { crossingsOf, energyOf, familiesOf, flipBlock, moveDelta, swapDelta, type EnergyInput } from "./energy";
 import { fixtures } from "./fixtures";
 import { initialPlacement, linkFamilies, stackLayers } from "./macro";
 import { indexCards, mapMarriages } from "./blocks";
@@ -127,5 +127,33 @@ describe("the terms of the energy", () => {
         expect(after - before, name).toBeCloseTo(delta, 6);
       }
     }
+  });
+});
+
+describe("turning a couple about", () => {
+  const block = (cx: number, width: number): Block => ({
+    members: [], layer: 0, width, up: [], down: [], key: 0, lane: false, kin: new Map(), cx, rank: 0, home: cx, pinned: false, dy: 0,
+  });
+
+  it("takes the crossing out of two lines that swap sides, and turned back restores it", () => {
+    const left = block(50, 100);
+    const right = block(350, 100);
+    const couple = block(200, 160);
+    couple.members = ["H", "W"];
+    couple.up = [
+      { to: right, far: 50, near: 40 },
+      { to: left, far: 50, near: 120 },
+    ];
+    right.down = [{ to: couple, far: 40, near: 50 }];
+    left.down = [{ to: couple, far: 120, near: 50 }];
+    const layers = [[left, right], [couple]];
+
+    expect(crossingsOf(layers)).toBe(1);
+    flipBlock(couple);
+    expect(couple.members).toEqual(["W", "H"]);
+    expect(crossingsOf(layers)).toBe(0);
+    flipBlock(couple);
+    expect(couple.members).toEqual(["H", "W"]);
+    expect(crossingsOf(layers)).toBe(1);
   });
 });
