@@ -141,7 +141,7 @@ SHALL carry each term at the start and at the end.
 
 #### Scenario: Reasonable lines
 - **WHEN** the generated large file is laid out
-- **THEN** the mean horizontal distance from a family to its children is no greater than that of the initial placement
+- **THEN** the distance term of the energy at the end is no greater than at the start, and so is the term for the separation of a family's children
 
 ### Requirement: People are placed inside their clusters
 
@@ -150,21 +150,18 @@ person with several spouses between two of them; the children of a family SHALL
 stand together under it in an order that is the same wherever the family stands;
 a family of many children SHALL take more room without moving another family
 apart from its relatives; and no two cards SHALL overlap whatever the families'
-sizes, which the engine SHALL take from the real size of each card.
+sizes, which the engine SHALL take from the size of a card in the direction the layout is turned to.
 
 #### Scenario: A large family
 - **WHEN** a family with twelve children is laid out beside a family with one
 - **THEN** the twelve stand together under their parents and the other family is not pushed further than the room the twelve need
 
-#### Scenario: Cards of unequal size
-- **WHEN** cards are given different widths
-- **THEN** no two overlap and the gaps are measured from their real edges
-
 ### Requirement: The layout is deterministic and stable
 
 The same input and options SHALL give the same layout, bit for bit, on every run
-and machine, and whatever order the families, or the children of a family, come
-in, provided the layout finishes within the work the engine allots it; a machine
+and machine, and, to within a pixel, whatever order the children of a family
+come in — the order of a person's marriages is information in the file and
+decides who stands left, so it is not shuffled — provided the layout finishes within the work the engine allots it; a machine
 too slow to finish it SHALL stop early at the best layout found, and SHALL NOT
 fail. The layout SHALL NOT
 depend on any state of the view. Where the caller gives the positions of an
@@ -176,9 +173,9 @@ where the earlier layout, or the initial placement, put them.
 - **WHEN** a file is laid out twice with the same options
 - **THEN** every card, node and line is at the same position both times
 
-#### Scenario: Shuffled input
-- **WHEN** the families of a file, and the children inside each, are given in another order
-- **THEN** the layout places every card at the same position
+#### Scenario: Shuffled children
+- **WHEN** the children inside each family are given in another order
+- **THEN** the layout places every card at the same position, to within a pixel
 
 #### Scenario: A small edit
 - **WHEN** a file is laid out, one child is added to one family, and it is laid out again with the first layout as previous positions

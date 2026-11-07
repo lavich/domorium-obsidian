@@ -172,6 +172,14 @@ export interface Union {
   missingChildren: Missing[];
 }
 
+/** How the file says a child belongs to a family: `PEDI` under `FAMC`. */
+export type ChildLinkKind = "birth" | "adopted" | "foster" | "sealing" | "other" | "unstated";
+
+export interface ChildLink {
+  family: string;
+  kind: ChildLinkKind;
+}
+
 export interface Person extends PersonRow {
   media: PersonMedia[];
   portrait?: PersonMedia;
@@ -180,6 +188,8 @@ export interface Person extends PersonRow {
   children: PersonRow[];
   events: PersonEvent[];
   childFamilies: FamilyRow[];
+  /** One for each child-family the document declares, with the kind of the link the file states. */
+  childLinks: ChildLink[];
   spouseFamilies: FamilyRow[];
   siblings: PersonRow[];
   unions: Union[];

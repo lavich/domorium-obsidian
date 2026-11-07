@@ -387,6 +387,7 @@ describe("the families the Curies do not have", () => {
     for (const line of layout.lines) {
       expect(line.points.at(-1)?.[1], line.child).toBeGreaterThan(line.points[0]?.[1] ?? Infinity);
     }
+    expect(layout.anomalies.map((one) => one.kind)).toContain("cycle");
   });
 
   it("shares one lane per family and row, and lays out a deep line with many sons quickly", () => {
@@ -436,6 +437,32 @@ describe("the families the Curies do not have", () => {
   });
 });
 
+describe("the lines of a family", () => {
+  it("share their start up to the first bend, so that a family's children hang from one trunk (a guard: the old layout did too)", () => {
+    const layout = layoutFileGraph(curie(), WHOLE);
+    const lines = layout.lines.filter((line) => line.family === "@F3@");
+
+    expect(lines).toHaveLength(2);
+    expect(lines[0]?.points[0]).toEqual(lines[1]?.points[0]);
+    expect(lines[0]?.points[1]).toEqual(lines[1]?.points[1]);
+  });
+
+  it("draw both the join and the line of a man who is also his own family's child, and not over one another", () => {
+    const layout = layoutFileGraph(
+      file(["H:M", "W:F"], [{ id: "F1", husb: "H", wife: "W", children: ["H"] }]),
+      WHOLE,
+    );
+
+    const join = layout.node.get("@F1@")?.joins[0];
+    const line = layout.lines.find((one) => one.child === "@H@");
+
+    expect(join).toHaveLength(2);
+    expect(line).toBeDefined();
+    expect(layout.anomalies.map((one) => one.kind)).toContain("self-parent");
+    expect(line?.points.at(-1)?.[0]).not.toBe(join?.at(-1)?.[0]);
+  });
+});
+
 describe("the order of the rows", () => {
   function seeded(seed: number): () => number {
     let state = seed;
@@ -469,7 +496,7 @@ describe("the order of the rows", () => {
 
     expect(layout.crossingsAtStart).toBeGreaterThan(0);
     expect(layout.crossings).toBeLessThan(layout.crossingsAtStart);
-    expect(layout.sweeps).toBeLessThanOrEqual(SWEEPS.most);
+    expect(layout.iterations).toBeLessThanOrEqual(SWEEPS.most);
     expect(overlapping(layout)).toEqual([]);
   });
 
@@ -515,7 +542,7 @@ describe("the order of the rows", () => {
       return now;
     });
 
-    expect(layout.sweeps).toBeLessThanOrEqual(1);
+    expect(layout.iterations).toBeLessThanOrEqual(1);
     expect(layout.crossings).toBeLessThanOrEqual(layout.crossingsAtStart);
   });
 });

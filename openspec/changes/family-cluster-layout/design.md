@@ -176,7 +176,9 @@ the cluster hierarchy from the root — each cluster's children in the file's
 order (eldest left where years allow, as the present spec says) and a block
 placed at the mean `v` of its partner clusters' parents and children, then
 compacted left to right with the spacing options. Siblings are ordered by year of birth where known, then by xref; the order of
-`CHIL` lines in the file is not used, so shuffling them changes nothing. Other
+`CHIL` lines in the file is not used, so shuffling them changes nothing beyond
+floating-point noise (checked to the pixel on every fixture); the order of a
+person's families is data and is kept. Other
 ties break by xref. No `Math.random`, no object-key order dependence.
 
 **Optimisation.** The budget is counted in **work units** (one unit per link
@@ -207,7 +209,7 @@ Energy, minimised, all weights in `LayoutOptions.weights`:
 | `E_crossings` | crossing lines | count of crossing segment pairs between adjacent generations (existing `countCrossings`, kept) |
 | `E_overlap` | overlap | Σ squared penetration of block boxes within a row (made zero by the row sweep and never traded away), plus a soft term for hulls of clusters that share no person, found with a spatial grid |
 | `E_generation` | generation order broken | Σ over non-ambiguous descent links of the squared amount a child's `u` fails to exceed its parent's by the pitch |
-| `E_cluster` | a family's members separated | Σ over clusters of the variance of children's `v` around the family anchor |
+| `E_cluster` | a family's members separated | Σ over families and rows of the blocks of other families (and lanes) standing between the first and the last of its children |
 | `E_displacement` | movement from start | Σ squared distance to the initial placement, or to `previous` where given |
 
 Default weights make crossings dominate, then cluster, generation, distance,
@@ -324,3 +326,63 @@ stay (the initial placement versus the final). `sweeps` is replaced by
 - Whether the renderer should one day draw adopted and foster lines
   differently, and whether the layer should tint anything — deferred, reader's
   eyes, not this change.
+
+## Implementation
+
+Deviations from the design above, as built:
+
+- **Types moved.** The input and result types and the layout constants moved to
+  `familyLayout/types.ts` (re-exported from `fileGraph.ts`, which keeps
+  `layoutGraph`, `layoutFileGraph`, `fileGraphOf` and a new `graphInputOf`), to
+  keep the import graph acyclic. `GraphCard` gained `width`, so that the four
+  directions can turn a card's box; `GraphNode` gained `others`; `GraphLine`
+  gained `id` and `relationship`; `FileGraphLayout` gained `direction`,
+  `clusters`, `links`, `layerOf`, `anomalies`, `energy` and `iterations`
+  (replacing `sweeps`).
+- **The read model.** `Person.childLinks` carries `PEDI` (one entry per declared
+  child-family); `TimelineFamily.links` names the children whose link is stated.
+  A child under `CHIL` with no `FAMC` simply has no entry: `unstated`.
+- **Two starts, not one.** The initial placement orders the top row by the
+  structure from the root and each row below by the mean of what it hangs from.
+  From that start a row can sit in a local minimum (a case in the existing tests
+  needs the top row reversed), so a run that still crosses lines is repeated from
+  the mirrored start — the same rule with every row reversed, still canonical —
+  and the better of the two is kept. This is not in the design; it replaced a
+  dependence on the order of the input.
+- **`E_cluster`** is the number of other families' blocks standing between a
+  family's children, not a variance: a variance grows with the subtrees the
+  children carry and is not "unnecessary" separation.
+- **`E_displacement`** pulls the optimisation only where `previous` is given.
+  Without it the initial placement is a left-packed row, not a meaningful anchor;
+  the term is still reported at the start and at the end.
+- **Work budget.** `cap = optimizationIterations × 6 × (blocks + links)`, charged
+  per block and link visited; the clock (`SWEEPS.budget`, `SWEEPS.pulls`) is a
+  safety net only. At default options the cap is not reached on the generated
+  files; on a clock that never advances the layout is the same as on the real one
+  (test in `performance.test.ts`).
+- **Pinned** means the block the card stands in: its spouses move with it, as
+  they stand beside it as one rigid row.
+- **Slack** is implemented as a second line half a step off the row's line, taken
+  by a block the row would push more than a card's width from where it wants to
+  stand; it is zero for the graph. Lanes were not made aware of it.
+- **Unequal card sizes.** `GraphInputCard` carries no size, so all cards are the
+  size of `CARD` in the direction the layout is turned to; the scenario of cards
+  of different widths was dropped from the spec.
+- **Shuffled families.** The order of a person's families is data in the file
+  (who stands left), so only the order of the children is promised to be
+  irrelevant, to within a pixel; the spec says so.
+- **Three or more partners.** `mapMarriages` now chains every pair of a family's
+  partners, so a family of three stands in one block, and the family's node is
+  kept on its first two partners with one join more for each other (`others`).
+  The upstream generation pass still reads only the first two partners of a
+  family; a third partner takes the generation of the row given for them.
+- **Micro before macro** as designed; collision repair is `resolveCollisions`,
+  used where a block is pinned.
+- **Differential test.** The old layout is not kept in the tree; `baseline.test.ts`
+  asserts the numbers it recorded on `main` at 28b5730 instead.
+- **Child centring** is not a separate step: the pull toward the mean of a
+  block's anchors centres children under their family, and `resolveCollisions`
+  only repairs overlap.
+- **Screenshots** were taken for `curie.ged` at 1 400 and 390 pixels; the
+  10 000-person file is covered by the unit performance test and the existing
+  Playwright spec, not by a screenshot.

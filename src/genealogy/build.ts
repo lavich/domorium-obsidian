@@ -10,12 +10,15 @@ import { childOf, childrenOf, payload, rolePointers, roleLinks } from "./symbols
 import {
   CHILD_FAMILY_TAG,
   CHILD_ROLE_TAGS,
+  PEDIGREE_TAG,
   FAMILY_EVENT_TAGS,
   PERSON_EVENT_TAGS,
   SPOUSE_FAMILY_TAG,
   SPOUSE_ROLE_TAGS,
 } from "./tags";
 import type {
+  ChildLink,
+  ChildLinkKind,
   Citation,
   DateOf,
   Family,
@@ -32,6 +35,15 @@ import type {
   SourceRow,
   Union,
 } from "./types";
+
+/** `PEDI` is lower-case in 5.5.1 and upper-case in 7.0; a value that is neither a known one nor absent is `other`. */
+function childLinkKind(value: string | undefined): ChildLinkKind {
+  if (value === undefined) {
+    return "unstated";
+  }
+  const kind = value.trim().toLowerCase();
+  return kind === "birth" || kind === "adopted" || kind === "foster" || kind === "sealing" ? kind : "other";
+}
 
 /**
  * One pass over the document's symbols. What it keeps is compact — a row per
@@ -218,8 +230,12 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
     const missingUnions: Missing[] = [];
     const resolved = (pointer: string): boolean => rows.has(pointer);
 
+    const childLinks: ChildLink[] = [];
     for (const link of childrenOf(record, CHILD_FAMILY_TAG)) {
       const family = payload(link) && familyOf(payload(link) as string);
+      if (family) {
+        childLinks.push({ family: payload(link) as string, kind: childLinkKind(payload(childOf(link, PEDIGREE_TAG))) });
+      }
       if (!family) {
         if (payload(link)) {
           missingParents.push({ xref: payload(link) as string, range: link.range });
@@ -308,6 +324,7 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
       children: [...children.values()],
       events: eventsOf(record, PERSON_EVENT_TAGS, byCiter.get(xref) ?? [], dateOf),
       childFamilies: familiesOf(CHILD_FAMILY_TAG),
+      childLinks,
       spouseFamilies: familiesOf(SPOUSE_FAMILY_TAG),
       siblings: [...siblings.values()],
       unions,
