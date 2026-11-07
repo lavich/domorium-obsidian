@@ -217,3 +217,12 @@ Deviations from the design above, as built:
   `minmax(70px, 130px) / 1fr` grid the detail rows use: the name a link on the left, the value and the source mark on
   the right, no frame, one line where it fits, at least 44 pixels high on a phone. The same list draws the events of a
   place, so the place card changes with it.
+- **Fields, read-only for now** (the reader's decision: build the panel as fields so that editing needs no new markup;
+  flat until the pointer or the focus is on them; in this PR). A value of a row is a read-only `textarea` that grows with
+  its text by the grid trick (a hidden copy of the text sized by CSS from `data-value`), `tabindex="-1"` so that Tab
+  still goes through buttons and links only, `aria-labelledby` its row's label; a value the standard limits to a list is
+  kind `choice` (a field showing the name, to become a dropdown). A name is a form of rows (name, type, parts) instead of
+  a header with a badge. Links, the facts, the relatives, the sources and the headings are not fields. Inline words (the
+  role of an associate, the sex in the heading line) stay text for now. Editing itself waits for the mutations upstream
+  (`docs/design/upstream-requests.md`) and for the business decision (`docs/design/next-steps.md`, stage 2): each field
+  already carries the line it was read from, which is where a write will go.

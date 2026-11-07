@@ -436,7 +436,8 @@ test.describe("the card of a record that states everything", () => {
       test("shows every name with its type and the parts of it", async ({ page }) => {
         await expect(page.locator(".gedcom-name-text")).toHaveText(["Maria Skłodowska", "Мария Склодовская", "Marie Curie"]);
         await expect(page.locator(".gedcom-name-type")).toHaveText(["Birth", "Married"]);
-        await expect(page.locator(".gedcom-names .gedcom-detail-label").first()).toHaveText("Given names");
+        await expect(page.locator(".gedcom-names .gedcom-detail-label").first()).toHaveText("Name");
+        await expect(page.locator(".gedcom-names .gedcom-detail-label", { hasText: "Given names" })).toBeVisible();
       });
 
       test("folds a long note and shows the rest on a press, and keeps what it shows inside the card", async ({ page }) => {

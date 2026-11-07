@@ -1,6 +1,7 @@
 import type { GenealogyIndex, PersonEvent, RecordLine } from "../../genealogy";
 import { t } from "../../i18n";
 import { NOTE_TAGS } from "./claims";
+import { labelId, renderField } from "./fields";
 import { renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
 import { sectionHeading } from "./section";
 
@@ -67,7 +68,11 @@ function renderSpouseAge(parent: HTMLElement, line: RecordLine, ctx: DetailConte
     text: t(line.tag === "HUSB" ? "record.husbandAge" : "record.wifeAge"),
   });
   label.setAttribute("data-line", String(line.range.start.line));
-  const value = parent.createDiv({ cls: "gedcom-detail-value", text: age?.text ?? "" });
+  label.id = labelId();
+  const value = parent.createDiv({ cls: "gedcom-detail-value" });
+  if (age?.text !== undefined) {
+    renderField(value, age.text, "text", { labelledBy: label.id });
+  }
   if (age) {
     value.setAttribute("data-line", String(age.range.start.line));
     if (age.children.length > 0) {

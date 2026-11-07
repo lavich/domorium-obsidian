@@ -439,7 +439,6 @@ h3.gedcom-desk-subsection[data-count]::after {
   padding: 0 0 var(--size-2-2);
 }
 
-.gedcom-name-head,
 .gedcom-related {
   display: flex;
   flex-wrap: wrap;
@@ -465,7 +464,6 @@ h3.gedcom-desk-subsection[data-count]::after {
   margin-inline-start: var(--size-4-4);
 }
 
-.gedcom-name-type,
 .gedcom-related-kind,
 .gedcom-related-role,
 .gedcom-related-phrase {
@@ -494,9 +492,55 @@ h3.gedcom-desk-subsection[data-count]::after {
   min-height: 44px;
 }
 
-.gedcom-detail-text-body {
-  white-space: pre-line;
+.gedcom-field {
+  display: grid;
+  min-width: 0;
+  margin-inline: calc(-1 * var(--size-4-1));
+}
+
+.gedcom-field::after {
+  content: attr(data-value) " ";
+  grid-area: 1 / 1;
+  visibility: hidden;
+  padding: 0 var(--size-4-1);
+  border: 1px solid transparent;
+  white-space: pre-wrap;
   overflow-wrap: anywhere;
+  font: inherit;
+  line-height: inherit;
+}
+
+textarea.gedcom-field-input {
+  grid-area: 1 / 1;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 0 var(--size-4-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  box-shadow: none;
+  resize: none;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+textarea.gedcom-field-input:hover {
+  border-color: var(--background-modifier-border);
+}
+
+textarea.gedcom-field-input:focus,
+textarea.gedcom-field-input:focus-visible {
+  border-color: var(--background-modifier-border-focus);
+  box-shadow: 0 0 0 1px var(--background-modifier-border-focus);
+  outline: none;
 }
 
 button.gedcom-desk-link {

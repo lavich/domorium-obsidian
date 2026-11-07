@@ -1,4 +1,5 @@
 import { t } from "../../i18n";
+import { renderField, setFieldText } from "./fields";
 
 /** A text longer than this many lines, or characters, shows the first of either and a button for the rest. */
 export const SHOWN = { lines: 5, characters: 300 } as const;
@@ -22,9 +23,8 @@ export function isLong(text: string): boolean {
 /** A text as written, folded where it is long; what the reader opened stays through a redraw. */
 export function renderFoldedText(parent: HTMLElement, text: string, { key, open, toggled }: FoldedText): HTMLElement {
   const box = parent.createDiv({ cls: "gedcom-detail-text" });
-  const body = box.createDiv({ cls: "gedcom-detail-text-body" });
+  const body = renderField(box, text, "text", { cls: "gedcom-detail-text-body" });
   if (!isLong(text)) {
-    body.setText(text);
     return box;
   }
   let shown = open;
@@ -32,7 +32,7 @@ export function renderFoldedText(parent: HTMLElement, text: string, { key, open,
   button.setAttribute("type", "button");
   button.setAttribute("data-focus-key", key);
   const draw = (): void => {
-    body.setText(shown ? text : preview(text));
+    setFieldText(body, shown ? text : preview(text));
     button.setText(shown ? t("record.less") : t("record.more"));
     button.setAttribute("aria-expanded", String(shown));
   };

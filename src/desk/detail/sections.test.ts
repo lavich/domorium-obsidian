@@ -46,7 +46,9 @@ describe("the names", () => {
 
     expect(text(".gedcom-name-text")).toEqual(["Maria Skłodowska", "Marie Curie"]);
     expect(text(".gedcom-name-type")).toEqual(["Birth", "Married"]);
-    expect(text(".gedcom-detail-label")).toEqual(["Given names", "Surname", "Prefix", "Suffix", "Nickname", "Surname prefix"]);
+    expect(text(".gedcom-detail-label")).toEqual([
+      "Name", "Type", "Given names", "Surname", "Prefix", "Suffix", "Nickname", "Surname prefix", "Name", "Type",
+    ]);
     expect(box.querySelector("h2")?.getAttribute("data-count")).toBe("2");
   });
 

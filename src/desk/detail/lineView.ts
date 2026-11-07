@@ -5,6 +5,7 @@ import { t } from "../../i18n";
 import { pageKind } from "../deskState";
 import { linkButton } from "../dom";
 import { familyTitle, personName, sourceTitle } from "../labels";
+import { labelId, renderField } from "./fields";
 import { renderFoldedText } from "./foldedText";
 import { linkStatusLabel, roleLabel, sexLabel, tagLabel } from "./labels";
 
@@ -134,16 +135,19 @@ export function renderRest(
 }
 
 /** One line as a row of a label and a value, its substructure nested beneath the value, none dropped. */
+const CHOICES: ReadonlySet<string> = new Set(["SEX", "ROLE", "RELA", "STAT", "PEDI", "RESN", "QUAY"]);
+
 export function renderLine(parent: HTMLElement, line: RecordLine, ctx: DetailContext): void {
   const label = parent.createDiv({ cls: "gedcom-detail-label", text: tagLabel(line.tag) });
   label.setAttribute("data-line", String(line.range.start.line));
+  label.id = labelId();
   const value = parent.createDiv({ cls: "gedcom-detail-value" });
   if (line.pointer !== undefined || line.void) {
     renderPointer(value, line, ctx);
   } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE")) {
     renderNoteText(value, line.text, line.range.start.line, ctx);
   } else if (line.text !== undefined) {
-    value.setText(valueText(line.tag, line.text));
+    renderField(value, valueText(line.tag, line.text), CHOICES.has(line.tag) ? "choice" : "text", { labelledBy: label.id });
   }
   if (line.children.length > 0) {
     renderLines(value.createDiv({ cls: "gedcom-detail" }), line.children, ctx);

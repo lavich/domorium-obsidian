@@ -199,3 +199,34 @@ the row SHALL select the card of the event, except on a link inside it. A fact w
 #### Scenario: A fact with no identifier
 - **WHEN** a record has no identifier and states a birth
 - **THEN** the name `Birth` is plain muted text and pressing the row selects nothing
+
+### Requirement: A value is a field that cannot be changed yet
+
+The value of a row of a card — a part of a name, a type, a sex, an age, a cause, an address, an identifier, the text of a note, the
+text of a line no section knows — SHALL be drawn as a **field**: a text area that holds the value, grows with it so that all of it is
+shown, can be selected and copied, shows a frame only while the pointer or the focus is on it, is not in the tab order, says in its
+accessible name what it is the value of, and cannot be changed. A value the standard limits to a list of values — a sex, the type of a
+name, a role, a status, a restriction — SHALL be a field of the kind *choice*, which shows the value's name as text and is the one that will
+become a dropdown when a card can be edited. A name SHALL be drawn as a small form of rows: the name as written, its type, the
+parts it states. A link — a relative, a source, a person a line names, a fact that selects its event card — stays a link and is not
+a field. Pressing, focusing or selecting a field SHALL NOT write to the file.
+
+#### Scenario: A value as a field
+- **WHEN** an event states `2 CAUS Natural causes`
+- **THEN** the row named Cause holds a field with `Natural causes` that cannot be changed, can be selected, and has no frame until the pointer is on it
+
+#### Scenario: A sex as a choice
+- **WHEN** a person's record states `1 SEX F`
+- **THEN** the field of its row reads `Female` and is of the kind choice
+
+#### Scenario: A long value
+- **WHEN** a value is longer than the width of the card
+- **THEN** the field shows all of it on as many lines as it needs, with nothing cut
+
+#### Scenario: A name as a form
+- **WHEN** a person's record states `1 NAME Maria /Curie/` with `2 TYPE BIRTH` and `2 GIVN Maria`
+- **THEN** the card shows rows named Name, Type and Given names with fields `Maria Curie`, `Birth` and `Maria`, the second a choice
+
+#### Scenario: Tab skips the fields
+- **WHEN** the reader moves through a card with the Tab key
+- **THEN** the focus goes through its buttons and links and does not stop on a field
