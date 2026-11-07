@@ -2207,12 +2207,34 @@ button.gedcom-fg-pop-open {
   appearance: none;
 }
 
+.gedcom-fg-find :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
+.gedcom-ft-find :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count),
+.gedcom-list-find :is(.gedcom-list-find-clear, .gedcom-list-find-prev, .gedcom-list-find-next, .gedcom-list-find-count) {
+  overflow: hidden;
+  transition:
+    width 180ms ease-out,
+    min-width 180ms ease-out,
+    max-width 180ms ease-out,
+    padding 180ms ease-out,
+    opacity 180ms ease-out,
+    visibility 0s linear 0s;
+}
+
 .gedcom-fg-find:not(.is-open) :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
 .gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count),
-
-
 .gedcom-list-find:not(.is-open) :is(.gedcom-list-find-clear, .gedcom-list-find-prev, .gedcom-list-find-next, .gedcom-list-find-count) {
-  display: none;
+  max-width: 0;
+  padding: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition-delay: 0s, 0s, 0s, 0s, 0s, 180ms;
+}
+
+.gedcom-fg-find:not(.is-open) :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next),
+.gedcom-ft-find:not(.is-open) :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next),
+.gedcom-list-find:not(.is-open) :is(.gedcom-list-find-clear, .gedcom-list-find-prev, .gedcom-list-find-next) {
+  width: 0;
+  min-width: 0;
 }
 
 .gedcom-fg-find,
@@ -2229,6 +2251,7 @@ button.gedcom-fg-pop-open {
 
 .gedcom-list-find-count {
   flex: none;
+  max-width: 20em;
   padding: 0 var(--size-2-3);
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
@@ -2306,6 +2329,7 @@ button.gedcom-fg-pop-open {
   box-sizing: border-box;
   width: var(--gedcom-find-size);
   min-width: var(--gedcom-find-size);
+  max-width: var(--gedcom-find-size);
   height: var(--gedcom-find-size);
   min-height: var(--gedcom-find-size);
   flex: none;
@@ -2346,7 +2370,10 @@ button.gedcom-fg-pop-open {
 
   .gedcom-list-find input.gedcom-list-search,
 
-  .gedcom-list-find .gedcom-list-find-toggle {
+  .gedcom-list-find .gedcom-list-find-toggle,
+  .gedcom-fg-find :is(.gedcom-fg-find-clear, .gedcom-fg-find-prev, .gedcom-fg-find-next, .gedcom-fg-find-count),
+  .gedcom-ft-find :is(.gedcom-ft-find-clear, .gedcom-ft-find-prev, .gedcom-ft-find-next, .gedcom-ft-find-count),
+  .gedcom-list-find :is(.gedcom-list-find-clear, .gedcom-list-find-prev, .gedcom-list-find-next, .gedcom-list-find-count) {
     transition: none;
   }
 }
