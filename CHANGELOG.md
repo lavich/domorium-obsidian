@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.18.1
+
+- **A branch has no limit.** The branch of a person is all their ancestors, all
+  their descendants and the spouses of everyone so shown, in the graph and the
+  timeline alike; the two steppers are gone. Pointing at a person in the graph
+  lights their whole branch and fades the other cards, not only their parents and
+  children.
+- **The graph is laid out by family.** People are grouped into the families the
+  file declares before any card is placed, then the families and the people in
+  them are placed together: a family stands over its children, forebears follow
+  their child instead of leaning toward a far-off crowd, and the parents of a
+  husband stand to the left of those of his wife at every level, so a pedigree no
+  longer crosses itself. The file's adoptive and foster links are read and kept;
+  they are drawn like any other. The graph is also more compact.
+- **Lines turn at right angles.** The lines of the graph run down, across and down
+  again with rounded corners, a family's children hanging from one shared line;
+  the S-shaped short lines are gone.
+- **The cards move when a branch is chosen.** Choosing a branch, or returning to the
+  whole file, moves the cards that stay to their new places as the view glides, fades
+  the others in or out and brings the lines back once the cards have arrived. With
+  reduced motion, or where more than 400 cards are drawn, the change is immediate.
+
 ## 1.18.0
 
 - **A person's card is shorter.** The **Places** section is gone: a place is
