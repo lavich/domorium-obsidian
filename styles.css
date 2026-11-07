@@ -389,7 +389,7 @@ button.gedcom-card-nav:disabled {
   color: var(--text-muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin: var(--size-4-6) 0 var(--size-2-3);
+  margin: var(--size-4-4) 0 var(--size-2-2);
 }
 
 h2.gedcom-desk-section[data-count]::after,
@@ -402,18 +402,18 @@ h3.gedcom-desk-subsection[data-count]::after {
 .gedcom-detail {
   display: grid;
   grid-template-columns: minmax(70px, 130px) 1fr;
-  gap: var(--size-2-2) var(--size-4-3);
+  gap: 0 var(--size-4-3);
   min-width: 0;
 }
 
 .gedcom-detail-label {
   color: var(--text-muted);
-  padding: var(--size-2-2) 0;
+  padding: var(--size-2-1) 0;
 }
 
 .gedcom-detail-value {
   min-width: 0;
-  padding: var(--size-2-2) 0;
+  padding: var(--size-2-1) 0;
   overflow-wrap: anywhere;
   white-space: pre-line;
 }
@@ -436,7 +436,7 @@ h3.gedcom-desk-subsection[data-count]::after {
 }
 
 .gedcom-detail .gedcom-detail .gedcom-detail-value {
-  padding: 0 0 var(--size-2-2);
+  padding: 0 0 var(--size-2-1);
 }
 
 .gedcom-related {
@@ -451,7 +451,7 @@ h3.gedcom-desk-subsection[data-count]::after {
 }
 
 .gedcom-name {
-  margin-bottom: var(--size-4-3);
+  margin-bottom: var(--size-4-2);
 }
 
 .gedcom-name-translation-label {
@@ -574,11 +574,11 @@ button.gedcom-desk-link:hover {
 .gedcom-desk-fact {
   display: grid;
   grid-template-columns: minmax(70px, 130px) 1fr;
-  gap: var(--size-2-2) var(--size-4-3);
+  gap: 0 var(--size-4-3);
   align-items: baseline;
   box-sizing: border-box;
   margin-inline: calc(-1 * var(--size-4-2));
-  padding: var(--size-2-2) var(--size-4-2);
+  padding: var(--size-2-1) var(--size-4-2);
   border-radius: var(--radius-s);
   text-align: start;
   color: var(--text-normal);
@@ -654,12 +654,16 @@ button.gedcom-desk-fact-name:disabled {
 .gedcom-desk-family {
   display: grid;
   grid-template-columns: 130px 1fr;
-  gap: var(--size-2-2) var(--size-4-3);
+  gap: var(--size-2-1) var(--size-4-3);
 }
 
 .gedcom-desk-kin-label {
   color: var(--text-muted);
-  padding: var(--size-2-3) 0;
+  padding: var(--size-2-1) 0;
+}
+
+.gedcom-desk-kin-label:not(:first-child) {
+  margin-top: var(--size-2-3);
 }
 
 .gedcom-desk-kin {
@@ -675,7 +679,7 @@ button.gedcom-desk-person {
   align-items: baseline;
   gap: var(--size-2-3);
   height: auto;
-  padding: var(--size-2-3) var(--size-4-2);
+  padding: var(--size-2-1) var(--size-4-2);
   margin: 0 calc(-1 * var(--size-4-2));
   background: none;
   border: 0;
@@ -759,7 +763,7 @@ button.gedcom-desk-person:hover {
 }
 
 h2.gedcom-desk-fold-heading {
-  margin: var(--size-4-6) 0 var(--size-2-3);
+  margin: var(--size-4-4) 0 var(--size-2-2);
 }
 
 button.gedcom-desk-fold-button {
