@@ -2,6 +2,7 @@ import { plural, t } from "../i18n";
 import { cardShape, nameMeasure, svg } from "./cardRender";
 import { floatingDock, HoverDelay, placeInside, prefersReducedMotion, zoomControls } from "./dom";
 import { CARD, type FileGraphLayout, type GraphCard, type Point } from "./fileGraph";
+import { beginMotion, runMotion } from "./graphMotion";
 import { GraphInput } from "./graphInput";
 import { buildItems, type Item } from "./sceneItems";
 
@@ -212,6 +213,7 @@ export class GraphCanvas {
     const kept = active && this.el.contains(active)
       ? { id: this.personAt(active), pill: active.hasAttribute("data-branch") }
       : null;
+    const motion = opening && "centre" in opening ? beginMotion(this.doc, this.layout, this.drawn, scene.layout) : null;
     this.scene = scene;
     this.layout = scene.layout;
     this.markSelectedIds();
@@ -227,8 +229,11 @@ export class GraphCanvas {
     );
     this.placedItems = built.placed;
     this.lineItems = built.lines;
+    const leaving = new Set(motion?.ghosts);
     for (const element of this.drawn.values()) {
-      element.remove();
+      if (!leaving.has(element)) {
+        element.remove();
+      }
     }
     this.drawn.clear();
     this.drawnWindow = null;
@@ -238,6 +243,9 @@ export class GraphCanvas {
     this.setQuery(this.query);
     this.settle();
     this.redrawIfNeeded();
+    if (motion) {
+      runMotion(motion, this.drawn, scene.layout);
+    }
     if (kept?.id) {
       this.refocus(this.cardOf.get(kept.id), kept.pill);
     }

@@ -59,7 +59,7 @@ function board(
   return drawn;
 }
 
-const all = (selector: string) => [...container.querySelectorAll(selector)];
+const all = (selector: string) => [...container.querySelectorAll(selector)].filter((one) => !one.closest("[inert]"));
 const drawnPeople = (): string[] => all(".gedcom-fg-person").map((card) => card.getAttribute("data-p") ?? "");
 const person = (xref: string) => container.querySelector<SVGElement>(`.gedcom-fg-person[data-p="${xref}"]`);
 const card = (xref: string) => container.querySelector<SVGElement>(`[data-card="${xref}"]`);
@@ -1168,5 +1168,82 @@ describe("the path of a line", () => {
     expect(d).toBe("M0 0 L0 90 Q0 100 10 100 L190 100 Q200 100 200 110 L200 300");
     expect(d).not.toContain("C");
     expect(polyline([[5, 5], [5, 9]])).toBe("M5 5 L5 9");
+  });
+});
+
+describe("a change of scope moves the cards", () => {
+  interface Played {
+    element: Element;
+    keyframes: Record<string, unknown>;
+    finish: { onfinish: (() => void) | null };
+  }
+  let played: Played[] = [];
+
+  beforeEach(() => {
+    played = [];
+    vi.spyOn(window.Element.prototype, "animate").mockImplementation(function (
+      this: Element,
+      keyframes: Keyframe[] | PropertyIndexedKeyframes | null,
+    ) {
+      const finish = { onfinish: null as (() => void) | null };
+      played.push({ element: this, keyframes: keyframes as Record<string, unknown>, finish });
+      return finish as unknown as Animation;
+    });
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  const moved = () => played.filter((one) => Array.isArray(one.keyframes.transform));
+  const leaving = () => [...container.querySelectorAll("[inert]")].map((one) => one.getAttribute("data-p"));
+  const chooseIrene = () => pill("@I12@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+
+  it("moves nothing when the graph is first shown", () => {
+    board(curie(), { around: "@I1@" });
+
+    expect(played).toHaveLength(0);
+    expect(leaving()).toEqual([]);
+  });
+
+  it("glides the cards that stay when Branch is chosen, and lets the others fade where they stood, out of reach", () => {
+    const model = curie();
+    board(model, { around: "@I1@" });
+    chooseIrene();
+
+    const branch = fileGraphOf(model, { focus: "@I12@" });
+    const staying = new Set(branch.cards.map((one) => one.id));
+    expect(moved().length).toBeGreaterThan(0);
+    for (const one of moved()) {
+      expect(staying.has(one.element.getAttribute("data-p") ?? "")).toBe(true);
+    }
+    expect(leaving().sort()).toEqual(fileGraphOf(model, WHOLE).cards.map((one) => one.id).filter((id) => !staying.has(id)).sort());
+    expect(drawnPeople().sort()).toEqual([...staying].sort());
+
+    for (const one of played.filter((fade) => fade.element.hasAttribute("inert"))) {
+      one.finish.onfinish?.();
+    }
+    expect(leaving()).toEqual([]);
+  });
+
+  it("fades the cards back in, and glides those that stay, on returning to the whole file", () => {
+    board(curie(), { around: "@I1@" });
+    chooseIrene();
+    played = [];
+    container.querySelector<HTMLElement>(".gedcom-fg-whole")?.click();
+
+    expect(drawnPeople()).toHaveLength(17);
+    expect(moved().length).toBeGreaterThan(0);
+    expect(played.filter((one) => Array.isArray(one.keyframes.opacity) && one.element.hasAttribute("data-p")).length).toBeGreaterThan(0);
+  });
+
+  it("changes at once, with nothing fading, where the reader asks for reduced motion", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce"), media: query }));
+    board(curie(), { around: "@I1@" });
+    chooseIrene();
+
+    expect(played).toHaveLength(0);
+    expect(leaving()).toEqual([]);
+    expect(drawnPeople()).toHaveLength(10);
   });
 });
