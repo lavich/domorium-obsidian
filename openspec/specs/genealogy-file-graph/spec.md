@@ -47,7 +47,7 @@ NOT label generations.
 
 ### Requirement: Generations run from top to bottom, and couples stand together
 
-Each generation of the file SHALL be one row of cards, the oldest at the top, a person standing in the generation the timeline of the file gives them: a person with no parents in the file, and no spouse standing below them, stands one row above the highest-standing of their children in the file, and in the first row only where they have none. Children of one family SHALL NOT stand at different heights for their years of birth. A person
+Each generation of the file SHALL be one row of cards, which no card leaves, the oldest at the top, a person standing in the generation the timeline of the file gives them: a person with no parents in the file, and no spouse standing below them, stands one row above the highest-standing of their children in the file, and in the first row only where they have none. Children of one family SHALL NOT stand at different heights for their years of birth. A person
 and their spouses in the same generation SHALL stand side by side, a husband to
 the left of his wife; a person married more than once SHALL stand between two
 of their spouses. Where a couple's families are both in the graph, the
@@ -71,6 +71,10 @@ parent's card.
 - **WHEN** the graph of `curie.ged` is shown
 - **THEN** Eugène and Sophie-Claire stand in the top row to the left of
   Władysław and Bronisława Boguska
+
+#### Scenario: Both sides of every couple
+- **WHEN** a pedigree of five generations is shown, in which both partners of most couples have parents in the file
+- **THEN** no line crosses another, and at every level the parents and forebears of a couple's husband stand to the left of those of his wife
 
 #### Scenario: A marriage with no date
 - **WHEN** the graph of `curie.ged` is shown
@@ -97,11 +101,11 @@ parent's card.
 
 A line SHALL run from each family node, or from the card of a family's one
 parent in the graph, to the card of each of its children in the graph, meeting
-the child's own card. Lines SHALL be curves. A line to a child more than one
+the child's own card. Lines SHALL be made of vertical and horizontal stretches that turn at right angles with rounded corners, never as an S, and so SHALL the joins between a family node and its spouses; the lines of one family SHALL run across between two rows at one height, and the lines of families whose runs would overlap in that gap at heights of their own. A line to a child more than one
 generation below SHALL pass through the rows between in a lane of its own,
 where no card stands.
 
-The order of the cards in each row SHALL be chosen to cross as few lines as the graph can find within the time budget the requirement on size gives it, brothers and sisters standing from the eldest at the left to the youngest at the right wherever that crosses no more lines than any other order the graph found; the cards are then placed as close above their children and below their parents as that order and the room between cards allow. No two cards SHALL overlap.
+The order of the cards in each row SHALL be chosen by laying the file out by family, as the family layout requires, to cross as few lines as the graph can find within the time budget the requirement on size gives it, brothers and sisters standing from the eldest at the left to the youngest at the right wherever that crosses no more lines than any other order the graph found; the cards are then placed as close above their children and below their parents as that order and the room between cards allow. Lines of one family SHALL leave its node, or its one parent's card, together and part only near the cards of the children, so that a family's children hang from one shared trunk. Several lines between the same two people, where they are related in more than one way, SHALL each be drawn and SHALL NOT lie over one another. No two cards SHALL overlap.
 
 #### Scenario: The Curie file
 - **WHEN** the graph of `curie.ged` is shown whole
@@ -113,6 +117,18 @@ The order of the cards in each row SHALL be chosen to cross as few lines as the 
   generations below his parents
 - **THEN** the line from his parents' family reaches his card through a lane in
   his sister's row, and no card stands in that lane
+
+#### Scenario: Right angles with rounded corners
+- **WHEN** the graph of any file is shown
+- **THEN** every line, and every join between a family node and a spouse, runs only up, down or across and turns at a rounded corner, and none is drawn as an S
+
+#### Scenario: Children share a trunk
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** the lines from the Curies' family node to Irène and Ève leave the node as one line and part only above their cards
+
+#### Scenario: A person who is both child and spouse of one family
+- **WHEN** a file declares a family whose husband is also listed as its child
+- **THEN** both the line to the child and the join to the spouse are drawn, and the two do not lie over one another
 
 #### Scenario: A crossing that cannot be avoided
 - **WHEN** no order of a row crosses fewer lines than the order shown
@@ -365,8 +381,9 @@ showed.
 
 The graph of a file of any size shown whole SHALL be laid out within a time
 budget — the ordering of the cards stops improving after a quarter of a second
-and the placing after half a second, keeping the best found — and SHALL always
-finish, however tangled the file, once for each reading of the file and scope:
+and the whole optimisation of the layout after half a second, keeping the best found — and SHALL always
+finish, however tangled the file, including a file in which one person is their own
+ancestor or the same ancestor is reached by many paths, once for each reading of the file and scope:
 pointing, dragging, zooming and searching SHALL NOT lay it out again. The graph SHALL draw
 only the shapes in view and near it, and SHALL keep up with the pointer.
 
