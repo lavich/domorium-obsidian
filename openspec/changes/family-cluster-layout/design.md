@@ -386,3 +386,18 @@ Deviations from the design above, as built:
 - **Screenshots** were taken for `curie.ged` at 1 400 and 390 pixels; the
   10 000-person file is covered by the unit performance test and the existing
   Playwright spec, not by a screenshot.
+- **The renderer is turned to one direction only.** `graphCanvas.ts`,
+  `cardRender.ts` and `sceneItems.ts` draw and cull with `CARD.width` and ignore
+  `GraphCard.width`; the graph asks for `TB`, where they agree, as the user
+  decided (direction only in the API). Drawing a turned layout is a separate
+  change.
+- **Time limits in tests are smoke limits.** The spec's 250 ms and 500 ms are the
+  budgets the optimisation stops on (a safety net behind the work cap), not a bound
+  on the whole layout; `performance.test.ts` bounds the whole with generous limits
+  and shows that, with the clock off, the result is the same.
+- **Found in review and fixed:** a `Math.min(...spread)` that overflowed the stack
+  on about 130 000 blocks (test: a row of 130 000 people); `bendApart` applying
+  bends to a line with stale indices when it crossed several gaps; a pinned card
+  taking its block's home from the first spouse rather than the pinned one; the
+  mirrored start leaving `home` stale when rejected; lanes being staggerable; lines
+  keyed by family in `sceneItems.ts` rather than by `line.id`.

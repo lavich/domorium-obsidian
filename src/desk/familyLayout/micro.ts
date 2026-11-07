@@ -210,7 +210,7 @@ export function staggerRow(g: Geometry, layer: Block[], want: readonly number[],
     const onLine = left >= (edge[0] ?? -Infinity) + g.block;
     const off = left >= (edge[1] ?? -Infinity) + g.block;
     const pushed = Math.abs((settled[at] ?? wish) - wish) > g.across;
-    if (onLine || block.pinned || !off || !pushed) {
+    if (onLine || block.pinned || block.lane || !off || !pushed) {
       const lowest = (edge[0] ?? -Infinity) + g.block + block.width / 2;
       block.cx = Math.max(onLine ? wish : (settled[at] ?? wish), lowest);
       block.dy = 0;

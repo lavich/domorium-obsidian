@@ -1,3 +1,4 @@
+import { least, most } from "../fileTimeline";
 import { countCrossings } from "./crossings";
 import { leftOf, type Block, type BlockLink } from "./blocks";
 import type { ClusterGraph, EnergyTerms, Geometry, Weights } from "./types";
@@ -140,7 +141,7 @@ export function energyOf({ layers, families, weights, g, descents, bandStart }: 
       byLayer.set(block.layer, [...(byLayer.get(block.layer) ?? []), at.get(block) ?? 0]);
     }
     for (const spots of byLayer.values()) {
-      cluster += Math.max(...spots) - Math.min(...spots) + 1 - new Set(spots).size;
+      cluster += most(spots) - least(spots) + 1 - new Set(spots).size;
     }
   }
   let generation = 0;

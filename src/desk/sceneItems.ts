@@ -64,7 +64,7 @@ export function buildItems(
     const ys = line.points.map((point) => point[1]);
     return {
       kind: "line",
-      id: line.family,
+      id: line.id,
       left: least(xs),
       top: least(ys),
       right: most(xs),

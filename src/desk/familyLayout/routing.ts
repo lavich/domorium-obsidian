@@ -37,6 +37,7 @@ export function bendApart(g: Geometry, lines: GraphLine[], bands: readonly Graph
       }
     });
   }
+  const replaced = new Map<GraphLine, Map<number, Point[]>>();
   for (const [gap, found] of crossings) {
     const families = [...new Set(found.map((one) => one.line.family))];
     if (families.length < 2) {
@@ -47,7 +48,6 @@ export function bendApart(g: Geometry, lines: GraphLine[], bands: readonly Graph
     const rank = new Map(families.map((family, at) => [family, at]));
     const top = (bands[gap]?.bottom ?? 0) + g.clear + g.bend;
     const bottom = (bands[gap + 1]?.top ?? top) - g.clear - g.bend;
-    const replaced = new Map<GraphLine, Map<number, Point[]>>();
     for (const { line, at } of found) {
       const [x0 = 0, y0 = 0] = line.points[at] ?? [];
       const [x1 = 0, y1 = 0] = line.points[at + 1] ?? [];
@@ -60,9 +60,9 @@ export function bendApart(g: Geometry, lines: GraphLine[], bands: readonly Graph
       own.set(at, [[x0, bend - g.bend], [x1, bend + g.bend]]);
       replaced.set(line, own);
     }
-    for (const [line, at] of replaced) {
-      line.points = line.points.flatMap((point, index) => [point, ...(at.get(index) ?? [])]);
-    }
+  }
+  for (const [line, at] of replaced) {
+    line.points = line.points.flatMap((point, index) => [point, ...(at.get(index) ?? [])]);
   }
 }
 

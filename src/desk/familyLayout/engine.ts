@@ -1,4 +1,4 @@
-import { most } from "../fileTimeline";
+import { least, most } from "../fileTimeline";
 import { indexCards, leftOf, mapMarriages, squeeze, type Block } from "./blocks";
 import { buildClusters } from "./clusters";
 import { orient } from "./direction";
@@ -81,7 +81,6 @@ export function runLayout(
   const previous = options.previous
     ? new Map([...options.previous].map(([id, at]) => [id, turned ? at.y : at.x]))
     : undefined;
-  initialPlacement(g, layers, previous);
   const pins = options.pinned;
   let pinned = false;
   if (pins && pins.size > 0) {
@@ -90,6 +89,7 @@ export function runLayout(
       pinned = pinned || block.pinned;
     }
   }
+  initialPlacement(g, layers, previous, false, pins);
 
   const families = familiesOf(graph, blockOf);
   const descents = edges.flatMap((edge) => {
@@ -105,9 +105,9 @@ export function runLayout(
   const budget = budgetOf(layers, options, clock);
   let optimised = optimise(g, layers, options, budget);
   if (optimised.crossings > 0 && !pinned && !budget.late(SWEEPS.budget)) {
-    const first = layers.map((layer) => layer.map((block) => [block, block.cx] as const));
+    const first = layers.map((layer) => layer.map((block) => [block, block.cx, block.home] as const));
     const mirrored = layers.map((layer) => [...layer]);
-    initialPlacement(g, mirrored, previous, true);
+    initialPlacement(g, mirrored, previous, true, pins);
     mirrored.forEach((layer, at) => {
       layers[at] = layer;
     });
@@ -116,8 +116,9 @@ export function runLayout(
       optimised = { ...second, crossingsAtStart: optimised.crossingsAtStart };
     } else {
       first.forEach((row, at) => {
-        layers[at] = row.map(([block, cx]) => {
+        layers[at] = row.map(([block, cx, home]) => {
           block.cx = cx;
+          block.home = home;
           return block;
         });
       });
@@ -138,7 +139,7 @@ export function runLayout(
   }
 
   const bands = stackBands(g, layers);
-  const minX = pinned || blocks.length === 0 ? 0 : Math.min(...blocks.map(leftOf));
+  const minX = pinned || blocks.length === 0 ? 0 : least(blocks.map(leftOf));
   const end = measure((at) => bands[at]?.top ?? rowStart(at));
   const { cards, card } = placeCards(g, layers, bands, minX);
   const { nodes, node } = joinSpouses(g, input.families, card);

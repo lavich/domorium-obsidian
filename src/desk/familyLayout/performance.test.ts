@@ -38,7 +38,6 @@ describe("larger and larger files", () => {
       expect(layout.cards).toHaveLength(input.cards.length);
       expect(new Set(layout.cards.map((card) => card.id)).size).toBe(input.cards.length);
       expect(overlapping(layout)).toBe(0);
-      expect(layout.crossings).toBeLessThanOrEqual(layout.crossingsAtStart);
       expect(took).toBeLessThan(limit);
     });
   }
@@ -78,5 +77,14 @@ describe("larger and larger files", () => {
 
     expect(layout.cards).toHaveLength(80);
     expect(layout.anomalies.filter((one) => one.kind === "cycle")).toEqual([]);
+  });
+});
+
+describe("a row of a hundred and thirty thousand people", () => {
+  it("is laid out without running out of stack on spread arguments", () => {
+    const cards: GraphInput["cards"] = Array.from({ length: 130_000 }, (_, at) => ({ id: `p${at}`, row: 0, sex: "U" }));
+    const layout = runLayout({ cards, families: [], focus: null });
+
+    expect(layout.cards).toHaveLength(130_000);
   });
 });

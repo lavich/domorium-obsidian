@@ -336,6 +336,26 @@ describe("the families the Curies do not have", () => {
     });
 
     expect(layout.crossings).toBe(0);
+    const x = (id: string) => layout.card.get(id)?.x ?? NaN;
+    expect(x("p")).toBeLessThan(x("q"));
+    expect(x("young")).toBeLessThan(x("old"));
+  });
+
+  it("stands a man with no parents one row above the higher of a son in the second row and a daughter in the third", () => {
+    const layout = layoutGraph({
+      cards: [
+        { id: "m", row: 0, sex: "M" },
+        { id: "s", row: 1, sex: "M" },
+        { id: "d", row: 2, sex: "F" },
+      ],
+      families: [{ id: "f", spouses: ["m"], children: ["s", "d"], year: null }],
+      focus: null,
+    });
+
+    expect(layout.card.get("m")?.row).toBe(0);
+    expect(layout.card.get("s")?.row).toBe(1);
+    expect(layout.card.get("d")?.row).toBe(2);
+    expect(layout.lines.map((line) => line.child).sort()).toEqual(["d", "s"]);
   });
 
   it("stands siblings with no spouse closer to each other than to anyone else", () => {

@@ -147,12 +147,15 @@ export function initialPlacement(
   layers: Block[][],
   previous: ReadonlyMap<string, number> | undefined,
   mirrored = false,
+  pins?: ReadonlySet<string>,
 ): void {
   layers.forEach((layer, at) => {
     layer.sort((a, b) => (mirrored ? b.rank - a.rank : a.rank - b.rank));
     const held = new Map<Block, number>();
     for (const block of layer) {
-      for (const [place, id] of block.members.entries()) {
+      const members = [...block.members.entries()];
+      const asked = members.filter(([, id]) => pins?.has(id) === true);
+      for (const [place, id] of [...asked, ...members]) {
         const x = previous?.get(id);
         if (x !== undefined) {
           held.set(block, x - place * g.pitch + block.width / 2);

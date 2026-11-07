@@ -85,7 +85,7 @@ export interface GraphLine {
   child: string;
   parents: string[];
   relationship: LinkKind;
-  /** The rows between the family and the child, and where in each the line passes. */
+  /** The rows between the family and the child, and where in each the line passes, across the generations: x for a layout running down or up, y for one running sideways. */
   lanes: { row: number; x: number }[];
   /**
    * From the family's node, or its one parent's card, to the child's card:

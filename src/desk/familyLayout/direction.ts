@@ -46,8 +46,3 @@ export function orient(layout: FileGraphLayout, direction: Direction): FileGraph
     direction,
   };
 }
-
-/** The start of a card across the generations, given a layout of `direction`: where `previous` positions are read. */
-export function acrossOf(direction: Direction, card: { x: number; y: number }): number {
-  return direction === "LR" || direction === "RL" ? card.y : card.x;
-}
