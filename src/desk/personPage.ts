@@ -8,6 +8,7 @@ import type {
   PersonRow,
 } from "../genealogy";
 import { t } from "../i18n";
+import { PERSON_ATTRIBUTE_TAGS } from "../genealogy/tags";
 import { PERSON_CLAIMED, unclaimed } from "./detail/claims";
 import { lazyFold } from "./detail/lazyFold";
 import { childMark, linkStatusLabel, parentsHeading, sexLabel } from "./detail/labels";
@@ -21,7 +22,7 @@ import { sectionHeading } from "./detail/section";
 import type { RecordLine } from "../genealogy";
 import { eventName, personName, shortPlace, yearsOf } from "./labels";
 import { linkButton } from "./dom";
-import { renderEventRow } from "./factRow";
+import { renderDetailRow, renderEventRow, type EventRowContent } from "./factRow";
 import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { timelineOf } from "./timeline";
@@ -103,7 +104,9 @@ export function renderPersonPage(
   if (needsNames(names)) {
     renderNames(container, names, ctx);
   }
-  renderFactList(container, factsOf(person), index, options, host);
+  const { events, details } = splitFacts(person);
+  renderFactList(container, events, index, options, host);
+  renderDetails(container, details, host);
   renderFamily(container, person, index, lines, host, ctx);
   const notes = lines ? noteLines(lines) : [];
   if (notes.length > 0) {
@@ -188,46 +191,61 @@ function renderHeading(
   });
 }
 
+function rowOf(fact: Fact, own: boolean, withSpouse = true): EventRowContent {
+  const { date, place, value } = fact.event;
+  return {
+    name: eventName(fact.event),
+    focusKey: fact.key,
+    ...(fact.eventId === undefined ? {} : { open: fact.eventId }),
+    ...(own && fact.spouse === undefined ? { line: fact.event.range.start.line } : {}),
+    detail: {
+      ...(date?.text ? { date: date.text } : {}),
+      ...(place ? { place } : {}),
+      ...(value ? { text: value } : {}),
+      ...(fact.spouse && withSpouse ? { spouse: t("desk.with", { name: personName(fact.spouse) }) } : {}),
+    },
+    citations: fact.event.citations.length,
+  };
+}
+
+/** What happened: each event as a row of its date, its name and its place; a section left out where there is none. */
 export function renderFactList(
   page: HTMLElement,
   facts: Fact[],
-  index: GenealogyIndex,
-  options: PersonPageOptions,
+  _index: GenealogyIndex,
+  _options: PersonPageOptions,
   host: PageHost,
   own = true,
 ): void {
   if (facts.length === 0) {
     return;
   }
-  sectionHeading(page, t("desk.facts"), facts.length);
-  const unsourced = facts.filter((fact) => fact.event.citations.length === 0).length;
-  if (unsourced > 0) {
-    page.createDiv({
-      cls: "gedcom-desk-unsourced",
-      text: t("desk.unsourced", { count: unsourced, total: facts.length }),
-    });
-  }
+  sectionHeading(page, t("record.events"), facts.length);
   const list = page.createDiv({ cls: "gedcom-desk-facts" });
   for (const fact of facts) {
-    const { date, place, value } = fact.event;
-    renderEventRow(
-      list,
-      {
-        name: eventName(fact.event),
-        focusKey: fact.key,
-        ...(fact.eventId === undefined ? {} : { open: fact.eventId }),
-        ...(own && fact.spouse === undefined ? { line: fact.event.range.start.line } : {}),
-        detail: {
-          ...(date?.text ? { date: date.text } : {}),
-          ...(place ? { place } : {}),
-          ...(value ? { text: value } : {}),
-          ...(fact.spouse ? { spouse: t("desk.with", { name: personName(fact.spouse) }) } : {}),
-        },
-        citations: fact.event.citations.length,
-      },
-      host,
-    );
+    renderEventRow(list, rowOf(fact, own), host);
   }
+}
+
+/** What is true of the person — an occupation, a residence, a title — as rows of a name and a value. */
+export function renderDetails(page: HTMLElement, facts: Fact[], host: PageHost): void {
+  if (facts.length === 0) {
+    return;
+  }
+  sectionHeading(page, t("record.details"), facts.length);
+  const list = page.createDiv({ cls: "gedcom-desk-facts" });
+  for (const fact of facts) {
+    renderDetailRow(list, rowOf(fact, true), host);
+  }
+}
+
+/** The facts of a person's own record that are events, and those that are attributes of the person. */
+export function splitFacts(person: Person): { events: Fact[]; details: Fact[] } {
+  const own = factsOf(person).filter((fact) => fact.key.startsWith("p:"));
+  return {
+    events: own.filter((fact) => !PERSON_ATTRIBUTE_TAGS.has(fact.event.tag)),
+    details: own.filter((fact) => PERSON_ATTRIBUTE_TAGS.has(fact.event.tag)),
+  };
 }
 
 const KINDS: ReadonlySet<string> = new Set(["birth", "adopted", "foster", "sealing", "other"]);
@@ -297,10 +315,8 @@ function renderFamily(
   }
 
   const spouseLinks = lines?.children.filter((line) => line.tag === "FAMS") ?? [];
-  for (const union of person.unions) {
+  for (const [at, union] of person.unions.entries()) {
     const spouse = union.spouse;
-    const marriage = union.events.find((event) => event.tag === "MARR");
-    const when = [marriage?.date?.text, shortPlace(marriage?.place)].filter(Boolean).join(", ");
     const role =
       spouse?.sex === "M" ? t("desk.husband")
       : spouse?.sex === "F" ? t("desk.wife")
@@ -309,13 +325,20 @@ function renderFamily(
     const link = spouseLinks.find((one) => one.pointer === familyXref);
     const partner = kinGroup(family, role, link ? [link.range.start.line] : []);
     if (spouse) {
-      relative(partner, spouse, host, when ? t("desk.married", { when }) : undefined);
+      relative(partner, spouse, host);
     }
     for (const missing of union.missingSpouses) {
       missingRelative(partner, missing, host);
     }
     if (!spouse && union.missingSpouses.length === 0) {
       partner.createDiv({ cls: "gedcom-desk-none", text: t("desk.notRecorded") });
+    }
+    const marriages = partner.createDiv({ cls: "gedcom-desk-facts gedcom-desk-union-events" });
+    for (const fact of factsOf(person).filter((one) => one.key.startsWith(`u:${at}:`))) {
+      renderEventRow(marriages, rowOf(fact, false, false), host);
+    }
+    if (!marriages.hasChildNodes()) {
+      marriages.remove();
     }
     if (familyXref) {
       linkButton(partner, t("desk.familyPage"), () => host.openRecord(familyXref));

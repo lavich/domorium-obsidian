@@ -100,7 +100,6 @@
   "command.branchOfSelected": "Branch of the selected person",
   "command.showSource": "Show as source",
   "command.toggleMode": "Switch between source and the last view",
-  "desk.facts": "Facts",
   "desk.family": "Family",
   "desk.person": "Person",
   "desk.parents": "Parents",
@@ -112,7 +111,6 @@
   "desk.notRecorded": "Not recorded",
   "desk.married": "Married {when}",
   "desk.with": "with {name}",
-  "desk.unsourced": "Facts without a source: {count} of {total}",
   "desk.noDetails": "Recorded, no details",
   "desk.born": "b. {year}",
   "desk.yearBce": "{year} BCE",
@@ -500,5 +498,7 @@
   "record.less": "Show less",
   "record.void": "Names no record",
   "record.husbandAge": "Husband's age",
-  "record.wifeAge": "Wife's age"
+  "record.wifeAge": "Wife's age",
+  "record.events": "Events",
+  "record.details": "Details"
 }

@@ -115,7 +115,7 @@ describe("the page of each kind of record, with its evidence", () => {
   it("shows Marie's sections in order, ending with Evidence", () => {
     draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Names", "Facts", "Family", "Notes", "Media", "Timeline", "Evidence"]);
+    expect(texts(".gedcom-card-body h2")).toEqual(["Names", "Events", "Details", "Family", "Notes", "Media", "Timeline", "Evidence"]);
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
   });
 

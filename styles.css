@@ -573,7 +573,6 @@ button.gedcom-desk-link:hover {
 
 .gedcom-desk-fact {
   display: grid;
-  grid-template-columns: minmax(70px, 130px) 1fr;
   gap: 0 var(--size-4-3);
   align-items: baseline;
   box-sizing: border-box;
@@ -585,12 +584,46 @@ button.gedcom-desk-link:hover {
   cursor: pointer;
 }
 
+.gedcom-desk-fact.is-event {
+  grid-template-columns: minmax(70px, 96px) 1fr;
+}
+
+.gedcom-desk-fact.is-detail {
+  grid-template-columns: minmax(70px, 130px) 1fr;
+}
+
 .gedcom-desk-fact.is-inert {
   cursor: default;
 }
 
 .gedcom-desk-fact:not(.is-inert):hover {
   background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-fact-date {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-fact-date.is-empty {
+  color: var(--text-faint);
+}
+
+.gedcom-desk-fact-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-2-3);
+}
+
+.gedcom-desk-fact-main {
+  min-width: 0;
+}
+
+.gedcom-desk-fact.is-detail .gedcom-desk-fact-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--size-2-3);
 }
 
 button.gedcom-desk-fact-name {
@@ -603,21 +636,17 @@ button.gedcom-desk-fact-name {
   text-align: start;
   white-space: normal;
   font: inherit;
-  color: var(--text-accent);
+  color: var(--text-normal);
   cursor: pointer;
 }
 
+.gedcom-desk-fact.is-detail button.gedcom-desk-fact-name,
 button.gedcom-desk-fact-name:disabled {
   color: var(--text-muted);
-  cursor: default;
 }
 
-.gedcom-desk-fact-main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--size-2-2) var(--size-4-2);
-  min-width: 0;
+button.gedcom-desk-fact-name:disabled {
+  cursor: default;
 }
 
 .gedcom-desk-fact-value {
@@ -633,23 +662,26 @@ button.gedcom-desk-fact-name:disabled {
   color: var(--text-muted);
 }
 
-.gedcom-desk-chip {
-  font-size: var(--font-ui-smaller);
-  padding: 2px var(--size-2-3);
-  border-radius: var(--radius-l);
-  white-space: nowrap;
+.gedcom-desk-fact-where {
+  flex-basis: 100%;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
 }
 
-.gedcom-desk-chip.has-source {
-  color: var(--text-muted);
-  background: var(--background-secondary);
+.gedcom-desk-source {
+  flex: none;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
 }
 
-.gedcom-desk-unsourced {
-  margin-bottom: var(--size-2-3);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
+.gedcom-desk-union-events {
+  margin-top: var(--size-2-1);
 }
+
 
 .gedcom-desk-family {
   display: grid;
@@ -887,6 +919,16 @@ button.gedcom-card-nav:focus-visible {
   position: relative;
   min-height: 44px;
   align-items: center;
+}
+
+.is-mobile .gedcom-desk-fact-head,
+.is-mobile .gedcom-desk-fact-value,
+.is-mobile .gedcom-desk-fact-where {
+  padding-block: 9px;
+}
+
+.is-mobile .gedcom-desk-fact .gedcom-desk-link::after {
+  inset: -9px 0;
 }
 
 .is-mobile button.gedcom-desk-fact-name::after {

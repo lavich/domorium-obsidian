@@ -16,22 +16,22 @@ are made of several kinds, show no count.
   states and the parts it states beneath it — given names, surname, prefix, suffix, nickname,
   surname prefix — and what the name itself carries, its notes and the sources it cites; left out
   where the record states one name with nothing beneath it, which the heading already shows;
-- their **facts**: each event and attribute of the person, in the order the
-  record writes them, followed by the events of each family the person is a
-  spouse of, named with the other spouse. Each fact SHALL be one compact row showing its name in the
-  reader's language, its date as the file writes it, its place, and its own
-  payload where it has one, and SHALL show how many sources the fact itself
-  cites where it cites any, with no mark on a fact that cites none; every other thing the fact
-  states is on its event card. One line above
-  the facts SHALL say how many of the facts listed, those of the families the person is
-  a spouse of included, cite no source, and SHALL be left out where every fact cites one;
+- their **events**: each event of the person — birth, baptism, death, burial, a census, an emigration, an ordinance —
+  in the order the record writes them, each as one row: its date as the file writes it on the left, a dash where
+  it has none, its name in the reader's language, which opens the card of the event, and its place as a link under the name; a quiet
+  dot after the name where the event cites a source, and no mark on one that cites none;
+- their **details**: each attribute of the person the standard names — an occupation, a residence, a title, education,
+  religion, nationality, a description, an identification number, a property, the number of children or of
+  marriages, a fact of a type the file words itself — in the order the record writes them, each as one row of its name on the
+  left, which opens the card of the fact, and its value on the right, its date and place beneath the value and the same dot
+  where it cites a source;
 - their **family**, as a list of people and not a drawing: for each family the person is a
   child of, its parents under a head that says how the person belongs to it where the file says
   it is not by birth — *Adoptive parents*, *Foster parents*, *Sealing parents* — and the status
   the file states for the link; where the person is a child of no family, a line saying the
   parents are not recorded; siblings; and for each family the person is a spouse of, the other
-  spouse with that family's marriage date and place where stated, the children of that family, and
-  a way to that family's card;
+  spouse with the events of that family — the marriage, a divorce, an engagement — as rows under them,
+  each opening its event card, the children of that family, and a way to that family's card;
 - their **notes**, as the next requirement says, those a `NOTE` states and those a shared note
   states by `NOTE` or `SNOTE`;
 - their **related people**: each person the record names as associated with them, with the role
@@ -57,15 +57,13 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: Marie's facts
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** it lists her birth with `7 NOV 1867` and `Warsaw, Congress Poland`, her
-  death with `4 JUL 1934` and `Passy, Haute-Savoie, France`, her occupation
-  `Physicist and chemist`, and her marriage with Pierre Curie with `26 JUL 1895`
-  and `Sceaux, France`, with no mark of sources on any of them and, above them, a line reading
-  `Facts without a source: 4 of 4`
+- **THEN** its Events list her birth with `7 NOV 1867` on the left and `Warsaw, Congress Poland` as a link under it, and her death with
+  `4 JUL 1934` and `Passy, Haute-Savoie, France`; its Details list `Occupation` with `Physicist and chemist`; her family shows her
+  marriage with Pierre Curie, `26 JUL 1895` and `Sceaux, France`, as a row under Pierre; and no dot stands after any of them
 
 #### Scenario: The sections in order
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** its section headings read, from the top, Names (2), Facts (4), Family, Notes (1), Media (3),
+- **THEN** its section headings read, from the top, Names (2), Events (2), Details (1), Family, Notes (1), Media (3),
   Timeline, then Identifiers and record information and Other data where the record holds them, and
   last Evidence, with her other name `Maria Salomea Skłodowska` under Names, her shared note under
   Notes, and no tab bar and no tree
@@ -73,8 +71,8 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 #### Scenario: Folded sections
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
 - **THEN** Timeline, and Identifiers and record information and Other data where the record holds them,
-  are folded, each heading shows its count, and pressing Timeline shows her entries; Names, Facts,
-  Family, Notes and Media are open
+  are folded, each heading shows its count, and pressing Timeline shows her entries; Names, Events,
+  Details, Family, Notes and Media are open
 
 #### Scenario: A fold kept across a redraw
 - **WHEN** the reader has opened Marie's Timeline and the file changes on disk
@@ -89,20 +87,23 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: A fact that cites a source
 - **WHEN** a person's `1 BIRT` carries `2 SOUR @S2@` beneath it
-- **THEN** the birth shows that it cites one source
+- **THEN** the birth shows a dot after its name, and an event that cites none shows none
 
 #### Scenario: Some facts without a source
-- **WHEN** a person's record states four facts and one of them carries `2 SOUR @S2@` beneath it
-- **THEN** the line above the facts reads `Facts without a source: 3 of 4`, and only the fact
-  that cites one carries a mark
+- **WHEN** a person's record states events of which only one cites a source
+- **THEN** no line above them says how many cite none, and only the one that cites a source carries a dot
 
 #### Scenario: Every fact cites a source
-- **WHEN** every fact of a person's record cites a source
-- **THEN** the card draws no line above the facts about facts without a source
+- **WHEN** every event and detail of a person cites a source
+- **THEN** each carries a dot, and no line anywhere says that all of them do
+
+#### Scenario: An event with no date
+- **WHEN** a person's `1 BIRT` states a place and no date
+- **THEN** its row shows a dash where the date stands
 
 #### Scenario: Two marriages
 - **WHEN** a person is a spouse of two families
-- **THEN** the family section shows two spouses, each with the children of that
+- **THEN** the family section shows two spouses, each with the events and the children of that
   family under them
 
 #### Scenario: A parent who is not in the file
@@ -150,11 +151,10 @@ tag, each section left out where the record holds nothing for it, in this order:
 - a heading naming the family by its spouses, in the order the record names them,
   with the marriage date and place where the record states them; a family naming
   no spouse SHALL be headed by a stated placeholder;
-- the family's **facts** — marriage, divorce, engagement and the other family
-  events the record states — in the order the record writes them, each one compact row with its
-  date as written, its place, and how many sources it cites itself where it cites any,
-  selectable as a person's facts are, with the same line above them about the facts
-  that cite no source, and the number of children the record states for the family where it states one;
+- the family's **events** — marriage, divorce, engagement and the other family
+  events the record states — in the order the record writes them, each one row of its date on the left, its name and its place,
+  with a dot after the name where it cites a source, selectable as a person's events are, and the number of children the record
+  states for the family where it states one;
 - its **spouses**, each under the role the record names them in, and its
   **children**, each selecting their card and each, where the file says the child belongs to the
   family otherwise than by birth, marked *Adopted*, *Foster* or *Sealing* with the status the file states
@@ -169,8 +169,7 @@ tag, each section left out where the record holds nothing for it, in this order:
 #### Scenario: The Curies' family
 - **WHEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
 - **THEN** it is headed by both names with `26 JUL 1895` and Sceaux, lists the
-  marriage as a fact with no mark of sources, under a line reading
-  `Facts without a source: 1 of 1`, Pierre Curie as husband and Marie as wife,
+  marriage as an event with its date on the left and no dot, Pierre Curie as husband and Marie as wife,
   and Irène Joliot-Curie and Ève Curie as children
 
 #### Scenario: From a person to their family
@@ -240,7 +239,7 @@ SHALL still have a card, which says that the event states no date, place or sour
 - **THEN** the card shows that source
 
 #### Scenario: Chosen on a person's card
-- **WHEN** the reader chooses Marie's birth in the Facts of her card
+- **WHEN** the reader chooses Marie's birth in the Events of her card
 - **THEN** the event card of her birth is shown, and a list in view shows the events with that birth marked
 
 #### Scenario: Show in source
@@ -286,3 +285,74 @@ SHALL still have a card, which says that the event states no date, place or sour
 #### Scenario: A source the file does not declare
 - **WHEN** an event cites `@S9@` and the file declares no such record
 - **THEN** its Evidence section says the source is missing, with the way to its line
+
+### Requirement: An event is one row wherever a card lists it
+
+The events of a person, the events of a family — in its own card and under a spouse in a person's family section — and the
+events at a place on the card of that place SHALL each be drawn as one **event row**: its date as the file writes it on
+the left, a dash where it has none; its name in the reader's language, which opens the card of the event, with its text where it has
+one; its place, as a link to the place, under the name; and, where it cites any source, a quiet dot after the name, which says
+how many in its accessible name and title; an event that cites none carries no dot. On the card of a
+place the row SHALL also name the record the event belongs to, as a link that selects that record, under the name. A tap or a press anywhere on the row
+SHALL open the card of the event, except on a link inside it, and on a phone the name and each link SHALL be a target of its own that the
+other does not cover.
+The timeline of a person SHALL keep its own form, a chronology, and SHALL show the same detail of an
+event. An event that states nothing SHALL be drawn as *recorded, no details*, and an event whose
+record has no identifier SHALL be drawn with a name that does not act.
+
+#### Scenario: A fact on a person's card
+- **WHEN** Marie's card shows her birth
+- **THEN** its row shows `7 NOV 1867` on the left, names `Birth`, shows `Warsaw, Congress Poland` as a link under the name, and carries no dot
+
+#### Scenario: A fact that cites a source
+- **WHEN** a birth carries `2 SOUR @S2@` and a person's card shows it
+- **THEN** its row shows a dot after the name, which says it cites one source
+
+#### Scenario: Tapping the name or the place on a phone
+- **WHEN** Marie's card is shown on a phone and the reader taps `Birth`, and then taps `Warsaw, Congress Poland` in the same row
+- **THEN** the first opens the event card of her birth and the second the card of the place
+
+#### Scenario: An event at a place
+- **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
+- **THEN** the row shows `7 NOV 1867`, names `Birth`, and links `Marie Skłodowska-Curie` under the name
+
+#### Scenario: Opening the event from a place
+- **WHEN** the reader presses `Birth` in that row
+- **THEN** the event card of Marie's birth is shown
+
+#### Scenario: The record from a place
+- **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
+- **THEN** Marie's card is shown and the list, where it is in view, shows the people with her marked
+
+### Requirement: The controls of a card are easy to see and to hit
+
+Every control of a card — the buttons that select a relative, a source, an event or a place, the
+links *Show in source*, the notes' lines, the picture of a media card, and Back and Forward — SHALL
+show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
+when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
+them SHALL have an activation area at least 32 pixels tall without changing the size of its text,
+and a control that is a block of its own — a relative, a source, a note's line, the heading of a
+fold, Back and Forward (44 by 44) — 44 pixels; where two controls stand closer together than that,
+the space between them is shared. The headings of the sections of a card and the secondary lines under
+them SHALL be set in the muted text colour of the theme, not the faint one. A date at the left of an event SHALL be set
+in the muted text colour; a notice that a source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
+
+#### Scenario: Keyboard focus
+- **WHEN** the reader reaches `Pierre Curie` in Marie's family section with the Tab key
+- **THEN** a ring in the accent colour surrounds it
+
+#### Scenario: A press with the pointer
+- **WHEN** the reader presses `Pierre Curie` with a pointer
+- **THEN** no ring is drawn around it
+
+#### Scenario: A phone
+- **WHEN** Marie's card is shown 390 pixels wide on a phone
+- **THEN** the area that activates a place link in her birth is at least 32 pixels tall, and the area that activates `Pierre Curie` and Back at least 44
+
+#### Scenario: A fact without a source
+- **WHEN** Marie's card is shown
+- **THEN** the dates of her events are in the muted text colour, on a card with no orange mark
+
+#### Scenario: A picture on a media card
+- **WHEN** the card of a photograph in the vault is shown
+- **THEN** its picture is a button that opens the file, reachable with the keyboard

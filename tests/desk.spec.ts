@@ -45,10 +45,10 @@ for (const size of SIZES) {
       await mountDesk(page, { width: size.width, phone: size.phone });
     });
 
-    test("runs Names, Facts, Family, Notes, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
+    test("runs Names, Events, Details, Family, Notes, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
       await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-        "Names", "Facts", "Family", "Notes", "Media", "Timeline", "Evidence",
+        "Names", "Events", "Details", "Family", "Notes", "Media", "Timeline", "Evidence",
       ]);
       const tops = await page
         .locator(".gedcom-card-body h2.gedcom-desk-section")
@@ -58,8 +58,10 @@ for (const size of SIZES) {
       expect(await overflowsSideways(page)).toBe(false);
     });
 
-    test("lists her four facts and the kin she has", async ({ page }) => {
+    test("lists her events and details and the kin she has", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-fact")).toHaveCount(4);
+      await expect(page.locator(".gedcom-desk-fact.is-event")).toHaveCount(3);
+      await expect(page.locator(".gedcom-desk-fact.is-detail")).toHaveCount(1);
       await expect(page.locator(".gedcom-desk-kin-label")).toHaveText(["Parents", "Siblings", "Husband", "Children"]);
       const inside = await page.evaluate(() => {
         const body = document.querySelector(".gedcom-card-body")?.getBoundingClientRect();
@@ -355,7 +357,7 @@ test.describe("the controls of a card", () => {
     await page.mouse.up();
   });
 
-  test("are muted, and the line about facts without a source is muted, not orange", async ({ page }) => {
+  test("are muted, and a source is a quiet dot, not an orange mark", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page);
     const colour = (selector: string, property: "color" | "backgroundColor") =>
@@ -363,9 +365,8 @@ test.describe("the controls of a card", () => {
     const muted = await colour(".gedcom-desk-subtitle", "color");
 
     expect(await colour("h2.gedcom-desk-section", "color")).toBe(muted);
-    expect(await colour(".gedcom-desk-unsourced", "color")).toBe(muted);
-    expect(await colour(".gedcom-desk-unsourced", "backgroundColor")).toBe("rgba(0, 0, 0, 0)");
-    await expect(page.locator(".gedcom-desk-unsourced + .gedcom-desk-facts")).toHaveCount(1);
+    await expect(page.locator(".gedcom-desk-unsourced")).toHaveCount(0);
+    expect(await colour(".gedcom-desk-fact-date", "color")).toBe(muted);
   });
 });
 
@@ -425,7 +426,7 @@ test.describe("the card of a record that states everything", () => {
 
       test("runs its sections in order, ends with Evidence, folds the three it folds, and does not scroll sideways", async ({ page }) => {
         await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-          "Names", "Facts", "Family", "Notes", "Related people", "Media", "Timeline",
+          "Names", "Events", "Details", "Family", "Notes", "Related people", "Media", "Timeline",
           "Identifiers and record information", "Other data", "Evidence",
         ]);
         await expect(page.locator(".gedcom-desk-fold-button")).toHaveCount(3);

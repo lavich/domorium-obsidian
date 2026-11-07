@@ -212,11 +212,13 @@ Deviations from the design above, as built:
   heading's count does not wrap.
 - **Not changed, known.** `@@` is read as `@` wherever it stands, as 5.5.1 says; in 7.0 only a leading `@@` is an
   escape, so `a@@b` in a 7.0 file shows as `a@b`.
-- **Facts as rows** (the reader's choice, after seeing the first build). The old list was a bordered table whose rows
-  stacked the name over the value at the width of the panel, unlike every other row. A fact is now a row of the
-  `minmax(70px, 130px) / 1fr` grid the detail rows use: the name a link on the left, the value and the source mark on
-  the right, no frame, one line where it fits, at least 44 pixels high on a phone. The same list draws the events of a
-  place, so the place card changes with it.
+- **Events and Details instead of Facts** (the reader's decision, after seeing the rows). A single Facts table could
+  not hold both what happened and what is true of a person. The person card has **Events** (date on the left, a dash
+  where there is none; the name, which opens the event; the place under it; a quiet dot where it cites a source) and
+  **Details** (an attribute as name and value, its date and place under the value, split by `PERSON_ATTRIBUTE_TAGS`).
+  Marriages and the other events of a family stand under that spouse in the Family section. The line counting facts
+  without a source is gone; the dot replaces it. Event names are in the normal text colour. The same event row draws
+  the events of a family and of a place. On a phone the name and the place link are targets that do not overlap.
 - **Fields, read-only for now** (the reader's decision: build the panel as fields so that editing needs no new markup;
   flat until the pointer or the focus is on them; in this PR). A value of a row is a read-only `textarea` that grows with
   its text by the grid trick (a hidden copy of the text sized by CSS from `data-value`), `tabindex="-1"` so that Tab

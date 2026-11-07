@@ -181,24 +181,31 @@ ships. A tag, type or role the standard names and the plugin has no word for SHA
 - **WHEN** the plugin's language is Russian and a person's record states `1 NAME` with `2 TYPE MARRIED`
 - **THEN** the entry's type reads in Russian, and every label key the cards use exists in the Russian catalogue as it does in the English one
 
-### Requirement: A fact is a row like the others
+### Requirement: Events are told from details
 
-A fact on the card of a person or of a family, and an event on the card of a place, SHALL be drawn as a row of two columns like the other
-rows of a card — its name on the left, as a link that selects its card, its date, its place and its own text on the right, and a mark of how
-many sources it cites at the end of what it states — with no frame about the list and no second line for the name, at any width of the card. Pressing anywhere on
-the row SHALL select the card of the event, except on a link inside it. A fact whose record has no identifier SHALL show its name as plain muted text and select nothing.
+What a person's record states as an *event* — something that happened — and what it states as an *attribute* — something that is true of
+them — SHALL be shown in two sections, as the standard divides them: **Events**, for birth, baptism, death, burial, census, emigration,
+immigration, and the other individual events and the ordinances, and **Details**, for caste, description, education, identification number,
+nationality, number of children, number of marriages, occupation, property, religion, residence, social security number, title, and a
+fact of a type the file words itself. An event SHALL be one row of its date, its name and its place; a detail one row of its name and its
+value with its date and place beneath. The events of a family a person is a spouse of SHALL be shown in their family section, under that
+family's spouse, and not among the person's own. A section the record holds nothing for SHALL be left out.
 
-#### Scenario: A birth beside the other rows
-- **WHEN** the card of Marie shows her facts at the width of the right panel
-- **THEN** each fact is one row with its name on the left as a link and its date and place on the right, in the same columns as the rows of her names, with no box about the list
+#### Scenario: Birth and occupation
+- **WHEN** a person's record states `1 BIRT` with a date and a place, and `1 OCCU Physicist`
+- **THEN** the birth is a row of Events, with its date on the left, and the occupation a row of Details, `Occupation` and `Physicist`
 
-#### Scenario: A fact that cites a source
-- **WHEN** a fact cites one source
-- **THEN** the mark `1 source` stands at the end of what the fact states, on the same line where it fits
+#### Scenario: A residence with a date
+- **WHEN** a person's record states `1 RESI` with `2 DATE 1900` and `2 PLAC Paris`
+- **THEN** a row of Details names `Residence`, shows `1900` and `Paris` beneath its value, and opens the card of the residence when pressed
 
-#### Scenario: A fact with no identifier
-- **WHEN** a record has no identifier and states a birth
-- **THEN** the name `Birth` is plain muted text and pressing the row selects nothing
+#### Scenario: A marriage
+- **WHEN** a person is a spouse of a family whose record states `1 MARR`
+- **THEN** the marriage is a row under that spouse in the family section, and the person's Events do not list it
+
+#### Scenario: A person with no events
+- **WHEN** a person's record states an occupation and no event
+- **THEN** the card has Details and no Events section
 
 ### Requirement: A value is a field that cannot be changed yet
 

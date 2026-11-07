@@ -110,7 +110,6 @@
   "command.branchOfSelected": "Ветка выбранного человека",
   "command.showSource": "Показать как исходник",
   "command.toggleMode": "Переключить исходник и последний режим",
-  "desk.facts": "Факты",
   "desk.family": "Семья",
   "desk.person": "Человек",
   "desk.parents": "Родители",
@@ -122,7 +121,6 @@
   "desk.notRecorded": "Не указаны",
   "desk.married": "Брак: {when}",
   "desk.with": "с {name}",
-  "desk.unsourced": "Фактов без источника: {count} из {total}",
   "desk.noDetails": "Отмечено, без подробностей",
   "desk.born": "род. {year}",
   "desk.yearBce": "{year} до н. э.",
@@ -546,5 +544,7 @@
   "record.less": "Свернуть",
   "record.void": "Запись не указана",
   "record.husbandAge": "Возраст мужа",
-  "record.wifeAge": "Возраст жены"
+  "record.wifeAge": "Возраст жены",
+  "record.events": "События",
+  "record.details": "Сведения"
 }
