@@ -23,19 +23,31 @@ export function svg<K extends keyof SVGElementTagNameMap>(
   return node;
 }
 
-export function curve(points: readonly Point[]): string {
+const CORNER = 10;
+
+/** A line of vertical and horizontal stretches whose corners are rounded, never an S. */
+export function polyline(points: readonly Point[]): string {
   const [first] = points;
   if (!first) {
     return "";
   }
   let d = `M${first[0]} ${first[1]}`;
-  for (let at = 1; at < points.length; at += 1) {
-    const [x0, y0] = points[at - 1] ?? first;
-    const [x1, y1] = points[at] ?? first;
-    const half = (y1 - y0) / 2;
-    d += ` C${x0} ${y0 + half} ${x1} ${y1 - half} ${x1} ${y1}`;
+  for (let at = 1; at < points.length - 1; at += 1) {
+    const [before, corner, after] = [points[at - 1], points[at], points[at + 1]];
+    if (!before || !corner || !after) {
+      continue;
+    }
+    const reach = (from: Point): number => Math.min(CORNER, Math.hypot(corner[0] - from[0], corner[1] - from[1]) / 2);
+    const toward = (from: Point, by: number): Point => {
+      const length = Math.hypot(corner[0] - from[0], corner[1] - from[1]) || 1;
+      return [corner[0] + ((from[0] - corner[0]) / length) * by, corner[1] + ((from[1] - corner[1]) / length) * by];
+    };
+    const [inX, inY] = toward(before, reach(before));
+    const [outX, outY] = toward(after, reach(after));
+    d += ` L${inX} ${inY} Q${corner[0]} ${corner[1]} ${outX} ${outY}`;
   }
-  return d;
+  const last = points[points.length - 1];
+  return points.length > 1 && last ? `${d} L${last[0]} ${last[1]}` : d;
 }
 
 export function fitText(text: string, room: number, measure: (text: string) => number): string {
@@ -152,7 +164,7 @@ export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, f
 export function nodeShape(doc: Document, node: GraphNode, family: CanvasFamily, far: boolean): SVGElement {
   const group = svg(doc, "g", `gedcom-fg-family is-${node.kind}`, { "data-f": node.family });
   for (const join of node.joins) {
-    group.append(svg(doc, "path", "gedcom-fg-join", { d: curve(join) }));
+    group.append(svg(doc, "path", "gedcom-fg-join", { d: polyline(join) }));
   }
   const dated = node.year !== null;
   const digits = node.year === null ? "" : marriageDigits(node.year);

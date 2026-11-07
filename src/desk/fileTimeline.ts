@@ -1,4 +1,4 @@
-import type { DateReading, GenealogyIndex, PersonEvent, PersonRow } from "../genealogy";
+import type { ChildLinkKind, DateReading, GenealogyIndex, PersonEvent, PersonRow } from "../genealogy";
 
 export type MarkKind = "birth" | "marriage" | "death" | "other";
 
@@ -46,6 +46,8 @@ export interface TimelineFamily {
   xref: string;
   spouses: string[];
   children: string[];
+  /** The kind of a child's link to the family where the file states one; a child not named here states none. */
+  links: Record<string, ChildLinkKind>;
   marks: TimelineMark[];
   marriage?: TimelineMark;
   /** The year a line between the spouses stands at: the marriage, else the earliest child's bar. */
@@ -413,6 +415,7 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       xref,
       spouses: xrefsOf(family.spouses, known),
       children: xrefsOf(family.children, known),
+      links: {},
       marks,
       ...(marriage === undefined ? {} : { marriage }),
     });
@@ -432,6 +435,12 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
       row.xref ? (families.get(row.xref)?.marks ?? []) : [],
     );
     const marks = [...own, ...ofFamilies];
+    for (const link of person.childLinks) {
+      const target = families.get(link.family);
+      if (target && link.kind !== "unstated") {
+        target.links[xref] = link.kind;
+      }
+    }
     const childFamily = person.childFamilies.find((row) => row.xref && families.has(row.xref))?.xref;
     if (childFamily !== undefined) {
       firstFamily.set(xref, childFamily);

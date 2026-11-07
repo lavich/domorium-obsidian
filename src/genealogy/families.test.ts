@@ -298,3 +298,45 @@ describe("an event that names its own kind", () => {
     expect(event?.type).toBe("Nobel Prize");
   });
 });
+
+describe("how a child belongs to a family", () => {
+  const withLink = (version: string, value?: string): GenealogyIndex =>
+    index(
+      [
+        "0 HEAD",
+        "1 GEDC",
+        `2 VERS ${version}`,
+        "0 @I1@ INDI",
+        "1 NAME Ola /Test/",
+        "1 FAMC @F1@",
+        ...(value === undefined ? [] : [`2 PEDI ${value}`]),
+        "0 @I2@ INDI",
+        "1 NAME Ala /Test/",
+        "1 FAMS @F1@",
+        "0 @F1@ FAM",
+        "1 WIFE @I2@",
+        "1 CHIL @I1@",
+      ].join("\n"),
+    );
+  const kind = (from: GenealogyIndex): string | undefined => from.person("@I1@")?.childLinks[0]?.kind;
+
+  it("reads the lower-case values of 5.5.1 and the upper-case values of 7.0", () => {
+    expect(kind(withLink("5.5.1", "adopted"))).toBe("adopted");
+    expect(kind(withLink("5.5.1", "birth"))).toBe("birth");
+    expect(kind(withLink("5.5.1", "sealing"))).toBe("sealing");
+    expect(kind(withLink("7.0", "FOSTER"))).toBe("foster");
+    expect(kind(withLink("7.0", "ADOPTED"))).toBe("adopted");
+  });
+
+  it("says unstated where the file states nothing, and other for a value it does not know", () => {
+    expect(kind(withLink("7.0"))).toBe("unstated");
+    expect(kind(withLink("7.0", "OTHER"))).toBe("other");
+    expect(kind(withLink("5.5.1", "stepchild"))).toBe("other");
+  });
+
+  it("names the family each link is to, and none for a family the file does not declare", () => {
+    expect(withLink("7.0", "BIRTH").person("@I1@")?.childLinks).toEqual([{ family: "@F1@", kind: "birth" }]);
+    const lost = index(["0 HEAD", "0 @I1@ INDI", "1 NAME Ola /Test/", "1 FAMC @F9@", "2 PEDI ADOPTED"].join("\n"));
+    expect(lost.person("@I1@")?.childLinks).toEqual([]);
+  });
+});

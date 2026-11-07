@@ -13,7 +13,7 @@ import {
 } from "./graphCanvas";
 import { familyTitle, lifelineYears, personName } from "./labels";
 
-export { curve, fitText, ZOOM, type GraphView, type GraphWindow } from "./graphCanvas";
+export { polyline, fitText, ZOOM, type GraphView, type GraphWindow } from "./graphCanvas";
 
 
 export interface GraphState extends BranchScope {

@@ -1,4 +1,6 @@
 export type {
+  ChildLink,
+  ChildLinkKind,
   Citation,
   Family,
   FamilyMember,

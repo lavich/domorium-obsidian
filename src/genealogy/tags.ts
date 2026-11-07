@@ -26,4 +26,5 @@ export const SPOUSE_ROLE_TAGS: ReadonlySet<string> = new Set(["HUSB", "WIFE"]);
 export const CHILD_ROLE_TAGS: ReadonlySet<string> = new Set(["CHIL"]);
 
 export const CHILD_FAMILY_TAG = "FAMC";
+export const PEDIGREE_TAG = "PEDI";
 export const SPOUSE_FAMILY_TAG = "FAMS";

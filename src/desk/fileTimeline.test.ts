@@ -486,3 +486,18 @@ describe("the generation of a person with no parents", () => {
     ).toEqual([0, 0, 0, 0, 1, 1, 1, 2, 2, 3]);
   });
 });
+
+describe("how a child belongs to a family, in the read model", () => {
+  it("names the kind of each stated link on the family, and none for a link the file leaves unstated", () => {
+    const text = [
+      "0 HEAD", "1 GEDC", "2 VERS 7.0",
+      "0 @A@ INDI", "1 NAME A /T/", "1 FAMS @F@",
+      "0 @B@ INDI", "1 NAME B /T/", "1 FAMC @F@", "2 PEDI ADOPTED",
+      "0 @C@ INDI", "1 NAME C /T/", "1 FAMC @F@",
+      "0 @F@ FAM", "1 HUSB @A@", "1 CHIL @B@", "1 CHIL @C@",
+    ].join("\n");
+    const family = buildFileTimeline(indexOf(text), NOW).families.get("@F@");
+
+    expect(family?.links).toEqual({ "@B@": "adopted" });
+  });
+});
