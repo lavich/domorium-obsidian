@@ -46,6 +46,10 @@ bare tag SHALL be shown for a tag the standard names.
 - **WHEN** a person's record states `1 ASSO @I2@` and the file declares `@I2@`
 - **THEN** the card shows that person's name as a link that selects them, and no `@I2@`
 
+#### Scenario: A void pointer
+- **WHEN** a 7.0 record states `1 ASSO @VOID@`
+- **THEN** the card shows that the line names no record, with no pointer to a missing record and no action to show it in the source
+
 #### Scenario: A pointer to an undeclared record
 - **WHEN** a person's record states `1 ASSO @I9@` and the file declares no such record
 - **THEN** the card shows a pointer to a record that is not in the file, with an action that shows the line in the source
@@ -58,8 +62,9 @@ bare tag SHALL be shown for a tag the standard names.
 
 The names section SHALL list every `NAME` of the record in the order the record writes them. Each
 SHALL be shown as the line writes it, without the slashes that mark a surname, followed by its type
-where it states one — *Birth*, *Married*, *Also known as*, *Immigrant*, *Professional*, *Religious*,
-*Maiden*, *Other*, or a type the file words itself as it words it — and by the parts it states, each in a
+where it states one — *Birth*, *Maiden*, *Married*, *Also known as*, *Immigrant*, *Professional*,
+*Other*, matched whether the file writes it in capitals as 7.0 does or in lower case as 5.5.1 does, or a
+type the file words itself as it words it — and by the parts it states, each in a
 row named in the reader's language: given names, surname, prefix, suffix, nickname, surname prefix.
 A name's notes and the number of sources it cites SHALL be shown with it, and a translation of a name
 as a name of its own beneath it with its language. The heading of the card SHALL show the first name.
@@ -93,20 +98,28 @@ the file does not declare SHALL be shown as a pointer to a record that is not in
 - **WHEN** a person's record states a note of twelve lines
 - **THEN** the card shows its first five lines and a control that shows the other seven, and pressing it shows them and offers to fold them again
 
-#### Scenario: A shared note
-- **WHEN** a person's record states `1 NOTE @N1@` and `0 @N1@ SNOTE The only person to have won...` follows
+#### Scenario: A shared note in 7.0
+- **WHEN** a 7.0 person's record states `1 SNOTE @N1@` and the file declares `0 @N1@ SNOTE The only person to have won...`
+- **THEN** the Notes section shows that text
+
+#### Scenario: A shared note in 5.5.1
+- **WHEN** a 5.5.1 person's record states `1 NOTE @N1@` and the file declares `0 @N1@ NOTE The only person to have won...`
 - **THEN** the Notes section shows that text
 
 ### Requirement: Related people and other records of the person
 
 The related people section SHALL list each person the record names with `ASSO`, with the role the
-record states — in the reader's language where the standard names it, as the file words it otherwise — and
-its phrase, notes and sources, and each record it names with `ALIA` as *Same person as*. Each SHALL
+record states — `ROLE` in 7.0, `RELA` in 5.5.1, in the reader's language where the standard names it,
+as the file words it otherwise — and its phrase, notes and sources, and each record it names with `ALIA` as *Same person as*. Each SHALL
 select the person it names.
 
 #### Scenario: A godparent
 - **WHEN** a person's record states `1 ASSO @I2@` with `2 ROLE GODP`
 - **THEN** the Related people section lists that person with the role *Godparent*
+
+#### Scenario: A relationship in 5.5.1
+- **WHEN** a 5.5.1 person's record states `1 ASSO @I2@` with `2 RELA godp`
+- **THEN** the entry shows the relationship as *Godparent*
 
 #### Scenario: A role of the file's own
 - **WHEN** an association states `2 ROLE OTHER` with `3 PHRASE Landlord`
@@ -144,7 +157,8 @@ counting nested ones. It SHALL be left out where the record has none.
 
 ### Requirement: The headings say how many, and an empty section is left out
 
-A section of a card that lists things SHALL show how many in its heading as `Name · n`. A section the
+A section of a card that lists things of one kind SHALL show how many in its heading, in the same way on every
+card; the family and the evidence, which are made of several kinds, show no count. A section the
 record holds nothing for SHALL be left out, with two exceptions that state what is missing and are
 what a researcher looks for: the parents of a person, in the family, and the evidence of a record,
 each of which says there is nothing recorded. No section SHALL show both a count of zero and a line
@@ -165,4 +179,4 @@ ships. A tag, type or role the standard names and the plugin has no word for SHA
 
 #### Scenario: Russian
 - **WHEN** the plugin's language is Russian and a person's record states `1 NAME` with `2 TYPE MARRIED`
-- **THEN** the entry's type reads in Russian, and no part of the card shows an English word the Russian locale has a translation for
+- **THEN** the entry's type reads in Russian, and every label key the cards use exists in the Russian catalogue as it does in the English one

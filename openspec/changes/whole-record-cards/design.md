@@ -30,9 +30,10 @@ sections; nothing paid for records nobody opened.
 ### D1. The record's lines, on request
 
 `src/genealogy/recordLines.ts` converts one `DocumentSymbol` into `RecordLine { tag, text?, pointer?,
-children, range }` on request: `CONC`/`CONT` joined into `text` (`CONT` breaks a line, `CONC` does not),
-a payload that is `@X@` becomes `pointer`, anything else `text` with `@@` read as `@`; for `NOTE` and
-`SNOTE` records the text is `label` plus the continuation. The index gains `record(xref)` over a map
+void?, children, range }` on request: `CONC`/`CONT` joined into `text` (`CONT` breaks a line, `CONC` does not),
+a payload that matches `^@[^@\s]+@$` becomes `pointer` — `@VOID@`, 7.0's deliberate «no record», sets `void`
+instead — and anything else is `text` with `@@` read as `@` (a payload beginning `@@` is a value, not a pointer);
+for `NOTE` and `SNOTE` records the text is `label` (absent where the first line is empty) plus the continuation. The index gains `record(xref)` over a map
 of every level-0 symbol that has an identifier — filled in the loop `build.ts` already makes, holding
 only references to symbols. Nothing is converted until the card of that record is drawn, so the cost
 is one record's walk per draw, as `person()` is today.
@@ -48,9 +49,22 @@ claims a tag at the top of the record or it does not, and below that the generic
 
 | Record | Claimed by a section |
 | --- | --- |
-| Person | `NAME` → Names; `SEX` → heading line; events and attributes (`tags.ts`) → Facts; `FAMC`, `FAMS` → Family; `NOTE` → Notes; `ASSO`, `ALIA` → Related people; `OBJE` → Media; `SOUR` → Evidence; `REFN`, `UID`, `EXID`, `AFN`, `RIN`, `RESN`, `CREA`, `CHAN`, `SUBM`, `ANCI`, `DESI` → Identifiers and record information |
-| Family | `HUSB`, `WIFE`, `CHIL` → spouses and children; events (`FAMILY_EVENT_TAGS`) → Facts; `NCHI` → a line by the facts; `NOTE`, `ASSO`, `OBJE`, `SOUR`, identifiers as above |
-| Event | `DATE`, `PLAC`, `TYPE` → top lines; `AGE`, `CAUS`, `AGNC`, `RELI`, `RESN`, `SDATE`, `ADDR`, `PHON`, `EMAIL`, `FAX`, `WWW`, `HUSB`/`WIFE` (their `AGE`) → Details; `NOTE`, `ASSO`, `OBJE`, `SOUR`, `UID`… |
+| Person | `NAME` → Names; `SEX` → heading line; events and attributes (`tags.ts`) → Facts; `FAMC`, `FAMS` → Family; `NOTE` and `SNOTE` (7.0's pointer to a shared note) → Notes; `ASSO`, `ALIA` → Related people; `OBJE` → Media, only the lines the gallery draws (see below); `SOUR` → Evidence; `REFN`, `UID`, `EXID`, `AFN`, `RIN`, `RESN`, `CREA`, `CHAN`, `SUBM`, `ANCI`, `DESI` → Identifiers and record information |
+| Family | `HUSB`, `WIFE`, `CHIL` → spouses and children; events (`FAMILY_EVENT_TAGS`) → Facts; `NCHI` → a line by the facts; `NOTE`, `SNOTE`, `ASSO`, `OBJE`, `SOUR`, identifiers as above |
+| Event | `DATE`, `PLAC`, `TYPE` → top lines; `AGE`, `CAUS`, `AGNC`, `RELI`, `RESN`, `SDATE`, `TEMP`, `STAT` (of an LDS ordinance), `ADDR`, `PHON`, `EMAIL`, `FAX`, `WWW`, `HUSB`/`WIFE` (their `AGE`) → Details; `NOTE`, `SNOTE`, `ASSO`, `OBJE`, `SOUR`, `UID`… |
+
+**Every claimed structure shows the rest of itself.** A section built from the summary (`Person`,
+`Family`, `childLinks`) is not enough, because the summary drops what lies under a claimed line. So
+Family and Media are drawn from the record's lines: `FAMC` and `FAMS` show their `PEDI`, `STAT`, notes
+and sources; `HUSB`, `WIFE` and `CHIL` show a `PHRASE` and the rest; an `OBJE` line is claimed by Media only
+where the gallery draws it (a media item's position lies within the line's range) and otherwise —
+a pointer to a record the file does not declare, an inline `OBJE` with no `FILE`, or an `OBJE` with
+a `NOTE` — goes to Other data with its lines. On an event card, Media is the event's `OBJE` lines
+drawn as links to the media card (pointer) or as `FILE`, `FORM` and `TITL` rows (inline).
+
+**Lines carry their place.** Every row a section draws for a line carries `data-line` with the line's
+number, so a test can compare the set of lines of a record with the set the card draws, instead of
+looking for values that may appear elsewhere on the card.
 
 ### D3. Modules (`src/desk/detail/`)
 
@@ -63,29 +77,47 @@ Shared note text is read through `index.record(pointer)`.
 
 ### D4. Names
 
-Every `NAME` is an entry: the line as written without slashes (`readName`), its `TYPE` named, the
-parts (`GIVN`, `SURN`, `NPFX`, `NSFX`, `NICK`, `SPFX`) as labelled rows, its notes and the count of
+Every `NAME` is an entry: the line as written without slashes (`readName`), its `TYPE` named (7.0:
+aka, birth, immigrant, maiden, married, professional, other; 5.5.1 the lower-case ones, and any
+free text as written), the parts (`GIVN`, `SURN`, `NPFX`, `NSFX`, `NICK`, `SPFX`) as labelled rows, its notes and the count of
 its sources, a `TRAN` as a nested name with its `LANG`, and the rest through the generic renderer.
 The section is left out for one name with nothing under it. The existing «Other names» section goes.
 
 ### D5. How a child belongs to a family
 
-`Person.childLinks` (kind from `PEDI`, added in 1.18.1's read model) groups the parents under *Parents*,
-*Adoptive parents*, *Foster parents* or *Sealing parents*; a `STAT` is named beside it. A person with no
-child-family gets the line «Parents not recorded», one of the two sections kept when empty. The family
-card marks a child *Adopted*, *Foster* or *Sealing* the same way, read from the child's `childLinks`.
+The person's own `FAMC` lines say how: `PEDI` groups the parents under *Parents*, *Adoptive parents*,
+*Foster parents* or *Sealing parents*, `STAT` is named beside it, and a `NOTE` or `SOUR` under the line
+is shown. A person with no child-family gets the line «Parents not recorded», one of the two sections
+kept when empty. The family card marks a child *Adopted*, *Foster* or *Sealing* the same way, read from
+that child's own `FAMC` line for this family through `index.record(child)` — a walk of the one record,
+not the full `person()` resolve, so a family of a hundred children costs a hundred small walks.
 
 ### D6. Folding
 
 Notes fold per note: more than five lines or three hundred characters shows the first of either and a
 button. The sections *Timeline*, *Identifiers and record information* and *Other data* use `renderFold`
-with the ids `timeline`, `info`, `other`, closed when a record is opened and kept through a redraw. Names,
-Facts, Family, Notes, Related people and Media stay open.
+with the ids `timeline`, `info`, `other`, closed when a record is opened and kept through a redraw; their
+bodies are drawn only while open, so a closed *Other data* of a huge record costs nothing. Names, Facts,
+Family, Notes, Related people and Media stay open.
+
+**What a redraw keeps.** `drawRecord` gives the folds to the family and event cards as well as the
+person card. A note's open state is held in `data-open` as `note:<line>` beside the fold ids, and the
+button that opens it has `data-focus-key="note:<line>"`; the buttons of Related people carry
+`assoc:<xref>`, not the bare `<xref>` the family buttons carry, so a person who is a relative and an
+associate does not share a key.
+
+**Order.** The card ends with **Evidence**, as `genealogy-evidence` says: Names, Facts, Family, Notes,
+Related people, Media, Timeline, Identifiers and record information, Other data, Evidence. The two
+folded sections stay before it so the requirement that Evidence closes the card and the browser specs
+that read it as the last section hold.
 
 ### D7. Counts and empties
 
-A section that lists says `Name · n` in its heading. Empty sections are not drawn, with two exceptions
-(parents, evidence). Evidence says once that the record cites no source, without «· 0». The common
+A section that lists things of one kind shows how many in its heading, by one mechanism for all: a
+`data-count` on the heading that the stylesheet shows after the title, as the fold buttons do now (no
+`·` in the text). Family and Evidence are made of several kinds and show no count. Empty sections are
+not drawn, with two exceptions (parents, evidence). Evidence says once that the record cites no source,
+without a «0». The common
 `h2` section style is kept; labelled rows inside a section use one row style (label above or beside the
 value), replacing the three styles of subheading the cards have today.
 
@@ -97,9 +129,13 @@ citation, so `DATA`/`TEXT`, `EVEN`/`ROLE`, notes and media of a citation are vis
 
 ### D9. Labels
 
-`tag.<TAG>` keys for the standard tags of 5.5.1 and 7.0 (about a hundred), `nameType.*`, `role.*`,
-`status.*`, `sex.*`, `pedi.*` in both `en.json` and `ru.json`. A test lists the standard tags and fails
-for a missing key in either language. A tag with no key is shown as written.
+`record.tag.<TAG>` keys for the standard tags of 5.5.1 and 7.0 that are not events (events keep the
+`event.*` names the cards already use), `record.nameType.*`, `record.role.*`, `record.linkStatus.*`,
+`record.sex.*`, `record.pedi.*` in both `en.json` and `ru.json` — a prefix of their own, because the
+editor already has `status.*`. Types, roles and statuses are matched case-insensitively (5.5.1 writes
+`birth`, 7.0 `BIRTH`). A test lists the standard tags and fails for a missing key in either language.
+`labels.ts` looks a key up with an `in` guard, since an unknown key makes `t()` throw. A tag with no key
+is shown as written. New English strings are in sentence case.
 
 ### Alternatives considered
 
@@ -110,6 +146,14 @@ for a missing key in either language. A tag with no key is shown as written.
   names covers.
 
 ## Risks / Trade-offs
+
+- [Family-level `RESI`, `FACT` and 7.0 `NCHI` are not in `FAMILY_EVENT_TAGS`] → they are shown in Other data
+  of the family card, not as facts; adding them to the events would change the timeline, list and events
+  views, which this change does not.
+- [The citations of a name are not indexed by name] → attributed to a name by the range of the `SOUR` line
+  falling inside the `NAME` line's range.
+- [A very long note or custom record on every redraw] → the folded sections draw only when open; a long
+  note draws only its first five lines until opened.
 
 - [A long card on a phone] → every new section but Names, Notes and Related people is folded or absent
   when empty; the folds keep the existing open/closed rules.

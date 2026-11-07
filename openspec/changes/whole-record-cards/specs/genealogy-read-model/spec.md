@@ -8,7 +8,7 @@ them, to any depth, on request for that one record: each with its tag, its value
 its substructures in the order written, and the range it occupies. A `CONC` or `CONT` SHALL be
 joined to the line it continues, as text broken at a `CONT` and unbroken at a `CONC`, and SHALL NOT be a
 line of its own. A payload of the form `@X@` SHALL be the pointer of the line, any other payload its value,
-with `@@` read as `@`. The text of a shared note SHALL be given whichever dialect declares it, as the payload of
+with `@@` read as `@`, a payload beginning `@@` being a value; the payload `@VOID@` SHALL be marked as the 7.0 "no record" pointer and not as a pointer to a record. The text of a shared note SHALL be given whichever dialect declares it, as the payload of
 the record line continued as above. Giving the lines of one record SHALL cost no more than a walk of that
 record, and SHALL NOT be done for the records nobody asked for.
 
@@ -27,6 +27,14 @@ record, and SHALL NOT be done for the records nobody asked for.
 #### Scenario: A shared note of either dialect
 - **WHEN** the document declares `0 @N1@ SNOTE text` in 7.0, or `0 @N1@ NOTE text` in 5.5.1
 - **THEN** the lines of `@N1@` give the text `text`
+
+#### Scenario: A note with an empty first line
+- **WHEN** a shared note's record line has no text and its first `CONT` carries it
+- **THEN** its text is that continuation
+
+#### Scenario: A void pointer
+- **WHEN** a record has `1 ASSO @VOID@`
+- **THEN** the line is marked void, has no pointer to look up and has no value
 
 #### Scenario: A record that is not declared
 - **WHEN** the lines of `@I9@` are asked for and the document declares no such record

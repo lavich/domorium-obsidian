@@ -5,7 +5,8 @@
 A person card SHALL show, without any cross-reference identifier, level number or
 tag, in this order, each section left out where the record holds nothing for it, except
 the two that say what is missing: the parents in the family, and the evidence. A section
-that lists things SHALL show how many in its heading, as `Facts · 4`.
+that lists things of one kind SHALL show how many in its heading; the family and the evidence, which
+are made of several kinds, show no count.
 
 - a heading with the person's portrait where there is one, their name, one line with their sex as
   the record states it, the years of birth and death where a year can be read, marked when a year is
@@ -31,9 +32,10 @@ that lists things SHALL show how many in its heading, as `Facts · 4`.
   parents are not recorded; siblings; and for each family the person is a spouse of, the other
   spouse with that family's marriage date and place where stated, the children of that family, and
   a way to that family's card;
-- their **notes**, as the next requirement says;
+- their **notes**, as the next requirement says, those a `NOTE` states and those a shared note
+  states by `NOTE` or `SNOTE`;
 - their **related people**: each person the record names as associated with them, with the role
-  the record states, and each record it names as another record of the same person;
+  the record states (`ROLE` in 7.0, `RELA` in 5.5.1), and each record it names as another record of the same person;
 - their **media**;
 - their **timeline**, a section of the card below the one before it, not a tab, and
   **folded** under its heading, which shows how many entries it holds: it is closed
@@ -41,12 +43,12 @@ that lists things SHALL show how many in its heading, as `Facts · 4`.
   across a redraw of the card for a change of the file, and closes again when
   another record is shown. The names stay open. The card SHALL have no
   section of places: a place is a link in a fact and in an entry of the timeline;
-- the **evidence**: what the whole record rests on; what an event rests on is on the card of that event;
 - its **identifiers and record information**, **folded** like the timeline: reference numbers and
   unique identifiers with their types, the restriction, and when the record was created and last
   changed, each named in the reader's language;
 - its **other data**, **folded** like the timeline: every line of the record that no section above
-  shows, as the next requirement says.
+  shows, as the next requirement says;
+- the **evidence**, which closes the card: what the whole record rests on; what an event rests on is on the card of that event.
 
 Every relative shown SHALL select that person. A relative the file points at but
 does not declare SHALL be shown as a pointer to a record that is not in the file,
@@ -63,14 +65,16 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: The sections in order
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** its section headings read, from the top, Names · 2, Facts · 4, Family, Media · 3,
-  Timeline, Evidence, Identifiers and record information and Other data where the record holds
-  them, with her other name `Maria Salomea Skłodowska` under Names, and no tab bar and no tree
+- **THEN** its section headings read, from the top, Names (2), Facts (4), Family, Notes (1), Media (3),
+  Timeline, then Identifiers and record information and Other data where the record holds them, and
+  last Evidence, with her other name `Maria Salomea Skłodowska` under Names, her shared note under
+  Notes, and no tab bar and no tree
 
 #### Scenario: Folded sections
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** Timeline, Identifiers and record information and Other data are folded, each heading
-  shows its count, and pressing Timeline shows her entries; Names, Facts and Family are open
+- **THEN** Timeline, and Identifiers and record information and Other data where the record holds them,
+  are folded, each heading shows its count, and pressing Timeline shows her entries; Names, Facts,
+  Family, Notes and Media are open
 
 #### Scenario: A fold kept across a redraw
 - **WHEN** the reader has opened Marie's Timeline and the file changes on disk
@@ -109,6 +113,10 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 #### Scenario: Following a relative
 - **WHEN** the reader activates Pierre Curie in Marie's family section
 - **THEN** the card shows Pierre Curie, and the tab's mode is as it was
+
+#### Scenario: A shared note
+- **WHEN** a 7.0 person's record states `1 SNOTE @N1@` and the file declares `0 @N1@ SNOTE` with text
+- **THEN** the Notes section shows that text
 
 #### Scenario: Every name of a person
 - **WHEN** a person's record states `1 NAME Maria /Curie/` with `2 TYPE BIRTH` and `2 NICK Manya`, and `1 NAME Marie /Curie/` with `2 TYPE MARRIED`
@@ -154,8 +162,9 @@ tag, each section left out where the record holds nothing for it, in this order:
   but does not declare SHALL be shown as a pointer to a record that is not in the file,
   with an action that shows it in the source;
 - its **notes**, and its **related people**, as a person's card shows them;
-- its **media**, and the **evidence** its facts and the record rest on;
-- its **identifiers and record information** and its **other data**, each folded as a person's are.
+- its **media**;
+- its **identifiers and record information** and its **other data**, each folded as a person's are;
+- the **evidence** its facts and the record rest on, which closes the card.
 
 #### Scenario: The Curies' family
 - **WHEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
@@ -193,16 +202,16 @@ event does not state is left out. Below them the card SHALL show everything else
 each in a section of its own that is left out where the event states nothing for it:
 
 - its **details**, as rows each named in the reader's language: the age, the cause, the agency, the
-  religion, the restriction, the age of each spouse for an event of a family, the date's phrase and time,
+  religion, the restriction, the temple and status of an LDS ordinance, the age of each spouse for an event of a family, the date's phrase and time,
   the sorting date, the address as the file writes it, and the phone numbers, e-mail addresses, fax numbers
   and web addresses; and what the place itself states — its form, its latitude and longitude, its
   translations and its notes;
 - its **notes**, and its **related people** with the role each is stated in, as a person's card shows them;
 - its **media**;
-- its **Evidence** section: the sources the event cites, each a link that selects the source, with
-  the page, the quality and whatever else the citation states — its quoted text and date, the event
-  and role it names, its notes and media;
-- its **other data**, folded: every line of the event no section above shows.
+- its **other data**, folded: every line of the event no section above shows;
+- its **Evidence** section, which closes the card: the sources the event cites, each a link that selects
+  the source, with the page, the quality and whatever else the citation states — its quoted text and
+  date, the event and role it names, its notes and media.
 
 The evidence SHALL NOT list what the whole record rests on: that is on the card of the record, whose link
 is at the top of the card. The card SHALL show nothing the file does not
