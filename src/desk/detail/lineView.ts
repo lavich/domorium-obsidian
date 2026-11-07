@@ -68,8 +68,17 @@ function valueText(tag: string, text: string): string {
   }
 }
 
+/** A note's text, folded where it is long; what the reader opened stays through a redraw. */
+export function renderNoteText(parent: HTMLElement, text: string, line: number, ctx: DetailContext): void {
+  renderFoldedText(parent, text, {
+    line,
+    open: ctx.open?.has(`note:${line}`) ?? false,
+    toggled: (open) => ctx.folded?.(`note:${line}`, open),
+  });
+}
+
 /** A pointer, as the name of the record it points at, or as a pointer to one the file does not declare. */
-export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: DetailContext): void {
+export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: DetailContext, focusKey?: string): void {
   const { index, host } = ctx;
   if (line.void) {
     parent.createSpan({ cls: "gedcom-desk-none", text: t("record.void") });
@@ -85,15 +94,17 @@ export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: Detail
   }
   const target = index.record(xref);
   if (target && (target.tag === "SNOTE" || target.tag === "NOTE") && target.text !== undefined) {
-    renderFoldedText(parent, target.text, {
-      line: line.range.start.line,
-      open: ctx.open?.has(`note:${line.range.start.line}`) ?? false,
-      toggled: (open) => ctx.folded?.(`note:${line.range.start.line}`, open),
-    });
+    renderNoteText(parent, target.text, line.range.start.line, ctx);
+    if (target.children.length > 0) {
+      renderLines(parent.createDiv({ cls: "gedcom-detail" }), target.children, ctx);
+    }
     return;
   }
   if (pageKind(index, xref)) {
-    linkButton(parent, title, () => host.openRecord(xref));
+    const link = linkButton(parent, title, () => host.openRecord(xref));
+    if (focusKey !== undefined) {
+      link.setAttribute("data-focus-key", focusKey);
+    }
   } else {
     parent.appendText(title);
   }
@@ -119,6 +130,8 @@ export function renderLine(parent: HTMLElement, line: RecordLine, ctx: DetailCon
   const value = parent.createDiv({ cls: "gedcom-detail-value" });
   if (line.pointer !== undefined || line.void) {
     renderPointer(value, line, ctx);
+  } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE")) {
+    renderNoteText(value, line.text, line.range.start.line, ctx);
   } else if (line.text !== undefined) {
     value.setText(valueText(line.tag, line.text));
   }
