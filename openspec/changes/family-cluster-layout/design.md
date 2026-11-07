@@ -22,8 +22,8 @@ See proposal.md for why. What exists, observed in the code on `main`:
   and a row from the input only.
 - The generation of a person is `FileTimeline.generations`, computed from
   relationships (`generationsOf`, `fileTimeline.ts:189-265`), not from dates;
-  the focus of a branch is `BranchScope.focus`; `model.branch(focus, up, down)`
-  is the set of a branch.
+  the focus of a branch is `BranchScope.focus`; `model.branch(focus)`
+  is the set of a whole branch (since #246 there is no generation limit).
 - `FileTimeline` has no kind of parent–child link. `src/genealogy/build.ts:290-299`
   (`familiesOf`; `:221` iterates the same FAMC link symbols) walks `FAMC` link nodes of a person's record (`childrenOf(record,
   tag)`), so the `PEDI` substructure of each `FAMC` is reachable there without
