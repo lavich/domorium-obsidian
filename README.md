@@ -171,7 +171,10 @@ lights their whole branch, as the timeline does; pointing at a node shows the
 marriage and the number of children. Drag or scroll with two fingers to move,
 use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the
 cards are drawn without names. The search, **Branch** and the 500-person rule
-work as in the timeline. A card selects the person, a node the family, and every
+work as in the timeline. Choosing a branch, or returning to the whole file, moves
+the cards that stay to their new places as the view glides, fading the others in or
+out and bringing the lines back once the cards have arrived; with reduced motion, or
+where more than 400 cards are drawn, the change is immediate. A card selects the person, a node the family, and every
 card and node can be reached and activated from the keyboard.
 
 Each tab remembers its mode and its selected record, and the branch, position and
