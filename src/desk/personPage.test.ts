@@ -69,7 +69,10 @@ const texts = (selector: string): string[] =>
 
 const facts = (): string[][] =>
   [...container.querySelectorAll(".gedcom-desk-fact")].map((row) =>
-    [...row.children].map((part) => part.textContent ?? ""),
+    [".gedcom-desk-fact-name", ".gedcom-desk-fact-value", ".gedcom-desk-chip"].flatMap((selector) => {
+      const part = row.querySelector(selector);
+      return part ? [part.textContent ?? ""] : [];
+    }),
   );
 
 describe("the person card", () => {

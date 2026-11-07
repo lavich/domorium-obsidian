@@ -212,3 +212,8 @@ Deviations from the design above, as built:
   heading's count does not wrap.
 - **Not changed, known.** `@@` is read as `@` wherever it stands, as 5.5.1 says; in 7.0 only a leading `@@` is an
   escape, so `a@@b` in a 7.0 file shows as `a@b`.
+- **Facts as rows** (the reader's choice, after seeing the first build). The old list was a bordered table whose rows
+  stacked the name over the value at the width of the panel, unlike every other row. A fact is now a row of the
+  `minmax(70px, 130px) / 1fr` grid the detail rows use: the name a link on the left, the value and the source mark on
+  the right, no frame, one line where it fits, at least 44 pixels high on a phone. The same list draws the events of a
+  place, so the place card changes with it.

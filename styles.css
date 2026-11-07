@@ -523,33 +523,22 @@ button.gedcom-desk-link:hover {
 }
 
 .gedcom-desk-facts {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  display: flex;
+  flex-direction: column;
 }
 
 .gedcom-desk-fact {
   display: grid;
-  grid-template-columns: 130px 1fr auto;
-  gap: var(--size-4-3);
-  align-items: center;
-  width: 100%;
+  grid-template-columns: minmax(70px, 130px) 1fr;
+  gap: var(--size-2-2) var(--size-4-3);
+  align-items: baseline;
   box-sizing: border-box;
-  padding: var(--size-4-2) var(--size-4-3);
-  border-top: 1px solid var(--background-modifier-border);
+  margin-inline: calc(-1 * var(--size-4-2));
+  padding: var(--size-2-2) var(--size-4-2);
+  border-radius: var(--radius-s);
   text-align: start;
   color: var(--text-normal);
   cursor: pointer;
-}
-
-.gedcom-desk-fact:first-child {
-  border-top: 0;
-  border-start-start-radius: var(--radius-m);
-  border-start-end-radius: var(--radius-m);
-}
-
-.gedcom-desk-fact:last-child {
-  border-end-start-radius: var(--radius-m);
-  border-end-end-radius: var(--radius-m);
 }
 
 .gedcom-desk-fact.is-inert {
@@ -570,8 +559,21 @@ button.gedcom-desk-fact-name {
   text-align: start;
   white-space: normal;
   font: inherit;
-  color: var(--text-muted);
+  color: var(--text-accent);
   cursor: pointer;
+}
+
+button.gedcom-desk-fact-name:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.gedcom-desk-fact-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2-2) var(--size-4-2);
+  min-width: 0;
 }
 
 .gedcom-desk-fact-value {
@@ -685,15 +687,6 @@ button.gedcom-desk-person:hover {
 }
 
 @container gedcom-card (max-width: 560px) {
-  .gedcom-desk-fact {
-    grid-template-columns: 1fr auto;
-  }
-
-  .gedcom-desk-fact-name {
-    grid-column: 1 / -1;
-    font-size: var(--font-ui-smaller);
-  }
-
   .gedcom-desk-family {
     grid-template-columns: 1fr;
   }
@@ -844,6 +837,8 @@ button.gedcom-card-nav:focus-visible {
 
 .is-mobile .gedcom-desk-fact {
   position: relative;
+  min-height: 44px;
+  align-items: center;
 }
 
 .is-mobile button.gedcom-desk-fact-name::after {

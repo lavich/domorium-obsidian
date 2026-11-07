@@ -37,7 +37,8 @@ export function renderEventRow(list: HTMLElement, content: EventRowContent, host
     button.setAttribute("disabled", "");
   }
 
-  const value = row.createSpan({ cls: "gedcom-desk-fact-value" });
+  const main = row.createDiv({ cls: "gedcom-desk-fact-main" });
+  const value = main.createSpan({ cls: "gedcom-desk-fact-value" });
   const shown = renderEventDetail(value, detail, host);
   if (record) {
     if (shown) {
@@ -49,6 +50,6 @@ export function renderEventRow(list: HTMLElement, content: EventRowContent, host
   }
   value.toggleClass("is-empty", !shown && !record);
   if (citations > 0) {
-    row.createSpan({ cls: ["gedcom-desk-chip", "has-source"], text: plural("desk.sources", citations) });
+    main.createSpan({ cls: ["gedcom-desk-chip", "has-source"], text: plural("desk.sources", citations) });
   }
 }

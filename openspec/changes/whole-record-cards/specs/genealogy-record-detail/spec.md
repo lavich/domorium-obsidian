@@ -180,3 +180,22 @@ ships. A tag, type or role the standard names and the plugin has no word for SHA
 #### Scenario: Russian
 - **WHEN** the plugin's language is Russian and a person's record states `1 NAME` with `2 TYPE MARRIED`
 - **THEN** the entry's type reads in Russian, and every label key the cards use exists in the Russian catalogue as it does in the English one
+
+### Requirement: A fact is a row like the others
+
+A fact on the card of a person or of a family, and an event on the card of a place, SHALL be drawn as a row of two columns like the other
+rows of a card — its name on the left, as a link that selects its card, its date, its place and its own text on the right, and a mark of how
+many sources it cites at the end of what it states — with no frame about the list and no second line for the name, at any width of the card. Pressing anywhere on
+the row SHALL select the card of the event, except on a link inside it. A fact whose record has no identifier SHALL show its name as plain muted text and select nothing.
+
+#### Scenario: A birth beside the other rows
+- **WHEN** the card of Marie shows her facts at the width of the right panel
+- **THEN** each fact is one row with its name on the left as a link and its date and place on the right, in the same columns as the rows of her names, with no box about the list
+
+#### Scenario: A fact that cites a source
+- **WHEN** a fact cites one source
+- **THEN** the mark `1 source` stands at the end of what the fact states, on the same line where it fits
+
+#### Scenario: A fact with no identifier
+- **WHEN** a record has no identifier and states a birth
+- **THEN** the name `Birth` is plain muted text and pressing the row selects nothing

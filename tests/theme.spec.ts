@@ -334,7 +334,7 @@ test.describe("the research desk in the Obsidian theme", () => {
 
     expect(await style(".gedcom-desk-title", "color")).toBe(DARK_DESK.normal);
     expect(await style(".gedcom-desk-unsourced", "color")).toBe(DARK_DESK.muted);
-    expect(await style(".gedcom-desk-facts", "border-top-color")).toBe(DARK_DESK.border);
+    expect(await style(".gedcom-desk-fact-name", "color")).toBe(DARK_DESK.link);
     expect(await style(".gedcom-desk-person", "color")).toBe(DARK_DESK.link);
   });
 });
