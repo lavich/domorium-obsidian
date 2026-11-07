@@ -271,8 +271,8 @@ and lanes of different clusters in one gap are staggered by `BEND_STEP` as today
 Several lines between the same two people (a person who is both child and spouse
 of one family, or two families linking the same pair) keep separate `id`s and
 `relationship` kinds and are offset, not merged. `points` are a polyline of vertical and horizontal stretches only, drawn with
-square corners (the reader's decision, after the first build: the old S-curves
-crossed where they met a corner); a stretch that changes x between rows becomes a
+rounded corners (the reader's decision, after the first build: the old S-curves
+crossed where they met a corner; fully square corners were tried and not liked); a stretch that changes x between rows becomes a
 drop, a run across at the family's bus height, and a drop. Routing reads
 placement and never writes it.
 
@@ -408,3 +408,6 @@ Deviations from the design above, as built:
   their own (greedy interval levels, wrapping past the room the gap has).
   Joins to a family node are elbows, and a join between spouses in different rows
   runs across at the node's height. `curve` became `polyline` in `cardRender.ts`.
+- **Rounded corners.** The routing is orthogonal as above; `polyline` draws it with
+  a corner radius of 10, like the long lines of the layout before, so that only
+  the S-shaped short lines are gone.

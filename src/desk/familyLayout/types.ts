@@ -75,7 +75,7 @@ export interface GraphNode {
   spouses: [string, string];
   /** The partners of a family of more than two, beyond the pair; each has a join of its own. */
   others: string[];
-  /** What joins the node to its spouses' cards, each a line of square corners. */
+  /** What joins the node to its spouses' cards, each running at right angles. */
   joins: Point[][];
 }
 

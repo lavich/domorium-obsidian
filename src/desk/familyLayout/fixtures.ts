@@ -163,3 +163,65 @@ export function fixtures(): Fixture[] {
     ]),
   ];
 }
+
+interface Line {
+  /** The person at the end of the line, then their father and mother, nothing for an unknown one. */
+  person: string;
+  father?: string;
+  mother?: string;
+}
+
+/**
+ * A pedigree by the people at its ends: each person is the child of the family
+ * of a father and a mother named beside them.
+ */
+export function pedigree(name: string, lines: Line[], root: string): Fixture {
+  const sexes = new Map<string, string>();
+  for (const line of lines) {
+    if (line.father) {
+      sexes.set(line.father, "M");
+    }
+    if (line.mother) {
+      sexes.set(line.mother, "F");
+    }
+    sexes.set(line.person, sexes.get(line.person) ?? "U");
+  }
+  const families: Kin[] = lines
+    .filter((line) => line.father || line.mother)
+    .map((line, at) => ({
+      id: `F${at}`,
+      ...(line.father ? { husb: line.father } : {}),
+      ...(line.mother ? { wife: line.mother } : {}),
+      children: [line.person],
+    }));
+  return fixture(name, [...sexes].map(([id, sex]) => `${id}:${sex}`), families, root);
+}
+
+/** The five generations of a real branch, in which both sides of every couple have forebears. */
+export function fiveGenerations(): Fixture {
+  return pedigree(
+    "a pedigree of five generations",
+    [
+      { person: "E", father: "Denis", mother: "Lyudmila" },
+      { person: "Denis", father: "Vyacheslav", mother: "Antonina" },
+      { person: "Vyacheslav", father: "Anatoly", mother: "Raida" },
+      { person: "Antonina", father: "Boris", mother: "Nadezhda" },
+      { person: "Anatoly", father: "VasilyL", mother: "Fekla" },
+      { person: "Raida", father: "VasilyO", mother: "ElizavetaO" },
+      { person: "Boris", father: "Ivan", mother: "Anna" },
+      { person: "Nadezhda", father: "Ilya", mother: "Natalia" },
+      { person: "VasilyL", father: "Petr" },
+      { person: "Petr", father: "Naum" },
+      { person: "Fekla", father: "Mikhail" },
+      { person: "VasilyO", father: "Semen" },
+      { person: "ElizavetaO", father: "Pavel" },
+      { person: "Ivan", father: "Gerasim" },
+      { person: "Ilya", father: "Grigory" },
+      { person: "Grigory", father: "Dormidont" },
+      { person: "Natalia", father: "Dmitry", mother: "Faina" },
+      { person: "Dmitry", father: "Timofei" },
+      { person: "Faina", father: "Konstantin" },
+    ],
+    "E",
+  );
+}

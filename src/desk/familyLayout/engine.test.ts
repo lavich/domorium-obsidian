@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fixtures, modelOf, type Fixture } from "./fixtures";
+import { fiveGenerations, fixtures, modelOf, type Fixture } from "./fixtures";
 import { runLayout } from "./engine";
 import { graphInputOf } from "../fileGraph";
 import type { Direction, FileGraphLayout, GraphInput } from "./types";
@@ -173,6 +173,26 @@ describe("stability", () => {
       expect(card.y).toBeGreaterThanOrEqual(band?.top ?? 0);
       expect(card.y + card.height).toBeLessThanOrEqual(band?.bottom ?? 0);
     }
+  });
+});
+
+describe("a pedigree", () => {
+  it("crosses no line, and stands the forebears of a husband to the left of those of his wife at every level", () => {
+    const layout = runLayout(fiveGenerations().input);
+    const parentsOf = (id: string): string[] =>
+      layout.clusters.filter((cluster) => cluster.children.some((child) => child.id === id)).flatMap((cluster) => cluster.partners);
+    const x = (id: string) => layout.card.get(id)?.x ?? NaN;
+    let compared = 0;
+
+    expect(layout.crossings).toBe(0);
+    for (const cluster of layout.clusters) {
+      const [husband, wife] = cluster.partners.map(parentsOf);
+      if (husband?.length && wife?.length && cluster.partners.length === 2) {
+        compared += 1;
+        expect(Math.max(...husband.map(x)), cluster.id).toBeLessThan(Math.min(...wife.map(x)));
+      }
+    }
+    expect(compared).toBeGreaterThan(5);
   });
 });
 

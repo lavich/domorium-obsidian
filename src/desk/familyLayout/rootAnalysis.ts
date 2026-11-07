@@ -98,6 +98,78 @@ function pathsUp(root: string, graph: ClusterGraph): Map<string, number> {
   return paths;
 }
 
+const SEX_ORDER: Record<string, number> = { M: 0, U: 1, F: 2 };
+
+/**
+ * Where each person stands in the pedigree of their component's root, as the path
+ * of choices that reaches them: the left partner of a family (the husband) is 0
+ * and the next 1, so that the forebears of a husband sort before those of his wife
+ * all the way up. People who are no forebear take the key of whom they hang from,
+ * after it.
+ */
+function pedigreeKeys(
+  input: GraphInput,
+  graph: ClusterGraph,
+  roots: readonly string[],
+): Map<string, number[]> {
+  const sexOf = new Map(input.cards.map((card) => [card.id, SEX_ORDER[card.sex] ?? 1]));
+  const born = new Map(input.cards.map((card) => [card.id, card.born ?? 9_999]));
+  const keys = new Map<string, number[]>();
+  const queue: string[] = [];
+  for (const root of roots) {
+    keys.set(root, []);
+    queue.push(root);
+  }
+  for (let at = 0; at < queue.length; at += 1) {
+    const person = queue[at] ?? "";
+    const own = keys.get(person) ?? [];
+    const cluster = graph.cluster.get(graph.childOf.get(person)?.[0] ?? "");
+    const partners = [...(cluster?.partners ?? [])].sort((a, b) => (sexOf.get(a) ?? 1) - (sexOf.get(b) ?? 1));
+    partners.forEach((parent, index) => {
+      if (!keys.has(parent)) {
+        keys.set(parent, [...own, index]);
+        queue.push(parent);
+      }
+    });
+  }
+  const hanging: string[] = [...keys.keys()];
+  for (let at = 0; at < hanging.length; at += 1) {
+    const person = hanging[at] ?? "";
+    const own = keys.get(person) ?? [];
+    for (const id of graph.partnerIn.get(person) ?? []) {
+      const cluster = graph.cluster.get(id);
+      cluster?.partners.forEach((other) => {
+        if (!keys.has(other)) {
+          keys.set(other, [...own, 7]);
+          hanging.push(other);
+        }
+      });
+      for (const child of [...(cluster?.children ?? [])].sort(
+        (a, b) => (born.get(a.id) ?? 0) - (born.get(b.id) ?? 0) || (a.id < b.id ? -1 : 1),
+      )) {
+        if (!keys.has(child.id)) {
+          keys.set(child.id, [...own, 8, born.get(child.id) ?? 9_999]);
+          hanging.push(child.id);
+        }
+      }
+    }
+  }
+  return keys;
+}
+
+function compareKeys(a: readonly number[] | undefined, b: readonly number[] | undefined): number {
+  if (!a || !b) {
+    return a ? -1 : b ? 1 : 0;
+  }
+  for (let at = 0; at < Math.min(a.length, b.length); at += 1) {
+    const by = (a[at] ?? 0) - (b[at] ?? 0);
+    if (by !== 0) {
+      return by;
+    }
+  }
+  return a.length - b.length;
+}
+
 /**
  * The structure of the file as seen from a root: how far each cluster is,
  * whether it is an ancestor, a descendant or a collateral of the root, and the
@@ -235,12 +307,17 @@ export function analyseRoot(input: GraphInput, graph: ClusterGraph, root: string
     const above = reached(graph.childOf.get(person));
     return above === Infinity ? 0 : 2 * above + 1;
   };
+  const pedigree = pedigreeKeys(input, graph, [...roots.values()]);
   const sorted = input.cards
     .map((card, at) => ({ id: card.id, at }))
     .sort((a, b) => {
       const byComponent = rank(component.get(a.id) ?? 0) - rank(component.get(b.id) ?? 0);
       if (byComponent !== 0) {
         return byComponent;
+      }
+      const byPedigree = compareKeys(pedigree.get(a.id), pedigree.get(b.id));
+      if (byPedigree !== 0) {
+        return byPedigree;
       }
       const byDistance = distanceOf(a.id) - distanceOf(b.id);
       if (byDistance !== 0) {

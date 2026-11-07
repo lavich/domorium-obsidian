@@ -557,7 +557,7 @@ describe("the order of the rows", () => {
     expect(crowded.length).toBe(0);
   });
 
-  it("draws every line with square corners, and every join to a family node too", () => {
+  it("runs every line, and every join to a family node, up, down or across only", () => {
     for (const model of [curie(), buildFileTimeline(indexOf(tangled(300)), 2026)]) {
       const layout = layoutFileGraph(model, WHOLE);
       const paths = [...layout.lines.map((line) => line.points), ...layout.nodes.flatMap((node) => node.joins)];

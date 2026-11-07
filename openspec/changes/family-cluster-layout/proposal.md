@@ -31,7 +31,9 @@ deterministic, independently tested stages.
   becomes the only layout of the graph of a file.
 - Follow-up, after seeing the graph in the demo vault: lines drawn as curves
   crossed one another where a curve met a square corner — "Давай сделаем все
-  угловатыми" (2026-11-07) — so every line and join is drawn with square corners.
+  угловатыми" (2026-11-07) — so every line and join runs at right angles. Fully square corners were then
+  rejected: "Прямые углы не надо делать… только от S-образных избавиться"
+  (2026-11-07), so the corners are rounded as the long lines were.
 - Decision on root and direction: **"Корень = focus ветки; направление — только
   в API"** — the root is the person whose branch is shown (the existing focus); the
   four directions are supported by the engine and its tests but no setting,

@@ -1159,3 +1159,14 @@ describe("the search of the graph, opened from outside", () => {
     expect(document.activeElement).toBe(field);
   });
 });
+
+describe("the path of a line", () => {
+  it("turns a corner with a rounded bend and never an S", async () => {
+    const { polyline } = await import("./cardRender");
+    const d = polyline([[0, 0], [0, 100], [200, 100], [200, 300]]);
+
+    expect(d).toBe("M0 0 L0 90 Q0 100 10 100 L190 100 Q200 100 200 110 L200 300");
+    expect(d).not.toContain("C");
+    expect(polyline([[5, 5], [5, 9]])).toBe("M5 5 L5 9");
+  });
+});
