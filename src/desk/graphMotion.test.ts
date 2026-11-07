@@ -138,8 +138,8 @@ describe("a change of scope", () => {
   it("does not animate a card that stands where it stood", () => {
     stubAnimate();
     const same = before();
-    const motion = beginMotion(document, same, drawn(same), same);
-    const next = drawn(same);
+    const motion = beginMotion(document, same, drawn(same, ["node", "line"]), same);
+    const next = drawn(same, ["node", "line"]);
     runMotion(motion as NonNullable<typeof motion>, next, same);
 
     expect(played).toHaveLength(0);
@@ -171,13 +171,19 @@ describe("a change of scope", () => {
     const [then, now] = [before(), after()];
     const elements = drawn(then);
     const leaving = [...elements].find(([one]) => one.id === "b")?.[1];
+    const part = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    part.setAttribute("tabindex", "0");
+    leaving?.append(part);
+    part.focus();
     const motion = beginMotion(document, then, elements, now);
     runMotion(motion as NonNullable<typeof motion>, drawn(now), now);
 
+    expect(document.activeElement).not.toBe(part);
     expect(motion?.ghosts).toContain(leaving);
     expect(leaving?.hasAttribute("inert")).toBe(true);
     expect(leaving?.getAttribute("aria-hidden")).toBe("true");
     expect(leaving?.classList.contains("is-leaving")).toBe(true);
+    expect(leaving?.querySelectorAll('[tabindex="0"]')).toHaveLength(0);
     expect(document.body.contains(leaving ?? null)).toBe(true);
     played.find((one) => one.element === leaving)?.finish.onfinish?.();
     expect(document.body.contains(leaving ?? null)).toBe(false);

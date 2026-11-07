@@ -89,3 +89,12 @@ it, as it does for the camera.
   fade in after the cards (delay 400 ms).
 - **No plan cross-review before the code**, as the flow asks: the change is small
   and was reviewed together with its code, after the implementation.
+- **`inert` is not enough on SVG** (found in review, checked in Chromium: a child
+  with `tabindex=0` still takes the focus). A leaving card's focusable parts get
+  `tabindex="-1"`, the focus is let go if it was inside, and the group is moved to
+  the front of its layer so that it paints under the new cards.
+- **Lines wait only if something changed.** A scope change that moves, adds and removes
+  no card does not blink the lines.
+- **Known:** a second change of scope during a motion starts from the cards' layout
+  coordinates, not from where they are drawn mid-flight, so they snap before they
+  glide; cards drawn after `runMotion` (a later glide) appear without motion.

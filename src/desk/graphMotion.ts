@@ -54,10 +54,19 @@ export function beginMotion(
   return from.size === 0 || from.size > MOVING_CARDS ? null : { from, ghosts };
 }
 
+/** `inert` does nothing on an SVG group, so its focusable parts are taken out of the tab order and the focus is let go. */
 function ghost(element: SVGElement): void {
   element.classList.add("is-leaving");
   element.setAttribute("aria-hidden", "true");
   element.setAttribute("inert", "");
+  for (const part of element.querySelectorAll("[tabindex]")) {
+    part.setAttribute("tabindex", "-1");
+  }
+  const held = element.ownerDocument.activeElement;
+  if (held instanceof SVGElement && element.contains(held)) {
+    held.blur();
+  }
+  element.parentNode?.prepend(element);
   const fade = element.animate({ opacity: [1, 0] }, { duration: FADE_OUT_MS, fill: "forwards" });
   fade.onfinish = () => element.remove();
 }
@@ -81,6 +90,14 @@ export function runMotion(motion: Motion, drawn: ReadonlyMap<Item, SVGElement>, 
   for (const element of motion.ghosts) {
     ghost(element);
   }
+  let changed = motion.ghosts.length > 0;
+  for (const [item, element] of drawn) {
+    if (item.kind === "card") {
+      const to = next.card.get(item.id);
+      const from = motion.from.get(item.id);
+      changed = changed || !from || (to !== undefined && (from.x !== to.x || from.y !== to.y));
+    }
+  }
   for (const [item, element] of drawn) {
     if (item.kind === "card") {
       const to = next.card.get(item.id);
@@ -93,7 +110,7 @@ export function runMotion(motion: Motion, drawn: ReadonlyMap<Item, SVGElement>, 
       } else if (from.x !== to.x || from.y !== to.y) {
         element.animate({ transform: [at(from), at(to)] }, { duration: MOVE.ms, easing: MOVE.easing });
       }
-    } else {
+    } else if (changed) {
       element.animate({ opacity: [0, 1] }, { duration: LINES_FADE_MS, delay: MOVE.ms, fill: "backwards" });
     }
   }

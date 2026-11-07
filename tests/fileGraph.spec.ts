@@ -181,12 +181,14 @@ test.describe("the graph of a file", () => {
         reachable: [...document.querySelectorAll(".gedcom-fg-person[inert]")].every(
           (ghost) => getComputedStyle(ghost).pointerEvents === "none",
         ),
+        focusable: document.querySelectorAll('.gedcom-fg-person[inert] [tabindex="0"]').length,
       };
     });
 
     expect(started.animations).toBeGreaterThan(0);
     expect(started.ghosts).toBe(7);
     expect(started.reachable).toBe(true);
+    expect(started.focusable).toBe(0);
     await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
     await expect(page.locator(".gedcom-fg-person")).toHaveCount(10);
     await expect(page.locator(".gedcom-fg-person[inert]")).toHaveCount(0);

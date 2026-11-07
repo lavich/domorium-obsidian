@@ -2166,7 +2166,8 @@ button.gedcom-fg-pop-open {
   --no-tooltip: true;
 }
 
-.gedcom-fg-person.is-leaving {
+.gedcom-fg-person.is-leaving,
+.gedcom-fg-person.is-leaving * {
   pointer-events: none;
 }
 
