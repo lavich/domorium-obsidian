@@ -48,7 +48,8 @@ function lineOf(symbol: DocumentSymbol): RecordLine {
  */
 export function recordLines(symbol: DocumentSymbol): RecordLine {
   const note = symbol.name === "NOTE" || symbol.name === "SNOTE";
-  const text = note ? continued(symbol, symbol.label)?.replace(/@@/gu, "@") : undefined;
+  const first = symbol.label ?? (symbol.children.some((child) => child.name === "CONT") ? "" : undefined);
+  const text = note ? continued(symbol, first)?.replace(/@@/gu, "@") : undefined;
   return {
     tag: symbol.name,
     ...(symbol.detail === undefined ? {} : { xref: symbol.detail }),

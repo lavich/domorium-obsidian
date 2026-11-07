@@ -374,8 +374,19 @@ test.describe("the controls of a card on a phone", () => {
 
   test("can be hit over a height of at least 32 pixels", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
-    for (const record of ["@I1@", "@F3@", "@S3@", "place:warsaw, congress poland", "event:@I1@:BIRT:0"]) {
-      await mountDesk(page, { record, phone: true });
+    const rich = readFileSync("demo-vault/rich-record.ged", "utf8");
+    const cases: [string, string | undefined][] = [
+      ["@I1@", undefined], ["@F3@", undefined], ["@S3@", undefined], ["place:warsaw, congress poland", undefined],
+      ["event:@I1@:BIRT:0", undefined], ["@I1@", rich], ["@F3@", rich], ["event:@I1@:BIRT:0", rich], ["event:@F3@:MARR:0", rich],
+    ];
+    for (const [record, doc] of cases) {
+      await mountDesk(page, { record, phone: true, ...(doc === undefined ? {} : { doc }) });
+      for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
+        await button.click();
+      }
+      for (const button of await page.locator(".gedcom-detail-more").all()) {
+        await button.click();
+      }
       const misses = await page.evaluate(() => {
         const missed: string[] = [];
         const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
@@ -398,7 +409,7 @@ test.describe("the controls of a card on a phone", () => {
         }
         return missed;
       });
-      expect(misses, record).toEqual([]);
+      expect(misses, `${record}${doc === undefined ? "" : " (rich)"}`).toEqual([]);
     }
   });
 });

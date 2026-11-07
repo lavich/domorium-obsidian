@@ -1,7 +1,7 @@
 import type { RecordLine } from "../../genealogy";
 import { readName, UNNAMED } from "../../genealogy/names";
 import { t } from "../../i18n";
-import { nameTypeLabel } from "./labels";
+import { nameTypeLabel, tagLabel } from "./labels";
 import { renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
 import { sectionHeading } from "./section";
 
@@ -30,13 +30,18 @@ function renderName(parent: HTMLElement, name: RecordLine, ctx: DetailContext): 
     }
   }
   const rows = entry.createDiv({ cls: "gedcom-detail" });
+  for (const further of name.children.filter((line) => line.tag === "TYPE").slice(1)) {
+    renderLine(rows, further, ctx);
+  }
   for (const line of name.children) {
     if (PARTS.has(line.tag) || line.tag === "NOTE" || line.tag === "SNOTE" || line.tag === "SOUR") {
       renderLine(rows, line, ctx);
     }
   }
   for (const translation of name.children.filter((line) => line.tag === "TRAN")) {
-    renderName(entry.createDiv({ cls: "gedcom-name-translation" }), { ...translation, tag: "NAME" }, ctx);
+    const box = entry.createDiv({ cls: "gedcom-name-translation" });
+    box.createDiv({ cls: "gedcom-name-translation-label", text: tagLabel("TRAN") });
+    renderName(box, { ...translation, tag: "NAME" }, ctx);
   }
   renderRest(rows, name, WHAT_AN_ENTRY_DRAWS, ctx);
   if (!rows.hasChildNodes()) {

@@ -7,7 +7,7 @@ import type { RecordLine } from "../genealogy";
 import { FAMILY_EVENT_TAGS } from "../genealogy/tags";
 import { INFO_TAGS, NOTE_TAGS, unclaimed } from "./detail/claims";
 import { lazyFold } from "./detail/lazyFold";
-import { renderRest, type DetailContext } from "./detail/lineView";
+import { renderLines, renderRest, scoped, type DetailContext } from "./detail/lineView";
 import { noteLines, renderNotes } from "./detail/notes";
 import { otherCount, renderOther } from "./detail/otherData";
 import { infoLines, renderInfo } from "./detail/recordInfo";
@@ -62,6 +62,7 @@ export function renderFamilyPage(
   const ctx: DetailContext = {
     index,
     host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) },
+    notes: { drawn: 0 },
     ...(options.open === undefined ? {} : { open: options.open }),
     ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
@@ -78,10 +79,9 @@ export function renderFamilyPage(
   });
 
   renderFactList(page, familyFacts(family), index, options, host);
-  const stated = lines?.children.find((line) => line.tag === "NCHI");
-  if (stated?.text) {
-    const note = page.createDiv({ cls: "gedcom-desk-subtitle", text: t("record.childrenStated", { count: stated.text }) });
-    note.setAttribute("data-line", String(stated.range.start.line));
+  const stated = lines?.children.filter((line) => line.tag === "NCHI") ?? [];
+  if (stated.length > 0) {
+    renderLines(page.createDiv({ cls: "gedcom-detail gedcom-desk-stated" }), stated, ctx);
   }
 
   sectionHeading(page, t("desk.family"));
@@ -130,13 +130,13 @@ export function renderFamilyPage(
     lazyFold(page, { id, title, count, open: options.open?.has(id) ?? false, toggled: (open) => options.folded?.(id, open) }, fill);
   const info = lines ? infoLines(lines) : [];
   if (info.length > 0) {
-    fold("info", t("record.info"), otherCount(info), (body) => renderInfo(body, info, ctx));
+    fold("info", t("record.info"), otherCount(info), (body) => renderInfo(body, info, scoped(ctx, "info")));
   }
   const gallery = options.media;
   const other = lines
     ? unclaimed(lines, FAMILY_CLAIMED, (line) => line.tag === "OBJE" && !drawnByGallery(line, gallery))
     : [];
   if (other.length > 0) {
-    fold("other", t("record.other"), otherCount(other), (body) => renderOther(body, other, ctx));
+    fold("other", t("record.other"), otherCount(other), (body) => renderOther(body, other, scoped(ctx, "other")));
   }
 }

@@ -11,7 +11,7 @@ import { t } from "../i18n";
 import { PERSON_CLAIMED, unclaimed } from "./detail/claims";
 import { lazyFold } from "./detail/lazyFold";
 import { childMark, linkStatusLabel, parentsHeading, sexLabel } from "./detail/labels";
-import { renderRest, type DetailContext } from "./detail/lineView";
+import { renderRest, scoped, type DetailContext } from "./detail/lineView";
 import { nameLines, needsNames, renderNames } from "./detail/names";
 import { noteLines, renderNotes } from "./detail/notes";
 import { otherCount, renderOther } from "./detail/otherData";
@@ -94,6 +94,7 @@ export function renderPersonPage(
   const ctx: DetailContext = {
     index,
     host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) },
+    notes: { drawn: 0 },
     ...(options.open === undefined ? {} : { open: options.open }),
     ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
@@ -122,14 +123,14 @@ export function renderPersonPage(
   );
   const info = lines ? infoLines(lines) : [];
   if (info.length > 0) {
-    fold("info", t("record.info"), otherCount(info), (body) => renderInfo(body, info, ctx));
+    fold("info", t("record.info"), otherCount(info), (body) => renderInfo(body, info, scoped(ctx, "info")));
   }
   const gallery = options.media;
   const other = lines
     ? unclaimed(lines, PERSON_CLAIMED, (line) => line.tag === "OBJE" && !drawnByGallery(line, gallery))
     : [];
   if (other.length > 0) {
-    fold("other", t("record.other"), otherCount(other), (body) => renderOther(body, other, ctx));
+    fold("other", t("record.other"), otherCount(other), (body) => renderOther(body, other, scoped(ctx, "other")));
   }
 }
 
@@ -137,6 +138,15 @@ export function renderPersonPage(
 export function drawnByGallery(line: RecordLine, gallery: readonly MediaItem[] | undefined): boolean {
   if (gallery === undefined) {
     return true;
+  }
+  const own = new Set(["TITL", "CROP"]);
+  const plain =
+    line.pointer !== undefined
+      ? line.children.every((child) => own.has(child.tag))
+      : line.children.filter((child) => child.tag === "FILE").length === 1 &&
+        line.children.every((child) => child.tag === "FILE" || own.has(child.tag));
+  if (!plain) {
+    return false;
   }
   const { start, end } = line.range;
   return gallery.some(({ at }) => {
@@ -186,6 +196,9 @@ export function renderFactList(
   host: PageHost,
   own = true,
 ): void {
+  if (facts.length === 0) {
+    return;
+  }
   sectionHeading(page, t("desk.facts"), facts.length);
   const unsourced = facts.filter((fact) => fact.event.citations.length === 0).length;
   if (unsourced > 0) {
@@ -195,9 +208,6 @@ export function renderFactList(
     });
   }
   const list = page.createDiv({ cls: "gedcom-desk-facts" });
-  if (facts.length === 0) {
-    list.createDiv({ cls: "gedcom-desk-none", text: t("desk.noFacts") });
-  }
   for (const fact of facts) {
     const { date, place, value } = fact.event;
     renderEventRow(
@@ -252,8 +262,16 @@ function renderFamily(
     const how = belonging(link);
     const label = [parentsHeading(how.kind), how.status ? linkStatusLabel(how.status) : undefined].filter(Boolean).join(" · ");
     const parents = kinGroup(family, label, how.lines);
+    for (const stated of link.children.filter((child) => child.tag === "PEDI" || child.tag === "STAT")) {
+      drawRest(parents, stated, new Set(), ctx);
+    }
+    if (link.void) {
+      parents.createDiv({ cls: "gedcom-desk-none", text: t("record.void") });
+      continue;
+    }
     if (!here) {
       missingRelative(parents, { xref: link.pointer ?? "", range: link.range }, host);
+      drawRest(parents, link, new Set(["PEDI", "STAT"]), ctx);
       continue;
     }
     for (const spouse of here.spouses.filter((one) => one.xref !== owner)) {
@@ -316,12 +334,19 @@ function renderFamily(
     }
   }
   for (const missing of person.missingUnions) {
-    missingRelative(kinGroup(family, t("desk.spouse")), missing, host);
+    const group = kinGroup(family, t("desk.spouse"));
+    missingRelative(group, missing, host);
+    drawRest(group, spouseLinks.find((one) => one.range.start.line === missing.range.start.line), new Set(), ctx);
+  }
+  for (const link of spouseLinks.filter((one) => one.void)) {
+    const group = kinGroup(family, t("desk.spouse"), [link.range.start.line]);
+    group.createDiv({ cls: "gedcom-desk-none", text: t("record.void") });
+    drawRest(group, link, new Set(), ctx);
   }
 }
 
-function drawRest(parent: HTMLElement, line: RecordLine, handled: ReadonlySet<string>, ctx: DetailContext): void {
-  if (line.children.some((child) => !handled.has(child.tag))) {
+function drawRest(parent: HTMLElement, line: RecordLine | undefined, handled: ReadonlySet<string>, ctx: DetailContext): void {
+  if (line?.children.some((child) => !handled.has(child.tag))) {
     renderRest(parent.createDiv({ cls: "gedcom-detail" }), line, handled, ctx);
   }
 }

@@ -455,6 +455,11 @@ h3.gedcom-desk-subsection[data-count]::after {
   margin-bottom: var(--size-4-3);
 }
 
+.gedcom-name-translation-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
 .gedcom-name-translation {
   margin-top: var(--size-2-3);
   margin-inline-start: var(--size-4-4);
@@ -755,6 +760,7 @@ button.gedcom-desk-fold-button[aria-expanded="true"]::before {
 
 button.gedcom-desk-fold-button::after {
   content: attr(data-count);
+  white-space: nowrap;
   font-weight: normal;
   letter-spacing: 0;
 }
@@ -1365,6 +1371,10 @@ button.gedcom-desk-tile-face:disabled {
 
 .gedcom-desk-tile .gedcom-desk-actions {
   margin-top: var(--size-2-1);
+}
+
+.is-mobile .gedcom-desk-tile .gedcom-desk-actions {
+  gap: var(--size-4-5);
 }
 
 button.gedcom-desk-media-stage {
@@ -2482,4 +2492,12 @@ button.gedcom-fg-pop-open {
   .gedcom-ft-age {
     transition: none;
   }
+}
+
+.gedcom-desk-cite-inline {
+  white-space: pre-line;
+}
+
+.gedcom-desk-stated {
+  margin-top: var(--size-2-3);
 }

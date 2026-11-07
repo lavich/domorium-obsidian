@@ -31,13 +31,20 @@ export function eventLine(index: GenealogyIndex, owner: string, event: PersonEve
 export function splitEvent(line: RecordLine, titled: boolean): EventParts {
   const rows: RecordLine[] = [];
   const parts: EventParts = { rows, notes: [], related: [], media: [], other: [] };
+  const seen = new Set<string>();
   for (const child of line.children) {
     if (child.tag === "DATE" || child.tag === "PLAC") {
-      rows.push(...child.children);
+      if (seen.has(child.tag)) {
+        rows.push(child);
+      } else {
+        seen.add(child.tag);
+        rows.push(...child.children);
+      }
     } else if (child.tag === "TYPE") {
-      if (!titled) {
+      if (!titled || seen.has("TYPE")) {
         rows.push(child);
       }
+      seen.add("TYPE");
     } else if (DETAIL_TAGS.has(child.tag)) {
       rows.push(child);
     } else if (NOTE_TAGS.has(child.tag)) {
@@ -63,6 +70,9 @@ function renderSpouseAge(parent: HTMLElement, line: RecordLine, ctx: DetailConte
   const value = parent.createDiv({ cls: "gedcom-detail-value", text: age?.text ?? "" });
   if (age) {
     value.setAttribute("data-line", String(age.range.start.line));
+    if (age.children.length > 0) {
+      renderLines(value.createDiv({ cls: "gedcom-detail" }), age.children, ctx);
+    }
   }
   renderRest(value, line, new Set(["AGE"]), ctx);
 }

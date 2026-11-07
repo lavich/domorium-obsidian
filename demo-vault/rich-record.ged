@@ -64,6 +64,13 @@
 2 NOTE A note on the link.
 1 FAMC @F2@
 2 PEDI ADOPTED
+3 PHRASE by a court
+1 FAMC @F99@
+2 NOTE A link to a family that is not in the file.
+1 FAMS @F98@
+2 NOTE A marriage that is not in the file.
+1 FAMS @VOID@
+1 SNOTE @N2@
 1 FAMS @F3@
 2 NOTE A note on the spouse link.
 1 SNOTE @N1@
@@ -149,13 +156,18 @@
 2 PHRASE the elder
 1 CHIL @I10@
 1 NCHI 3
+1 NCHI 4
+2 SOUR @S1@
 1 MARR
 2 DATE 26 JUL 1895
 2 PLAC Sceaux, France
 2 HUSB
 3 AGE 36y
+4 PHRASE about that
 2 WIFE
 3 AGE 27y
+2 DATE ABT 1895
+2 PLAC Paris, France
 2 NOTE A modest wedding.
 2 SOUR @S1@
 3 PAGE 7
@@ -181,4 +193,6 @@
 2 TITL A portrait
 0 @N1@ SNOTE The shared note text.
 1 CONT Its second line.
+0 @N2@ SNOTE
+1 CONT Text that starts on the second line.
 0 TRLR

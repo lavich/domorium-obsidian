@@ -15,7 +15,7 @@ beforeEach(() => {
 const lines = (count: number): string => Array.from({ length: count }, (_, at) => `line ${at + 1}`).join("\n");
 const draw = (text: string, open = false) => {
   const toggled = vi.fn<(open: boolean) => void>();
-  renderFoldedText(box, text, { line: 12, open, toggled });
+  renderFoldedText(box, text, { key: "note:2", open, toggled });
   return { toggled, button: box.querySelector<HTMLButtonElement>("button"), body: box.querySelector(".gedcom-detail-text-body") };
 };
 
@@ -55,6 +55,6 @@ describe("a text folded where it is long", () => {
     const { button, body } = draw(lines(12), true);
 
     expect(body?.textContent).toBe(lines(12));
-    expect(button?.getAttribute("data-focus-key")).toBe("note:12");
+    expect(button?.getAttribute("data-focus-key")).toBe("note:2");
   });
 });

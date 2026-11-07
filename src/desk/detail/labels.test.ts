@@ -63,6 +63,6 @@ describe("the names of a type, a role, a status and a sex", () => {
     expect(childMark("birth")).toBeUndefined();
     expect(childMark("unstated")).toBeUndefined();
     setLanguage("ru");
-    expect(parentsHeading("foster")).toBe("Опекуны");
+    expect(parentsHeading("foster")).toBe("Патронатные родители");
   });
 });

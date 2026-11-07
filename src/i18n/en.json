@@ -197,7 +197,6 @@
   "desk.couple": "{one} ⚭ {other}",
   "desk.familyNoSpouses": "A family with no spouses recorded",
   "desk.familyPage": "Family card",
-  "desk.noFacts": "The record states no facts.",
   "desk.media": "Media",
   "desk.mediaPage": "Media card",
   "desk.notInVault": "Not in the vault",
@@ -501,7 +500,5 @@
   "record.less": "Show less",
   "record.void": "Names no record",
   "record.husbandAge": "Husband's age",
-  "record.wifeAge": "Wife's age",
-  "record.childrenStated": "Children the record states: {count}",
-  "record.parentsNotRecorded": "Parents not recorded"
+  "record.wifeAge": "Wife's age"
 }

@@ -127,6 +127,10 @@ function renderCitation(
   const record = index.record(citation.record);
   const line = record ? findLine(record, citation.range) : undefined;
   if (own && line) {
+    const inline = own.querySelector(".gedcom-desk-cite-inline");
+    if (inline && line.text !== undefined) {
+      inline.setText(line.text);
+    }
     const shown = line.children.filter((child) => CITATION_SHOWN.has(child.tag));
     own.setAttribute("data-line", [line, ...shown].map((one) => one.range.start.line).join(" "));
     const ctx: DetailContext = { index, host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) } };

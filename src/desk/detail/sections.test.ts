@@ -70,6 +70,7 @@ describe("the names", () => {
     renderNames(box, nameLines(record), ctx);
 
     expect(text(".gedcom-name-text")).toEqual(["Maria Curie", "Мария Кюри"]);
+    expect(text(".gedcom-name-translation-label")).toEqual(["Translation"]);
     expect(text(".gedcom-detail-value")).toContain("ru");
   });
 
@@ -131,7 +132,7 @@ describe("the related people", () => {
     setLanguage("ru");
     box.replaceChildren();
     renderRelated(box, relatedLines(old.record), old.ctx);
-    expect(text(".gedcom-related-role")).toEqual(["Крёстный"]);
+    expect(text(".gedcom-related-role")).toEqual(["Крёстный родитель"]);
   });
 
   it("shows the phrase of a role the file worded itself, and the lines of an association that no row knows", () => {

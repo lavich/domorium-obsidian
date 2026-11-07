@@ -92,6 +92,6 @@ describe("a shared note", () => {
   it("gives the text of a note whose first line is empty from its continuation", () => {
     const index = indexOf([...head("7.0"), "0 @N1@ SNOTE", "1 CONT second", "0 TRLR"]);
 
-    expect(index.record("@N1@")?.text).toBe("second");
+    expect(index.record("@N1@")?.text).toBe("\nsecond");
   });
 });

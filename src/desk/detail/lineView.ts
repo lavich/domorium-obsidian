@@ -19,6 +19,13 @@ export interface DetailContext {
   /** The ids of what the reader has opened on the card: folds and long notes. */
   open?: ReadonlySet<string>;
   folded?(id: string, open: boolean): void;
+  /** Counts the notes drawn so far on the card, so that one is named by its place among them and not by its line. */
+  notes?: { drawn: number; prefix?: string };
+}
+
+/** A context for a body drawn later, whose notes are numbered from its own start so that the order it is opened in does not matter. */
+export function scoped(ctx: DetailContext, name: string): DetailContext {
+  return { ...ctx, notes: { drawn: 0, prefix: `${name}.` } };
 }
 
 /** The lines of a list and of everything beneath them. */
@@ -70,10 +77,11 @@ function valueText(tag: string, text: string): string {
 
 /** A note's text, folded where it is long; what the reader opened stays through a redraw. */
 export function renderNoteText(parent: HTMLElement, text: string, line: number, ctx: DetailContext): void {
+  const key = `note:${ctx.notes ? `${ctx.notes.prefix ?? ""}${ctx.notes.drawn++}` : `L${line}`}`;
   renderFoldedText(parent, text, {
-    line,
-    open: ctx.open?.has(`note:${line}`) ?? false,
-    toggled: (open) => ctx.folded?.(`note:${line}`, open),
+    key,
+    open: ctx.open?.has(key) ?? false,
+    toggled: (open) => ctx.folded?.(key, open),
   });
 }
 
@@ -93,8 +101,10 @@ export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: Detail
     return;
   }
   const target = index.record(xref);
-  if (target && (target.tag === "SNOTE" || target.tag === "NOTE") && target.text !== undefined) {
-    renderNoteText(parent, target.text, line.range.start.line, ctx);
+  if (target && (target.tag === "SNOTE" || target.tag === "NOTE")) {
+    if (target.text !== undefined) {
+      renderNoteText(parent, target.text, line.range.start.line, ctx);
+    }
     if (target.children.length > 0) {
       renderLines(parent.createDiv({ cls: "gedcom-detail" }), target.children, ctx);
     }

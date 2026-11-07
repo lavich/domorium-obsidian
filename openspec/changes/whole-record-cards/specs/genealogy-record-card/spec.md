@@ -188,7 +188,7 @@ tag, each section left out where the record holds nothing for it, in this order:
 
 #### Scenario: The number of children
 - **WHEN** a family's record states `1 NCHI 3` while it lists two children
-- **THEN** the card says the record states three children, beside the two it lists
+- **THEN** the card shows a row named Number of children with `3`, beside the two it lists, and one such row for each `NCHI` the record states
 
 ### Requirement: The event card
 

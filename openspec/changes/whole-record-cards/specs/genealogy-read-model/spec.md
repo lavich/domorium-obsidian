@@ -30,7 +30,7 @@ record, and SHALL NOT be done for the records nobody asked for.
 
 #### Scenario: A note with an empty first line
 - **WHEN** a shared note's record line has no text and its first `CONT` carries it
-- **THEN** its text is that continuation
+- **THEN** its text is an empty line and then that continuation
 
 #### Scenario: A void pointer
 - **WHEN** a record has `1 ASSO @VOID@`

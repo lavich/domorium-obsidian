@@ -5,7 +5,7 @@ import { renderEventDetail } from "./eventDetail";
 import { eventTitle, type EventTarget } from "./eventRows";
 import { familyTitle, personName } from "./labels";
 import { lazyFold } from "./detail/lazyFold";
-import type { DetailContext } from "./detail/lineView";
+import { scoped, type DetailContext } from "./detail/lineView";
 import { eventLine, renderEventMedia, renderEventRows, splitEvent } from "./detail/eventDetails";
 import { renderNotes } from "./detail/notes";
 import { otherCount, renderOther } from "./detail/otherData";
@@ -34,6 +34,7 @@ export function renderEventPage(
   const ctx: DetailContext = {
     index,
     host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) },
+    notes: { drawn: 0 },
     ...(options.open === undefined ? {} : { open: options.open }),
     ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
@@ -50,7 +51,9 @@ export function renderEventPage(
   if (!renderEventDetail(when, { ...(event.date?.text ? { date: event.date.text } : {}), ...(place ? { place } : {}) }, host)) {
     when.remove();
   } else {
-    const dated = line?.children.filter((child) => child.tag === "DATE" || child.tag === "PLAC") ?? [];
+    const dated = [line?.children.find((child) => child.tag === "DATE"), line?.children.find((child) => child.tag === "PLAC")].flatMap((one) =>
+      one ? [one] : [],
+    );
     when.setAttribute("data-line", dated.map((one) => one.range.start.line).join(" "));
   }
   linkButton(heading, t("desk.showInSource"), () => host.showInSource(event.range));
@@ -79,7 +82,7 @@ export function renderEventPage(
           open: options.open?.has("other") ?? false,
           toggled: (open) => options.folded?.("other", open),
         },
-        (body) => renderOther(body, other, ctx),
+        (body) => renderOther(body, other, scoped(ctx, "other")),
       );
     }
   }

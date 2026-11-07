@@ -49,6 +49,14 @@
 1 FAMC @F1@
 2 PEDI birth
 2 STAT proven
+1 SOUR An inline source text
+2 CONC  that is continued
+2 CONT and goes on a new line
+1 OBJE
+2 FILE one.jpg
+3 FORM jpeg
+2 FILE two.jpg
+2 NOTE The second file is also stated.
 1 NOTE @N1@
 1 NOTE A 5.5.1 note with an at sign: me@@example.org
 2 CONC  and a continuation

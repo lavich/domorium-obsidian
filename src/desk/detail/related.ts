@@ -9,14 +9,14 @@ export const relatedLines = (record: RecordLine): RecordLine[] => record.childre
 
 const ROLE_TAGS: ReadonlySet<string> = new Set(["ROLE", "RELA", "PHRASE"]);
 
-function renderEntry(parent: HTMLElement, line: RecordLine, ctx: DetailContext): void {
+function renderEntry(parent: HTMLElement, line: RecordLine, ctx: DetailContext, key?: string): void {
   const entry = parent.createDiv({ cls: "gedcom-related" });
   entry.setAttribute("data-line", String(line.range.start.line));
   if (line.tag === "ALIA") {
     entry.createSpan({ cls: "gedcom-related-kind", text: tagLabel("ALIA") });
   }
   const who = entry.createSpan({ cls: "gedcom-related-who" });
-  renderPointer(who, line, ctx, line.pointer === undefined ? undefined : `assoc:${line.pointer}`);
+  renderPointer(who, line, ctx, key);
   for (const role of line.children.filter((child) => child.tag === "ROLE" || child.tag === "RELA")) {
     const phrase = role.children.find((child) => child.tag === "PHRASE")?.text;
     const word = entry.createSpan({
@@ -45,7 +45,13 @@ function renderEntry(parent: HTMLElement, line: RecordLine, ctx: DetailContext):
 export function renderRelated(parent: HTMLElement, lines: readonly RecordLine[], ctx: DetailContext): void {
   sectionHeading(parent, t("record.related"), lines.length);
   const list = parent.createDiv({ cls: "gedcom-related-list" });
+  const seen = new Map<string, number>();
   for (const line of lines) {
-    renderEntry(list, line, ctx);
+    const base = line.pointer === undefined ? undefined : `assoc:${line.pointer}`;
+    const again = base === undefined ? 0 : (seen.get(base) ?? 0);
+    if (base !== undefined) {
+      seen.set(base, again + 1);
+    }
+    renderEntry(list, line, ctx, base === undefined ? undefined : again === 0 ? base : `${base}#${again}`);
   }
 }

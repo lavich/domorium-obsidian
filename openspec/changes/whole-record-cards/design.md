@@ -201,3 +201,14 @@ Deviations from the design above, as built:
 - **A lazy fold needs the fold open to be seen**: the Timeline of a person is drawn only when opened, so a test
   or a spec that reads it first presses its heading.
 - **The plan was reviewed before the code, but not again after its fixes** (they were corrections the review named).
+- **Found in review and fixed.** Inline `SOUR` text with `CONC`/`CONT` showed only its first line; a media link the
+  gallery shows but that states more than one file, or a note or another child, now goes to Other data instead of being
+  taken as the gallery's; the lines beneath `PEDI` and `STAT`, beneath a link to a family the file does not declare and
+  beneath `FAMS @VOID@`, were not drawn; a family's `NCHI` is drawn as rows, each; `AGE` under `HUSB`/`WIFE` shows its own
+  lines; a second `DATE` or `PLAC` of an event, and a second `TYPE`, are rows; a shared note's empty first line is kept; a
+  fold's notes are numbered from the fold's own start so that the order folds are opened in does not rename them;
+  the `assoc:` key of two associations of one person differs; Facts is left out where there is none (no «0» above «no
+  facts»); the tile of a media record whose file is missing keeps its two links 20 pixels apart on a phone; the fold
+  heading's count does not wrap.
+- **Not changed, known.** `@@` is read as `@` wherever it stands, as 5.5.1 says; in 7.0 only a leading `@@` is an
+  escape, so `a@@b` in a 7.0 file shows as `a@b`.
