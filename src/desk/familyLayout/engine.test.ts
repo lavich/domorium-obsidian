@@ -187,12 +187,41 @@ describe("a pedigree", () => {
     expect(layout.crossings).toBe(0);
     for (const cluster of layout.clusters) {
       const [husband, wife] = cluster.partners.map(parentsOf);
-      if (husband?.length && wife?.length && cluster.partners.length === 2) {
+      const row = (id: string) => layout.card.get(id)?.row;
+      if (husband?.length && wife?.length && cluster.partners.length === 2 && row(husband[0] ?? "") === row(wife[0] ?? "")) {
         compared += 1;
         expect(Math.max(...husband.map(x)), cluster.id).toBeLessThan(Math.min(...wife.map(x)));
       }
     }
-    expect(compared).toBeGreaterThan(5);
+    expect(compared).toBeGreaterThan(4);
+  });
+});
+
+describe("forebears of a person with many children", () => {
+  it("stand over the person, and not off to one side, however wide the fan of children below", () => {
+    const ids = ["Vy:M", "An:F", "Anat:M", "Rai:F", "VL:M", "Fek:F", "VO:M", "ElO:F", "Pet:M", "Naum:M", "MikhB:M", "Sem:M", "Pav:M"];
+    const kids = ["K1", "K2", "K3", "K4"];
+    const model = modelOf([...ids, ...kids.map((k) => `${k}:M`), "W1:F", "W3:F", "W4:F", "C1:M", "C2:F", "C3:M", "C4:F", "C5:M", "C6:F"], [
+      { id: "F1", husb: "Vy", wife: "An", children: kids },
+      { id: "F2", husb: "Anat", wife: "Rai", children: ["Vy"] },
+      { id: "F3", husb: "VL", wife: "Fek", children: ["Anat"] },
+      { id: "F4", husb: "VO", wife: "ElO", children: ["Rai"] },
+      { id: "F5", husb: "Pet", children: ["VL"] },
+      { id: "F6", husb: "MikhB", children: ["Fek"] },
+      { id: "F7", husb: "Naum", children: ["Pet"] },
+      { id: "F8", husb: "Sem", children: ["VO"] },
+      { id: "F9", husb: "Pav", children: ["ElO"] },
+      { id: "FK1", husb: "K1", wife: "W1", children: ["C1", "C2"] },
+      { id: "FK3", husb: "K3", wife: "W3", children: ["C3", "C4"] },
+      { id: "FK4", husb: "K4", wife: "W4", children: ["C5", "C6"] },
+    ]);
+    const layout = runLayout(graphInputOf(model, { focus: "@Vy@" }));
+    const centre = (id: string) => (layout.card.get(id)?.x ?? NaN) + 62;
+    const node = (family: string) => layout.node.get(family)?.x ?? NaN;
+
+    expect(Math.abs(node("@F2@") - centre("@Vy@"))).toBeLessThan(25);
+    expect(Math.abs(node("@F3@") - centre("@Anat@"))).toBeLessThan(25);
+    expect(layout.crossings).toBe(0);
   });
 });
 

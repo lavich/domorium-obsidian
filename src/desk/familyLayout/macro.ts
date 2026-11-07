@@ -128,6 +128,27 @@ export function stackLayers(blocks: Block[], count: number): Block[][] {
   return layers;
 }
 
+/**
+ * How much more a block's links to what hangs below it pull than those to what
+ * stands above: a block is centred over its children, and forebears follow their
+ * child, so that a line of descent runs straight instead of leaning toward a
+ * far-off crowd of forebears.
+ */
+const BELOW_PULL = 64;
+
+/** Where a block would stand over its children, a little drawn to its parents. */
+function pull(block: Block): number {
+  let sum = 0;
+  let weight = 0;
+  for (const [links, by] of [[block.up, 1], [block.down, BELOW_PULL]] as const) {
+    for (const one of links) {
+      sum += by * (leftOf(one.to) + one.far - one.near + block.width / 2);
+      weight += by;
+    }
+  }
+  return sum / weight;
+}
+
 function wish(block: Block, links: BlockLink[]): number {
   let sum = 0;
   for (const one of links) {
@@ -195,8 +216,7 @@ export function initialPlacement(
  */
 export function wantsOf(g: Geometry, layer: Block[]): number[] {
   const want = layer.map((block) => {
-    const links = [...block.up, ...block.down];
-    return links.length > 0 ? wish(block, links) : NaN;
+    return block.up.length + block.down.length > 0 ? pull(block) : NaN;
   });
   const beside = (from: number, to: number): void => {
     const block = layer[to];

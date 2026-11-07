@@ -411,3 +411,10 @@ Deviations from the design above, as built:
 - **Rounded corners.** The routing is orthogonal as above; `polyline` draws it with
   a corner radius of 10, like the long lines of the layout before, so that only
   the S-shaped short lines are gone.
+- **Centred over the children.** The pull toward a block's anchors weighs the links
+  to what hangs below it 64 times a link to what stands above (`BELOW_PULL`): a
+  block is centred over its children and forebears follow their child, so a line of
+  descent runs straight. With every link weighing the same, a person with four
+  children and two forebear families was held half-way between them and the
+  forebears sat far to one side of the descent (seen in the demo vault). The
+  Curie file is now a few percent wider than before.

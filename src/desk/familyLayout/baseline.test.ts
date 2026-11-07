@@ -23,7 +23,7 @@ describe("against the layered layout it replaced", () => {
     expect(layout.rows).toBe(4);
     expect(layout.lines).toHaveLength(11);
     expect(layout.crossings).toBe(0);
-    expect(layout.width).toBeCloseTo(1215, 0);
+    expect(layout.width).toBeLessThan(1215 * 1.1);
   });
 
   for (const [name, count] of [["t300", 300], ["t600", 600], ["t2000", 2000]] as const) {
