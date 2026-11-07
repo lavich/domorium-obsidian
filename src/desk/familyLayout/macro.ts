@@ -307,9 +307,16 @@ function turnedSpouses(layers: Block[][], crossings: number): { found: number; t
   return { found, turned };
 }
 
+/** Turning couples pays only where a few lines cross; in a tangle it is work for nothing. */
+const FEW_CROSSINGS = 100;
+
 /** Once the order of the rows is settled and lines still cross, turns couples about where that removes crossings, and pulls the rows again. */
 export function turnSpouses(g: Geometry, layers: Block[][], options: LayoutOptions, budget: Budget, crossings: number): number {
-  const { found, turned } = turnedSpouses(layers, crossingsOf(layers));
+  const settled = crossingsOf(layers);
+  if (settled > FEW_CROSSINGS) {
+    return crossings;
+  }
+  const { found, turned } = turnedSpouses(layers, settled);
   if (turned) {
     pullTogether(g, layers, options, budget);
   }
