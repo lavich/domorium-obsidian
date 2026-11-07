@@ -193,7 +193,7 @@ test.describe("the graph of a file", () => {
     await page.mouse.wheel(0, 100);
     await expect.poll(() => zoom(page)).toBeLessThan(fitted);
 
-    for (let step = 0; step < 6; step += 1) {
+    for (let step = 0; step < 10 && (await zoom(page)) >= 0.35; step += 1) {
       await page.locator(".gedcom-fg-zoom-out").click();
     }
     await expect.poll(() => zoom(page)).toBeLessThan(0.35);
