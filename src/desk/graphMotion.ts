@@ -91,7 +91,7 @@ export function runMotion(motion: Motion, drawn: ReadonlyMap<Item, SVGElement>, 
     ghost(element);
   }
   let changed = motion.ghosts.length > 0;
-  for (const [item, element] of drawn) {
+  for (const item of drawn.keys()) {
     if (item.kind === "card") {
       const to = next.card.get(item.id);
       const from = motion.from.get(item.id);
