@@ -50,6 +50,10 @@ export class GraphInput {
       this.host.left();
     });
     el.addEventListener("wheel", (event) => this.wheeled(event), { passive: false });
+    for (const type of ["touchstart", "touchmove"] as const) {
+      // Obsidian opens a side panel on a swipe it sees; the graph pans on its own.
+      el.addEventListener(type, (event) => event.stopPropagation(), { passive: true });
+    }
   }
 
   private local(event: { clientX: number; clientY: number }): Point {
