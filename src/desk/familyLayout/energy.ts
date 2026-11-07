@@ -39,19 +39,40 @@ export function swapDelta(one: Block, other: Block): number {
   return then - now;
 }
 
+/** The crossings of lines between row `at` and the row below it. */
+export function crossingsBelow(layers: Block[][], at: number): number {
+  const segments: [number, number][] = [];
+  for (const block of layers[at] ?? []) {
+    const left = leftOf(block);
+    for (const link of block.down) {
+      segments.push([left + link.near, leftOf(link.to) + link.far]);
+    }
+  }
+  return countCrossings(segments);
+}
+
 export function crossingsOf(layers: Block[][]): number {
   let found = 0;
   for (let at = 0; at < layers.length - 1; at += 1) {
-    const segments: [number, number][] = [];
-    for (const block of layers[at] ?? []) {
-      const left = leftOf(block);
-      for (const link of block.down) {
-        segments.push([left + link.near, leftOf(link.to) + link.far]);
-      }
-    }
-    found += countCrossings(segments);
+    found += crossingsBelow(layers, at);
   }
   return found;
+}
+
+/** A chain of spouses turned about, its lines kept on the same people. */
+export function flipBlock(block: Block): void {
+  block.members.reverse();
+  const done = new Set<BlockLink>();
+  for (const [links, side] of [[block.up, "down"], [block.down, "up"]] as const) {
+    for (const link of links) {
+      const back = link.to[side].find((other) => other.to === block && other.far === link.near && other.near === link.far && !done.has(other));
+      if (back) {
+        done.add(back);
+        back.far = block.width - back.far;
+      }
+      link.near = block.width - link.near;
+    }
+  }
 }
 
 /** The squared offset of a block's anchors from those it is joined to, beyond a dead zone of one family. */

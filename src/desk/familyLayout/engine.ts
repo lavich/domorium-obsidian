@@ -3,7 +3,7 @@ import { indexCards, leftOf, mapMarriages, squeeze, type Block } from "./blocks"
 import { buildClusters } from "./clusters";
 import { orient } from "./direction";
 import { energyOf, familiesOf, crossingsOf } from "./energy";
-import { budgetOf, initialPlacement, linkFamilies, optimise, stackLayers, wantsOf } from "./macro";
+import { budgetOf, initialPlacement, linkFamilies, optimise, stackLayers, turnSpouses, wantsOf } from "./macro";
 import { measureBlocks, placeCards, resolveCollisions, staggerRow } from "./micro";
 import { analyseRoot } from "./rootAnalysis";
 import { squareOff, joinSpouses, routeLines } from "./routing";
@@ -124,6 +124,9 @@ export function runLayout(
       });
       optimised = { ...optimised, iterations: Math.max(optimised.iterations, second.iterations) };
     }
+  }
+  if (!pinned && optimised.crossings > 0) {
+    optimised = { ...optimised, crossings: turnSpouses(g, layers, options, budget, optimised.crossings) };
   }
   if (!pinned) {
     squeeze(blocks, g.most);
