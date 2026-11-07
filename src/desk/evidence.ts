@@ -1,7 +1,8 @@
 import type { Range } from "@domorium/language-service";
 
-import type { Citation, GenealogyIndex, PersonEvent } from "../genealogy";
+import type { Citation, GenealogyIndex, PersonEvent, RecordLine } from "../genealogy";
 import { t, type MessageKey } from "../i18n";
+import { renderRest, type DetailContext } from "./detail/lineView";
 import { linkButton } from "./dom";
 import { sourceTitle } from "./labels";
 import type { NoteHit } from "./noteLinks";
@@ -52,10 +53,10 @@ export function renderEvidenceSection(
     return;
   }
 
-  body.createEl("h3", {
-    cls: "gedcom-desk-subsection",
-    text: `${t("evidence.recordSources")} · ${ofRecord.length}`,
-  });
+  const sources = body.createEl("h3", { cls: "gedcom-desk-subsection", text: t("evidence.recordSources") });
+  if (ofRecord.length > 0) {
+    sources.setAttribute("data-count", String(ofRecord.length));
+  }
   if (ofRecord.length === 0) {
     body.createDiv({ cls: "gedcom-desk-none", text: t("evidence.recordEmpty") });
   }
@@ -74,10 +75,13 @@ function renderNotes(
   if (notes === undefined) {
     return;
   }
-  parent.createEl(heading, {
+  const title = parent.createEl(heading, {
     cls: heading === "h2" ? "gedcom-desk-section" : "gedcom-desk-subsection",
-    text: notes === null ? t("evidence.notes") : `${t("evidence.notes")} · ${notes.length}`,
+    text: t("evidence.notes"),
   });
+  if (notes !== null && notes.length > 0) {
+    title.setAttribute("data-count", String(notes.length));
+  }
   if (notes?.length === 0) {
     parent.createDiv({ cls: "gedcom-desk-none", text: t("evidence.notesNone") });
   }
@@ -95,7 +99,48 @@ function renderNotes(
   }
 }
 
+const CITATION_SHOWN: ReadonlySet<string> = new Set(["PAGE", "QUAY"]);
+
+function findLine(line: RecordLine, range: Citation["range"]): RecordLine | undefined {
+  if (line.range.start.line === range.start.line && line.range.start.character === range.start.character) {
+    return line;
+  }
+  for (const child of line.children) {
+    const found = findLine(child, range);
+    if (found) {
+      return found;
+    }
+  }
+  return undefined;
+}
+
+/** A citation as the title of its source, its page and its quality, then every other line it states. */
 function renderCitation(
+  parent: HTMLElement,
+  citation: Citation,
+  index: GenealogyIndex,
+  host: EvidenceHost,
+): void {
+  const before = parent.childElementCount;
+  drawCitation(parent, citation, index, host);
+  const own = parent.children[before];
+  const record = index.record(citation.record);
+  const line = record ? findLine(record, citation.range) : undefined;
+  if (own && line) {
+    const inline = own.querySelector(".gedcom-desk-cite-inline");
+    if (inline && line.text !== undefined) {
+      inline.setText(line.text);
+    }
+    const shown = line.children.filter((child) => CITATION_SHOWN.has(child.tag));
+    own.setAttribute("data-line", [line, ...shown].map((one) => one.range.start.line).join(" "));
+    const ctx: DetailContext = { index, host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) } };
+    if (line.children.some((child) => !CITATION_SHOWN.has(child.tag))) {
+      renderRest(parent.createDiv({ cls: ["gedcom-detail", "gedcom-cite-lines"] }), line, CITATION_SHOWN, ctx);
+    }
+  }
+}
+
+function drawCitation(
   parent: HTMLElement,
   citation: Citation,
   index: GenealogyIndex,

@@ -196,7 +196,7 @@ function drawRecord(
   if (person) {
     renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media), ...folds }, host);
   } else if (family) {
-    renderFamilyPage(body, family, index, { selected: fact, media: tab.mediaItems(family.media) }, host);
+    renderFamilyPage(body, family, index, { selected: fact, media: tab.mediaItems(family.media), ...folds }, host);
   } else if (source) {
     renderSourcePage(body, source, index, host, tab.mediaItems(source.media));
   } else if (media) {
@@ -212,7 +212,7 @@ function drawRecord(
     renderPlacePage(body, place, index, host);
     return;
   } else if (event) {
-    renderEventPage(body, event, index, host);
+    renderEventPage(body, event, index, host, folds);
   }
   renderEvidenceSection(
     body,

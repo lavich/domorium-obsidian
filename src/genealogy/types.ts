@@ -6,6 +6,7 @@ import type {
 } from "@domorium/language-service";
 
 import type { DateReading } from "./dates";
+import type { RecordLine } from "./recordLines";
 
 export type IndexSource = Pick<GedcomLanguageService, "getDocumentSymbols" | "readDate">;
 
@@ -208,6 +209,8 @@ export interface GenealogyIndex {
   family(xref: string): Family | undefined;
   source(xref: string): Source | undefined;
   media(xref: string): MediaRecord | undefined;
+  /** The lines of any record that has an identifier, whole, converted on request; none for one the document does not declare. */
+  record(xref: string): RecordLine | undefined;
   citesBy(xref: string): Citation[];
   citedBy(xref: string): Citation[];
 }

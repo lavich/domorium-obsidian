@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
@@ -44,10 +45,10 @@ for (const size of SIZES) {
       await mountDesk(page, { width: size.width, phone: size.phone });
     });
 
-    test("runs Facts, Other names, Family, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
+    test("runs Names, Events, Details, Family, Notes, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
       await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-        "Facts", "Other names", "Family", "Media", "Timeline", "Evidence",
+        "Names", "Events", "Details", "Family", "Notes", "Media", "Timeline", "Evidence",
       ]);
       const tops = await page
         .locator(".gedcom-card-body h2.gedcom-desk-section")
@@ -57,8 +58,10 @@ for (const size of SIZES) {
       expect(await overflowsSideways(page)).toBe(false);
     });
 
-    test("lists her four facts and the kin she has", async ({ page }) => {
+    test("lists her events and details and the kin she has", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-fact")).toHaveCount(4);
+      await expect(page.locator(".gedcom-desk-fact.is-event")).toHaveCount(3);
+      await expect(page.locator(".gedcom-desk-fact.is-detail")).toHaveCount(1);
       await expect(page.locator(".gedcom-desk-kin-label")).toHaveText(["Parents", "Siblings", "Husband", "Children"]);
       const inside = await page.evaluate(() => {
         const body = document.querySelector(".gedcom-card-body")?.getBoundingClientRect();
@@ -121,6 +124,7 @@ for (const size of SIZES) {
     });
 
     test("opens the card of an event from the timeline", async ({ page }) => {
+      await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
       await page.locator(".gedcom-desk-moment-what", { hasText: "Marriage with Pierre Curie" }).evaluate((entry) => (entry as HTMLElement).click());
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
@@ -353,7 +357,7 @@ test.describe("the controls of a card", () => {
     await page.mouse.up();
   });
 
-  test("are muted, and the line about facts without a source is muted, not orange", async ({ page }) => {
+  test("are muted, and a source is a quiet dot, not an orange mark", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page);
     const colour = (selector: string, property: "color" | "backgroundColor") =>
@@ -361,9 +365,8 @@ test.describe("the controls of a card", () => {
     const muted = await colour(".gedcom-desk-subtitle", "color");
 
     expect(await colour("h2.gedcom-desk-section", "color")).toBe(muted);
-    expect(await colour(".gedcom-desk-unsourced", "color")).toBe(muted);
-    expect(await colour(".gedcom-desk-unsourced", "backgroundColor")).toBe("rgba(0, 0, 0, 0)");
-    await expect(page.locator(".gedcom-desk-unsourced + .gedcom-desk-facts")).toHaveCount(1);
+    await expect(page.locator(".gedcom-desk-unsourced")).toHaveCount(0);
+    expect(await colour(".gedcom-desk-fact-date", "color")).toBe(muted);
   });
 });
 
@@ -372,8 +375,19 @@ test.describe("the controls of a card on a phone", () => {
 
   test("can be hit over a height of at least 32 pixels", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
-    for (const record of ["@I1@", "@F3@", "@S3@", "place:warsaw, congress poland", "event:@I1@:BIRT:0"]) {
-      await mountDesk(page, { record, phone: true });
+    const rich = readFileSync("demo-vault/rich-record.ged", "utf8");
+    const cases: [string, string | undefined][] = [
+      ["@I1@", undefined], ["@F3@", undefined], ["@S3@", undefined], ["place:warsaw, congress poland", undefined],
+      ["event:@I1@:BIRT:0", undefined], ["@I1@", rich], ["@F3@", rich], ["event:@I1@:BIRT:0", rich], ["event:@F3@:MARR:0", rich],
+    ];
+    for (const [record, doc] of cases) {
+      await mountDesk(page, { record, phone: true, ...(doc === undefined ? {} : { doc }) });
+      for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
+        await button.click();
+      }
+      for (const button of await page.locator(".gedcom-detail-more").all()) {
+        await button.click();
+      }
       const misses = await page.evaluate(() => {
         const missed: string[] = [];
         const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
@@ -396,7 +410,67 @@ test.describe("the controls of a card on a phone", () => {
         }
         return missed;
       });
-      expect(misses, record).toEqual([]);
+      expect(misses, `${record}${doc === undefined ? "" : " (rich)"}`).toEqual([]);
     }
   });
+});
+
+test.describe("the card of a record that states everything", () => {
+  const rich = () => readFileSync("demo-vault/rich-record.ged", "utf8");
+  for (const size of SIZES) {
+    test.describe(size.name, () => {
+      test.beforeEach(async ({ page }) => {
+        await page.setViewportSize(size.viewport);
+        await mountDesk(page, { doc: rich(), record: "@I1@", width: size.width, phone: size.phone });
+      });
+
+      test("runs its sections in order, ends with Evidence, folds the three it folds, and does not scroll sideways", async ({ page }) => {
+        await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
+          "Names", "Events", "Details", "Family", "Notes", "Related people", "Media", "Timeline",
+          "Identifiers and record information", "Other data", "Evidence",
+        ]);
+        await expect(page.locator(".gedcom-desk-fold-button")).toHaveCount(3);
+        await expect(page.locator(".gedcom-desk-fold-body[hidden]")).toHaveCount(3);
+        expect(await overflowsSideways(page)).toBe(false);
+      });
+
+      test("shows every name with its type and the parts of it", async ({ page }) => {
+        await expect(page.locator(".gedcom-name-text")).toHaveText(["Maria Skłodowska", "Мария Склодовская", "Marie Curie"]);
+        await expect(page.locator(".gedcom-name-type")).toHaveText(["Birth", "Married"]);
+        await expect(page.locator(".gedcom-names .gedcom-detail-label").first()).toHaveText("Name");
+        await expect(page.locator(".gedcom-names .gedcom-detail-label", { hasText: "Given names" })).toBeVisible();
+      });
+
+      test("folds a long note and shows the rest on a press, and keeps what it shows inside the card", async ({ page }) => {
+        const more = page.locator(".gedcom-detail-more");
+        await expect(more).toHaveText("Show more");
+        await expect(page.getByText("Line 12 of a long note.")).toBeHidden();
+        await more.click();
+        await expect(page.getByText("Line 12 of a long note.")).toBeVisible();
+        await expect(more).toHaveText("Show less");
+        expect(await overflowsSideways(page)).toBe(false);
+        if (size.phone) {
+          expect((await more.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+        }
+      });
+
+      test("opens the folded sections and shows the custom line nested, without scrolling sideways", async ({ page }) => {
+        for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
+          await button.click();
+        }
+        await expect(page.locator(".gedcom-detail-label", { hasText: "_MILITARY" })).toBeVisible();
+        await expect(page.locator(".gedcom-detail-label", { hasText: "_SINCE" })).toBeVisible();
+        expect(await overflowsSideways(page)).toBe(false);
+      });
+
+      test("shows the age, the cause and the coordinates on the card of the birth", async ({ page }) => {
+        await page.locator(".gedcom-desk-fact-name", { hasText: "Birth" }).first().click();
+
+        await expect(page.locator(".gedcom-detail-label", { hasText: "Cause" })).toBeVisible();
+        await expect(page.locator(".gedcom-detail-label", { hasText: "Latitude" })).toBeVisible();
+        await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
+        expect(await overflowsSideways(page)).toBe(false);
+      });
+    });
+  }
 });

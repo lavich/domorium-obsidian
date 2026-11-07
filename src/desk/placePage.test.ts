@@ -45,9 +45,9 @@ describe("the card of a place", () => {
     const row = marieRow();
 
     expect(row?.querySelector(".gedcom-desk-fact-name")?.textContent).toBe("Birth");
-    expect(row?.querySelector(".gedcom-desk-fact-value")?.textContent).toContain("7 NOV 1867");
+    expect(row?.querySelector(".gedcom-desk-fact-date")?.textContent).toBe("7 NOV 1867");
     expect(row?.querySelector(".gedcom-desk-fact-value .gedcom-desk-link")?.textContent).toBe("Marie Skłodowska-Curie");
-    expect(row?.querySelector(".gedcom-desk-chip")).toBeNull();
+    expect(row?.querySelector(".gedcom-desk-source")).toBeNull();
     expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
   });
 

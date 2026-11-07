@@ -389,7 +389,158 @@ button.gedcom-card-nav:disabled {
   color: var(--text-muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin: var(--size-4-6) 0 var(--size-2-3);
+  margin: var(--size-4-4) 0 var(--size-2-2);
+}
+
+h2.gedcom-desk-section[data-count]::after,
+h3.gedcom-desk-subsection[data-count]::after {
+  content: " " attr(data-count);
+  font-weight: normal;
+  letter-spacing: 0;
+}
+
+.gedcom-detail {
+  display: grid;
+  grid-template-columns: minmax(70px, 130px) 1fr;
+  gap: 0 var(--size-4-3);
+  min-width: 0;
+}
+
+.gedcom-detail-label {
+  color: var(--text-muted);
+  padding: var(--size-2-1) 0;
+}
+
+.gedcom-detail-value {
+  min-width: 0;
+  padding: var(--size-2-1) 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.gedcom-detail-value > .gedcom-detail {
+  white-space: normal;
+}
+
+.gedcom-detail .gedcom-detail {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin-top: var(--size-2-2);
+  padding-inline-start: var(--size-4-2);
+  border-inline-start: 2px solid var(--background-modifier-border);
+}
+
+.gedcom-detail .gedcom-detail .gedcom-detail-label {
+  padding: 0;
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-detail .gedcom-detail .gedcom-detail-value {
+  padding: 0 0 var(--size-2-1);
+}
+
+.gedcom-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2-2) var(--size-4-2);
+}
+
+.gedcom-related > .gedcom-detail {
+  flex-basis: 100%;
+}
+
+.gedcom-name {
+  margin-bottom: var(--size-4-2);
+}
+
+.gedcom-name-translation-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-name-translation {
+  margin-top: var(--size-2-3);
+  margin-inline-start: var(--size-4-4);
+}
+
+.gedcom-related-kind,
+.gedcom-related-role,
+.gedcom-related-phrase {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-note + .gedcom-note {
+  margin-top: var(--size-4-3);
+  padding-top: var(--size-4-3);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-related + .gedcom-related {
+  margin-top: var(--size-2-3);
+}
+
+.gedcom-desk-kin-child {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.is-mobile button.gedcom-detail-more {
+  min-height: 44px;
+}
+
+.gedcom-field {
+  display: grid;
+  min-width: 0;
+  margin-inline: calc(-1 * var(--size-4-1));
+}
+
+.gedcom-field::after {
+  content: attr(data-value) " ";
+  grid-area: 1 / 1;
+  visibility: hidden;
+  padding: 0 var(--size-4-1);
+  border: 1px solid transparent;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  line-height: inherit;
+}
+
+textarea.gedcom-field-input {
+  grid-area: 1 / 1;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  padding: 0 var(--size-4-1);
+  border: 1px solid transparent;
+  border-radius: var(--radius-s);
+  background: transparent;
+  box-shadow: none;
+  resize: none;
+  overflow: hidden;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+textarea.gedcom-field-input:hover {
+  border-color: var(--background-modifier-border);
+}
+
+textarea.gedcom-field-input:focus,
+textarea.gedcom-field-input:focus-visible {
+  border-color: var(--background-modifier-border-focus);
+  box-shadow: 0 0 0 1px var(--background-modifier-border-focus);
+  outline: none;
 }
 
 button.gedcom-desk-link {
@@ -416,33 +567,29 @@ button.gedcom-desk-link:hover {
 }
 
 .gedcom-desk-facts {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  display: flex;
+  flex-direction: column;
 }
 
 .gedcom-desk-fact {
   display: grid;
-  grid-template-columns: 130px 1fr auto;
-  gap: var(--size-4-3);
-  align-items: center;
-  width: 100%;
+  gap: 0 var(--size-4-3);
+  align-items: baseline;
   box-sizing: border-box;
-  padding: var(--size-4-2) var(--size-4-3);
-  border-top: 1px solid var(--background-modifier-border);
+  margin-inline: calc(-1 * var(--size-4-2));
+  padding: var(--size-2-1) var(--size-4-2);
+  border-radius: var(--radius-s);
   text-align: start;
   color: var(--text-normal);
   cursor: pointer;
 }
 
-.gedcom-desk-fact:first-child {
-  border-top: 0;
-  border-start-start-radius: var(--radius-m);
-  border-start-end-radius: var(--radius-m);
+.gedcom-desk-fact.is-event {
+  grid-template-columns: minmax(70px, 96px) 1fr;
 }
 
-.gedcom-desk-fact:last-child {
-  border-end-start-radius: var(--radius-m);
-  border-end-end-radius: var(--radius-m);
+.gedcom-desk-fact.is-detail {
+  grid-template-columns: minmax(70px, 130px) 1fr;
 }
 
 .gedcom-desk-fact.is-inert {
@@ -451,6 +598,32 @@ button.gedcom-desk-link:hover {
 
 .gedcom-desk-fact:not(.is-inert):hover {
   background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-fact-date {
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-fact-date.is-empty {
+  color: var(--text-faint);
+}
+
+.gedcom-desk-fact-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-2-3);
+}
+
+.gedcom-desk-fact-main {
+  min-width: 0;
+}
+
+.gedcom-desk-fact.is-detail .gedcom-desk-fact-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--size-2-3);
 }
 
 button.gedcom-desk-fact-name {
@@ -463,8 +636,17 @@ button.gedcom-desk-fact-name {
   text-align: start;
   white-space: normal;
   font: inherit;
-  color: var(--text-muted);
+  color: var(--text-normal);
   cursor: pointer;
+}
+
+.gedcom-desk-fact.is-detail button.gedcom-desk-fact-name,
+button.gedcom-desk-fact-name:disabled {
+  color: var(--text-muted);
+}
+
+button.gedcom-desk-fact-name:disabled {
+  cursor: default;
 }
 
 .gedcom-desk-fact-value {
@@ -480,37 +662,40 @@ button.gedcom-desk-fact-name {
   color: var(--text-muted);
 }
 
-.gedcom-desk-chip {
-  font-size: var(--font-ui-smaller);
-  padding: 2px var(--size-2-3);
-  border-radius: var(--radius-l);
-  white-space: nowrap;
-}
-
-.gedcom-desk-chip.has-source {
+.gedcom-desk-fact-where {
+  flex-basis: 100%;
   color: var(--text-muted);
-  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+  overflow-wrap: anywhere;
 }
 
-.gedcom-desk-unsourced {
-  margin-bottom: var(--size-2-3);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
+.gedcom-desk-source {
+  flex: none;
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
 }
 
-.gedcom-desk-name {
-  padding: var(--size-2-2) 0;
+.gedcom-desk-union-events {
+  margin-top: var(--size-2-1);
 }
+
 
 .gedcom-desk-family {
   display: grid;
   grid-template-columns: 130px 1fr;
-  gap: var(--size-2-2) var(--size-4-3);
+  gap: var(--size-2-1) var(--size-4-3);
 }
 
 .gedcom-desk-kin-label {
   color: var(--text-muted);
-  padding: var(--size-2-3) 0;
+  padding: var(--size-2-1) 0;
+}
+
+.gedcom-desk-kin-label:not(:first-child) {
+  margin-top: var(--size-2-3);
 }
 
 .gedcom-desk-kin {
@@ -526,7 +711,7 @@ button.gedcom-desk-person {
   align-items: baseline;
   gap: var(--size-2-3);
   height: auto;
-  padding: var(--size-2-3) var(--size-4-2);
+  padding: var(--size-2-1) var(--size-4-2);
   margin: 0 calc(-1 * var(--size-4-2));
   background: none;
   border: 0;
@@ -582,15 +767,6 @@ button.gedcom-desk-person:hover {
 }
 
 @container gedcom-card (max-width: 560px) {
-  .gedcom-desk-fact {
-    grid-template-columns: 1fr auto;
-  }
-
-  .gedcom-desk-fact-name {
-    grid-column: 1 / -1;
-    font-size: var(--font-ui-smaller);
-  }
-
   .gedcom-desk-family {
     grid-template-columns: 1fr;
   }
@@ -619,7 +795,7 @@ button.gedcom-desk-person:hover {
 }
 
 h2.gedcom-desk-fold-heading {
-  margin: var(--size-4-6) 0 var(--size-2-3);
+  margin: var(--size-4-4) 0 var(--size-2-2);
 }
 
 button.gedcom-desk-fold-button {
@@ -657,6 +833,7 @@ button.gedcom-desk-fold-button[aria-expanded="true"]::before {
 
 button.gedcom-desk-fold-button::after {
   content: attr(data-count);
+  white-space: nowrap;
   font-weight: normal;
   letter-spacing: 0;
 }
@@ -740,6 +917,18 @@ button.gedcom-card-nav:focus-visible {
 
 .is-mobile .gedcom-desk-fact {
   position: relative;
+  min-height: 44px;
+  align-items: center;
+}
+
+.is-mobile .gedcom-desk-fact-head,
+.is-mobile .gedcom-desk-fact-value,
+.is-mobile .gedcom-desk-fact-where {
+  padding-block: 12px;
+}
+
+.is-mobile .gedcom-desk-fact .gedcom-desk-link::after {
+  inset: -12px 0;
 }
 
 .is-mobile button.gedcom-desk-fact-name::after {
@@ -1267,6 +1456,10 @@ button.gedcom-desk-tile-face:disabled {
 
 .gedcom-desk-tile .gedcom-desk-actions {
   margin-top: var(--size-2-1);
+}
+
+.is-mobile .gedcom-desk-tile .gedcom-desk-actions {
+  gap: var(--size-4-5);
 }
 
 button.gedcom-desk-media-stage {
@@ -2384,4 +2577,12 @@ button.gedcom-fg-pop-open {
   .gedcom-ft-age {
     transition: none;
   }
+}
+
+.gedcom-desk-cite-inline {
+  white-space: pre-line;
+}
+
+.gedcom-desk-stated {
+  margin-top: var(--size-2-3);
 }

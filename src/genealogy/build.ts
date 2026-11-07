@@ -3,6 +3,7 @@ import type { DocumentSymbol } from "@domorium/language-service";
 import type { DateReading } from "./dates";
 import { collectCitations } from "./citations";
 import { eventsOf, NO_EVENTS } from "./events";
+import { recordLines, type RecordLine } from "./recordLines";
 import { collectMediaLinks, looksLikeAnImage, mediaOf, mediaRecordOf } from "./media";
 import { familyRowOf as readFamilyRow, readDatesOf, rowOf } from "./rows";
 import { repositoryRead, SOURCE_FIELD_TAGS, sourceRowOf as readSourceRow } from "./sources";
@@ -72,8 +73,13 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
   const byCiter = new Map<string, Citation[]>();
   const byCited = new Map<string, Citation[]>();
   const mediaLinks = new Map<string, MediaLink[]>();
+  const declared = new Map<string, DocumentSymbol>();
+  const converted = new Map<string, RecordLine>();
 
   for (const symbol of symbols) {
+    if (symbol.detail !== undefined && /^@[^@\s]+@$/u.test(symbol.detail)) {
+      declared.set(symbol.detail, symbol);
+    }
     if (symbol.name === "INDI" || symbol.name === "FAM") {
       readDatesOf(symbol, language, readings);
     }
@@ -353,6 +359,18 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
     media: (xref) => {
       const record = objects.get(xref);
       return record ? mediaRecordOf(xref, record, mediaLinks.get(xref) ?? []) : undefined;
+    },
+    record: (xref) => {
+      const symbol = declared.get(xref);
+      if (!symbol) {
+        return undefined;
+      }
+      let lines = converted.get(xref);
+      if (!lines) {
+        lines = recordLines(symbol);
+        converted.set(xref, lines);
+      }
+      return lines;
     },
     citesBy: (xref) => byCiter.get(xref) ?? [],
     citedBy: (xref) => byCited.get(xref) ?? [],

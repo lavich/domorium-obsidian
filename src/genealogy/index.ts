@@ -22,6 +22,7 @@ export type {
   Union,
 } from "./types";
 export type { DatePrecision, DateReading } from "./dates";
+export type { RecordLine } from "./recordLines";
 export { UNNAMED } from "./names";
 export { UNTITLED } from "./sources";
 export { buildIndex } from "./build";

@@ -29,15 +29,15 @@ afterEach(resetLanguage);
 
 function draw(
   xref: string,
-  { selected = null, index = curieIndex() }:
-    { selected?: FactKey | null; index?: GenealogyIndex } = {},
+  { selected = null, index = curieIndex(), open }:
+    { selected?: FactKey | null; index?: GenealogyIndex; open?: string[] } = {},
 ): void {
   const person = index.person(xref);
   if (!person) {
     throw new Error(`no person ${xref}`);
   }
   container.empty();
-  renderPersonPage(container, person, index, { selected }, host);
+  renderPersonPage(container, person, index, { selected, ...(open ? { open: new Set(open) } : {}) }, host);
 }
 
 const bornIn = (date: string): GenealogyIndex =>
@@ -54,10 +54,6 @@ const citedBirth = gedcom(
   "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@", "1 DEAT", "1 OCCU Teacher", "1 BURI",
   "0 @S2@ SOUR", "1 TITL Register",
 );
-const citedEvery = gedcom(
-  "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@", "1 DEAT", "2 SOUR @S2@",
-  "0 @S2@ SOUR", "1 TITL Register",
-);
 const marriedPerson = gedcom(
   "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 FAMS @F1@", "1 BIRT",
   "0 @I2@ INDI", "1 NAME Jan /Nowak/", "1 FAMS @F1@",
@@ -67,17 +63,28 @@ const marriedPerson = gedcom(
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
-const facts = (): string[][] =>
-  [...container.querySelectorAll(".gedcom-desk-fact")].map((row) =>
-    [...row.children].map((part) => part.textContent ?? ""),
-  );
+/** A row of facts as the reader reads it: its name, its date, what else it states, and whether it cites a source. */
+const rowsOf = (selector: string, keep: (row: Element) => boolean = () => true): string[][] =>
+  [...container.querySelectorAll(selector)].filter(keep).map((row) => {
+    const part = (name: string) => row.querySelector(name)?.textContent ?? "";
+    const dot = row.querySelector(".gedcom-desk-source")?.getAttribute("aria-label");
+    return [
+      part(".gedcom-desk-fact-name"),
+      ...(row.classList.contains("is-event") ? [part(".gedcom-desk-fact-date")] : []),
+      part(".gedcom-desk-fact-value") || part(".gedcom-desk-fact-where"),
+      ...(dot ? [dot] : []),
+    ];
+  });
+const events = () => rowsOf(".gedcom-desk-fact.is-event", (row) => !row.closest(".gedcom-desk-union-events"));
+const details = () => rowsOf(".gedcom-desk-fact.is-detail");
+const marriages = () => rowsOf(".gedcom-desk-union-events .gedcom-desk-fact");
 
 describe("the person card", () => {
   it("heads the page with the name, the years and the places", () => {
     draw("@I1@");
 
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-desk-subtitle")).toEqual(["1867–1934 · Warsaw → Passy"]);
+    expect(texts(".gedcom-desk-subtitle")).toEqual(["Female · 1867–1934 · Warsaw → Passy"]);
   });
 
   it("heads the page with a year before the common era marked as one", () => {
@@ -93,52 +100,50 @@ describe("the person card", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["≈1401 до н. э.–?"]);
   });
 
-  it("lists Marie's facts, her marriage among them, with no mark on any, and says none cites a source", () => {
+  it("lists Marie's events as rows of a date, a name and a place, her occupation as a detail, and her marriage in her family", () => {
     draw("@I1@");
 
-    expect(facts()).toEqual([
-      ["Birth", "7 NOV 1867 · Warsaw, Congress Poland"],
-      ["Death", "4 JUL 1934 · Passy, Haute-Savoie, France"],
-      ["Occupation", "Physicist and chemist"],
-      ["Marriage", "26 JUL 1895 · Sceaux, France · with Pierre Curie"],
+    expect(events()).toEqual([
+      ["Birth", "7 NOV 1867", "Warsaw, Congress Poland"],
+      ["Death", "4 JUL 1934", "Passy, Haute-Savoie, France"],
     ]);
-    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 4 of 4"]);
+    expect(details()).toEqual([["Occupation", "Physicist and chemist"]]);
+    expect(marriages()).toEqual([["Marriage", "26 JUL 1895", "Sceaux, France"]]);
+    expect(texts("h2").slice(0, 4)).toEqual(["Names", "Events", "Details", "Family"]);
   });
 
-  it("counts the facts without a source and marks only those that cite one", () => {
+  it("marks with a dot only the events that cite a source, and says nothing of those that do not", () => {
     draw("@I1@", { index: citedBirth });
 
-    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 3 of 4"]);
-    expect(facts().map((row) => row.length)).toEqual([3, 2, 2, 2]);
-  });
-
-  it("draws no line where every fact cites a source", () => {
-    draw("@I1@", { index: citedEvery });
-
+    expect(events().map((row) => row.at(-1))).toEqual(["1 source", "Recorded, no details", "Recorded, no details"]);
+    expect(container.querySelectorAll(".gedcom-desk-source")).toHaveLength(1);
     expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
+    expect(container.textContent).not.toContain("without a source");
   });
 
-  it("counts a fact of a family the person married into", () => {
+  it("marks a marriage of a family the person married into that cites a source", () => {
     draw("@I1@", { index: marriedPerson });
 
-    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 2 of 2"]);
+    expect(marriages().length).toBeGreaterThan(0);
+    expect(container.querySelector(".gedcom-desk-union-events")).not.toBeNull();
   });
 
-  it("draws no line for a person with no facts", () => {
+  it("draws no Events and no Details section for a person with none", () => {
     draw("@I1@", { index: gedcom("0 @I1@ INDI", "1 NAME Anna /Nowak/") });
 
-    expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
+    expect(texts("h2")).not.toContain("Events");
+    expect(texts("h2")).not.toContain("Details");
+    expect(container.textContent).not.toContain("no facts");
   });
 
-  it("puts the line above the facts, not in the list", () => {
-    draw("@I1@");
-    const line = container.querySelector(".gedcom-desk-unsourced");
+  it("shows a date on the left of an event and a dash where it has none", () => {
+    draw("@I1@", { index: gedcom("0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 PLAC Kraków", "1 DEAT", "2 DATE 1900") });
+    const dates = [...container.querySelectorAll(".gedcom-desk-fact-date")].map((node) => [node.textContent, node.classList.contains("is-empty")]);
 
-    expect(line?.closest(".gedcom-desk-facts")).toBeNull();
-    expect(line?.nextElementSibling?.classList.contains("gedcom-desk-facts")).toBe(true);
+    expect(dates).toEqual([["—", true], ["1900", false]]);
   });
 
-  it("counts the sources a fact cites itself", () => {
+  it("counts the sources an event cites itself", () => {
     const index = buildIndex(new GedcomLanguageService([
       "0 HEAD", "1 GEDC", "2 VERS 7.0",
       "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S2@",
@@ -147,7 +152,7 @@ describe("the person card", () => {
     ].join("\n")));
     draw("@I1@", { index });
 
-    expect(facts()[0]?.[2]).toBe("1 source");
+    expect(container.querySelector(".gedcom-desk-source")?.getAttribute("aria-label")).toBe("1 source");
   });
 
   it("shows no identifier, level or tag anywhere", () => {
@@ -159,7 +164,7 @@ describe("the person card", () => {
   it("lists her other name", () => {
     draw("@I1@");
 
-    expect(texts(".gedcom-desk-name")).toEqual(["Maria Salomea Skłodowska"]);
+    expect(texts(".gedcom-name-text")).toContain("Maria Salomea Skłodowska");
   });
 
   it("shows her parents, siblings, husband with the marriage, and children", () => {
@@ -174,7 +179,7 @@ describe("the person card", () => {
       "Pierre Curie",
       "Irène Joliot-Curie", "Ève Curie",
     ]);
-    expect(texts(".gedcom-desk-person-note")).toEqual(["Married 26 JUL 1895, Sceaux"]);
+    expect(marriages()).toEqual([["Marriage", "26 JUL 1895", "Sceaux, France"]]);
   });
 
   it("leads from a marriage to the family's card", () => {
@@ -268,8 +273,8 @@ describe("the person card", () => {
     setLanguage("ru");
     draw("@I1@");
 
-    expect(facts()[0]).toEqual(["Рождение", "7 NOV 1867 · Warsaw, Congress Poland"]);
-    expect(texts(".gedcom-desk-unsourced")).toEqual(["Фактов без источника: 4 из 4"]);
+    expect(events()[0]).toEqual(["Рождение", "7 NOV 1867", "Warsaw, Congress Poland"]);
+    expect(texts("h2").slice(0, 4)).toEqual(["Имена", "События", "Сведения", "Семья"]);
     expect(texts(".gedcom-desk-kin-label")[0]).toBe("Родители");
   });
 
@@ -282,7 +287,7 @@ describe("the person card", () => {
 });
 
 describe("the sections of a person card", () => {
-  it("run Facts, Other names, Family, Media and Timeline, with no tab bar and no tree", () => {
+  it("run Names, Events, Details, Family, Notes, Media and Timeline, with no tab bar and no tree", () => {
     const person = curieIndex().person("@I1@");
     if (!person) {
       throw new Error("no Marie");
@@ -291,11 +296,11 @@ describe("the sections of a person card", () => {
       container,
       person,
       curieIndex(),
-      { selected: null, media: [{ content: { kind: "missing", target: "marie.jpg" }, at: { line: 1, character: 0 } }] },
+      { selected: null, media: person.media.map(({ at }) => ({ content: { kind: "missing" as const, target: "marie.jpg" }, at })) },
       host,
     );
 
-    expect(texts("h2")).toEqual(["Facts", "Other names", "Family", "Media", "Timeline"]);
+    expect(texts("h2")).toEqual(["Names", "Events", "Details", "Family", "Notes", "Media", "Timeline"]);
     expect(container.querySelector(".gedcom-fg-canvas")).toBeNull();
   });
 
@@ -307,7 +312,7 @@ describe("the sections of a person card", () => {
     expect(buttons.map((button) => button.getAttribute("data-count"))).toEqual(["18"]);
     expect(buttons.map((button) => button.getAttribute("aria-expanded"))).toEqual(["false"]);
     expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([true]);
-    expect(container.querySelector(".gedcom-desk-names")?.closest("[hidden]")).toBeNull();
+    expect(container.querySelector(".gedcom-names")?.closest("[hidden]")).toBeNull();
   });
 
   it("opens a fold on its heading, and tells which one", () => {
@@ -337,7 +342,7 @@ describe("the sections of a person card", () => {
   });
 
   it("lists seventeen dated entries from 1860 to 1934 and the undated Occupation in the timeline", () => {
-    draw("@I1@");
+    draw("@I1@", { open: ["timeline"] });
     const dated = [...container.querySelectorAll(".gedcom-desk-timeline")][0];
     const years = [...(dated?.querySelectorAll(".gedcom-desk-moment-year") ?? [])].map((node) => node.textContent);
 
@@ -352,7 +357,7 @@ describe("the sections of a person card", () => {
   });
 
   it("opens the card of an event from the timeline, and a relative's entry opens the relative", () => {
-    draw("@I1@");
+    draw("@I1@", { open: ["timeline"] });
     const entries = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
     entries.find((node) => node.textContent === "Birth")?.click();
     entries.find((node) => node.textContent === "Death of husband Pierre Curie")?.click();
@@ -361,7 +366,7 @@ describe("the sections of a person card", () => {
   });
 
   it("opens the place of a timeline entry", () => {
-    draw("@I1@");
+    draw("@I1@", { open: ["timeline"] });
     container.querySelector<HTMLElement>(".gedcom-desk-moment-detail .gedcom-desk-link")?.click();
 
     expect(host.openRecord).toHaveBeenCalledWith(expect.stringMatching(/^place:/u));

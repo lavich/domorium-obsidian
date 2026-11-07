@@ -51,17 +51,20 @@ describe("the family page", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
-  it("lists the family's facts, with no mark on one that cites no source, and says so above them", () => {
+  it("lists the family's events as rows of a date, a name and a place, with no mark on one that cites no source", () => {
     draw("@F3@");
 
-    expect(texts(".gedcom-desk-fact")).toEqual(["Marriage26 JUL 1895 · Sceaux, France"]);
-    expect(texts(".gedcom-desk-unsourced")).toEqual(["Facts without a source: 1 of 1"]);
+    expect(texts(".gedcom-desk-fact-date")).toEqual(["26 JUL 1895"]);
+    expect(texts(".gedcom-desk-fact-name")).toEqual(["Marriage"]);
+    expect(texts(".gedcom-desk-fact-value")).toEqual(["Sceaux, France"]);
+    expect(container.querySelector(".gedcom-desk-source")).toBeNull();
+    expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
   });
 
-  it("has a Facts section and a Family section", () => {
+  it("has an Events section and a Family section", () => {
     draw("@F3@");
 
-    expect(texts("h2")).toEqual(["Facts", "Family"]);
+    expect(texts("h2")).toEqual(["Events", "Family"]);
   });
 
   it("shows the spouses by their roles and the children", () => {
