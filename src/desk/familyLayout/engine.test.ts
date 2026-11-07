@@ -225,6 +225,38 @@ describe("forebears of a person with many children", () => {
   });
 });
 
+describe("a branch whose children carry families of their own", () => {
+  it("hangs each family over its children and keeps the whole not far wider than its widest row", () => {
+    const people = ["Naum:M", "Petr:M", "Varv:F", "Ivan:M", "Vas:M", "Fek:F", "Mikh:M", "Mar:F", "Lub:F", "Vlad:M", "Klav:F", "Anat:M", "Rai:F", "Vy:M", "An:F", "Nad:F", "Novik:M", "NN:U", "Nik:M", "Nad2:F", "Al:M", "Tat:F", "K1:M", "K2:M", "K3:M", "W1:F", "W3:F", "C1:M", "C2:F", "C3:M", "Sem:M", "Pav:M", "VO:M", "ElO:F"];
+    const model = modelOf(people, [
+      { id: "A1", husb: "Naum", children: ["Petr", "Varv"] },
+      { id: "A2", husb: "Petr", children: ["Ivan", "Vas"] },
+      { id: "A3", husb: "Vas", wife: "Fek", children: ["Mar", "Lub", "Vlad", "Anat"] },
+      { id: "A3b", husb: "Mikh", children: ["Fek"] },
+      { id: "A4", husb: "Vlad", wife: "Klav", children: ["Nad", "Nik"] },
+      { id: "A5", husb: "Novik", wife: "Nad", children: ["NN"] },
+      { id: "A6", husb: "Nik", wife: "Nad2", children: ["Al", "Tat"] },
+      { id: "A7", husb: "Anat", wife: "Rai", children: ["Vy"] },
+      { id: "A7b", husb: "VO", wife: "ElO", children: ["Rai"] },
+      { id: "A7c", husb: "Sem", children: ["VO"] },
+      { id: "A7d", husb: "Pav", children: ["ElO"] },
+      { id: "A8", husb: "Vy", wife: "An", children: ["K1", "K2", "K3"] },
+      { id: "A9", husb: "K1", wife: "W1", children: ["C1", "C2"] },
+      { id: "A10", husb: "K3", wife: "W3", children: ["C3"] },
+    ]);
+    const layout = runLayout(graphInputOf(model, {}));
+    const centre = (id: string) => (layout.card.get(id)?.x ?? NaN) + 62;
+    const over = (family: string, children: string[]) =>
+      Math.abs((layout.node.get(family)?.x ?? NaN) - children.map(centre).reduce((sum, x) => sum + x, 0) / children.length);
+
+    expect(layout.crossings).toBe(0);
+    expect(over("@A4@", ["@Nad@", "@Nik@"])).toBeLessThan(80);
+    expect(over("@A6@", ["@Al@", "@Tat@"])).toBeLessThan(10);
+    const widest = Math.max(...[...new Set(layout.cards.map((card) => card.row))].map((row) => layout.cards.filter((card) => card.row === row).length));
+    expect(layout.width).toBeLessThan(widest * 172 * 1.25);
+  });
+});
+
 describe("the energy", () => {
   it("is no worse at the end than at the start in distance and in the separation of a family, on the large family", () => {
     const one = fixtures().find((fixture) => fixture.name === "a large extended family");

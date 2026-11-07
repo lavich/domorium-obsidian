@@ -1,7 +1,6 @@
 import { least } from "../fileTimeline";
 import {
   gapBetween,
-  keepGaps,
   leftOf,
   pack,
   type Block,
@@ -130,14 +129,14 @@ export function stackLayers(blocks: Block[], count: number): Block[][] {
 
 /**
  * How much more a block's links to what hangs below it pull than those to what
- * stands above: a block is centred over its children, and forebears follow their
+ * stands above (each row is solved exactly, so a moderate weight is enough): a block is centred over its children, and forebears follow their
  * child, so that a line of descent runs straight instead of leaning toward a
  * far-off crowd of forebears.
  */
-const BELOW_PULL = 64;
+const BELOW_PULL = 8;
 
-/** Where a block would stand over its children, a little drawn to its parents. */
-function pull(block: Block): number {
+/** Where a block would stand over its children, a little drawn to its parents, and how hard its links pull. */
+function pullOf(block: Block): { target: number; weight: number } {
   let sum = 0;
   let weight = 0;
   for (const [links, by] of [[block.up, 1], [block.down, BELOW_PULL]] as const) {
@@ -146,7 +145,7 @@ function pull(block: Block): number {
       weight += by;
     }
   }
-  return sum / weight;
+  return weight === 0 ? { target: block.cx, weight: 0.001 } : { target: sum / weight, weight };
 }
 
 function wish(block: Block, links: BlockLink[]): number {
@@ -216,7 +215,7 @@ export function initialPlacement(
  */
 export function wantsOf(g: Geometry, layer: Block[]): number[] {
   const want = layer.map((block) => {
-    return block.up.length + block.down.length > 0 ? pull(block) : NaN;
+    return block.up.length + block.down.length > 0 ? pullOf(block).target : NaN;
   });
   const beside = (from: number, to: number): void => {
     const block = layer[to];
@@ -374,6 +373,40 @@ export function optimise(
   return { crossingsAtStart, crossings: best, iterations: sweeps };
 }
 
+/**
+ * The positions of a row that stand nearest their targets, in the sense of the
+ * weighted squares, with every block at least its gap from the one before it: the
+ * weighted isotonic regression of the targets less the room the blocks need, found
+ * by pooling neighbours that break the order. Exact, so a row does not drift as
+ * repeated one-sided pushes would.
+ */
+export function solveRow(g: Geometry, layer: Block[], target: readonly number[], weight: readonly number[]): number[] {
+  const offset: number[] = [];
+  layer.forEach((block, at) => {
+    const before = layer[at - 1];
+    offset[at] = before ? (offset[at - 1] ?? 0) + before.width / 2 + gapBetween(g, before, block) + block.width / 2 : 0;
+  });
+  const pools: { sum: number; weight: number; count: number }[] = [];
+  layer.forEach((_, at) => {
+    const w = weight[at] ?? 1;
+    pools.push({ sum: w * ((target[at] ?? 0) - (offset[at] ?? 0)), weight: w, count: 1 });
+    for (let top = pools.length - 1; top > 0; top -= 1) {
+      const [low, high] = [pools[top - 1], pools[top]];
+      if (!low || !high || low.sum / low.weight <= high.sum / high.weight) {
+        break;
+      }
+      pools.splice(top - 1, 2, { sum: low.sum + high.sum, weight: low.weight + high.weight, count: low.count + high.count });
+    }
+  });
+  const placed: number[] = [];
+  for (const pool of pools) {
+    for (let count = 0; count < pool.count; count += 1) {
+      placed.push(pool.sum / pool.weight + (offset[placed.length] ?? 0));
+    }
+  }
+  return placed;
+}
+
 function pullTogether(g: Geometry, layers: Block[][], options: LayoutOptions, budget: Budget): void {
   const { late, charge } = budget;
   const mix = options.previous
@@ -382,46 +415,33 @@ function pullTogether(g: Geometry, layers: Block[][], options: LayoutOptions, bu
   const passes = Math.max(1, options.optimizationIterations - SWEEPS.most);
   for (let pass = 0; pass < passes && !late(SWEEPS.pulls); pass += 1) {
     const forward = pass % 2 === 0;
+    let moved = 0;
     for (let step = 0; step < layers.length; step += 1) {
       const layer = layers[forward ? step : layers.length - 1 - step] ?? [];
       if (layer.length === 0) {
         continue;
       }
       charge(layer.reduce((sum, block) => sum + 1 + block.up.length + block.down.length, 0));
-      const want = wantsOf(g, layer).map((value, at) => {
-        const block = layer[at];
+      const pulls = layer.map((block) => pullOf(block));
+      const target = pulls.map(({ target: at }, index) => {
+        const block = layer[index];
         if (!block) {
-          return value;
+          return at;
         }
         if (block.pinned) {
           return block.home;
         }
-        return mix > 0 ? (1 - mix) * value + mix * block.home : value;
+        return mix > 0 ? (1 - mix) * at + mix * block.home : at;
       });
-      const fromLeft: number[] = [];
-      const fromRight: number[] = [];
+      const weight = pulls.map(({ weight: by }, index) => (layer[index]?.pinned ? 1e9 : by));
+      const placed = solveRow(g, layer, target, weight);
       layer.forEach((block, at) => {
-        const before = layer[at - 1];
-        const own = want[at] ?? block.cx;
-        fromLeft[at] = before
-          ? Math.max(own, (fromLeft[at - 1] ?? 0) + before.width / 2 + gapBetween(g, before, block) + block.width / 2)
-          : own;
+        moved = Math.max(moved, Math.abs((placed[at] ?? block.cx) - block.cx));
+        block.cx = placed[at] ?? block.cx;
       });
-      for (let at = layer.length - 1; at >= 0; at -= 1) {
-        const block = layer[at];
-        const after = layer[at + 1];
-        if (!block) {
-          continue;
-        }
-        const own = want[at] ?? block.cx;
-        fromRight[at] = after
-          ? Math.min(own, (fromRight[at + 1] ?? 0) - after.width / 2 - gapBetween(g, block, after) - block.width / 2)
-          : own;
-      }
-      layer.forEach((block, at) => {
-        block.cx = ((fromLeft[at] ?? 0) + (fromRight[at] ?? 0)) / 2;
-      });
-      keepGaps(g, layer);
+    }
+    if (moved < 0.25) {
+      break;
     }
   }
 }

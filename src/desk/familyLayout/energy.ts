@@ -125,7 +125,7 @@ export function energyOf({ layers, families, weights, g, descents, bandStart }: 
       const before = layer[at - 1];
       if (before) {
         const room = before.cx + before.width / 2 + (before.lane || block.lane ? g.laneGap : 0) - leftOf(block);
-        overlap += Math.max(0, room) ** 2;
+        overlap += Math.max(0, room - 1e-6) ** 2;
       }
       displacement += (block.cx - block.home) ** 2;
     });
