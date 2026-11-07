@@ -4,7 +4,7 @@ import type { GenealogyIndex } from "../genealogy";
 import type { MessageKey } from "../i18n";
 import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON } from "../icon";
 import { DESK_MODES, readDeskMode, type DeskMode } from "../settingsData";
-import { BRANCH_STEPS, initialFocus, initialTimelineFocus } from "./fileTimeline";
+import { initialFocus, initialTimelineFocus } from "./fileTimeline";
 import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
 import { familyFactByKey } from "./familyPage";
@@ -144,11 +144,7 @@ export function openingMemory(
     return saved;
   }
   const focus = kind === "graph" ? initialFocus(index, around) : initialTimelineFocus(index, around);
-  const scope = {
-    ...(focus === undefined ? {} : { focus }),
-    up: BRANCH_STEPS.initial,
-    down: BRANCH_STEPS.initial,
-  };
+  const scope = focus === undefined ? {} : { focus };
   return kind === "graph" ? scope : { ...scope, zoom: TIMELINE_ZOOM.initial };
 }
 

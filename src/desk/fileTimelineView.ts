@@ -132,7 +132,6 @@ export class FileTimelineBoard {
     this.root = parent.createDiv({ cls: "gedcom-ft" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-ft",
-      setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (next) => this.setScope(next),
     });
 
@@ -297,12 +296,13 @@ export class FileTimelineBoard {
       }
       this.lit.push(element);
     };
-    for (const relative of model.related(xref)) {
+    const branch = model.branch(xref);
+    for (const relative of branch) {
       for (const element of this.byPerson.get(relative) ?? []) {
         light(element, relative === xref);
       }
     }
-    this.drawArrows(layout, model, xref);
+    this.drawArrows(layout, model, branch);
     if (this.year !== null) {
       this.drawCursor();
     }
@@ -616,7 +616,7 @@ export class FileTimelineBoard {
     if (sameScope(next, this.scope)) {
       return;
     }
-    const branchChanged = next.focus !== this.scope.focus || next.up !== this.scope.up || next.down !== this.scope.down;
+    const branchChanged = next.focus !== this.scope.focus;
     const person = next.focus ?? this.scope.focus;
     const centre = this.centreYear();
     this.highlight(null);
@@ -645,7 +645,7 @@ export class FileTimelineBoard {
       this.current = null;
     }
     const focus = this.scope.focus ? model.people.get(this.scope.focus) : undefined;
-    this.scopeBar.draw(this.scope, {
+    this.scopeBar.draw({
       total: layout.total,
       shown: layout.shown.length,
       focusName: focus && layout.branch ? personName(focus.row) : null,
@@ -678,18 +678,17 @@ export class FileTimelineBoard {
     this.find.refresh();
   }
 
-  private drawArrows(layout: Layout, model: FileTimeline, xref: string): void {
-    const person = model.people.get(xref);
-    if (!person) {
-      return;
-    }
+  private drawArrows(layout: Layout, model: FileTimeline, branch: ReadonlySet<string>): void {
+    const window = this.drawn;
+    const inView = (at: number, fromY: number, toY: number): boolean =>
+      at >= window.left && at <= window.right && Math.max(fromY, toY) >= window.top && Math.min(fromY, toY) <= window.bottom;
     const arrow = (from: string, to: string, at: number): void => {
-      const fromY = layout.y.get(from) ?? 0;
-      const toY = layout.y.get(to) ?? 0;
-      const down = toY > fromY;
-      if (toY === fromY) {
+      const fromY = layout.y.get(from);
+      const toY = layout.y.get(to);
+      if (fromY === undefined || toY === undefined || toY === fromY || !inView(at, fromY, toY)) {
         return;
       }
+      const down = toY > fromY;
       this.hover.append(
         svg(this.doc, "path", "gedcom-ft-kin", {
           d: `M${at} ${fromY + (down ? BAR / 2 : -BAR / 2)} V${toY + (down ? -BAR / 2 : BAR / 2)}`,
@@ -699,29 +698,27 @@ export class FileTimelineBoard {
         }),
       );
     };
-    const parents = person.parents.filter((parent) => layout.y.has(parent));
-    if (person.lifeline) {
-      const start = layout.x(person.lifeline.start);
+    for (const xref of branch) {
+      const person = model.people.get(xref);
+      const start = person?.lifeline ? layout.x(person.lifeline.start) : undefined;
+      if (!person || start === undefined) {
+        continue;
+      }
+      const parents = person.parents.filter((parent) => branch.has(parent) && layout.y.has(parent));
       parents.forEach((parent, at) => {
         arrow(parent, xref, start + (at - (parents.length - 1) / 2) * 4);
       });
     }
-    for (const child of person.children) {
-      const line = model.people.get(child)?.lifeline;
-      if (line && layout.y.has(child)) {
-        arrow(xref, child, layout.x(line.start));
-      }
-    }
     for (const family of model.families.values()) {
-      if (!family.spouses.includes(xref) || family.linkYear === undefined) {
+      if (family.linkYear === undefined || !family.spouses.every((spouse) => branch.has(spouse))) {
         continue;
       }
       const ends = family.spouses.filter((spouse) => layout.y.has(spouse));
       const [upper, lower] = ends.map((spouse) => layout.y.get(spouse) ?? 0).sort((a, b) => a - b);
-      if (ends.length < 2 || upper === undefined || lower === undefined || upper === lower) {
+      const at = layout.x(family.linkYear);
+      if (ends.length < 2 || upper === undefined || lower === undefined || upper === lower || !inView(at, upper, lower)) {
         continue;
       }
-      const at = layout.x(family.linkYear);
       const [top, bottom] = [upper + BAR / 2, lower - BAR / 2];
       this.hover.append(
         svg(this.doc, "line", "gedcom-ft-marriage", { x1: at, x2: at, y1: top, y2: bottom }),
@@ -765,7 +762,7 @@ export class FileTimelineBoard {
     const at = layout.x(year);
     this.cursor.append(svg(this.doc, "line", "gedcom-ft-cursor-line", { x1: at, x2: at, y1: 0, y2: layout.height }));
     const alive = model.alive(year, layout.shownSet);
-    const lit = this.highlighted === null ? null : model.related(this.highlighted);
+    const lit = this.highlighted === null ? null : model.branch(this.highlighted);
     for (const one of alive) {
       const cy = layout.y.get(one.xref);
       if (cy === undefined || one.age === undefined || cy < this.drawn.top || cy > this.drawn.bottom) {
@@ -1031,10 +1028,10 @@ interface Hold {
   row?: { xref: string; offset: number };
 }
 
-function scopeOf({ focus, up, down, zoom }: TimelineScope): TimelineScope {
-  return { ...(focus === undefined ? {} : { focus }), up, down, zoom };
+function scopeOf({ focus, zoom }: TimelineScope): TimelineScope {
+  return { ...(focus === undefined ? {} : { focus }), zoom };
 }
 
 function sameScope(a: TimelineScope, b: TimelineScope): boolean {
-  return a.focus === b.focus && a.up === b.up && a.down === b.down && a.zoom === b.zoom;
+  return a.focus === b.focus && a.zoom === b.zoom;
 }

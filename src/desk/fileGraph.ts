@@ -466,7 +466,7 @@ export function layoutFileGraph(
   clock: () => number = () => performance.now(),
 ): FileGraphLayout {
   const focus = scope.focus !== undefined && model.people.has(scope.focus) ? scope.focus : null;
-  const keep = focus === null ? null : model.branch(focus, scope.up, scope.down);
+  const keep = focus === null ? null : model.branch(focus);
   const shown = keep ? model.rows.filter((xref) => keep.has(xref)) : model.rows;
   return layoutGraph(
     {
@@ -997,7 +997,7 @@ const held = new WeakMap<FileTimeline, { key: string; layout: FileGraphLayout }[
 /** The last few layouts of a model, so going back and forth between a branch and the whole file costs nothing. */
 export function fileGraphOf(model: FileTimeline, scope: BranchScope): FileGraphLayout {
   const key =
-    scope.focus !== undefined && model.people.has(scope.focus) ? `${scope.focus}|${scope.up}|${scope.down}` : "";
+    scope.focus !== undefined && model.people.has(scope.focus) ? scope.focus : "";
   const list = held.get(model) ?? [];
   const found = list.find((one) => one.key === key);
   const layout = found?.layout ?? layoutFileGraph(model, scope);

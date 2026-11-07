@@ -12,7 +12,6 @@ export interface Item {
   top: number;
   right: number;
   bottom: number;
-  people: string[];
   make(far: boolean): SVGElement;
 }
 
@@ -27,10 +26,6 @@ export function buildItems(
     const [first] = node.spouses;
     nodesAfter.set(first, [...(nodesAfter.get(first) ?? []), node]);
   }
-  const near = new Map<string, string[]>();
-  for (const line of layout.lines) {
-    near.set(line.family, [...(near.get(line.family) ?? []), line.child]);
-  }
   const placed: Item[] = [];
   for (const card of layout.cards) {
     const shown = scene.card(card.id);
@@ -44,7 +39,6 @@ export function buildItems(
       top: card.y,
       right: card.x + CARD.width,
       bottom: card.y + card.height,
-      people: [card.id],
       make: (far) => makeCard({ placed: card, shown }, far),
     });
     for (const node of nodesAfter.get(card.id) ?? []) {
@@ -61,7 +55,6 @@ export function buildItems(
         top: least(ys) - 11,
         right: most(xs) + 11,
         bottom: most(ys) + 11,
-        people: [...node.spouses, ...(near.get(node.family) ?? [])],
         make: (far) => nodeShape(doc, node, family, far),
       });
     }
@@ -76,7 +69,6 @@ export function buildItems(
       top: least(ys),
       right: most(xs),
       bottom: most(ys),
-      people: [line.child, ...line.parents],
       make: () =>
         svg(doc, "path", "gedcom-fg-line", {
           d: curve(line.points),

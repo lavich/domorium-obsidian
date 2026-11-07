@@ -65,7 +65,6 @@ export class FileGraphBoard {
     this.root = parent.createDiv({ cls: "gedcom-fg" });
     this.scopeBar = new BranchScopeBar(this.root, {
       prefix: "gedcom-fg",
-      setIcon: (element, icon) => this.host.setIcon(element, icon),
       change: (next) => this.setScope(next),
     });
     this.canvas = new GraphCanvas(this.root, {
@@ -183,7 +182,7 @@ export class FileGraphBoard {
     }
     const layout = fileGraphOf(model, this.scope);
     const focus = layout.focus === null ? undefined : model.people.get(layout.focus);
-    this.scopeBar.draw(this.scope, {
+    this.scopeBar.draw({
       total: model.people.size,
       shown: layout.cards.length,
       focusName: focus ? personName(focus.row) : null,
@@ -240,11 +239,11 @@ function sceneOf(
         children: family.children.length,
       };
     },
-    related: (xref) => model.related(xref),
+    branch: (xref) => model.branch(xref),
     search: (xref) => search.get(xref) ?? "",
   };
 }
 
-function scopeOf({ focus, up, down }: BranchScope): BranchScope {
-  return { ...(focus === undefined ? {} : { focus }), up, down };
+function scopeOf({ focus }: BranchScope): BranchScope {
+  return focus === undefined ? {} : { focus };
 }

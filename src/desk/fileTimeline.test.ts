@@ -261,7 +261,7 @@ describe("the order of the rows", () => {
 describe("the branch of one person", () => {
   it("holds Irène's parents and grandparents, Frédéric and their two children", () => {
     const model = curie();
-    const branch = model.branch("@I12@", 2, 2);
+    const branch = model.branch("@I12@");
 
     expect(branch.size).toBe(10);
     expect([...branch].sort()).toEqual(
@@ -270,16 +270,35 @@ describe("the branch of one person", () => {
     expect(model.rows).toHaveLength(17);
   });
 
-  it("narrows and widens by generations, from none", () => {
-    const model = curie();
+  it("holds Marie's parents, her husband, her daughters, their spouses and their children", () => {
+    expect(curie().branch("@I1@").size).toBe(10);
+  });
 
-    expect([...model.branch("@I12@", 0, 0)].sort()).toEqual(["@I12@", "@I14@"]);
-    expect(model.branch("@I12@", 1, 0).has("@I3@")).toBe(false);
-    expect(model.branch("@I3@", 0, 9).has("@I17@")).toBe(true);
+  it("holds twelve generations of ancestors and of descendants whole", () => {
+    const ids = Array.from({ length: 25 }, (_, index) => `G${index}`);
+    const model = kinship(
+      ids,
+      ids.slice(0, -1).map((id, index) => ({ id: `F${index}`, husb: id, children: [ids[index + 1] ?? ""] })),
+    );
+
+    expect([...model.branch("@G12@")].sort()).toEqual(ids.map((id) => `@${id}@`).sort());
+  });
+
+  it("finishes for a person who is their own ancestor", () => {
+    const model = kinship(["A", "B"], [{ id: "F1", husb: "A", children: ["B"] }, { id: "F2", husb: "B", children: ["A"] }]);
+
+    expect([...model.branch("@A@")].sort()).toEqual(["@A@", "@B@"]);
   });
 
   it("is empty for a person not in the file", () => {
-    expect(curie().branch("@I99@", 2, 2).size).toBe(0);
+    expect(curie().branch("@I99@").size).toBe(0);
+  });
+
+  it("answers the same set again for the same person", () => {
+    const model = curie();
+
+    expect(model.branch("@I12@")).toBe(model.branch("@I12@"));
+    expect(model.branch("@I1@")).not.toBe(model.branch("@I12@"));
   });
 });
 

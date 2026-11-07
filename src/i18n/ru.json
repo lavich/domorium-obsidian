@@ -270,12 +270,6 @@
     "other": "Ветка: {name} · {shown} из {count} человека"
   },
   "overview.branch": "Ветка",
-  "overview.ancestors": "Предки",
-  "overview.descendants": "Потомки",
-  "overview.fewerAncestors": "На поколение предков меньше",
-  "overview.moreAncestors": "На поколение предков больше",
-  "overview.fewerDescendants": "На поколение потомков меньше",
-  "overview.moreDescendants": "На поколение потомков больше",
   "fileGraph.branchOf": "Ветка: {name}",
   "overview.zoomIn": "Приблизить",
   "overview.zoomOut": "Отдалить",

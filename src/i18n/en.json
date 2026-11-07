@@ -252,12 +252,6 @@
     "other": "Branch of {name} · {shown} of {count} people"
   },
   "overview.branch": "Branch",
-  "overview.ancestors": "Ancestors",
-  "overview.descendants": "Descendants",
-  "overview.fewerAncestors": "One generation of ancestors fewer",
-  "overview.moreAncestors": "One generation of ancestors more",
-  "overview.fewerDescendants": "One generation of descendants fewer",
-  "overview.moreDescendants": "One generation of descendants more",
   "fileGraph.branchOf": "Branch of {name}",
   "overview.zoomIn": "Zoom in",
   "overview.zoomOut": "Zoom out",

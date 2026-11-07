@@ -95,7 +95,7 @@ for (const viewport of [
     test("keeps the timeline's scroll through the source and back, its years in line with the bars", async ({
       page,
     }) => {
-      await mountTab(page, { mode: "timeline", memory: { timeline: { up: 2, down: 2, zoom: 16 } } });
+      await mountTab(page, { mode: "timeline", memory: { timeline: { zoom: 16 } } });
       const plot = page.locator(".gedcom-ft-plot");
       await plot.evaluate((element) => {
         element.scrollTop = 120;
@@ -199,7 +199,7 @@ for (const viewport of [
     });
 
     test("restores a graph at the view that was saved", async ({ page }) => {
-      await mountTab(page, { mode: "graph", memory: { graph: { up: 2, down: 2, view: { x: 500, y: 200, k: 0.8 } } } });
+      await mountTab(page, { mode: "graph", memory: { graph: { view: { x: 500, y: 200, k: 0.8 } } } });
       await expect(person(page, "@I1@")).toHaveCount(1);
 
       const [width, height] = await page

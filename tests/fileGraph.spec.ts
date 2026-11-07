@@ -120,12 +120,12 @@ test.describe("the graph of a file", () => {
     );
   });
 
-  test("lights Marie's family when the pointer is on her, and tells the Curies' marriage", async ({ page }) => {
+  test("lights Marie's branch when the pointer is on her, and tells the Curies' marriage", async ({ page }) => {
     await mountGraph(page);
     await card(page, "@I1@").hover();
 
     await expect(person(page, "@I1@")).toHaveClass(/is-hl/);
-    await expect(page.locator(".gedcom-fg-person.is-on")).toHaveCount(6);
+    await expect(page.locator(".gedcom-fg-person.is-on")).toHaveCount(10);
     await expect.poll(() => person(page, "@I11@").evaluate((group) => getComputedStyle(group).opacity)).toBe("0.18");
     expect(await person(page, "@I2@").evaluate((group) => getComputedStyle(group).opacity)).toBe("1");
 

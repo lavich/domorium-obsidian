@@ -21,7 +21,7 @@ import {
 
 const WIDE = { width: 1400, height: 900 };
 const NARROW = { width: 390, height: 600 };
-const WHOLE: BranchScope = { up: 2, down: 2 };
+const WHOLE: BranchScope = {};
 
 let container: HTMLElement;
 let host: {
@@ -238,18 +238,28 @@ describe("drawing the graph of a file", () => {
     expect(container.querySelector(".gedcom-fg-tools")).toBeNull();
   });
 
-  it("lights Marie, her parents, husband and daughters and the lines to them, replacing nothing", () => {
+  it("lights every card of Marie's branch, and no line or family node, replacing nothing", () => {
     const drawn = board();
     const before = all(".gedcom-fg-view *");
     drawn.highlight("@I1@");
 
     const lit = all(".gedcom-fg-person.is-on").map((one) => one.getAttribute("data-p"));
-    expect(lit.sort()).toEqual(["@I1@", "@I12@", "@I13@", "@I2@", "@I3@", "@I4@"].sort());
+    expect(lit.sort()).toEqual(
+      ["@I1@", "@I12@", "@I13@", "@I14@", "@I15@", "@I16@", "@I17@", "@I2@", "@I3@", "@I4@"].sort(),
+    );
     expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
-    const lines = all(".gedcom-fg-line.is-on").map((one) => `${one.getAttribute("data-f")}>${one.getAttribute("data-child")}`);
-    expect(lines.sort()).toEqual(["@F1@>@I1@", "@F3@>@I12@", "@F3@>@I13@"]);
+    expect(all(".gedcom-fg-line.is-on, .gedcom-fg-family.is-on")).toHaveLength(0);
     expect(container.querySelector(".gedcom-fg-svg")?.classList.contains("has-hl")).toBe(true);
     expect(all(".gedcom-fg-view *")).toEqual(before);
+  });
+
+  it("lights Hélène's ancestors and fades Ève", () => {
+    const drawn = board();
+    drawn.highlight("@I16@");
+
+    const lit = all(".gedcom-fg-person.is-on").map((one) => one.getAttribute("data-p"));
+    expect(lit.sort()).toEqual(["@I1@", "@I10@", "@I12@", "@I14@", "@I16@", "@I2@", "@I3@", "@I4@", "@I9@"].sort());
+    expect(person("@I13@")?.classList.contains("is-on")).toBe(false);
   });
 
   it("lights a person once the pointer has rested, only the last of a sweep, and puts the light out after the same rest", () => {
@@ -342,7 +352,7 @@ describe("the view", () => {
     const model = curie();
     expectCentredOn(board(model, { around: "@I1@" }, NARROW).view(), centreOf(model, "@I1@"), ZOOM.readable);
 
-    const branch = { focus: "@I12@", up: 2, down: 2 };
+    const branch = { focus: "@I12@" };
     expectCentredOn(
       board(model, { scope: branch, around: "@F1@" }, { width: 300, height: 600 }).view(),
       centreOf(model, "@I12@", branch),
@@ -373,7 +383,7 @@ describe("the view", () => {
     const drawn = board(model, { around: "@I1@" });
     pill("@I12@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
 
-    const branch = { focus: "@I12@", up: 2, down: 2 };
+    const branch = { focus: "@I12@" };
     expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 10 of 17 people");
     expectCentredOn(drawn.view(), centreOf(model, "@I12@", branch), ZOOM.readable);
     expect(host.stateChanged.mock.lastCall?.[0].scope).toEqual(branch);
@@ -439,11 +449,24 @@ describe("the view", () => {
     expect(drawn.view()).toEqual(dragged);
   });
 
-  it("saves a change of scope made before the canvas has a size", () => {
-    board(curie(), { scope: { focus: "@I12@", up: 2, down: 2 } }, null);
-    container.querySelector<HTMLElement>('[data-step="up:-1"]')?.click();
+  it("offers no stepper for a number of generations on the scope line", () => {
+    board(curie(), { scope: { focus: "@I12@" } });
 
-    expect(host.stateChanged.mock.lastCall?.[0]).toEqual({ scope: { focus: "@I12@", up: 1, down: 2 } });
+    expect(scopeText()).toContain("10 of 17 people");
+    expect(container.querySelector("[data-step]")).toBeNull();
+    expect(container.querySelectorAll(".gedcom-fg-scope button")).toHaveLength(1);
+  });
+
+  it("opens a saved state with numbers of generations on the branch of its focus, and saves it again without them", () => {
+    const saved = readGraphState({ focus: "@I1@", up: 0, down: 0 });
+    const drawn = board(curie(), { scope: saved });
+
+    expect(scopeText()).toContain("Branch of Marie Skłodowska-Curie · 10 of 17 people");
+    expect(drawnPeople()).toHaveLength(10);
+    drawn.resized({ width: 1200, height: 900 });
+    pill("@I1@")?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+    expect(drawnPeople()).toHaveLength(17);
+    expect(JSON.stringify(host.stateChanged.mock.calls)).not.toMatch(/"(up|down)"/);
   });
 
   it("zooms around the middle of a pinch, and opens nothing after it", () => {
@@ -473,11 +496,9 @@ describe("the view", () => {
   it("reads a saved state, keeping its scope and view within bounds", () => {
     expect(readGraphState({ focus: "@I1@", up: 12, down: -3, view: { x: 1, y: 2, k: 9 } })).toEqual({
       focus: "@I1@",
-      up: 9,
-      down: 0,
       view: { x: 1, y: 2, k: ZOOM.max },
     });
-    expect(readGraphState({ focus: "", view: { x: 1 } })).toEqual({ up: 2, down: 2 });
+    expect(readGraphState({ focus: "", view: { x: 1 } })).toEqual({});
   });
 });
 
@@ -510,7 +531,7 @@ describe("the search", () => {
 
   it("has no native tooltip on its buttons, and asks Obsidian's to stand clear of the group", () => {
     board();
-    const buttons = [...container.querySelectorAll(".gedcom-fg-controls button, .gedcom-fg-find button, .gedcom-fg-pill, [data-step]")];
+    const buttons = [...container.querySelectorAll(".gedcom-fg-controls button, .gedcom-fg-find button, .gedcom-fg-pill")];
 
     expect(buttons.length).toBeGreaterThanOrEqual(7);
     for (const button of buttons.filter((one) => one.tagName === "BUTTON")) {
@@ -745,7 +766,7 @@ describe("activating", () => {
     expect(drawnPeople()).toHaveLength(17);
     expect(scopeText()).toBe("");
     expectCentredOn(drawn.view(), centreOf(model, "@I12@"), ZOOM.readable);
-    expect(host.stateChanged.mock.lastCall?.[0].scope).toEqual({ up: 2, down: 2 });
+    expect(host.stateChanged.mock.lastCall?.[0].scope).toEqual({});
 
     pill("@I12@")?.focus();
     key(pill("@I12@"), "Enter");
@@ -926,7 +947,7 @@ describe("the keyboard", () => {
 describe("the graph in Russian", () => {
   it("counts the branch's people and the family's children in the form the number takes", () => {
     setLanguage("ru");
-    board(curie(), { scope: { focus: "@I12@", up: 2, down: 2 } });
+    board(curie(), { scope: { focus: "@I12@" } });
 
     expect(scopeText()).toContain("10 из 17 человек");
     pointer("pointermove", node("@F3@")?.querySelector("circle"));
@@ -980,7 +1001,7 @@ describe("the selected card", () => {
 
   it("changes no scope for a person outside the scope selected without a reveal, and marks nothing until the card is drawn", () => {
     const model = curie();
-    const narrow = { focus: "@I12@", up: 0, down: 0 };
+    const narrow = { focus: "@I15@" };
     const drawn = board(model, { scope: narrow });
     host.stateChanged.mockClear();
 
@@ -1048,7 +1069,7 @@ describe("the selected card", () => {
   it("is on the card again once a scope narrowed by hand is widened", () => {
     const model = curie();
     const drawn = board(model);
-    const narrow = { focus: "@I12@", up: 0, down: 0 };
+    const narrow = { focus: "@I15@" };
     expect(fileGraphOf(model, narrow).card.has("@I2@")).toBe(false);
     drawn.select("@I2@", true);
 
@@ -1060,7 +1081,7 @@ describe("the selected card", () => {
 
   it("changes the scope to the person's own branch where the branch shown does not hold them", () => {
     const model = curie();
-    const narrow = { focus: "@I12@", up: 0, down: 0 };
+    const narrow = { focus: "@I15@" };
     const drawn = board(model, { scope: narrow });
     expect(person("@I2@")).toBeNull();
 
@@ -1086,7 +1107,7 @@ describe("the selected card", () => {
         layout,
         card: (id) => ({ name: id, years: "", paint: "" }),
         family: () => undefined,
-        related: () => [],
+        branch: () => new Set(),
         copies: (id) => (id === "@I2@" ? ["@I2@", "@I1@"] : [id]),
       };
     }

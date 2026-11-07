@@ -81,7 +81,7 @@ export function layoutOf(
   measure: (text: string) => number,
 ): Layout {
   const keep = scope.focus && model.people.has(scope.focus)
-    ? model.branch(scope.focus, scope.up, scope.down)
+    ? model.branch(scope.focus)
     : null;
   const barred = (xref: string): boolean => model.people.get(xref)?.lifeline != null;
   const total = [...model.people.keys()].filter(barred).length;

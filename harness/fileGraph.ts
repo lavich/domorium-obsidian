@@ -77,7 +77,7 @@ function mount(options: GraphOptions): number {
     setIcon: stubSetIcon,
   });
   board.show(fileTimelineOf(index), {
-    scope: { up: 2, down: 2, ...(focus === undefined ? {} : { focus }), ...options.scope },
+    scope: { ...(focus === undefined ? {} : { focus }), ...options.scope },
     ...(options.around === undefined ? {} : { around: options.around }),
     ...(options.view === undefined ? {} : { view: options.view }),
   });

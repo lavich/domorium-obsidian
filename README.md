@@ -144,16 +144,16 @@ approximate; a bar with no recorded death fades out a hundred years after it
 begins, while one that begins at a birth in the last hundred years runs to the
 present in a straight cut edge, as the bar of a person who may be alive. A name too long for its bar is cut with an ellipsis inside it, and pointing at a bar shows the whole name. Dated events are marks along the bar's lower edge, an approximate
 date is drawn dashed and a period as a span; a person with no dated event has no
-bar. Clicking a bar selects the person and picks out their parents, spouses and
-children, with a line and an arrowhead from each parent down to the person and
-from the person down to each child, and a dashed line with a dot at each end to a
+bar. Clicking a bar selects the person and picks out their whole branch — all their
+ancestors and descendants and the spouses of each — with a line and an arrowhead
+from each parent down to each child, and a dashed line with a dot at each end to a
 spouse at the year of the marriage. A year cursor gives the age everyone alive
 reached that year, and the selected person's age on the axis. A search icon over
 the board opens into a field that fades everyone else and steps from match to
 match with arrows, and the zoom buttons widen, narrow or fit the years; on a
 phone a pinch zooms the axis. **Branch**, on the selected bar or from the command
 **Branch of the selected person**, narrows the board to one person's ancestors
-and descendants, and a file of more than 500 people opens on the branch of the
+and descendants (all generations), and a file of more than 500 people opens on the branch of the
 person selected. An event shows its lines in Source. On a phone the first touch
 picks a person out and places the year cursor, and a second touch selects them.
 
@@ -163,7 +163,7 @@ the left of his wife, joined by a node with the year of their marriage — hollo
 where it is undated — from which curved lines run to their children; the
 husband's family tends to stand on the left and the wife's on the right, and the
 rows are ordered to cross as few lines as it can find. Pointing at a person
-lights their parents, spouses and children; pointing at a node shows the
+lights their whole branch, as the timeline does; pointing at a node shows the
 marriage and the number of children. Drag or scroll with two fingers to move,
 use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the
 cards are drawn without names. The search, **Branch** and the 500-person rule

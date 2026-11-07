@@ -80,21 +80,22 @@ test.describe("the timeline of a file", () => {
     const lines = await page.locator(".gedcom-ft-marriage").evaluateAll((nodes) =>
       nodes.map((node) => node.getBoundingClientRect()).map((box) => ({ x: box.x, height: box.height })),
     );
-    expect(lines).toHaveLength(1);
-    expect(Math.abs((lines[0]?.x ?? 0) - at)).toBeLessThan(2);
-    expect(await page.locator(".gedcom-ft-marriage").evaluate((line) => getComputedStyle(line).strokeDasharray)).not.toBe("none");
-    await expect(page.locator(".gedcom-ft-marriage-dot")).toHaveCount(2);
+    expect(lines).toHaveLength(4);
+    expect(lines.filter((line) => Math.abs(line.x - at) < 2)).toHaveLength(1);
+    expect(await page.locator(".gedcom-ft-marriage").first().evaluate((line) => getComputedStyle(line).strokeDasharray)).not.toBe("none");
+    await expect(page.locator(".gedcom-ft-marriage-dot")).toHaveCount(8);
     await page.addStyleTag({ content: ".gedcom-ft-marriage-dot { pointer-events: auto !important; }" });
-    const seen = await page.locator(".gedcom-ft-marriage-dot").evaluateAll((dots) => {
+    const seen = await page.locator(".gedcom-ft-marriage-dot").evaluateAll((dots, markX) => {
       const centres = dots
         .map((dot) => dot.getBoundingClientRect())
         .map((box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 }))
+        .filter((centre) => Math.abs(centre.x - markX) < 2)
         .sort((a, b) => a.y - b.y);
       return centres.map((centre, at) => {
         const hit = document.elementFromPoint(centre.x, centre.y + (at === 0 ? 2.5 : -1.5));
         return { dot: hit?.classList.contains("gedcom-ft-marriage-dot") === true, bar: hit?.classList.contains("gedcom-ft-life") === true };
       });
-    });
+    }, at);
     expect(seen).toEqual([{ dot: true, bar: false }, { dot: true, bar: false }]);
     const span = await page.locator('.gedcom-ft-span[data-p="@I2@"]').boundingBox();
     expect(span?.width).toBeCloseTo((1906 - 1895) * ZOOM, 0);
@@ -136,8 +137,8 @@ test.describe("the timeline of a file", () => {
     await mountTimeline(page);
     await life(page, "@I1@").click();
 
-    await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
-    expect(await page.locator('.gedcom-ft-kin[data-from="@I2@"]').count()).toBe(0);
+    await expect(page.locator(".gedcom-ft-kin")).toHaveCount(10);
+    expect(await page.locator('.gedcom-ft-kin[data-from="@I9@"]').count()).toBe(0);
     await expect.poll(() => opacityOf(life(page, "@I11@"))).toBe("0.18");
     expect(await opacityOf(life(page, "@I2@"))).toBe("1");
     expect(await page.locator(".gedcom-ft-kin").first().getAttribute("marker-end")).toContain("gedcom-ft-arrow");
@@ -747,7 +748,7 @@ test.describe("the timeline of a file on a phone", () => {
     await page.touchscreen.tap(at.x, at.y);
 
     await expect(life(page, "@I1@")).toHaveClass(/is-hl/);
-    await expect(page.locator(".gedcom-ft-kin")).toHaveCount(4);
+    await expect(page.locator(".gedcom-ft-kin")).toHaveCount(10);
     await expect(page.locator(".gedcom-ft-tip.is-shown")).toHaveText("Marie Skłodowska-Curie");
     const touched = Math.round(FIRST_DECADE + (at.x - (await yearX(page, FIRST_DECADE))) / ZOOM);
     await expect(page.locator(".gedcom-ft-axis-cursor")).toHaveText(String(touched));

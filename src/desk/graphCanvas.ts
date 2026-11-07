@@ -51,8 +51,8 @@ export interface CanvasScene {
   layout: FileGraphLayout;
   card(id: string): CanvasCard | undefined;
   family(id: string): CanvasFamily | undefined;
-  /** The cards lit with this one. */
-  related(id: string): Iterable<string>;
+  /** The branch of a person: the cards lit with theirs. */
+  branch(id: string): ReadonlySet<string>;
   /** Every card its person stands on, this one among them. */
   copies?(id: string): Iterable<string>;
   /** What a search reads of a card. */
@@ -126,7 +126,6 @@ export class GraphCanvas {
   private drawnWindow: GraphWindow | null = null;
   private drawnFar = false;
   private cardOf = new Map<string, Element>();
-  private reach = new Map<string, Element[]>();
   private lit: Element[] = [];
   private highlighted: string | null = null;
   private armed: string | null = null;
@@ -374,15 +373,12 @@ export class GraphCanvas {
       this.lit.push(element);
     };
     const selves = new Set(scene.copies?.(id) ?? [id]);
-    for (const self of selves) {
-      for (const relative of scene.related(self)) {
-        const card = this.cardOf.get(relative);
-        if (card && !card.classList.contains("is-on")) {
-          light(card, selves.has(relative));
-        }
-      }
-      for (const element of this.reach.get(self) ?? []) {
-        light(element, true);
+    const branch: ReadonlySet<string> =
+      selves.size === 1 ? scene.branch([...selves][0] ?? id) : new Set([...selves].flatMap((self) => [...scene.branch(self)]));
+    for (const member of branch) {
+      const card = this.cardOf.get(member);
+      if (card && !card.classList.contains("is-on")) {
+        light(card, selves.has(member));
       }
     }
   }
@@ -755,16 +751,9 @@ export class GraphCanvas {
 
   private mapDrawn(): void {
     this.cardOf = new Map();
-    this.reach = new Map();
     for (const [item, element] of this.drawn) {
       if (item.kind === "card") {
         this.cardOf.set(item.id, element);
-        continue;
-      }
-      for (const id of item.people) {
-        const held = this.reach.get(id) ?? [];
-        held.push(element);
-        this.reach.set(id, held);
       }
     }
   }
