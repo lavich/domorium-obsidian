@@ -65,7 +65,7 @@ export function buildItems(
         bottom: most(ys) + 11,
         people: [...node.spouses, ...(near.get(node.family) ?? [])],
         lit: (branch) => {
-          const spouses = node.spouses.filter((one) => branch.has(one)).length;
+          const spouses = node.spouses.reduce((count, one) => count + (branch.has(one) ? 1 : 0), 0);
           return spouses >= 2 || (spouses === 1 && (near.get(node.family) ?? []).some((one) => branch.has(one)));
         },
         make: (far) => nodeShape(doc, node, family, far),

@@ -153,7 +153,7 @@ the board opens into a field that fades everyone else and steps from match to
 match with arrows, and the zoom buttons widen, narrow or fit the years; on a
 phone a pinch zooms the axis. **Branch**, on the selected bar or from the command
 **Branch of the selected person**, narrows the board to one person's ancestors
-and descendants, all of them, and a file of more than 500 people opens on the branch of the
+and descendants (all generations), and a file of more than 500 people opens on the branch of the
 person selected. An event shows its lines in Source. On a phone the first touch
 picks a person out and places the year cursor, and a second touch selects them.
 

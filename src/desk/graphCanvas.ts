@@ -374,12 +374,8 @@ export class GraphCanvas {
       this.lit.push(element);
     };
     const selves = new Set(scene.copies?.(id) ?? [id]);
-    const branch = new Set<string>();
-    for (const self of selves) {
-      for (const member of scene.branch(self)) {
-        branch.add(member);
-      }
-    }
+    const branch: ReadonlySet<string> =
+      selves.size === 1 ? scene.branch([...selves][0] ?? id) : new Set([...selves].flatMap((self) => [...scene.branch(self)]));
     for (const member of branch) {
       const card = this.cardOf.get(member);
       if (card && !card.classList.contains("is-on")) {

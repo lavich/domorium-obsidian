@@ -14,7 +14,7 @@ export function sameBranch(a: BranchScope, b: BranchScope): boolean {
 }
 
 export interface BranchScopeBarOptions {
-  /** `gedcom-ft` gives `gedcom-ft-scope`, `gedcom-ft-step`, `gedcom-ft-whole`. */
+  /** `gedcom-ft` gives `gedcom-ft-scope`, `gedcom-ft-whole`. */
   prefix: string;
   change(next: Partial<BranchScope>): void;
 }
