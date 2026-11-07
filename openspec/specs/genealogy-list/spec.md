@@ -101,7 +101,7 @@ since it cannot be selected. A kind with no record SHALL say that the file holds
 
 #### Scenario: A family row
 - **WHEN** the list shows the families of `curie.ged`
-- **THEN** the Curies' row reads `Pierre Curie and Marie Skłodowska-Curie`, `1895`,
+- **THEN** the Curies' row reads `Pierre Curie ⚭ Marie Skłodowska-Curie`, `1895`,
   `Sceaux, France` and `2`, and the count reads `5 families`
 
 #### Scenario: A family with no marriage stated
