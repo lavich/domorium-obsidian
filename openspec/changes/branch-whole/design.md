@@ -15,3 +15,10 @@
 
 - A person whose branch is the whole file lights everything and fades nothing; that is the branch, and the whole file is what the reader asked for.
 - Scenarios that used `up: 0, down: 0` as the narrow scope now use a person whose branch is small; the tests that stepped the numbers go with the steppers.
+
+## Implementation
+
+- `FileTimeline.branch(focus)` returns a shared `ReadonlySet`, kept for the last focus; callers must not change it.
+- `BranchScopeBarOptions` lost `setIcon` with the steppers.
+- Timeline arrows are clipped to the drawn window by their x and y; a segment crossing the window is drawn whole.
+- Marie's click light in the timeline draws 10 parent → child arrows and 4 marriage links (her parents, her and Pierre, Irène and Frédéric, Ève and Henry).

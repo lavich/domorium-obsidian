@@ -69,7 +69,7 @@ describe("what a tab keeps of the desk", () => {
     expect(readDeskState({ mode: "source", record: "@I1@", view: "timeline" })).toEqual({ mode: "source" });
   });
 
-  it("reads the memory of the graph and the timeline, clamped, and drops what is malformed", () => {
+  it("reads the memory of the graph and the timeline, clamped, without numbers of generations, and drops what is malformed", () => {
     expect(
       readDeskState({
         mode: "graph",
@@ -78,13 +78,13 @@ describe("what a tab keeps of the desk", () => {
       }),
     ).toEqual({
       mode: "graph",
-      graph: { focus: "@I12@", up: 9, down: 1, view: { x: 1, y: 2, k: 3 } },
-      timeline: { focus: "@I12@", up: 3, down: 0, zoom: 16, scroll: { top: 30, left: 0 } },
+      graph: { focus: "@I12@", view: { x: 1, y: 2, k: 3 } },
+      timeline: { focus: "@I12@", zoom: 16, scroll: { top: 30, left: 0 } },
     });
     expect(readDeskState({ graph: "wide", timeline: null })).toEqual({});
     expect(readDeskState({ graph: { view: { x: 1 } }, timeline: { scroll: { top: 5 } } })).toEqual({
-      graph: { up: 2, down: 2 },
-      timeline: { up: 2, down: 2, zoom: ZOOM.initial },
+      graph: {},
+      timeline: { zoom: ZOOM.initial },
     });
   });
 
@@ -284,9 +284,9 @@ describe("where a view opens for the first time", () => {
   it("reads a small file whole", () => {
     const memory = openingMemory("graph", undefined, curieIndex(), "@I12@");
 
-    expect(memory).toEqual({ up: 2, down: 2 });
+    expect(memory).toEqual({});
     expect("focus" in memory).toBe(false);
-    expect(openingMemory("timeline", undefined, curieIndex(), "@I12@")).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
+    expect(openingMemory("timeline", undefined, curieIndex(), "@I12@")).toEqual({ zoom: ZOOM.initial });
   });
 
   it("opens a large file on the branch of the person the tab is on, else of the first person", () => {
@@ -299,7 +299,7 @@ describe("where a view opens for the first time", () => {
 
   it("keeps what the tab saved, a whole file chosen on a large one included", () => {
     const large = indexOf(generated(2000));
-    const saved = { up: 4, down: 1 };
+    const saved = { view: { x: 4, y: 1, k: 1 } };
 
     expect(openingMemory("graph", saved, large, "@I6@")).toBe(saved);
   });

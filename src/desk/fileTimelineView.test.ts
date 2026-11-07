@@ -17,7 +17,7 @@ import {
 
 const NOW = 2026;
 const BAR_HEIGHT = 22;
-const SCOPE: TimelineScope = { up: 2, down: 2, zoom: ZOOM.initial };
+const SCOPE: TimelineScope = { zoom: ZOOM.initial };
 const WHOLE = { top: 0, left: 0, width: 2000, height: 20 * ROW };
 
 const curie = (): FileTimeline => buildFileTimeline(curieIndex(), NOW);
@@ -242,13 +242,15 @@ describe("drawing the timeline of a file", () => {
 });
 
 describe("lighting a person", () => {
-  it("lights Marie's parents, husband and daughters, and replaces nothing drawn", () => {
+  it("lights every bar of Marie's branch, and replaces nothing drawn", () => {
     const drawn = board();
     const before = all(".gedcom-ft-items > *");
     drawn.highlight("@I1@");
 
     const lit = new Set(all(".gedcom-ft-life.is-on").map((bar) => bar.getAttribute("data-p")));
-    expect([...lit].sort()).toEqual(["@I1@", "@I12@", "@I13@", "@I2@", "@I3@", "@I4@"].sort());
+    expect([...lit].sort()).toEqual(
+      ["@I1@", "@I12@", "@I13@", "@I14@", "@I15@", "@I16@", "@I17@", "@I2@", "@I3@", "@I4@"].sort(),
+    );
     expect(bar("@I1@")?.classList.contains("is-hl")).toBe(true);
     expect(label("@I2@")?.classList.contains("is-on")).toBe(true);
     expect(bar("@I11@")?.classList.contains("is-on")).toBe(false);
@@ -256,32 +258,38 @@ describe("lighting a person", () => {
     expect(all(".gedcom-ft-items > *")).toEqual(before);
   });
 
-  it("draws arrows from both of Marie's parents and to her daughters, and none from Pierre", () => {
+  it("draws an arrow from each parent to each child within Marie's branch, and none from Pierre's parents", () => {
     board().highlight("@I1@");
 
-    const arrows = all(".gedcom-ft-kin").map((arrow) => [arrow.getAttribute("data-from"), arrow.getAttribute("data-to")]);
-    expect(arrows).toEqual([
-      ["@I3@", "@I1@"],
-      ["@I4@", "@I1@"],
-      ["@I1@", "@I12@"],
-      ["@I1@", "@I13@"],
-    ]);
-    expect(arrows.some(([from]) => from === "@I2@")).toBe(false);
+    const arrows = all(".gedcom-ft-kin").map((arrow) => `${arrow.getAttribute("data-from")}>${arrow.getAttribute("data-to")}`);
+    expect(arrows.sort()).toEqual(
+      [
+        "@I3@>@I1@", "@I4@>@I1@",
+        "@I1@>@I12@", "@I2@>@I12@", "@I1@>@I13@", "@I2@>@I13@",
+        "@I12@>@I16@", "@I14@>@I16@", "@I12@>@I17@", "@I14@>@I17@",
+      ].sort(),
+    );
+    expect(arrows.some((arrow) => arrow.endsWith(">@I2@"))).toBe(false);
   });
 
-  it("draws a dashed marriage line with a dot at each end, at the year of the marriage, for the lit person only", () => {
+  it("draws a dashed marriage line with a dot at each end, at the year of the marriage, for each marriage within the branch", () => {
     board().highlight("@I1@");
 
     const lines = all(".gedcom-ft-marriage");
-    expect(lines).toHaveLength(1);
-    expect(lines[0]?.getAttribute("x1")).toBe(String((1895 - 1820) * ZOOM.initial + 12));
-    expect(lines[0]?.getAttribute("y1")).not.toBe(lines[0]?.getAttribute("y2"));
-    expect(all(".gedcom-ft-marriage-dot")).toHaveLength(2);
-    expect(lines[0]?.getAttribute("marker-end")).toBeNull();
+    expect(lines).toHaveLength(4);
+    expect(all(".gedcom-ft-marriage-dot")).toHaveLength(8);
+    const year = String((1895 - 1820) * ZOOM.initial + 12);
+    const marie = lines.filter((line) => line.getAttribute("x1") === year);
+    expect(marie).toHaveLength(1);
+    expect(marie[0]?.getAttribute("y1")).not.toBe(marie[0]?.getAttribute("y2"));
+    expect(marie[0]?.getAttribute("marker-end")).toBeNull();
     const edges = [bar("@I1@"), bar("@I2@")]
       .map((one) => Number(one?.getAttribute("y")))
       .sort((a, b) => a - b);
-    const dots = all(".gedcom-ft-marriage-dot").map((dot) => Number(dot.getAttribute("cy"))).sort((a, b) => a - b);
+    const dots = all(".gedcom-ft-marriage-dot")
+      .filter((dot) => dot.getAttribute("cx") === year)
+      .map((dot) => Number(dot.getAttribute("cy")))
+      .sort((a, b) => a - b);
     expect(dots).toEqual([edges[0] + BAR_HEIGHT, (edges[1] ?? 0)]);
   });
 
@@ -303,6 +311,27 @@ describe("lighting a person", () => {
     expect(all(".gedcom-ft-kin").every((line) => line.getAttribute("marker-end") !== null)).toBe(true);
     expect(all(".gedcom-ft-marriage").every((line) => line.getAttribute("marker-end") === null)).toBe(true);
     expect(all(".gedcom-ft-marriage-dot").length).toBeGreaterThan(0);
+  });
+
+  it("draws the arrows of a large branch only where they fall in the drawn window", () => {
+    const children = Array.from({ length: 300 }, (_, at) => at);
+    const model = fromLines(
+      ...lived("@R@", "Root /Large/", 1850, 1930),
+      "1 FAMS @F@",
+      ...children.flatMap((at) => [...lived(`@K${at}@`, `Kid /Large${at}/`, 1880 + (at % 40), 1950), "1 FAMC @F@"]),
+      "0 @F@ FAM", "1 HUSB @R@", ...children.map((at) => `1 CHIL @K${at}@`),
+    );
+    const drawn = board(model);
+    drawn.draw({ top: 0, left: 0, width: 2000, height: 10 * ROW });
+    drawn.highlight("@R@");
+
+    expect(all(".gedcom-ft-kin")).toHaveLength(300);
+    drawn.draw({ top: 200 * ROW, left: 0, width: 2000, height: 10 * ROW });
+    const scrolled = all(".gedcom-ft-kin").length;
+    expect(scrolled).toBeGreaterThan(0);
+    expect(scrolled).toBeLessThan(300);
+    drawn.draw({ top: 0, left: 0, width: 40, height: 10 * ROW });
+    expect(all(".gedcom-ft-kin").length).toBeLessThan(300);
   });
 
   it("clears the arrows and the light when the light is put out", () => {
@@ -352,8 +381,8 @@ describe("the light of a click", () => {
     expect(bar("@I2@")?.classList.contains("is-on")).toBe(true);
     expect(bar("@I11@")?.classList.contains("is-on")).toBe(false);
     expect(litBoard()).toBe(true);
-    expect(all(".gedcom-ft-kin")).toHaveLength(4);
-    expect(all(".gedcom-ft-marriage")).toHaveLength(1);
+    expect(all(".gedcom-ft-kin")).toHaveLength(10);
+    expect(all(".gedcom-ft-marriage")).toHaveLength(4);
     expect(host.select).toHaveBeenCalledWith("@I1@");
   });
 
@@ -476,7 +505,7 @@ describe("the timeline without a toolbar", () => {
     };
     const buttons = [...container.querySelectorAll("button")].filter((one) => one.getAttribute("aria-label"));
 
-    expect(buttons.length).toBeGreaterThan(8);
+    expect(buttons.length).toBeGreaterThan(7);
     for (const button of buttons) {
       expect(button.hasAttribute("title"), button.className).toBe(false);
       const group = Object.keys(places).find((cls) => button.closest(`.${cls}`));
@@ -584,7 +613,7 @@ describe("the timeline without a toolbar", () => {
     expect(bar("@I14@")?.classList.contains("is-dim")).toBe(false);
   });
 
-  it("shows one person's branch from their Branch button, widens and narrows it, and returns to the whole file", () => {
+  it("shows one person's branch from their Branch button, and returns to the whole file", () => {
     const drawn = board();
     drawn.select("@I12@", false);
     click(container.querySelector("[data-branch]"));
@@ -592,17 +621,8 @@ describe("the timeline without a toolbar", () => {
     expect(bars()).toHaveLength(10);
     expect(scopeText()).toContain("Irène Joliot-Curie");
     expect(scopeText()).toContain("10 of 17 people");
-    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ focus: "@I12@", up: 2 }));
-
-    container.querySelector<HTMLElement>('[data-step="up:-1"]')?.click();
-    expect(bars()).toHaveLength(6);
-    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ up: 1 }));
-    container.querySelector<HTMLElement>('[data-step="down:-1"]')?.click();
-    expect(bars()).toHaveLength(6);
-    container.querySelector<HTMLElement>('[data-step="down:-1"]')?.click();
-    expect(bars()).toHaveLength(4);
-    expect(container.querySelector('[data-step="down:-1"]')?.hasAttribute("disabled")).toBe(true);
-    expect(container.querySelector('[data-step="up:-1"]')?.getAttribute("data-icon")).toBe("minus");
+    expect(host.scopeChanged).toHaveBeenLastCalledWith(expect.objectContaining({ focus: "@I12@" }));
+    expect(JSON.stringify(host.scopeChanged.mock.lastCall)).not.toMatch(/"(up|down)"/);
 
     container.querySelector<HTMLElement>(".gedcom-ft-whole")?.click();
     expect(bars()).toHaveLength(17);
@@ -693,24 +713,20 @@ describe("the state a timeline keeps", () => {
       readTimelineState({ focus: "@I12@", up: 3, down: 0, zoom: 12, others: false, scroll: { top: 40, left: 8 } }),
     ).toEqual({
       focus: "@I12@",
-      up: 3,
-      down: 0,
       zoom: 12,
       scroll: { top: 40, left: 8 },
     });
     expect(readTimelineState({ up: 40, down: -2, zoom: 1, focus: 7, scroll: { top: -5, left: 3 } })).toEqual({
-      up: 9,
-      down: 0,
       zoom: ZOOM.min,
       scroll: { top: 0, left: 3 },
     });
-    expect(readTimelineState(null)).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
+    expect(readTimelineState(null)).toEqual({ zoom: ZOOM.initial });
   });
 
   it("drops a scroll that is not a pair of numbers", () => {
-    expect(readTimelineState({ scroll: { top: 4 } })).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
-    expect(readTimelineState({ scroll: { top: "a", left: Infinity } })).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
-    expect(readTimelineState({ scroll: 7 })).toEqual({ up: 2, down: 2, zoom: ZOOM.initial });
+    expect(readTimelineState({ scroll: { top: 4 } })).toEqual({ zoom: ZOOM.initial });
+    expect(readTimelineState({ scroll: { top: "a", left: Infinity } })).toEqual({ zoom: ZOOM.initial });
+    expect(readTimelineState({ scroll: 7 })).toEqual({ zoom: ZOOM.initial });
   });
 });
 
@@ -827,33 +843,17 @@ describe("the keyboard", () => {
     expect(document.activeElement?.hasAttribute("data-branch")).toBe(true);
   });
 
-  it("keeps the focus on a stepper as it steps, and on its other button at the end", () => {
-    board(curie(), { focus: "@I12@" });
-    const step = (which: string) => container.querySelector<HTMLElement>(`[data-step="${which}"]`);
-    step("up:-1")?.focus();
-    step("up:-1")?.click();
-
-    expect(document.activeElement?.getAttribute("data-step")).toBe("up:-1");
-    step("up:-1")?.click();
-    expect(document.activeElement?.getAttribute("data-step")).toBe("up:1");
-  });
-
-  it("shows no scope line for the whole file, says whose branch it shows, and stops each stepper at zero and nine", () => {
+  it("shows no scope line for the whole file, and says whose branch it shows, with no stepper", () => {
     board();
     expect(scopeText()).toBe("");
     expect(container.querySelector<HTMLElement>(".gedcom-ft-scope")?.style.display).toBe("none");
     expect(bars()).toHaveLength(17);
 
     container.replaceChildren();
-    board(curie(), { focus: "@I12@", up: 9, down: 0 });
-    const disabled = (which: string) => container.querySelector(`[data-step="${which}"]`)?.hasAttribute("disabled");
-    expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 8 of 17 people");
-    expect([disabled("up:1"), disabled("up:-1"), disabled("down:-1"), disabled("down:1")]).toEqual([
-      true,
-      false,
-      true,
-      false,
-    ]);
+    board(curie(), { focus: "@I12@" });
+    expect(scopeText()).toContain("Branch of Irène Joliot-Curie · 10 of 17 people");
+    expect(container.querySelector("[data-step]")).toBeNull();
+    expect(container.querySelectorAll(".gedcom-ft-scope button")).toHaveLength(1);
   });
 
   it("returns to the whole file on Branch again, the button pressed while the branch is shown", () => {
@@ -869,13 +869,6 @@ describe("the keyboard", () => {
     expect(bars()).toHaveLength(17);
     expect(host.scopeChanged.mock.lastCall?.[0]).not.toHaveProperty("focus");
     expect(container.querySelector(".gedcom-ft-plot")?.scrollTop).toBe(rowOf("@I12@") * ROW + ROW / 2);
-  });
-
-  it("names each stepper's buttons for what they widen or narrow", () => {
-    board(curie(), { focus: "@I12@" });
-    const labels = all("[data-step]").map((button) => button.getAttribute("aria-label"));
-
-    expect(new Set(labels).size).toBe(4);
   });
 });
 
@@ -931,7 +924,7 @@ describe("the selected bar", () => {
   });
 
   it("changes no scope for a person outside it when asked not to reveal", () => {
-    const drawn = board(curie(), { focus: "@I12@", up: 0, down: 0 });
+    const drawn = board(curie(), { focus: "@I5@" });
     host.scopeChanged.mockClear();
 
     drawn.select("@I2@", false);
@@ -974,7 +967,7 @@ describe("the selected bar", () => {
     drawn.draw(WHOLE);
     expect(selectedLives()).toEqual(["@I2@"]);
 
-    drawn.show(curie(), { ...SCOPE, focus: "@I12@", up: 0, down: 0 });
+    drawn.show(curie(), { ...SCOPE, focus: "@I5@" });
     drawn.draw(WHOLE);
     expect(selectedLives()).toEqual([]);
     drawn.show(curie(), SCOPE);
@@ -983,7 +976,7 @@ describe("the selected bar", () => {
   });
 
   it("changes the scope to the person's own branch where the branch shown does not hold them", () => {
-    const drawn = board(curie(), { focus: "@I12@", up: 0, down: 0 });
+    const drawn = board(curie(), { focus: "@I5@" });
     expect(bar("@I2@")).toBeNull();
 
     drawn.select("@I2@", true);

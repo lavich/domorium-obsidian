@@ -63,15 +63,13 @@ export interface FileTimeline {
   families: ReadonlyMap<string, TimelineFamily>;
   generations: ReadonlyMap<string, number>;
   rows: readonly string[];
-  branch(focus: string, up: number, down: number): Set<string>;
+  /** The set is shared between calls for the same person: do not change it. */
+  branch(focus: string): ReadonlySet<string>;
   alive(year: number, among?: ReadonlySet<string>): AliveAt[];
-  related(xref: string): Set<string>;
 }
 
 /** Beyond this a lifeline with no end recorded stops fading and stops. */
 export const OPEN_SPAN = 100;
-
-export const BRANCH_STEPS = { min: 0, max: 9, initial: 2 } as const;
 
 /** Past this many people the whole file stops being readable, and it opens on a branch. */
 export const LARGE_FILE = 500;
@@ -384,8 +382,16 @@ function rowsOf(o: Ordering): string[] {
   return rows;
 }
 
-function uniqueWalk(from: string[], step: (xref: string) => string[]): string[] {
-  return [...new Set(from.flatMap(step))];
+function walk(from: string, into: Set<string>, step: (xref: string) => readonly string[]): void {
+  const queue = [from];
+  for (let at = 0; at < queue.length; at += 1) {
+    for (const next of step(queue[at])) {
+      if (!into.has(next)) {
+        into.add(next);
+        queue.push(next);
+      }
+    }
+  }
 }
 
 export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimeline {
@@ -482,32 +488,29 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
     yearOf,
   });
 
+  let last: { focus: string; keep: ReadonlySet<string> } | undefined;
+
   return {
     people,
     families,
     generations: generation,
     rows,
-    branch(focus, up, down) {
+    branch(focus) {
+      if (last?.focus === focus) {
+        return last.keep;
+      }
       const keep = new Set<string>();
-      if (!people.has(focus)) {
-        return keep;
-      }
-      keep.add(focus);
-      let level = [focus];
-      for (let step = 0; step < up; step += 1) {
-        level = uniqueWalk(level, (xref) => parents.get(xref) ?? []);
-        level.forEach((xref) => keep.add(xref));
-      }
-      level = [focus];
-      for (let step = 0; step < down; step += 1) {
-        level = uniqueWalk(level, (xref) => children.get(xref) ?? []);
-        level.forEach((xref) => keep.add(xref));
-      }
-      for (const xref of [...keep]) {
-        for (const spouse of spouses.get(xref) ?? []) {
-          keep.add(spouse);
+      if (people.has(focus)) {
+        keep.add(focus);
+        walk(focus, keep, (xref) => parents.get(xref) ?? []);
+        walk(focus, keep, (xref) => children.get(xref) ?? []);
+        for (const xref of [...keep]) {
+          for (const spouse of spouses.get(xref) ?? []) {
+            keep.add(spouse);
+          }
         }
       }
+      last = { focus, keep };
       return keep;
     },
     alive(year, among) {
@@ -524,15 +527,6 @@ export function buildFileTimeline(index: GenealogyIndex, now: number): FileTimel
         });
       }
       return found;
-    },
-    related(xref) {
-      const person = people.get(xref);
-      return new Set([
-        xref,
-        ...(person?.parents ?? []),
-        ...(person?.spouses ?? []),
-        ...(person?.children ?? []),
-      ]);
     },
   };
 }

@@ -132,10 +132,10 @@ describe("the views of a tab", () => {
 
   it("takes a saved view at the first show of the graph and not at the second", () => {
     const tab = views();
-    tab.show("graph", index, { graph: { up: 2, down: 2, view: { x: 500, y: 200, k: 0.8 } } });
+    tab.show("graph", index, { graph: { view: { x: 500, y: 200, k: 0.8 } } });
     expect(tab.memory().graph?.view).toEqual({ x: 500, y: 200, k: 0.8 });
 
-    tab.show("graph", index, { graph: { up: 2, down: 2, view: { x: 10, y: 10, k: 1.5 } } });
+    tab.show("graph", index, { graph: { view: { x: 10, y: 10, k: 1.5 } } });
 
     expect(tab.memory().graph?.view).toEqual({ x: 500, y: 200, k: 0.8 });
   });
@@ -151,15 +151,15 @@ describe("the views of a tab", () => {
   it("keeps a scope chosen on the whole of a large file across a hide and a show", () => {
     const large = indexOf(generated(2000));
     const tab = views();
-    tab.show("graph", large, { graph: { up: 3, down: 1 } }, "@I6@");
-    expect(tab.memory().graph).toMatchObject({ up: 3, down: 1 });
+    tab.show("graph", large, { graph: { view: { x: 3, y: 1, k: 1 } } }, "@I6@");
+    expect(tab.memory().graph).toMatchObject({ view: { x: 3, y: 1, k: 1 } });
     expect(tab.memory().graph?.focus).toBeUndefined();
 
     tab.hide();
     tab.show("graph", large, tab.memory(), "@I6@");
 
     expect(tab.memory().graph?.focus).toBeUndefined();
-    expect(tab.memory().graph).toMatchObject({ up: 3, down: 1 });
+    expect(tab.memory().graph).toMatchObject({ view: { x: 3, y: 1, k: 1 } });
   });
 
   it("holds a memory for a view only once it was shown", () => {
@@ -251,7 +251,7 @@ describe("the views of a tab", () => {
 
   it("keeps the last scroll it saw in sight for a tab that goes behind another with no hide", () => {
     const tab = views();
-    tab.show("timeline", index, { timeline: { up: 2, down: 2, zoom: 6, scroll: { top: 100, left: 0 } } });
+    tab.show("timeline", index, { timeline: { zoom: 6, scroll: { top: 100, left: 0 } } });
     const plot = parent.querySelector<HTMLElement>(".gedcom-ft-plot");
     if (!plot) {
       throw new Error("no plot");
@@ -267,21 +267,21 @@ describe("the views of a tab", () => {
 
   it("takes the scroll a restored tab saved, at its first show of the timeline", () => {
     const tab = views();
-    tab.show("timeline", index, { timeline: { up: 2, down: 2, zoom: 6, scroll: { top: 80, left: 30 } } });
+    tab.show("timeline", index, { timeline: { zoom: 6, scroll: { top: 80, left: 30 } } });
 
     expect(parent.querySelector<HTMLElement>(".gedcom-ft-plot")?.scrollTop).toBe(80);
   });
 
   it("forgets the boards and the memory on reset, and opens the next file by the first-opening rule", () => {
     const tab = views();
-    tab.show("graph", index, { graph: { up: 1, down: 1, view: { x: 1, y: 1, k: 1 } } });
+    tab.show("graph", index, { graph: { view: { x: 1, y: 1, k: 1 } } });
     tab.reset();
 
     expect(parent.children).toHaveLength(0);
     expect(tab.memory()).toEqual({});
 
     tab.show("graph", indexOf(generated(2000)), {}, "@I6@");
-    expect(tab.memory().graph).toMatchObject({ focus: "@I6@", up: 2, down: 2 });
+    expect(tab.memory().graph).toMatchObject({ focus: "@I6@" });
   });
 });
 
@@ -418,7 +418,7 @@ describe("selecting in a view", () => {
       const tab = views();
       tab.select("graph", "@I2@", false);
 
-      tab.show("graph", index, { graph: { up: 2, down: 2, view: { x: 500, y: 200, k: 0.8 } } });
+      tab.show("graph", index, { graph: { view: { x: 500, y: 200, k: 0.8 } } });
 
       expect(tab.memory().graph?.view).toEqual({ x: 500, y: 200, k: 0.8 });
       expect(all(".gedcom-fg-person.is-selected").map((one) => one.getAttribute("data-p"))).toEqual(["@I2@"]);

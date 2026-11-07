@@ -17,7 +17,7 @@ import {
   type GraphCard,
 } from "./fileGraph";
 
-const WHOLE = { up: 2, down: 2 };
+const WHOLE = {};
 
 const curie = (): FileTimeline => buildFileTimeline(curieIndex(), 2026);
 
@@ -522,7 +522,7 @@ describe("the order of the rows", () => {
 
 describe("a branch", () => {
   it("shows Irène's ten people in four rows", () => {
-    const layout = layoutFileGraph(curie(), { focus: "@I12@", up: 2, down: 2 });
+    const layout = layoutFileGraph(curie(), { focus: "@I12@" });
 
     expect(layout.cards).toHaveLength(10);
     expect(layout.rows).toBe(4);
@@ -530,26 +530,25 @@ describe("a branch", () => {
     expect(overlapping(layout)).toEqual([]);
   });
 
-  it("shows Marie with no ancestors and no descendants in one row, beside Pierre", () => {
-    const layout = layoutFileGraph(curie(), { focus: "@I1@", up: 0, down: 0 });
+  it("shows Henry Richardson Labouisse, with no parents and no children, in one row beside Ève", () => {
+    const layout = layoutFileGraph(curie(), { focus: "@I15@" });
 
-    expect(layout.cards.map((card) => [card.id, card.row])).toEqual([
-      ["@I2@", 0],
-      ["@I1@", 0],
-    ]);
+    expect(layout.cards).toHaveLength(2);
+    expect(new Set(layout.cards.map((card) => card.row))).toEqual(new Set([0]));
+    expect(layout.cards.map((card) => card.id).sort()).toEqual(["@I13@", "@I15@"]);
   });
 });
 
 describe("the layouts held for a model", () => {
-  it("answers one layout for the whole file whatever the steps, and for a focus it does not know", () => {
+  it("answers one layout for the whole file, and for a focus it does not know", () => {
     const model = curie();
     const whole = fileGraphOf(model, WHOLE);
 
-    expect(fileGraphOf(model, { up: 5, down: 0 })).toBe(whole);
-    expect(fileGraphOf(model, { focus: "@I99@", up: 1, down: 1 })).toBe(whole);
-    expect(fileGraphOf(model, { focus: "@I12@", up: 2, down: 2 })).not.toBe(whole);
-    expect(fileGraphOf(model, { focus: "@I12@", up: 2, down: 2 })).toBe(
-      fileGraphOf(model, { focus: "@I12@", up: 2, down: 2 }),
+    expect(fileGraphOf(model, {})).toBe(whole);
+    expect(fileGraphOf(model, { focus: "@I99@" })).toBe(whole);
+    expect(fileGraphOf(model, { focus: "@I12@" })).not.toBe(whole);
+    expect(fileGraphOf(model, { focus: "@I12@" })).toBe(
+      fileGraphOf(model, { focus: "@I12@" }),
     );
     expect(fileGraphOf(curie(), WHOLE)).not.toBe(whole);
   });
@@ -557,7 +556,7 @@ describe("the layouts held for a model", () => {
   it("keeps the four last asked for", () => {
     const model = curie();
     const whole = fileGraphOf(model, WHOLE);
-    const branch = (focus: string) => fileGraphOf(model, { focus, up: 1, down: 1 });
+    const branch = (focus: string) => fileGraphOf(model, { focus });
     for (const focus of ["@I1@", "@I2@", "@I3@"]) {
       branch(focus);
     }

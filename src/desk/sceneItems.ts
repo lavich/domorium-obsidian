@@ -13,6 +13,8 @@ export interface Item {
   right: number;
   bottom: number;
   people: string[];
+  /** Whether the light of a branch reaches a line or a family node; a card is lit by its person. */
+  lit?(branch: ReadonlySet<string>): boolean;
   make(far: boolean): SVGElement;
 }
 
@@ -62,6 +64,10 @@ export function buildItems(
         right: most(xs) + 11,
         bottom: most(ys) + 11,
         people: [...node.spouses, ...(near.get(node.family) ?? [])],
+        lit: (branch) => {
+          const spouses = node.spouses.filter((one) => branch.has(one)).length;
+          return spouses >= 2 || (spouses === 1 && (near.get(node.family) ?? []).some((one) => branch.has(one)));
+        },
         make: (far) => nodeShape(doc, node, family, far),
       });
     }
@@ -77,6 +83,7 @@ export function buildItems(
       right: most(xs),
       bottom: most(ys),
       people: [line.child, ...line.parents],
+      lit: (branch) => branch.has(line.child) && line.parents.some((one) => branch.has(one)),
       make: () =>
         svg(doc, "path", "gedcom-fg-line", {
           d: curve(line.points),
