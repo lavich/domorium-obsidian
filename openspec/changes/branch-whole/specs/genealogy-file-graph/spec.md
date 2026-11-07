@@ -4,9 +4,9 @@
 
 Pointing at a person's card, or giving it the keyboard focus, SHALL light that
 card, the cards of every person of their branch — their ancestors, their
-descendants and the spouses of everyone so shown — the lines between those people,
-and the family nodes they belong to, and SHALL fade everything
-else, until the pointer or the focus leaves. The pointer SHALL light a person
+descendants and the spouses of everyone so shown — and SHALL fade every other
+card, until the pointer or the focus leaves. The lines and the family nodes SHALL
+be neither lit nor faded: they stay as they are. The pointer SHALL light a person
 only once it has rested on them a moment, and put the light out only once it
 has rested off them as long, so that a sweep across cards does not flicker; the
 keyboard's focus and a touch SHALL light at once. Lighting and fading SHALL be
@@ -21,14 +21,13 @@ it has no date, and how many children the family has.
 - **WHEN** the reader points at Marie's card in the graph of `curie.ged`
 - **THEN** the cards of Marie, Władysław, Bronisława Boguska, Pierre Curie, Irène,
   Ève, Frédéric Joliot, Henry Richardson Labouisse, Hélène and Pierre Joliot are
-  lit, with the lines between them, and the cards of her sisters and brothers, of
-  Eugène Curie and of Sophie-Claire fade, as do the lines to her sisters and brothers
+  lit, and the cards of her sisters and brothers, of Eugène Curie and of
+  Sophie-Claire fade, while no line and no family node changes
 
 #### Scenario: Pointing at Hélène
 - **WHEN** the reader points at Hélène's card
 - **THEN** the cards of Hélène, Frédéric and Irène, Pierre Curie and Marie, and
-  Eugène, Sophie-Claire, Władysław and Bronisława Boguska are lit, and Ève and the
-  line to her fade
+  Eugène, Sophie-Claire, Władysław and Bronisława Boguska are lit, and Ève fades
 
 #### Scenario: Pointing at the Curies' family node
 - **WHEN** the reader points at the node between Pierre Curie and Marie

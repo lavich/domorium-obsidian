@@ -12,9 +12,6 @@ export interface Item {
   top: number;
   right: number;
   bottom: number;
-  people: string[];
-  /** Whether the light of a branch reaches a line or a family node; a card is lit by its person. */
-  lit?(branch: ReadonlySet<string>): boolean;
   make(far: boolean): SVGElement;
 }
 
@@ -29,10 +26,6 @@ export function buildItems(
     const [first] = node.spouses;
     nodesAfter.set(first, [...(nodesAfter.get(first) ?? []), node]);
   }
-  const near = new Map<string, string[]>();
-  for (const line of layout.lines) {
-    near.set(line.family, [...(near.get(line.family) ?? []), line.child]);
-  }
   const placed: Item[] = [];
   for (const card of layout.cards) {
     const shown = scene.card(card.id);
@@ -46,7 +39,6 @@ export function buildItems(
       top: card.y,
       right: card.x + CARD.width,
       bottom: card.y + card.height,
-      people: [card.id],
       make: (far) => makeCard({ placed: card, shown }, far),
     });
     for (const node of nodesAfter.get(card.id) ?? []) {
@@ -63,11 +55,6 @@ export function buildItems(
         top: least(ys) - 11,
         right: most(xs) + 11,
         bottom: most(ys) + 11,
-        people: [...node.spouses, ...(near.get(node.family) ?? [])],
-        lit: (branch) => {
-          const spouses = node.spouses.reduce((count, one) => count + (branch.has(one) ? 1 : 0), 0);
-          return spouses >= 2 || (spouses === 1 && (near.get(node.family) ?? []).some((one) => branch.has(one)));
-        },
         make: (far) => nodeShape(doc, node, family, far),
       });
     }
@@ -82,8 +69,6 @@ export function buildItems(
       top: least(ys),
       right: most(xs),
       bottom: most(ys),
-      people: [line.child, ...line.parents],
-      lit: (branch) => branch.has(line.child) && line.parents.some((one) => branch.has(one)),
       make: () =>
         svg(doc, "path", "gedcom-fg-line", {
           d: curve(line.points),

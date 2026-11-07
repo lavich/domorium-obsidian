@@ -126,7 +126,6 @@ export class GraphCanvas {
   private drawnWindow: GraphWindow | null = null;
   private drawnFar = false;
   private cardOf = new Map<string, Element>();
-  private reach = new Map<string, { element: Element; item: Item }[]>();
   private lit: Element[] = [];
   private highlighted: string | null = null;
   private armed: string | null = null;
@@ -380,11 +379,6 @@ export class GraphCanvas {
       const card = this.cardOf.get(member);
       if (card && !card.classList.contains("is-on")) {
         light(card, selves.has(member));
-      }
-      for (const { element, item } of this.reach.get(member) ?? []) {
-        if (!element.classList.contains("is-on") && item.lit?.(branch)) {
-          light(element, selves.has(member));
-        }
       }
     }
   }
@@ -757,16 +751,9 @@ export class GraphCanvas {
 
   private mapDrawn(): void {
     this.cardOf = new Map();
-    this.reach = new Map();
     for (const [item, element] of this.drawn) {
       if (item.kind === "card") {
         this.cardOf.set(item.id, element);
-        continue;
-      }
-      for (const id of item.people) {
-        const held = this.reach.get(id) ?? [];
-        held.push({ element, item });
-        this.reach.set(id, held);
       }
     }
   }

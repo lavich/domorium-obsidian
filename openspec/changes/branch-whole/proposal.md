@@ -4,13 +4,13 @@ A branch in the graph or the timeline stops at a number of generations of ancest
 
 ## The user's decisions (2026-11-07)
 
-In Russian: «Сейчас, когда я выбираю бранч в графовом представлении или таймлайне есть ограничение на количество потомков и предков. Хочу, чтобы этого ограничения не было и этой настройки тоже не было и выбирались максимальное количество предков либо потомков. А также при наведении подсвечиваются ближайшие родственники выбранного человека. Я хочу, чтобы подсвечивался весь бранч, а не только его родители и дети.» Asked what «the whole branch» is for the light, and where: «Тот же набор, что в Branch; граф и таймлайн». Asked what to do with the steppers and the saved state: «Убрать совсем». Recorded as given.
+In Russian: «Сейчас, когда я выбираю бранч в графовом представлении или таймлайне есть ограничение на количество потомков и предков. Хочу, чтобы этого ограничения не было и этой настройки тоже не было и выбирались максимальное количество предков либо потомков. А также при наведении подсвечиваются ближайшие родственники выбранного человека. Я хочу, чтобы подсвечивался весь бранч, а не только его родители и дети.» After the first build the user asked: «Убери выделение связи при наведении.» and, asked whether that meant lines only or lines and family nodes, chose «Линии и узлы семей». Asked what «the whole branch» is for the light, and where: «Тот же набор, что в Branch; граф и таймлайн». Asked what to do with the steppers and the saved state: «Убрать совсем». Recorded as given.
 
 ## What Changes
 
 - **A branch has no limit.** The branch of a person is all their ancestors, all their descendants and the spouses of everyone so shown — in the graph and the timeline alike.
 - **The two steppers go, with their numbers.** The line about the scope keeps whose branch is shown, how many of the file's people that is, and the way back to the whole file. A scope saved with `up` and `down` in the tab's state is read without them.
-- **The light is the branch.** Pointing at a person in the graph lights every card of their branch, the family nodes and the lines between those people, and fades everything else. In the timeline the light a click puts on does the same, and its arrows join every parent to every child within the branch, and the spouses of every marriage within it.
+- **The light is the branch.** Pointing at a person in the graph lights every card of their branch and fades every other card; the lines and the family nodes between them are neither lit nor faded. In the timeline the light a click puts on does the same, and its arrows join every parent to every child within the branch, and the spouses of every marriage within it.
 
 Repository or upstream: **this repository only.** The read model's `branch` and `related` are the one thing both views read; the parser and the language service are untouched.
 

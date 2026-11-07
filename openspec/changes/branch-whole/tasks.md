@@ -11,7 +11,7 @@ Independent of the other open changes: those that touched these requirements are
 
 ## 3. The light
 
-- [x] 3.1 Graph: `graphCanvas.highlight` lights every card of the branch, a line whose child and at least one parent are in the branch, and a family node with a spouse in the branch and another of its `people` in it; only the pointed card and its own lines carry `is-hl` (`src/desk/graphCanvas.ts`, `src/desk/sceneItems.ts`, `src/desk/fileGraphView.ts`). `CanvasScene.related` becomes `branch(xref)`. Tests in `src/desk/fileGraphView.test.ts` (the stub at its line 1090 follows) and `tests/fileGraph.spec.ts` (six lit cards for Marie become ten): Marie lights ten cards and not the lines to her sisters and brothers, Hélène lights her ancestors and fades Ève and her line.
+- [x] 3.1 Graph: `graphCanvas.highlight` lights every card of the branch and fades the other cards, and lights and fades no line and no family node (`src/desk/graphCanvas.ts`, `src/desk/sceneItems.ts`, `src/desk/fileGraphView.ts`). `CanvasScene.related` becomes `branch(xref)`. Tests in `src/desk/fileGraphView.test.ts` (the stub at its line 1090 follows) and `tests/fileGraph.spec.ts` (six lit cards for Marie become ten): Marie lights ten cards, Hélène lights her ancestors and fades Ève, and no line or node is lit.
 - [x] 3.2 Timeline: rows, lifelines and age pills of the branch light; `drawArrows` draws, once for the branch and not per person, parent → child and marriage links within it, only where an end is in the drawn window, and redraws them as the window moves (`src/desk/fileTimelineView.ts`). Tests in `src/desk/fileTimelineView.test.ts`, with a 10 000-person file clicked at its root.
 
 ## 4. The rest

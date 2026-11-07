@@ -238,7 +238,7 @@ describe("drawing the graph of a file", () => {
     expect(container.querySelector(".gedcom-fg-tools")).toBeNull();
   });
 
-  it("lights every card of Marie's branch and the lines within it, replacing nothing", () => {
+  it("lights every card of Marie's branch, and no line or family node, replacing nothing", () => {
     const drawn = board();
     const before = all(".gedcom-fg-view *");
     drawn.highlight("@I1@");
@@ -248,20 +248,18 @@ describe("drawing the graph of a file", () => {
       ["@I1@", "@I12@", "@I13@", "@I14@", "@I15@", "@I16@", "@I17@", "@I2@", "@I3@", "@I4@"].sort(),
     );
     expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
-    const lines = all(".gedcom-fg-line.is-on").map((one) => `${one.getAttribute("data-f")}>${one.getAttribute("data-child")}`);
-    expect(lines.sort()).toEqual(["@F1@>@I1@", "@F3@>@I12@", "@F3@>@I13@", "@F4@>@I16@", "@F4@>@I17@"]);
+    expect(all(".gedcom-fg-line.is-on, .gedcom-fg-family.is-on")).toHaveLength(0);
     expect(container.querySelector(".gedcom-fg-svg")?.classList.contains("has-hl")).toBe(true);
     expect(all(".gedcom-fg-view *")).toEqual(before);
   });
 
-  it("lights Hélène's ancestors and fades Ève and the line to her", () => {
+  it("lights Hélène's ancestors and fades Ève", () => {
     const drawn = board();
     drawn.highlight("@I16@");
 
     const lit = all(".gedcom-fg-person.is-on").map((one) => one.getAttribute("data-p"));
     expect(lit.sort()).toEqual(["@I1@", "@I10@", "@I12@", "@I14@", "@I16@", "@I2@", "@I3@", "@I4@", "@I9@"].sort());
     expect(person("@I13@")?.classList.contains("is-on")).toBe(false);
-    expect(all(".gedcom-fg-line.is-on").map((one) => one.getAttribute("data-child"))).not.toContain("@I13@");
   });
 
   it("lights a person once the pointer has rested, only the last of a sweep, and puts the light out after the same rest", () => {

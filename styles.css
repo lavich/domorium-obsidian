@@ -2307,16 +2307,8 @@ button.gedcom-fg-pop-open {
   pointer-events: none;
 }
 
-.gedcom-fg-svg.has-hl .gedcom-fg-person:not(.is-on),
-.gedcom-fg-svg.has-hl .gedcom-fg-line:not(.is-on),
-.gedcom-fg-svg.has-hl .gedcom-fg-family:not(.is-on) {
+.gedcom-fg-svg.has-hl .gedcom-fg-person:not(.is-on) {
   opacity: 0.18;
-}
-
-.gedcom-fg-line.is-hl,
-.gedcom-fg-family.is-hl .gedcom-fg-join {
-  stroke: var(--text-accent);
-  stroke-width: 2.5;
 }
 
 .gedcom-fg-person.is-hl .gedcom-fg-card-bg {
