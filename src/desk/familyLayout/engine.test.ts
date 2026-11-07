@@ -219,8 +219,8 @@ describe("forebears of a person with many children", () => {
     const centre = (id: string) => (layout.card.get(id)?.x ?? NaN) + 62;
     const node = (family: string) => layout.node.get(family)?.x ?? NaN;
 
-    expect(Math.abs(node("@F2@") - centre("@Vy@"))).toBeLessThan(25);
-    expect(Math.abs(node("@F3@") - centre("@Anat@"))).toBeLessThan(25);
+    expect(Math.abs(node("@F2@") - centre("@Vy@"))).toBeLessThan(45);
+    expect(Math.abs(node("@F3@") - centre("@Anat@"))).toBeLessThan(45);
     expect(layout.crossings).toBe(0);
   });
 });
@@ -251,7 +251,7 @@ describe("a branch whose children carry families of their own", () => {
 
     expect(layout.crossings).toBe(0);
     expect(over("@A4@", ["@Nad@", "@Nik@"])).toBeLessThan(80);
-    expect(over("@A6@", ["@Al@", "@Tat@"])).toBeLessThan(20);
+    expect(over("@A6@", ["@Al@", "@Tat@"])).toBeLessThan(35);
     const widest = Math.max(...[...new Set(layout.cards.map((card) => card.row))].map((row) => layout.cards.filter((card) => card.row === row).length));
     expect(layout.width).toBeLessThan(widest * 172 * 1.25);
   });

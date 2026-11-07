@@ -132,7 +132,7 @@ export function stackLayers(blocks: Block[], count: number): Block[][] {
  * solved exactly, so a moderate weight is enough). Higher keeps a line of descent straight; lower lets a couple
  * lean toward its own forebears instead of crowding the child's column.
  */
-const BELOW_PULL = 4;
+const BELOW_PULL = 2;
 
 /** Where a block would stand over its children, a little drawn to its parents, and how hard its links pull. */
 function pullOf(block: Block): { target: number; weight: number } {
