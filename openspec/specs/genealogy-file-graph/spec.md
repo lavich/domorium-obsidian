@@ -7,44 +7,47 @@ to cross as little as possible, in a tab of its own beside the person pages.
 
 ## Requirements
 
-### Requirement: A card is a person, coloured by sex
+### Requirement: A card is a person, coloured by surname
 
 Each person the file declares with an identifier SHALL have a card showing,
-from top to bottom, their portrait where they have one, their given names,
-their surname and their years of life, written as the timeline of the file
-writes them. The portrait SHALL be the picture, cut as its crop says, that the
-person's card shows; a picture from the web SHALL be shown only where the
-setting *Load images from the web*, or the reader's answer for this session,
-allows it, as on the card. A card without a portrait, or whose portrait cannot
-be shown, SHALL show none, and a name the record writes with no surname SHALL
-stand on one line. A card's background SHALL be tinted pink for a woman, blue
-for a man, and grey where the record states no sex, in colours taken from the
-theme. A line
+from top to bottom, their given names, their surname and their years of life,
+written as the timeline of the file writes them. A card SHALL show no picture, and
+every card SHALL be of one height; a name the record writes with no surname SHALL
+stand on one line. A card's background SHALL be tinted by the person's whole surname, in the colour the timeline gives their bar: surnames that differ only in a gendered ending, or are one name in two scripts, SHALL be tinted almost alike, surnames with little in common far apart, and a card of a person with no surname SHALL be grey. The lines of the card SHALL be written in an ink that reads at 4.5:1 on its tint, in the light scheme and in the dark. A line
 too long for its card SHALL be cut short, and the name given in full when the
-pointer rests on the card. Far out, neither portraits nor text SHALL be drawn,
-and only cards in or near the view SHALL load their portraits. The graph SHALL
+pointer rests on the card. Far out, no text SHALL be drawn. The graph SHALL
 NOT label generations.
 
 #### Scenario: Marie's card
 - **WHEN** the graph of `curie.ged` is shown
-- **THEN** Marie's card shows her portrait at its top, then `Marie`, then
-  `Skłodowska-Curie`, then `1867–1934`, and is marked pink, and Pierre Curie's
-  is marked blue; a line wider than the card is cut with an ellipsis, so in a
+- **THEN** Marie's card shows `Marie`, then
+  `Skłodowska-Curie`, then `1867–1934`, and is tinted by her surname, `Skłodowska-Curie`, and Pierre Curie's by his, `Curie`, in a different colour; a line wider than the card is cut with an ellipsis, so in a
   wide font her surname may be cut
 
 #### Scenario: A card without a portrait
-- **WHEN** the graph of `curie.ged` is shown
-- **THEN** Jacques's card has no portrait and begins with `Jacques` over
-  `Curie`, and stands in the same row as Pierre Curie's, which has one
+- **WHEN** the graph of `curie.ged` is shown, whose people have pictures
+- **THEN** no card shows a picture, Jacques's card begins with `Jacques` over
+  `Curie`, and every card is of one height
 
 #### Scenario: No labels for generations
 - **WHEN** the graph of `curie.ged` is shown
 - **THEN** no generation is named or numbered anywhere in it
 
+#### Scenario: Two spellings of one surname
+- **WHEN** a file has `Лобанов` and `Лобанова`
+- **THEN** their cards are tinted in hues that are almost the same, and `Сидорова`'s is far from them
+
+#### Scenario: Readable in both schemes
+- **WHEN** the graph of `curie.ged` is shown in the light scheme and then in the dark
+- **THEN** the lines of every card read at 4.5:1 on its tint in both
+
+#### Scenario: Without a surname
+- **WHEN** a person's name states no surname
+- **THEN** their card is grey
+
 ### Requirement: Generations run from top to bottom, and couples stand together
 
-Each generation of the file SHALL be one row of cards, the oldest at the top, a
-person standing in the generation the timeline of the file gives them. A person
+Each generation of the file SHALL be one row of cards, the oldest at the top, a person standing in the generation the timeline of the file gives them: a person with no parents in the file, and no spouse standing below them, stands one row above the highest-standing of their children in the file, and in the first row only where they have none. Children of one family SHALL NOT stand at different heights for their years of birth. A person
 and their spouses in the same generation SHALL stand side by side, a husband to
 the left of his wife; a person married more than once SHALL stand between two
 of their spouses. Where a couple's families are both in the graph, the
@@ -74,6 +77,22 @@ parent's card.
 - **THEN** the node between Eugène and Sophie-Claire is hollow, and the nodes of
   the other four couples show `’60`, `’95`, `’26` and `’54`
 
+#### Scenario: A man with no parents whose daughter marries down
+- **WHEN** a man with no parents in the file has a daughter who marries a man whose own father and grandfather are in the file
+- **THEN** the man stands one row above his daughter, in the row of the husband's father, and not in the top row with the husband's grandfather
+
+#### Scenario: A man with children in two generations
+- **WHEN** a man with no parents in the file has a son in the second row and a daughter in the third
+- **THEN** he stands in the first row, one above the higher of the two, and both lines reach their children
+
+#### Scenario: The Curie file keeps its rows
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** every card stands in the row it stood in before, Eugène and Sophie-Claire and Władysław and Bronisława Boguska in the top row
+
+#### Scenario: Brothers of different ages
+- **WHEN** two brothers were born in 1901 and 1914
+- **THEN** their cards stand in one row, and the elder stands to the left of the younger unless that crosses more lines
+
 ### Requirement: Lines run from a family to each child, crossing as little as possible
 
 A line SHALL run from each family node, or from the card of a family's one
@@ -82,10 +101,7 @@ the child's own card. Lines SHALL be curves. A line to a child more than one
 generation below SHALL pass through the rows between in a lane of its own,
 where no card stands.
 
-The order of the cards in each row SHALL be chosen to cross as few lines as the
-graph can find within the time budget the requirement on size gives it, and the cards
-then placed as close above their children and below their parents as that order
-and the room between cards allow. No two cards SHALL overlap.
+The order of the cards in each row SHALL be chosen to cross as few lines as the graph can find within the time budget the requirement on size gives it, brothers and sisters standing from the eldest at the left to the youngest at the right wherever that crosses no more lines than any other order the graph found; the cards are then placed as close above their children and below their parents as that order and the room between cards allow. No two cards SHALL overlap.
 
 #### Scenario: The Curie file
 - **WHEN** the graph of `curie.ged` is shown whole
@@ -97,6 +113,10 @@ and the room between cards allow. No two cards SHALL overlap.
   generations below his parents
 - **THEN** the line from his parents' family reaches his card through a lane in
   his sister's row, and no card stands in that lane
+
+#### Scenario: A crossing that cannot be avoided
+- **WHEN** no order of a row crosses fewer lines than the order shown
+- **THEN** the elder brother stands to the left of the younger
 
 ### Requirement: Pointing at a person lights their family
 
@@ -122,16 +142,17 @@ it has no date, and how many children the family has.
 
 #### Scenario: Pointing at the Curies' family node
 - **WHEN** the reader points at the node between Pierre Curie and Marie
-- **THEN** it shows Pierre Curie and Marie Skłodowska-Curie, married
+- **THEN** it shows Pierre Curie ⚭ Marie Skłodowska-Curie, married
   `26 JUL 1895` in Sceaux, France, and 2 children
 
 ### Requirement: Finding a person
 
 The graph SHALL offer a search by name that fades the cards that do not match.
-The search SHALL be an icon floating over the canvas, away from the zoom
-buttons, that is replaced by a field when it is pressed, the icon fading away as the
+The search SHALL be an icon floating over the canvas, in the top corner
+beside the zoom buttons, that is replaced by a field when it is pressed, the icon fading away as the
 field grows and taking no place beside it, and the field SHALL take the focus; the
-graph SHALL NOT have a toolbar for it. The field SHALL have a cross that
+graph SHALL NOT have a toolbar for it. The open field SHALL grow away from the
+zoom buttons and SHALL NOT cover them. The field SHALL have a cross that
 erases the text and leaves the field open. Escape, and the cross of an empty
 field, SHALL close the field back to the icon, as SHALL leaving it empty; a
 field with text SHALL stay open and keep its matches faded.
@@ -199,6 +220,11 @@ with a mouse or a key SHALL leave the focus in the field.
 - **WHEN** the field is empty and the reader presses Escape
 - **THEN** the field closes back to the icon, which has the focus
 
+#### Scenario: Opening the search beside the zoom
+- **WHEN** the reader presses the search icon
+- **THEN** the field grows away from the zoom buttons, which stay where
+  they were and uncovered
+
 ### Requirement: A branch scope shows one person's ancestors and descendants
 
 The reader SHALL be able to choose, from a person's card, to show only that
@@ -257,9 +283,9 @@ leaves it on SHALL be kept, the whole file included.
 The reader SHALL be able to move the graph by dragging it from anywhere, a card
 included; a press that moves before it is released SHALL NOT activate what it
 began on. A mouse wheel SHALL zoom around the pointer; a trackpad's two-finger
-scroll SHALL move the graph and its pinch SHALL zoom; buttons floating over a
-corner of the graph, which stay where they are as it moves, SHALL zoom in and
-out. **Fit** SHALL show the whole scope where the zoom range allows, and
+scroll SHALL move the graph and its pinch SHALL zoom; buttons floating over the top
+corner of the graph, inside the same bordered box as the search icon, right after it, which
+stay where they are as it moves, SHALL zoom in and out. **Fit** SHALL show the whole scope where the zoom range allows, and
 otherwise as much of it as the farthest zoom shows, centred on it. Zoomed out
 beyond the point where names can be read, cards SHALL be drawn without text.
 
@@ -299,6 +325,22 @@ showed.
 - **WHEN** the reader has moved and zoomed the graph, switches to Timeline mode
   and then back to Graph mode
 - **THEN** the graph is at the same position and zoom, and was not laid out again
+
+#### Scenario: The search and the zoom side by side
+- **WHEN** the graph of `curie.ged` is shown
+- **THEN** the search icon and the zoom out, zoom in and Fit buttons are in one bordered box
+  in the top corner of the canvas, the buttons to the right of the icon, and none is
+  at the bottom of the canvas
+
+#### Scenario: The buttons of the box are one size
+- **WHEN** the search and the zoom buttons are shown
+- **THEN** the search icon and the zoom out, zoom in and Fit buttons are squares of one size, at least 44
+  pixels on a phone
+
+#### Scenario: The zoom on a phone while the search is open
+- **WHEN** the reader opens the search on a phone
+- **THEN** the zoom buttons are hidden while the field is open, so it has the room to be used, and are
+  shown again when it closes
 
 ### Requirement: The graph holds up at size
 

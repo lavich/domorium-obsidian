@@ -497,8 +497,7 @@ drawn views of the first into the second.
 #### Scenario: Rewritten by the plugin
 - **WHEN** the tab is in Graph mode and the plugin rewrites a `FILE` path in the
   text because the media file was renamed
-- **THEN** the graph is drawn from the new text, and a card whose portrait it
-  names shows the portrait at the new path
+- **THEN** the graph is drawn from the new text
 
 #### Scenario: Navigated to another file
 - **WHEN** a tab of `curie.ged` is in Graph mode on Irène's branch, zoomed in, and
@@ -602,3 +601,19 @@ left as they were, and every GEDCOM tab SHALL keep its mode.
 #### Scenario: The tabs are as they were
 - **WHEN** the same workspace holds a tab of `curie.ged` in Graph mode
 - **THEN** the tab is still in Graph mode
+
+### Requirement: A couple is named with the marriage sign
+
+Wherever the plugin names a family by its spouses — the title of its card, a row of the list, the tooltip and the accessible name of its node in the graph, a command that lists it — it SHALL write the two names joined by ` ⚭ `, in every language, and not with a word. A family with one spouse SHALL be named by that spouse alone, and one with none as having no spouses, as it is today.
+
+#### Scenario: The Curies
+- **WHEN** the card of the family of Pierre and Marie is shown for `curie.ged`
+- **THEN** its title reads `Pierre Curie ⚭ Marie Skłodowska-Curie`
+
+#### Scenario: In Russian
+- **WHEN** the language of the plugin is Russian and the same card is shown
+- **THEN** the title reads the two names joined by ` ⚭ ` and not by «и»
+
+#### Scenario: One spouse
+- **WHEN** a family names only one spouse
+- **THEN** its title is that spouse's name, with no marriage sign
