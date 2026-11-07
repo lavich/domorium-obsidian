@@ -115,16 +115,17 @@ another event. The label SHALL name no one but the selected person.
 ### Requirement: A branch scope shows one person's ancestors and descendants
 
 The reader SHALL be able to choose, from the bar of the selected person, to show only
-that person's branch: their ancestors up to a number of generations, their descendants
-down to a number of generations, and the spouses of everyone so shown. The choice
+that person's branch: all their ancestors, all their descendants, and the spouses of
+everyone so shown. No number of generations SHALL limit a branch and none SHALL be
+offered. The choice
 SHALL be a button, Branch, attached to the selected person's bar and not dependent on
 pointing, and SHALL be offered for no other bar; the command **Branch of the selected
 person** SHALL do what pressing it does, and SHALL be available from the keyboard
-whether or not the bar is in the part drawn. Both numbers SHALL start at two and be
-changed in steps of one, from zero to nine. The timeline SHALL say whose branch it shows and how many of the file's people with a bar that is, and SHALL return to the whole file on
+whether or not the bar is in the part drawn. The timeline SHALL say whose branch it shows and how many of the file's people with a bar that is, and SHALL return to the whole file on
 request. Choosing Branch again on the person whose branch is shown SHALL return to the
 whole file, and that person's Branch SHALL read as pressed while their branch is
-shown. While the whole file is shown, no line about the scope SHALL be shown.
+shown. While the whole file is shown, no line about the scope SHALL be shown. A scope saved with
+numbers of generations SHALL be read as the branch of its person.
 
 A file of more than 500 people SHALL show its timeline, the first time the tab does, on
 the branch of the person the tab had selected when it was brought to the timeline — in
@@ -137,6 +138,17 @@ included.
   Branch on her bar
 - **THEN** her parents and grandparents, Frédéric, and their two children are shown,
   and the timeline says this is 10 of 17 people
+
+#### Scenario: Marie's branch
+- **WHEN** Marie is selected and the reader chooses Branch on her bar
+- **THEN** her parents, her husband, her daughters, their spouses and their children
+  are shown, and the timeline says this is 10 of 17 people, with no control for a
+  number of generations
+
+#### Scenario: A saved scope with numbers
+- **WHEN** a tab is restored whose saved timeline scope names Marie with `up` 0 and
+  `down` 0
+- **THEN** the timeline shows Marie's whole branch
 
 #### Scenario: Branch again
 - **WHEN** Irène's branch is shown and the reader chooses Branch on Irène's bar
@@ -407,17 +419,17 @@ of these fades anyone.
 
 A click on a person's bar with a mouse or a pen, and Enter or Space on a focused bar, SHALL
 select that person, as `A bar selects a record` says, and light them:
-highlight their bar, their parents, spouses and children, and fade everyone else, and draw
-the person's links. Those SHALL be, for each parent, a vertical line from the parent's bar
-to the person's bar at the year of the person's birth, ending in an arrowhead on the
-person's bar; the same from the person's bar to each child's bar at the year of the child's
-birth; and, for each spouse, a dashed vertical line between the two bars at the year of
-their marriage — where the marriage is undated, at the year of the first child the two share
+highlight the bars of their whole branch — their ancestors, their descendants and the
+spouses of everyone so shown — and fade everyone else, and draw the links of that branch.
+Those SHALL be, for each parent and child within the branch, a vertical line from the
+parent's bar to the child's bar at the year of the child's birth, ending in an arrowhead
+on the child's bar; and, for each marriage within the branch, a dashed vertical line
+between the two bars at the year of the marriage — where the marriage is undated, at the year of the first child the two share
 — with a dot at each end and no arrowhead. A link whose two bars are not both drawn SHALL
 be drawn as far as the edge of the part shown. The two parents' lines to one child SHALL
 not lie on one another. The three kinds of line SHALL differ in more than colour: a line to
 a parent or a child SHALL be solid with an arrowhead, a marriage dashed with dots. No link
-SHALL be drawn for anyone else. The light SHALL be put on at once, with no wait for the
+SHALL be drawn for anyone outside the branch. The light SHALL be put on at once, with no wait for the
 pointer to rest, and SHALL stay until the reader clicks anywhere on the board that is not a
 person or a mark, presses Escape with the focus in the timeline, clicks another person,
 whom the light then moves to, changes the scope or the mode, selects another record by any
@@ -433,15 +445,16 @@ where the reader's system asks for reduced motion.
 
 #### Scenario: A sweep across the rows
 - **WHEN** the pointer passes over several bars and the reader clicks Irène's
-- **THEN** only Irène and her family stand out, and they stood out only from the click
+- **THEN** only Irène's branch stands out, and it stood out only from the click
 
 #### Scenario: Clicking Marie
 - **WHEN** the reader clicks Marie's bar
-- **THEN** Marie is selected, her parents, Pierre, Irène and Ève stand out, the others
-  fade, a solid line with an arrowhead falls from each of her parents' bars to her bar at
-  1867, a solid line with an arrowhead falls from her bar to each daughter's bar at the
-  daughter's birth, a dashed line joins her bar to Pierre's in 1895, and nothing is drawn
-  from Pierre's bar to anyone but her
+- **THEN** Marie is selected, her parents, Pierre, Irène, Ève, their spouses and Hélène
+  and Pierre Joliot stand out, the others fade, a solid line with an arrowhead falls
+  from each of her parents' bars to her bar at 1867, from her bar and Pierre's to each
+  daughter's bar, and from each of Irène's and Frédéric's bars to each of their
+  children's, a dashed line joins her bar to Pierre's in 1895, and nothing is drawn
+  from Eugène's bar
 
 #### Scenario: A marriage with no date
 - **WHEN** two spouses' marriage is undated and their first child was born in 1900
@@ -449,7 +462,7 @@ where the reader's system asks for reduced motion.
 
 #### Scenario: Clicking another person
 - **WHEN** Marie is lit and the reader clicks Irène's bar
-- **THEN** only Irène and her family stand out, and Irène is selected
+- **THEN** only Irène's branch stands out, and Irène is selected
 
 #### Scenario: Clicking empty space
 - **WHEN** Marie is lit and the reader clicks the board where there is no person and no mark
@@ -461,7 +474,7 @@ where the reader's system asks for reduced motion.
 
 #### Scenario: From the keyboard
 - **WHEN** the focus is on Irène's bar and the reader presses Enter
-- **THEN** Irène is selected and her family stands out; moving the focus to Marie's bar with
+- **THEN** Irène is selected and her branch stands out; moving the focus to Marie's bar with
   Tab lights no one and puts no light out
 
 #### Scenario: A selection made elsewhere
@@ -564,9 +577,9 @@ mode or write to the file.
 - **THEN** no bar is marked and the timeline does not scroll
 
 #### Scenario: A person outside the branch
-- **WHEN** the timeline shows Marie's branch with zero generations of ancestors and zero of
-  descendants and the reader follows `[[curie.ged#@I16@]]`
-- **THEN** the timeline shows Hélène's branch, with her bar selected
+- **WHEN** the timeline shows Marie's branch and the reader follows
+  `[[curie.ged#@I5@]]`
+- **THEN** the timeline shows Zofia's branch, with her bar selected
 
 #### Scenario: Selected while the tab is behind another
 - **WHEN** a tab in Timeline mode is behind another tab and the reader follows
