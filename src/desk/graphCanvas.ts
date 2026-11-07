@@ -5,7 +5,7 @@ import { CARD, type FileGraphLayout, type GraphCard, type Point } from "./fileGr
 import { GraphInput } from "./graphInput";
 import { buildItems, type Item } from "./sceneItems";
 
-export { curve, fitText } from "./cardRender";
+export { polyline, fitText } from "./cardRender";
 
 export const ZOOM = { min: 0.05, max: 3, fit: 1.4, readable: 0.6, opens: 0.55, far: 0.5 } as const;
 const MARGIN = 20;

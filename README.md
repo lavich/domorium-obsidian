@@ -160,7 +160,7 @@ picks a person out and places the year cursor, and a second touch selects them.
 In **Graph** mode the tab shows a card per person, generations from top to
 bottom and tinted by surname, as the bars of the timeline are. Spouses stand side by side, a husband to
 the left of his wife, joined by a node with the year of their marriage — hollow
-where it is undated — from which curved lines run to their children; the
+where it is undated — from which lines with square corners run to their children; the
 husband's family tends to stand on the left and the wife's on the right, and the
 rows are ordered to cross as few lines as it can find. The graph is laid out by
 family: people are grouped into the families the file declares — adoptive and

@@ -23,19 +23,8 @@ export function svg<K extends keyof SVGElementTagNameMap>(
   return node;
 }
 
-export function curve(points: readonly Point[]): string {
-  const [first] = points;
-  if (!first) {
-    return "";
-  }
-  let d = `M${first[0]} ${first[1]}`;
-  for (let at = 1; at < points.length; at += 1) {
-    const [x0, y0] = points[at - 1] ?? first;
-    const [x1, y1] = points[at] ?? first;
-    const half = (y1 - y0) / 2;
-    d += ` C${x0} ${y0 + half} ${x1} ${y1 - half} ${x1} ${y1}`;
-  }
-  return d;
+export function polyline(points: readonly Point[]): string {
+  return points.map(([x, y], at) => `${at === 0 ? "M" : "L"}${x} ${y}`).join(" ");
 }
 
 export function fitText(text: string, room: number, measure: (text: string) => number): string {
@@ -152,7 +141,7 @@ export function cardShape(doc: Document, placed: GraphCard, shown: CanvasCard, f
 export function nodeShape(doc: Document, node: GraphNode, family: CanvasFamily, far: boolean): SVGElement {
   const group = svg(doc, "g", `gedcom-fg-family is-${node.kind}`, { "data-f": node.family });
   for (const join of node.joins) {
-    group.append(svg(doc, "path", "gedcom-fg-join", { d: curve(join) }));
+    group.append(svg(doc, "path", "gedcom-fg-join", { d: polyline(join) }));
   }
   const dated = node.year !== null;
   const digits = node.year === null ? "" : marriageDigits(node.year);

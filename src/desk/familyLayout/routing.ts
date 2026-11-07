@@ -22,48 +22,66 @@ function bandAt(bands: readonly GraphBand[], y: number): number {
 }
 
 /**
- * Where long lines of several families cross one gap between rows, each
- * family's cross at a height of their own, ranked by where the family stands,
- * so a bundle of them can be told apart; neighbours never share a height.
+ * Gives every line square corners: a stretch that changes x between rows turns
+ * into a drop, a run across and a drop. The lines of one family run across at one
+ * height, a bus they share; families whose runs would overlap in one gap run at
+ * heights of their own, so that a bundle of them can be told apart.
  */
-export function bendApart(g: Geometry, lines: GraphLine[], bands: readonly GraphBand[]): void {
-  const crossings = new Map<number, { line: GraphLine; at: number }[]>();
+export function squareOff(g: Geometry, lines: GraphLine[], bands: readonly GraphBand[]): void {
+  const found = new Map<number, { line: GraphLine; at: number }[]>();
   for (const line of lines) {
     line.points.forEach((point, at) => {
       const next = line.points[at + 1];
-      if (next && Math.abs(next[0] - point[0]) > g.long && next[1] > point[1]) {
+      if (next && next[0] !== point[0] && next[1] > point[1]) {
         const gap = bandAt(bands, point[1]);
-        crossings.set(gap, [...(crossings.get(gap) ?? []), { line, at }]);
+        found.set(gap, [...(found.get(gap) ?? []), { line, at }]);
       }
     });
   }
-  const replaced = new Map<GraphLine, Map<number, Point[]>>();
-  for (const [gap, found] of crossings) {
-    const families = [...new Set(found.map((one) => one.line.family))];
-    if (families.length < 2) {
-      continue;
+  const added = new Map<GraphLine, Map<number, Point[]>>();
+  for (const [gap, segments] of found) {
+    const top = (bands[gap]?.bottom ?? 0) + g.clear;
+    const bottom = (bands[gap + 1]?.top ?? top + g.rowGap) - g.clear;
+    const families = new Map<string, { left: number; right: number }>();
+    for (const { line, at } of segments) {
+      const xs = [line.points[at]?.[0] ?? 0, line.points[at + 1]?.[0] ?? 0];
+      const own = families.get(line.family);
+      const [left, right] = [Math.min(...xs), Math.max(...xs)];
+      families.set(
+        line.family,
+        own ? { left: Math.min(own.left, left), right: Math.max(own.right, right) } : { left, right },
+      );
     }
-    const startOf = new Map(found.map((one) => [one.line.family, one.line.points[one.at]?.[0] ?? 0]));
-    families.sort((a, b) => (startOf.get(a) ?? 0) - (startOf.get(b) ?? 0));
-    const rank = new Map(families.map((family, at) => [family, at]));
-    const top = (bands[gap]?.bottom ?? 0) + g.clear + g.bend;
-    const bottom = (bands[gap + 1]?.top ?? top) - g.clear - g.bend;
-    for (const { line, at } of found) {
+    const ordered = [...families.entries()].sort((a, b) => a[1].left - b[1].left || (a[0] < b[0] ? -1 : 1));
+    const ends: number[] = [];
+    const levelOf = new Map<string, number>();
+    for (const [family, span] of ordered) {
+      let level = ends.findIndex((end) => end + g.sibling < span.left);
+      if (level < 0) {
+        level = ends.length;
+      }
+      ends[level] = span.right;
+      levelOf.set(family, level);
+    }
+    const room = Math.max(1, Math.min(ends.length, Math.floor((bottom - top) / g.bendStep)));
+    for (const { line, at } of segments) {
       const [x0 = 0, y0 = 0] = line.points[at] ?? [];
       const [x1 = 0, y1 = 0] = line.points[at + 1] ?? [];
-      const levels = Math.max(1, Math.min(families.length, Math.floor((bottom - top) / g.bendStep)));
-      const bend = top + ((bottom - top) * (((rank.get(line.family) ?? 0) % levels) + 0.5)) / levels;
-      if (bend - g.bend < y0 || bend + g.bend > y1) {
-        continue;
-      }
-      const own = replaced.get(line) ?? new Map<number, Point[]>();
-      own.set(at, [[x0, bend - g.bend], [x1, bend + g.bend]]);
-      replaced.set(line, own);
+      const level = (levelOf.get(line.family) ?? 0) % room;
+      const y = Math.min(Math.max(top + ((bottom - top) * (level + 0.5)) / room, y0), y1);
+      const own = added.get(line) ?? new Map<number, Point[]>();
+      own.set(at, [[x0, y], [x1, y]]);
+      added.set(line, own);
     }
   }
-  for (const [line, at] of replaced) {
+  for (const [line, at] of added) {
     line.points = line.points.flatMap((point, index) => [point, ...(at.get(index) ?? [])]);
   }
+}
+
+/** Down, then across, so that a join to a node has square corners. */
+function elbow(from: Point, to: Point): Point[] {
+  return from[0] === to[0] ? [from, to] : [from, [from[0], to[1]], to];
 }
 
 function nodeOf(g: Geometry, family: GraphInputFamily, placed: GraphCard[]): GraphNode {
@@ -88,7 +106,7 @@ function nodeOf(g: Geometry, family: GraphInputFamily, placed: GraphCard[]): Gra
       year,
       spouses: [one.id, other.id],
       others,
-      joins: placed.map((card) => [bottom(card), [x, y]]),
+      joins: placed.map((card) => elbow(bottom(card), [x, y])),
     };
   }
   let node: GraphNode;
@@ -118,7 +136,7 @@ function nodeOf(g: Geometry, family: GraphInputFamily, placed: GraphCard[]): Gra
         year,
         spouses: [a.id, b.id],
         others,
-        joins: [[bottom(a), [x, y]], [bottom(b), [x, y]]],
+        joins: [elbow(bottom(a), [x, y]), elbow(bottom(b), [x, y])],
       };
     }
   } else {
@@ -127,6 +145,7 @@ function nodeOf(g: Geometry, family: GraphInputFamily, placed: GraphCard[]): Gra
     const to = top(lower);
     const next = lower.row - upper.row === 1;
     const at: Point = next ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : [from[0], from[1] + g.below];
+    const across = (to[1] - at[1]) / 2 + at[1];
     node = {
       family: family.id,
       kind: "across",
@@ -135,11 +154,13 @@ function nodeOf(g: Geometry, family: GraphInputFamily, placed: GraphCard[]): Gra
       year,
       spouses: [upper.id, lower.id],
       others,
-      joins: next ? [[from, to]] : [[from, at], [at, to]],
+      joins: next
+        ? [from[0] === to[0] ? [from, to] : [from, [from[0], at[1]], [to[0], at[1]], to]]
+        : [[from, at], from[0] === to[0] ? [at, to] : [at, [at[0], across], [to[0], across], to]],
     };
   }
   for (const card of rest) {
-    node.joins.push([card.y + card.height <= node.y ? bottom(card) : top(card), [node.x, node.y]]);
+    node.joins.push(elbow(card.y + card.height <= node.y ? bottom(card) : top(card), [node.x, node.y]));
   }
   return node;
 }

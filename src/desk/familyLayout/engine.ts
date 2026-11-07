@@ -6,7 +6,7 @@ import { energyOf, familiesOf, crossingsOf } from "./energy";
 import { budgetOf, initialPlacement, linkFamilies, optimise, stackLayers, wantsOf } from "./macro";
 import { measureBlocks, placeCards, resolveCollisions, staggerRow } from "./micro";
 import { analyseRoot } from "./rootAnalysis";
-import { bendApart, joinSpouses, routeLines } from "./routing";
+import { squareOff, joinSpouses, routeLines } from "./routing";
 import {
   DEFAULT_OPTIONS,
   DEFAULT_WEIGHTS,
@@ -144,7 +144,7 @@ export function runLayout(
   const { cards, card } = placeCards(g, layers, bands, minX);
   const { nodes, node } = joinSpouses(g, input.families, card);
   const lines = routeLines(g, edges, card, node, bands);
-  bendApart(g, lines, bands);
+  squareOff(g, lines, bands);
 
   const rights = blocks.map((block) => block.cx + block.width / 2);
   const layout: FileGraphLayout = {

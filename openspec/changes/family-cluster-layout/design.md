@@ -270,8 +270,10 @@ no node, as today. Bus levels
 and lanes of different clusters in one gap are staggered by `BEND_STEP` as today.
 Several lines between the same two people (a person who is both child and spouse
 of one family, or two families linking the same pair) keep separate `id`s and
-`relationship` kinds and are offset, not merged. `points` stay a polyline that
-turns only between rows, drawn through the same `curve` as now. Routing reads
+`relationship` kinds and are offset, not merged. `points` are a polyline of vertical and horizontal stretches only, drawn with
+square corners (the reader's decision, after the first build: the old S-curves
+crossed where they met a corner); a stretch that changes x between rows becomes a
+drop, a run across at the family's bus height, and a drop. Routing reads
 placement and never writes it.
 
 ### D10. Result
@@ -305,7 +307,7 @@ stay (the initial placement versus the final). `sweeps` is replaced by
   (`pulls`); a performance test at 1 000, 5 000, 10 000 people asserts completion
   within budget on the generated file.
 - [Orthogonal bus routing changes how lines look] → points stay between-row
-  polylines through the same curve; browser screenshot at desktop and phone width
+  polylines; browser screenshot at desktop and phone width
   compared before and after.
 - [`PEDI` absent or contradictory] → `unstated` is a valid kind; a child listed
   under a `FAM` with a `FAMC` of another family is an `alternate-parents` link, not
@@ -401,3 +403,8 @@ Deviations from the design above, as built:
   taking its block's home from the first spouse rather than the pinned one; the
   mirrored start leaving `home` stale when rejected; lanes being staggerable; lines
   keyed by family in `sceneItems.ts` rather than by `line.id`.
+- **Square corners.** `squareOff` replaces `bendApart`: a family's lines share a
+  bus height in each gap, and families whose runs overlap in x take heights of
+  their own (greedy interval levels, wrapping past the room the gap has).
+  Joins to a family node are elbows, and a join between spouses in different rows
+  runs across at the node's height. `curve` became `polyline` in `cardRender.ts`.

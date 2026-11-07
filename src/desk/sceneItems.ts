@@ -1,6 +1,6 @@
 import { CARD, type GraphCard, type GraphNode } from "./fileGraph";
 import { least, most } from "./fileTimeline";
-import { curve, nodeShape, svg } from "./cardRender";
+import { polyline, nodeShape, svg } from "./cardRender";
 import type { CanvasCard, CanvasScene } from "./graphCanvas";
 
 type ItemKind = "card" | "node" | "line";
@@ -71,7 +71,7 @@ export function buildItems(
       bottom: most(ys),
       make: () =>
         svg(doc, "path", "gedcom-fg-line", {
-          d: curve(line.points),
+          d: polyline(line.points),
           "data-f": line.family,
           "data-child": line.child,
         }),

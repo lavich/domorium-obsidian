@@ -530,28 +530,45 @@ describe("the order of the rows", () => {
     expect(layout.width).toBeLessThan(1.5 * Math.max(...widths.values()));
   });
 
-  it("bends the long lines of each family in a gap at a height of their own", () => {
+  it("runs the lines of each family across a gap at one height, and those of families that would overlap at heights of their own", () => {
     const layout = layoutFileGraph(buildFileTimeline(indexOf(tangled(300)), 2026), WHOLE);
-    const heights = new Map<string, Set<number>>();
+    const runs: { gap: number; family: string; y: number; left: number; right: number }[] = [];
     for (const line of layout.lines) {
       line.points.forEach((point, at) => {
         const next = line.points[at + 1];
-        if (next && next[1] - point[1] === 16 && Math.abs(next[0] - point[0]) > CARD.height + ROW_GAP) {
-          const gap = layout.bands.findIndex((band) => band.bottom < point[1] && point[1] < band.bottom + ROW_GAP);
-          heights.set(`${gap}|${line.family}`, (heights.get(`${gap}|${line.family}`) ?? new Set()).add(point[1]));
+        if (next && next[1] === point[1] && next[0] !== point[0]) {
+          const gap = layout.bands.findIndex((band, row) => band.bottom <= point[1] && point[1] <= (layout.bands[row + 1]?.top ?? Infinity));
+          runs.push({ gap, family: line.family, y: point[1], left: Math.min(point[0], next[0]), right: Math.max(point[0], next[0]) });
         }
       });
     }
-    const byGap = new Map<number, number[]>();
-    for (const [key, ys] of heights) {
-      expect(ys.size, key).toBe(1);
-      const gap = Number(key.split("|")[0]);
-      byGap.set(gap, [...(byGap.get(gap) ?? []), ...ys]);
-    }
 
-    expect(byGap.size).toBeGreaterThan(0);
-    for (const ys of byGap.values()) {
-      expect(new Set(ys).size).toBe(Math.min(ys.length, 12));
+    expect(runs.length).toBeGreaterThan(0);
+    const byFamily = new Map<string, Set<number>>();
+    for (const run of runs) {
+      byFamily.set(`${run.gap}|${run.family}`, (byFamily.get(`${run.gap}|${run.family}`) ?? new Set()).add(run.y));
+    }
+    for (const [key, heights] of byFamily) {
+      expect(heights.size, key).toBe(1);
+    }
+    const crowded = runs.filter((one, at) =>
+      runs.some((other, index) => index !== at && other.gap === one.gap && other.family !== one.family && other.y === one.y && other.left < one.right && one.left < other.right),
+    );
+    expect(crowded.length).toBe(0);
+  });
+
+  it("draws every line with square corners, and every join to a family node too", () => {
+    for (const model of [curie(), buildFileTimeline(indexOf(tangled(300)), 2026)]) {
+      const layout = layoutFileGraph(model, WHOLE);
+      const paths = [...layout.lines.map((line) => line.points), ...layout.nodes.flatMap((node) => node.joins)];
+      for (const points of paths) {
+        points.forEach((point, at) => {
+          const next = points[at + 1];
+          if (next) {
+            expect(point[0] === next[0] || point[1] === next[1], JSON.stringify(points)).toBe(true);
+          }
+        });
+      }
     }
   });
 

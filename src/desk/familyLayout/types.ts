@@ -61,7 +61,7 @@ export interface GraphBand {
 /**
  * `pair`: between neighbouring spouses. `below`: under a block whose two
  * spouses are not neighbours, as a third marriage leaves them. `across`: on
- * the curve between spouses in different rows.
+ * the line between spouses in different rows.
  */
 export type NodeKind = "pair" | "below" | "across";
 
@@ -75,7 +75,7 @@ export interface GraphNode {
   spouses: [string, string];
   /** The partners of a family of more than two, beyond the pair; each has a join of its own. */
   others: string[];
-  /** What joins the node to its spouses' cards, each drawn as a curve. */
+  /** What joins the node to its spouses' cards, each a line of square corners. */
   joins: Point[][];
 }
 

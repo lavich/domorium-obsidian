@@ -52,7 +52,7 @@ parent's card.
 
 A line SHALL run from each family node, or from the card of a family's one
 parent in the graph, to the card of each of its children in the graph, meeting
-the child's own card. Lines SHALL be curves. A line to a child more than one
+the child's own card. Lines SHALL be made of vertical and horizontal stretches with square corners, and so SHALL the joins between a family node and its spouses; the lines of one family SHALL run across between two rows at one height, and the lines of families whose runs would overlap in that gap at heights of their own. A line to a child more than one
 generation below SHALL pass through the rows between in a lane of its own,
 where no card stands.
 
@@ -68,6 +68,10 @@ The order of the cards in each row SHALL be chosen by laying the file out by fam
   generations below his parents
 - **THEN** the line from his parents' family reaches his card through a lane in
   his sister's row, and no card stands in that lane
+
+#### Scenario: Square corners
+- **WHEN** the graph of any file is shown
+- **THEN** every line, and every join between a family node and a spouse, turns only at right angles, and no line is drawn as a curve
 
 #### Scenario: Children share a trunk
 - **WHEN** the graph of `curie.ged` is shown

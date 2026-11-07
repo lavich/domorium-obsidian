@@ -29,6 +29,9 @@ deterministic, independently tested stages.
   performance tests; no `any`; the renderer is not rewritten.
 - Decision on approach: **"Заменить layoutGraph целиком"** — the new engine
   becomes the only layout of the graph of a file.
+- Follow-up, after seeing the graph in the demo vault: lines drawn as curves
+  crossed one another where a curve met a square corner — "Давай сделаем все
+  угловатыми" (2026-11-07) — so every line and join is drawn with square corners.
 - Decision on root and direction: **"Корень = focus ветки; направление — только
   в API"** — the root is the person whose branch is shown (the existing focus); the
   four directions are supported by the engine and its tests but no setting,
