@@ -1,0 +1,184 @@
+0 HEAD
+1 GEDC
+2 VERS 7.0
+1 SUBM @U1@
+0 @U1@ SUBM
+1 NAME A Submitter
+0 @I1@ INDI
+1 NAME Maria /Skłodowska/
+2 TYPE BIRTH
+2 GIVN Maria
+2 SURN Skłodowska
+2 NPFX Dr
+2 NSFX Jr
+2 NICK Manya
+2 SPFX von
+2 NOTE Spelled in Polish.
+2 SOUR @S1@
+3 PAGE 4
+2 TRAN Мария Склодовская
+3 LANG ru
+2 _SPELLING Polish
+1 NAME Marie /Curie/
+2 TYPE MARRIED
+1 SEX F
+1 BIRT
+2 DATE 7 NOV 1867
+3 TIME 10:00
+3 PHRASE in the morning
+2 PLAC Warsaw, Poland
+3 FORM City, Country
+3 MAP
+4 LATI N52.2
+4 LONG E21.0
+3 TRAN Варшава
+4 LANG ru
+2 AGE 0y
+2 CAUS Natural causes
+2 AGNC Registry office
+2 ADDR 1 Freta Street
+3 CONT Warsaw
+3 CITY Warsaw
+2 PHON +48 1 2345
+2 EMAIL maria@@example.org
+2 WWW https://example.org
+2 NOTE Born at home.
+3 CONT The second line.
+2 ASSO @I2@
+3 ROLE WITN
+2 OBJE @O1@
+2 SOUR @S1@
+3 PAGE 12
+3 QUAY 3
+3 DATA
+4 TEXT Quoted text of the register.
+4 DATE 1867
+3 NOTE A note on the citation.
+2 _WEATHER Rain
+1 OCCU Physicist
+1 FACT yes
+2 TYPE Hobby
+1 FAMC @F1@
+2 PEDI BIRTH
+2 STAT PROVEN
+2 NOTE A note on the link.
+1 FAMC @F2@
+2 PEDI ADOPTED
+1 FAMS @F3@
+2 NOTE A note on the spouse link.
+1 SNOTE @N1@
+1 NOTE The first line of a long note.
+2 CONT Line 2 of a long note.
+2 CONT Line 3 of a long note.
+2 CONT Line 4 of a long note.
+2 CONT Line 5 of a long note.
+2 CONT Line 6 of a long note.
+2 CONT Line 7 of a long note.
+2 CONT Line 8 of a long note.
+2 CONT Line 9 of a long note.
+2 CONT Line 10 of a long note.
+2 CONT Line 11 of a long note.
+2 CONT Line 12 of a long note.
+1 ASSO @I2@
+2 ROLE OTHER
+3 PHRASE Landlord
+1 ALIA @I3@
+1 REFN 123
+2 TYPE user
+1 UID 6f1f4a2e-0000-0000-0000-000000000001
+1 EXID 4711
+2 TYPE https://example.org/
+1 RESN PRIVACY
+1 CREA
+2 DATE 1 JAN 2019
+1 CHAN
+2 DATE 1 JAN 2020
+3 TIME 10:00
+1 SUBM @U1@
+1 OBJE @O1@
+1 OBJE @O9@
+1 _MILITARY Cavalry
+2 _RANK Captain
+3 _SINCE 1890
+0 @I2@ INDI
+1 NAME Pierre /Curie/
+1 SEX M
+1 FAMS @F3@
+0 @I3@ INDI
+1 NAME Another /Record/
+1 ALIA @I1@
+0 @I5@ INDI
+1 NAME Władysław /Skłodowski/
+1 SEX M
+1 FAMS @F1@
+0 @I6@ INDI
+1 NAME Bronisława /Boguska/
+1 SEX F
+1 FAMS @F1@
+0 @I7@ INDI
+1 NAME Adoptive /Father/
+1 SEX M
+1 FAMS @F2@
+0 @I8@ INDI
+1 NAME Adoptive /Mother/
+1 SEX F
+1 FAMS @F2@
+0 @I9@ INDI
+1 NAME Irène /Joliot-Curie/
+1 SEX F
+1 FAMC @F3@
+2 PEDI ADOPTED
+2 STAT CHALLENGED
+0 @I10@ INDI
+1 NAME Ève /Curie/
+1 SEX F
+1 FAMC @F3@
+0 @F1@ FAM
+1 HUSB @I5@
+1 WIFE @I6@
+1 CHIL @I1@
+0 @F2@ FAM
+1 HUSB @I7@
+1 WIFE @I8@
+1 CHIL @I1@
+0 @F3@ FAM
+1 HUSB @I2@
+2 PHRASE the husband
+1 WIFE @I1@
+1 CHIL @I9@
+2 PHRASE the elder
+1 CHIL @I10@
+1 NCHI 3
+1 MARR
+2 DATE 26 JUL 1895
+2 PLAC Sceaux, France
+2 HUSB
+3 AGE 36y
+2 WIFE
+3 AGE 27y
+2 NOTE A modest wedding.
+2 SOUR @S1@
+3 PAGE 7
+2 AGNC Town hall
+2 _GUESTS 2
+1 DIV
+2 TYPE None
+1 NOTE A note on the family.
+1 ASSO @I5@
+2 ROLE FATH
+1 REFN F-3
+1 RESN LOCKED
+1 CHAN
+2 DATE 2 FEB 2021
+1 _FAMILYTAG yes
+2 _SUB x
+0 @S1@ SOUR
+1 TITL The register
+1 AUTH Clerk
+0 @O1@ OBJE
+1 FILE Media/portrait.svg
+2 FORM image/svg+xml
+2 TITL A portrait
+0 @N1@ SNOTE The shared note text.
+1 CONT Its second line.
+0 TRLR

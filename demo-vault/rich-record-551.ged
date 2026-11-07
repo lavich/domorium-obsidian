@@ -1,0 +1,86 @@
+0 HEAD
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+1 SUBM @U1@
+0 @U1@ SUBM
+1 NAME An Old Submitter
+0 @I1@ INDI
+1 NAME Maria /Curie/
+2 TYPE maiden
+2 GIVN Maria
+2 SURN Curie
+2 NICK Manya
+2 NOTE Old-style name note.
+1 NAME Marie /Curie/
+2 TYPE aka
+1 SEX F
+1 BIRT
+2 DATE 7 NOV 1867
+2 PLAC Warsaw, Poland
+3 FORM City, Country
+3 MAP
+4 LATI N52.2
+4 LONG E21.0
+2 AGE 0y
+2 CAUS Natural causes
+2 AGNC Registry office
+2 ADDR 1 Freta Street
+3 CONT Warsaw
+3 ADR1 1 Freta Street
+3 CITY Warsaw
+3 CTRY Poland
+2 PHON +48 1
+2 NOTE @N1@
+2 SOUR @S1@
+3 PAGE 9
+3 QUAY 2
+3 DATA
+4 TEXT Quote.
+2 OBJE
+3 FILE portrait.jpg
+4 FORM jpeg
+3 TITL Inline media
+1 BAPL
+2 DATE 1 JAN 1900
+2 TEMP SLAKE
+2 STAT COMPLETED
+1 FAMC @F1@
+2 PEDI birth
+2 STAT proven
+1 NOTE @N1@
+1 NOTE A 5.5.1 note with an at sign: me@@example.org
+2 CONC  and a continuation
+2 CONT on a new line
+1 ASSO @I2@
+2 RELA godp
+1 REFN 9
+2 TYPE user
+1 RIN 4711
+1 AFN AB12
+1 RESN locked
+1 CHAN
+2 DATE 1 JAN 2000
+3 TIME 12:00
+1 ANCI @U1@
+1 _CUSTOM value
+2 _SUB deep
+0 @I2@ INDI
+1 NAME Pierre /Curie/
+1 SEX M
+1 FAMS @F1@
+0 @F1@ FAM
+1 HUSB @I2@
+1 WIFE @I1@
+1 NCHI 0
+1 MARR
+2 DATE 1895
+2 HUSB
+3 AGE 36y
+0 @S1@ SOUR
+1 TITL Old register
+0 @N1@ NOTE A shared note in the old way,
+1 CONC  continued
+1 CONT and on.
+0 TRLR

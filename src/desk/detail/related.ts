@@ -23,7 +23,12 @@ function renderEntry(parent: HTMLElement, line: RecordLine, ctx: DetailContext):
       cls: "gedcom-related-role",
       text: role.text?.toUpperCase() === "OTHER" && phrase ? phrase : roleLabel(role.text ?? ""),
     });
-    word.setAttribute("data-line", String(role.range.start.line));
+    const phraseLine = role.children.find((child) => child.tag === "PHRASE");
+    const usesPhrase = role.text?.toUpperCase() === "OTHER" && Boolean(phrase);
+    word.setAttribute(
+      "data-line",
+      [role, usesPhrase ? phraseLine : undefined].flatMap((one) => (one ? [one.range.start.line] : [])).join(" "),
+    );
     if (phrase && !(role.text?.toUpperCase() === "OTHER")) {
       renderLines(entry.createDiv({ cls: "gedcom-detail" }), role.children.filter((child) => child.tag === "PHRASE"), ctx);
     }

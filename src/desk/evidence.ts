@@ -127,7 +127,8 @@ function renderCitation(
   const record = index.record(citation.record);
   const line = record ? findLine(record, citation.range) : undefined;
   if (own && line) {
-    own.setAttribute("data-line", String(line.range.start.line));
+    const shown = line.children.filter((child) => CITATION_SHOWN.has(child.tag));
+    own.setAttribute("data-line", [line, ...shown].map((one) => one.range.start.line).join(" "));
     const ctx: DetailContext = { index, host: { openRecord: (xref) => host.openRecord(xref), showInSource: (range) => host.showInSource(range) } };
     if (line.children.some((child) => !CITATION_SHOWN.has(child.tag))) {
       renderRest(parent.createDiv({ cls: ["gedcom-detail", "gedcom-cite-lines"] }), line, CITATION_SHOWN, ctx);
