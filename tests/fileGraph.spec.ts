@@ -171,6 +171,40 @@ test.describe("the graph of a file", () => {
       .toBeLessThan(2);
   });
 
+  test("moves the cards of a branch to their places, fades the others where they stood, and leaves nothing behind", async ({ page }) => {
+    await mountGraph(page);
+    const started = await page.evaluate(() => {
+      document.querySelector('[data-branch="@I12@"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+      return {
+        animations: document.getAnimations().length,
+        ghosts: document.querySelectorAll(".gedcom-fg-person[inert]").length,
+        reachable: [...document.querySelectorAll(".gedcom-fg-person[inert]")].every(
+          (ghost) => getComputedStyle(ghost).pointerEvents === "none",
+        ),
+        focusable: document.querySelectorAll('.gedcom-fg-person[inert] [tabindex="0"]').length,
+      };
+    });
+
+    expect(started.animations).toBeGreaterThan(0);
+    expect(started.ghosts).toBe(7);
+    expect(started.reachable).toBe(true);
+    expect(started.focusable).toBe(0);
+    await expect.poll(() => page.evaluate(() => document.getAnimations().length)).toBe(0);
+    await expect(page.locator(".gedcom-fg-person")).toHaveCount(10);
+    await expect(page.locator(".gedcom-fg-person[inert]")).toHaveCount(0);
+  });
+
+  test("changes at once, with nothing moving, where the reader asks for reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await mountGraph(page);
+    const started = await page.evaluate(() => {
+      document.querySelector('[data-branch="@I12@"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+      return { animations: document.getAnimations().length, people: document.querySelectorAll(".gedcom-fg-person").length };
+    });
+
+    expect(started).toEqual({ animations: 0, people: 10 });
+  });
+
   test("returns to the whole file on Branch again, which reads pressed while the branch is shown", async ({ page }) => {
     await mountGraph(page);
     await card(page, "@I12@").hover();
@@ -549,6 +583,20 @@ test.describe("the graph of a file of 10 000 people", () => {
         return performance.now() - started;
       });
       expect(hover).toBeLessThan(50);
+
+      const changed = await page.evaluate(async () => {
+        const xref = document.querySelector("[data-card]")?.getAttribute("data-card") ?? "";
+        const started = performance.now();
+        document.querySelector(`[data-branch="${xref}"]`)?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
+        const took = performance.now() - started;
+        return { took, animations: document.getAnimations().length, ghosts: document.querySelectorAll(".gedcom-fg-person[inert]").length };
+      });
+      expect(changed.took).toBeLessThan(2_000);
+      expect(changed.animations).toBeLessThan(1_000);
+      expect(changed.ghosts).toBeLessThanOrEqual(400);
+      await expect.poll(() => page.evaluate(() => document.getAnimations().length), { timeout: 5_000 }).toBe(0);
+      await expect(page.locator(".gedcom-fg-person[inert]")).toHaveCount(0);
+      await page.locator(".gedcom-fg-whole").click();
 
       await page.locator(".gedcom-fg-fit").click();
       await page.waitForTimeout(100);
