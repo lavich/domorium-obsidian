@@ -251,7 +251,7 @@ describe("a branch whose children carry families of their own", () => {
 
     expect(layout.crossings).toBe(0);
     expect(over("@A4@", ["@Nad@", "@Nik@"])).toBeLessThan(80);
-    expect(over("@A6@", ["@Al@", "@Tat@"])).toBeLessThan(10);
+    expect(over("@A6@", ["@Al@", "@Tat@"])).toBeLessThan(20);
     const widest = Math.max(...[...new Set(layout.cards.map((card) => card.row))].map((row) => layout.cards.filter((card) => card.row === row).length));
     expect(layout.width).toBeLessThan(widest * 172 * 1.25);
   });
