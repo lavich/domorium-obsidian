@@ -924,11 +924,11 @@ button.gedcom-card-nav:focus-visible {
 .is-mobile .gedcom-desk-fact-head,
 .is-mobile .gedcom-desk-fact-value,
 .is-mobile .gedcom-desk-fact-where {
-  padding-block: 9px;
+  padding-block: 12px;
 }
 
 .is-mobile .gedcom-desk-fact .gedcom-desk-link::after {
-  inset: -9px 0;
+  inset: -12px 0;
 }
 
 .is-mobile button.gedcom-desk-fact-name::after {
