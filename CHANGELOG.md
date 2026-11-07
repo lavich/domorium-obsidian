@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.18.2
+
+- **The cards on the right show the whole record.** A person's card lists every name
+  with its type and parts, the events (date on the left, name, place beneath, a quiet
+  dot where a source is cited), the details (occupation, residence and the like), the
+  family with the marriages under each spouse, notes, related people, media, the
+  timeline and the evidence; a line that no section claims is under a folded *Other
+  data*, so none is dropped. The cards of a family and of an event are built the same
+  way. Values are read-only fields for now, flat until the pointer or focus is on them.
+  The line counting facts without a source is gone.
+- **A touch on the graph no longer opens the side panels.** On a phone or a tablet,
+  dragging or pinching the graph was read by Obsidian as a swipe that opens a panel.
+- **Couples stand nearer their own parents.** A couple is no longer pressed against the
+  column of its child, and where lines still cross a couple is turned about, wife left
+  and husband right, when that takes the crossing out.
+- **The expanding search closes as smoothly as it opens.**
+
 ## 1.18.1
 
 - **A branch has no limit.** The branch of a person is all their ancestors, all
