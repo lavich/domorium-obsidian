@@ -2395,6 +2395,11 @@ button.gedcom-fg-pop-open {
   transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
+.gedcom-fg-view.is-moving,
+.gedcom-fg-view.is-gliding {
+  will-change: transform;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gedcom-fg-view.is-gliding {
     transition: none;
@@ -2560,6 +2565,37 @@ button.gedcom-fg-pop-open {
   stroke: var(--text-normal);
   stroke-width: 2;
   stroke-dasharray: 4 3;
+}
+
+.gedcom-fg-person.is-outlined .gedcom-fg-card-bg {
+  stroke: var(--text-accent);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.gedcom-fg-person.is-outlined.is-hl .gedcom-fg-card-bg {
+  stroke-width: 4px;
+}
+
+.gedcom-fg-person.is-outlined.is-selected .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 5px;
+}
+
+.gedcom-fg-person.is-outlined.is-current .gedcom-fg-card-bg {
+  stroke: var(--interactive-accent);
+  stroke-width: 6px;
+}
+
+.gedcom-fg-person.is-outlined.is-selected.is-current .gedcom-fg-card-bg,
+.gedcom-fg-person.is-outlined.is-selected.is-current.is-hl .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 6px;
+}
+
+.gedcom-fg-person.is-outlined .gedcom-fg-card:focus-visible .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 3px;
 }
 
 .gedcom-fg-person.is-dim {

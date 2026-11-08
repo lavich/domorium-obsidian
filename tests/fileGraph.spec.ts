@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import type { GraphOptions } from "../harness/fileGraph";
 import { expectNameLines } from "./cardText";
-import { generated, tangled } from "./generated";
+import { generated, lineages, tangled } from "./generated";
 
 async function mountGraph(page: Page, options: GraphOptions = {}): Promise<number> {
   await page.goto(pathToFileURL(resolve("harness/fileGraph.html")).href);
@@ -604,4 +604,109 @@ test.describe("the graph of a file of 10 000 people", () => {
       expect(await page.locator(".gedcom-fg-view *").count()).toBeLessThan(6_000);
     });
   }
+});
+
+test.describe("the graph of a file as wide as it is deep", () => {
+  const view = (page: Page) => page.locator(".gedcom-fg-view");
+  const drawnCards = (page: Page) => page.locator(".gedcom-fg-person").count();
+  const zoomTo = (page: Page, k: number) =>
+    page.evaluate((target) => {
+      const board = window.graph.board;
+      board?.zoomAt(target / (board.view()?.k ?? 1), 700, 450);
+    }, k);
+  const outsideView = (page: Page) =>
+    page.evaluate(() => {
+      const window_ = window.graph.board?.windowOf();
+      if (!window_) {
+        return -1;
+      }
+      const width = window_.right - window_.left;
+      const height = window_.bottom - window_.top;
+      return [...document.querySelectorAll(".gedcom-fg-person")].filter((one) => {
+        const [x = NaN, y = NaN] = (one.getAttribute("transform")?.match(/-?[\d.]+/g) ?? []).map(Number);
+        return x + 168 < window_.left - width || x > window_.right + width || y + 46 < window_.top - height || y > window_.bottom + height;
+      }).length;
+    });
+
+  test.beforeEach(async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: 1400, height: 900 });
+    await mountGraph(page, { doc: lineages(150, 20), whole: true });
+  });
+
+  const fitNow = (page: Page) =>
+    page.evaluate(() => {
+      window.graph.board?.fit();
+      return {
+        gliding: document.querySelector(".gedcom-fg-view")?.classList.contains("is-gliding") ?? false,
+        drawn: document.querySelectorAll(".gedcom-fg-person").length,
+      };
+    });
+
+  test("draws only what a view needs once it has come in from Fit, whether Fit glided or jumped", async ({ page }) => {
+    const glided = await fitNow(page);
+    expect(glided.gliding).toBe(true);
+    expect(glided.drawn).toBeGreaterThan(3_000);
+    await expect(view(page)).not.toHaveClass(/is-gliding/);
+
+    await zoomTo(page, 0.15);
+    await expect.poll(() => drawnCards(page)).toBeLessThan(2_500);
+    expect(await outsideView(page)).toBe(0);
+
+    await zoomTo(page, 0.6);
+    const jumped = await fitNow(page);
+    expect(jumped.gliding).toBe(false);
+    await expect.poll(() => drawnCards(page)).toBeGreaterThan(3_000);
+
+    await zoomTo(page, 0.15);
+    await expect.poll(() => drawnCards(page)).toBeLessThan(2_500);
+    expect(await outsideView(page)).toBe(0);
+  });
+
+  test("outlines the lit branch and fades no card while more than 3 000 are drawn, and fades again in a thin view", async ({ page }) => {
+    await fitNow(page);
+    await expect(view(page)).not.toHaveClass(/is-gliding/);
+    expect(await drawnCards(page)).toBeGreaterThan(3_000);
+
+    const xref = (await page.locator("[data-card]").nth(2_000).getAttribute("data-card")) ?? "";
+    await page.evaluate((id) => window.graph.board?.highlight(id), xref);
+    const lit = await page.locator(".gedcom-fg-person.is-on").count();
+    expect(lit).toBeGreaterThan(1);
+    await expect(page.locator(".gedcom-fg-person.is-outlined")).toHaveCount(lit);
+    await expect(page.locator(".gedcom-fg-svg")).not.toHaveClass(/has-hl/);
+    const unlit = page.locator(".gedcom-fg-person:not(.is-on)").first();
+    expect(await unlit.evaluate((element) => getComputedStyle(element).opacity)).toBe("1");
+
+    const bg = (selector: string) =>
+      page.locator(selector).first().locator(".gedcom-fg-card-bg").evaluate((element) => {
+        const style = getComputedStyle(element);
+        return [style.strokeWidth, style.vectorEffect];
+      });
+    const outline = () => bg(".gedcom-fg-person.is-outlined:not(.is-hl)");
+    await expect.poll(outline).toEqual(["2px", "non-scaling-stroke"]);
+    await expect.poll(() => bg(".gedcom-fg-person.is-outlined.is-hl")).toEqual(["4px", "non-scaling-stroke"]);
+    await zoomTo(page, 0.06);
+    await expect.poll(() => drawnCards(page)).toBeGreaterThan(3_000);
+    await expect.poll(outline).toEqual(["2px", "non-scaling-stroke"]);
+    await page.evaluate((id) => window.graph.board?.select(id, false), xref);
+    await expect.poll(() => bg(".gedcom-fg-person.is-outlined.is-selected")).toEqual(["5px", "non-scaling-stroke"]);
+
+    await zoomTo(page, 0.6);
+    await expect.poll(() => drawnCards(page)).toBeLessThan(2_500);
+    const near = (await page.locator("[data-card]").first().getAttribute("data-card")) ?? "";
+    await page.evaluate((id) => window.graph.board?.highlight(id), near);
+    await expect(page.locator(".gedcom-fg-svg")).toHaveClass(/has-hl/);
+    await expect(page.locator(".gedcom-fg-person.is-outlined")).toHaveCount(0);
+  });
+
+  test("keeps the shapes as a layer while the view moves, and lets it go once at rest", async ({ page }) => {
+    const willChange = () => view(page).evaluate((element) => getComputedStyle(element).willChange);
+    const moving = await page.evaluate(() => {
+      window.graph.board?.panBy(30, 0);
+      return getComputedStyle(document.querySelector(".gedcom-fg-view") as Element).willChange;
+    });
+    expect(moving).toBe("transform");
+
+    await expect.poll(willChange, { timeout: 3_000 }).toBe("auto");
+  });
 });
