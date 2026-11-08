@@ -1135,6 +1135,155 @@ describe("the selected card", () => {
   });
 });
 
+describe("a graph with more cards drawn than the light can fade", () => {
+  const model = curie();
+  const sceneOf = (): CanvasScene => ({
+    layout: fileGraphOf(model, WHOLE),
+    card: (id) => ({ name: id, years: "", paint: "" }),
+    family: () => undefined,
+    branch: (id) => model.branch(id),
+  });
+  const handlers = { activateCard: vi.fn(), activateFamily: vi.fn(), viewChanged: vi.fn() };
+  const MARIE = ["@I1@", "@I12@", "@I13@", "@I14@", "@I15@", "@I16@", "@I17@", "@I2@", "@I3@", "@I4@"];
+  const hasHl = () => container.querySelector(".gedcom-fg-svg")?.classList.contains("has-hl");
+
+  function canvasWith(fade: { limit: number; back: number }): GraphCanvas {
+    const canvas = new GraphCanvas(container, handlers, { fade });
+    canvas.show(sceneOf(), { open: undefined });
+    canvas.resized(WIDE);
+    return canvas;
+  }
+
+  it("outlines the branch and fades no card, leaving the rest as they are", () => {
+    const canvas = canvasWith({ limit: 10, back: 6 });
+    canvas.highlight("@I1@");
+
+    expect(all(".gedcom-fg-person.is-outlined").map((one) => one.getAttribute("data-p")).sort()).toEqual([...MARIE].sort());
+    expect(all(".gedcom-fg-person.is-on")).toHaveLength(MARIE.length);
+    expect(hasHl()).toBe(false);
+    expect(person("@I11@")?.classList.contains("is-outlined")).toBe(false);
+  });
+
+  it("fades the others and outlines nothing at or below the limit", () => {
+    const canvas = canvasWith({ limit: 17, back: 12 });
+    canvas.highlight("@I1@");
+
+    expect(hasHl()).toBe(true);
+    expect(all(".is-outlined")).toHaveLength(0);
+  });
+
+  it("keeps the mode it had between the two limits, and fades again at the lower", () => {
+    const fade = { limit: 10, back: 6 };
+    const canvas = canvasWith(fade);
+    canvas.highlight("@I1@");
+    expect(hasHl()).toBe(false);
+
+    Object.assign(fade, { limit: 20, back: 12 });
+    canvas.highlight("@I2@");
+    expect(hasHl()).toBe(false);
+    expect(all(".is-outlined").length).toBeGreaterThan(0);
+
+    Object.assign(fade, { limit: 20, back: 17 });
+    canvas.highlight("@I1@");
+    expect(hasHl()).toBe(true);
+    expect(all(".is-outlined")).toHaveLength(0);
+  });
+
+  it("takes the outline away with the light", () => {
+    const canvas = canvasWith({ limit: 10, back: 6 });
+    canvas.highlight("@I1@");
+    canvas.highlight(null);
+
+    expect(all(".is-outlined, .is-on")).toHaveLength(0);
+    expect(hasHl()).toBe(false);
+  });
+
+  it("does not lose the light a pointer is resting for when the view is drawn again", () => {
+    vi.useFakeTimers();
+    try {
+      const drawn = board();
+      pointer("pointermove", card("@I1@"));
+      const window = drawn.windowOf();
+      if (window) {
+        drawn.draw(window);
+      }
+      vi.advanceTimersByTime(HOVER_DELAY);
+
+      expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe("what the graph keeps drawn as the view comes in", () => {
+  const WIDEST = { left: -40_000, top: -40_000, right: 40_000, bottom: 40_000 };
+
+  it("asks for a redraw once what is drawn is more than twice what the view needs, and not for a zoom step", () => {
+    const drawn = board();
+    drawn.draw(WIDEST);
+    const view = drawn.windowOf();
+    expect(view && drawn.needsDraw(view)).toBe(true);
+
+    if (view) {
+      drawn.draw(view);
+    }
+    expect(drawn.needsDraw(drawn.windowOf() ?? view ?? WIDEST)).toBe(false);
+    drawn.zoomAt(1.12, 700, 450);
+    expect(drawn.needsDraw(drawn.windowOf() ?? WIDEST)).toBe(false);
+  });
+
+  it("waits for a glide to end, and lets go of what it drew once it has", () => {
+    const drawn = board();
+    drawn.zoomBy(1.2);
+    const view = container.querySelector(".gedcom-fg-view");
+    expect(view?.classList.contains("is-gliding")).toBe(true);
+
+    drawn.draw(WIDEST);
+    expect(drawn.needsDraw(drawn.windowOf() ?? WIDEST)).toBe(false);
+
+    view?.dispatchEvent(new Event("transitionend"));
+    expect(view?.classList.contains("is-gliding")).toBe(false);
+    expect(drawn.needsDraw(drawn.windowOf() ?? WIDEST)).toBe(true);
+  });
+
+  it("keeps the card holding the focus, and marks the selected one again when it is drawn back", () => {
+    const drawn = board();
+    drawn.select("@I2@", false);
+    card("@I1@")?.focus();
+
+    drawn.draw({ left: 90_000, top: 90_000, right: 91_400, bottom: 90_900 });
+    expect(person("@I1@")).not.toBeNull();
+    expect(person("@I2@")).toBeNull();
+
+    const view = drawn.windowOf();
+    if (view) {
+      drawn.draw(view);
+    }
+    expect(person("@I2@")?.classList.contains("is-selected")).toBe(true);
+  });
+
+  it("keeps the shapes as a layer while the view moves, and lets it be painted again once it has rested", () => {
+    vi.useFakeTimers();
+    try {
+      const drawn = board();
+      const view = container.querySelector(".gedcom-fg-view");
+      drawn.panBy(30, 0);
+      expect(view?.classList.contains("is-moving")).toBe(true);
+
+      vi.advanceTimersByTime(150);
+      drawn.panBy(30, 0);
+      vi.advanceTimersByTime(150);
+      expect(view?.classList.contains("is-moving")).toBe(true);
+
+      vi.advanceTimersByTime(60);
+      expect(view?.classList.contains("is-moving")).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("the search of the graph, opened from outside", () => {
   it("replaces the icon with a focused field", () => {
     const drawn = board();

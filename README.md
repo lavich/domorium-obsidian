@@ -173,8 +173,9 @@ family: people are grouped into the families the file declares — adoptive and
 foster links, several marriages and unknown parents included, though the graph
 draws every link alike — before any card is placed, and a person who belongs to
 several families stays one card. Pointing at a person
-lights their whole branch, as the timeline does; pointing at a node shows the
-marriage and the number of children. Drag or scroll with two fingers to move,
+lights their whole branch, as the timeline does, and fades the rest; where more
+than 3 000 cards are in view the branch is outlined instead and nothing fades.
+Pointing at a node shows the marriage and the number of children. Drag or scroll with two fingers to move,
 use the wheel or pinch to zoom, and **Fit** to see the whole scope; far out the
 cards are drawn without names. The search, **Branch** and the 500-person rule
 work as in the timeline. Choosing a branch, or returning to the whole file, moves

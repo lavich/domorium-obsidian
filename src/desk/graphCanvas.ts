@@ -13,6 +13,8 @@ const MARGIN = 20;
 const BUTTON_STEP = 1.2;
 const GLIDE_MS = 400;
 const GLIDE_REACH = 2.5;
+const PRUNE = 2;
+const REST_MS = 200;
 
 /** Where the view looks: the graph point at the centre of the canvas, and the scale. */
 export interface GraphView {
@@ -80,7 +82,16 @@ export type Opening =
 export interface GraphCanvasOptions {
   /** Obsidian's; where none is handed in, the buttons carry a sign. */
   setIcon?(element: HTMLElement, icon: string): void;
+  fade?: FadeLimits;
 }
+
+/** The light outlines once more than `limit` cards are drawn, and fades again once `back` or fewer are. */
+export interface FadeLimits {
+  limit: number;
+  back: number;
+}
+
+export const FADE: FadeLimits = { limit: 3000, back: 2500 };
 
 /** The cards a family joins, each lit with the others: spouses with spouses and children, children with parents. */
 export function relatedIn(layout: FileGraphLayout, families: Iterable<{ id: string; spouses: string[]; children: string[] }>): (id: string) => Set<string> {
@@ -139,6 +150,8 @@ export class GraphCanvas {
   private size = { width: 0, height: 0 };
   private transform: { x: number; y: number; k: number } | null = null;
   private glideTimer: number | null = null;
+  private moveTimer: number | null = null;
+  private outlining = false;
   private pending: Opening | null = null;
   private frame = false;
   private refocusing = false;
@@ -193,7 +206,7 @@ export class GraphCanvas {
     this.viewEl.append(this.linesEl, this.itemsEl);
     this.viewEl.addEventListener("transitionend", (event) => {
       if (event.target === this.viewEl) {
-        this.endGlide();
+        this.restGlide();
       }
     });
     this.svgEl.append(this.viewEl);
@@ -282,16 +295,39 @@ export class GraphCanvas {
     };
   }
 
+  /** Also true once what is drawn dwarfs what the view needs, so a view that has come in from Fit lets the rest go; not while gliding. */
   needsDraw(window: GraphWindow): boolean {
     const drawn = this.drawnWindow;
-    return (
+    if (
       drawn === null ||
       this.far() !== this.drawnFar ||
       window.left < drawn.left ||
       window.top < drawn.top ||
       window.right > drawn.right ||
       window.bottom > drawn.bottom
+    ) {
+      return true;
+    }
+    if (this.viewEl.classList.contains("is-gliding")) {
+      return false;
+    }
+    const needed = this.rangeOf(window);
+    return (
+      drawn.right - drawn.left > PRUNE * (needed.right - needed.left) ||
+      drawn.bottom - drawn.top > PRUNE * (needed.bottom - needed.top)
     );
+  }
+
+  private rangeOf(window: GraphWindow, around?: number): GraphWindow {
+    const width = window.right - window.left;
+    const height = window.bottom - window.top;
+    const margin = around ?? (this.far() ? 0.25 : 1);
+    return {
+      left: window.left - width * margin,
+      top: window.top - height * margin,
+      right: window.right + width * margin,
+      bottom: window.bottom + height * margin,
+    };
   }
 
   draw(window: GraphWindow, around?: number): void {
@@ -299,15 +335,7 @@ export class GraphCanvas {
       return;
     }
     const far = this.far();
-    const width = window.right - window.left;
-    const height = window.bottom - window.top;
-    const margin = around ?? (far ? 0.25 : 1);
-    const range: GraphWindow = {
-      left: window.left - width * margin,
-      top: window.top - height * margin,
-      right: window.right + width * margin,
-      bottom: window.bottom + height * margin,
-    };
+    const range = this.rangeOf(window, around);
     const active = this.doc.activeElement;
     const focused = active ? this.itemOf(active) : null;
     const focusedPill = active?.hasAttribute("data-branch") ?? false;
@@ -326,7 +354,7 @@ export class GraphCanvas {
     this.place(this.placedItems, this.itemsEl, inRange, far);
     this.mapDrawn();
     for (const element of this.lit) {
-      element.classList.remove("is-on", "is-hl");
+      element.classList.remove("is-on", "is-hl", "is-outlined");
     }
     this.lit = [];
     this.highlight(this.highlighted, true);
@@ -357,24 +385,36 @@ export class GraphCanvas {
     this.hover.cancel();
   }
 
+  /** A forced light is a redraw's, and leaves a hover the pointer is still resting for. */
   highlight(id: string | null, force = false): void {
-    this.hover.cancel();
+    if (!force) {
+      this.hover.cancel();
+    }
     if (id === this.highlighted && !force) {
       return;
     }
     this.highlighted = id;
     for (const element of this.lit) {
-      element.classList.remove("is-on", "is-hl");
+      element.classList.remove("is-on", "is-hl", "is-outlined");
     }
     this.lit = [];
     const scene = this.scene;
     const shown = id !== null && scene !== null && scene.layout.card.has(id);
-    this.svgEl.classList.toggle("has-hl", shown);
+    const fade = this.options.fade ?? FADE;
+    if (this.cardOf.size > fade.limit) {
+      this.outlining = true;
+    } else if (this.cardOf.size <= fade.back) {
+      this.outlining = false;
+    }
+    this.svgEl.classList.toggle("has-hl", shown && !this.outlining);
     if (!shown || id === null || !scene) {
       return;
     }
     const light = (element: Element, self: boolean): void => {
       element.classList.add("is-on");
+      if (this.outlining) {
+        element.classList.add("is-outlined");
+      }
       if (self) {
         element.classList.add("is-hl");
       }
@@ -626,6 +666,7 @@ export class GraphCanvas {
       this.endGlide();
     }
     this.viewEl.style.transform = `translate(${at.x}px, ${at.y}px) scale(${at.k})`;
+    this.markMoving();
     this.root.toggleClass("is-far", this.far());
     this.closePop();
     this.scheduleDraw();
@@ -667,12 +708,31 @@ export class GraphCanvas {
   private beginGlide(): void {
     this.viewEl.classList.add("is-gliding");
     this.clearGlideTimer();
-    this.glideTimer = (this.doc.defaultView ?? window).setTimeout(() => this.endGlide(), GLIDE_MS + 150);
+    this.glideTimer = (this.doc.defaultView ?? window).setTimeout(() => this.restGlide(), GLIDE_MS + 150);
   }
 
   private endGlide(): void {
     this.viewEl.classList.remove("is-gliding");
     this.clearGlideTimer();
+  }
+
+  /** A glide that has come to rest lets go of the shapes it drew for its path. */
+  private restGlide(): void {
+    this.endGlide();
+    this.scheduleDraw();
+  }
+
+  /** Kept as a layer while the view moves, painted again sharp once it has rested. */
+  private markMoving(): void {
+    const win = this.doc.defaultView ?? window;
+    this.viewEl.classList.add("is-moving");
+    if (this.moveTimer !== null) {
+      win.clearTimeout(this.moveTimer);
+    }
+    this.moveTimer = win.setTimeout(() => {
+      this.moveTimer = null;
+      this.viewEl.classList.remove("is-moving");
+    }, REST_MS);
   }
 
   private clearGlideTimer(): void {

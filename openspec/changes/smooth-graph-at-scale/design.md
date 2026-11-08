@@ -102,3 +102,20 @@ the theme's variables, which the DOM gives.
 
 - The widths and the exact accent of the outline and of the three rings, settled with a screenshot
   at desktop and phone width in both schemes, shown to the user, since it is what the reader sees.
+
+## Implementation
+
+Deviations from the plan above, found while building it:
+
+- The fade limits are a `fade` option of `GraphCanvas` (default `FADE`, 3 000 and 2 500), so a test with
+  a few dozen cards crosses them; nothing else reads it.
+- Coming in from Fit to a readable zoom already cleared the drawn shapes, because it crosses `ZOOM.far`
+  and `draw` redraws on a flip. The excess lives inside the far range, so the browser spec zooms to 0.15.
+- No generated file reached 3 000 drawn cards at **Fit** (376 to 542), so `tests/generated.ts` gained
+  `lineages(chains, depth)`, which does: `lineages(150, 20)` draws 6 049 cards at Fit.
+- On a phone-sized view (390 by 844) the same file draws 1 457 cards at Fit, so the outline does not
+  appear there; the light fades as before. The limit counts cards drawn, and a phone draws few.
+- At a zoom of 0.05 a card is about 6 by 3 screen pixels, so the 2 px outline covers it and the 4, 5 and
+  6 px rings of the pointer, the selected card and the current match read as blobs wider than the card.
+  They stay distinguishable by colour and size; the widths are the open question above.
+- `highlight(id, true)` no longer cancels a pending hover; `highlight(id)` still does.

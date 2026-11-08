@@ -144,3 +144,17 @@ export function tangled(count: number, { seed = 7, founders = 40 }: { seed?: num
   }
   return made.text(false);
 }
+
+/** `chains` lines of descent, each married and followed down `depth` generations with one child to a family: a graph as wide as it is deep. */
+export function lineages(chains: number, depth: number): string {
+  const made = new Generator();
+  for (let chain = 0; chain < chains; chain += 1) {
+    let heir = made.person("M", 1450 + (chain % 20));
+    for (let generation = 0; generation < depth; generation += 1) {
+      const family = made.couple(heir, made.person("F", heir.born + 1), heir.born + 25);
+      heir = made.person("M", family.year + 2, family.id);
+      family.children.push(heir.id);
+    }
+  }
+  return made.text(false);
+}
