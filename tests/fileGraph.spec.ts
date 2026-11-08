@@ -682,8 +682,12 @@ test.describe("the graph of a file as wide as it is deep", () => {
         const style = getComputedStyle(element);
         return [style.strokeWidth, style.vectorEffect];
       });
-    await expect.poll(() => bg(".gedcom-fg-person.is-outlined:not(.is-hl)")).toEqual(["2px", "non-scaling-stroke"]);
+    const outline = () => bg(".gedcom-fg-person.is-outlined:not(.is-hl)");
+    await expect.poll(outline).toEqual(["2px", "non-scaling-stroke"]);
     await expect.poll(() => bg(".gedcom-fg-person.is-outlined.is-hl")).toEqual(["4px", "non-scaling-stroke"]);
+    await zoomTo(page, 0.06);
+    await expect.poll(() => drawnCards(page)).toBeGreaterThan(3_000);
+    await expect.poll(outline).toEqual(["2px", "non-scaling-stroke"]);
     await page.evaluate((id) => window.graph.board?.select(id, false), xref);
     await expect.poll(() => bg(".gedcom-fg-person.is-outlined.is-selected")).toEqual(["5px", "non-scaling-stroke"]);
 
@@ -695,13 +699,13 @@ test.describe("the graph of a file as wide as it is deep", () => {
     await expect(page.locator(".gedcom-fg-person.is-outlined")).toHaveCount(0);
   });
 
-  test("keeps the shapes as a layer while the view is dragged, and lets it go once at rest", async ({ page }) => {
+  test("keeps the shapes as a layer while the view moves, and lets it go once at rest", async ({ page }) => {
     const willChange = () => view(page).evaluate((element) => getComputedStyle(element).willChange);
-    await page.mouse.move(700, 450);
-    await page.mouse.down();
-    await page.mouse.move(760, 470, { steps: 5 });
-    expect(await willChange()).toBe("transform");
-    await page.mouse.up();
+    const moving = await page.evaluate(() => {
+      window.graph.board?.panBy(30, 0);
+      return getComputedStyle(document.querySelector(".gedcom-fg-view") as Element).willChange;
+    });
+    expect(moving).toBe("transform");
 
     await expect.poll(willChange, { timeout: 3_000 }).toBe("auto");
   });

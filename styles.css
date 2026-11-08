@@ -2593,6 +2593,11 @@ button.gedcom-fg-pop-open {
   stroke-width: 6px;
 }
 
+.gedcom-fg-person.is-outlined .gedcom-fg-card:focus-visible .gedcom-fg-card-bg {
+  stroke: var(--text-normal);
+  stroke-width: 3px;
+}
+
 .gedcom-fg-person.is-dim {
   opacity: 0.25;
 }

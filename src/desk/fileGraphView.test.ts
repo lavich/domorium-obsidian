@@ -17,6 +17,7 @@ import {
   type FileGraphHost,
   type GraphSettings,
   type GraphView,
+  type GraphWindow,
 } from "./fileGraphView";
 
 const WIDE = { width: 1400, height: 900 };
@@ -1203,10 +1204,7 @@ describe("a graph with more cards drawn than the light can fade", () => {
     try {
       const drawn = board();
       pointer("pointermove", card("@I1@"));
-      const window = drawn.windowOf();
-      if (window) {
-        drawn.draw(window);
-      }
+      drawn.draw(viewOf(drawn));
       vi.advanceTimersByTime(HOVER_DELAY);
 
       expect(person("@I1@")?.classList.contains("is-hl")).toBe(true);
@@ -1214,7 +1212,42 @@ describe("a graph with more cards drawn than the light can fade", () => {
       vi.useRealTimers();
     }
   });
+
+  it("does not light a card the view has moved from under the pointer while it was resting", () => {
+    vi.useFakeTimers();
+    try {
+      const drawn = board();
+      pointer("pointermove", card("@I1@"));
+      drawn.panBy(40, 0);
+      vi.advanceTimersByTime(HOVER_DELAY);
+
+      expect(all(".is-on")).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("starts a new scene in the fade, not in the mode the last one ended in", () => {
+    const fade = { limit: 10, back: 6 };
+    const canvas = canvasWith(fade);
+    canvas.highlight("@I1@");
+    expect(hasHl()).toBe(false);
+
+    Object.assign(fade, { limit: 20, back: 12 });
+    canvas.show(sceneOf(), { open: undefined });
+
+    expect(hasHl()).toBe(true);
+    expect(all(".is-outlined")).toHaveLength(0);
+  });
 });
+
+function viewOf(drawn: FileGraphBoard): GraphWindow {
+  const view = drawn.windowOf();
+  if (!view) {
+    throw new Error("the graph has no window yet");
+  }
+  return view;
+}
 
 describe("what the graph keeps drawn as the view comes in", () => {
   const WIDEST = { left: -40_000, top: -40_000, right: 40_000, bottom: 40_000 };
@@ -1222,15 +1255,12 @@ describe("what the graph keeps drawn as the view comes in", () => {
   it("asks for a redraw once what is drawn is more than twice what the view needs, and not for a zoom step", () => {
     const drawn = board();
     drawn.draw(WIDEST);
-    const view = drawn.windowOf();
-    expect(view && drawn.needsDraw(view)).toBe(true);
+    expect(drawn.needsDraw(viewOf(drawn))).toBe(true);
 
-    if (view) {
-      drawn.draw(view);
-    }
-    expect(drawn.needsDraw(drawn.windowOf() ?? view ?? WIDEST)).toBe(false);
+    drawn.draw(viewOf(drawn));
+    expect(drawn.needsDraw(viewOf(drawn))).toBe(false);
     drawn.zoomAt(1.12, 700, 450);
-    expect(drawn.needsDraw(drawn.windowOf() ?? WIDEST)).toBe(false);
+    expect(drawn.needsDraw(viewOf(drawn))).toBe(false);
   });
 
   it("waits for a glide to end, and lets go of what it drew once it has", () => {
@@ -1240,11 +1270,11 @@ describe("what the graph keeps drawn as the view comes in", () => {
     expect(view?.classList.contains("is-gliding")).toBe(true);
 
     drawn.draw(WIDEST);
-    expect(drawn.needsDraw(drawn.windowOf() ?? WIDEST)).toBe(false);
+    expect(drawn.needsDraw(viewOf(drawn))).toBe(false);
 
     view?.dispatchEvent(new Event("transitionend"));
     expect(view?.classList.contains("is-gliding")).toBe(false);
-    expect(drawn.needsDraw(drawn.windowOf() ?? WIDEST)).toBe(true);
+    expect(drawn.needsDraw(viewOf(drawn))).toBe(true);
   });
 
   it("keeps the card holding the focus, and marks the selected one again when it is drawn back", () => {
@@ -1256,10 +1286,7 @@ describe("what the graph keeps drawn as the view comes in", () => {
     expect(person("@I1@")).not.toBeNull();
     expect(person("@I2@")).toBeNull();
 
-    const view = drawn.windowOf();
-    if (view) {
-      drawn.draw(view);
-    }
+    drawn.draw(viewOf(drawn));
     expect(person("@I2@")?.classList.contains("is-selected")).toBe(true);
   });
 

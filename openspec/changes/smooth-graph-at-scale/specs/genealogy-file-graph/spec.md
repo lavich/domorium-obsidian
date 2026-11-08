@@ -45,8 +45,8 @@ it has no date, and how many children the family has.
 #### Scenario: Pointing in a crowded view
 - **WHEN** more than 3 000 cards are drawn and the reader points at a card
 - **THEN** the cards of its branch that are drawn are outlined in the accent
-  colour, no card fades, and the outline is as wide on the screen at a zoom of
-  0.05 as at 0.6
+  colour, no card fades, and the outline keeps one width on the screen as the
+  view zooms in or out while more than 3 000 cards stay drawn
 
 #### Scenario: The same card in a thinner view
 - **WHEN** the reader points at a card while 3 000 cards or fewer are drawn

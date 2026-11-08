@@ -58,3 +58,15 @@ No other change is open; this one archives on its own.
   the branch is outlined and the others do not fade.
 - [ ] 5.2 `npm run check` and `npm run test:browser`; the PR's test plan lists a look in Obsidian on
   desktop with `Habsburg.ged` and on a phone, unticked until someone has done them.
+
+## Left to a look, and why
+
+- The width of the outline on the screen is not asserted: `getBoundingClientRect` leaves the stroke out,
+  so the specs check the mechanism (`vector-effect: non-scaling-stroke`, a width in pixels) at 0.05 and
+  0.06, and the width itself is judged on the screenshots of 3.3.
+- The ring of the current match in an outlined view is reached only where more than 3 000 cards are
+  drawn at a zoom of 0.5 or more, which a view cannot hold, since stepping to a match zooms to a readable
+  size; it is checked by reading the cascade, and the selected card's ring is asserted.
+- The light returning within 100 ms is measured, not asserted (4.3), as a timing bound would be flaky in CI.
+- "Sharp once at rest" and the layer's effect on a phone: by eye in Obsidian on desktop and on an iPhone,
+  where WebKit may not give an SVG group a layer.

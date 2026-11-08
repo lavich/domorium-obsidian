@@ -85,7 +85,7 @@ export interface GraphCanvasOptions {
   fade?: FadeLimits;
 }
 
-/** The light outlines once more than `limit` cards are drawn, and fades again once `back` or fewer are. */
+/** Outlines above `limit` cards drawn, and fades again only at `back` or fewer, so a view near the limit holds its mode. */
 export interface FadeLimits {
   limit: number;
   back: number;
@@ -229,6 +229,7 @@ export class GraphCanvas {
     const motion = opening && "centre" in opening ? beginMotion(this.doc, this.layout, this.drawn, scene.layout) : null;
     this.scene = scene;
     this.layout = scene.layout;
+    this.outlining = false;
     this.markSelectedIds();
     this.arm(null);
     const built = buildItems(scene, this.doc, (card, far) =>
@@ -295,7 +296,7 @@ export class GraphCanvas {
     };
   }
 
-  /** Also true once what is drawn dwarfs what the view needs, so a view that has come in from Fit lets the rest go; not while gliding. */
+  /** Not while gliding: a glide draws both ends of its path on purpose. */
   needsDraw(window: GraphWindow): boolean {
     const drawn = this.drawnWindow;
     if (
@@ -667,6 +668,7 @@ export class GraphCanvas {
     }
     this.viewEl.style.transform = `translate(${at.x}px, ${at.y}px) scale(${at.k})`;
     this.markMoving();
+    this.hover.cancel();
     this.root.toggleClass("is-far", this.far());
     this.closePop();
     this.scheduleDraw();
@@ -716,13 +718,12 @@ export class GraphCanvas {
     this.clearGlideTimer();
   }
 
-  /** A glide that has come to rest lets go of the shapes it drew for its path. */
   private restGlide(): void {
     this.endGlide();
     this.scheduleDraw();
   }
 
-  /** Kept as a layer while the view moves, painted again sharp once it has rested. */
+  /** A layer while the view moves, painted again sharp once it has rested. */
   private markMoving(): void {
     const win = this.doc.defaultView ?? window;
     this.viewEl.classList.add("is-moving");

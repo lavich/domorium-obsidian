@@ -145,7 +145,7 @@ export function tangled(count: number, { seed = 7, founders = 40 }: { seed?: num
   return made.text(false);
 }
 
-/** `chains` lines of descent, each married and followed down `depth` generations with one child to a family: a graph as wide as it is deep. */
+/** `chains` lines of descent, `depth` generations each, one child to a family: as wide as it is deep. */
 export function lineages(chains: number, depth: number): string {
   const made = new Generator();
   for (let chain = 0; chain < chains; chain += 1) {
