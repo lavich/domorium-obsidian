@@ -75,7 +75,7 @@ const rowsOf = (selector: string, keep: (row: Element) => boolean = () => true):
       ...(dot ? [dot] : []),
     ];
   });
-const treeRows = (): HTMLElement[] => [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")];
+const treeRows = (): HTMLElement[] => [...container.querySelectorAll<HTMLElement>(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row")];
 const labelOf = (row: Element): string => row.querySelector(".gedcom-tree-label")?.textContent ?? "";
 const treeRow = (label: string, at = 0): HTMLElement | undefined => treeRows().filter((row) => labelOf(row) === label)[at];
 const summaryOf = (row: Element | undefined): string | undefined => row?.querySelector(".gedcom-tree-summary")?.textContent ?? undefined;

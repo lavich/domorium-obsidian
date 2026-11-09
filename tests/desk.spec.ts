@@ -69,9 +69,11 @@ for (const size of SIZES) {
       expect(await overflowsSideways(page)).toBe(false);
     });
 
-    test("lists her lines as closed nodes and the kin she has", async ({ page }) => {
-      await expect(page.locator(".gedcom-tree-list > .gedcom-tree-node")).toHaveCount(14);
-      await expect(page.locator(".gedcom-tree-chevron[aria-expanded=true]")).toHaveCount(0);
+    test("lists her lines as closed nodes beneath an open root, and the kin she has", async ({ page }) => {
+      await expect(page.locator(".gedcom-tree-list > .gedcom-tree-node.is-root")).toHaveCount(1);
+      await expect(page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-label")).toHaveText("Person");
+      await expect(page.locator('.gedcom-tree-node[data-depth="1"]')).toHaveCount(14);
+      await expect(page.locator(".gedcom-tree-chevron[aria-expanded=true]")).toHaveCount(1);
       await expect(treeRow(page, "Birth").locator(".gedcom-tree-summary")).toContainText("7 NOV 1867");
       await expect(page.locator(".gedcom-desk-fact")).toHaveCount(1);
       await expect(page.locator(".gedcom-desk-kin-label")).toHaveText(["Parents", "Siblings", "Husband", "Children"]);

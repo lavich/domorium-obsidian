@@ -432,6 +432,8 @@
   "record.tag.STAT": "Статус",
   "record.tag.NOTE": "Заметка",
   "record.tag.SNOTE": "Общая заметка",
+  "record.tag.INDI": "Человек",
+  "record.tag.FAM": "Семья",
   "record.tag.SOUR": "Источник",
   "record.tag.OBJE": "Медиа",
   "record.tag.ASSO": "Связанное лицо",

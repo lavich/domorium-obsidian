@@ -25,6 +25,15 @@ describe("the choices of the reader in the trees", () => {
     expect(session.stateFor("r1").isOpen("A[0]")).toBe(false);
   });
 
+  it("open the root of a record at first, and keep it closed for the record once the reader closed it", () => {
+    const session = new TreeSession();
+    expect(session.stateFor("a").isOpen("")).toBe(true);
+
+    session.stateFor("a").setOpen("", false);
+    expect(session.stateFor("a").isOpen("")).toBe(false);
+    expect(session.stateFor("b").isOpen("")).toBe(true);
+  });
+
   it("close a node again", () => {
     const state = new TreeSession().stateFor("r");
     state.setOpen("A[0]", true);

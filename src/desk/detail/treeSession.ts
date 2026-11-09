@@ -24,7 +24,7 @@ export class TreeSession {
   private tagsShown = false;
 
   private memory(record: string): RecordMemory {
-    const held = this.records.get(record) ?? { open: new Set<string>(), scroll: 0, pressed: null };
+    const held = this.records.get(record) ?? { open: new Set<string>([""]), scroll: 0, pressed: null };
     this.records.delete(record);
     this.records.set(record, held);
     for (const oldest of this.records.keys()) {

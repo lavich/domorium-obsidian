@@ -386,6 +386,8 @@
   "record.tag.STAT": "Status",
   "record.tag.NOTE": "Note",
   "record.tag.SNOTE": "Shared note",
+  "record.tag.INDI": "Person",
+  "record.tag.FAM": "Family",
   "record.tag.SOUR": "Source",
   "record.tag.OBJE": "Media",
   "record.tag.ASSO": "Associated person",

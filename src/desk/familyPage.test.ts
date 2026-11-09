@@ -53,7 +53,7 @@ describe("the family page", () => {
 
   it("shows the lines of the family's record as a tree, the marriage with its date and place and no mark", () => {
     draw("@F3@");
-    const labels = [...container.querySelectorAll(".gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
+    const labels = [...container.querySelectorAll(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
 
     expect(labels).toEqual(["Husband", "Wife", "Child", "Child", "Marriage"]);
     expect(texts(".gedcom-tree-summary")).toEqual(["26 JUL 1895 · Sceaux, France"]);

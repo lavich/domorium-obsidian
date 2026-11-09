@@ -37,6 +37,11 @@ export function factsByLine(facts: readonly TreeFact[]): Map<number, TreeFact> {
   return new Map(facts.map((fact) => [fact.event.range.start.line, fact]));
 }
 
+interface SummaryPart {
+  text: string;
+  kind: "value" | "date" | "place";
+}
+
 let drawn = 0;
 
 function keyOf(parent: string, tag: string, nth: number): string {
@@ -71,7 +76,7 @@ class Tree {
     this.nodes.clear();
     this.pressedRow = null;
     this.toolbar();
-    this.lines(this.root.createDiv({ cls: "gedcom-tree-list" }), this.record.children, this.record, "", 1);
+    this.row(this.root.createDiv({ cls: "gedcom-tree-list" }), this.record, this.record, "", 0, 0);
   }
 
   private redraw(): void {
@@ -113,7 +118,7 @@ class Tree {
   }
 
   private allOpen(): boolean {
-    return nodeKeys(this.record.children, "").every((key) => this.options.state.isOpen(key));
+    return ["", ...nodeKeys(this.record.children, "")].every((key) => this.options.state.isOpen(key));
   }
 
   private refreshToggle(): void {
@@ -133,7 +138,7 @@ class Tree {
   }
 
   private setAll(open: boolean): void {
-    for (const key of nodeKeys(this.record.children, "")) {
+    for (const key of ["", ...nodeKeys(this.record.children, "")]) {
       this.options.state.setOpen(key, open);
     }
     for (const [, set] of this.nodes) {
@@ -166,7 +171,7 @@ class Tree {
   }
 
   /** What a closed node says of its line, as the parts of one line; a part that is a place is a link. */
-  private summary(line: RecordLine, owner: RecordLine, fact: TreeFact | undefined): { text: string; kind: "value" | "date" | "place" }[] {
+  private summary(line: RecordLine, owner: RecordLine, fact: TreeFact | undefined): SummaryPart[] {
     const { index } = this.options;
     let value: string | undefined;
     if (line.void) {
@@ -180,7 +185,7 @@ class Tree {
     } else if (line.text !== undefined && !(fact && line.text === "Y")) {
       value = valueText(line, owner);
     }
-    const parts: { text: string; kind: "value" | "date" | "place" }[] = [];
+    const parts: SummaryPart[] = [];
     if (value !== undefined && value !== "") {
       parts.push({ text: firstLine(value), kind: "value" });
     }
@@ -199,11 +204,18 @@ class Tree {
 
   private row(container: HTMLElement, line: RecordLine, owner: RecordLine, key: string, depth: number, ordinal: number): void {
     const { host, index, state, facts } = this.options;
-    const fact = facts.get(line.range.start.line);
+    const root = depth === 0;
+    const fact = root ? undefined : facts.get(line.range.start.line);
     const isNode = line.children.length > 0;
     const label = tagLabel(line.tag);
     const named = ordinal > 0 ? `${label} ${ordinal}` : label;
-    const node = container.createDiv({ cls: isNode ? ["gedcom-tree-node", "tree-item", "mod-collapsible"] : ["gedcom-tree-node", "tree-item"] });
+    const node = container.createDiv({
+      cls: [
+        "gedcom-tree-node", "tree-item",
+        ...(isNode ? ["mod-collapsible"] : []),
+        ...(root ? ["is-root"] : []),
+      ],
+    });
     node.setAttribute("data-depth", String(depth));
     node.setAttribute("data-key", key);
     const header = node.createDiv({
@@ -265,6 +277,7 @@ class Tree {
       source.addEventListener("click", () => host.showInSource(line.range));
     }
 
+    const rootName = root ? (recordTitle(index, line.xref ?? "") ?? "") : "";
     const detail: DetailContext = {
       index,
       host,
@@ -273,6 +286,9 @@ class Tree {
       folded: (id, now) => state.setOpen(id, now),
     };
     const paintValue = (): void => {
+      if (root) {
+        return;
+      }
       detail.notes = { drawn: 0, prefix: `${key}.` };
       if (line.void || line.pointer !== undefined) {
         renderPointer(main, line, detail, `t:${key}:link`);
@@ -288,7 +304,7 @@ class Tree {
       }
     };
     const paintSummary = (): void => {
-      const parts = this.summary(line, owner, fact);
+      const parts: SummaryPart[] = root ? (rootName === "" ? [] : [{ text: rootName, kind: "value" }]) : this.summary(line, owner, fact);
       if (parts.length > 0) {
         const text = main.createSpan({ cls: "gedcom-tree-summary" });
         text.setAttribute("dir", "auto");
@@ -304,7 +320,7 @@ class Tree {
           }
         });
       }
-      const cited = line.children.filter((child) => child.tag === "SOUR").length;
+      const cited = root ? 0 : line.children.filter((child) => child.tag === "SOUR").length;
       if (cited > 0) {
         const dot = main.createSpan({ cls: ["gedcom-desk-source", "has-source"] });
         const words = plural("desk.sources", cited);

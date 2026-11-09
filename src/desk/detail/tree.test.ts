@@ -57,7 +57,7 @@ function draw(made: Made, state: TreeState = ephemeralTreeState(), parent: HTMLE
   });
 }
 
-const rows = (): HTMLElement[] => [...box.querySelectorAll<HTMLElement>(".gedcom-tree-row")];
+const rows = (): HTMLElement[] => [...box.querySelectorAll<HTMLElement>(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row")];
 const labelOf = (row: Element): string => row.querySelector(".gedcom-tree-label")?.textContent ?? "";
 const rowNamed = (label: string, at = 0): HTMLElement => {
   const found = rows().filter((row) => labelOf(row) === label)[at];
@@ -271,6 +271,82 @@ describe("a note", () => {
   });
 });
 
+describe("the root of the tree", () => {
+  const root = (): HTMLElement => {
+    const found = box.querySelector<HTMLElement>(".gedcom-tree-node.is-root > .gedcom-tree-row");
+    if (!found) {
+      throw new Error("no root");
+    }
+    return found;
+  };
+  const record = (xref: string, lines: string[]): Made => make(lines, "7.0", xref);
+
+  it("is the opening line of a person, named Person, open at first, with no summary and no identifier", () => {
+    draw(make(["0 @I1@ INDI", "1 NAME Maria /Curie/", "1 SEX F"]));
+
+    expect(labelOf(root())).toBe("Person");
+    expect(summaryOf(root())).toBeUndefined();
+    expect(root().querySelector(".gedcom-tree-chevron")?.getAttribute("aria-expanded")).toBe("true");
+    expect(rows().map(labelOf)).toEqual(["Name", "Sex"]);
+    expect(box.textContent).not.toContain("@I1@");
+  });
+
+  it("shows the name of the person once it is closed, and hides every line beneath it", () => {
+    draw(make(["0 @I1@ INDI", "1 NAME Maria /Curie/", "1 SEX F"]));
+    chevron(root()).click();
+
+    expect(summaryOf(root())).toBe("Maria Curie");
+    expect(box.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-children")?.hasAttribute("hidden")).toBe(true);
+    chevron(root()).click();
+    expect(summaryOf(root())).toBeUndefined();
+  });
+
+  it("is a family named Family with the spouses as its summary, and a source named Source with its title", () => {
+    draw(record("@F1@", ["0 @I1@ INDI", "1 NAME Anna /Nowak/", "0 @I2@ INDI", "1 NAME Jan /Nowak/", "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I1@"]));
+    expect(labelOf(root())).toBe("Family");
+    chevron(root()).click();
+    expect(summaryOf(root())).toBe("Jan Nowak ⚭ Anna Nowak");
+
+    box.replaceChildren();
+    draw(record("@S1@", ["0 @S1@ SOUR", "1 TITL The Register"]));
+    expect(labelOf(root())).toBe("Source");
+    chevron(root()).click();
+    expect(summaryOf(root())).toBe("The Register");
+  });
+
+  it("selects the whole record with its Show in source, and reads Person in Russian", () => {
+    const made = make(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
+    draw(made);
+    root().querySelector<HTMLButtonElement>(".gedcom-tree-source")?.click();
+
+    expect(shown).toHaveBeenCalledWith(made.record.range);
+    box.replaceChildren();
+    setLanguage("ru");
+    draw(made);
+    expect(labelOf(root())).toBe("Человек");
+  });
+
+  it("shows its tag when tags are asked for, and is opened and closed by the toggle with the rest", () => {
+    draw(make(["0 @I1@ INDI", "1 NAME A /B/", "2 NICK Ab"]));
+    control("Open every node").click();
+    expect(rows().map(labelOf)).toEqual(["Name", "Nickname"]);
+    control("Close every node").click();
+    expect(root().querySelector(".gedcom-tree-chevron")?.getAttribute("aria-expanded")).toBe("false");
+    control("Open every node").click();
+    expect(root().querySelector(".gedcom-tree-chevron")?.getAttribute("aria-expanded")).toBe("true");
+    control("Show GEDCOM tags").click();
+    expect(root().querySelector(".gedcom-tree-tag")?.textContent).toBe("INDI");
+  });
+
+  it("keeps the focus keys of the root apart from those of its children", () => {
+    draw(make(["0 @I1@ INDI", "1 NAME A /B/"]));
+    const keys = [...box.querySelectorAll("[data-focus-key]")].map((one) => one.getAttribute("data-focus-key") ?? "");
+
+    expect(keys).toEqual(expect.arrayContaining(["t:", "src:", "src:NAME[0]"]));
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
 describe("a shared note in a node", () => {
   const made = (): Made =>
     make([
@@ -335,7 +411,7 @@ describe("a name", () => {
 
     expect(
       [...box.querySelectorAll(".gedcom-tree-source")].map((one) => one.getAttribute("aria-label")),
-    ).toEqual(["Show in source: Name 1", "Show in source: Name 2", "Show in source: Sex"]);
+    ).toEqual(["Show in source: Person", "Show in source: Name 1", "Show in source: Name 2", "Show in source: Sex"]);
     expect(chevron(rowNamed("Name", 1)).getAttribute("aria-label")).toBe("Name 2");
   });
 
@@ -443,7 +519,7 @@ describe("the nodes", () => {
     expect(button.getAttribute("aria-expanded")).toBe("true");
     expect(container?.hasAttribute("hidden")).toBe(false);
     expect([...box.querySelectorAll<HTMLElement>(".gedcom-tree-node")].map((node) => node.getAttribute("data-key"))).toEqual([
-      "NAME[0]", "NAME[1]", "NAME[1].TYPE[0]", "NAME[1].NICK[0]",
+      "", "NAME[0]", "NAME[1]", "NAME[1].TYPE[0]", "NAME[1].NICK[0]",
     ]);
   });
 
@@ -476,7 +552,7 @@ describe("the nodes", () => {
     draw(make(["0 @I1@ INDI", "1 _A x", "2 _B y", "3 _C z"]));
     control("Open every node").click();
 
-    expect([...box.querySelectorAll(".gedcom-tree-node")].map((node) => node.getAttribute("data-depth"))).toEqual(["1", "2", "3"]);
+    expect([...box.querySelectorAll(".gedcom-tree-node")].map((node) => node.getAttribute("data-depth"))).toEqual(["0", "1", "2", "3"]);
   });
 });
 
@@ -572,7 +648,7 @@ describe("the controls", () => {
     all.click();
 
     expect(rows().map(labelOf)).toEqual(["_A", "_B", "_C", "_D", "_E"]);
-    expect(box.querySelectorAll('.gedcom-tree-chevron[aria-expanded="true"]')).toHaveLength(3);
+    expect(box.querySelectorAll('.gedcom-tree-chevron[aria-expanded="true"]')).toHaveLength(4);
     expect(document.activeElement).toBe(all);
 
     control("Close every node").click();
@@ -645,7 +721,7 @@ describe("the tags", () => {
     draw(make(["0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "1 _X y"]));
     control("Show GEDCOM tags").click();
 
-    expect([...box.querySelectorAll(".gedcom-tree-tag")].map((tag) => tag.textContent)).toEqual(["NAME", "BIRT"]);
+    expect([...box.querySelectorAll(".gedcom-tree-tag")].map((tag) => tag.textContent)).toEqual(["INDI", "NAME", "BIRT"]);
     control("Hide GEDCOM tags").click();
     expect(box.querySelector(".gedcom-tree-tag")).toBeNull();
   });

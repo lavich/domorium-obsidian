@@ -35,7 +35,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: Marie's facts
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** below the heading it shows her record's lines as a tree in the order the file writes them, every node closed: her names, her sex, her birth with the summary `7 NOV 1867 · Warsaw, Congress Poland`, her death with `4 JUL 1934 · Passy, Haute-Savoie, France`, her occupation `Physicist and chemist`; her family section shows her marriage with Pierre Curie, `26 JUL 1895` and `Sceaux, France`, as a row under Pierre; and no row carries a dot
+- **THEN** below the heading it shows her record's lines as a tree in the order the file writes them under a root named *Person* that is open, every node beneath it closed: her names, her sex, her birth with the summary `7 NOV 1867 · Warsaw, Congress Poland`, her death with `4 JUL 1934 · Passy, Haute-Savoie, France`, her occupation `Physicist and chemist`; her family section shows her marriage with Pierre Curie, `26 JUL 1895` and `Sceaux, France`, as a row under Pierre; and no row carries a dot
 
 #### Scenario: The sections in order
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
@@ -43,7 +43,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: Folded sections
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** Timeline is folded and shows its count, and pressing it shows her entries; her tree's nodes are closed, and Family and Media are open
+- **THEN** Timeline is folded and shows its count, and pressing it shows her entries; the root of her tree is open and the nodes beneath it are closed, and Family and Media are open
 
 #### Scenario: A fold kept across a redraw
 - **WHEN** the reader has opened Marie's Timeline and the file changes on disk

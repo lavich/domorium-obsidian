@@ -2670,7 +2670,7 @@ button.gedcom-tree-control:hover {
   display: none;
 }
 
-.gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children {
+.gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children {
   margin-inline-start: 0;
   padding-inline-start: 0;
   border-inline-start: 0;
