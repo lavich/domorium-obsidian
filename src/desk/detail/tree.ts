@@ -62,7 +62,6 @@ const firstLine = (text: string): string => text.split("\n")[0] ?? "";
 
 class Tree {
   private readonly nodes = new Map<string, (open: boolean) => void>();
-  private pressedRow: HTMLElement | null = null;
   private toggle: HTMLElement | null = null;
 
   constructor(
@@ -74,7 +73,6 @@ class Tree {
   draw(): void {
     this.root.empty();
     this.nodes.clear();
-    this.pressedRow = null;
     this.toolbar();
     this.row(this.root.createDiv({ cls: "gedcom-tree-list" }), this.record, this.record, "", 0, 0);
   }
@@ -195,16 +193,6 @@ class Tree {
       cls: isNode ? ["gedcom-tree-row", "tree-item-self", "is-clickable", "mod-collapsible"] : "gedcom-tree-row",
     });
     header.setAttribute("data-line", String(line.range.start.line));
-    header.addEventListener("pointerdown", () => {
-      this.pressedRow?.removeClass("is-pressed");
-      this.pressedRow = header;
-      header.addClass("is-pressed");
-      state.press(key);
-    });
-    if (state.pressed() === key) {
-      this.pressedRow = header;
-      header.addClass("is-pressed");
-    }
 
     let open = isNode && state.isOpen(key);
     drawn += 1;
@@ -233,20 +221,6 @@ class Tree {
 
     const missing =
       line.pointer !== undefined && !line.void && recordTitle(index, line.pointer) === undefined;
-    let source: HTMLElement | null = null;
-    if (!missing || isNode) {
-      source = header.createEl("button", { cls: "gedcom-tree-source" });
-      source.setAttribute("type", "button");
-      source.setAttribute("aria-label", t("tree.showInSource", { name: named }));
-      source.setAttribute("data-focus-key", `src:${key}`);
-      if (host.setIcon) {
-        host.setIcon(source, "code");
-      } else {
-        source.setText("</>");
-      }
-      source.addEventListener("click", () => host.showInSource(line.range));
-    }
-
     const rootName = root ? (recordTitle(index, line.xref ?? "") ?? "") : "";
     const detail: DetailContext = {
       index,
@@ -290,6 +264,9 @@ class Tree {
           }
         });
       }
+      if (missing) {
+        linkButton(main, t("desk.showInSource"), () => host.showInSource(line.range));
+      }
       const cited = root ? 0 : line.children.filter((child) => child.tag === "SOUR").length;
       if (cited > 0) {
         const dot = main.createSpan({ cls: ["gedcom-desk-source", "has-source"] });
@@ -301,7 +278,6 @@ class Tree {
     };
     const paint = (): void => {
       main.empty();
-      source?.toggleAttribute("hidden", missing && !(isNode && !open));
       if (isNode && !open) {
         paintSummary();
       } else {
@@ -341,10 +317,6 @@ class Tree {
       });
     }
     show();
-
-    if (!isNode && header.querySelector("button:not(.gedcom-tree-source), a") === null) {
-      header.querySelector(".gedcom-tree-source")?.setAttribute("tabindex", "-1");
-    }
   }
 }
 

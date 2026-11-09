@@ -60,12 +60,4 @@ describe("the choices of the reader in the trees", () => {
 
     expect(session.scrollOf("first")).toBe(0);
   });
-
-  it("keep the row last pressed for the record", () => {
-    const session = new TreeSession();
-    session.stateFor("a").press("SEX[0]");
-
-    expect(session.stateFor("a").pressed()).toBe("SEX[0]");
-    expect(session.stateFor("b").pressed()).toBeNull();
-  });
 });

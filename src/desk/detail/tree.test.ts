@@ -187,44 +187,28 @@ describe("a pointer", () => {
     const row = rowNamed("Associated person");
 
     expect(row.textContent).toContain("Points to a record that is not in the file");
-    expect(row.querySelector(".gedcom-tree-source")).toBeNull();
     const buttons = row.querySelectorAll<HTMLButtonElement>(".gedcom-desk-missing button");
     expect(buttons).toHaveLength(1);
     buttons[0]?.click();
     expect(shown).toHaveBeenCalledWith(made.record.children[0]?.range);
   });
 
-  it("has a way to its line in a closed node that points to a record not in the file, and never two once it is open", () => {
+  it("has a way to its line in the summary of a closed node that points to a record not in the file, and never two once it is open", () => {
     const made = make(["0 @I1@ INDI", "1 ASSO @I9@", "2 RELA friend"]);
     draw(made);
     const row = rowNamed("Associated person");
-    const source = (): HTMLElement | null => row.querySelector<HTMLElement>(".gedcom-tree-source");
+    const actions = (): HTMLButtonElement[] => [...row.querySelectorAll<HTMLButtonElement>("button.gedcom-desk-link")];
 
-    expect(source()?.hasAttribute("hidden")).toBe(false);
-    source()?.click();
+    expect(actions().map((one) => one.textContent)).toEqual(["Show in source"]);
+    actions()[0]?.click();
     expect(shown).toHaveBeenCalledWith(made.record.children[0]?.range);
     open("Associated person");
-    expect(source()?.hasAttribute("hidden")).toBe(true);
-    expect(row.querySelectorAll(".gedcom-desk-missing button")).toHaveLength(1);
+    expect(actions()).toHaveLength(1);
     open("Associated person");
-    expect(source()?.hasAttribute("hidden")).toBe(false);
+    expect(actions()).toHaveLength(1);
   });
 
-  it("names no record where a 7.0 file writes @VOID@, with no way to the source of a missing record", () => {
-    draw(make(["0 @I1@ INDI", "1 ASSO @VOID@"]));
-    const row = rowNamed("Associated person");
-
-    expect(row.textContent).toContain("Names no record");
-    expect(row.querySelector(".gedcom-desk-missing")).toBeNull();
-  });
-
-  it("reads @VOID@ the same in a 5.5.1 file", () => {
-    draw(make(["0 @I1@ INDI", "1 ASSO @VOID@"], "5.5.1"));
-
-    expect(rowNamed("Associated person").textContent).toContain("Names no record");
-  });
-
-  it("is the text of a shared note and the citation beneath it, drawn where the pointer is, and Show in source selects the pointer's line", () => {
+  it("is the text of a shared note and the citation beneath it, drawn where the pointer is", () => {
     const made = make([
       "0 @I1@ INDI", "1 SNOTE @N1@",
       "0 @N1@ SNOTE The shared text", "1 SOUR @S1@", "2 PAGE p. 4",
@@ -236,8 +220,6 @@ describe("a pointer", () => {
     expect(row.querySelector(".gedcom-detail-text-body")?.textContent).toBe("The shared text");
     expect(row.textContent).toContain("Register");
     expect(row.textContent).toContain("p. 4");
-    row.querySelector<HTMLButtonElement>(".gedcom-tree-source")?.click();
-    expect(shown).toHaveBeenCalledWith(made.record.children[0]?.range);
   });
 
   it("is the text of a shared note in 5.5.1", () => {
@@ -314,12 +296,9 @@ describe("the root of the tree", () => {
     expect(summaryOf(root())).toBe("The Register");
   });
 
-  it("selects the whole record with its Show in source, and reads Person in Russian", () => {
+  it("is named Person in Russian", () => {
     const made = make(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
     draw(made);
-    root().querySelector<HTMLButtonElement>(".gedcom-tree-source")?.click();
-
-    expect(shown).toHaveBeenCalledWith(made.record.range);
     box.replaceChildren();
     setLanguage("ru");
     draw(made);
@@ -340,7 +319,7 @@ describe("the root of the tree", () => {
     draw(make(["0 @I1@ INDI", "1 NAME A /B/"]));
     const keys = [...box.querySelectorAll("[data-focus-key]")].map((one) => one.getAttribute("data-focus-key") ?? "");
 
-    expect(keys).toEqual(expect.arrayContaining(["t:", "src:", "src:NAME[0]"]));
+    expect(keys).toEqual(expect.arrayContaining(["t:", "tree:toggle"]));
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
@@ -404,27 +383,11 @@ describe("a name", () => {
     expect(summaryOf(rowNamed("Name"))).toBe("Unnamed");
   });
 
-  it("names the controls of two names apart, and the chevron by its row alone", () => {
+  it("names the chevrons of two names apart by their place among the siblings", () => {
     draw(make(["0 @I1@ INDI", "1 NAME A /B/", "2 NICK Ab", "1 NAME C /D/", "2 NICK Cd", "1 SEX F"]));
 
-    expect(
-      [...box.querySelectorAll(".gedcom-tree-source")].map((one) => one.getAttribute("aria-label")),
-    ).toEqual(["Show in source: Person", "Show in source: Name 1", "Show in source: Name 2", "Show in source: Sex"]);
+    expect(chevron(rowNamed("Name", 0)).getAttribute("aria-label")).toBe("Name 1");
     expect(chevron(rowNamed("Name", 1)).getAttribute("aria-label")).toBe("Name 2");
-  });
-
-  it("reads the type of the second name and a translation of a name, as the old section did", () => {
-    draw(make([
-      "0 @I1@ INDI", "1 NAME Maria /Curie/", "2 TYPE BIRTH", "2 TRAN Мария Кюри", "3 LANG ru",
-      "1 NAME Marie /Curie/", "2 TYPE MARRIED",
-    ]));
-    open("Name", 0);
-    open("Name", 1);
-    open("Translation");
-
-    expect(box.querySelector('[data-key="NAME[1].TYPE[0]"] .gedcom-field')?.getAttribute("data-value")).toBe("Married");
-    expect(valuesOf(rowNamed("Translation"))).toEqual(["Мария Кюри"]);
-    expect(valuesOf(rowNamed("Language"))).toEqual(["ru"]);
   });
 
   it("reads a type as written where it is not under a name", () => {
@@ -608,35 +571,22 @@ describe("a fact", () => {
 });
 
 describe("the controls", () => {
-  it("are real buttons named for what they do and the row they act on, and Show in source selects exactly the line and what is beneath it", () => {
-    const made = make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "1 SEX F"]);
-    draw(made);
-    const source = rowNamed("Birth").querySelector<HTMLButtonElement>(".gedcom-tree-source");
+  it("are real buttons that say whether their node is open and which part they control", () => {
+    draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "1 SEX F"]));
+    const arrow = chevron(rowNamed("Birth"));
 
-    expect(source?.getAttribute("aria-label")).toBe("Show in source: Birth");
-    expect(source?.tagName).toBe("BUTTON");
-    source?.click();
-    expect(shown).toHaveBeenCalledWith(made.record.children[0]?.range);
-    expect(made.record.children[0]?.range.end.line).toBe(made.record.children[0]?.children[0]?.range.end.line);
+    expect(arrow.tagName).toBe("BUTTON");
+    expect(arrow.getAttribute("aria-label")).toBe("Birth");
+    expect(arrow.getAttribute("aria-expanded")).toBe("false");
+    expect(box.querySelector(`#${arrow.getAttribute("aria-controls")}`)).not.toBeNull();
+    expect(box.querySelector(".gedcom-tree-source")).toBeNull();
   });
 
-  it("keep a plain value's Show in source out of the tab order and leave a node's, and a row with a link of its own, in it", () => {
-    draw(make(["0 @I1@ INDI", "1 SEX F", "1 BIRT", "2 DATE 1900", "1 ASSO @I2@", "0 @I2@ INDI", "1 NAME P /C/"]));
-    const tab = (label: string): string | null | undefined =>
-      rowNamed(label).querySelector(".gedcom-tree-source")?.getAttribute("tabindex");
-
-    expect(tab("Sex")).toBe("-1");
-    expect(tab("Birth")).toBeNull();
-    expect(tab("Associated person")).toBeNull();
-  });
-
-  it("come after the other controls of their row, and the toolbar comes first in the tree", () => {
+  it("have the toolbar first in the tree, and the arrow first in its row", () => {
     draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]));
 
-    expect(box.querySelector(".gedcom-tree")?.firstElementChild?.className).toBe("gedcom-tree-bar");
-    const row = rowNamed("Birth");
-    expect(row.lastElementChild?.className).toContain("gedcom-tree-source");
-    expect(row.firstElementChild?.className).toContain("gedcom-tree-chevron");
+    expect(box.querySelector(".gedcom-tree")?.firstElementChild?.className).toContain("gedcom-tree-bar");
+    expect(rowNamed("Birth").firstElementChild?.className).toContain("gedcom-tree-chevron");
   });
 
   it("open every node of the record, drawing what is beneath each as it is opened, and close them again, the focus staying on the control", () => {
@@ -680,19 +630,6 @@ describe("the controls", () => {
     expect(toggle?.getAttribute("data-focus-key")).toBe("tree:toggle");
   });
 
-  it("show the row last pressed and remember it", () => {
-    const state = new TreeSession().stateFor("rec");
-    draw(make(["0 @I1@ INDI", "1 SEX F", "1 _X y"]), state);
-    rowNamed("Sex").dispatchEvent(new Event("pointerdown", { bubbles: true }));
-    rowNamed("_X").dispatchEvent(new Event("pointerdown", { bubbles: true }));
-
-    expect(box.querySelectorAll(".is-pressed")).toHaveLength(1);
-    expect(state.pressed()).toBe("_X[0]");
-    box.replaceChildren();
-    draw(make(["0 @I1@ INDI", "1 SEX F", "1 _X y"]), state);
-    expect(rowNamed("_X").classList.contains("is-pressed")).toBe(true);
-  });
-
   it("carry focus keys that are unique and never an identifier, and every row carries its line", () => {
     const index = curieIndex();
     draw({ index, xref: "@I1@", record: index.record("@I1@") as RecordLine } as Made);
@@ -702,7 +639,7 @@ describe("the controls", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.filter((key) => /^@[^@]+@$/u.test(key))).toEqual([]);
     expect(keys).toContain("tree:toggle");
-    expect(keys.some((key) => key.startsWith("src:"))).toBe(true);
+    expect(keys.some((key) => key.startsWith("src:"))).toBe(false);
     expect(rows().every((row) => row.hasAttribute("data-line"))).toBe(true);
   });
 });

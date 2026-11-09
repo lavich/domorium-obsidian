@@ -546,6 +546,5 @@
   "record.husbandAge": "Возраст мужа",
   "record.wifeAge": "Возраст жены",
   "tree.openAll": "Открыть все узлы",
-  "tree.closeAll": "Закрыть все узлы",
-  "tree.showInSource": "Показать в исходнике: {name}"
+  "tree.closeAll": "Закрыть все узлы"
 }
