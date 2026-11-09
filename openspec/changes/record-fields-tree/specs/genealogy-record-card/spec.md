@@ -2,8 +2,7 @@
 
 ### Requirement: The person card
 
-A person card SHALL show, without any cross-reference identifier, level number or
-tag, in this order, each section left out where the record holds nothing for it, except
+A person card SHALL show, without any cross-reference identifier or level number, and without a tag unless the reader has asked for tags in the tree of the record, in this order, each section left out where the record holds nothing for it, except
 the two that say what is missing: the parents in the family, and the evidence. A section
 that lists things of one kind SHALL show how many in its heading; the family, the lines of the record and the evidence, which
 are made of several kinds, show no count.
@@ -85,15 +84,15 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: A fact that cites a source
 - **WHEN** a person's `1 BIRT` carries `2 SOUR @S2@` beneath it
-- **THEN** the tree shows the citation as a row beneath the birth, and no row carries a dot
+- **THEN** the closed birth shows a quiet dot after its summary that says it cites one source, and once it is opened the citation is a row beneath it
 
 #### Scenario: Some facts without a source
 - **WHEN** a person's record states events of which only one cites a source
-- **THEN** no line above them says how many cite none, and only the one that cites a source has a citation beneath it
+- **THEN** no line above them says how many cite none, and only the one that cites a source carries a dot
 
 #### Scenario: Every fact cites a source
 - **WHEN** every event and detail of a person cites a source
-- **THEN** each has its citation beneath it, and no line anywhere says that all of them do
+- **THEN** each carries a dot, and no line anywhere says that all of them do
 
 #### Scenario: An event with no date
 - **WHEN** a person's `1 BIRT` states a place and no date
@@ -105,7 +104,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: Every name of a person
 - **WHEN** a person's record states `1 NAME Maria /Curie/` with `2 TYPE BIRTH` and `2 NICK Manya`, and `1 NAME Marie /Curie/` with `2 TYPE MARRIED`
-- **THEN** the tree shows both names in the order the file writes them, the first with its type as the birth name and its nickname `Manya` beneath it, the second as the married name
+- **THEN** the tree shows both names in the order the file writes them, and once they are opened the first with its type as the birth name and its nickname `Manya` beneath it, the second as the married name
 
 #### Scenario: A person with one plain name
 - **WHEN** a person's record states one name and nothing beneath it
@@ -117,8 +116,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 ### Requirement: The family card
 
-A family card SHALL show, without any cross-reference identifier, level number or
-tag, each section left out where the record holds nothing for it, in this order, with no section for events, notes, related people, identifiers or other data apart from the lines of the record:
+A family card SHALL show, without any cross-reference identifier or level number, and without a tag unless the reader has asked for tags in the tree of the record, each section left out where the record holds nothing for it, in this order, with no section for events, notes, related people, identifiers or other data apart from the lines of the record:
 
 - a heading naming the family by its spouses, in the order the record names them,
   with the marriage date and place where the record states them; a family naming
@@ -242,7 +240,7 @@ when it is pressed with a pointer. On a device whose pointer is coarse and in th
 them SHALL have an activation area at least 32 pixels tall without changing the size of its text,
 and a control that is a block of its own — a relative, a source, a note's line, the heading of a
 fold, Back and Forward (44 by 44) — 44 pixels; where two controls stand closer together than that,
-the space between them is shared. Where a card has many controls, those that act on one row or on the whole tree SHALL be shown only while the pointer is over the row or the tree, or the focus is within it, and SHALL NOT take space when hidden; a control that is reached by the keyboard SHALL appear when it takes the focus. Where the pointer cannot hover, those of a row SHALL be shown on the row the reader last pressed, and those of the tree SHALL stay shown. A control that opens or closes a part of the card SHALL stay shown. The headings of the sections of a card and the secondary lines under
+the space between them is shared. Where a card has many controls, those that act on one row or on the whole tree SHALL be shown only while the pointer is over the row or the tree, or the focus is within it, and SHALL NOT shift anything when they appear or disappear; a control SHALL be shown when its row takes the focus and SHALL stay reachable by assistive technology while it is not shown, and those of a node SHALL be in the tab order. Where the pointer cannot hover, those of a row SHALL be shown on the row the reader last pressed, and those of the tree SHALL stay shown. A control that opens or closes a part of the card SHALL stay shown. The headings of the sections of a card and the secondary lines under
 them SHALL be set in the muted text colour of the theme, not the faint one. A date at the left of an event SHALL be set
 in the muted text colour; a notice that a source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
 
@@ -271,8 +269,8 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 - **THEN** no *Show in source* control of a row is visible, and moving the pointer over a row shows that row's
 
 #### Scenario: Controls by keyboard
-- **WHEN** the reader reaches a row of the tree with the Tab key
-- **THEN** that row's controls are visible and the control that has the focus shows a ring in the accent colour
+- **WHEN** the reader reaches a node of the tree with the Tab key
+- **THEN** that node's controls are visible and the control that has the focus shows a ring in the accent colour
 
 #### Scenario: Controls on a phone
 - **WHEN** Marie's card is shown on a phone and the reader presses the row of her occupation

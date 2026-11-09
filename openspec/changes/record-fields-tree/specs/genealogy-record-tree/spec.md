@@ -30,7 +30,7 @@ The card of a person, of a family and of a source SHALL show the lines of that r
 
 ### Requirement: A row reads as the file writes it
 
-Each line of the tree SHALL be a **row** of a label and a value. The label SHALL be the name the reader's language gives the tag where the standard names it, and the tag as written otherwise. The value SHALL be read as the requirement on reading a line says: a pointer as the name of the record it points at, as a link that selects that record, or as a pointer to a record that is not in the file with one action that shows it in the source; a pointer to a shared note as the text of that note and the lines beneath it, drawn where the pointer is; a note as its text, folded where it is long; the type of a name in the reader's language, a name without its slashes and a name that is only a placeholder as the placeholder the card uses elsewhere; any other value as a field that cannot be changed. A line with no value SHALL show no value and no dash. A value written right to left SHALL be laid out in its own direction. A line that has substructures SHALL be a **node**: its row SHALL carry a control that opens and closes what is beneath it, and a node SHALL be closed when the card is first drawn. While a node is closed its row SHALL show a **summary** of one line, made of the value of the line where it has one other than `Y`, then, where the card knows the line as an event or an attribute, its date as the file writes it and its place as the file writes it, joined by a dot and leaving out what the line does not state; while it is open the row shows the value alone and the substructures show the rest. A node's opened state SHALL be kept for each record, by the line's place among its siblings and not by its number in the file, through a redraw of the card for a change of the file and while another record is shown, for the last twenty records shown and until the plugin reloads.
+Each line of the tree SHALL be a **row** of a label and a value. The label SHALL be the name the reader's language gives the tag where the standard names it, and the tag as written otherwise. The value SHALL be read as the requirement on reading a line says: a pointer as the name of the record it points at, as a link that selects that record, or as a pointer to a record that is not in the file with one action that shows it in the source; a pointer to a shared note as the text of that note and the lines beneath it, drawn where the pointer is; a note as its text, folded where it is long; the type of a name in the reader's language, a name without its slashes and a name that is only a placeholder as the placeholder the card uses elsewhere; any other value as a field that cannot be changed, except that the value `Y` of a line the card knows as an event is not drawn; the type of a name is read as such only on a `NAME`, and a `TYPE` on any other line is drawn as written. A line with no value SHALL show no value and no dash. A value written right to left SHALL be laid out in its own direction. A line that has substructures SHALL be a **node**: its row SHALL carry a control that opens and closes what is beneath it, and a node SHALL be closed when the card is first drawn. While a node is closed its row SHALL show a **summary** of one line, made of the value of the line where it has one other than `Y`, then, where the card knows the line as an event or an attribute, its date as the file writes it and its place as the file writes it, joined by a dot and leaving out what the line does not state, and for a value of several lines its first line; a closed node whose line cites a source SHALL show a quiet dot after its summary, which says in its accessible name how many sources it cites, and one that cites none SHALL show none; while it is open the row shows the value alone and the substructures show the rest. A node's opened state SHALL be kept for each record, by the line's place among its siblings and not by its number in the file, through a redraw of the card for a change of the file and while another record is shown, for the last twenty records shown and until the plugin reloads.
 
 #### Scenario: A name with its parts
 - **WHEN** a person's record states `1 NAME Maria /Skłodowska/` with `2 TYPE BIRTH` and `2 GIVN Maria` beneath it
@@ -47,6 +47,14 @@ Each line of the tree SHALL be a **row** of a label and a value. The label SHALL
 #### Scenario: An attribute with a value
 - **WHEN** a person's `1 OCCU Physicist` states `2 DATE 1900`
 - **THEN** its closed row's summary reads `Physicist · 1900`, and opened it shows the value `Physicist` and the date beneath it
+
+#### Scenario: A citation at a glance
+- **WHEN** a person's `1 BIRT` carries `2 SOUR @S2@` and the node is closed
+- **THEN** its row shows a quiet dot after the summary that says it cites one source, and once it is opened the citation is a row beneath it
+
+#### Scenario: A type that is not a name's
+- **WHEN** a person's `1 EVEN` states `2 TYPE Stage name`
+- **THEN** the row shows the type as written, not read as a name type
 
 #### Scenario: A bare event
 - **WHEN** a person's record states `1 DEAT Y` and nothing beneath it
@@ -106,7 +114,7 @@ Where a line of the tree is an event or an attribute that the card of the record
 
 ### Requirement: The controls of the tree appear only where the reader is
 
-The controls that act on one row — *Show in source* — and those that act on the whole tree — show or hide tags, open every node, close every node — SHALL be shown only while the pointer is over the row or the tree or the focus is within it, SHALL NOT take space while hidden, and SHALL be reachable by the keyboard from the row that holds them. A control that opens or closes a node SHALL stay shown. Where the pointer cannot hover — a touch screen, the mobile app — the controls of a row SHALL be shown on the row the reader last pressed and those of the tree SHALL stay shown, each at least 44 pixels in each direction. Every control SHALL be named for its action and for the row it acts on, as `Show in source: Birth`, whether or not it is shown. A node's control SHALL say whether the node is open. *Show in source* on a row SHALL select exactly the lines that state it, the lines beneath it included. A row that holds nothing the keyboard can reach — a plain value, which is a field that is not in the tab order — has no *Show in source* of its own for the keyboard; the node that holds it has one. *Open every node* SHALL open every node of the record, drawing what is beneath each as it is opened.
+The controls that act on one row — *Show in source* — and those that act on the whole tree — show or hide tags, open every node, close every node — SHALL be shown only while the pointer is over the row or the tree or the focus is within it, and SHALL NOT shift anything when they appear or disappear: the row keeps the room for them. They SHALL remain focusable and in the accessibility tree while they are not shown, SHALL be shown when their row takes the focus, and SHALL be named for their action and for the row they act on, as `Show in source: Birth`. The controls of a node, and of a row that holds a link or a button of its own, SHALL be in the tab order after that row's other controls; those of a plain value, which is a field that is not in the tab order, SHALL be reachable by the pointer, by touch and by assistive technology but not by Tab, and the node that holds the value has one for the keyboard. The control that opens and closes a node SHALL stay shown, and a node's control SHALL say whether the node is open; the controls of the tree are not among those that stay shown. Where the pointer cannot hover — a touch screen, the mobile app — the controls of a row SHALL be shown on the row the reader last pressed and those of the tree SHALL stay shown, each at least 44 pixels in each direction. *Show in source* on a row SHALL select exactly the lines that state it, the lines beneath it included. *Open every node* SHALL open every node of the record, drawing what is beneath each as it is opened.
 
 #### Scenario: A quiet card
 - **WHEN** the card is shown and the pointer is outside the tree
@@ -114,11 +122,15 @@ The controls that act on one row — *Show in source* — and those that act on 
 
 #### Scenario: Under the pointer
 - **WHEN** the pointer moves over the row of Marie's occupation
-- **THEN** its *Show in source* is shown, and moving away hides it
+- **THEN** its *Show in source* is shown, and moving away hides it, and nothing in the row moves
 
 #### Scenario: By the keyboard
 - **WHEN** the reader reaches the node of Marie's birth with the Tab key
-- **THEN** its *Show in source* is shown, is named `Show in source: Birth`, and is the next control in the tab order
+- **THEN** its *Show in source* is shown and named `Show in source: Birth`, and the next Tab reaches it after the node's other controls
+
+#### Scenario: A hidden control and assistive technology
+- **WHEN** a screen reader lists the controls of Marie's card with the pointer outside the tree
+- **THEN** each row's `Show in source` is listed with the name of its row
 
 #### Scenario: Show in source
 - **WHEN** the reader chooses *Show in source* on the row of Marie's birth
@@ -142,7 +154,7 @@ Pressing, focusing, selecting, opening or closing in the tree SHALL NOT write to
 
 ### Requirement: The tree fits a narrow panel and a phone
 
-The tree SHALL be readable in one column from 320 pixels up and at a phone's width, without horizontal scrolling. The indentation of nested lines SHALL stop growing after the fourth level beneath the opening line, so that a line nested deeper keeps the width of a line at the fourth. A long value SHALL wrap, and a long label SHALL wrap. A redraw of the card for a change of the file SHALL keep the focus on the same control and SHALL NOT scroll the card, and returning to a record with Back SHALL restore its scroll position.
+The tree SHALL be readable in one column from 320 pixels up and at a phone's width, without horizontal scrolling. The indentation of nested lines SHALL stop growing after the fourth level beneath the opening line, so that a line nested deeper keeps the width of a line at the fourth. A long value SHALL wrap, and a long label SHALL wrap. A redraw of the card for a change of the file SHALL keep the focus on the same control and SHALL NOT scroll the card; returning to a record with Back or Forward SHALL restore its scroll position, and showing a record in any other way SHALL scroll the card to its top.
 
 #### Scenario: A deep line at a sidebar's width
 - **WHEN** a record nests a line six levels deep and the card is 320 pixels wide
