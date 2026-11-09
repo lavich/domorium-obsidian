@@ -450,20 +450,6 @@ h3.gedcom-desk-subsection[data-count]::after {
   flex-basis: 100%;
 }
 
-.gedcom-name {
-  margin-bottom: var(--size-4-2);
-}
-
-.gedcom-name-translation-label {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-name-translation {
-  margin-top: var(--size-2-3);
-  margin-inline-start: var(--size-4-4);
-}
-
 .gedcom-related-kind,
 .gedcom-related-role,
 .gedcom-related-phrase {
@@ -588,10 +574,6 @@ button.gedcom-desk-link:hover {
   grid-template-columns: minmax(70px, 96px) 1fr;
 }
 
-.gedcom-desk-fact.is-detail {
-  grid-template-columns: minmax(70px, 130px) 1fr;
-}
-
 .gedcom-desk-fact.is-inert {
   cursor: default;
 }
@@ -619,13 +601,6 @@ button.gedcom-desk-link:hover {
   min-width: 0;
 }
 
-.gedcom-desk-fact.is-detail .gedcom-desk-fact-main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--size-2-3);
-}
-
 button.gedcom-desk-fact-name {
   height: auto;
   min-height: 0;
@@ -640,7 +615,6 @@ button.gedcom-desk-fact-name {
   cursor: pointer;
 }
 
-.gedcom-desk-fact.is-detail button.gedcom-desk-fact-name,
 button.gedcom-desk-fact-name:disabled {
   color: var(--text-muted);
 }
@@ -660,13 +634,6 @@ button.gedcom-desk-fact-name:disabled {
 
 .gedcom-desk-fact-value.is-empty {
   color: var(--text-muted);
-}
-
-.gedcom-desk-fact-where {
-  flex-basis: 100%;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  overflow-wrap: anywhere;
 }
 
 .gedcom-desk-source {
@@ -922,8 +889,7 @@ button.gedcom-card-nav:focus-visible {
 }
 
 .is-mobile .gedcom-desk-fact-head,
-.is-mobile .gedcom-desk-fact-value,
-.is-mobile .gedcom-desk-fact-where {
+.is-mobile .gedcom-desk-fact-value {
   padding-block: 12px;
 }
 
@@ -2610,6 +2576,316 @@ button.gedcom-fg-pop-open {
   white-space: pre-line;
 }
 
-.gedcom-desk-stated {
-  margin-top: var(--size-2-3);
+.gedcom-tree {
+  margin-top: var(--size-4-2);
+}
+
+.gedcom-tree-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out;
+}
+
+.gedcom-tree:hover > .gedcom-tree-bar,
+.gedcom-tree:focus-within > .gedcom-tree-bar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+button.gedcom-tree-control {
+  height: auto;
+  padding: var(--size-2-1) var(--size-2-3);
+  background: none;
+  border: 0;
+  box-shadow: none;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+}
+
+button.gedcom-tree-control:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.gedcom-tree-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--size-4-2);
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--size-2-1) 28px var(--size-2-1) 22px;
+  border-radius: var(--radius-s);
+}
+
+.gedcom-tree-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-tree-children {
+  margin-inline-start: 10px;
+  padding-inline-start: 4px;
+  border-inline-start: 1px solid var(--background-modifier-border);
+}
+
+.gedcom-tree-children[hidden] {
+  display: none;
+}
+
+.gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+.gedcom-tree-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+button.gedcom-tree-label {
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  font: inherit;
+  text-align: start;
+  white-space: normal;
+  color: var(--text-normal);
+  cursor: pointer;
+}
+
+button.gedcom-tree-label:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+.gedcom-tree-tag {
+  flex: none;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-tree-main {
+  display: flex;
+  flex: 1 1 9rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--size-2-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree-main:empty {
+  display: none;
+}
+
+.gedcom-tree-main > .gedcom-field,
+.gedcom-tree-main > .gedcom-detail-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gedcom-tree-main > .gedcom-detail {
+  flex-basis: 100%;
+}
+
+.gedcom-tree-summary {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: pre;
+  color: var(--text-muted);
+}
+
+.gedcom-tree-part {
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gedcom-tree-part:last-child {
+  flex-shrink: 1;
+}
+
+.gedcom-tree-summary .gedcom-desk-link {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
+.gedcom-tree-main .gedcom-desk-link {
+  text-align: start;
+}
+
+button.gedcom-tree-chevron,
+button.gedcom-tree-source {
+  position: absolute;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 22px;
+  height: 28px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+button.gedcom-tree-chevron {
+  inset-inline-start: 0;
+}
+
+button.gedcom-tree-source {
+  inset-inline-end: 0;
+  width: 28px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+button.gedcom-tree-source .svg-icon {
+  width: 14px;
+  height: 14px;
+}
+
+button.gedcom-tree-chevron:hover,
+button.gedcom-tree-source:hover {
+  background: none;
+  color: var(--text-normal);
+}
+
+button.gedcom-tree-chevron::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-inline-end: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+button.gedcom-tree-chevron:dir(rtl)::before {
+  transform: rotate(45deg);
+}
+
+.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron::before {
+  transform: rotate(45deg);
+}
+
+.gedcom-tree-row:hover > button.gedcom-tree-source,
+.gedcom-tree-row:focus-within > button.gedcom-tree-source,
+button.gedcom-tree-source:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+button.gedcom-tree-control:focus-visible,
+button.gedcom-tree-label:focus-visible,
+button.gedcom-tree-chevron:focus-visible,
+button.gedcom-tree-source:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+.is-mobile .gedcom-tree-bar,
+.is-mobile .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.is-mobile button.gedcom-tree-control {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.is-mobile .gedcom-tree-row {
+  min-height: 44px;
+  align-items: center;
+  padding-inline: 34px 44px;
+}
+
+.is-mobile button.gedcom-tree-chevron {
+  width: 34px;
+  height: 44px;
+}
+
+.is-mobile button.gedcom-tree-source {
+  width: 44px;
+  height: 44px;
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree-bar,
+  .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  button.gedcom-tree-control {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .gedcom-tree-row {
+    min-height: 44px;
+    align-items: center;
+    padding-inline: 34px 44px;
+  }
+
+  button.gedcom-tree-chevron {
+    width: 34px;
+    height: 44px;
+  }
+
+  button.gedcom-tree-source {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.is-mobile button.gedcom-tree-label {
+  position: relative;
+}
+
+.is-mobile button.gedcom-tree-label::after {
+  content: "";
+  position: absolute;
+  inset: -12px 0;
+}
+
+@media (pointer: coarse) {
+  button.gedcom-tree-label {
+    position: relative;
+  }
+
+  button.gedcom-tree-label::after {
+    content: "";
+    position: absolute;
+    inset: -12px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gedcom-tree-bar {
+    transition: none;
+  }
 }

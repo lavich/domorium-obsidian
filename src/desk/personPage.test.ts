@@ -71,7 +71,7 @@ const rowsOf = (selector: string, keep: (row: Element) => boolean = () => true):
     return [
       part(".gedcom-desk-fact-name"),
       ...(row.classList.contains("is-event") ? [part(".gedcom-desk-fact-date")] : []),
-      part(".gedcom-desk-fact-value") || part(".gedcom-desk-fact-where"),
+      part(".gedcom-desk-fact-value"),
       ...(dot ? [dot] : []),
     ];
   });

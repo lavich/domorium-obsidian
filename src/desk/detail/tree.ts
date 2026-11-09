@@ -256,12 +256,13 @@ class Tree {
         text.setAttribute("dir", "auto");
         parts.forEach((part, at) => {
           if (at > 0) {
-            text.appendText(" · ");
+            text.createSpan({ cls: "gedcom-tree-join", text: " · " });
           }
+          const one = text.createSpan({ cls: "gedcom-tree-part" });
           if (part.place) {
-            this.place(text, part.text, `t:${key}:place`);
+            this.place(one, part.text, `t:${key}:place`);
           } else {
-            text.appendText(part.text);
+            one.setText(part.text);
           }
         });
       }
