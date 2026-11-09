@@ -2599,7 +2599,7 @@ button.gedcom-fg-pop-open {
   pointer-events: auto;
 }
 
-button.gedcom-tree-control {
+.gedcom-tree button.gedcom-tree-control {
   height: auto;
   padding: var(--size-2-1) var(--size-2-3);
   background: none;
@@ -2611,18 +2611,18 @@ button.gedcom-tree-control {
   cursor: pointer;
 }
 
-button.gedcom-tree-toggle .svg-icon {
+.gedcom-tree button.gedcom-tree-toggle .svg-icon {
   width: var(--icon-size);
   height: var(--icon-size);
   stroke-width: var(--icon-stroke);
 }
 
-button.gedcom-tree-control:hover {
+.gedcom-tree button.gedcom-tree-control:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
-.gedcom-tree-row {
+.gedcom-tree .gedcom-tree-row {
   position: relative;
   display: flex;
   flex-wrap: wrap;
@@ -2635,55 +2635,55 @@ button.gedcom-tree-control:hover {
   border-radius: var(--radius-s);
 }
 
-.gedcom-tree-row,
-.gedcom-tree-row.tree-item-self {
+.gedcom-tree .gedcom-tree-row,
+.gedcom-tree .gedcom-tree-row.tree-item-self {
   margin-bottom: 0;
   font-size: var(--nav-item-size);
 }
 
-.gedcom-tree-row:hover {
+.gedcom-tree .gedcom-tree-row:hover {
   background: var(--nav-item-background-hover);
 }
 
-.gedcom-tree-row.mod-collapsible {
+.gedcom-tree .gedcom-tree-row.mod-collapsible {
   color: var(--nav-item-color);
   font-weight: var(--nav-item-weight);
   border-radius: var(--clickable-icon-radius);
   cursor: pointer;
 }
 
-.gedcom-tree-row.mod-collapsible:hover {
+.gedcom-tree .gedcom-tree-row.mod-collapsible:hover {
   color: var(--nav-item-color-hover);
 }
 
-.gedcom-tree-row.is-pressed {
+.gedcom-tree .gedcom-tree-row.is-pressed {
   background: var(--nav-item-background-selected);
 }
 
-.gedcom-tree-children {
+.gedcom-tree .gedcom-tree-children {
   margin-inline-start: var(--size-4-3);
   padding-inline-start: var(--size-2-2);
   border-inline-start: var(--indentation-guide-width) solid var(--indentation-guide-color);
 }
 
-.gedcom-tree-children[hidden] {
+.gedcom-tree .gedcom-tree-children[hidden] {
   display: none;
 }
 
-.gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children {
+.gedcom-tree .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children {
   margin-inline-start: 0;
   padding-inline-start: 0;
   border-inline-start: 0;
 }
 
-.gedcom-tree-label {
+.gedcom-tree .gedcom-tree-label {
   flex: 0 1 auto;
   min-width: 0;
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 
-button.gedcom-tree-label {
+.gedcom-tree button.gedcom-tree-label {
   height: auto;
   min-height: 0;
   padding: 0;
@@ -2697,12 +2697,12 @@ button.gedcom-tree-label {
   cursor: pointer;
 }
 
-button.gedcom-tree-label:hover {
+.gedcom-tree button.gedcom-tree-label:hover {
   background: none;
   text-decoration: underline;
 }
 
-.gedcom-tree-main {
+.gedcom-tree .gedcom-tree-main {
   display: flex;
   flex: 1 1 9rem;
   flex-wrap: wrap;
@@ -2712,21 +2712,21 @@ button.gedcom-tree-label:hover {
   overflow-wrap: anywhere;
 }
 
-.gedcom-tree-main:empty {
+.gedcom-tree .gedcom-tree-main:empty {
   display: none;
 }
 
-.gedcom-tree-main > .gedcom-field,
-.gedcom-tree-main > .gedcom-detail-text {
+.gedcom-tree .gedcom-tree-main > .gedcom-field,
+.gedcom-tree .gedcom-tree-main > .gedcom-detail-text {
   flex: 1 1 auto;
   min-width: 0;
 }
 
-.gedcom-tree-main > .gedcom-detail {
+.gedcom-tree .gedcom-tree-main > .gedcom-detail {
   flex-basis: 100%;
 }
 
-.gedcom-tree-summary {
+.gedcom-tree .gedcom-tree-summary {
   display: flex;
   flex: 0 1 auto;
   min-width: 0;
@@ -2734,51 +2734,51 @@ button.gedcom-tree-label:hover {
   color: var(--text-muted);
 }
 
-.gedcom-tree-join {
+.gedcom-tree .gedcom-tree-join {
   flex: none;
 }
 
-.gedcom-tree-part {
+.gedcom-tree .gedcom-tree-part {
   min-width: 0;
 }
 
-.gedcom-tree-part.is-value {
+.gedcom-tree .gedcom-tree-part.is-value {
   flex: 0 1 auto;
   min-width: 4ch;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.gedcom-tree-part.is-date {
+.gedcom-tree .gedcom-tree-part.is-date {
   flex: 0 0 auto;
 }
 
-.gedcom-tree-part.is-place {
+.gedcom-tree .gedcom-tree-part.is-place {
   display: flex;
   flex: 0 1000 auto;
   min-width: 5ch;
 }
 
-.gedcom-tree-summary .gedcom-desk-link {
+.gedcom-tree .gedcom-tree-summary .gedcom-desk-link {
   display: flex;
   flex: 0 1 auto;
   min-width: 0;
   max-width: 100%;
 }
 
-.gedcom-tree-clip {
+.gedcom-tree .gedcom-tree-clip {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: pre;
 }
 
-.gedcom-tree-main .gedcom-desk-link {
+.gedcom-tree .gedcom-tree-main .gedcom-desk-link {
   text-align: start;
 }
 
-button.gedcom-tree-chevron,
-button.gedcom-tree-source {
+.gedcom-tree button.gedcom-tree-chevron,
+.gedcom-tree button.gedcom-tree-source {
   position: absolute;
   top: 0;
   display: inline-flex;
@@ -2797,53 +2797,62 @@ button.gedcom-tree-source {
   cursor: pointer;
 }
 
-button.gedcom-tree-chevron {
+.gedcom-tree button.gedcom-tree-chevron {
   inset-inline-start: 0;
   color: var(--nav-collapse-icon-color);
+  opacity: 0;
+  pointer-events: none;
 }
 
-button.gedcom-tree-chevron .svg-icon {
+.gedcom-tree:hover button.gedcom-tree-chevron,
+.gedcom-tree:focus-within button.gedcom-tree-chevron,
+.gedcom-tree button.gedcom-tree-chevron:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.gedcom-tree button.gedcom-tree-chevron .svg-icon {
   width: var(--icon-xs);
   height: var(--icon-xs);
   stroke-width: var(--icon-stroke);
   transform: rotate(0deg);
 }
 
-.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron .svg-icon {
+.gedcom-tree .gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron .svg-icon {
   transform: rotate(90deg);
 }
 
-button.gedcom-tree-chevron:dir(rtl) .svg-icon {
+.gedcom-tree button.gedcom-tree-chevron:dir(rtl) .svg-icon {
   transform: scaleX(-1);
 }
 
-.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:dir(rtl) .svg-icon {
+.gedcom-tree .gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:dir(rtl) .svg-icon {
   transform: scaleX(-1) rotate(90deg);
 }
 
-button.gedcom-tree-source {
+.gedcom-tree button.gedcom-tree-source {
   inset-inline-end: 0;
   width: 28px;
   opacity: 0;
   pointer-events: none;
 }
 
-button.gedcom-tree-source .svg-icon {
+.gedcom-tree button.gedcom-tree-source .svg-icon {
   width: 14px;
   height: 14px;
 }
 
-button.gedcom-tree-chevron:hover {
+.gedcom-tree button.gedcom-tree-chevron:hover {
   background: none;
   color: var(--nav-item-color-hover);
 }
 
-button.gedcom-tree-source:hover {
+.gedcom-tree button.gedcom-tree-source:hover {
   background: none;
   color: var(--text-normal);
 }
 
-button.gedcom-tree-chevron:empty::before {
+.gedcom-tree button.gedcom-tree-chevron:empty::before {
   content: "";
   width: 5px;
   height: 5px;
@@ -2852,25 +2861,25 @@ button.gedcom-tree-chevron:empty::before {
   transform: rotate(-45deg);
 }
 
-button.gedcom-tree-chevron:empty:dir(rtl)::before {
+.gedcom-tree button.gedcom-tree-chevron:empty:dir(rtl)::before {
   transform: rotate(45deg);
 }
 
-.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:empty::before {
+.gedcom-tree .gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:empty::before {
   transform: rotate(45deg);
 }
 
-.gedcom-tree-row:hover > button.gedcom-tree-source,
-.gedcom-tree-row:focus-within > button.gedcom-tree-source,
-button.gedcom-tree-source:focus-visible {
+.gedcom-tree .gedcom-tree-row:hover > button.gedcom-tree-source,
+.gedcom-tree .gedcom-tree-row:focus-within > button.gedcom-tree-source,
+.gedcom-tree button.gedcom-tree-source:focus-visible {
   opacity: 1;
   pointer-events: auto;
 }
 
-button.gedcom-tree-control:focus-visible,
-button.gedcom-tree-label:focus-visible,
-button.gedcom-tree-chevron:focus-visible,
-button.gedcom-tree-source:focus-visible {
+.gedcom-tree button.gedcom-tree-control:focus-visible,
+.gedcom-tree button.gedcom-tree-label:focus-visible,
+.gedcom-tree button.gedcom-tree-chevron:focus-visible,
+.gedcom-tree button.gedcom-tree-source:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
 }
@@ -2881,28 +2890,30 @@ button.gedcom-tree-source:focus-visible {
 }
 
 .is-mobile .gedcom-tree-bar,
-.is-mobile .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
+.is-mobile .gedcom-tree .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
   opacity: 1;
   pointer-events: auto;
 }
 
-.is-mobile button.gedcom-tree-control {
+.is-mobile .gedcom-tree button.gedcom-tree-control {
   min-width: 44px;
   min-height: 44px;
 }
 
-.is-mobile .gedcom-tree-row {
+.is-mobile .gedcom-tree .gedcom-tree-row {
   min-height: 44px;
   padding-block: 12px;
   padding-inline: 34px 44px;
 }
 
-.is-mobile button.gedcom-tree-chevron {
+.is-mobile .gedcom-tree button.gedcom-tree-chevron {
+  opacity: 1;
+  pointer-events: auto;
   width: 34px;
   height: 44px;
 }
 
-.is-mobile button.gedcom-tree-source {
+.is-mobile .gedcom-tree button.gedcom-tree-source {
   width: 44px;
   height: 44px;
 }
@@ -2914,49 +2925,51 @@ button.gedcom-tree-source:focus-visible {
   }
 
   .gedcom-tree-bar,
-  .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
+  .gedcom-tree .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
     opacity: 1;
     pointer-events: auto;
   }
 
-  button.gedcom-tree-control {
+  .gedcom-tree button.gedcom-tree-control {
     min-width: 44px;
     min-height: 44px;
   }
 
-  .gedcom-tree-row {
+  .gedcom-tree .gedcom-tree-row {
     min-height: 44px;
     padding-block: 12px;
     padding-inline: 34px 44px;
   }
 
-  button.gedcom-tree-chevron {
+  .gedcom-tree button.gedcom-tree-chevron {
+    opacity: 1;
+    pointer-events: auto;
     width: 34px;
     height: 44px;
   }
 
-  button.gedcom-tree-source {
+  .gedcom-tree button.gedcom-tree-source {
     width: 44px;
     height: 44px;
   }
 }
 
-.is-mobile button.gedcom-tree-label {
+.is-mobile .gedcom-tree button.gedcom-tree-label {
   position: relative;
 }
 
-.is-mobile button.gedcom-tree-label::after {
+.is-mobile .gedcom-tree button.gedcom-tree-label::after {
   content: "";
   position: absolute;
   inset: -12px 0;
 }
 
 @media (pointer: coarse) {
-  button.gedcom-tree-label {
+  .gedcom-tree button.gedcom-tree-label {
     position: relative;
   }
 
-  button.gedcom-tree-label::after {
+  .gedcom-tree button.gedcom-tree-label::after {
     content: "";
     position: absolute;
     inset: -12px 0;

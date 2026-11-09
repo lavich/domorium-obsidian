@@ -253,6 +253,7 @@ body {
   --icon-size: 18px;
   --icon-xs: 14px;
   --nav-item-color: var(--text-muted);
+  --nav-item-padding: var(--size-4-1) var(--size-4-2) var(--size-4-1) var(--size-4-6);
   --nav-item-weight: inherit;
   --nav-collapse-icon-color: var(--text-faint);
   --indentation-guide-width: 1px;
@@ -528,6 +529,7 @@ body {
 }
 
 .tree-item-self {
+  padding: var(--nav-item-padding);
   display: flex;
   align-items: center;
   border-radius: var(--clickable-icon-radius);
@@ -536,12 +538,18 @@ body {
   margin-bottom: 1px;
 }
 
+.tree-item-self.is-clickable {
+  padding: var(--nav-item-padding);
+}
+
 .tree-item-self.is-clickable:hover {
   background-color: var(--nav-item-background-hover);
   color: var(--nav-item-color-hover);
 }
 
 .tree-item-icon.collapse-icon {
+  position: absolute;
+  margin-inline-start: calc(var(--size-4-6) * -1);
   color: var(--nav-collapse-icon-color);
 }
 

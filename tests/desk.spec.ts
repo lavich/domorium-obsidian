@@ -30,6 +30,12 @@ const opacityOf = (locator: Locator) => locator.evaluate((node) => getComputedSt
 const treeRow = (page: Page, label: string) =>
   page.locator(".gedcom-tree-row", { has: page.locator(".gedcom-tree-label", { hasText: new RegExp(`^${label}$`, "u") }) }).first();
 
+const pressArrow = async (page: Page, label: string): Promise<void> => {
+  const row = treeRow(page, label);
+  await row.hover();
+  await row.locator(".gedcom-tree-chevron").click();
+};
+
 const openEveryNode = async (page: Page): Promise<void> => {
   await page.locator(".gedcom-tree").hover();
   const toggle = page.locator('.gedcom-tree-toggle[aria-label="Open every node"]');
@@ -132,7 +138,7 @@ for (const size of SIZES) {
     });
 
     test("opens the place of a fact, not the event", async ({ page }) => {
-      await treeRow(page, "Birth").locator(".gedcom-tree-chevron").click();
+      await pressArrow(page, "Birth");
       await treeRow(page, "Place").locator(".gedcom-desk-link").first().click();
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
@@ -564,7 +570,9 @@ test.describe("the tree of a record", () => {
       expect(await opacityOf(source)).toBe("0");
     }
     for (const chevron of await page.locator(".gedcom-tree-chevron").all()) {
-      expect(await opacityOf(chevron)).toBe("1");
+      expect(await opacityOf(chevron)).toBe("0");
+      await expect(chevron).toHaveAttribute("aria-label", /.+/u);
+      expect(await chevron.evaluate((node) => (node as HTMLButtonElement).tabIndex)).toBe(0);
     }
     const row = treeRow(page, "Occupation");
     const before = await row.boundingBox();
@@ -575,6 +583,49 @@ test.describe("the tree of a record", () => {
     expect(await row.boundingBox()).toEqual(before);
     await page.mouse.move(5, 5);
     await expect(row.locator(".gedcom-tree-source")).toHaveCSS("opacity", "0");
+  });
+
+  test("shows the arrows of the nodes while the pointer is over the tree or the focus is in it, and a press on a header still toggles", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 420 });
+    await page.mouse.move(2, 2);
+    const birth = treeRow(page, "Birth");
+    const arrow = birth.locator(".gedcom-tree-chevron");
+
+    await expect(arrow).toHaveCSS("opacity", "0");
+    await birth.hover();
+    await expect(arrow).toHaveCSS("opacity", "1");
+    await page.mouse.move(2, 2);
+    await expect(arrow).toHaveCSS("opacity", "0");
+    await arrow.focus();
+    await expect(arrow).toHaveCSS("opacity", "1");
+    await page.mouse.move(2, 2);
+    await page.locator(".gedcom-card-body").focus();
+    await birth.locator(".gedcom-tree-part.is-date").click();
+    await expect(arrow).toHaveAttribute("aria-expanded", "true");
+  });
+
+  for (const size of [{ width: 320, phone: false }, { width: 390, phone: true }]) {
+    test(`starts the label of a line and of a node of the same depth at one column at ${size.width} pixels`, async ({ page }) => {
+      await page.setViewportSize({ width: 1400, height: 760 });
+      await mountDesk(page, { width: size.width, phone: size.phone });
+      const left = (label: string) => treeRow(page, label).locator(".gedcom-tree-label").evaluate((node) => node.getBoundingClientRect().left);
+
+      expect(await left("Sex")).toBe(await left("Birth"));
+      expect(await left("Occupation")).toBe(await left("Name"));
+      expect(await left("Spouse in family")).toBe(await left("Death"));
+      await page.locator(".gedcom-tree").hover();
+      await page.locator('.gedcom-tree-toggle[aria-label="Open every node"]').click();
+      expect(await left("Date")).toBe(await left("Place"));
+    });
+  }
+
+  test("keeps the arrows shown where the pointer cannot hover", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await mountDesk(page, { phone: true });
+    for (const chevron of await page.locator(".gedcom-tree-chevron").all()) {
+      expect(await opacityOf(chevron)).toBe("1");
+    }
   });
 
   test("shows a row's control when the keyboard reaches the row, and the next Tab is that control", async ({ page }) => {
@@ -607,8 +658,7 @@ test.describe("the tree of a record", () => {
   test("keeps a node open across a visit to another record", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
-    const birth = treeRow(page, "Birth").locator(".gedcom-tree-chevron");
-    await birth.click();
+    await pressArrow(page, "Birth");
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "true");
 
     await page.evaluate(() => {
@@ -649,7 +699,7 @@ test.describe("the tree of a record", () => {
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
     await back(page).click();
 
-    await treeRow(page, "Birth").locator(".gedcom-tree-chevron").click();
+    await pressArrow(page, "Birth");
     await treeRow(page, "Place").locator(".gedcom-desk-link").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
   });
