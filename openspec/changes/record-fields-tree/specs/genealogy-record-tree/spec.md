@@ -66,11 +66,11 @@ Each line of the tree SHALL be a **row** of a label and a value. The label SHALL
 
 #### Scenario: A pointer to a shared note
 - **WHEN** a 7.0 person's record states `1 SNOTE @N1@` and the file declares `0 @N1@ SNOTE` with text and a `2 SOUR` beneath it
-- **THEN** the row shows that text and the citation beneath it where the pointer is, and *Show in source* on that row selects the line of the pointer
+- **THEN** the row shows that text and the citation beneath it where the pointer is
 
 #### Scenario: A pointer to a record not in the file
 - **WHEN** a person's record states `1 FAMS @F9@` and the file declares no `@F9@`
-- **THEN** the row shows a pointer to a record that is not in the file with one action that shows the line in the source
+- **THEN** the row shows a pointer to a record that is not in the file with one action that shows the line in the source, which a closed node offers in its summary and an open node on the pointer itself
 
 #### Scenario: An open node kept across a redraw and a visit elsewhere
 - **WHEN** the reader has opened the node of Marie's residence, the file changes on disk above it, and the card then shows Pierre Curie and Marie again
@@ -112,33 +112,25 @@ Where a line of the tree is an event or an attribute that the card of the record
 - **WHEN** the reader presses `Sex` in Marie's tree
 - **THEN** nothing opens
 
-### Requirement: The controls of the tree appear only where the reader is
+### Requirement: The node controls stay in view and the toggle appears where the reader is
 
-The controls that act on one row — *Show in source* — and those that act on the whole tree — the one icon toggle that opens or closes every node — SHALL be shown only while the pointer is over the row or the tree or the focus is within it, and SHALL NOT shift anything when they appear or disappear: the row keeps the room for them. They SHALL remain focusable and in the accessibility tree while they are not shown, SHALL be shown when their row takes the focus, and SHALL be named for their action and for the row they act on, as `Show in source: Birth`. The controls of a node, and of a row that holds a link or a button of its own, SHALL be in the tab order after that row's other controls; those of a plain value, which is a field that is not in the tab order, SHALL be reachable by the pointer, by touch and by assistive technology but not by Tab, and the node that holds the value has one for the keyboard. The control that opens and closes a node — its arrow — is one of these controls on a device that can hover: it SHALL NOT be shown at rest, SHALL be revealed like the others while the pointer is over the tree or the focus is within it, SHALL remain focusable and named by its row, and SHALL say whether the node is open. A press on a node's header outside its own controls SHALL open or close the node as the arrow does. Where the pointer cannot hover — a touch screen, the mobile app — the controls of a row SHALL be shown on the row the reader last pressed and those of the tree, the arrows of the nodes among them, SHALL stay shown, each at least 44 pixels in each direction. *Show in source* on a row SHALL select exactly the lines that state it, the lines beneath it included; on the root that is the whole record, as the control in the heading selects it, which the heading keeps. The toggle that opens or closes every node includes the root. The toggle SHALL be a single icon button, in the style of the icon buttons of Obsidian's own file explorer, that shows the icon of the action it will do now — expanding all while any node is closed, collapsing all while every node is open, the state taken from the tree itself and updated whenever the reader opens or closes a node — and SHALL be named for that action, *Open every node* or *Close every node*. Opening every node SHALL open every node of the record, drawing what is beneath each as it is opened.
+The control of a node — its arrow — SHALL always be shown, quiet in the colour the app gives its collapse icons, SHALL be a real button that is focusable and in the accessibility tree, named by its row, that says whether the node is open and which part it controls, and SHALL show a focus ring when the keyboard reaches it. A press on a node's header outside its own controls SHALL open or close the node as the arrow does. The arrow's column SHALL be reserved at the start of every row, of a node and of a line alike, so that the labels of one depth start at one place, and the label SHALL follow the arrow's glyph closely. The control that acts on the whole tree — the one icon toggle that opens or closes every node — SHALL be shown only while the pointer is over the tree or the focus is within it, SHALL NOT shift anything when it appears or disappears, and SHALL remain focusable and in the accessibility tree while it is not shown. The toggle SHALL be a single icon button, in the style of the icon buttons of Obsidian's own file explorer, that shows the icon of the action it will do now — expanding all while any node is closed, collapsing all while every node is open, the state taken from the tree itself and updated whenever the reader opens or closes a node — and SHALL be named for that action, *Open every node* or *Close every node*. Opening every node SHALL open every node of the record, the root included, drawing what is beneath each as it is opened. Where the pointer cannot hover — a touch screen, the mobile app — the toggle SHALL stay shown, and it and the arrows SHALL be at least 44 pixels in each direction. The rows of the tree SHALL be set apart by a small vertical space, the guide of the children continuing across it, and a row under the pointer SHALL be painted with the neutral hover colour of the app's navigation and never with the colour of a selected row, whether or not it has been pressed.
 
 #### Scenario: A quiet card
 - **WHEN** the card is shown and the pointer is outside the tree
-- **THEN** no control of the tree is visible, the arrows of the nodes included, and every one of them is still focusable and named
+- **THEN** the arrows of the nodes are visible and the open-all toggle is not, and the toggle is still focusable and named
+
+#### Scenario: Arrows in the file explorer's way
+- **WHEN** the card shows Marie's tree
+- **THEN** each node has its arrow inside its row, followed closely by its label, the label of a line such as `Sex` starts where the label of a node such as `Birth` starts, and the rows are apart
 
 #### Scenario: Under the pointer
-- **WHEN** the pointer moves over the row of Marie's occupation
-- **THEN** its *Show in source* is shown, and moving away hides it, and nothing in the row moves
+- **WHEN** the pointer moves over a row of the tree
+- **THEN** the row is painted with the hover background of the navigation, not with the colour of a selected row, and after a press on it and the pointer moving away it keeps no background
 
 #### Scenario: By the keyboard
-- **WHEN** the reader reaches the node of Marie's birth with the Tab key
-- **THEN** its *Show in source* is shown and named `Show in source: Birth`, and the next Tab reaches it after the node's other controls
-
-#### Scenario: A hidden control and assistive technology
-- **WHEN** a screen reader lists the controls of Marie's card with the pointer outside the tree
-- **THEN** each row's `Show in source` is listed with the name of its row
-
-#### Scenario: Show in source
-- **WHEN** the reader chooses *Show in source* on the row of Marie's birth
-- **THEN** the tab is in Source mode with the `1 BIRT` line and the lines beneath it selected and in view
-
-#### Scenario: On a phone
-- **WHEN** Marie's card is shown on a phone and the reader presses the row of her occupation
-- **THEN** that row's *Show in source* is shown, 44 pixels in each direction, and no other row's is
+- **WHEN** the reader reaches the open-all toggle with the Tab key
+- **THEN** the toggle is shown and its name says what it will do
 
 #### Scenario: The toggle opens and closes every node
 - **WHEN** the reader presses the toggle on Marie's record with her nodes closed

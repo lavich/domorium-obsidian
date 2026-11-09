@@ -2622,7 +2622,7 @@ button.gedcom-fg-pop-open {
   color: var(--text-normal);
 }
 
-.gedcom-tree .gedcom-tree-row {
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
   position: relative;
   display: flex;
   flex-wrap: wrap;
@@ -2630,38 +2630,40 @@ button.gedcom-fg-pop-open {
   gap: 0 var(--size-4-2);
   box-sizing: border-box;
   min-width: 0;
-  padding-block: var(--size-4-1);
-  padding-inline: 22px 28px;
-  border-radius: var(--radius-s);
-}
-
-.gedcom-tree .gedcom-tree-row,
-.gedcom-tree .gedcom-tree-row.tree-item-self {
   margin-bottom: 0;
+  padding-block: var(--size-4-1);
+  padding-inline: 24px var(--size-4-2);
+  border-radius: var(--clickable-icon-radius);
   font-size: var(--nav-item-size);
+  line-height: var(--line-height-tight);
 }
 
-.gedcom-tree .gedcom-tree-row:hover {
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row::before,
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row::after {
+  content: none;
+}
+
+.gedcom-tree .gedcom-tree-node + .gedcom-tree-node {
+  margin-block-start: var(--size-2-2);
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row:hover {
   background: var(--nav-item-background-hover);
 }
 
-.gedcom-tree .gedcom-tree-row.mod-collapsible {
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row.mod-collapsible {
   color: var(--nav-item-color);
   font-weight: var(--nav-item-weight);
-  border-radius: var(--clickable-icon-radius);
   cursor: pointer;
 }
 
-.gedcom-tree .gedcom-tree-row.mod-collapsible:hover {
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row.mod-collapsible:hover {
   color: var(--nav-item-color-hover);
-}
-
-.gedcom-tree .gedcom-tree-row.is-pressed {
-  background: var(--nav-item-background-selected);
 }
 
 .gedcom-tree .gedcom-tree-children {
   margin-inline-start: var(--size-4-3);
+  padding-block-start: var(--size-2-2);
   padding-inline-start: var(--size-2-2);
   border-inline-start: var(--indentation-guide-width) solid var(--indentation-guide-color);
 }
@@ -2777,8 +2779,14 @@ button.gedcom-fg-pop-open {
   text-align: start;
 }
 
-.gedcom-tree button.gedcom-tree-chevron,
-.gedcom-tree button.gedcom-tree-source {
+.gedcom-tree .gedcom-tree-main > .gedcom-desk-link {
+  max-width: 100%;
+  height: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree button.gedcom-tree-chevron {
   position: absolute;
   top: 0;
   display: inline-flex;
@@ -2800,15 +2808,11 @@ button.gedcom-fg-pop-open {
 .gedcom-tree button.gedcom-tree-chevron {
   inset-inline-start: 0;
   color: var(--nav-collapse-icon-color);
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
 }
 
-.gedcom-tree:hover button.gedcom-tree-chevron,
-.gedcom-tree:focus-within button.gedcom-tree-chevron,
-.gedcom-tree button.gedcom-tree-chevron:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
+.gedcom-tree button.gedcom-tree-chevron::before {
+  content: none;
 }
 
 .gedcom-tree button.gedcom-tree-chevron .svg-icon {
@@ -2830,26 +2834,9 @@ button.gedcom-fg-pop-open {
   transform: scaleX(-1) rotate(90deg);
 }
 
-.gedcom-tree button.gedcom-tree-source {
-  inset-inline-end: 0;
-  width: 28px;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.gedcom-tree button.gedcom-tree-source .svg-icon {
-  width: 14px;
-  height: 14px;
-}
-
 .gedcom-tree button.gedcom-tree-chevron:hover {
   background: none;
   color: var(--nav-item-color-hover);
-}
-
-.gedcom-tree button.gedcom-tree-source:hover {
-  background: none;
-  color: var(--text-normal);
 }
 
 .gedcom-tree button.gedcom-tree-chevron:empty::before {
@@ -2869,17 +2856,9 @@ button.gedcom-fg-pop-open {
   transform: rotate(45deg);
 }
 
-.gedcom-tree .gedcom-tree-row:hover > button.gedcom-tree-source,
-.gedcom-tree .gedcom-tree-row:focus-within > button.gedcom-tree-source,
-.gedcom-tree button.gedcom-tree-source:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
 .gedcom-tree button.gedcom-tree-control:focus-visible,
 .gedcom-tree button.gedcom-tree-label:focus-visible,
-.gedcom-tree button.gedcom-tree-chevron:focus-visible,
-.gedcom-tree button.gedcom-tree-source:focus-visible {
+.gedcom-tree button.gedcom-tree-chevron:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
 }
@@ -2887,10 +2866,6 @@ button.gedcom-fg-pop-open {
 .is-mobile .gedcom-tree-bar {
   position: static;
   flex-wrap: wrap;
-}
-
-.is-mobile .gedcom-tree-bar,
-.is-mobile .gedcom-tree .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
   opacity: 1;
   pointer-events: auto;
 }
@@ -2900,21 +2875,14 @@ button.gedcom-fg-pop-open {
   min-height: 44px;
 }
 
-.is-mobile .gedcom-tree .gedcom-tree-row {
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
   min-height: 44px;
   padding-block: 12px;
-  padding-inline: 34px 44px;
+  padding-inline: 30px var(--size-4-2);
 }
 
 .is-mobile .gedcom-tree button.gedcom-tree-chevron {
-  opacity: 1;
-  pointer-events: auto;
-  width: 34px;
-  height: 44px;
-}
-
-.is-mobile .gedcom-tree button.gedcom-tree-source {
-  width: 44px;
+  width: 30px;
   height: 44px;
 }
 
@@ -2922,10 +2890,6 @@ button.gedcom-fg-pop-open {
   .gedcom-tree-bar {
     position: static;
     flex-wrap: wrap;
-  }
-
-  .gedcom-tree-bar,
-  .gedcom-tree .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
     opacity: 1;
     pointer-events: auto;
   }
@@ -2935,21 +2899,14 @@ button.gedcom-fg-pop-open {
     min-height: 44px;
   }
 
-  .gedcom-tree .gedcom-tree-row {
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
     min-height: 44px;
     padding-block: 12px;
-    padding-inline: 34px 44px;
+    padding-inline: 30px var(--size-4-2);
   }
 
   .gedcom-tree button.gedcom-tree-chevron {
-    opacity: 1;
-    pointer-events: auto;
-    width: 34px;
-    height: 44px;
-  }
-
-  .gedcom-tree button.gedcom-tree-source {
-    width: 44px;
+    width: 30px;
     height: 44px;
   }
 }

@@ -171,26 +171,6 @@ their card. A source naming a repository the file does not declare SHALL say so.
 - **WHEN** the card shows a source no record cites
 - **THEN** it says no record cites it
 
-### Requirement: Show in source
-
-Every fact, every line of the tree of a record, every relative that is not in the file, and the record a card shows
-SHALL offer **Show in source**. It SHALL switch the tab to Source mode and select,
-and scroll into view, exactly the lines of the file that state it.
-
-#### Scenario: Showing a birth in the source
-- **WHEN** the reader selects Marie's birth and chooses Show in source
-- **THEN** the tab is in Source mode with the `1 BIRT` line and the lines beneath it
-  selected and in view
-
-#### Scenario: Showing a whole record
-- **WHEN** the reader chooses Show in source with no fact selected on Pierre Curie's
-  card
-- **THEN** the lines of Pierre Curie's record are selected and in view
-
-#### Scenario: Showing a line of the tree
-- **WHEN** the reader chooses Show in source on the row of Marie's occupation
-- **THEN** the tab is in Source mode with the `1 OCCU` line and the lines beneath it selected and in view
-
 ### Requirement: The card fits a narrow panel and a phone
 
 The card SHALL be readable and usable in one column at the width a sidebar has,
@@ -240,7 +220,7 @@ when it is pressed with a pointer. On a device whose pointer is coarse and in th
 them SHALL have an activation area at least 32 pixels tall without changing the size of its text,
 and a control that is a block of its own — a relative, a source, a note's line, the heading of a
 fold, Back and Forward (44 by 44) — 44 pixels; where two controls stand closer together than that,
-the space between them is shared. Where a card has many controls, those that act on one row or on the whole tree SHALL be shown only while the pointer is over the row or the tree, or the focus is within it, and SHALL NOT shift anything when they appear or disappear; a control SHALL be shown when its row takes the focus and SHALL stay reachable by assistive technology while it is not shown, and those of a node SHALL be in the tab order. Where the pointer cannot hover, those of a row SHALL be shown on the row the reader last pressed, and those of the tree SHALL stay shown. A control that opens or closes a part of the card SHALL stay shown, the heading of a fold among them; the arrows of the nodes of the tree are the exception on a device that can hover and are revealed like the other controls of the tree. The headings of the sections of a card and the secondary lines under
+the space between them is shared. The control of a node of the tree, its arrow, SHALL stay shown, like any control that opens or closes a part of the card; the one control that opens or closes every node of a tree SHALL be shown only while the pointer is over the tree or the focus is within it, SHALL NOT shift anything when it appears or disappears, SHALL stay reachable by assistive technology while it is not shown, and SHALL stay shown where the pointer cannot hover. The headings of the sections of a card and the secondary lines under
 them SHALL be set in the muted text colour of the theme, not the faint one. A date at the left of an event SHALL be set
 in the muted text colour; a notice that a source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
 
@@ -264,17 +244,9 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 - **WHEN** the card of a photograph in the vault is shown
 - **THEN** its picture is a button that opens the file, reachable with the keyboard
 
-#### Scenario: Controls under the pointer
-- **WHEN** the card is shown and the pointer is not over a row of the tree
-- **THEN** no *Show in source* control of a row is visible, and moving the pointer over a row shows that row's
-
-#### Scenario: Controls by keyboard
-- **WHEN** the reader reaches a node of the tree with the Tab key
-- **THEN** that node's controls are visible and the control that has the focus shows a ring in the accent colour
-
-#### Scenario: Controls on a phone
-- **WHEN** Marie's card is shown on a phone and the reader presses the row of her occupation
-- **THEN** that row's controls are shown, at least 44 pixels in each direction, and no other row's are
+#### Scenario: The arrows of a node
+- **WHEN** the card is shown and the pointer is not over the tree
+- **THEN** the arrows of the nodes are visible, and the control that opens or closes every node is not until the pointer or the focus is in the tree
 
 ### Requirement: An event is one row wherever a card lists it
 

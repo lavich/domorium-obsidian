@@ -396,9 +396,6 @@ const hitSweep = (page: Page): Promise<string[]> =>
     const missed: string[] = [];
     const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
     for (const control of document.querySelectorAll<HTMLElement>(selectors)) {
-      if (control.matches(".gedcom-tree-source") && !control.closest(".is-pressed")) {
-        continue;
-      }
       control.scrollIntoView({ block: "center" });
       const box = control.getBoundingClientRect();
       if (box.width === 0) {
@@ -421,7 +418,7 @@ const hitSweep = (page: Page): Promise<string[]> =>
 test.describe("the controls of a card on a phone", () => {
   test.use({ hasTouch: true });
 
-  test("can be hit over a height of at least 32 pixels, closed and open, and a pressed row's Show in source over 44", async ({ page }) => {
+  test("can be hit over a height of at least 32 pixels, closed and open", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     const rich = readFileSync("demo-vault/rich-record.ged", "utf8");
     const cases: [string, string | undefined][] = [
@@ -433,13 +430,6 @@ test.describe("the controls of a card on a phone", () => {
       await mountDesk(page, { record, phone: true, ...(doc === undefined ? {} : { doc }) });
       expect(await hitSweep(page), `${name}, closed`).toEqual([]);
 
-      const rows = page.locator(".gedcom-tree-row");
-      for (let at = 0; at < Math.min(await rows.count(), 6); at += 1) {
-        await rows.nth(at).dispatchEvent("pointerdown");
-        expect(await hitSweep(page), `${name}, row ${at} pressed`).toEqual([]);
-        const box = await rows.nth(at).locator(".gedcom-tree-source").boundingBox();
-        expect(box?.height ?? 0, `${name}, row ${at}`).toBeGreaterThanOrEqual(44);
-      }
       for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
         await button.click();
       }
@@ -457,21 +447,18 @@ test.describe("the controls of a card on a phone", () => {
 test.describe("the controls of a card where the pointer is coarse", () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test("show the pressed row's control and the toolbar without the app's mobile class", async ({ page }) => {
+  test("keep the arrows and the toolbar shown, at touch sizes, without the app's mobile class", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await mountDesk(page, { width: 390 });
     expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
     expect(await page.evaluate(() => document.body.classList.contains("is-mobile"))).toBe(false);
 
-    const row = treeRow(page, "Occupation");
-    await row.dispatchEvent("pointerdown");
-    await expect(row.locator(".gedcom-tree-source")).toHaveCSS("opacity", "1");
-    expect(await opacityOf(treeRow(page, "Sex").locator(".gedcom-tree-source"))).toBe("0");
-    const box = await row.locator(".gedcom-tree-source").boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
     await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
     await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("position", "static");
+    const box = await page.locator(".gedcom-tree-toggle").boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect((await page.locator(".gedcom-tree-chevron").first().boundingBox())?.height).toBeGreaterThanOrEqual(44);
     expect((await hitSweep(page)).filter((name) => name.includes("gedcom-tree"))).toEqual([]);
   });
 });
@@ -560,50 +547,88 @@ const longDoc = (events: number): string => {
 
 
 test.describe("the tree of a record", () => {
-  test("keeps the controls of a row and of the tree out of sight until the pointer is there, and shifts nothing when they appear", async ({ page }) => {
+  test("keeps the open-all toggle out of sight until the pointer is over the tree, and the arrows of the nodes always in sight", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
-    await page.mouse.move(5, 5);
+    await page.mouse.move(2, 2);
 
     expect(await opacityOf(page.locator(".gedcom-tree-bar"))).toBe("0");
-    for (const source of await page.locator(".gedcom-tree-source").all()) {
-      expect(await opacityOf(source)).toBe("0");
-    }
     for (const chevron of await page.locator(".gedcom-tree-chevron").all()) {
-      expect(await opacityOf(chevron)).toBe("0");
+      expect(await opacityOf(chevron)).toBe("1");
+      expect(await chevron.evaluate((node) => getComputedStyle(node).pointerEvents)).toBe("auto");
       await expect(chevron).toHaveAttribute("aria-label", /.+/u);
       expect(await chevron.evaluate((node) => (node as HTMLButtonElement).tabIndex)).toBe(0);
     }
-    const row = treeRow(page, "Occupation");
-    const before = await row.boundingBox();
-    await row.hover();
-
-    await expect(row.locator(".gedcom-tree-source")).toHaveCSS("opacity", "1");
-    expect(await opacityOf(treeRow(page, "Sex").locator(".gedcom-tree-source"))).toBe("0");
-    expect(await row.boundingBox()).toEqual(before);
-    await page.mouse.move(5, 5);
-    await expect(row.locator(".gedcom-tree-source")).toHaveCSS("opacity", "0");
+    await page.locator(".gedcom-tree").hover();
+    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
+    await page.mouse.move(2, 2);
+    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "0");
+    await page.locator(".gedcom-tree-toggle").focus();
+    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
   });
 
-  test("shows the arrows of the nodes while the pointer is over the tree or the focus is in it, and a press on a header still toggles", async ({ page }) => {
+  test("toggles a node by a press on its arrow and on its header", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
-    await page.mouse.move(2, 2);
     const birth = treeRow(page, "Birth");
     const arrow = birth.locator(".gedcom-tree-chevron");
 
-    await expect(arrow).toHaveCSS("opacity", "0");
-    await birth.hover();
-    await expect(arrow).toHaveCSS("opacity", "1");
-    await page.mouse.move(2, 2);
-    await expect(arrow).toHaveCSS("opacity", "0");
-    await arrow.focus();
-    await expect(arrow).toHaveCSS("opacity", "1");
-    await page.mouse.move(2, 2);
-    await page.locator(".gedcom-card-body").focus();
+    await arrow.click();
+    await expect(arrow).toHaveAttribute("aria-expanded", "true");
+    await birth.locator(".gedcom-tree-label").evaluate((node) => node.parentElement?.click());
+    await expect(arrow).toHaveAttribute("aria-expanded", "false");
     await birth.locator(".gedcom-tree-part.is-date").click();
     await expect(arrow).toHaveAttribute("aria-expanded", "true");
   });
+
+  for (const size of [{ width: 320, phone: false }, { width: 390, phone: true }, { width: 420, phone: false }]) {
+    test(`puts the arrow inside its row, within 10 pixels of the label, and the rows apart at ${size.width} pixels`, async ({ page }) => {
+      await page.setViewportSize({ width: 1400, height: 760 });
+      await mountDesk(page, { width: size.width, phone: size.phone });
+      const birth = treeRow(page, "Birth");
+      const arrow = (await birth.locator(".gedcom-tree-chevron svg").boundingBox()) ?? { x: 0, width: 0 };
+      const label = (await birth.locator(".gedcom-tree-label").boundingBox()) ?? { x: 0 };
+      const row = (await birth.boundingBox()) ?? { x: 0, width: 0 };
+
+      expect(label.x - (arrow.x + arrow.width)).toBeLessThanOrEqual(10);
+      expect(label.x - (arrow.x + arrow.width)).toBeGreaterThan(0);
+      expect(arrow.x).toBeGreaterThanOrEqual(row.x);
+      const sex = (await treeRow(page, "Sex").boundingBox()) ?? { y: 0, height: 0 };
+      const death = (await treeRow(page, "Death").boundingBox()) ?? { y: 0 };
+      const birthBox = (await birth.boundingBox()) ?? { y: 0, height: 0 };
+      const gap = await page.evaluate(() => parseFloat(getComputedStyle(document.body).getPropertyValue("--size-2-2")));
+      expect(death.y - (birthBox.y + birthBox.height)).toBeGreaterThanOrEqual(gap - 0.5);
+      expect((await treeRow(page, "Birth").boundingBox())!.y - (sex.y + sex.height)).toBeGreaterThanOrEqual(gap - 0.5);
+    });
+  }
+
+  test("paints a hovered row with the hover background only, and keeps no selected background after a click", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 420 });
+    const colours = await page.evaluate(() => {
+      const style = getComputedStyle(document.body);
+      return {
+        hover: style.getPropertyValue("--nav-item-background-hover").trim(),
+        selected: style.getPropertyValue("--nav-item-background-selected").trim(),
+      };
+    });
+    const background = (row: Locator) => row.evaluate((node) => getComputedStyle(node).backgroundColor);
+    const occupation = treeRow(page, "Occupation");
+    const birth = treeRow(page, "Birth");
+
+    await page.mouse.move(2, 2);
+    await birth.hover();
+    expect(await background(birth)).toBe(colours.hover);
+    expect(await background(birth)).not.toBe(colours.selected);
+    await occupation.locator(".gedcom-tree-main").click();
+    await birth.locator(".gedcom-tree-part.is-date").click();
+    await page.mouse.move(2, 2);
+    for (const row of [occupation, birth]) {
+      expect(await background(row)).toBe("rgba(0, 0, 0, 0)");
+      expect(await row.evaluate((node) => getComputedStyle(node).boxShadow)).toBe("none");
+    }
+  });
+
 
   for (const size of [{ width: 320, phone: false }, { width: 390, phone: true }]) {
     test(`starts the label of a line and of a node of the same depth at one column at ${size.width} pixels`, async ({ page }) => {
@@ -626,33 +651,6 @@ test.describe("the tree of a record", () => {
     for (const chevron of await page.locator(".gedcom-tree-chevron").all()) {
       expect(await opacityOf(chevron)).toBe("1");
     }
-  });
-
-  test("shows a row's control when the keyboard reaches the row, and the next Tab is that control", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 760 });
-    await mountDesk(page, { width: 420 });
-    await page.mouse.move(5, 5);
-    await treeRow(page, "Occupation").locator("button.gedcom-tree-label").focus();
-    await page.keyboard.press("Tab");
-
-    const active = page.locator(".gedcom-tree-source:focus");
-    await expect(active).toHaveAttribute("aria-label", "Show in source: Occupation");
-    await expect(active).toHaveCSS("opacity", "1");
-    await expect(treeRow(page, "Sex").locator(".gedcom-tree-source")).toHaveAttribute("tabindex", "-1");
-  });
-
-  test("shows only the pressed row's control where the pointer cannot hover", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 900 });
-    await mountDesk(page, { phone: true });
-    const occupation = treeRow(page, "Occupation");
-    await occupation.dispatchEvent("pointerdown");
-
-    await expect(occupation.locator(".gedcom-tree-source")).toHaveCSS("opacity", "1");
-    expect(await opacityOf(treeRow(page, "Sex").locator(".gedcom-tree-source"))).toBe("0");
-    const box = await occupation.locator(".gedcom-tree-source").boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
-    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
   });
 
   test("keeps a node open across a visit to another record", async ({ page }) => {
@@ -735,33 +733,6 @@ test.describe("the tree of a record", () => {
       expect(await left(6)).toBe(await left(4));
     });
   }
-
-  test("selects the lines of a row when its control is pressed with the mouse after the pointer is over the row", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 760 });
-    await mountDesk(page, { width: 420 });
-    const row = treeRow(page, "Occupation");
-    const line = Number(await row.getAttribute("data-line"));
-    await row.hover();
-    await row.locator(".gedcom-tree-source").click();
-
-    const shown = await page.evaluate(() => window.desk.calls.shownInSource);
-    expect(shown.at(-1)?.start.line).toBe(line);
-  });
-
-  test("keeps the room of the controls at the end of the row in a right-to-left card", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 760 });
-    await mountDesk(page, { width: 420 });
-    await page.evaluate(() => {
-      document.body.dir = "rtl";
-    });
-    const row = treeRow(page, "Occupation");
-    const source = await row.locator(".gedcom-tree-source").boundingBox();
-    const main = await row.locator(".gedcom-tree-main").boundingBox();
-
-    expect(source).not.toBeNull();
-    expect(main).not.toBeNull();
-    expect(main?.x ?? 0).toBeGreaterThanOrEqual((source?.x ?? 0) + (source?.width ?? 0) - 0.5);
-  });
 
   for (const width of [320, 390]) {
     test(`cuts a long value of a closed row with an ellipsis and keeps its date visible at ${width} pixels`, async ({ page }) => {

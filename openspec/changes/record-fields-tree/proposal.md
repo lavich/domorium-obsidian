@@ -16,7 +16,7 @@ The proposed scope:
 - The card of a person, a family and a source shows, below its heading, one **tree of the lines of the record**, in the file's order, nested as the file nests them. The sections it replaces are removed: names, events, details, notes, related people, identifiers and record information, other data, and the family card's list of events.
 - A row is a label and a value, in the reader's language. A line with substructures is a node, closed when the card is first drawn, with a one-line summary (an event shows its value, date and place); the reader's choice is kept for each record while the plugin is loaded.
 - Tags are hidden, as the product principles ask. A closed node that cites a source carries the quiet dot the event row has.
-- The controls of a row and of the tree appear on hover and on keyboard focus; on a touch device those of a row appear on the row last pressed.
+- The node arrows stay in view; the one icon toggle that opens or closes every node appears on hover and on keyboard focus and stays shown on a touch device. Rows have no control of their own.
 - A line that is an event or an attribute opens its event card from its label, and a place opens the card of the place, as they do on the card today.
 - What the card computes from the whole file stays as it is: the heading, the family section (parents, siblings, spouses with their events, children), the pictures, the timeline, the evidence, and the spouses and children of a family card.
 - The card's event, place and media pages keep their own forms.

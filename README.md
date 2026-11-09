@@ -108,8 +108,7 @@ order the file writes them and nested as the file nests them, with no sections o
 own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
 the file puts them. Every node starts closed with a one-line summary — an event shows its date
 and place, an attribute its value — and a quiet dot after it where it cites a source; what you
-open comes back open when you return to that record. The arrows of the nodes, the controls of a row, **Show in source**, and the open-all toggle appear only where the pointer or the keyboard focus
-is, and on a phone on the row you last pressed; the tree only reads. Below it come
+open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon beside the tree opens or closes every node and appears where the pointer or the keyboard focus is, and on a phone always. The tree only reads. Below it come
 their parents (marked adoptive, foster or sealing where the file says so), siblings,
 spouses with the events of each marriage, and children, each of whom selects that person; their
 media; a **timeline** of their events and their close relatives', folded under its heading,
