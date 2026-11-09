@@ -45,6 +45,25 @@ describe("the source page", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["Nobel Prize Outreach · nobelprize.org"]);
   });
 
+  it("shows the lines of the record as a tree below the heading, then the repository and the records that cite it", () => {
+    draw("@S2@");
+    const labels = [...container.querySelectorAll(".gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
+
+    expect(container.querySelector(".gedcom-desk-heading + .gedcom-tree")).not.toBeNull();
+    expect(labels).toEqual(expect.arrayContaining(["Title", "Repository"]));
+    expect(texts("h2")).toEqual(["Repository", "Cited by"]);
+    expect(container.querySelector(".gedcom-tree .gedcom-desk-fact")).toBeNull();
+  });
+
+  it("does not take a title for an event, whatever lies beneath it", () => {
+    draw("@S1@", buildIndex(new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @S1@ SOUR", "1 TITL Register", "2 DATE 1900", "2 PLAC Paris", "0 TRLR", "",
+    ].join("\n"))));
+
+    expect(texts(".gedcom-tree-summary")).toEqual(["Register"]);
+    expect(container.querySelector("button.gedcom-tree-label")).toBeNull();
+  });
+
   it("shows the repository with its address", () => {
     draw("@S2@");
 

@@ -51,20 +51,21 @@ describe("the family page", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
-  it("lists the family's events as rows of a date, a name and a place, with no mark on one that cites no source", () => {
+  it("shows the lines of the family's record as a tree, the marriage with its date and place and no mark", () => {
     draw("@F3@");
+    const labels = [...container.querySelectorAll(".gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
 
-    expect(texts(".gedcom-desk-fact-date")).toEqual(["26 JUL 1895"]);
-    expect(texts(".gedcom-desk-fact-name")).toEqual(["Marriage"]);
-    expect(texts(".gedcom-desk-fact-value")).toEqual(["Sceaux, France"]);
+    expect(labels).toEqual(["Husband", "Wife", "Child", "Child", "Marriage"]);
+    expect(texts(".gedcom-tree-summary")).toEqual(["26 JUL 1895 · Sceaux, France"]);
     expect(container.querySelector(".gedcom-desk-source")).toBeNull();
-    expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
+    expect(container.querySelector(".gedcom-desk-fact")).toBeNull();
   });
 
-  it("has an Events section and a Family section", () => {
+  it("has the tree and a Family section, and none of events, notes, related people, identifiers or other data", () => {
     draw("@F3@");
 
-    expect(texts("h2")).toEqual(["Events", "Family"]);
+    expect(texts("h2")).toEqual(["Family"]);
+    expect(container.querySelector(".gedcom-desk-heading + .gedcom-tree")).not.toBeNull();
   });
 
   it("shows the spouses by their roles and the children", () => {
@@ -85,10 +86,10 @@ describe("the family page", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I13@");
   });
 
-  it("opens the card of a family's event, and shows the selected one in the source", () => {
+  it("opens the card of a family's event from the label of its row, and shows the selected one in the source", () => {
     const index = curieIndex();
     draw("@F3@", { index });
-    container.querySelector<HTMLElement>(".gedcom-desk-fact")?.click();
+    container.querySelector<HTMLElement>(".gedcom-tree-label.is-fact")?.click();
     expect(host.openRecord).toHaveBeenCalledWith("event:@F3@:MARR:0");
 
     draw("@F3@", { index, selected: "f:0" });
@@ -114,7 +115,39 @@ describe("the family page", () => {
     });
 
     expect(texts(".gedcom-desk-title")).toEqual(["Anna Nowak"]);
-    expect(texts(".gedcom-desk-missing span")).toEqual(["Points to a record that is not in the file"]);
+    expect(texts(".gedcom-desk-missing span")).toEqual([
+      "Points to a record that is not in the file",
+      "Points to a record that is not in the file",
+    ]);
+  });
+
+  it("shows the number of children the file states beside the children it lists", () => {
+    draw("@F1@", {
+      index: buildIndex(new GedcomLanguageService([
+        "0 HEAD", "1 GEDC", "2 VERS 7.0",
+        "0 @I1@ INDI", "1 NAME Anna /Nowak/", "0 @I2@ INDI", "1 NAME Jan /Nowak/", "0 @I3@ INDI", "1 NAME Eva /Nowak/",
+        "0 @F1@ FAM", "1 WIFE @I1@", "1 NCHI 3", "1 CHIL @I2@", "1 CHIL @I3@",
+        "0 TRLR", "",
+      ].join("\n"))),
+    });
+    const row = [...container.querySelectorAll(".gedcom-tree-row")].find((one) => one.querySelector(".gedcom-tree-label")?.textContent === "Number of children");
+
+    expect(row?.querySelector(".gedcom-field")?.getAttribute("data-value")).toBe("3");
+    expect(texts(".gedcom-desk-person-name")).toEqual(["Anna Nowak", "Jan Nowak", "Eva Nowak"]);
+  });
+
+  it("shows a note of the family in its tree, and marks an adopted child in the children", () => {
+    draw("@F1@", {
+      index: buildIndex(new GedcomLanguageService([
+        "0 HEAD", "1 GEDC", "2 VERS 7.0",
+        "0 @I1@ INDI", "1 NAME Anna /Nowak/", "0 @I2@ INDI", "1 NAME Jan /Nowak/", "1 FAMC @F1@", "2 PEDI ADOPTED",
+        "0 @F1@ FAM", "1 WIFE @I1@", "1 CHIL @I2@", "1 NOTE Married in the church.",
+        "0 TRLR", "",
+      ].join("\n"))),
+    });
+
+    expect(texts(".gedcom-detail-text-body")).toEqual(["Married in the church."]);
+    expect(texts(".gedcom-desk-person-note")).toEqual(["Adopted"]);
   });
 
   it("names the couple in Russian", () => {

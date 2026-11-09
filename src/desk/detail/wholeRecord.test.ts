@@ -2,12 +2,11 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GenealogyIndex, RecordLine } from "../../genealogy";
-import { FAMILY_EVENT_TAGS, PERSON_EVENT_TAGS } from "../../genealogy/tags";
 import { resetLanguage } from "../../i18n";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { richIndex, richIndex551 } from "../../testing/rich";
 import { eventIdOf } from "../eventRows";
-import { drawnByGallery } from "../personPage";
+import { TreeSession } from "./treeSession";
 import { renderRecordCard, type CardTab, type CardView } from "../recordCard";
 
 beforeAll(installObsidianDom);
@@ -18,8 +17,6 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
 });
-
-const EVENT_TAGS: ReadonlySet<string> = new Set([...PERSON_EVENT_TAGS, ...FAMILY_EVENT_TAGS]);
 
 const everyLine = (line: RecordLine): number[] => [line.range.start.line, ...line.children.flatMap(everyLine)];
 
@@ -39,12 +36,18 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
     history: () => ({ canBack: false, canForward: false }),
     back: vi.fn(),
     forward: vi.fn(),
+    arrivedBy: () => "other",
   };
-  const view: CardView = { setIcon: vi.fn(), openNote: vi.fn() };
+  const view: CardView = { setIcon: vi.fn(), openNote: vi.fn(), session: new TreeSession(), redraw: vi.fn() };
   container.replaceChildren();
   renderRecordCard(container, tab, [], view);
-  container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline info other");
+  container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline other");
   renderRecordCard(container, tab, [], view);
+  for (const control of container.querySelectorAll<HTMLElement>(".gedcom-tree-control")) {
+    if (control.textContent === "Open every node") {
+      control.click();
+    }
+  }
   if (text) {
     text.said = container.textContent ?? "";
   }
@@ -57,14 +60,9 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
   return found;
 }
 
-/** What a person's or a family's own card must draw: every line but those beneath an event, which its card draws. */
+/** What a person's or a family's own card must draw: every line of its record, to any depth. */
 function ownLines(index: GenealogyIndex, xref: string): number[] {
-  const record = index.record(xref);
-  const media = (index.person(xref) ?? index.family(xref))?.media ?? [];
-  const items = media.map(({ at }) => ({ content: { kind: "missing" as const, target: "" }, at }));
-  return (record?.children ?? [])
-    .filter((line) => !(line.tag === "OBJE" && drawnByGallery(line, items)))
-    .flatMap((line) => (EVENT_TAGS.has(line.tag) ? [line.range.start.line] : everyLine(line)));
+  return (index.record(xref)?.children ?? []).flatMap(everyLine);
 }
 
 function check(index: GenealogyIndex, xref: string): void {

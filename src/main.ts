@@ -44,6 +44,7 @@ import {
   RecordCardView,
   type DeskViewsHost,
 } from "./desk/DeskViews";
+import { TreeSession } from "./desk/detail/treeSession";
 import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
@@ -87,6 +88,7 @@ export default class GedcomPlugin
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
   private followedView: GedcomView | null = null;
+  private readonly treeSession = new TreeSession();
   /** Placed once a session, so a card the reader closes stays closed. */
   private cardPlaced = false;
   private notesCache = new Map<string, Promise<NoteLinks[]>>();
@@ -503,7 +505,11 @@ export default class GedcomPlugin
     }
   }
 
-  private redrawDesk(): void {
+  session(): TreeSession {
+    return this.treeSession;
+  }
+
+  redrawDesk(): void {
     for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
       if (leaf.view instanceof RecordCardView) {
         leaf.view.redraw();

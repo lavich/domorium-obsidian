@@ -17,8 +17,8 @@ export interface EventRowContent {
 
 type Host = Pick<PageHost, "openRecord">;
 
-function begin(list: HTMLElement, content: EventRowContent, host: Host, kind: "is-event" | "is-detail"): HTMLElement {
-  const row = list.createDiv({ cls: ["gedcom-desk-fact", kind] });
+function begin(list: HTMLElement, content: EventRowContent, host: Host): HTMLElement {
+  const row = list.createDiv({ cls: ["gedcom-desk-fact", "is-event"] });
   if (content.line !== undefined) {
     row.setAttribute("data-line", String(content.line));
   }
@@ -79,7 +79,7 @@ function where(parent: HTMLElement, content: EventRowContent, host: Host, skip: 
 
 /** An event as a row: its date on the left, its name and what it states on the right. */
 export function renderEventRow(list: HTMLElement, content: EventRowContent, host: Host): void {
-  const row = begin(list, content, host, "is-event");
+  const row = begin(list, content, host);
   row.createSpan({
     cls: ["gedcom-desk-fact-date", content.detail.date ? "" : "is-empty"].filter(Boolean),
     text: content.detail.date ?? "—",
@@ -93,39 +93,6 @@ export function renderEventRow(list: HTMLElement, content: EventRowContent, host
     if (content.detail.date) {
       value.remove();
     } else {
-      value.setText(t("desk.noDetails"));
-      value.addClass("is-empty");
-    }
-  }
-}
-
-/** A detail about a person — an occupation, a residence — as a row: what it is on the left, its value on the right. */
-export function renderDetailRow(list: HTMLElement, content: EventRowContent, host: Host): void {
-  const row = begin(list, content, host, "is-detail");
-  nameButton(row, content, row);
-  const main = row.createDiv({ cls: "gedcom-desk-fact-main" });
-  const value = main.createSpan({ cls: "gedcom-desk-fact-value" });
-  const { date, text } = content.detail;
-  if (text) {
-    value.setText(text);
-  }
-  sourceDot(main, content.citations);
-  const when = [date].filter(Boolean).join("");
-  const rest = main.createDiv({ cls: text ? "gedcom-desk-fact-where" : "gedcom-desk-fact-value" });
-  let any = false;
-  if (when) {
-    rest.appendText(when);
-    any = true;
-  }
-  if (content.detail.place || content.detail.spouse) {
-    if (any) {
-      rest.appendText(" · ");
-    }
-    any = where(rest, content, host, new Set(["text"])) || any;
-  }
-  if (!any) {
-    rest.remove();
-    if (!text) {
       value.setText(t("desk.noDetails"));
       value.addClass("is-empty");
     }

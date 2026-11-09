@@ -8,21 +8,16 @@ import type {
   PersonRow,
 } from "../genealogy";
 import { t } from "../i18n";
-import { PERSON_ATTRIBUTE_TAGS } from "../genealogy/tags";
-import { PERSON_CLAIMED, unclaimed } from "./detail/claims";
 import { lazyFold } from "./detail/lazyFold";
 import { childMark, linkStatusLabel, parentsHeading, sexLabel } from "./detail/labels";
-import { renderRest, scoped, type DetailContext } from "./detail/lineView";
-import { nameLines, needsNames, renderNames } from "./detail/names";
-import { noteLines, renderNotes } from "./detail/notes";
-import { otherCount, renderOther } from "./detail/otherData";
-import { infoLines, renderInfo } from "./detail/recordInfo";
-import { relatedLines, renderRelated } from "./detail/related";
+import { renderRest, type DetailContext } from "./detail/lineView";
 import { sectionHeading } from "./detail/section";
+import { factsByLine, renderTree } from "./detail/tree";
+import { ephemeralTreeState, type TreeState } from "./detail/treeSession";
 import type { RecordLine } from "../genealogy";
 import { eventName, personName, shortPlace, yearsOf } from "./labels";
 import { linkButton } from "./dom";
-import { renderDetailRow, renderEventRow, type EventRowContent } from "./factRow";
+import { renderEventRow, type EventRowContent } from "./factRow";
 import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { timelineOf } from "./timeline";
@@ -60,6 +55,8 @@ export interface PersonPageOptions {
   /** The folded sections the reader has opened, and where a change of one is told. */
   open?: ReadonlySet<string>;
   folded?(id: string, open: boolean): void;
+  /** The reader's choices in the tree of the record; the tree keeps its own where omitted. */
+  tree?: TreeState;
 }
 
 export function factsOf(person: Person): Fact[] {
@@ -100,62 +97,43 @@ export function renderPersonPage(
     ...(options.folded === undefined ? {} : { folded: (id: string, open: boolean) => options.folded?.(id, open) }),
   };
   renderHeading(container, person, lines, options, host);
-  const names = lines ? nameLines(lines) : [];
-  if (needsNames(names)) {
-    renderNames(container, names, ctx);
-  }
-  const { events, details } = splitFacts(person);
-  renderFactList(container, events, index, options, host);
-  renderDetails(container, details, host);
+  drawTree(container, lines, index, host, options, factsOf(person).filter((fact) => fact.key.startsWith("p:")));
   renderFamily(container, person, index, lines, host, ctx);
-  const notes = lines ? noteLines(lines) : [];
-  if (notes.length > 0) {
-    renderNotes(container, notes, ctx);
-  }
-  const related = lines ? relatedLines(lines) : [];
-  if (related.length > 0) {
-    renderRelated(container, related, ctx);
-  }
   renderGallery(container, options.media ?? [], host);
   const timeline = timelineOf(person, index);
-  const folded = (id: string) => (open: boolean) => options.folded?.(id, open);
-  const fold = (id: string, title: string, count: number, fill: (body: HTMLElement) => void): void =>
-    lazyFold(container, { id, title, count, open: options.open?.has(id) ?? false, toggled: folded(id) }, fill);
-  fold("timeline", t("desk.timeline"), timeline.entries.length + timeline.undated.length, (body) =>
-    renderTimeline(body, timeline, host),
+  lazyFold(
+    container,
+    {
+      id: "timeline",
+      title: t("desk.timeline"),
+      count: timeline.entries.length + timeline.undated.length,
+      open: options.open?.has("timeline") ?? false,
+      toggled: (open) => options.folded?.("timeline", open),
+    },
+    (body) => renderTimeline(body, timeline, host),
   );
-  const info = lines ? infoLines(lines) : [];
-  if (info.length > 0) {
-    fold("info", t("record.info"), otherCount(info), (body) => renderInfo(body, info, scoped(ctx, "info")));
-  }
-  const gallery = options.media;
-  const other = lines
-    ? unclaimed(lines, PERSON_CLAIMED, (line) => line.tag === "OBJE" && !drawnByGallery(line, gallery))
-    : [];
-  if (other.length > 0) {
-    fold("other", t("record.other"), otherCount(other), (body) => renderOther(body, other, scoped(ctx, "other")));
-  }
 }
 
-/** An `OBJE` line is the gallery's where a picture it draws was found on that line. */
-export function drawnByGallery(line: RecordLine, gallery: readonly MediaItem[] | undefined): boolean {
-  if (gallery === undefined) {
-    return true;
+export function drawTree(
+  container: HTMLElement,
+  lines: RecordLine | undefined,
+  index: GenealogyIndex,
+  host: PageHost,
+  options: PersonPageOptions,
+  facts: Fact[],
+): void {
+  if (lines === undefined) {
+    return;
   }
-  const own = new Set(["TITL", "CROP"]);
-  const plain =
-    line.pointer !== undefined
-      ? line.children.every((child) => own.has(child.tag))
-      : line.children.filter((child) => child.tag === "FILE").length === 1 &&
-        line.children.every((child) => child.tag === "FILE" || own.has(child.tag));
-  if (!plain) {
-    return false;
-  }
-  const { start, end } = line.range;
-  return gallery.some(({ at }) => {
-    const after = at.line > start.line || (at.line === start.line && at.character >= start.character);
-    const before = at.line < end.line || (at.line === end.line && at.character <= end.character);
-    return after && before;
+  renderTree(container, lines, {
+    index,
+    host: {
+      openRecord: (xref) => host.openRecord(xref),
+      showInSource: (range) => host.showInSource(range),
+      ...(host.setIcon === undefined ? {} : { setIcon: (element, icon) => host.setIcon?.(element, icon) }),
+    },
+    facts: factsByLine(facts),
+    state: options.tree ?? ephemeralTreeState(),
   });
 }
 
@@ -205,46 +183,6 @@ function rowOf(fact: Fact, own: boolean, withSpouse = true): EventRowContent {
       ...(fact.spouse && withSpouse ? { spouse: t("desk.with", { name: personName(fact.spouse) }) } : {}),
     },
     citations: fact.event.citations.length,
-  };
-}
-
-/** What happened: each event as a row of its date, its name and its place; a section left out where there is none. */
-export function renderFactList(
-  page: HTMLElement,
-  facts: Fact[],
-  _index: GenealogyIndex,
-  _options: PersonPageOptions,
-  host: PageHost,
-  own = true,
-): void {
-  if (facts.length === 0) {
-    return;
-  }
-  sectionHeading(page, t("record.events"), facts.length);
-  const list = page.createDiv({ cls: "gedcom-desk-facts" });
-  for (const fact of facts) {
-    renderEventRow(list, rowOf(fact, own), host);
-  }
-}
-
-/** What is true of the person — an occupation, a residence, a title — as rows of a name and a value. */
-export function renderDetails(page: HTMLElement, facts: Fact[], host: PageHost): void {
-  if (facts.length === 0) {
-    return;
-  }
-  sectionHeading(page, t("record.details"), facts.length);
-  const list = page.createDiv({ cls: "gedcom-desk-facts" });
-  for (const fact of facts) {
-    renderDetailRow(list, rowOf(fact, true), host);
-  }
-}
-
-/** The facts of a person's own record that are events, and those that are attributes of the person. */
-export function splitFacts(person: Person): { events: Fact[]; details: Fact[] } {
-  const own = factsOf(person).filter((fact) => fact.key.startsWith("p:"));
-  return {
-    events: own.filter((fact) => !PERSON_ATTRIBUTE_TAGS.has(fact.event.tag)),
-    details: own.filter((fact) => PERSON_ATTRIBUTE_TAGS.has(fact.event.tag)),
   };
 }
 

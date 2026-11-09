@@ -1,10 +1,9 @@
 import type { RecordLine } from "../../genealogy";
 import { t } from "../../i18n";
-import { NOTE_TAGS } from "./claims";
 import { renderLines, renderNoteText, renderPointer, type DetailContext } from "./lineView";
 import { sectionHeading } from "./section";
 
-export const noteLines = (record: RecordLine): RecordLine[] => record.children.filter((line) => NOTE_TAGS.has(line.tag));
+export const NOTE_TAGS: ReadonlySet<string> = new Set(["NOTE", "SNOTE"]);
 
 function renderNote(parent: HTMLElement, note: RecordLine, ctx: DetailContext): void {
   const box = parent.createDiv({ cls: "gedcom-note" });

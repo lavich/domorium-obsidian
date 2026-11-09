@@ -1,11 +1,8 @@
 import type { RecordLine } from "../../genealogy";
 import { t } from "../../i18n";
-import { RELATED_TAGS } from "./claims";
 import { roleLabel, tagLabel } from "./labels";
 import { renderLines, renderPointer, renderRest, type DetailContext } from "./lineView";
 import { sectionHeading } from "./section";
-
-export const relatedLines = (record: RecordLine): RecordLine[] => record.children.filter((line) => RELATED_TAGS.has(line.tag));
 
 const ROLE_TAGS: ReadonlySet<string> = new Set(["ROLE", "RELA", "PHRASE"]);
 

@@ -5,13 +5,12 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import { buildIndex, type RecordLine } from "../../genealogy";
 import { resetLanguage, setLanguage } from "../../i18n";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { INFO_TAGS, PERSON_CLAIMED, unclaimed } from "./claims";
+import { eventAt } from "../eventRows";
+import { renderEventPage } from "../eventPage";
 import type { DetailContext } from "./lineView";
-import { nameLines, needsNames, renderNames } from "./names";
-import { noteLines, renderNotes } from "./notes";
+import { NOTE_TAGS, renderNotes } from "./notes";
 import { renderOther, otherCount } from "./otherData";
-import { relatedLines, renderRelated } from "./related";
-import { infoLines, renderInfo } from "./recordInfo";
+import { renderRelated } from "./related";
 
 beforeAll(installObsidianDom);
 afterEach(resetLanguage);
@@ -34,54 +33,10 @@ function person(lines: string[], version = "7.0"): { record: RecordLine; ctx: De
   return { record, ctx: { index, host: { openRecord: opened, showInSource: () => undefined } } };
 }
 
+const noteLines = (record: RecordLine): RecordLine[] => record.children.filter((line) => NOTE_TAGS.has(line.tag));
+const relatedLines = (record: RecordLine): RecordLine[] => record.children.filter((line) => line.tag === "ASSO" || line.tag === "ALIA");
+
 const text = (selector: string) => [...box.querySelectorAll(selector)].map((one) => one.textContent);
-
-describe("the names", () => {
-  it("lists every name as written, with its type, and the parts of each in rows", () => {
-    const { record, ctx } = person([
-      "1 NAME Maria /Skłodowska/", "2 TYPE BIRTH", "2 GIVN Maria", "2 SURN Skłodowska", "2 NPFX Dr", "2 NSFX Jr", "2 NICK Manya", "2 SPFX von",
-      "1 NAME Marie /Curie/", "2 TYPE MARRIED",
-    ]);
-    renderNames(box, nameLines(record), ctx);
-
-    expect(text(".gedcom-name-text")).toEqual(["Maria Skłodowska", "Marie Curie"]);
-    expect(text(".gedcom-name-type")).toEqual(["Birth", "Married"]);
-    expect(text(".gedcom-detail-label")).toEqual([
-      "Name", "Type", "Given names", "Surname", "Prefix", "Suffix", "Nickname", "Surname prefix", "Name", "Type",
-    ]);
-    expect(box.querySelector("h2")?.getAttribute("data-count")).toBe("2");
-  });
-
-  it("shows a type the file worded itself, and a 5.5.1 type in lower case, as it should", () => {
-    const { record, ctx } = person(["1 NAME A /B/", "2 TYPE Stage name", "1 NAME C /D/", "2 TYPE aka"], "5.5.1");
-    renderNames(box, nameLines(record), ctx);
-
-    expect(text(".gedcom-name-type")).toEqual(["Stage name", "Also known as"]);
-  });
-
-  it("shows a name's notes and sources and a line no row knows beneath that name", () => {
-    const { record, ctx } = person(["1 NAME A /B/", "2 NOTE Spelled in Polish.", "2 SOUR @S1@", "3 PAGE 4", "2 _SPELLING Polish"]);
-    renderNames(box, nameLines(record), ctx);
-
-    expect(text(".gedcom-detail-label")).toEqual(expect.arrayContaining(["Note", "Source", "Page", "_SPELLING"]));
-    expect(box.textContent).toContain("Spelled in Polish.");
-  });
-
-  it("shows a translation as a name of its own beneath, with its language", () => {
-    const { record, ctx } = person(["1 NAME Maria /Curie/", "2 TRAN Мария Кюри", "3 LANG ru"]);
-    renderNames(box, nameLines(record), ctx);
-
-    expect(text(".gedcom-name-text")).toEqual(["Maria Curie", "Мария Кюри"]);
-    expect(text(".gedcom-name-translation-label")).toEqual(["Translation"]);
-    expect(text(".gedcom-detail-value")).toContain("ru");
-  });
-
-  it("is needed for two names or for one with something beneath it, and for one plain name not", () => {
-    expect(needsNames(nameLines(person(["1 NAME A /B/"]).record))).toBe(false);
-    expect(needsNames(nameLines(person(["1 NAME A /B/", "2 NICK Ab"]).record))).toBe(true);
-    expect(needsNames(nameLines(person(["1 NAME A /B/", "1 NAME C /D/"]).record))).toBe(true);
-  });
-});
 
 describe("the notes", () => {
   it("shows an inline note and a shared note of either dialect, and a note's own lines", () => {
@@ -161,28 +116,40 @@ describe("the related people", () => {
   });
 });
 
-describe("the identifiers and the other data", () => {
-  it("shows two reference numbers with their types, an external identifier, and the last change", () => {
-    const { record, ctx } = person([
-      "1 REFN 123", "2 TYPE user", "1 REFN 456", "1 EXID 4711", "2 TYPE https://example.org/", "1 RESN LOCKED",
-      "1 CREA", "2 DATE 1 JAN 2019", "1 CHAN", "2 DATE 1 JAN 2020", "3 TIME 10:00", "1 UID abc",
-    ]);
-    renderInfo(box, infoLines(record), ctx);
-
-    expect(text(".gedcom-detail-label")).toEqual([
-      "Reference number", "Type", "Reference number", "External identifier", "Type", "Restriction", "Created", "Date",
-      "Last changed", "Date", "Time", "Unique identifier",
-    ]);
-    expect(text(".gedcom-detail-value")).toContain("10:00");
-  });
-
-  it("claims the lines a person card draws itself and sends the rest, a custom structure among them, to Other data", () => {
-    const { record, ctx } = person(["1 NAME A /B/", "1 REFN 1", "1 _TRIBE Highlander", "2 _CLAN Sas", "3 _SINCE 1800", "1 FACT x", "2 TYPE y"]);
-    const rest = unclaimed(record, PERSON_CLAIMED);
-    renderOther(box, rest, ctx);
+describe("the other data of an event", () => {
+  it("shows a custom structure nested as the file nests it, and counts every line", () => {
+    const { record, ctx } = person(["1 _TRIBE Highlander", "2 _CLAN Sas", "3 _SINCE 1800"]);
+    renderOther(box, record.children, ctx);
 
     expect(text(".gedcom-detail-label")).toEqual(["_TRIBE", "_CLAN", "_SINCE"]);
-    expect(otherCount(rest)).toBe(3);
-    expect(INFO_TAGS.has("REFN")).toBe(true);
+    expect(otherCount(record.children)).toBe(3);
+  });
+});
+
+describe("the card of an event", () => {
+  it("still draws its notes, its related people and its other data", () => {
+    const index = buildIndex(
+      new GedcomLanguageService(
+        [
+          "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 NOTE Born at home.", "2 ASSO @I2@", "3 ROLE WITN",
+          "2 _WEATHER Rain", "0 @I2@ INDI", "1 NAME Pierre /Curie/", "0 TRLR",
+        ].join("\n"),
+      ),
+    );
+    const target = eventAt(index, "event:@I1@:BIRT:0");
+    if (!target) {
+      throw new Error("no event");
+    }
+    renderEventPage(box, target, index, {
+      openRecord: opened,
+      select: vi.fn(),
+      showInSource: vi.fn(),
+      openFile: vi.fn(),
+    });
+
+    expect(text("h2")).toEqual(expect.arrayContaining(["Notes", "Related people"]));
+    expect(box.textContent).toContain("Born at home.");
+    expect(text(".gedcom-related-role")).toEqual(["Witness"]);
+    expect(text(".gedcom-desk-fold-button")).toEqual(["Other data"]);
   });
 });

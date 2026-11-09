@@ -7,6 +7,7 @@ import type { NoteHit } from "../src/desk/noteLinks";
 import { pageKind } from "../src/desk/deskState";
 import type { FactKey } from "../src/desk/personPage";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
+import { TreeSession } from "../src/desk/detail/treeSession";
 import { RecordHistory } from "../src/desk/recordHistory";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
@@ -74,6 +75,8 @@ let index: GenealogyIndex;
 let record: string | null = null;
 let fact: FactKey | null = null;
 let hasTab = true;
+let arrival: "history" | "other" = "other";
+let session = new TreeSession();
 
 function element(id: string): HTMLElement {
   const found = document.getElementById(id);
@@ -111,6 +114,7 @@ function step(xref: string | null): void {
   if (xref !== null) {
     record = xref;
     fact = null;
+    arrival = "history";
     draw();
   }
 }
@@ -146,11 +150,13 @@ const tab: CardTab = {
   forward: () => {
     step(history.forward(exists));
   },
+  arrivedBy: () => arrival,
 };
 
 function selectRecord(xref: string): void {
   record = xref;
   fact = null;
+  arrival = "other";
   history.visit(xref);
   draw();
 }
@@ -161,6 +167,8 @@ function draw(): void {
     openNote: (path, line) => {
       calls.notesOpened.push({ path, line });
     },
+    session,
+    redraw: draw,
   });
 }
 
@@ -179,6 +187,8 @@ function mount(options: DeskOptions): void {
   service = new GedcomLanguageService(options.doc ?? curie);
   index = buildIndex(service);
   hasTab = !(options.noTab ?? false);
+  session = new TreeSession();
+  arrival = "other";
   const first = options.record ?? index.people.find((row) => row.xref)?.xref ?? "";
   record = first === "" ? null : first;
   fact = options.fact ?? null;

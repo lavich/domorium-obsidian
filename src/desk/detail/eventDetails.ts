@@ -1,8 +1,8 @@
 import type { GenealogyIndex, PersonEvent, RecordLine } from "../../genealogy";
 import { t } from "../../i18n";
-import { NOTE_TAGS } from "./claims";
 import { labelId, renderField } from "./fields";
 import { renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
+import { NOTE_TAGS } from "./notes";
 import { sectionHeading } from "./section";
 
 /** What an event states beyond its date and place, drawn as a row each. */

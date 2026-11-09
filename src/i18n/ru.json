@@ -535,16 +535,18 @@
   "record.childMark.foster": "На воспитании",
   "record.childMark.sealing": "Запечатывание",
   "record.childMark.other": "Иная связь",
-  "record.names": "Имена",
   "record.notes": "Заметки",
   "record.related": "Связанные люди",
-  "record.info": "Идентификаторы и сведения о записи",
   "record.other": "Другие данные",
   "record.more": "Показать полностью",
   "record.less": "Свернуть",
   "record.void": "Запись не указана",
   "record.husbandAge": "Возраст мужа",
   "record.wifeAge": "Возраст жены",
-  "record.events": "События",
-  "record.details": "Сведения"
+  "tree.showTags": "Показать теги",
+  "tree.hideTags": "Скрыть теги",
+  "tree.openAll": "Открыть все узлы",
+  "tree.closeAll": "Закрыть все узлы",
+  "tree.toggle": "Развернуть или свернуть: {name}",
+  "tree.showInSource": "Показать в исходнике: {name}"
 }

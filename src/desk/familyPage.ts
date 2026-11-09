@@ -4,23 +4,15 @@ import { t } from "../i18n";
 import { familyTitle, shortPlace } from "./labels";
 import { renderGallery } from "./media";
 import type { RecordLine } from "../genealogy";
-import { FAMILY_EVENT_TAGS } from "../genealogy/tags";
-import { INFO_TAGS, NOTE_TAGS, unclaimed } from "./detail/claims";
-import { lazyFold } from "./detail/lazyFold";
-import { renderLines, renderRest, scoped, type DetailContext } from "./detail/lineView";
-import { noteLines, renderNotes } from "./detail/notes";
-import { otherCount, renderOther } from "./detail/otherData";
-import { infoLines, renderInfo } from "./detail/recordInfo";
-import { relatedLines, renderRelated } from "./detail/related";
+import { renderRest, type DetailContext } from "./detail/lineView";
 import { sectionHeading } from "./detail/section";
 import { linkButton } from "./dom";
 import {
-  drawnByGallery,
+  drawTree,
   kinGroup,
   markOf,
   missingRelative,
   relative,
-  renderFactList,
   type Fact,
   type FactKey,
   type PageHost,
@@ -39,10 +31,6 @@ export function familyFacts(family: Family): Fact[] {
 export function familyFactByKey(family: Family, key: FactKey | null): Fact | undefined {
   return key === null ? undefined : familyFacts(family).find((fact) => fact.key === key);
 }
-
-const FAMILY_CLAIMED: ReadonlySet<string> = new Set([
-  "HUSB", "WIFE", "CHIL", "NCHI", "SOUR", "OBJE", ...NOTE_TAGS, "ASSO", ...INFO_TAGS, ...FAMILY_EVENT_TAGS,
-]);
 
 function drawRest(parent: HTMLElement, line: RecordLine | undefined, ctx: DetailContext): void {
   if (line && line.children.length > 0) {
@@ -78,11 +66,7 @@ export function renderFamilyPage(
     host.showInSource(selected?.event.range ?? family.range);
   });
 
-  renderFactList(page, familyFacts(family), index, options, host);
-  const stated = lines?.children.filter((line) => line.tag === "NCHI") ?? [];
-  if (stated.length > 0) {
-    renderLines(page.createDiv({ cls: "gedcom-detail gedcom-desk-stated" }), stated, ctx);
-  }
+  drawTree(page, lines, index, host, options, familyFacts(family));
 
   sectionHeading(page, t("desk.family"));
   const members = page.createDiv({ cls: "gedcom-desk-family" });
@@ -117,26 +101,5 @@ export function renderFamilyPage(
   if (family.children.length === 0 && family.missingChildren.length === 0) {
     children.createDiv({ cls: "gedcom-desk-none", text: t("desk.notRecorded") });
   }
-  const notes = lines ? noteLines(lines) : [];
-  if (notes.length > 0) {
-    renderNotes(page, notes, ctx);
-  }
-  const related = lines ? relatedLines(lines) : [];
-  if (related.length > 0) {
-    renderRelated(page, related, ctx);
-  }
   renderGallery(page, options.media ?? [], host);
-  const fold = (id: string, title: string, count: number, fill: (body: HTMLElement) => void): void =>
-    lazyFold(page, { id, title, count, open: options.open?.has(id) ?? false, toggled: (open) => options.folded?.(id, open) }, fill);
-  const info = lines ? infoLines(lines) : [];
-  if (info.length > 0) {
-    fold("info", t("record.info"), otherCount(info), (body) => renderInfo(body, info, scoped(ctx, "info")));
-  }
-  const gallery = options.media;
-  const other = lines
-    ? unclaimed(lines, FAMILY_CLAIMED, (line) => line.tag === "OBJE" && !drawnByGallery(line, gallery))
-    : [];
-  if (other.length > 0) {
-    fold("other", t("record.other"), otherCount(other), (body) => renderOther(body, other, scoped(ctx, "other")));
-  }
 }

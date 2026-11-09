@@ -9,6 +9,10 @@ interface Shape {
 }
 
 const ICONS: Record<string, Shape[]> = {
+  code: [
+    { tag: "path", attrs: { d: "m16 18 6-6-6-6" } },
+    { tag: "path", attrs: { d: "m8 6-6 6 6 6" } },
+  ],
   "whole-word": [
     { tag: "circle", attrs: { cx: 7, cy: 12, r: 3 } },
     { tag: "path", attrs: { d: "M10 9v6" } },

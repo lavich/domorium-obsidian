@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { buildIndex } from "../../genealogy";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import type { DetailContext } from "./lineView";
-import { noteLines, renderNotes } from "./notes";
+import { NOTE_TAGS, renderNotes } from "./notes";
 
 beforeAll(installObsidianDom);
 
@@ -21,7 +21,7 @@ function draw(lines: string[], open: ReadonlySet<string>): { keys: (string | nul
     notes: { drawn: 0 },
   };
   const box = document.createElement("div");
-  renderNotes(box, noteLines(index.record("@I1@") as never), ctx);
+  renderNotes(box, (index.record("@I1@")?.children ?? []).filter((line) => NOTE_TAGS.has(line.tag)), ctx);
   return {
     keys: [...box.querySelectorAll("button")].map((one) => one.getAttribute("data-focus-key")),
     shown: [...box.querySelectorAll(".gedcom-detail-text-body")].map((one) => one.textContent?.split("\n")[0] ?? ""),

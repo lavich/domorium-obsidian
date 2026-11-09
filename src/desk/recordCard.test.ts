@@ -5,10 +5,11 @@ import type { GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
+import { TreeSession } from "./detail/treeSession";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
 let container: HTMLElement;
-let state: { record: string | null; fact: string | null; canBack: boolean; canForward: boolean };
+let state: { record: string | null; fact: string | null; canBack: boolean; canForward: boolean; arrival: "history" | "other" };
 let tab: CardTab;
 let calls: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
@@ -16,7 +17,13 @@ let calls: {
   back: ReturnType<typeof vi.fn<() => void>>;
   forward: ReturnType<typeof vi.fn<() => void>>;
 };
-let view: { setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>; openNote: ReturnType<typeof vi.fn<CardView["openNote"]>> };
+let view: {
+  setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
+  openNote: ReturnType<typeof vi.fn<CardView["openNote"]>>;
+  session: TreeSession;
+  redraw: () => void;
+};
+const redraw = vi.fn<() => void>();
 let index: GenealogyIndex;
 const scrollIntoView = vi.fn();
 
@@ -30,7 +37,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
   index = curieIndex();
-  state = { record: "@I1@", fact: null, canBack: false, canForward: false };
+  state = { record: "@I1@", fact: null, canBack: false, canForward: false, arrival: "other" };
   calls = { select: vi.fn(), selectFact: vi.fn(), back: vi.fn(), forward: vi.fn() };
   tab = {
     filePath: () => "curie.ged",
@@ -54,13 +61,17 @@ beforeEach(() => {
     forward: () => {
       calls.forward();
     },
+    arrivedBy: () => state.arrival,
   };
   view = {
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
       element.setAttribute("data-icon", icon);
     }),
     openNote: vi.fn(),
+    session: new TreeSession(),
+    redraw,
   };
+  redraw.mockReset();
 });
 
 const draw = (notes: Parameters<typeof renderRecordCard>[2] = []): void => {
@@ -115,7 +126,8 @@ describe("the page of each kind of record, with its evidence", () => {
   it("shows Marie's sections in order, ending with Evidence", () => {
     draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Names", "Events", "Details", "Family", "Notes", "Media", "Timeline", "Evidence"]);
+    expect(texts(".gedcom-card-body h2")).toEqual(["Family", "Media", "Timeline", "Evidence"]);
+    expect(container.querySelector(".gedcom-card-body .gedcom-tree")).not.toBeNull();
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
@@ -357,17 +369,23 @@ describe("redrawing the card", () => {
     expect(body()?.scrollTop).toBe(0);
   });
 
-  it("keeps the focus on the selected fact's row where the focus was in the card", () => {
-    state.fact = "p:1";
+  it("keeps the focus on the same control of the tree where the focus was in the card", () => {
     draw();
-    container.querySelector<HTMLElement>('[data-focus-key="p:1"]')?.focus();
-
-    state.fact = "p:2";
-    draw();
-    container.querySelector<HTMLElement>('[data-focus-key="p:2"]')?.focus();
+    container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]')?.focus();
     draw();
 
-    expect(document.activeElement).toBe(container.querySelector('[data-focus-key="p:2"]'));
+    expect(document.activeElement).toBe(container.querySelector('[data-focus-key="t:BIRT[0]"]'));
+  });
+
+  it("keeps the focus on a control that the reader pressed to open a node", () => {
+    draw();
+    const chevron = container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]');
+    chevron?.focus();
+    chevron?.click();
+    draw();
+
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:BIRT[0]");
+    expect(document.activeElement?.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("does not take the focus from outside the card", () => {
@@ -399,5 +417,82 @@ describe("the live region", () => {
     draw();
 
     expect(live()).toBe("Показано: Marie Skłodowska-Curie");
+  });
+});
+
+describe("the tree of a record on the card", () => {
+  const chevron = (key: string): HTMLElement | null => container.querySelector<HTMLElement>(`[data-focus-key="${key}"]`);
+  const toggled = (key: string): string | null | undefined => chevron(key)?.getAttribute("aria-expanded");
+
+  it("keeps a node the reader opened open after the card shows Pierre Curie and Marie again, and for a redraw", () => {
+    draw();
+    chevron("t:BIRT[0]")?.click();
+    draw();
+    expect(toggled("t:BIRT[0]")).toBe("true");
+
+    state.record = "@I2@";
+    draw();
+    state.record = "@I1@";
+    draw();
+    expect(toggled("t:BIRT[0]")).toBe("true");
+  });
+
+  it("restores the scroll of a record the reader returns to by Back, and not one reached by a link", () => {
+    draw();
+    const first = body();
+    if (first) {
+      first.scrollTop = 300;
+    }
+    state.record = "@I2@";
+    draw();
+    state.arrival = "history";
+    state.record = "@I1@";
+    draw();
+    expect(body()?.scrollTop).toBe(300);
+
+    const again = body();
+    if (again) {
+      again.scrollTop = 120;
+    }
+    state.arrival = "other";
+    state.record = "@I2@";
+    draw();
+    expect(body()?.scrollTop).toBe(0);
+    state.record = "@I1@";
+    draw();
+    expect(body()?.scrollTop).toBe(0);
+  });
+
+  it("does not scroll the card for a link to the record it already shows", () => {
+    draw();
+    const first = body();
+    if (first) {
+      first.scrollTop = 200;
+    }
+    draw();
+
+    expect(body()?.scrollTop).toBe(200);
+  });
+
+  it("holds the tags on another record and in another tab, and tells every card to redraw", () => {
+    draw();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.textContent === "Show tags")?.click();
+    expect(redraw).toHaveBeenCalledTimes(1);
+
+    state.record = "@I2@";
+    draw();
+    expect(container.querySelector(".gedcom-tree-tag")).not.toBeNull();
+
+    const other = document.createElement("div");
+    document.body.append(other);
+    renderRecordCard(other, { ...tab, filePath: () => "other.ged" }, [], view);
+    expect(other.querySelector(".gedcom-tree-tag")).not.toBeNull();
+  });
+
+  it("shows no tree for a card of an event, a place or a media record", () => {
+    state.record = "event:@I1@:BIRT:0";
+    draw();
+
+    expect(container.querySelector(".gedcom-tree")).toBeNull();
   });
 });

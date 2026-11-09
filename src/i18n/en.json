@@ -489,16 +489,18 @@
   "record.childMark.foster": "Foster",
   "record.childMark.sealing": "Sealing",
   "record.childMark.other": "Other relationship",
-  "record.names": "Names",
   "record.notes": "Notes",
   "record.related": "Related people",
-  "record.info": "Identifiers and record information",
   "record.other": "Other data",
   "record.more": "Show more",
   "record.less": "Show less",
   "record.void": "Names no record",
   "record.husbandAge": "Husband's age",
   "record.wifeAge": "Wife's age",
-  "record.events": "Events",
-  "record.details": "Details"
+  "tree.showTags": "Show tags",
+  "tree.hideTags": "Hide tags",
+  "tree.openAll": "Open every node",
+  "tree.closeAll": "Close every node",
+  "tree.toggle": "Open or close: {name}",
+  "tree.showInSource": "Show in source: {name}"
 }

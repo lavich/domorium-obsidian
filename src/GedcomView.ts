@@ -120,6 +120,7 @@ export class GedcomView extends TextFileView implements CardTab {
   private readonly views: FileViews;
   private memory: ViewMemory = {};
   private selectedFact: FactKey | null = null;
+  private arrival: Origin = "view";
   private readonly recordHistory = new RecordHistory();
   private revision = 0;
   private readonly genealogyCache = new IndexCache();
@@ -466,6 +467,7 @@ export class GedcomView extends TextFileView implements CardTab {
     if (!this.modes.select(xref, this.genealogy())) {
       return false;
     }
+    this.arrival = origin;
     this.followCursor.selected(origin);
     const rules = originRules(origin, Platform.isMobile);
     this.selectedFact = null;
@@ -487,6 +489,10 @@ export class GedcomView extends TextFileView implements CardTab {
       this.host.cardWanted(this, origin);
     }
     return true;
+  }
+
+  arrivedBy(): "history" | "other" {
+    return this.arrival === "history" ? "history" : "other";
   }
 
   history(): { canBack: boolean; canForward: boolean } {

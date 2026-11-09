@@ -4,7 +4,7 @@ import { t } from "../i18n";
 import { eventName, familyTitle, personName, sourceTitle, yearsOf } from "./labels";
 import { renderGallery, type MediaItem } from "./media";
 import { linkButton } from "./dom";
-import type { PageHost } from "./personPage";
+import { drawTree, type PageHost, type PersonPageOptions } from "./personPage";
 
 export function renderSourcePage(
   container: HTMLElement,
@@ -12,6 +12,7 @@ export function renderSourcePage(
   index: GenealogyIndex,
   host: PageHost,
   media: MediaItem[] = [],
+  options: Pick<PersonPageOptions, "open" | "folded" | "tree"> = {},
 ): void {
   const page = container;
   const heading = page.createDiv({ cls: "gedcom-desk-heading" });
@@ -22,6 +23,8 @@ export function renderSourcePage(
     text: [source.author, publication].filter(Boolean).join(" · ") || t("desk.noAuthor"),
   });
   linkButton(heading, t("desk.showInSource"), () => host.showInSource(source.range));
+
+  drawTree(page, source.xref === undefined ? undefined : index.record(source.xref), index, host, { selected: null, ...options }, []);
 
   page.createEl("h2", { cls: "gedcom-desk-section", text: t("desk.repository") });
   const repository = page.createDiv({ cls: "gedcom-desk-repository" });

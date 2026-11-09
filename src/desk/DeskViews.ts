@@ -4,6 +4,7 @@ import { ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
 import type { GedcomView } from "../GedcomView";
 import { t } from "../i18n";
 import type { NoteHit } from "./noteLinks";
+import type { TreeSession } from "./detail/treeSession";
 import { renderRecordCard } from "./recordCard";
 
 export const RECORD_VIEW_TYPE = "domorium-record";
@@ -12,6 +13,8 @@ export interface DeskViewsHost {
   followed(): GedcomView | null;
   notesFor(path: string, xref: string): Promise<NoteHit[]>;
   openNote(path: string, line: number): void;
+  session(): TreeSession;
+  redrawDesk(): void;
 }
 
 export class RecordCardView extends ItemView {
@@ -75,6 +78,10 @@ export class RecordCardView extends ItemView {
       },
       openNote: (notePath, line) => {
         this.host.openNote(notePath, line);
+      },
+      session: this.host.session(),
+      redraw: () => {
+        this.host.redrawDesk();
       },
     });
   }

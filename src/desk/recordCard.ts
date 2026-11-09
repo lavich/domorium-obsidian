@@ -16,6 +16,7 @@ import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type FactKey, type PageHost, type PersonPageOptions } from "./personPage";
 import { renderSourcePage } from "./sourcePage";
+import type { TreeSession } from "./detail/treeSession";
 
 export interface CardTab {
   filePath(): string | null;
@@ -31,17 +32,23 @@ export interface CardTab {
   history(): { canBack: boolean; canForward: boolean };
   back(): void;
   forward(): void;
+  /** How the record shown was last chosen: by Back or Forward, or any other way. */
+  arrivedBy(): "history" | "other";
 }
 
 export interface CardView {
   setIcon(element: HTMLElement, icon: string): void;
   openNote(path: string, line: number): void;
+  /** What the reader chose in the trees of the records shown, kept while the plugin is loaded. */
+  session: TreeSession;
+  /** Redraws every card. */
+  redraw(): void;
 }
 
 const FOCUS_KEY = "data-focus-key";
 const OPEN_KEY = "data-open";
 
-function foldsOf(root: HTMLElement): Pick<PersonPageOptions, "open" | "folded"> {
+function foldsOf(root: HTMLElement): Required<Pick<PersonPageOptions, "open" | "folded">> {
   const open = new Set((root.getAttribute(OPEN_KEY) ?? "").split(" ").filter(Boolean));
   return {
     open,
@@ -89,6 +96,9 @@ export function renderRecordCard(
   const focusKey = focusWas?.closest(`[${FOCUS_KEY}]`)?.getAttribute(FOCUS_KEY) ?? null;
   const scrollTop = before?.scrollTop ?? 0;
   const previous = root.getAttribute("data-shown");
+  if (previous) {
+    view.session.rememberScroll(previous, scrollTop);
+  }
 
   for (const stale of [...root.children]) {
     if (stale !== live) {
@@ -119,7 +129,10 @@ export function renderRecordCard(
     if (shown !== previous) {
       root.removeAttribute(OPEN_KEY);
     }
-    drawRecord(body, tab, index, record, selection.fact, notes, view, foldsOf(root));
+    drawRecord(body, tab, index, record, selection.fact, notes, view, {
+      ...foldsOf(root),
+      tree: view.session.stateFor(shown, () => view.redraw()),
+    });
   }
 
   root.setAttribute("data-shown", shown);
@@ -128,6 +141,8 @@ export function renderRecordCard(
   }
   if (shown === previous) {
     body.scrollTop = scrollTop;
+  } else if (record && tab?.arrivedBy() === "history") {
+    body.scrollTop = view.session.scrollOf(shown);
   }
   if (focusWas !== null) {
     const same =
@@ -177,7 +192,7 @@ function drawRecord(
   fact: FactKey | null,
   notes: NoteHit[] | null,
   view: CardView,
-  folds: Pick<PersonPageOptions, "open" | "folded">,
+  folds: Pick<PersonPageOptions, "open" | "folded" | "tree">,
 ): void {
   const host: PageHost & { openFile(path: string): void } = {
     openRecord: (xref) => tab.select(xref),
@@ -198,7 +213,7 @@ function drawRecord(
   } else if (family) {
     renderFamilyPage(body, family, index, { selected: fact, media: tab.mediaItems(family.media), ...folds }, host);
   } else if (source) {
-    renderSourcePage(body, source, index, host, tab.mediaItems(source.media));
+    renderSourcePage(body, source, index, host, tab.mediaItems(source.media), folds);
   } else if (media) {
     const whole = media.at ? tab.mediaItem(media.at) : null;
     renderMediaPage(
