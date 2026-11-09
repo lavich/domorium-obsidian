@@ -103,17 +103,20 @@ right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a tap on a
 row of the list, opens. A person's card shows everything the record says, in the
-reader's language: every name with its type and parts; their facts in the order the record
-states them, each a compact row marked with how many sources it cites itself where it cites
-any, and a line above them saying how many have none; their parents (marked adoptive, foster
-or sealing where the file says so), siblings, spouses and children, each of whom selects that
-person; their notes, folded where long; the people the record names as associated with them;
-their media; a **timeline** of their events and their close relatives'; their identifiers and
-the dates the record was created and changed; **other data**, every line no section above
-shows, a custom tag among them, so nothing the file states is hidden — these three folded under
-their headings, which show how many they hold, and closed when a card opens; and last the
-**evidence** — what the whole record rests on, each citation with everything it states.
-A family's card shows the same for the family; a section the record holds nothing for is left out. Tapping a fact, or
+reader's language. Below the heading it shows the **lines of the record as a tree**, in the
+order the file writes them and nested as the file nests them, with no sections of the plugin's
+own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
+the file puts them. Every node starts closed with a one-line summary — an event shows its date
+and place, an attribute its value — and a quiet dot after it where it cites a source; what you
+open stays open while you look at other records, and **Show tags** adds the GEDCOM tag after each
+label. The controls of a row, **Show in source**, and those of the tree appear only where the pointer or the keyboard focus
+is, and on a phone on the row you last pressed; the tree only reads. Below it come
+their parents (marked adoptive, foster or sealing where the file says so), siblings,
+spouses with the events of each marriage, and children, each of whom selects that person; their
+media; a **timeline** of their events and their close relatives', folded under its heading,
+which shows how many entries it holds; and last the **evidence** — what the whole record rests
+on, each citation with everything it states. A family's card and a source's card show their
+own lines as a tree in the same way; a section the record holds nothing for is left out. Tapping a fact, or
 an entry of the timeline, opens the card of its event: the person or the family it
 belongs to as a link above its name, its date and place under it, then everything else
 the event states — age, cause, agency, address, contacts, what the place states, notes,
