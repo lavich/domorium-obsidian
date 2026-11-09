@@ -251,6 +251,12 @@ body {
   --input-border-width: 1px;
   --input-height: 30px;
   --icon-size: 18px;
+  --icon-xs: 14px;
+  --nav-item-color: var(--text-muted);
+  --nav-item-weight: inherit;
+  --nav-collapse-icon-color: var(--text-faint);
+  --indentation-guide-width: 1px;
+  --indentation-guide-color: var(--background-modifier-border);
   --icon-stroke: 1.75px;
   --clickable-icon-radius: var(--radius-s);
   --icon-opacity: 0.85;
@@ -519,4 +525,35 @@ body {
    in a class — the offsets are measured per hover and stay with the element. */
 .gedcom-harness-anchored {
   position: fixed;
+}
+
+.tree-item-self {
+  display: flex;
+  align-items: center;
+  border-radius: var(--clickable-icon-radius);
+  color: var(--nav-item-color);
+  font-size: var(--nav-item-size);
+  margin-bottom: 1px;
+}
+
+.tree-item-self.is-clickable:hover {
+  background-color: var(--nav-item-background-hover);
+  color: var(--nav-item-color-hover);
+}
+
+.tree-item-icon.collapse-icon {
+  color: var(--nav-collapse-icon-color);
+}
+
+.tree-item-icon.collapse-icon svg {
+  transition: transform 100ms ease-in-out;
+}
+
+.tree-item-inner {
+  flex-grow: 1;
+  overflow-wrap: anywhere;
+}
+
+.tree-item-children {
+  padding-inline-start: 0;
 }

@@ -2611,6 +2611,12 @@ button.gedcom-tree-control {
   cursor: pointer;
 }
 
+button.gedcom-tree-toggle .svg-icon {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  stroke-width: var(--icon-stroke);
+}
+
 button.gedcom-tree-control:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
@@ -2624,19 +2630,40 @@ button.gedcom-tree-control:hover {
   gap: 0 var(--size-4-2);
   box-sizing: border-box;
   min-width: 0;
-  padding-block: var(--size-2-1);
+  padding-block: var(--size-4-1);
   padding-inline: 22px 28px;
   border-radius: var(--radius-s);
 }
 
+.gedcom-tree-row,
+.gedcom-tree-row.tree-item-self {
+  margin-bottom: 0;
+  font-size: var(--nav-item-size);
+}
+
 .gedcom-tree-row:hover {
-  background: var(--background-modifier-hover);
+  background: var(--nav-item-background-hover);
+}
+
+.gedcom-tree-row.mod-collapsible {
+  color: var(--nav-item-color);
+  font-weight: var(--nav-item-weight);
+  border-radius: var(--clickable-icon-radius);
+  cursor: pointer;
+}
+
+.gedcom-tree-row.mod-collapsible:hover {
+  color: var(--nav-item-color-hover);
+}
+
+.gedcom-tree-row.is-pressed {
+  background: var(--nav-item-background-selected);
 }
 
 .gedcom-tree-children {
-  margin-inline-start: 10px;
-  padding-inline-start: 4px;
-  border-inline-start: 1px solid var(--background-modifier-border);
+  margin-inline-start: var(--size-4-3);
+  padding-inline-start: var(--size-2-2);
+  border-inline-start: var(--indentation-guide-width) solid var(--indentation-guide-color);
 }
 
 .gedcom-tree-children[hidden] {
@@ -2779,6 +2806,26 @@ button.gedcom-tree-source {
 
 button.gedcom-tree-chevron {
   inset-inline-start: 0;
+  color: var(--nav-collapse-icon-color);
+}
+
+button.gedcom-tree-chevron .svg-icon {
+  width: var(--icon-xs);
+  height: var(--icon-xs);
+  stroke-width: var(--icon-stroke);
+  transform: rotate(0deg);
+}
+
+.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron .svg-icon {
+  transform: rotate(90deg);
+}
+
+button.gedcom-tree-chevron:dir(rtl) .svg-icon {
+  transform: scaleX(-1);
+}
+
+.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:dir(rtl) .svg-icon {
+  transform: scaleX(-1) rotate(90deg);
 }
 
 button.gedcom-tree-source {
@@ -2793,13 +2840,17 @@ button.gedcom-tree-source .svg-icon {
   height: 14px;
 }
 
-button.gedcom-tree-chevron:hover,
+button.gedcom-tree-chevron:hover {
+  background: none;
+  color: var(--nav-item-color-hover);
+}
+
 button.gedcom-tree-source:hover {
   background: none;
   color: var(--text-normal);
 }
 
-button.gedcom-tree-chevron::before {
+button.gedcom-tree-chevron:empty::before {
   content: "";
   width: 5px;
   height: 5px;
@@ -2808,11 +2859,11 @@ button.gedcom-tree-chevron::before {
   transform: rotate(-45deg);
 }
 
-button.gedcom-tree-chevron:dir(rtl)::before {
+button.gedcom-tree-chevron:empty:dir(rtl)::before {
   transform: rotate(45deg);
 }
 
-.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron::before {
+.gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:empty::before {
   transform: rotate(45deg);
 }
 

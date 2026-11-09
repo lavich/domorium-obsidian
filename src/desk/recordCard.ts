@@ -47,7 +47,7 @@ export interface CardView {
 
 const FOCUS_KEY = "data-focus-key";
 const OPEN_KEY = "data-open";
-const CARD_KEYS: ReadonlySet<string> = new Set(["card.back", "card.forward", "tags", "tree:open", "tree:close"]);
+const CARD_KEYS: ReadonlySet<string> = new Set(["card.back", "card.forward", "tags", "tree:toggle"]);
 
 const hasTree = (index: GenealogyIndex, record: string): boolean =>
   index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;

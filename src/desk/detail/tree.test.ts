@@ -80,7 +80,7 @@ const summaryOf = (row: Element): string | undefined => row.querySelector(".gedc
 const valuesOf = (row: Element): string[] =>
   [...row.querySelectorAll<HTMLElement>(".gedcom-field")].map((field) => field.getAttribute("data-value") ?? "");
 const control = (name: string): HTMLButtonElement => {
-  const found = [...box.querySelectorAll<HTMLButtonElement>(".gedcom-tree-control")].find((one) => one.textContent === name);
+  const found = [...box.querySelectorAll<HTMLButtonElement>(".gedcom-tree-control")].find((one) => one.textContent === name || one.getAttribute("aria-label") === name);
   if (!found) {
     throw new Error(`no control ${name}`);
   }
@@ -578,6 +578,32 @@ describe("the controls", () => {
     control("Close every node").click();
     expect(box.querySelectorAll('.gedcom-tree-chevron[aria-expanded="true"]')).toHaveLength(0);
     expect(box.querySelector('.gedcom-tree-node[data-key="_A[0]"] > .gedcom-tree-children')?.hasAttribute("hidden")).toBe(true);
+  });
+
+  it("is one icon that says what it will do now, and flips as nodes are opened and closed, one by one or all at once", () => {
+    const icons: string[] = [];
+    const made = make(["0 @I1@ INDI", "1 _A x", "2 _B y", "1 _D w", "2 _E v"]);
+    renderTree(box, made.record, {
+      index: made.index,
+      host: { openRecord: opened, showInSource: shown, setIcon: (_, icon) => { if (icon.startsWith("chevrons")) { icons.push(icon); } } },
+      facts: new Map(),
+      state: ephemeralTreeState(),
+    });
+    const toggle = box.querySelector<HTMLButtonElement>(".gedcom-tree-toggle");
+
+    expect(toggle?.getAttribute("aria-label")).toBe("Open every node");
+    expect(icons.at(-1)).toBe("chevrons-up-down");
+    toggle?.click();
+    expect(toggle?.getAttribute("aria-label")).toBe("Close every node");
+    expect(icons.at(-1)).toBe("chevrons-down-up");
+    chevron(rowNamed("_A")).click();
+    expect(toggle?.getAttribute("aria-label")).toBe("Open every node");
+    expect(icons.at(-1)).toBe("chevrons-up-down");
+    chevron(rowNamed("_A")).click();
+    expect(toggle?.getAttribute("aria-label")).toBe("Close every node");
+    toggle?.click();
+    expect(box.querySelectorAll('.gedcom-tree-chevron[aria-expanded="true"]')).toHaveLength(0);
+    expect(toggle?.getAttribute("data-focus-key")).toBe("tree:toggle");
   });
 
   it("show the row last pressed and remember it", () => {

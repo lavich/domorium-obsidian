@@ -32,7 +32,10 @@ const treeRow = (page: Page, label: string) =>
 
 const openEveryNode = async (page: Page): Promise<void> => {
   await page.locator(".gedcom-tree").hover();
-  await page.locator(".gedcom-tree-control", { hasText: "Open every node" }).click();
+  const toggle = page.locator('.gedcom-tree-toggle[aria-label="Open every node"]');
+  if ((await toggle.count()) > 0) {
+    await toggle.click();
+  }
 };
 
 const back = (page: Page) => page.locator('.gedcom-card-nav[aria-label="Back"]');
@@ -618,6 +621,26 @@ test.describe("the tree of a record", () => {
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "true");
   });
 
+  test("opens and closes every node with one icon toggle that flips and keeps the focus", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 420 });
+    await page.locator(".gedcom-tree").hover();
+    const toggle = page.locator(".gedcom-tree-toggle");
+
+    await expect(toggle.locator("svg")).toHaveCount(1);
+    await expect(toggle).toHaveAttribute("aria-label", "Open every node");
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-label", "Close every node");
+    expect(await page.locator(".gedcom-tree-chevron[aria-expanded=false]").count()).toBe(0);
+    await expect(toggle).toBeFocused();
+    await page.locator(".gedcom-tree-chevron").first().click();
+    await expect(toggle).toHaveAttribute("aria-label", "Open every node");
+    await toggle.click();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-label", "Open every node");
+    expect(await page.locator(".gedcom-tree-chevron[aria-expanded=true]").count()).toBe(0);
+  });
+
   test("keeps the focus on the same control across a redraw", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
@@ -768,7 +791,7 @@ test.describe("the tree of a record", () => {
       window.desk.mount({ doc: text, record: "@I1@", width: 420 });
       await frame();
       const first = performance.now() - start;
-      const control = [...document.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.textContent === "Open every node");
+      const control = [...document.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.getAttribute("aria-label") === "Open every node");
       const opened = performance.now();
       control?.click();
       await frame();

@@ -44,7 +44,7 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
   container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline other");
   renderRecordCard(container, tab, [], view);
   for (const control of container.querySelectorAll<HTMLElement>(".gedcom-tree-control")) {
-    if (control.textContent === "Open every node") {
+    if (control.getAttribute("aria-label") === "Open every node") {
       control.click();
     }
   }

@@ -397,6 +397,19 @@ describe("redrawing the card", () => {
     expect(document.activeElement).toBe(nav("Back"));
   });
 
+  it("keeps the focus on the toggle of every node when another record is shown, and flips its icon with the state", () => {
+    draw();
+    const toggle = (): HTMLElement | null => container.querySelector<HTMLElement>('[data-focus-key="tree:toggle"]');
+    expect(toggle()?.getAttribute("data-icon")).toBe("chevrons-up-down");
+    toggle()?.focus();
+    toggle()?.click();
+    expect(toggle()?.getAttribute("data-icon")).toBe("chevrons-down-up");
+    state.record = "@I2@";
+    draw();
+
+    expect(document.activeElement).toBe(toggle());
+  });
+
   it("keeps the focus on a control that the reader pressed to open a node", () => {
     draw();
     const chevron = container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]');

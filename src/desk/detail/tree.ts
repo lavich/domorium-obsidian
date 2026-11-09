@@ -1,6 +1,6 @@
 import type { GenealogyIndex, PersonEvent, RecordLine } from "../../genealogy";
 import { plural, t } from "../../i18n";
-import { linkButton } from "../dom";
+import { linkButton, tipPlace } from "../dom";
 import { placeAt, placeId } from "../placeRows";
 import { labelId, renderField } from "./fields";
 import { tagLabel } from "./labels";
@@ -58,6 +58,7 @@ const firstLine = (text: string): string => text.split("\n")[0] ?? "";
 class Tree {
   private readonly nodes = new Map<string, (open: boolean) => void>();
   private pressedRow: HTMLElement | null = null;
+  private toggle: HTMLElement | null = null;
 
   constructor(
     private readonly root: HTMLElement,
@@ -102,8 +103,33 @@ class Tree {
         this.redraw();
       }
     });
-    button("tree:open", t("tree.openAll"), () => this.setAll(true));
-    button("tree:close", t("tree.closeAll"), () => this.setAll(false));
+    const toggle = bar.createEl("button", { cls: ["gedcom-tree-control", "gedcom-tree-toggle", "clickable-icon"] });
+    toggle.setAttribute("type", "button");
+    toggle.setAttribute("data-focus-key", "tree:toggle");
+    tipPlace(toggle, "bottom");
+    toggle.addEventListener("click", () => this.setAll(!this.allOpen()));
+    this.toggle = toggle;
+    this.refreshToggle();
+  }
+
+  private allOpen(): boolean {
+    return nodeKeys(this.record.children, "").every((key) => this.options.state.isOpen(key));
+  }
+
+  private refreshToggle(): void {
+    const { toggle } = this;
+    if (!toggle) {
+      return;
+    }
+    const open = this.allOpen();
+    const name = t(open ? "tree.closeAll" : "tree.openAll");
+    toggle.setAttribute("aria-label", name);
+    toggle.setAttribute("data-open", String(open));
+    if (this.options.host.setIcon) {
+      this.options.host.setIcon(toggle, open ? "chevrons-down-up" : "chevrons-up-down");
+    } else {
+      toggle.setText(name);
+    }
   }
 
   private setAll(open: boolean): void {
@@ -113,6 +139,7 @@ class Tree {
     for (const [, set] of this.nodes) {
       set(open);
     }
+    this.refreshToggle();
   }
 
   private lines(parent: HTMLElement, lines: readonly RecordLine[], owner: RecordLine, parentKey: string, depth: number): void {
@@ -176,10 +203,12 @@ class Tree {
     const isNode = line.children.length > 0;
     const label = tagLabel(line.tag);
     const named = ordinal > 0 ? `${label} ${ordinal}` : label;
-    const node = container.createDiv({ cls: "gedcom-tree-node" });
+    const node = container.createDiv({ cls: isNode ? ["gedcom-tree-node", "tree-item", "mod-collapsible"] : ["gedcom-tree-node", "tree-item"] });
     node.setAttribute("data-depth", String(depth));
     node.setAttribute("data-key", key);
-    const header = node.createDiv({ cls: "gedcom-tree-row" });
+    const header = node.createDiv({
+      cls: isNode ? ["gedcom-tree-row", "tree-item-self", "is-clickable", "mod-collapsible"] : "gedcom-tree-row",
+    });
     header.setAttribute("data-line", String(line.range.start.line));
     header.addEventListener("pointerdown", () => {
       this.pressedRow?.removeClass("is-pressed");
@@ -197,7 +226,8 @@ class Tree {
     const childrenId = `gedcom-tree-children-${drawn}`;
     let chevron: HTMLElement | null = null;
     if (isNode) {
-      chevron = header.createEl("button", { cls: "gedcom-tree-chevron" });
+      chevron = header.createEl("button", { cls: ["gedcom-tree-chevron", "tree-item-icon", "collapse-icon"] });
+      host.setIcon?.(chevron, "chevron-right");
       chevron.setAttribute("type", "button");
       chevron.setAttribute("aria-label", named);
       chevron.setAttribute("aria-controls", childrenId);
@@ -205,7 +235,7 @@ class Tree {
     }
 
     const name = fact?.eventId === undefined
-      ? header.createSpan({ cls: "gedcom-tree-label", text: label })
+      ? header.createSpan({ cls: isNode ? ["gedcom-tree-label", "tree-item-inner"] : "gedcom-tree-label", text: label })
       : header.createEl("button", { cls: "gedcom-tree-label is-fact", text: label });
     name.id = labelId();
     if (fact?.eventId !== undefined) {
@@ -293,7 +323,7 @@ class Tree {
       }
     };
 
-    const children = isNode ? node.createDiv({ cls: "gedcom-tree-children" }) : null;
+    const children = isNode ? node.createDiv({ cls: ["gedcom-tree-children", "tree-item-children"] }) : null;
     let filled = false;
     const show = (): void => {
       node.toggleClass("is-open", open);
@@ -314,9 +344,15 @@ class Tree {
           open = next;
           state.setOpen(key, next);
           show();
+          this.refreshToggle();
         }
       });
       chevron?.addEventListener("click", () => this.nodes.get(key)?.(!open));
+      header.addEventListener("click", (click) => {
+        if (!(click.target as HTMLElement).closest("button, a, textarea")) {
+          this.nodes.get(key)?.(!open);
+        }
+      });
     }
     show();
 
