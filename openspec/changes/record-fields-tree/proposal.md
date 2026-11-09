@@ -10,6 +10,7 @@ The user's requirement, in their words and by date:
 - 2026-11-09: «убери разделы Основное, События и прочее — элементы должны идти в том порядке, что заданы в gedcom» — no grouping; the file's order.
 - 2026-11-09: «если на экране много элементов управления, то стоит их показывать только по наведению, чтобы не мельтешили».
 - 2026-11-09: «удали доказательства» — the Evidence section is removed from every card, with the notes of the vault that link to a record that it listed.
+- 2026-11-09: «в карточке семьи можно удалить раздел Family; аналогично в Source надо оставить только галерею из старого» — the family card loses its Family section, and the source card keeps only its heading, the tree and its gallery.
 - 2026-11-09: «пока не делаем перетаскивание», and, before it, «для начала сделаем поля не редактируемыми — просто отображение» — this step only reads.
 
 The proposed scope:
@@ -41,6 +42,7 @@ The proposed scope:
 
 ## Non-goals
 
+- On the family card, a section of spouses and children and the marks of a child who is adopted, foster or sealing; on the source card, the repository's address and web address and the list of the records that cite it. The tree shows the pointers, and the person card's family section is unchanged.
 - An Evidence section, or a list of the notes of the vault that link to a record, on any card.
 - Editing, adding, removing and reordering lines. They follow on this view; reordering needs a new operation upstream.
 - A tree for the event, place and media pages, which are computed pages and keep their form.
@@ -55,6 +57,7 @@ The proposed scope:
 - `src/desk/detail/`: a new tree renderer; `names.ts`, `notes.ts` (for records), `related.ts` (for records), `recordInfo.ts`, `otherData.ts` (for records) and `claims.ts` lose their person and family callers. The event card keeps what it uses.
 - `src/desk/factRow.ts` (the event row): a person's and a family's own events are no longer rows; the family section and the place card keep it. `src/desk/detail/claims.ts` shrinks to the tag lists the event card still reads.
 - `src/desk/recordCard.ts`, `src/desk/DeskViews.ts`, `src/GedcomView.ts`, `src/main.ts`: the session that keeps the tree's choices (open nodes, scroll), the way the card learns it arrived by Back, and the redraw of every card.
+- `src/desk/familyPage.ts` and `sourcePage.ts`: the Family section, the repository and the cited-by list are removed; `Source.heldAt`, `repositoryRead` and the `Repository` type of the model, the strings `desk.repository`, `desk.noRepository`, `desk.missingRepository`, `desk.citedBy` and `desk.citedByNone`, and their rules in `styles.css`, go with them.
 - `src/desk/evidence.ts`, `src/desk/noteLinks.ts` and their tests, the notes plumbing of `DeskViews.ts` and `main.ts`, `noteChangeMatters`, the `evidence.*` and `quality.*` strings and the rules of the evidence section: removed.
 - `src/i18n/en.json`, `src/i18n/ru.json`, `styles.css`, `harness/desk.ts`, `tests/desk.spec.ts`, `README.md`.
 - Specs: new `genealogy-record-tree`; deltas to `genealogy-record-card` and `genealogy-record-detail`. The later change `edit-person-names-in-card`, not yet in the repository, modifies "The names of a person", which this change removes; it is rewritten on this tree and is not archived as it stands.

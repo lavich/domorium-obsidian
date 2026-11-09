@@ -40,6 +40,14 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 - [x] 6.4 Specs: `genealogy-evidence` removed (a REMOVED block for each requirement, `retire_capabilities: true` in the change's `.openspec.yaml`, and the continuation lines of its scenarios joined so that archive can retire it), the dependents modified, `plugin-language` modified; verify with `npm run openspec:validate` and an archive of a copy of `openspec/`
 - [x] 6.5 `README.md` and `tests/desk.spec.ts`: the sentences and the specs about the Evidence section are removed; verify with `npm run test:browser`
 
+## 7. The family and source cards keep a heading, a tree and a gallery
+
+- [x] 7.1 `familyPage.ts`: delete the Family section and what only it used (`drawRest`, the detail context); verify in `src/desk/familyPage.test.ts` that the card is the heading, the tree and the gallery, that the husband, the wife and the children are links that select that person, that a member the file does not declare is a pointer to a record that is not in the file, that `NCHI` and a note are rows, and that no mark of an adopted child is shown, and in `tests/desk.spec.ts` the same for the Curies' family
+- [x] 7.2 `sourcePage.ts`: delete the repository section and the cited-by list; verify in `src/desk/sourcePage.test.ts` that the card is the heading, the tree and the gallery, that the repository is a row with its name and no address, that a repository the file does not declare is a pointer to a record that is not in the file, and that no list of citing records is drawn, and in `tests/desk.spec.ts` the same for `@S3@`
+- [x] 7.3 Remove what has no caller: `Source.heldAt`, `repositoryRead`, `Repository` and the unresolved `REPO` pointer in `src/genealogy/`, the strings `desk.repository`, `desk.noRepository`, `desk.missingRepository`, `desk.citedBy` and `desk.citedByNone`, and the rules `gedcom-desk-repository`, `gedcom-desk-citer*` and `gedcom-desk-kin-child`; keep `citedBy` and `citesBy`, which the list reads; verify with `npm run typecheck`, `npm run lint` and `src/genealogy/sources.test.ts`
+- [x] 7.4 Specs: `The family card`, `The source card` (genealogy-record-card), `The sources a document declares` and `A source read in full` (genealogy-read-model) modified, their old scenarios kept by name and rewritten; verify with `npm run openspec:validate`
+- [x] 7.5 `README.md`: the card sentence; verify the text names the heading, the tree and the pictures
+
 ## 5. Docs and gate
 
 - [x] 5.1 `README.md` where it describes the card; verify the text names the tree and the controls on hover

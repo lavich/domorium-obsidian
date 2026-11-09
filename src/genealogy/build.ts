@@ -6,7 +6,7 @@ import { eventsOf, NO_EVENTS } from "./events";
 import { recordLines, type RecordLine } from "./recordLines";
 import { collectMediaLinks, looksLikeAnImage, mediaOf, mediaRecordOf } from "./media";
 import { familyRowOf as readFamilyRow, readDatesOf, rowOf } from "./rows";
-import { repositoryRead, SOURCE_FIELD_TAGS, sourceRowOf as readSourceRow } from "./sources";
+import { SOURCE_FIELD_TAGS, sourceRowOf as readSourceRow } from "./sources";
 import { childOf, childrenOf, payload, rolePointers, roleLinks } from "./symbols";
 import {
   CHILD_FAMILY_TAG,
@@ -172,11 +172,6 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
       return undefined;
     }
     const unresolved: string[] = [];
-    const pointer = payload(childOf(record, "REPO"));
-    const held = pointer ? repositories.get(pointer) : undefined;
-    if (pointer && !held) {
-      unresolved.push(pointer);
-    }
     const media = mediaOf(record, objects, unresolved);
     const portrait = media.find(looksLikeAnImage);
 
@@ -188,12 +183,9 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
       }
     }
 
-    const heldAt = held ? repositoryRead(held) : undefined;
-
     return {
       ...sourceRowOf(record),
       fields,
-      ...(heldAt === undefined ? {} : { heldAt }),
       media,
       ...(portrait === undefined ? {} : { portrait }),
       unresolved,

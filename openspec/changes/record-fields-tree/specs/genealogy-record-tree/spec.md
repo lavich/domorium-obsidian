@@ -18,7 +18,7 @@ The card of a person, of a family and of a source SHALL show the lines of that r
 
 #### Scenario: A family
 - **WHEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
-- **THEN** its tree shows the lines of that family's record, the marriage and the pointers to the husband, the wife and the children among them, in the order the file writes them, while the card still lists the spouses and the children in their own section
+- **THEN** its tree shows the lines of that family's record, the marriage and the pointers to the husband, the wife and the children among them, in the order the file writes them, and the card has no section of its own for the spouses and the children
 
 #### Scenario: A source
 - **WHEN** the card shows a source whose record states `1 TITL`, `1 AUTH` and `1 REPO @R1@`

@@ -112,7 +112,7 @@ their parents (marked adoptive, foster or sealing where the file says so), sibli
 spouses with the events of each marriage, and children, each of whom selects that person; their
 media; a **timeline** of their events and their close relatives', folded under its heading,
 which shows how many entries it holds. A family's card and a source's card show their
-own lines as a tree in the same way; a section the record holds nothing for is left out. Tapping a fact, or
+heading, their own lines as a tree in the same way, and their pictures, and nothing else; a section the record holds nothing for is left out. Tapping a fact, or
 an entry of the timeline, opens the card of its event: the person or the family it
 belongs to as a link above its name, its date and place under it, then everything else
 the event states — age, cause, agency, address, contacts, what the place states, notes,

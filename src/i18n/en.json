@@ -117,11 +117,6 @@
   "desk.missingRecord": "Points to a record that is not in the file",
   "desk.showInSource": "Show in source",
   "desk.noAuthor": "No author or publication recorded",
-  "desk.repository": "Repository",
-  "desk.noRepository": "Not recorded",
-  "desk.missingRepository": "Points to a repository that is not in the file",
-  "desk.citedBy": "Cited by",
-  "desk.citedByNone": "No record cites it.",
   "desk.wholeRecord": "Whole record",
   "desk.sources": {
     "one": "{count} source",

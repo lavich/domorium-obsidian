@@ -14,7 +14,6 @@ export type {
   PersonEvent,
   PersonMedia,
   PersonRow,
-  Repository,
   Row,
   Source,
   SourceField,

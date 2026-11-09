@@ -98,12 +98,6 @@ export interface SourceField {
   value: string;
 }
 
-export interface Repository {
-  name?: string;
-  address?: string;
-  web?: string;
-}
-
 export interface SourceRow extends Row {
   title: string;
   author?: string;
@@ -112,7 +106,6 @@ export interface SourceRow extends Row {
 
 export interface Source extends SourceRow {
   fields: SourceField[];
-  heldAt?: Repository;
   media: PersonMedia[];
   portrait?: PersonMedia;
   unresolved: string[];

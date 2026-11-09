@@ -133,12 +133,13 @@ describe("the page of each kind of record", () => {
     expect(texts("h1")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
-  it("shows the Curies' family without an Evidence section", () => {
+  it("shows the Curies' family as a heading and a tree, with no section", () => {
     state.record = "@F3@";
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-card-body h2")).toEqual(["Family"]);
+    expect(texts(".gedcom-card-body h2")).toEqual([]);
+    expect(container.querySelector(".gedcom-card-body .gedcom-tree")).not.toBeNull();
   });
 
   it("shows a source and a multimedia record with no Evidence section and no notes of the vault", () => {

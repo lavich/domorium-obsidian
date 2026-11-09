@@ -127,11 +127,6 @@
   "desk.missingRecord": "Ссылка на запись, которой нет в файле",
   "desk.showInSource": "Показать в исходнике",
   "desk.noAuthor": "Автор и издание не указаны",
-  "desk.repository": "Хранилище",
-  "desk.noRepository": "Не указано",
-  "desk.missingRepository": "Ссылка на хранилище, которого нет в файле",
-  "desk.citedBy": "Ссылаются",
-  "desk.citedByNone": "Ни одна запись на него не ссылается.",
   "desk.wholeRecord": "Вся запись",
   "desk.sources": {
     "one": "{count} источник",

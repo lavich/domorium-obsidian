@@ -51,38 +51,24 @@ describe("the family page", () => {
     expect(texts(".gedcom-desk-subtitle")).toEqual(["Married 26 JUL 1895, Sceaux"]);
   });
 
-  it("shows the lines of the family's record as a tree, the marriage with its date and place and no mark", () => {
+  it("is the heading, the tree of the lines of the record and the gallery, with no section of its own", () => {
     draw("@F3@");
     const labels = [...container.querySelectorAll(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
 
     expect(labels).toEqual(["Husband", "Wife", "Child", "Child", "Marriage"]);
+    expect(texts("h2")).toEqual([]);
+    expect(container.querySelector(".gedcom-desk-heading + .gedcom-tree")).not.toBeNull();
+    expect(container.querySelector(".gedcom-desk-family, .gedcom-desk-kin")).toBeNull();
     expect(texts(".gedcom-tree-summary")).toEqual(["26 JUL 1895 · Sceaux, France"]);
     expect(container.querySelector(".gedcom-desk-source")).toBeNull();
-    expect(container.querySelector(".gedcom-desk-fact")).toBeNull();
   });
 
-  it("has the tree and a Family section, and none of events, notes, related people, identifiers or other data", () => {
+  it("links the husband, the wife and the children in the tree, and a press selects that person", () => {
     draw("@F3@");
+    const links = [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")];
 
-    expect(texts("h2")).toEqual(["Family"]);
-    expect(container.querySelector(".gedcom-desk-heading + .gedcom-tree")).not.toBeNull();
-  });
-
-  it("shows the spouses by their roles and the children", () => {
-    draw("@F3@");
-
-    expect(texts(".gedcom-desk-kin-label")).toEqual(["Husband", "Wife", "Children"]);
-    expect(texts(".gedcom-desk-person-name")).toEqual([
-      "Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie",
-    ]);
-  });
-
-  it("selects a member", () => {
-    draw("@F3@");
-    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]
-      .find((node) => node.textContent?.startsWith("Ève Curie"))
-      ?.click();
-
+    expect(links.map((link) => link.textContent)).toEqual(["Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie", "Sceaux, France"]);
+    links.find((link) => link.textContent === "Ève Curie")?.click();
     expect(host.openRecord).toHaveBeenCalledWith("@I13@");
   });
 
@@ -97,14 +83,7 @@ describe("the family page", () => {
     expect(host.showInSource).toHaveBeenCalledWith(index.family("@F3@")?.events[0]?.range);
   });
 
-  it("says when a family records no children", () => {
-    draw("@F5@");
-
-    expect(texts(".gedcom-desk-kin-label")).toEqual(["Husband", "Wife", "Children"]);
-    expect(texts(".gedcom-desk-family .gedcom-desk-none")).toEqual(["Not recorded"]);
-  });
-
-  it("shows a member the file does not declare", () => {
+  it("shows a spouse and a child the file does not declare as pointers to records that are not in the file", () => {
     draw("@F1@", {
       index: buildIndex(new GedcomLanguageService([
         "0 HEAD", "1 GEDC", "2 VERS 7.0",
@@ -115,13 +94,12 @@ describe("the family page", () => {
     });
 
     expect(texts(".gedcom-desk-title")).toEqual(["Anna Nowak"]);
-    expect(texts(".gedcom-desk-missing span")).toEqual([
-      "Points to a record that is not in the file",
-      "Points to a record that is not in the file",
-    ]);
+    expect(texts(".gedcom-desk-missing span")).toEqual(["Points to a record that is not in the file"]);
+    container.querySelector<HTMLElement>(".gedcom-desk-missing .gedcom-desk-link")?.click();
+    expect(host.showInSource).toHaveBeenCalled();
   });
 
-  it("shows the number of children the file states beside the children it lists", () => {
+  it("shows the number of children the file states beside the children it names", () => {
     draw("@F1@", {
       index: buildIndex(new GedcomLanguageService([
         "0 HEAD", "1 GEDC", "2 VERS 7.0",
@@ -133,10 +111,10 @@ describe("the family page", () => {
     const row = [...container.querySelectorAll(".gedcom-tree-row")].find((one) => one.querySelector(".gedcom-tree-label")?.textContent === "Number of children");
 
     expect(row?.querySelector(".gedcom-field")?.getAttribute("data-value")).toBe("3");
-    expect(texts(".gedcom-desk-person-name")).toEqual(["Anna Nowak", "Jan Nowak", "Eva Nowak"]);
+    expect(texts(".gedcom-tree button.gedcom-desk-link")).toEqual(["Anna Nowak", "Jan Nowak", "Eva Nowak"]);
   });
 
-  it("shows a note of the family in its tree, and marks an adopted child in the children", () => {
+  it("shows a note of the family and the pointer of an adopted child in its tree, with no mark of its own", () => {
     draw("@F1@", {
       index: buildIndex(new GedcomLanguageService([
         "0 HEAD", "1 GEDC", "2 VERS 7.0",
@@ -147,7 +125,7 @@ describe("the family page", () => {
     });
 
     expect(texts(".gedcom-detail-text-body")).toEqual(["Married in the church."]);
-    expect(texts(".gedcom-desk-person-note")).toEqual(["Adopted"]);
+    expect(container.textContent).not.toContain("Adopted");
   });
 
   it("names the couple in Russian", () => {

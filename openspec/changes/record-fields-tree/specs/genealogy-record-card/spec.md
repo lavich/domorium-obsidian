@@ -115,23 +115,19 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 ### Requirement: The family card
 
-A family card SHALL show, without any cross-reference identifier, level number or tag the standard names, each section left out where the record holds nothing for it, in this order, with no section for events, notes, related people, identifiers or other data apart from the lines of the record:
+A family card SHALL show, without any cross-reference identifier, level number or tag the standard names, in this order, with no other section: a heading, the lines of the record as a tree, and the media.
 
 - a heading naming the family by its spouses, in the order the record names them,
   with the marriage date and place where the record states them; a family naming
-  no spouse SHALL be headed by a stated placeholder;
-- the **lines of the record**, as the requirement on the tree of a record says: every line the record states, in the order the file writes them, the events, the number of children, the notes, the related people and the identifiers among them;
-- its **spouses**, each under the role the record names them in, and its
-  **children**, each selecting their card and each, where the file says the child belongs to the
-  family otherwise than by birth, marked *Adopted*, *Foster* or *Sealing* with the status the file states
-  for the link; a spouse or child the file points at
-  but does not declare SHALL be shown as a pointer to a record that is not in the file,
-  with an action that shows it in the source;
-- its **media**, as a person's are;
+  no spouse SHALL be headed by a stated placeholder, and the heading offers **Show in source** for the whole record;
+- the **lines of the record**, as the requirement on the tree of a record says: every line the record states, in the order the file writes them, the events, the pointers to the husband, the wife and the children, the number of children, the notes, the related people and the identifiers among them. A pointer to a person the file declares is that person's name as a link that selects their card; a pointer to a record the file does not declare is shown as a pointer to a record that is not in the file, with an action that shows it in the source;
+- its **media**, as a person's are.
+
+The card SHALL NOT have a section of its own for the spouses or the children, and SHALL NOT mark a child as adopted, foster or sealing: the tree states what the family's own record states.
 
 #### Scenario: The Curies' family
 - **WHEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
-- **THEN** it is headed by both names with `26 JUL 1895` and Sceaux, shows the marriage among the lines of the record with its date, lists Pierre Curie as husband and Marie as wife, and Irène Joliot-Curie and Ève Curie as children
+- **THEN** it is headed by both names with `26 JUL 1895` and Sceaux, and its tree shows, in the file's order, Pierre Curie as husband, Marie as wife, Irène Joliot-Curie and Ève Curie as children, each a link that selects that person, and the marriage with its date and place, and the card has no section of spouses or children
 
 #### Scenario: From a person to their family
 - **WHEN** the reader is on Marie's card and chooses the family card beside Pierre
@@ -140,7 +136,7 @@ A family card SHALL show, without any cross-reference identifier, level number o
 
 #### Scenario: An adopted child
 - **WHEN** a family lists a child whose own record points back with `2 PEDI ADOPTED`
-- **THEN** the card shows that child marked *Adopted* among the children
+- **THEN** the tree shows the pointer to that child as to any other, and the card marks no child as adopted
 
 #### Scenario: A note on a family
 - **WHEN** a family's record carries `1 NOTE` with text
@@ -148,25 +144,27 @@ A family card SHALL show, without any cross-reference identifier, level number o
 
 #### Scenario: The number of children
 - **WHEN** a family's record states `1 NCHI 3` while it lists two children
-- **THEN** the lines of the record show a row named Number of children with `3`, and the children section lists the two it names
+- **THEN** the lines of the record show a row named Number of children with `3`, beside the two pointers to children it lists
 
 ### Requirement: The source card
 
-A source card SHALL show the source's title, its author and publication where the
-record states them in the heading, the lines of the record, as the requirement on the tree of a record says, the repository it names with that repository's name, address
-and web address, every record that cites it — for each, the person or family, where
-in that record the citation sits (the whole record or the named event) and the page
-the citation states — and its media. A person or a family among those that cite it SHALL select
-their card. A source naming a repository the file does not declare SHALL say so.
+A source card SHALL show, in this order and with no other section: the source's title, its author and publication where the record states them in the heading, the lines of the record as a tree, as the requirement on the tree of a record says, and its media. A line that points at a repository is a row of the tree like any pointer, showing the repository's name. The card SHALL NOT list the records that cite the source, and SHALL NOT show the repository's address and web address.
+
+#### Scenario: A source
+- **WHEN** the card shows `The Nobel Prize in Chemistry 1911 and 1935`
+- **THEN** it shows its title and author in the heading, the tree of its lines and its pictures where it has some, and no section of repository or of the records that cite it
 
 #### Scenario: A source cited by three people
 - **WHEN** the card shows `The Nobel Prize in Chemistry 1911 and 1935`
-- **THEN** it lists Marie Skłodowska-Curie, Irène Joliot-Curie and Frédéric Joliot,
-  each with the page their citation states
+- **THEN** it lists none of the three records that cite it, the card having no list of the records that cite a source
 
 #### Scenario: A source nothing cites
 - **WHEN** the card shows a source no record cites
-- **THEN** it says no record cites it
+- **THEN** it says nothing of citations, as it does for a source that is cited
+
+#### Scenario: A source's repository
+- **WHEN** the card shows a source whose record states `1 REPO @R1@` and the file declares `@R1@` named `State Archive in Warsaw`
+- **THEN** its tree shows a row named Repository with `State Archive in Warsaw`
 
 ### Requirement: The card fits a narrow panel and a phone
 

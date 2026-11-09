@@ -264,27 +264,27 @@ test.describe("the family card", () => {
     await page.locator(".gedcom-desk-link", { hasText: "Family card" }).click();
 
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie ⚭ Marie Skłodowska-Curie");
-    await expect(page.locator(".gedcom-desk-person-name")).toHaveText([
-      "Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie",
-    ]);
-    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText(["Family"]);
+    await expect(page.locator(".gedcom-tree .gedcom-tree-row", { hasText: "Husband" }).locator(".gedcom-desk-link")).toHaveText("Pierre Curie");
+    await expect(page.locator(".gedcom-tree .gedcom-tree-row", { hasText: "Wife" }).locator(".gedcom-desk-link")).toHaveText("Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveCount(0);
+    await expect(page.locator(".gedcom-desk-kin, .gedcom-desk-person")).toHaveCount(0);
     await treeRow(page, "Marriage").locator("button.gedcom-tree-label").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
 
     await back(page).click();
-    await page.locator(".gedcom-desk-person", { hasText: "Ève Curie" }).click();
+    await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Ève Curie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
   });
 });
 
 test.describe("the source card and the media card", () => {
-  test("lists the three people a source is cited by", async ({ page }) => {
+  test("shows a source as its heading, its tree and its gallery, and nothing else", async ({ page }) => {
     await mountDesk(page, { record: "@S3@" });
 
-    await expect(page.locator(".gedcom-desk-citer .gedcom-desk-person-name")).toHaveText([
-      "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Frédéric Joliot",
-    ]);
-    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toHaveText("Cited by");
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("The Nobel Prize in Chemistry 1911 and 1935");
+    await expect(page.locator(".gedcom-desk-heading + .gedcom-tree")).toHaveCount(1);
+    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveCount(0);
+    await expect(page.locator(".gedcom-desk-citer, .gedcom-desk-repository")).toHaveCount(0);
   });
 
   test("selects a source from its row in the tree of a card", async ({ page }) => {
@@ -293,9 +293,6 @@ test.describe("the source card and the media card", () => {
     await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Physics 1903" }).click();
 
     await expect(page.locator(".gedcom-desk-title")).toHaveText("The Nobel Prize in Physics 1903");
-    await expect(page.locator(".gedcom-desk-citer .gedcom-desk-person-name")).toHaveText([
-      "Marie Skłodowska-Curie", "Pierre Curie",
-    ]);
   });
 
   test("lists the two people a photograph is linked by", async ({ page }) => {
