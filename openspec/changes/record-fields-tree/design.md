@@ -72,3 +72,22 @@ None: no setting, no data. Rollback is a revert of the change.
 ## Open Questions
 
 - Whether a closed summary reads right when a node has neither value nor date nor place: the label alone. The first look on the demo vault in Obsidian confirms it.
+
+## Implementation
+
+Where the code differs from the plan above, or settled something the plan left open:
+
+- `renderSourcePage` already took `host`; it gains one trailing parameter `options` (`open`, `folded`, `tree`), not three.
+- `CardTab.arrivedBy()`, `CardView.session` and `CardView.redraw()` are required members; `GedcomView` answers `arrivedBy()` from the origin of its last `selectRecord`, and every test and the harness that builds a tab or a view gives them.
+- The session is `TreeSession` in `src/desk/detail/treeSession.ts`; the tree reads it through the `TreeState` interface, and falls back to an ephemeral state, which redraws the tree itself where the state has no `changed()`. `rememberScroll` creates the memory of a record, so the cards of events, places and media count towards the twenty and have a scroll to return to.
+- A note of the tree is keyed `note:<node key>` for the note line itself; a pointer to a shared note draws the note and the lines beneath it with their own counter scoped to the row, so their keys are `note:<node key>.0`, `note:<node key>.1`, and so on. `DetailContext.open` is widened to `{ has(id) }` so that the session can stand for it, and `renderNoteText` takes the key as an optional argument.
+- `valueText` and a new `fieldKind` are exported from `lineView.ts`; `renderLine`, `renderLines` and `renderRest` carry the owner of the lines so that `TYPE` is read as the type of a name only under a `NAME`. The no-name placeholder is read in `valueText` for a `NAME` line.
+- `NOTE_TAGS` is in `notes.ts` and read by `eventDetails.ts`; `RELATED_TAGS`, `noteLines` and `relatedLines` had no reader left and are gone with `claims.ts`.
+- A pointer to a record that is not in the file has no row-level *Show in source*; the one `renderPointer` draws is the only one. A void pointer has the row-level control, as any line does.
+- *Show in source* is drawn with the `code` icon where the host gives `setIcon`, and as `</>` where it does not; the harness icon set gained `code`. The toolbar keeps the plan's wording of its three controls and their keys are `tags`, `tree:open` and `tree:close`.
+- A closed summary is a flex row of parts; the last part, the place where there is one, is the one the panel cuts with an ellipsis, so the date is not cut before it. The dot counts the `SOUR` lines directly beneath the line.
+- On touch, the row is at least 44 pixels tall, the chevron 34 by 44, and a fact's label has a 44-pixel hit area made by a pseudo-element; the toolbar stays shown, as the plan says.
+- *Open every node* and *Close every node* touch node keys only; what the reader showed of a long note is left as it was.
+- The person page's own `drawTree` helper serves the family and the source page; the `FactKey` selection of the heading's *Show in source* is unchanged.
+- Timing, 80 events of seven lines (561 rows once open), the harness in headless Chromium: first draw about 30 ms and *Open every node* about 33 ms; the card of `main` draws the same record in 21 to 32 ms (it draws only the compact event rows, no notes and no sources).
+- Not checked: Obsidian itself on desktop and on a phone (task 4.2); only the harness was looked at, in both themes at 320 and 390 pixels.
