@@ -96,21 +96,17 @@ The tree SHALL show no tag the standard names, no level number and no cross-refe
 - **WHEN** a record states `1 _TRIBE Highlander`
 - **THEN** the row is labelled `_TRIBE` and shows no second tag
 
-### Requirement: An event or an attribute opens its card from its name
+### Requirement: A place in the tree is a link
 
-Where a line of the tree is an event or an attribute that the card of the record also knows as a fact — a birth, a death, an occupation, a residence, a marriage — and the fact has an identifier, its label SHALL be a control that opens the card of that event, as the name of a fact does elsewhere on a card, and a fact with no identifier SHALL have a label that does not act. Any other line's label SHALL NOT act. The value of a `PLAC` line, where the card knows the place, SHALL be a link that opens the card of that place, and so SHALL the place in the summary of a closed row, as a place is a link in a fact elsewhere on a card. Opening a card SHALL NOT write to the file.
-
-#### Scenario: Opening a birth
-- **WHEN** the reader presses `Birth` in Marie's tree
-- **THEN** the event card of her birth is shown
+The value of a `PLAC` line, where the card knows the place, SHALL be a link that opens the card of that place, and so SHALL the place in the summary of a closed row. The label of a line, whether the line is an event or an attribute or not, SHALL be text and SHALL NOT act: no card of an event exists. Opening a card SHALL NOT write to the file.
 
 #### Scenario: Opening a place
 - **WHEN** the reader presses `Warsaw, Congress Poland` in the opened birth of Marie's tree
-- **THEN** the card of that place is shown, and the card of her birth is not
+- **THEN** the card of that place is shown
 
-#### Scenario: A line that is not a fact
-- **WHEN** the reader presses `Sex` in Marie's tree
-- **THEN** nothing opens
+#### Scenario: A label
+- **WHEN** the reader presses `Sex` or `Birth` in Marie's tree
+- **THEN** nothing opens, and pressing the header of the node `Birth` opens or closes the node
 
 ### Requirement: The node controls stay in view and the toggle appears where the reader is
 

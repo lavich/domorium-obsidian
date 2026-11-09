@@ -3,7 +3,6 @@ import { GedcomLanguageService, type Position, type Range } from "@domorium/lang
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
-import type { FactKey } from "../src/desk/personPage";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
@@ -17,7 +16,6 @@ export interface DeskOptions {
   doc?: string;
   /** The selected record; the first person where omitted, none for an empty string. */
   record?: string;
-  fact?: FactKey;
   dark?: boolean;
   phone?: boolean;
   /** The card's width in pixels: 360 where omitted, 390 on a phone. */
@@ -47,7 +45,6 @@ declare global {
       mount(options: DeskOptions): void;
       calls: DeskCalls;
       record(): string | null;
-      selected(): FactKey | null;
       selectRecord(xref: string): void;
     };
   }
@@ -59,7 +56,6 @@ const calls: DeskCalls = { shownInSource: [], filesOpened: [] };
 let service: GedcomLanguageService;
 let index: GenealogyIndex;
 let record: string | null = null;
-let fact: FactKey | null = null;
 let hasTab = true;
 let session = new TreeSession();
 
@@ -96,7 +92,7 @@ function mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
 const tab: CardTab = {
   filePath: () => "curie.ged",
   index: () => index,
-  selection: () => ({ record, fact }),
+  selection: () => ({ record }),
   mediaItems,
   mediaItem,
   portrait: (xref: string): PortraitContent | null => {
@@ -106,10 +102,6 @@ const tab: CardTab = {
   },
   select: (xref) => {
     selectRecord(xref);
-  },
-  selectFact: (key) => {
-    fact = key;
-    draw();
   },
   showInSource: (range) => {
     calls.shownInSource.push(range);
@@ -121,7 +113,6 @@ const tab: CardTab = {
 
 function selectRecord(xref: string): void {
   record = xref;
-  fact = null;
   draw();
 }
 
@@ -149,7 +140,6 @@ function mount(options: DeskOptions): void {
   session = new TreeSession();
   const first = options.record ?? index.people.find((row) => row.xref)?.xref ?? "";
   record = first === "" ? null : first;
-  fact = options.fact ?? null;
   element("card").empty();
   draw();
 }
@@ -158,6 +148,5 @@ window.desk = {
   mount,
   calls,
   record: () => record,
-  selected: () => fact,
   selectRecord,
 };

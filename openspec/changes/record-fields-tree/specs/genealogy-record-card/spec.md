@@ -18,7 +18,7 @@ are made of several kinds, show no count.
   the file states for the link; where the person is a child of no family, a line saying the
   parents are not recorded; siblings; and for each family the person is a spouse of, the other
   spouse with the events of that family — the marriage, a divorce, an engagement — as rows under them,
-  each opening its event card, the children of that family, and a way to that family's card;
+  the children of that family, and a way to that family's card;
 - their **media**, the portrait and the media of the record drawn as tiles, as the requirement on portrait and media says;
 - their **timeline**, a section of the card below the one before it, not a tab, and
   **folded** under its heading, which shows how many entries it holds: it is closed
@@ -166,48 +166,9 @@ A source card SHALL show, in this order and with no other section: the source's 
 - **WHEN** the card shows a source whose record states `1 REPO @R1@` and the file declares `@R1@` named `State Archive in Warsaw`
 - **THEN** its tree shows a row named Repository with `State Archive in Warsaw`
 
-### Requirement: The card fits a narrow panel and a phone
-
-The card SHALL be readable and usable in one column at the width a sidebar has,
-from 320 pixels up, and at a phone's width, without horizontal scrolling of the
-card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. Choosing a fact SHALL open the card of its event, as the
-requirement on the event card says, and a place named in a fact or an entry SHALL open the card of that place. Redrawing the card for the same record — the file changing —
-SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record, an event or a place SHALL scroll the card to
-the top.
-
-#### Scenario: A person card at a sidebar's width
-- **WHEN** Marie's card is shown 320 pixels wide
-- **THEN** every line of her record and every relative is visible without scrolling sideways
-
-#### Scenario: A person card on a phone
-- **WHEN** Marie's card is shown 390 pixels wide
-- **THEN** every line of her record and every relative is visible without scrolling sideways
-
-#### Scenario: Tapping a fact
-- **WHEN** the reader taps Marie's birth
-- **THEN** the card of her birth is shown, and the list, where it is in view, shows the events with her birth marked
-
-#### Scenario: Tapping a place in a fact
-- **WHEN** the reader taps `Warsaw, Congress Poland` in Marie's birth
-- **THEN** the card of that place is shown, and the card of her birth is not
-
-#### Scenario: Selecting a fact in a scrolled card
-- **WHEN** the card is scrolled to Marie's family section and the reader selects her
-  marriage
-- **THEN** the card of the marriage is shown from its top
-
-#### Scenario: Another record
-- **WHEN** the card is scrolled to the end of Marie's card and the reader activates
-  Pierre Curie in her family section
-- **THEN** Pierre Curie's card is shown from its top
-
-#### Scenario: The header stays
-- **WHEN** the reader scrolls to the end of Marie's card
-- **THEN** the card has no header: no bar, no Back or Forward control, and its body began at the top of the card
-
 ### Requirement: The controls of a card are easy to see and to hit
 
-Every control of a card — the buttons that select a relative, a source, an event or a place, the
+Every control of a card — the buttons that select a relative, a source or a place, the
 links *Show in source*, the notes' lines, and the picture of a media card — SHALL
 show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
 when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
@@ -242,145 +203,6 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 - **WHEN** the card is shown and the pointer is not over the tree
 - **THEN** the arrows of the nodes are visible, and the control that opens or closes every node is not until the pointer or the focus is in the tree
 
-### Requirement: An event is one row wherever a card lists it
-
-The events of a family under a spouse in a person's family section and the
-events at a place on the card of that place SHALL each be drawn as one **event row**: its date as the file writes it on
-the left, a dash where it has none; its name in the reader's language, which opens the card of the event, with its text where it has
-one; its place, as a link to the place, under the name; and, where it cites any source, a quiet dot after the name, which says
-how many in its accessible name and title; an event that cites none carries no dot. On the card of a
-place the row SHALL also name the record the event belongs to, as a link that selects that record, under the name. A tap or a press anywhere on the row
-SHALL open the card of the event, except on a link inside it, and on a phone the name and each link SHALL be a target of its own that the
-other does not cover.
-The timeline of a person SHALL keep its own form, a chronology, and SHALL show the same detail of an
-event. An event that states nothing SHALL be drawn as *recorded, no details*, and an event whose
-record has no identifier SHALL be drawn with a name that does not act.
-
-#### Scenario: A fact on a person's card
-- **WHEN** Marie's card shows her marriage under Pierre in her family section
-- **THEN** its row shows `26 JUL 1895` on the left, names `Marriage`, shows `Sceaux, France` as a link under the name, and carries no dot
-
-#### Scenario: A fact that cites a source
-- **WHEN** a marriage carries `2 SOUR @S2@` and a person's family section shows it
-- **THEN** its row shows a dot after the name, which says it cites one source
-
-#### Scenario: Tapping the name or the place on a phone
-- **WHEN** Marie's card is shown on a phone and the reader taps `Marriage` in her family section, and then taps `Sceaux, France` in the same row
-- **THEN** the first opens the event card of the marriage and the second the card of the place
-
-#### Scenario: An event at a place
-- **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
-- **THEN** the row shows `7 NOV 1867`, names `Birth`, and links `Marie Skłodowska-Curie` under the name
-
-#### Scenario: Opening the event from a place
-- **WHEN** the reader presses `Birth` in that row
-- **THEN** the event card of Marie's birth is shown
-
-#### Scenario: The record from a place
-- **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
-- **THEN** Marie's card is shown and the list, where it is in view, shows the people with her marked
-
-### Requirement: The event card
-
-Selecting an event, which a row of the Events in the List does, SHALL show its **event card**. At
-its top, a line naming the kind of record the event belongs to — *Person* or *Family* — and the
-record as a link that selects it. Under it, the title: the name of the event in the reader's language, a custom event by its type, and the text the event carries other than `Y`, with a *Show
-in source* that moves to the lines of the event. Under the title, one line with the date as the
-file writes it and the place as the file writes it, the place a link that selects it; a part the
-event does not state is left out. Below them the card SHALL show everything else the event states,
-each in a section of its own that is left out where the event states nothing for it:
-
-- its **details**, as rows each named in the reader's language: the age, the cause, the agency, the
-  religion, the restriction, the temple and status of an LDS ordinance, the age of each spouse for an event of a family, the date's phrase and time,
-  the sorting date, the address as the file writes it, and the phone numbers, e-mail addresses, fax numbers
-  and web addresses; and what the place itself states — its form, its latitude and longitude, its
-  translations and its notes;
-- its **notes**, and its **related people** with the role each is stated in, in sections of their own on this card, as the detail requirements say;
-- its **media**;
-- its **other data**, folded: every line of the event no section above shows;
-- the **sources** the event cites, each as a row in the order the event writes them: a source the file
-  declares as a link that selects it, a source stated inline as its text, one the file does not declare as a
-  pointer to a record that is not in the file, and beneath each whatever the citation states — its page,
-  its quality, its quoted text and date, the event and role it names, its notes and media.
-
-The card SHALL have no section of evidence and SHALL NOT list what the whole record rests on: that is
-in the tree of the card of the record, whose link is at the top of the card. The card SHALL show nothing the file does not
-hold and SHALL NOT label the date, the place or the record with a row of its own. Choosing a fact on
-a person's or a family's card, or an entry of a person's timeline, SHALL open this card. Selecting
-a link on it SHALL NOT write to the file. An event that carries nothing to show beyond its name
-SHALL still have a card, which says that the event states no date, place or source.
-
-#### Scenario: A birth
-- **WHEN** the event card of Marie's birth is shown
-- **THEN** it shows `Person` and a link `Marie Skłodowska-Curie` above the title `Birth`, and
-  under the title `7 NOV 1867` and a link `Warsaw, Congress Poland`
-
-#### Scenario: An occupation
-- **WHEN** the event card of an occupation `Physicist` with no date and no place is shown
-- **THEN** its title reads `Occupation · Physicist`, it draws no line of date and place, and it
-  says the event states no date, place or source
-
-#### Scenario: Nothing of the whole record
-- **WHEN** the event card of Marie's birth is shown
-- **THEN** it has no section named Evidence, lists no source of Marie's record and no note of the vault, and has no head *Whole
-  record*
-
-#### Scenario: A cited source
-- **WHEN** the event card of an event that cites a source record is shown, and the reader presses the source among its rows
-- **THEN** the card shows that source
-
-#### Scenario: Chosen on a person's card
-- **WHEN** the reader presses `Birth` in the tree of her card
-- **THEN** the event card of her birth is shown, and a list in view shows the events with that birth marked
-
-#### Scenario: Show in source
-- **WHEN** the reader presses *Show in source* on the event card of Marie's birth
-- **THEN** the tab shows the Source mode with the lines of that birth selected
-
-#### Scenario: A record pressed
-- **WHEN** the reader presses the record at the top of the event card of Marie's birth
-- **THEN** the card shows Marie
-
-#### Scenario: A family event
-- **WHEN** the event card of the Curies' marriage is shown
-- **THEN** its top line reads `Family` and links the family
-
-#### Scenario: What an event states beyond its date and place
-- **WHEN** an event states `2 AGE 0y`, `2 CAUS Natural` and `2 AGNC Registry office`
-- **THEN** its card shows rows named Age, Cause and Agency with those values under the date and place
-
-#### Scenario: An address
-- **WHEN** an event states `2 ADDR 1 Street` continued by `3 CONT Town`
-- **THEN** the card shows the address as two lines in a row named Address
-
-#### Scenario: The place's coordinates
-- **WHEN** an event's place states `3 MAP` with `4 LATI N52.2` and `4 LONG E21.0`
-- **THEN** the card shows the latitude and longitude under the place
-
-#### Scenario: A note on an event
-- **WHEN** an event states `2 NOTE Born at home.`
-- **THEN** its card shows a Notes section with that text
-
-#### Scenario: A witness
-- **WHEN** an event states `2 ASSO @I2@` with `3 ROLE WITN`
-- **THEN** its card lists that person under Related people with the role *Witness*
-
-#### Scenario: A citation that quotes
-- **WHEN** an event cites a source with `3 DATA` and `4 TEXT` beneath it
-- **THEN** its card shows the source row with the quoted text beneath it
-
-#### Scenario: A citation with a page
-- **WHEN** an event states `2 SOUR @S1@` with `3 PAGE 12` beneath it
-- **THEN** its card shows a row *Source* with the source as a link and a row *Page* with `12` beneath it
-
-#### Scenario: A line no section knows
-- **WHEN** an event states a custom `2 _WEATHER Rain`
-- **THEN** its card shows `_WEATHER` and `Rain` in a folded Other data section
-
-#### Scenario: A source the file does not declare
-- **WHEN** an event cites `@S9@` and the file declares no such record
-- **THEN** its card shows a pointer to a record that is not in the file, with the way to its line
-
 ### Requirement: The timeline of a person
 
 The timeline section of a person card SHALL list, ordered by the year read from
@@ -398,8 +220,7 @@ place. The person's own entries SHALL be told apart from their relatives'. An ev
 of the person's with no year read from it SHALL be listed apart, as undated, within
 the section. No age SHALL be shown.
 
-Activating a relative in an entry SHALL select that relative; activating one of
-the person's own entries SHALL select that fact.
+Activating a relative in an entry SHALL select that relative; the person's own entries SHALL open nothing, and the place of an entry SHALL open the card of that place.
 
 #### Scenario: Marie's timeline
 - **WHEN** Marie's card is shown
@@ -415,7 +236,7 @@ the person's own entries SHALL select that fact.
 
 #### Scenario: Selecting an entry
 - **WHEN** the reader activates the entry for Marie's birth in the timeline section
-- **THEN** the card of her birth is shown
+- **THEN** nothing opens, the entry being text, and activating the entry of her husband's death selects Pierre Curie
 
 #### Scenario: A place in an entry
 - **WHEN** the reader activates the place of an entry in the timeline section
@@ -439,106 +260,6 @@ tile of a file on another card, and has no row in the list.
 - **WHEN** the reader chooses the media card of the family photograph from Marie's
   media
 - **THEN** the card shows the media card of `@O5@`
-
-### Requirement: A tab holds one selected record
-
-A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
-source or a multimedia record of its file, or a place or an event that the file names. It SHALL be selected by activating a
-person's card, a family node, a name or a lifeline in Graph or Timeline; by
-activating a row of the list; by activating a relative, a citation, a person, a
-family, a source or a media record in the card; by following a link into the file
-and by choosing a record with **Go to record**, where the record is of one of those
-four kinds; and in Source mode by the cursor, as the requirement on Source says.
-Selecting another record SHALL replace the first. Selecting SHALL show the record in
-the card, SHALL NOT change the tab's mode, SHALL NOT open another tab and SHALL NOT
-write to the file.
-
-The selection SHALL belong to the tab and to the record, not to what is drawn. It
-SHALL be kept when the tab changes mode, and when the workspace is closed and
-reopened. It SHALL end when the record no longer exists in the file and when the tab is navigated to another file, and SHALL NOT be shown while the Genealogy interface is off.
-A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected or shown, and a saved selection SHALL be kept in the tab's state unused, to come back when the interface is turned on. A state handed to a tab for the same file that names no selection SHALL leave the selection as it is. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
-
-While a record is selected the list SHALL mark its row as selected in List mode. A
-fact of a person or a family SHALL be selectable on its card, and selecting it SHALL select
-its event, whose card shows it; the record it belongs to is selected from the link at the top of that card.
-
-In Graph and Timeline mode a selected person SHALL be marked in the view, as the
-requirements of those views say. In List mode the row of a selected person, family
-or source SHALL be marked, as the requirements of the list say. A selected family,
-source or media record has no card or row to mark in Graph or Timeline, and while one
-is selected nobody is marked there; a media record has no row in the list.
-
-#### Scenario: From a card in the graph
-- **WHEN** the tab is in Graph mode and the reader activates Irène's card
-- **THEN** the tab stays in Graph mode, Irène's card is marked selected, the card
-  shows Irène Joliot-Curie, and no other tab is open
-
-#### Scenario: From a row in the timeline
-- **WHEN** the tab is in Timeline mode and the reader activates Marie's lifeline
-- **THEN** the tab stays in Timeline mode, her row is marked selected, and the
-  card shows Marie Skłodowska-Curie
-
-#### Scenario: From a family node
-- **WHEN** the tab is in Graph mode and the reader activates the node between
-  Pierre Curie and Marie
-- **THEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie,
-  and no card of the graph is marked selected
-
-#### Scenario: From the list
-- **WHEN** the tab is in List mode and the reader activates Marie's row
-- **THEN** the tab stays in List mode, her row is marked selected, and the card shows
-  her
-
-#### Scenario: A family row in the list
-- **WHEN** the tab is in List mode and the reader activates the Curies' row among
-  the families
-- **THEN** the tab stays in List mode, the card shows the Curies' family, and
-  that row is marked selected
-
-#### Scenario: Kept across the modes
-- **WHEN** Marie is selected in Graph mode and the reader switches to Timeline
-  mode
-- **THEN** her row is marked selected, the card still shows her, and the list,
-  when shown, marks her row
-
-#### Scenario: Kept by the workspace
-- **WHEN** Marie is selected in a tab in Graph mode, zoomed in and moved, and
-  Obsidian is restarted
-- **THEN** the tab is in Graph mode at that zoom and position with Marie's card
-  marked selected, and the card shows Marie
-
-#### Scenario: A record with no card
-- **WHEN** Marie is selected and the reader follows `[[curie.ged#@N1@]]`
-- **THEN** the tab switches to Source mode at that note's record, and the card
-  still shows Marie
-
-#### Scenario: The record goes
-- **WHEN** Marie is selected in Graph mode and her record is removed from the file
-  on disk
-- **THEN** nobody is selected, the card says to select a record, and no row of
-  the list is marked
-
-#### Scenario: The interface is turned off
-- **WHEN** Marie is selected in Graph mode and the reader turns the Genealogy
-  interface off
-- **THEN** the tab shows the source, the card is closed, and no row of the list is
-  marked; turning the interface on again shows Marie selected
-
-#### Scenario: Another file
-- **WHEN** Marie is selected in a tab and the same tab is navigated to another
-  GEDCOM file
-- **THEN** nothing is selected in the tab
-
-#### Scenario: A saved record the file no longer has
-- **WHEN** a tab was saved with `@I99@` selected, which the file does not declare,
-  and Obsidian is restarted
-- **THEN** nothing is selected, the card says to select a record, and no row of the
-  list is marked
-
-#### Scenario: Selecting a fact and going back
-- **WHEN** the reader selects Marie's birth on her card and then presses her name at the
-  top of the card of her birth
-- **THEN** the card shows Marie
 
 ### Requirement: The card lives in the right sidebar and follows the GEDCOM tab
 
@@ -720,8 +441,194 @@ select the record under the cursor where it has a card.
   switches to Graph mode
 - **THEN** Pierre Curie is selected, and the card shows Pierre Curie
 
+## ADDED Requirements
+
+### Requirement: The card fits a narrow panel and a phone, with no header
+
+The card SHALL be readable and usable in one column at the width a sidebar has,
+from 320 pixels up, and at a phone's width, without horizontal scrolling of the
+card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. A place named in a fact or an entry SHALL open the card of that place. Redrawing the card for the same record — the file changing —
+SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record or a place SHALL scroll the card to
+the top.
+
+#### Scenario: A person card at a sidebar's width
+- **WHEN** Marie's card is shown 320 pixels wide
+- **THEN** every line of her record and every relative is visible without scrolling sideways
+
+#### Scenario: A person card on a phone
+- **WHEN** Marie's card is shown 390 pixels wide
+- **THEN** every line of her record and every relative is visible without scrolling sideways
+
+#### Scenario: Tapping a place in a fact
+- **WHEN** the reader taps `Warsaw, Congress Poland` in Marie's birth
+- **THEN** the card of that place is shown
+
+#### Scenario: Another record
+- **WHEN** the card is scrolled to the end of Marie's card and the reader activates
+  Pierre Curie in her family section
+- **THEN** Pierre Curie's card is shown from its top
+
+#### Scenario: The header stays
+- **WHEN** the reader scrolls to the end of Marie's card
+- **THEN** the card has no header: no bar, no Back or Forward control, and its body began at the top of the card
+
+### Requirement: A tab holds at most one selected record
+
+A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
+source or a multimedia record of its file, or or a place that the file names. It SHALL be selected by activating a
+person's card, a family node, a name or a lifeline in Graph or Timeline; by
+activating a row of the list; by activating a relative, a citation, a person, a
+family, a source or a media record in the card; by following a link into the file
+and by choosing a record with **Go to record**, where the record is of one of those
+four kinds; and in Source mode by the cursor, as the requirement on Source says.
+Selecting another record SHALL replace the first. Selecting SHALL show the record in
+the card, SHALL NOT change the tab's mode, SHALL NOT open another tab and SHALL NOT
+write to the file.
+
+The selection SHALL belong to the tab and to the record, not to what is drawn. It
+SHALL be kept when the tab changes mode, and when the workspace is closed and
+reopened. It SHALL end when the record no longer exists in the file and when the tab is navigated to another file, and SHALL NOT be shown while the Genealogy interface is off.
+A record of another kind — a note, a repository, a submitter, the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected or shown, and a saved selection SHALL be kept in the tab's state unused, to come back when the interface is turned on. A state handed to a tab for the same file that names no selection SHALL leave the selection as it is. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
+
+While a record is selected the list SHALL mark its row as selected in List mode. A
+fact of a person or a family SHALL NOT be selectable on its card: its lines are rows of the tree.
+
+In Graph and Timeline mode a selected person SHALL be marked in the view, as the
+requirements of those views say. In List mode the row of a selected person, family
+or source SHALL be marked, as the requirements of the list say. A selected family,
+source or media record has no card or row to mark in Graph or Timeline, and while one
+is selected nobody is marked there; a media record has no row in the list.
+
+#### Scenario: From a card in the graph
+- **WHEN** the tab is in Graph mode and the reader activates Irène's card
+- **THEN** the tab stays in Graph mode, Irène's card is marked selected, the card
+  shows Irène Joliot-Curie, and no other tab is open
+
+#### Scenario: From a row in the timeline
+- **WHEN** the tab is in Timeline mode and the reader activates Marie's lifeline
+- **THEN** the tab stays in Timeline mode, her row is marked selected, and the
+  card shows Marie Skłodowska-Curie
+
+#### Scenario: From a family node
+- **WHEN** the tab is in Graph mode and the reader activates the node between
+  Pierre Curie and Marie
+- **THEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie,
+  and no card of the graph is marked selected
+
+#### Scenario: From the list
+- **WHEN** the tab is in List mode and the reader activates Marie's row
+- **THEN** the tab stays in List mode, her row is marked selected, and the card shows
+  her
+
+#### Scenario: A family row in the list
+- **WHEN** the tab is in List mode and the reader activates the Curies' row among
+  the families
+- **THEN** the tab stays in List mode, the card shows the Curies' family, and
+  that row is marked selected
+
+#### Scenario: Kept across the modes
+- **WHEN** Marie is selected in Graph mode and the reader switches to Timeline
+  mode
+- **THEN** her row is marked selected, the card still shows her, and the list,
+  when shown, marks her row
+
+#### Scenario: Kept by the workspace
+- **WHEN** Marie is selected in a tab in Graph mode, zoomed in and moved, and
+  Obsidian is restarted
+- **THEN** the tab is in Graph mode at that zoom and position with Marie's card
+  marked selected, and the card shows Marie
+
+#### Scenario: A record with no card
+- **WHEN** Marie is selected and the reader follows `[[curie.ged#@N1@]]`
+- **THEN** the tab switches to Source mode at that note's record, and the card
+  still shows Marie
+
+#### Scenario: The record goes
+- **WHEN** Marie is selected in Graph mode and her record is removed from the file
+  on disk
+- **THEN** nobody is selected, the card says to select a record, and no row of
+  the list is marked
+
+#### Scenario: The interface is turned off
+- **WHEN** Marie is selected in Graph mode and the reader turns the Genealogy
+  interface off
+- **THEN** the tab shows the source, the card is closed, and no row of the list is
+  marked; turning the interface on again shows Marie selected
+
+#### Scenario: Another file
+- **WHEN** Marie is selected in a tab and the same tab is navigated to another
+  GEDCOM file
+- **THEN** nothing is selected in the tab
+
+#### Scenario: A saved record the file no longer has
+- **WHEN** a tab was saved with `@I99@` selected, which the file does not declare,
+  and Obsidian is restarted
+- **THEN** nothing is selected, the card says to select a record, and no row of the
+  list is marked
+
+### Requirement: Show in source for a record and a relative
+
+Every relative that is not in the file, and the record a card shows
+SHALL offer **Show in source**. It SHALL switch the tab to Source mode and select,
+and scroll into view, exactly the lines of the file that state it.
+
+#### Scenario: Showing a whole record
+- **WHEN** the reader chooses Show in source on Pierre Curie's card
+- **THEN** the lines of Pierre Curie's record are selected and in view
+
+### Requirement: An event is one row in a family section and at a place
+
+The events of a family under a spouse in a person's family section and the
+events at a place on the card of that place SHALL each be drawn as one **event row**: its date as the file writes it on
+the left, a dash where it has none; its name in the reader's language, which opens nothing, with its text where it has
+one; its place, as a link to the place, under the name; and, where it cites any source, a quiet dot after the name, which says
+how many in its accessible name and title; an event that cites none carries no dot. On the card of a
+place the row SHALL also name the record the event belongs to, as a link that selects that record, under the name. On a phone each link SHALL be a target of its own that the
+other does not cover.
+The timeline of a person SHALL keep its own form, a chronology, and SHALL show the same detail of an
+event. An event that states nothing SHALL be drawn as *recorded, no details*,.
+
+#### Scenario: A fact on a person's card
+- **WHEN** Marie's card shows her marriage under Pierre in her family section
+- **THEN** its row shows `26 JUL 1895` on the left, names `Marriage`, shows `Sceaux, France` as a link under the name, and carries no dot
+
+#### Scenario: A fact that cites a source
+- **WHEN** a marriage carries `2 SOUR @S2@` and a person's family section shows it
+- **THEN** its row shows a dot after the name, which says it cites one source
+
+#### Scenario: An event at a place
+- **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
+- **THEN** the row shows `7 NOV 1867`, names `Birth`, and links `Marie Skłodowska-Curie` under the name
+
+#### Scenario: The record from a place
+- **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
+- **THEN** Marie's card is shown and the list, where it is in view, shows the people with her marked
+
 ## REMOVED Requirements
 
 ### Requirement: Moving between records in the card
 **Reason**: The header of the card, which held Back and Forward and the record's name, is removed at the user's request of 2026-11-09 («убери из правых вкладок шапку с историей»); the history of the records a card has shown had no other way to be used.
 **Migration**: Select the record again in the graph, the timeline or the list, from a relative or a link in the card, or with *Go to record*.
+### Requirement: The card fits a narrow panel and a phone
+**Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»). It is restated, without the events, under a new name.
+**Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.
+
+### Requirement: A tab holds one selected record
+**Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»). It is restated, without the events, under a new name.
+**Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.
+
+### Requirement: Show in source
+**Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»). It is restated, without the facts, under a new name.
+**Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.
+
+### Requirement: An event is one row wherever a card lists it
+**Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»). It is restated, with a name that opens nothing, under a new name.
+**Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.
+
+### Requirement: The event card
+**Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»).
+**Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.
+
+### Requirement: An event stays selected while the cursor is in its record
+**Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»).
+**Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.

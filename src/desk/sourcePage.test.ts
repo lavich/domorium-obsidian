@@ -14,7 +14,6 @@ let host: ReturnType<typeof pageHost>;
 function pageHost() {
   return {
     openRecord: vi.fn<PageHost["openRecord"]>(),
-    select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;

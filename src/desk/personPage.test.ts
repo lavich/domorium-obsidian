@@ -6,7 +6,7 @@ import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
-import { factsOf, renderPersonPage, type FactKey, type PageHost } from "./personPage";
+import { factsOf, renderPersonPage, type PageHost } from "./personPage";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -14,7 +14,6 @@ let host: ReturnType<typeof pageHost>;
 function pageHost() {
   return {
     openRecord: vi.fn<PageHost["openRecord"]>(),
-    select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
@@ -29,15 +28,14 @@ afterEach(resetLanguage);
 
 function draw(
   xref: string,
-  { selected = null, index = curieIndex(), open }:
-    { selected?: FactKey | null; index?: GenealogyIndex; open?: string[] } = {},
+  { index = curieIndex(), open }: { index?: GenealogyIndex; open?: string[] } = {},
 ): void {
   const person = index.person(xref);
   if (!person) {
     throw new Error(`no person ${xref}`);
   }
   container.empty();
-  renderPersonPage(container, person, index, { selected, ...(open ? { open: new Set(open) } : {}) }, host);
+  renderPersonPage(container, person, index, { ...(open ? { open: new Set(open) } : {}) }, host);
 }
 
 const bornIn = (date: string): GenealogyIndex =>
@@ -223,21 +221,24 @@ describe("the person card", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I2@");
   });
 
-  it("opens the card of an event from the label of its row", () => {
+  it("draws the label of a fact as text that opens nothing, and keeps its place a link", () => {
     draw("@I1@");
-    treeRow("Birth")?.querySelector<HTMLElement>("button.gedcom-tree-label")?.click();
-    treeRow("Death")?.querySelector<HTMLElement>("button.gedcom-tree-label")?.click();
+    const birth = treeRow("Birth");
 
-    expect(host.openRecord.mock.calls).toEqual([["event:@I1@:BIRT:0"], ["event:@I1@:DEAT:0"]]);
-    expect(host.select).not.toHaveBeenCalled();
+    expect(birth?.querySelector("button.gedcom-tree-label")).toBeNull();
+    treeRow("Sex")?.querySelector<HTMLElement>(".gedcom-tree-label")?.click();
+    expect(host.openRecord).not.toHaveBeenCalled();
+    expect(birth?.querySelector(".gedcom-tree-summary .gedcom-desk-link")?.textContent).toBe("Warsaw, Congress Poland");
   });
 
-  it("opens the card of an event of a family the person married into, under the family", () => {
+  it("draws the name of a marriage under the family as text that opens nothing", () => {
     draw("@I1@");
     const marriage = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-fact")].find((row) => row.textContent?.includes("Marriage"));
     marriage?.click();
+    marriage?.querySelector<HTMLElement>(".gedcom-desk-fact-name")?.click();
 
-    expect(host.openRecord).toHaveBeenCalledWith("event:@F3@:MARR:0");
+    expect(marriage?.querySelector("button.gedcom-desk-fact-name")).toBeNull();
+    expect(host.openRecord).not.toHaveBeenCalled();
   });
 
   it("opens the place of a fact, and not the event, when the place is pressed", () => {
@@ -247,16 +248,12 @@ describe("the person card", () => {
     expect(host.openRecord.mock.calls).toEqual([["place:warsaw, congress poland"]]);
   });
 
-  it("shows in source the selected fact, or else the whole record", () => {
+  it("shows in source the whole record", () => {
     const index = curieIndex();
-    const marie = index.person("@I1@");
     draw("@I1@", { index });
     container.querySelector<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")?.click();
-    expect(host.showInSource).toHaveBeenLastCalledWith(marie?.range);
 
-    draw("@I1@", { index, selected: "p:0" });
-    container.querySelector<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")?.click();
-    expect(host.showInSource).toHaveBeenLastCalledWith(marie?.events[0]?.range);
+    expect(host.showInSource).toHaveBeenLastCalledWith(index.person("@I1@")?.range);
   });
 
   it("shows a parent the file does not declare, with the way to its line", () => {
@@ -305,7 +302,7 @@ describe("the sections of a person card", () => {
       container,
       person,
       curieIndex(),
-      { selected: null, media: person.media.map(({ at }) => ({ content: { kind: "missing" as const, target: "marie.jpg" }, at })) },
+      { media: person.media.map(({ at }) => ({ content: { kind: "missing" as const, target: "marie.jpg" }, at })) },
       host,
     );
 
@@ -332,7 +329,7 @@ describe("the sections of a person card", () => {
     if (!person) {
       throw new Error("no Marie");
     }
-    renderPersonPage(container, person, index, { selected: null, folded }, host);
+    renderPersonPage(container, person, index, { folded }, host);
     container.querySelector<HTMLElement>(".gedcom-desk-fold-button")?.click();
 
     expect(container.querySelector(".gedcom-desk-fold-body")?.hasAttribute("hidden")).toBe(false);
@@ -346,7 +343,7 @@ describe("the sections of a person card", () => {
     if (!person) {
       throw new Error("no Marie");
     }
-    renderPersonPage(container, person, index, { selected: null, open: new Set(["timeline"]) }, host);
+    renderPersonPage(container, person, index, { open: new Set(["timeline"]) }, host);
 
     expect([...container.querySelectorAll(".gedcom-desk-fold-body")].map((body) => body.hasAttribute("hidden"))).toEqual([false]);
   });
@@ -366,13 +363,14 @@ describe("the sections of a person card", () => {
     ]);
   });
 
-  it("opens the card of an event from the timeline, and a relative's entry opens the relative", () => {
+  it("draws the person's own entry as text that opens nothing, and a relative's entry opens the relative", () => {
     draw("@I1@", { open: ["timeline"] });
     const entries = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
     entries.find((node) => node.textContent === "Birth")?.click();
     entries.find((node) => node.textContent === "Death of husband Pierre Curie")?.click();
 
-    expect(host.openRecord.mock.calls).toEqual([["event:@I1@:BIRT:0"], ["@I2@"]]);
+    expect(entries.find((node) => node.textContent === "Birth")?.hasAttribute("disabled")).toBe(true);
+    expect(host.openRecord.mock.calls).toEqual([["@I2@"]]);
   });
 
   it("opens the place of a timeline entry", () => {

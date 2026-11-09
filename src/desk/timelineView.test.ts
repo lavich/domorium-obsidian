@@ -15,7 +15,6 @@ let host: ReturnType<typeof pageHost>;
 function pageHost() {
   return {
     openRecord: vi.fn<PageHost["openRecord"]>(),
-    select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
@@ -81,14 +80,13 @@ describe("the timeline", () => {
       .toBe("Physicist and chemist");
   });
 
-  it("opens a relative, and the card of one of the person's events", () => {
+  it("opens a relative, and the person's own entry opens nothing", () => {
     draw();
     const whats = [...container.querySelectorAll<HTMLElement>(".gedcom-desk-moment-what")];
     whats.find((node) => node.textContent?.startsWith("Death of husband"))?.click();
     whats.find((node) => node.textContent === "Birth")?.click();
 
-    expect(host.openRecord).toHaveBeenCalledWith("@I2@");
-    expect(host.openRecord).toHaveBeenCalledWith("event:@I1@:BIRT:0");
+    expect(host.openRecord.mock.calls).toEqual([["@I2@"]]);
   });
 
   it("opens the place of an entry", () => {

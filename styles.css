@@ -406,34 +406,6 @@ h3.gedcom-desk-subsection[data-count]::after {
   padding: 0 0 var(--size-2-1);
 }
 
-.gedcom-related {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--size-2-2) var(--size-4-2);
-}
-
-.gedcom-related > .gedcom-detail {
-  flex-basis: 100%;
-}
-
-.gedcom-related-kind,
-.gedcom-related-role,
-.gedcom-related-phrase {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-note + .gedcom-note {
-  margin-top: var(--size-4-3);
-  padding-top: var(--size-4-3);
-  border-top: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-related + .gedcom-related {
-  margin-top: var(--size-2-3);
-}
-
 .is-mobile button.gedcom-detail-more {
   min-height: 44px;
 }
@@ -527,19 +499,10 @@ button.gedcom-desk-link:hover {
   border-radius: var(--radius-s);
   text-align: start;
   color: var(--text-normal);
-  cursor: pointer;
 }
 
 .gedcom-desk-fact.is-event {
   grid-template-columns: minmax(70px, 96px) 1fr;
-}
-
-.gedcom-desk-fact.is-inert {
-  cursor: default;
-}
-
-.gedcom-desk-fact:not(.is-inert):hover {
-  background: var(--background-modifier-hover);
 }
 
 .gedcom-desk-fact-date {
@@ -561,26 +524,8 @@ button.gedcom-desk-link:hover {
   min-width: 0;
 }
 
-button.gedcom-desk-fact-name {
-  height: auto;
-  min-height: 0;
-  padding: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font: inherit;
+.gedcom-desk-fact-name {
   color: var(--text-normal);
-  cursor: pointer;
-}
-
-button.gedcom-desk-fact-name:disabled {
-  color: var(--text-muted);
-}
-
-button.gedcom-desk-fact-name:disabled {
-  cursor: default;
 }
 
 .gedcom-desk-fact-value {
@@ -686,23 +631,6 @@ button.gedcom-desk-person:hover {
   }
 }
 
-.gedcom-desk-event-owner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--size-2-3);
-  margin-bottom: var(--size-2-3);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-event-owner .gedcom-desk-link {
-  text-align: start;
-}
-
-.gedcom-desk-event-kind {
-  color: var(--text-muted);
-}
-
 h2.gedcom-desk-fold-heading {
   margin: var(--size-4-4) 0 var(--size-2-2);
 }
@@ -753,7 +681,6 @@ button.gedcom-desk-fold-button::after {
 
 button.gedcom-desk-link:focus-visible,
 button.gedcom-desk-person:focus-visible,
-button.gedcom-desk-fact-name:focus-visible,
 button.gedcom-desk-moment-what:focus-visible,
 button.gedcom-desk-fold-button:focus-visible,
 button.gedcom-desk-media-stage:focus-visible,
@@ -763,11 +690,6 @@ button.gedcom-desk-tile-face:focus-visible {
 }
 
 @media (pointer: coarse) {
-  .gedcom-desk-event-owner {
-    min-height: 44px;
-    align-items: center;
-  }
-
   button.gedcom-desk-person,
   button.gedcom-desk-moment-what,
   button.gedcom-desk-fold-button {
@@ -776,12 +698,6 @@ button.gedcom-desk-tile-face:focus-visible {
 
   .gedcom-desk-fact {
     position: relative;
-  }
-
-  button.gedcom-desk-fact-name::after {
-    content: "";
-    position: absolute;
-    inset: 0;
   }
 
   button.gedcom-desk-link {
@@ -794,11 +710,6 @@ button.gedcom-desk-tile-face:focus-visible {
     position: absolute;
     inset: -13px 0;
   }
-}
-
-.is-mobile .gedcom-desk-event-owner {
-  min-height: 44px;
-  align-items: center;
 }
 
 .is-mobile button.gedcom-desk-person,
@@ -820,12 +731,6 @@ button.gedcom-desk-tile-face:focus-visible {
 
 .is-mobile .gedcom-desk-fact .gedcom-desk-link::after {
   inset: -12px 0;
-}
-
-.is-mobile button.gedcom-desk-fact-name::after {
-  content: "";
-  position: absolute;
-  inset: 0;
 }
 
 .is-mobile button.gedcom-desk-link {
@@ -2518,25 +2423,6 @@ button.gedcom-fg-pop-open {
   overflow-wrap: anywhere;
 }
 
-.gedcom-tree button.gedcom-tree-label {
-  height: auto;
-  min-height: 0;
-  padding: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  font: inherit;
-  text-align: start;
-  white-space: normal;
-  color: var(--text-normal);
-  cursor: pointer;
-}
-
-.gedcom-tree button.gedcom-tree-label:hover {
-  background: none;
-  text-decoration: underline;
-}
-
 .gedcom-tree .gedcom-tree-main {
   display: flex;
   flex: 1 1 9rem;
@@ -2663,7 +2549,6 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree button.gedcom-tree-control:focus-visible,
-.gedcom-tree button.gedcom-tree-label:focus-visible,
 .gedcom-tree button.gedcom-tree-chevron:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
@@ -2719,27 +2604,6 @@ button.gedcom-fg-pop-open {
   }
 }
 
-.is-mobile .gedcom-tree button.gedcom-tree-label {
-  position: relative;
-}
-
-.is-mobile .gedcom-tree button.gedcom-tree-label::after {
-  content: "";
-  position: absolute;
-  inset: -12px 0;
-}
-
-@media (pointer: coarse) {
-  .gedcom-tree button.gedcom-tree-label {
-    position: relative;
-  }
-
-  .gedcom-tree button.gedcom-tree-label::after {
-    content: "";
-    position: absolute;
-    inset: -12px 0;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .gedcom-tree-bar {

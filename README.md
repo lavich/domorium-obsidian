@@ -109,17 +109,12 @@ their parents (marked adoptive, foster or sealing where the file says so), sibli
 spouses with the events of each marriage, and children, each of whom selects that person; their
 media; a **timeline** of their events and their close relatives', folded under its heading,
 which shows how many entries it holds. A family's card and a source's card show their
-heading, their own lines as a tree in the same way, and their pictures, and nothing else; a section the record holds nothing for is left out. Tapping a fact, or
-an entry of the timeline, opens the card of its event: the person or the family it
-belongs to as a link above its name, its date and place under it, then everything else
-the event states — age, cause, agency, address, contacts, what the place states, notes,
-associates, and the sources it cites; a place named there opens the card of that place, which lists
-the events held there as the facts of a person are listed, and a list in view
-shows the event or the place. Every control of a card shows a focus ring for the
+heading, their own lines as a tree in the same way, and their pictures, and nothing else; a section the record holds nothing for is left out. A place named in a fact or an entry of the timeline opens the card of that place, which lists
+the events held there, each with a link to the person or the family it belongs to. Every control of a card shows a focus ring for the
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a
-source, a place, an event and a media record have cards of their own, and the card has no header: select a record again in the
+source, a place and a media record have cards of their own, and the card has no header: select a record again in the
 graph, the timeline or the list to return to it. The card reads the file and
-never writes to it. **Show in source** on a card, a fact or a missing relative
+never writes to it. **Show in source** on a card or a missing relative
 switches to Source with exactly those lines selected, which is where a
 correction is made.
 

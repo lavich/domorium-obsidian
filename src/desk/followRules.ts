@@ -1,5 +1,4 @@
 import type { DeskMode, Origin } from "./deskState";
-import { eventOwner } from "./eventRows";
 
 export interface CursorRest {
   interfaceOn: boolean;
@@ -10,7 +9,7 @@ export interface CursorRest {
 }
 
 export function shouldFollowCursor({ interfaceOn, mode, selected, atCursor, hasCard }: CursorRest): boolean {
-  return interfaceOn && mode === "source" && atCursor !== undefined && hasCard && atCursor !== selected && atCursor !== eventOwner(selected);
+  return interfaceOn && mode === "source" && atCursor !== undefined && hasCard && atCursor !== selected;
 }
 
 export function adoptsFollow<T>(followed: T | null, candidate: T, active: T | null): boolean {

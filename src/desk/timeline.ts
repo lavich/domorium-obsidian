@@ -1,8 +1,6 @@
-import { eventIdOf } from "./eventRows";
 import type { GenealogyIndex, Person, PersonEvent, PersonRow } from "../genealogy";
 import { t, type MessageKey } from "../i18n";
 import { eventName, personName } from "./labels";
-import type { FactKey } from "./personPage";
 
 export interface TimelineEntry {
   year?: number;
@@ -10,8 +8,6 @@ export interface TimelineEntry {
   label: string;
   own: boolean;
   relative?: { xref: string; name: string };
-  fact?: FactKey;
-  eventId?: string;
 }
 
 export interface Timeline {
@@ -33,18 +29,16 @@ export function timelineOf(person: Person, index: GenealogyIndex): Timeline {
   const own: TimelineEntry[] = [];
   const kin: TimelineEntry[] = [];
 
-  person.events.forEach((event, at) => {
+  person.events.forEach((event) => {
     own.push({
       year: event.date?.year,
       event,
       label: eventName(event),
       own: true,
-      fact: `p:${at}`,
-      ...(person.xref === undefined ? {} : { eventId: eventIdOf(person.xref, person.events, event) }),
     });
   });
-  person.unions.forEach((union, u) => {
-    union.events.forEach((event, at) => {
+  person.unions.forEach((union) => {
+    union.events.forEach((event) => {
       const spouse = union.spouse;
       own.push({
         year: event.date?.year,
@@ -53,8 +47,6 @@ export function timelineOf(person: Person, index: GenealogyIndex): Timeline {
           ? t("timeline.with", { event: eventName(event), name: personName(spouse) })
           : eventName(event),
         own: true,
-        fact: `u:${u}:${at}`,
-        ...(union.family.xref === undefined ? {} : { eventId: eventIdOf(union.family.xref, union.events, event) }),
         ...(spouse?.xref ? { relative: { xref: spouse.xref, name: personName(spouse) } } : {}),
       });
     });

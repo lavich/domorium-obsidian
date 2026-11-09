@@ -46,7 +46,7 @@ The proposed scope:
 
 ## Non-goals
 
-- An Events kind in the List, and a saved Events kind, which opens the people.
+- A card for an event, a selection of an event, the opening of an event from its name in the tree, from a row of the family section, from a place's card or from a timeline entry, and an Events kind in the List, and a saved Events kind, which opens the people.
 - A header on the card, Back and Forward between the records it has shown, and the scroll position restored on returning to a record.
 - On the family card, a section of spouses and children and the marks of a child who is adopted, foster or sealing; on the source card, the repository's address and web address and the list of the records that cite it. The tree shows the pointers, and the person card's family section is unchanged.
 - An Evidence section, or a list of the notes of the vault that link to a record, on any card.

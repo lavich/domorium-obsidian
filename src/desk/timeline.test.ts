@@ -60,9 +60,9 @@ describe("a person's timeline", () => {
   });
 
   it("tells the person's own entries from their relatives'", () => {
-    const own = of("@I1@").entries.filter((entry) => entry.own).map((entry) => entry.fact);
+    const own = of("@I1@").entries.filter((entry) => entry.own).map((entry) => entry.label);
 
-    expect(own).toEqual(["p:0", "u:0:0", "p:1"]);
+    expect(own).toEqual(["Birth", "Marriage with Pierre Curie", "Death"]);
   });
 
   it("leaves out a relative's event after the person's death", () => {

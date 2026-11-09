@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { countLines, renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
+import { renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
 
 beforeAll(installObsidianDom);
 
@@ -41,7 +41,6 @@ describe("a line as the file writes it", () => {
 
     expect(rows(".gedcom-detail-label")).toEqual(["_TRIBE", "_CLAN", "_SINCE"]);
     expect(box.querySelector(".gedcom-detail .gedcom-detail .gedcom-detail .gedcom-detail-value")?.textContent).toBe("1800");
-    expect(countLines(record.children)).toBe(3);
   });
 
   it("names a standard tag in the reader's language and gives every row the number of its line", () => {

@@ -18,22 +18,14 @@ import type { RecordLine } from "../genealogy";
 import { eventName, personName, shortPlace, yearsOf } from "./labels";
 import { linkButton } from "./dom";
 import { renderEventRow, type EventRowContent } from "./factRow";
-import { eventIdOf } from "./eventRows";
 import { renderGallery, renderPortrait, type MediaItem } from "./media";
 import { timelineOf } from "./timeline";
 import { renderTimeline } from "./timelineView";
 import type { PortraitContent } from "./media";
 
-/**
- * `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family
- * they married into, `f:<event>` for a family's on its own page.
- */
-export type FactKey = string;
-
 export interface Fact {
-  key: FactKey;
-  /** The id the event is selected by; none where its record has no identifier. */
-  eventId?: string;
+  /** `p:<event>` for a person's own event, `u:<union>:<event>` for one of a family they married into, `f:<event>` for a family's own. */
+  key: string;
   event: PersonEvent;
   /** The other spouse, for an event of a family the person married into. */
   spouse?: PersonRow;
@@ -41,7 +33,6 @@ export interface Fact {
 
 export interface PageHost {
   openRecord(xref: string): void;
-  select(key: FactKey | null): void;
   showInSource(range: Range): void;
   openFile(path: string): void;
   setIcon?(element: HTMLElement, icon: string): void;
@@ -49,7 +40,6 @@ export interface PageHost {
 }
 
 export interface PersonPageOptions {
-  selected: FactKey | null;
   /** The files the record links, resolved by the host; none where omitted. */
   media?: MediaItem[];
   /** The folded sections the reader has opened, and where a change of one is told. */
@@ -60,25 +50,18 @@ export interface PersonPageOptions {
 }
 
 export function factsOf(person: Person): Fact[] {
-  const owner = person.xref;
   const own = person.events.map((event, at) => ({
     key: `p:${at}`,
-    ...(owner === undefined ? {} : { eventId: eventIdOf(owner, person.events, event) }),
     event,
   }));
   const married = person.unions.flatMap((union, u) =>
     union.events.map((event, at) => ({
       key: `u:${u}:${at}`,
-      ...(union.family.xref === undefined ? {} : { eventId: eventIdOf(union.family.xref, union.events, event) }),
       event,
       ...(union.spouse === undefined ? {} : { spouse: union.spouse }),
     })),
   );
   return [...own, ...married];
-}
-
-export function factByKey(person: Person, key: FactKey | null): Fact | undefined {
-  return key === null ? undefined : factsOf(person).find((fact) => fact.key === key);
 }
 
 export function renderPersonPage(
@@ -163,9 +146,8 @@ function renderHeading(
       subtitle.setAttribute("data-line", String(sex.range.start.line));
     }
   }
-  const selected = factByKey(person, options.selected);
   linkButton(heading, t("desk.showInSource"), () => {
-    host.showInSource(selected?.event.range ?? person.range);
+    host.showInSource(person.range);
   });
 }
 
@@ -173,8 +155,6 @@ function rowOf(fact: Fact, own: boolean, withSpouse = true): EventRowContent {
   const { date, place, value } = fact.event;
   return {
     name: eventName(fact.event),
-    focusKey: fact.key,
-    ...(fact.eventId === undefined ? {} : { open: fact.eventId }),
     ...(own && fact.spouse === undefined ? { line: fact.event.range.start.line } : {}),
     detail: {
       ...(date?.text ? { date: date.text } : {}),

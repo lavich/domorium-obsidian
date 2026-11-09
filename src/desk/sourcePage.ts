@@ -23,7 +23,7 @@ export function renderSourcePage(
   });
   linkButton(heading, t("desk.showInSource"), () => host.showInSource(source.range));
 
-  drawTree(page, source.xref === undefined ? undefined : index.record(source.xref), index, host, { selected: null, ...options }, []);
+  drawTree(page, source.xref === undefined ? undefined : index.record(source.xref), index, host, options, []);
 
   renderGallery(page, media, host);
 }

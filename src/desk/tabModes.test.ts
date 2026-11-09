@@ -46,19 +46,6 @@ describe("the record a tab selects on leaving Source", () => {
     expect(modes.selected).toBe("@I3@");
   });
 
-  it("keeps the event it shows while the cursor is in its record, and leaves it for another record", () => {
-    const modes = tab("graph");
-    modes.select("event:@I1@:BIRT:0", index);
-    modes.setMode("source", at());
-
-    expect(modes.setMode("graph", at("@I1@"))).toMatchObject({ changed: true, selectionChanged: false });
-    expect(modes.selected).toBe("event:@I1@:BIRT:0");
-
-    modes.setMode("source", at());
-    expect(modes.setMode("graph", at("@I2@")).selectionChanged).toBe(true);
-    expect(modes.selected).toBe("@I2@");
-  });
-
   it("leaves the selection alone for a record that has no card", () => {
     const modes = tab("source");
     modes.select("@I1@", index);
@@ -150,24 +137,10 @@ describe("the selected record", () => {
     expect(modes.shownRecord()).toBeNull();
   });
 
-  it("ends when a text change removes the event it shows, and keeps it while the event stays", () => {
+  it("selects nothing for an event id, which names no record of a tab", () => {
     const modes = tab("graph");
-    const event = "event:@I1@:BIRT:0";
-    const kept = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n1 BIRT\n2 DATE 1867\n0 TRLR\n");
-    const gone = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n0 TRLR\n");
 
-    expect(modes.select(event, kept)).toBe(true);
-    expect(modes.textChanged(kept).selectionCleared).toBe(false);
-    expect(modes.textChanged(gone).selectionCleared).toBe(true);
-    expect(modes.selected).toBeNull();
-  });
-
-  it("drops the second of two events of a tag when the first is removed, since its number now names nothing", () => {
-    const modes = tab("graph");
-    const two = ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 RESI", "2 PLAC One", "1 RESI", "2 PLAC Two"];
-    modes.select("event:@I1@:RESI:1", indexOf(two.join("\n")));
-
-    expect(modes.textChanged(indexOf([...two.slice(0, 3), ...two.slice(5)].join("\n"))).selectionCleared).toBe(true);
+    expect(modes.select("event:@I1@:BIRT:0", index)).toBe(false);
     expect(modes.selected).toBeNull();
   });
 

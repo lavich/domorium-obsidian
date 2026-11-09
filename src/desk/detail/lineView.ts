@@ -25,16 +25,6 @@ export interface DetailContext {
   notes?: { drawn: number; prefix?: string };
 }
 
-/** A context for a body drawn later, whose notes are numbered from its own start so that the order it is opened in does not matter. */
-export function scoped(ctx: DetailContext, name: string): DetailContext {
-  return { ...ctx, notes: { drawn: 0, prefix: `${name}.` } };
-}
-
-/** The lines of a list and of everything beneath them. */
-export function countLines(lines: readonly RecordLine[]): number {
-  return lines.reduce((sum, line) => sum + 1 + countLines(line.children), 0);
-}
-
 /** What a reader calls the record a pointer names, with no identifier. */
 export function recordTitle(index: GenealogyIndex, xref: string): string | undefined {
   const person = index.person(xref);

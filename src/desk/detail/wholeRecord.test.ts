@@ -5,7 +5,6 @@ import type { GenealogyIndex, RecordLine } from "../../genealogy";
 import { resetLanguage } from "../../i18n";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { richIndex, richIndex551 } from "../../testing/rich";
-import { eventIdOf } from "../eventRows";
 import { TreeSession } from "./treeSession";
 import { renderRecordCard, type CardTab, type CardView } from "../recordCard";
 
@@ -30,7 +29,6 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
     mediaItem: () => null,
     portrait: () => null,
     select: vi.fn(),
-    selectFact: vi.fn(),
     showInSource: vi.fn(),
     openFile: vi.fn(),
   };
@@ -66,30 +64,22 @@ function check(index: GenealogyIndex, xref: string): void {
   const missing = ownLines(index, xref).filter((line) => !have.has(line));
   expect(missing, `lines of ${xref} not on its card`).toEqual([]);
 
-  const record = index.person(xref) ?? index.family(xref);
-  for (const event of record?.events ?? []) {
-    const id = eventIdOf(xref, record?.events ?? [], event);
-    const there = drawn(index, id);
-    const line = index.record(xref)?.children.find((one) => one.tag === event.tag && one.range.start.line === event.range.start.line);
-    const absent = (line ? everyLine(line) : []).filter((one) => !there.has(one));
-    expect(absent, `lines of ${id} not on its card`).toEqual([]);
-  }
 }
 
 describe("every line of a record is on a card", () => {
-  it("shows every line of a person in 7.0, and of each of their events, on their cards", () => {
+  it("shows every line of a person in 7.0 on their card", () => {
     check(richIndex(), "@I1@");
   });
 
-  it("shows every line of a family in 7.0, and of each of its events, on its cards", () => {
+  it("shows every line of a family in 7.0 on its card", () => {
     check(richIndex(), "@F3@");
   });
 
-  it("shows every line of a person in 5.5.1, and of each of their events, on their cards", () => {
+  it("shows every line of a person in 5.5.1 on their card", () => {
     check(richIndex551(), "@I1@");
   });
 
-  it("shows every line of a family in 5.5.1, and of each of its events, on its cards", () => {
+  it("shows every line of a family in 5.5.1 on its card", () => {
     check(richIndex551(), "@F1@");
   });
 });
@@ -132,7 +122,7 @@ describe("what the lines of a record say is on the card, not only where they sta
   });
 
   it("shows the phrase of a spouse's age, and a second date and place, on the card of the marriage", () => {
-    const card = said(seven, "event:@F3@:MARR:0");
+    const card = said(seven, "@F3@");
 
     expect(card).toContain("about that");
     expect(card).toContain("ABT 1895");

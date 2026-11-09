@@ -88,6 +88,12 @@ describe("what a tab keeps of the desk", () => {
     });
   });
 
+  it("reads a selection saved as an event as the record it belongs to", () => {
+    expect(readDeskState({ selected: "event:@I1@:BIRT:0" })).toEqual({ selected: "@I1@" });
+    expect(readDeskState({ selected: "event:@F3@:MARR:12" })).toEqual({ selected: "@F3@" });
+    expect(readDeskState({ selected: "place:paris" })).toEqual({ selected: "place:paris" });
+  });
+
   it("keeps a valid list state and drops a bad one", () => {
     expect(readDeskState({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } }))
       .toEqual({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } });
@@ -121,12 +127,11 @@ describe("which records have a card", () => {
     expect(pageKind(index(), "place:atlantis")).toBeNull();
   });
 
-  it("gives an event the file names a card, and one it does not name none", () => {
+  it("gives an event id no card, which no longer has one", () => {
     const curie = curieIndex();
 
-    expect(pageKind(curie, "event:@I1@:BIRT:0")).toBe("event");
-    expect(pageKind(curie, "event:@F3@:MARR:0")).toBe("event");
-    expect(pageKind(curie, "event:@I1@:BIRT:999")).toBeNull();
+    expect(pageKind(curie, "event:@I1@:BIRT:0")).toBeNull();
+    expect(pageKind(curie, "event:@F3@:MARR:0")).toBeNull();
   });
 });
 
@@ -154,23 +159,15 @@ describe("where the source opens when the tab switches to it", () => {
   const curie = curieIndex();
   const marie = curie.person("@I1@");
 
-  it("opens on the selected fact", () => {
-    expect(shownRange(curie, "@I1@", "p:0")).toEqual(marie?.events[0]?.range);
+  it("opens on the whole record", () => {
+    expect(shownRange(curie, "@I1@")).toEqual(marie?.range);
+    expect(shownRange(curie, "@F3@")).toEqual(curie.family("@F3@")?.range);
   });
 
-  it("opens on the whole record when no fact is selected", () => {
-    expect(shownRange(curie, "@I1@", null)).toEqual(marie?.range);
-  });
-
-  it("opens on a family's fact, a source and a multimedia record too", () => {
-    expect(shownRange(curie, "@F3@", "f:0")).toEqual(curie.family("@F3@")?.events[0]?.range);
-    expect(shownRange(curie, "@S1@", null)).toEqual(curie.source("@S1@")?.range);
-    expect(shownRange(curie, "@O5@", null)).toEqual(curie.media("@O5@")?.range);
-  });
-
-  it("opens on the lines of an event", () => {
-    expect(shownRange(curie, "event:@I1@:BIRT:0", null)).toEqual(marie?.events[0]?.range);
-    expect(shownRange(curie, "event:@F3@:MARR:0", null)).toEqual(curie.family("@F3@")?.events[0]?.range);
+  it("opens on a source and a multimedia record too, and on nothing for an event id", () => {
+    expect(shownRange(curie, "@S1@")).toEqual(curie.source("@S1@")?.range);
+    expect(shownRange(curie, "@O5@")).toEqual(curie.media("@O5@")?.range);
+    expect(shownRange(curie, "event:@I1@:BIRT:0")).toBeNull();
   });
 
   it("leaves a cursor already inside the lines where it is", () => {

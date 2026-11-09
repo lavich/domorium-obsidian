@@ -5,9 +5,6 @@ import type { PageHost } from "./personPage";
 
 export interface EventRowContent {
   name: string;
-  focusKey?: string;
-  /** The id of the card of the event; none where its record has no identifier. */
-  open?: string;
   detail: EventDetail;
   citations: number;
   record?: { name: string; xref: string };
@@ -17,35 +14,12 @@ export interface EventRowContent {
 
 type Host = Pick<PageHost, "openRecord">;
 
-function begin(list: HTMLElement, content: EventRowContent, host: Host): HTMLElement {
+function begin(list: HTMLElement, content: EventRowContent): HTMLElement {
   const row = list.createDiv({ cls: ["gedcom-desk-fact", "is-event"] });
   if (content.line !== undefined) {
     row.setAttribute("data-line", String(content.line));
   }
-  const { open } = content;
-  if (open !== undefined) {
-    row.addEventListener("click", (click) => {
-      if (!(click.target as HTMLElement).closest(".gedcom-desk-link")) {
-        host.openRecord(open);
-      }
-    });
-  } else {
-    row.addClass("is-inert");
-  }
   return row;
-}
-
-function nameButton(parent: HTMLElement, content: EventRowContent, row: HTMLElement): HTMLButtonElement {
-  const button = parent.createEl("button", { cls: "gedcom-desk-fact-name", text: content.name });
-  button.setAttribute("type", "button");
-  if (content.focusKey !== undefined) {
-    button.setAttribute("data-focus-key", content.focusKey);
-  }
-  if (content.open === undefined) {
-    button.setAttribute("disabled", "");
-    row.addClass("is-inert");
-  }
-  return button;
 }
 
 /** A dot at the end of what a fact states, where it cites a source; a fact that cites none has none. */
@@ -79,14 +53,14 @@ function where(parent: HTMLElement, content: EventRowContent, host: Host, skip: 
 
 /** An event as a row: its date on the left, its name and what it states on the right. */
 export function renderEventRow(list: HTMLElement, content: EventRowContent, host: Host): void {
-  const row = begin(list, content, host);
+  const row = begin(list, content);
   row.createSpan({
     cls: ["gedcom-desk-fact-date", content.detail.date ? "" : "is-empty"].filter(Boolean),
     text: content.detail.date ?? "—",
   });
   const main = row.createDiv({ cls: "gedcom-desk-fact-main" });
   const head = main.createDiv({ cls: "gedcom-desk-fact-head" });
-  nameButton(head, content, row);
+  head.createSpan({ cls: "gedcom-desk-fact-name", text: content.name });
   sourceDot(head, content.citations);
   const value = main.createDiv({ cls: "gedcom-desk-fact-value" });
   if (!where(value, content, host)) {

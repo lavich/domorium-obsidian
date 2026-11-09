@@ -15,9 +15,8 @@ import {
 } from "./lineView";
 import type { TreeState } from "./treeSession";
 
-/** An event or an attribute the page knows on one of the lines of the record, and the id that opens its card. */
+/** An event or an attribute the page knows on one of the lines of the record. */
 export interface TreeFact {
-  eventId?: string;
   event: PersonEvent;
 }
 
@@ -207,16 +206,11 @@ class Tree {
       chevron.setAttribute("data-focus-key", `t:${key}`);
     }
 
-    const name = fact?.eventId === undefined
-      ? header.createSpan({ cls: isNode ? ["gedcom-tree-label", "tree-item-inner"] : "gedcom-tree-label", text: label })
-      : header.createEl("button", { cls: "gedcom-tree-label is-fact", text: label });
+    const name = header.createSpan({
+      cls: isNode ? ["gedcom-tree-label", "tree-item-inner"] : "gedcom-tree-label",
+      text: label,
+    });
     name.id = labelId();
-    if (fact?.eventId !== undefined) {
-      const eventId = fact.eventId;
-      name.setAttribute("type", "button");
-      name.setAttribute("data-focus-key", `t:${key}:label`);
-      name.addEventListener("click", () => host.openRecord(eventId));
-    }
     const main = header.createDiv({ cls: "gedcom-tree-main" });
 
     const missing =

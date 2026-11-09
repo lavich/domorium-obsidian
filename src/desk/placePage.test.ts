@@ -13,7 +13,6 @@ let host: ReturnType<typeof deskHost>;
 function deskHost() {
   return {
     openRecord: vi.fn<PageHost["openRecord"]>(),
-    select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
@@ -51,17 +50,13 @@ describe("the card of a place", () => {
     expect(container.querySelector(".gedcom-desk-unsourced")).toBeNull();
   });
 
-  it("opens the card of the event from its name, and the record from its link", () => {
+  it("draws the name of an event as text that opens nothing, and opens the record from its link", () => {
     drawWarsaw();
     marieRow()?.querySelector<HTMLElement>(".gedcom-desk-fact-name")?.click();
+    (marieRow() as HTMLElement | undefined)?.click();
     marieRow()?.querySelector<HTMLElement>(".gedcom-desk-fact-value .gedcom-desk-link")?.click();
 
-    expect(host.openRecord.mock.calls).toEqual([["event:@I1@:BIRT:0"], ["@I1@"]]);
-  });
-
-  it("keys the name by the event, so focus survives a redraw", () => {
-    drawWarsaw();
-
-    expect(marieRow()?.querySelector(".gedcom-desk-fact-name")?.getAttribute("data-focus-key")).toBe("event:@I1@:BIRT:0");
+    expect(marieRow()?.querySelector("button.gedcom-desk-fact-name")).toBeNull();
+    expect(host.openRecord.mock.calls).toEqual([["@I1@"]]);
   });
 });

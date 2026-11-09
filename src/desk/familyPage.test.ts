@@ -7,7 +7,7 @@ import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { renderFamilyPage } from "./familyPage";
-import type { FactKey, PageHost } from "./personPage";
+import type { PageHost } from "./personPage";
 
 let container: HTMLElement;
 let host: ReturnType<typeof pageHost>;
@@ -15,7 +15,6 @@ let host: ReturnType<typeof pageHost>;
 function pageHost() {
   return {
     openRecord: vi.fn<PageHost["openRecord"]>(),
-    select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
@@ -30,14 +29,14 @@ afterEach(resetLanguage);
 
 function draw(
   xref: string,
-  { selected = null, index = curieIndex() }: { selected?: FactKey | null; index?: GenealogyIndex } = {},
+  { index = curieIndex() }: { index?: GenealogyIndex } = {},
 ): void {
   const family = index.family(xref);
   if (!family) {
     throw new Error(`no family ${xref}`);
   }
   container.empty();
-  renderFamilyPage(container, family, index, { selected }, host);
+  renderFamilyPage(container, family, index, {}, host);
 }
 
 const texts = (selector: string): string[] =>
@@ -72,15 +71,15 @@ describe("the family page", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I13@");
   });
 
-  it("opens the card of a family's event from the label of its row, and shows the selected one in the source", () => {
+  it("draws the label of the marriage as text that opens nothing, and the heading shows the whole family in the source", () => {
     const index = curieIndex();
     draw("@F3@", { index });
-    container.querySelector<HTMLElement>(".gedcom-tree-label.is-fact")?.click();
-    expect(host.openRecord).toHaveBeenCalledWith("event:@F3@:MARR:0");
+    container.querySelector<HTMLElement>(".gedcom-tree-label")?.click();
+    expect(container.querySelector("button.gedcom-tree-label")).toBeNull();
+    expect(host.openRecord).not.toHaveBeenCalled();
 
-    draw("@F3@", { index, selected: "f:0" });
     container.querySelector<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")?.click();
-    expect(host.showInSource).toHaveBeenCalledWith(index.family("@F3@")?.events[0]?.range);
+    expect(host.showInSource).toHaveBeenCalledWith(index.family("@F3@")?.range);
   });
 
   it("shows a spouse and a child the file does not declare as pointers to records that are not in the file", () => {

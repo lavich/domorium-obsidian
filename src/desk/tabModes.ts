@@ -8,7 +8,6 @@ import {
   type DeskState,
   type Origin,
 } from "./deskState";
-import { eventOwner } from "./eventRows";
 
 export type { Origin } from "./deskState";
 
@@ -79,10 +78,8 @@ export class TabModes {
     if (before === "source") {
       const atCursor = leaving.cursorRecord;
       if (atCursor && pageKind(leaving.index(), atCursor)) {
-        if (atCursor !== eventOwner(this.selected)) {
-          selectionChanged = atCursor !== this.selected;
-          this.selected = atCursor;
-        }
+        selectionChanged = atCursor !== this.selected;
+        this.selected = atCursor;
       }
     } else {
       this.lastMode = before;

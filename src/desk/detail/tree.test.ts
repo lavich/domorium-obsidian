@@ -523,16 +523,12 @@ describe("a fact", () => {
     return { index, xref: "@I1@", record: index.record("@I1@") as RecordLine } as Made;
   };
 
-  it("opens its card from its label, and a sex does not", () => {
+  it("has a label that is text for every fact, and a press on a leaf's label opens nothing", () => {
     draw(marie());
-    const birth = rowNamed("Birth").querySelector<HTMLButtonElement>("button.gedcom-tree-label");
-    birth?.click();
 
-    expect(opened).toHaveBeenCalledTimes(1);
-    expect(opened.mock.calls[0]?.[0]).toMatch(/^event:@I1@:BIRT:/u);
-    expect(rowNamed("Sex").querySelector("button.gedcom-tree-label")).toBeNull();
+    expect(box.querySelector("button.gedcom-tree-label, .is-fact")).toBeNull();
     rowNamed("Sex").querySelector(".gedcom-tree-label")?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(opened).toHaveBeenCalledTimes(1);
+    expect(opened).not.toHaveBeenCalled();
   });
 
   it("opens the card of the place from the summary and, once opened, from the place line", () => {
@@ -549,18 +545,12 @@ describe("a fact", () => {
     expect(valuesOf(rowNamed("Place"))).toEqual([]);
   });
 
-  it("has a label that does not act where the event has no identifier", () => {
-    const made = make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]);
-    const person = made.index.person("@I1@");
-    renderTree(box, made.record, {
-      index: made.index,
-      host: { openRecord: opened, showInSource: shown },
-      facts: factsByLine((person ? factsOf(person) : []).map(({ eventId: _unused, ...fact }) => fact)),
-      state: ephemeralTreeState(),
-    });
+  it("shows the summary of a fact and its place as a link while the label is text", () => {
+    draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "2 PLAC Paris"]));
 
-    expect(rowNamed("Birth").querySelector("button.gedcom-tree-label")).toBeNull();
-    expect(summaryOf(rowNamed("Birth"))).toBe("1900");
+    expect(summaryOf(rowNamed("Birth"))).toBe("1900 · Paris");
+    rowNamed("Birth").querySelector<HTMLButtonElement>(".gedcom-tree-summary button")?.click();
+    expect(opened).toHaveBeenCalledWith("place:paris");
   });
 
   it("is a residence whose place is a link", () => {

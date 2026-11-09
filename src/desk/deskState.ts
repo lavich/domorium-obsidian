@@ -7,15 +7,12 @@ import { DESK_MODES, readDeskMode, type DeskMode } from "../settingsData";
 import { initialFocus, initialTimelineFocus } from "./fileTimeline";
 import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
-import { familyFactByKey } from "./familyPage";
 import { readListState, type ListState } from "./listRows";
-import { eventAt } from "./eventRows";
 import { placeAt } from "./placeRows";
-import { factByKey, type FactKey } from "./personPage";
 
 export type { DeskMode };
 
-export type PageKind = "person" | "family" | "source" | "media" | "place" | "event";
+export type PageKind = "person" | "family" | "source" | "media" | "place";
 
 export type ViewKind = "graph" | "timeline" | "list";
 
@@ -44,11 +41,18 @@ export function readDeskState(state: unknown): DeskState {
   const read = readDeskMode(mode);
   return {
     ...(read === undefined ? {} : { mode: read }),
-    ...(typeof selected === "string" && selected ? { selected } : {}),
+    ...(typeof selected === "string" && selected ? { selected: ownerOfSavedEvent(selected) } : {}),
     ...(isObject(graph) ? { graph: readGraphState(graph) } : {}),
     ...(isObject(timeline) ? { timeline: readTimelineState(timeline) } : {}),
     ...(isObject(list) ? { list: readListState(list) } : {}),
   };
+}
+
+const SAVED_EVENT = /^event:(.+):[A-Za-z0-9_]+:(?:0|[1-9]\d*)$/u;
+
+/** A workspace saved before the events had no cards may name an event as the selection; its record is what it showed. */
+function ownerOfSavedEvent(selected: string): string {
+  return SAVED_EVENT.exec(selected)?.[1] ?? selected;
 }
 
 export function effectiveMode(stored: DeskMode, interfaceOn: boolean): DeskMode {
@@ -87,7 +91,7 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   if (placeAt(index, xref)) {
     return "place";
   }
-  return eventAt(index, xref) ? "event" : null;
+  return null;
 }
 
 export type Origin = "view" | "card" | "link" | "cursor";
@@ -165,21 +169,9 @@ export function routeLink(
   return declared(xref) ? { to: "source", xref } : { to: "nowhere" };
 }
 
-/** The lines of the fact shown, or else of the whole record shown. */
-export function shownRange(
-  index: GenealogyIndex,
-  record: string,
-  fact: FactKey | null,
-): Range | null {
-  const person = index.person(record);
-  if (person) {
-    return factByKey(person, fact)?.event.range ?? person.range;
-  }
-  const family = index.family(record);
-  if (family) {
-    return familyFactByKey(family, fact)?.event.range ?? family.range;
-  }
-  return index.source(record)?.range ?? index.media(record)?.range ?? eventAt(index, record)?.event.range ?? null;
+/** The lines of the record shown. */
+export function shownRange(index: GenealogyIndex, record: string): Range | null {
+  return (index.person(record) ?? index.family(record) ?? index.source(record) ?? index.media(record))?.range ?? null;
 }
 
 /** Leaves a cursor already inside the lines alone, so switching back and forth does not move it. */

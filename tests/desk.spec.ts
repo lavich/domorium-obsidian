@@ -128,27 +128,26 @@ for (const size of SIZES) {
       expect(await scrollTopOf(page)).toBeGreaterThan(0);
     });
 
-    test("opens the card of an event when a fact is tapped, and selecting her again shows her card", async ({ page }) => {
-      await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
+    test("draws the labels of her facts as text, and pressing a line's label opens nothing", async ({ page }) => {
+      await expect(page.locator("button.gedcom-tree-label, .is-fact")).toHaveCount(0);
+      await treeRow(page, "Sex").locator(".gedcom-tree-label").click();
 
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-      await expect(page.locator(".gedcom-card-evidence")).toHaveCount(0);
-      await show(page, "@I1@");
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     });
 
-    test("opens the place of a fact, not the event", async ({ page }) => {
+    test("opens the place of a fact", async ({ page }) => {
       await pressArrow(page, "Birth");
       await treeRow(page, "Place").locator(".gedcom-desk-link").first().click();
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
     });
 
-    test("opens the card of an event from the timeline", async ({ page }) => {
+    test("draws her own entries of the timeline as text, and opens the relative of an entry", async ({ page }) => {
       await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
-      await page.locator(".gedcom-desk-moment-what", { hasText: "Marriage with Pierre Curie" }).evaluate((entry) => (entry as HTMLElement).click());
+      await expect(page.locator(".gedcom-desk-moment-what", { hasText: /^Birth$/u })).toBeDisabled();
+      await page.locator(".gedcom-desk-moment-what", { hasText: "Death of husband Pierre Curie" }).evaluate((entry) => (entry as HTMLElement).click());
 
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
+      await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
     });
 
     test("shows Pierre Curie from his top, with no Back or Forward to return by", async ({ page }) => {
@@ -160,17 +159,6 @@ for (const size of SIZES) {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
       expect(await scrollTopOf(page)).toBe(0);
       await expect(page.locator(".gedcom-card-nav")).toHaveCount(0);
-    });
-
-    test("shows no evidence on the card of her birth, and returns to her by the record at its top", async ({ page }) => {
-      await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-      await expect(page.locator(".gedcom-card-evidence, .gedcom-desk-note, .gedcom-desk-cite")).toHaveCount(0);
-      await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).not.toContainText(["Evidence"]);
-
-      await page.locator(".gedcom-desk-event-owner .gedcom-desk-link").click();
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
-      await expect(page.locator(".gedcom-card-evidence")).toHaveCount(0);
     });
   });
 }
@@ -197,21 +185,18 @@ test.describe("Obsidian's own button styling", () => {
   });
 });
 
-test.describe("the card of an event", () => {
-  test("shows the event and links to its record", async ({ page }) => {
+test.describe("an event id", () => {
+  test("shows no card, which the file no longer has for events", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { record: "event:@I1@:BIRT:0" });
 
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-    await expect(page.locator(".gedcom-desk-event-owner")).toHaveText("PersonMarie Skłodowska-Curie");
-    await expect(page.locator(".gedcom-desk-subtitle")).toHaveText("7 NOV 1867 · Warsaw, Congress Poland");
-    await page.locator(".gedcom-desk-event-owner .gedcom-desk-link", { hasText: "Marie" }).click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-card-state")).toHaveText("Select a record in the graph, the timeline or the list.");
+    await expect(page.locator(".gedcom-desk-title")).toHaveCount(0);
   });
 });
 
 test.describe("every kind of card in a narrow column", () => {
-  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "event:@I1@:BIRT:0"]) {
+  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@"]) {
     for (const [width, phone, language] of [[320, false, "en"], [320, false, "ru"], [390, true, "ru"]] as const) {
       test(`${record} at ${width} pixels in ${language} has nothing to scroll sideways`, async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 760 });
@@ -257,9 +242,6 @@ test.describe("the family card", () => {
     await expect(page.locator(".gedcom-tree .gedcom-tree-row", { hasText: "Wife" }).locator(".gedcom-desk-link")).toHaveText("Marie Skłodowska-Curie");
     await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveCount(0);
     await expect(page.locator(".gedcom-desk-kin, .gedcom-desk-person")).toHaveCount(0);
-    await treeRow(page, "Marriage").locator("button.gedcom-tree-label").click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
-
     await show(page, "@F3@");
     await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Ève Curie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
@@ -397,7 +379,7 @@ test.describe("the controls of a card on a phone", () => {
     const rich = readFileSync("demo-vault/rich-record.ged", "utf8");
     const cases: [string, string | undefined][] = [
       ["@I1@", undefined], ["@F3@", undefined], ["@S3@", undefined], ["place:warsaw, congress poland", undefined],
-      ["event:@I1@:BIRT:0", undefined], ["@I1@", rich], ["@F3@", rich], ["event:@I1@:BIRT:0", rich], ["event:@F3@:MARR:0", rich],
+      ["@I1@", rich], ["@F3@", rich],
     ];
     for (const [record, doc] of cases) {
       const name = `${record}${doc === undefined ? "" : " (rich)"}`;
@@ -485,15 +467,6 @@ test.describe("the card of a record that states everything", () => {
         await openEveryNode(page);
         await expect(page.locator(".gedcom-tree-label", { hasText: "_MILITARY" }).first()).toBeVisible();
         await expect(page.locator(".gedcom-tree-label", { hasText: "_SINCE" }).first()).toBeVisible();
-        expect(await overflowsSideways(page)).toBe(false);
-      });
-
-      test("shows the age, the cause and the coordinates on the card of the birth", async ({ page }) => {
-        await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
-
-        await expect(page.locator(".gedcom-detail-label", { hasText: "Cause" })).toBeVisible();
-        await expect(page.locator(".gedcom-detail-label", { hasText: "Latitude" })).toBeVisible();
-        await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
         expect(await overflowsSideways(page)).toBe(false);
       });
     });
@@ -683,13 +656,9 @@ test.describe("the tree of a record", () => {
     expect(await page.locator(".gedcom-tree-chevron[aria-expanded=true]").count()).toBe(0);
   });
 
-  test("opens the card of a fact from its label and the card of a place from its line", async ({ page }) => {
+  test("opens the card of a place from its line", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
-    await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-    await show(page, "@I1@");
-
     await pressArrow(page, "Birth");
     await treeRow(page, "Place").locator(".gedcom-desk-link").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
@@ -761,7 +730,7 @@ test.describe("the tree of a record", () => {
     const clip = { x: (box?.x ?? 0) - 4, y: (box?.y ?? 0) - 4, width: (box?.width ?? 0) + 8, height: (box?.height ?? 0) + 8 };
     await page.mouse.move(2, 2);
     const plain = await page.screenshot({ clip });
-    await treeRow(page, "Birth").locator("button.gedcom-tree-label").focus();
+    await treeRow(page, "Birth").locator(".gedcom-tree-chevron").focus();
     await page.keyboard.press("Tab");
     await expect(link).toBeFocused();
     expect(await link.evaluate((node) => node.matches(":focus-visible"))).toBe(true);

@@ -11,11 +11,8 @@ function renderEntry(list: HTMLElement, entry: TimelineEntry, host: PageHost): v
   const text = row.createDiv({ cls: "gedcom-desk-moment-text" });
   const what = text.createEl("button", { cls: "gedcom-desk-moment-what", text: entry.label });
   what.setAttribute("type", "button");
-  const eventId = entry.eventId;
   const relative = entry.relative;
-  if (eventId) {
-    what.addEventListener("click", () => host.openRecord(eventId));
-  } else if (relative) {
+  if (relative) {
     what.addEventListener("click", () => host.openRecord(relative.xref));
   } else {
     what.setAttribute("disabled", "");

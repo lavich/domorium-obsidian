@@ -2,7 +2,7 @@
 
 ### Requirement: Nothing the record writes is left out
 
-Every line of a person's record, of a family's record and of a source's record SHALL be shown on the card of that record, in the tree of its lines — the heading of the card showing the first `NAME` — and every line of an event under a person or a family on the card of that event, in the section made for what it says — the details of an event — or, where no such section knows it, in the section *Other data*. A structure shown in the tree SHALL show every
+Every line of a person's record, of a family's record and of a source's record SHALL be shown on the card of that record, in the tree of its lines — the heading of the card showing the first `NAME`. A structure shown in the tree SHALL show every
 substructure of its own too, to any depth. No line SHALL be dropped for being unknown, custom, from the other
 dialect, or deeply nested. The only lines not shown as lines of their own are those the card shows
 in another form: a `CONC` or `CONT` is joined to the line it continues, and a pointer is shown as
@@ -42,7 +42,7 @@ that says it is empty.
 
 ### Requirement: Notes, folded where they are long
 
-Every note of a person, a family or a source SHALL be shown in the tree of its record's lines, at the place the record writes it, and every note of an event in the notes section of its card, in the order the event writes them: the text
+Every note of a person, a family or a source SHALL be shown in the tree of its record's lines, at the place the record writes it: the text
 of an inline `NOTE`, and the text of the shared note a `NOTE` points at, whichever dialect
 declares it. A note of more than five lines or three hundred characters SHALL show its first five
 lines, or its first three hundred characters, and a control that shows the rest and one that folds
@@ -72,7 +72,7 @@ text of a line no section knows — SHALL be drawn as a **field**: a text area t
 shown, can be selected and copied, shows a frame only while the pointer or the focus is on it, is not in the tab order, says in its
 accessible name what it is the value of, and cannot be changed. A value the standard limits to a list of values — a sex, the type of a
 name, a role, a status, a restriction — SHALL be a field of the kind *choice*, which shows the value's name as text and is the one that will
-become a dropdown when a card can be edited. A link — a relative, a source, a person a line names, a fact that selects its event card — stays a link and is not
+become a dropdown when a card can be edited. A link — a relative, a source, a person a line names, a place — stays a link and is not
 a field. Pressing, focusing or selecting a field SHALL NOT write to the file.
 
 #### Scenario: A value as a field
@@ -95,37 +95,6 @@ a field. Pressing, focusing or selecting a field SHALL NOT write to the file.
 - **WHEN** the reader moves through a card with the Tab key
 - **THEN** the focus goes through its buttons and links and does not stop on a field
 
-### Requirement: Related people and other records of the person
-
-On the card of an event, the related people section SHALL list each person the event names with `ASSO`, with the role the
-event states — `ROLE` in 7.0, `RELA` in 5.5.1, in the reader's language where the standard names it,
-as the file words it otherwise — and its phrase, notes and sources. Each SHALL
-select the person it names. On the card of a person or a family, an `ASSO` or an `ALIA` line is a row of the tree of the record, with the person it names as a link.
-
-#### Scenario: A godparent
-- **WHEN** an event states `2 ASSO @I2@` with `3 ROLE GODP`
-- **THEN** the Related people section of the event card lists that person with the role *Godparent*
-
-#### Scenario: A relationship in 5.5.1
-- **WHEN** a 5.5.1 event states `2 ASSO @I2@` with `3 RELA godp`
-- **THEN** the entry shows the relationship as *Godparent*
-
-#### Scenario: A role of the file's own
-- **WHEN** an association states `3 ROLE OTHER` with `4 PHRASE Landlord`
-- **THEN** the entry shows `Landlord`
-
-### Requirement: Other data
-
-On the card of an event, the other data section SHALL show every line of the event that no other section shows, with its
-substructures nested beneath it in the order the file writes them, each tag named in the reader's
-language where the standard names it and as written otherwise, each value read as the requirement on
-reading a line says. The section SHALL be folded as the timeline is and show how many lines it holds,
-counting nested ones. It SHALL be left out where the record has none.
-
-#### Scenario: A structure with children
-- **WHEN** an event states `2 _TRIBE Highlander` with `3 _CLAN Sas` and `4 _SINCE 1800`
-- **THEN** Other data on the event card, opened, shows the three lines nested as the file nests them, and its count reads 3
-
 ## REMOVED Requirements
 
 ### Requirement: The names of a person
@@ -138,4 +107,13 @@ counting nested ones. It SHALL be left out where the record has none.
 
 ### Requirement: Events are told from details
 **Reason**: A person's events and details are lines of the record and are shown in the tree in the order the file writes them, not in two sections. The events of a family a person is a spouse of stay in the person's family section, under that family's spouse, as the person card says.
-**Migration**: The tree shows each event and each attribute as a line of the record; the event card of an event is opened from its name.
+**Migration**: The tree shows each event and each attribute as a line of the record; the family section and the card of a place keep the rows of events.
+
+### Requirement: Related people and other records of the person
+**Reason**: It spoke of the related people of an event card; the event cards are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»).
+**Migration**: An `ASSO` or an `ALIA` line is a row of the tree of the record, with the person it names as a link.
+
+### Requirement: Other data
+**Reason**: It spoke of the other data of an event card; the event cards are removed at the user's request of 2026-11-09.
+**Migration**: Every line of a record is a row of its tree, to any depth, in the order the file writes it.
+
