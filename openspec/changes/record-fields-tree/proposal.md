@@ -14,10 +14,10 @@ The user's requirement, in their words and by date:
 The proposed scope:
 
 - The card of a person, a family and a source shows, below its heading, one **tree of the lines of the record**, in the file's order, nested as the file nests them. The sections it replaces are removed: names, events, details, notes, related people, identifiers and record information, other data, and the family card's list of events.
-- A row is a label and a value, in the reader's language. A line with substructures is a node with a one-line summary while closed (an event shows its date and place). The first level is open, the rest closed; the reader's choice survives a redraw.
+- A row is a label and a value, in the reader's language. A line with substructures is a node, closed when the card is first drawn, with a one-line summary (an event shows its value, date and place); the reader's choice is kept for each record while the plugin is loaded.
 - Tags are hidden, as the product principles ask, and a control shows them.
 - The controls of a row and of the tree appear on hover and on keyboard focus; on a touch device those of a row appear on the row last pressed.
-- A line that is an event or an attribute opens its event card from its label; the selected fact is marked in the tree.
+- A line that is an event or an attribute opens its event card from its label, and a place opens the card of the place, as they do on the card today.
 - What the card computes from the whole file stays as it is: the heading, the family section (parents, siblings, spouses with their events, children), the pictures, the timeline, the evidence, and the spouses and children of a family card.
 - The card's event, place and media pages keep their own forms.
 
@@ -47,7 +47,7 @@ The proposed scope:
 
 - `src/desk/personPage.ts`, `familyPage.ts`, `sourcePage.ts`: the retelling sections are replaced by the tree; the family and evidence sections stay.
 - `src/desk/detail/`: a new tree renderer; `names.ts`, `notes.ts` (for records), `related.ts` (for records), `recordInfo.ts`, `otherData.ts` (for records) and `claims.ts` lose their person and family callers. The event card keeps what it uses.
-- `src/desk/factRow.ts`, `eventRows.ts`: events of a person and of a family's own card are no longer rows; the family section and the place card keep them.
+- `src/desk/factRow.ts` (the event row): a person's and a family's own events are no longer rows; the family section and the place card keep it. `src/desk/detail/claims.ts` shrinks to the tag lists the event card still reads.
 - `src/desk/recordCard.ts`: the tree's session choices (tags, open nodes) and the controls.
 - `src/i18n/en.json`, `src/i18n/ru.json`, `styles.css`, `harness/desk.ts`, `tests/desk.spec.ts`, `README.md`.
-- Specs: new `genealogy-record-tree`; deltas to `genealogy-record-card` and `genealogy-record-detail`. The later change `edit-person-names-in-card`, not yet in the repository, is rewritten on this tree.
+- Specs: new `genealogy-record-tree`; deltas to `genealogy-record-card` and `genealogy-record-detail`. The later change `edit-person-names-in-card`, not yet in the repository, modifies "The names of a person", which this change removes; it is rewritten on this tree and is not archived as it stands.

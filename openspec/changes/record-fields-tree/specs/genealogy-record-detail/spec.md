@@ -2,7 +2,7 @@
 
 ### Requirement: Nothing the record writes is left out
 
-Every line of a person's record, of a family's record and of a source's record SHALL be shown on the card of that record, in the tree of its lines, and every line of an event under a person or a family on the card of that event, in the section made for what it says — the details of an event — or, where no such section knows it, in the section *Other data*. A structure shown in the tree SHALL show every
+Every line of a person's record, of a family's record and of a source's record SHALL be shown on the card of that record, in the tree of its lines — the heading of the card showing the first `NAME` — and every line of an event under a person or a family on the card of that event, in the section made for what it says — the details of an event — or, where no such section knows it, in the section *Other data*. A structure shown in the tree SHALL show every
 substructure of its own too, to any depth. No line SHALL be dropped for being unknown, custom, from the other
 dialect, or deeply nested. The only lines not shown as lines of their own are those the card shows
 in another form: a `CONC` or `CONT` is joined to the line it continues, and a pointer is shown as

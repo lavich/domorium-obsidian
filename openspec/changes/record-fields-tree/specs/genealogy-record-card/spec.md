@@ -20,7 +20,7 @@ are made of several kinds, show no count.
   parents are not recorded; siblings; and for each family the person is a spouse of, the other
   spouse with the events of that family — the marriage, a divorce, an engagement — as rows under them,
   each opening its event card, the children of that family, and a way to that family's card;
-- their **pictures**, the portrait and the media of the record drawn as tiles, as the requirement on portrait and media says;
+- their **media**, the portrait and the media of the record drawn as tiles, as the requirement on portrait and media says;
 - their **timeline**, a section of the card below the one before it, not a tab, and
   **folded** under its heading, which shows how many entries it holds: it is closed
   when a card is opened, and stays open while the card shows the same record,
@@ -36,7 +36,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: Marie's facts
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** below the heading it shows her record's lines as a tree in the order the file writes them: her names, her sex, her birth with `7 NOV 1867` and `Warsaw, Congress Poland` in the line of the birth, her death with `4 JUL 1934` and `Passy, Haute-Savoie, France`, her occupation `Physicist and chemist`; her family shows her marriage with Pierre Curie, `26 JUL 1895` and `Sceaux, France`, as a row under Pierre; and no row carries a dot
+- **THEN** below the heading it shows her record's lines as a tree in the order the file writes them, every node closed: her names, her sex, her birth with the summary `7 NOV 1867 · Warsaw, Congress Poland`, her death with `4 JUL 1934 · Passy, Haute-Savoie, France`, her occupation `Physicist and chemist`; her family section shows her marriage with Pierre Curie, `26 JUL 1895` and `Sceaux, France`, as a row under Pierre; and no row carries a dot
 
 #### Scenario: The sections in order
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
@@ -44,7 +44,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 #### Scenario: Folded sections
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** Timeline is folded and shows its count, and pressing it shows her entries; her lines, Family and Media are open
+- **THEN** Timeline is folded and shows its count, and pressing it shows her entries; her tree's nodes are closed, and Family and Media are open
 
 #### Scenario: A fold kept across a redraw
 - **WHEN** the reader has opened Marie's Timeline and the file changes on disk
@@ -130,7 +130,7 @@ tag, each section left out where the record holds nothing for it, in this order,
   for the link; a spouse or child the file points at
   but does not declare SHALL be shown as a pointer to a record that is not in the file,
   with an action that shows it in the source;
-- its **pictures**, as a person's are;
+- its **media**, as a person's are;
 - the **evidence** its facts and the record rest on, which closes the card.
 
 #### Scenario: The Curies' family
@@ -315,3 +315,99 @@ record has no identifier SHALL be drawn with a name that does not act.
 #### Scenario: The record from a place
 - **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
 - **THEN** Marie's card is shown and the list, where it is in view, shows the people with her marked
+
+### Requirement: The event card
+
+Selecting an event, which a row of the Events in the List does, SHALL show its **event card**. At
+its top, a line naming the kind of record the event belongs to — *Person* or *Family* — and the
+record as a link that selects it. Under it, the title: the name of the event in the reader's language, a custom event by its type, and the text the event carries other than `Y`, with a *Show
+in source* that moves to the lines of the event. Under the title, one line with the date as the
+file writes it and the place as the file writes it, the place a link that selects it; a part the
+event does not state is left out. Below them the card SHALL show everything else the event states,
+each in a section of its own that is left out where the event states nothing for it:
+
+- its **details**, as rows each named in the reader's language: the age, the cause, the agency, the
+  religion, the restriction, the temple and status of an LDS ordinance, the age of each spouse for an event of a family, the date's phrase and time,
+  the sorting date, the address as the file writes it, and the phone numbers, e-mail addresses, fax numbers
+  and web addresses; and what the place itself states — its form, its latitude and longitude, its
+  translations and its notes;
+- its **notes**, and its **related people** with the role each is stated in, in sections of their own on this card, as the detail requirements say;
+- its **media**;
+- its **other data**, folded: every line of the event no section above shows;
+- its **Evidence** section, which closes the card: the sources the event cites, each a link that selects
+  the source, with the page, the quality and whatever else the citation states — its quoted text and
+  date, the event and role it names, its notes and media.
+
+The evidence SHALL NOT list what the whole record rests on: that is on the card of the record, whose link
+is at the top of the card. The card SHALL show nothing the file does not
+hold and SHALL NOT label the date, the place or the record with a row of its own. Choosing a fact on
+a person's or a family's card, or an entry of a person's timeline, SHALL open this card. Selecting
+a link on it SHALL NOT write to the file. An event that carries nothing to show beyond its name
+SHALL still have a card, which says that the event states no date, place or source.
+
+#### Scenario: A birth
+- **WHEN** the event card of Marie's birth is shown
+- **THEN** it shows `Person` and a link `Marie Skłodowska-Curie` above the title `Birth`, and
+  under the title `7 NOV 1867` and a link `Warsaw, Congress Poland`
+
+#### Scenario: An occupation
+- **WHEN** the event card of an occupation `Physicist` with no date and no place is shown
+- **THEN** its title reads `Occupation · Physicist`, it draws no line of date and place, and it
+  says the event states no date, place or source
+
+#### Scenario: Nothing of the whole record
+- **WHEN** the event card of Marie's birth is shown
+- **THEN** its Evidence section lists no source of Marie's record, no note, and has no head *Whole
+  record*
+
+#### Scenario: A cited source
+- **WHEN** the event card of an event that cites a source record is shown, and the reader presses the source in its Evidence section
+- **THEN** the card shows that source
+
+#### Scenario: Chosen on a person's card
+- **WHEN** the reader presses `Birth` in the tree of her card
+- **THEN** the event card of her birth is shown, and a list in view shows the events with that birth marked
+
+#### Scenario: Show in source
+- **WHEN** the reader presses *Show in source* on the event card of Marie's birth
+- **THEN** the tab shows the Source mode with the lines of that birth selected
+
+#### Scenario: A record pressed
+- **WHEN** the reader presses the record at the top of the event card of Marie's birth
+- **THEN** the card shows Marie
+
+#### Scenario: A family event
+- **WHEN** the event card of the Curies' marriage is shown
+- **THEN** its top line reads `Family` and links the family
+
+#### Scenario: What an event states beyond its date and place
+- **WHEN** an event states `2 AGE 0y`, `2 CAUS Natural` and `2 AGNC Registry office`
+- **THEN** its card shows rows named Age, Cause and Agency with those values under the date and place
+
+#### Scenario: An address
+- **WHEN** an event states `2 ADDR 1 Street` continued by `3 CONT Town`
+- **THEN** the card shows the address as two lines in a row named Address
+
+#### Scenario: The place's coordinates
+- **WHEN** an event's place states `3 MAP` with `4 LATI N52.2` and `4 LONG E21.0`
+- **THEN** the card shows the latitude and longitude under the place
+
+#### Scenario: A note on an event
+- **WHEN** an event states `2 NOTE Born at home.`
+- **THEN** its card shows a Notes section with that text
+
+#### Scenario: A witness
+- **WHEN** an event states `2 ASSO @I2@` with `3 ROLE WITN`
+- **THEN** its card lists that person under Related people with the role *Witness*
+
+#### Scenario: A citation that quotes
+- **WHEN** an event cites a source with `3 DATA` and `4 TEXT` beneath it
+- **THEN** its Evidence section shows the quoted text with the citation
+
+#### Scenario: A line no section knows
+- **WHEN** an event states a custom `2 _WEATHER Rain`
+- **THEN** its card shows `_WEATHER` and `Rain` in a folded Other data section
+
+#### Scenario: A source the file does not declare
+- **WHEN** an event cites `@S9@` and the file declares no such record
+- **THEN** its Evidence section says the source is missing, with the way to its line
