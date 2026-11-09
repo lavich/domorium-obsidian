@@ -2,7 +2,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generated } from "../../tests/generated";
-import { resetLanguage, setLanguage } from "../i18n";
+import { resetLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
@@ -779,7 +779,7 @@ describe("the places", () => {
   it("is the fourth kind, after the sources", () => {
     board();
 
-    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places", "Events"]);
+    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places"]);
   });
 
   it("lists every place of the file, alphabetically, with its events and years", () => {
@@ -890,7 +890,7 @@ describe("the places", () => {
   it("has no button but the kinds on the places", () => {
     open();
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Events"]);
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
@@ -909,176 +909,16 @@ describe("the places", () => {
   });
 });
 
-describe("the events", () => {
-  const withEvents = indexOf(curieWithEvents());
-  const open = (state = {}, source = index) => board({ kind: "events", ...state }, source);
-  const id = (owner: string, tag: string): string => `event:${owner}:${tag}:0`;
-  const eventRow = (owner: string, tag: string): HTMLElement | undefined => rows().find((one) => one.dataset.key === id(owner, tag));
-  const marked = (): string[] => rows().filter((one) => one.getAttribute("aria-selected") === "true").map((one) => one.dataset.key ?? "");
-  const column = (at: number): (string | undefined)[] => rows().map((one) => cell(one, at));
+describe("no events kind", () => {
+  it("has no button but the kinds, and no Events among them", () => {
+    board({}, index);
 
-  it("is the fifth kind and lists every event of the file with the columns of the kind", () => {
-    open();
-
-    expect(text(".gedcom-list-count")).toBe("51 events");
-    expect(all(".gedcom-list-headcell:not([hidden])").map((one) => one.textContent?.replace(/[↑↓]/u, ""))).toEqual(["Event", "Record", "Date", "Place"]);
-  });
-
-  it("reads Marie's birth with her record, its date and its place", () => {
-    open();
-
-    expect([0, 1, 2, 3].map((at) => cell(eventRow("@I1@", "BIRT"), at))).toEqual(["Birth", "Marie Skłodowska-Curie", "7 NOV 1867", "Warsaw, Congress Poland"]);
-  });
-
-  it("tells an occupation by its text and keeps the name of an event that has none", () => {
-    open();
-
-    expect(column(0)).toContain("Occupation · Physicist");
-    expect(column(0)).toContain("Birth");
-  });
-
-  it("narrows by an event, a record, a date or a place, without marks, and counts what is left", () => {
-    open();
-
-    type("PHYSICIST");
-
-    expect(column(0).every((one) => one?.toLowerCase().includes("physicist"))).toBe(true);
-    expect(text(".gedcom-list-count")).toBe(`${rows().length} of 51 events`);
-  });
-
-  it("says so when nothing matches", () => {
-    open();
-    type("zzz");
-
-    expect(text(".gedcom-list-none")).toBe("Nothing matches “zzz”. Search covers events, records, dates and places.");
-  });
-
-  it("says so when the file holds no events", () => {
-    open({}, indexOf("0 HEAD\n0 TRLR"));
-
-    expect(text(".gedcom-list-none")).toBe("The file holds no events.");
-  });
-
-  it("sorts by the first year of the date", () => {
-    open();
-
-    click(button(".gedcom-list-sort", "Date"));
-
-    const years = column(2).map((one) => (one ? Number(/\d{4}/u.exec(one)?.[0]) : null));
-    const dated = years.filter((one): one is number => one !== null && !Number.isNaN(one));
-    expect(dated).toEqual([...dated].sort((a, b) => a - b));
-  });
-
-  it("returns to the order of the file on the third press", () => {
-    open();
-    const order = rows().map((one) => one.dataset.key);
-
-    click(button(".gedcom-list-sort", "Record"));
-    click(button(".gedcom-list-sort", "Record"));
-    click(button(".gedcom-list-sort", "Record"));
-
-    expect(rows().map((one) => one.dataset.key)).toEqual(order);
-    expect(host.changed).toHaveBeenLastCalledWith({ kind: "events" });
-  });
-
-  it("selects the event of a clicked row under its id, and marks only that row", () => {
-    open();
-
-    click(eventRow("@I1@", "BIRT"));
-
-    expect(host.select).toHaveBeenCalledWith(id("@I1@", "BIRT"));
-    expect(marked()).toEqual([id("@I1@", "BIRT")]);
-  });
-
-  it("selects the focused row with Enter", () => {
-    open();
-    scroller().focus();
-    press("ArrowDown");
-    press("Enter");
-
-    expect(host.select).toHaveBeenCalledWith(id("@I1@", "DEAT"));
-    expect(marked()).toHaveLength(1);
-  });
-
-  it("marks the event selected elsewhere, and no row for a record", () => {
-    const made = open();
-
-    made.select(id("@I1@", "DEAT"), true);
-    expect(marked()).toEqual([id("@I1@", "DEAT")]);
-
-    made.select("@I1@", true);
-    expect(marked()).toEqual([]);
-  });
-
-  it("stays on the events when a record or a source is selected elsewhere", () => {
-    const made = open();
-
-    made.select("@I2@", true);
-    made.select("@S1@", true);
-
-    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
-    expect(marked()).toEqual([]);
-  });
-
-  it("switches to the places when a place is selected elsewhere, and back to the events for an event", () => {
-    const made = open({}, withEvents);
-
-    made.select("place:paris, france", true);
-    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Places"]);
-
-    made.select(id("@I1@", "BIRT"), true);
-    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
-    expect(marked()).toEqual([id("@I1@", "BIRT")]);
-  });
-
-  it("switches from the people to the events for an event selected elsewhere", () => {
-    const made = board({}, index);
-
-    made.select(id("@I1@", "BIRT"), true);
-
-    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Events"]);
-    expect(marked()).toEqual([id("@I1@", "BIRT")]);
-  });
-
-  describe("bringing an event into view", () => {
-    const large = indexOf(generated(500));
-    const position = (made: ListBoard, key: string): number => (made as unknown as { positions: Map<string, number> }).positions.get(key) as number;
-
-    it("scrolls to an event selected from outside, and marks it", () => {
-      const made = open({}, large);
-      scroller().scrollTop = 0;
-
-      made.select(id("@I400@", "BIRT"), true);
-
-      expect(marked()).toEqual([id("@I400@", "BIRT")]);
-      const top = position(made, id("@I400@", "BIRT")) * box.wide - scroller().scrollTop;
-      expect(top).toBeGreaterThanOrEqual(0);
-      expect(top).toBeLessThan(box.height);
-    });
-
-    it("clears a filter that hides the event", () => {
-      const made = open({}, large);
-      type("zzzzzz");
-      expect(rows()).toHaveLength(0);
-
-      made.select(id("@I400@", "BIRT"), true);
-
-      expect(query<HTMLInputElement>(".gedcom-list-search").value).toBe("");
-      expect(marked()).toEqual([id("@I400@", "BIRT")]);
-    });
-
-    it("leaves the scroll alone for a selection made from the list", () => {
-      const made = open({}, large);
-      scroller().scrollTop = 90;
-
-      made.select(id("@I400@", "BIRT"), false);
-
-      expect(scroller().scrollTop).toBe(90);
-    });
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
   it("switches to the people for a person selected from the card, and marks that person", () => {
-    const made = open();
+    const made = board({ kind: "places" }, index);
 
     made.select("@I2@", true, true);
 
@@ -1087,7 +927,7 @@ describe("the events", () => {
   });
 
   it("switches to the families for a family selected from the card", () => {
-    const made = open();
+    const made = board({ kind: "places" }, index);
 
     made.select("@F3@", true, true);
 
@@ -1095,18 +935,11 @@ describe("the events", () => {
     expect(row("@F3@")?.getAttribute("aria-selected")).toBe("true");
   });
 
-  it("has no button but the kinds on the events", () => {
-    open();
+  it("marks no row for an event id that an older workspace may have saved", () => {
+    const made = board({}, index);
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Events"]);
-    expect(all(".gedcom-list-action")).toHaveLength(0);
-  });
+    made.select("event:@I1@:BIRT:0", true);
 
-  it("reads the same rows in Russian", () => {
-    setLanguage("ru");
-    open();
-
-    expect(text(".gedcom-list-count")).toBe("51 событие");
-    expect(cell(eventRow("@I1@", "BIRT"), 0)).toBe("Рождение");
+    expect(all("[aria-selected=true]")).toHaveLength(0);
   });
 });

@@ -107,7 +107,6 @@ describe("what a row counts", () => {
   });
 
   it("has four columns for each kind", () => {
-    expect(columnsOf("events").map((column) => column.key)).toEqual(["event", "record", "date", "place"]);
     expect(columnsOf("people").map((column) => column.key)).toEqual(["name", "years", "place", "sources"]);
     expect(columnsOf("families").map((column) => column.key)).toEqual(["spouses", "marriage", "place", "children"]);
     expect(columnsOf("sources").map((column) => column.key)).toEqual(["title", "author", "repository", "citedBy"]);
@@ -228,9 +227,9 @@ describe("reading a saved list state", () => {
     });
   });
 
-  it("keeps the events as a kind and its sort", () => {
-    expect(readListState({ kind: "events", sort: { events: desc("date") } })).toEqual({ kind: "events", sort: { events: desc("date") } });
-    expect(readListState({ kind: "events", sort: { events: { by: "years", dir: "asc" } } })).toEqual({ kind: "events" });
+  it("drops a saved events kind, which no longer exists, and its sort, so that the list opens on the people", () => {
+    expect(readListState({ kind: "events", sort: { events: desc("events") } })).toEqual({});
+    expect(readListState({ kind: "places", sort: { events: desc("events"), places: desc("events") } })).toEqual({ kind: "places", sort: { places: desc("events") } });
   });
 
   it("reads a value that is not an object as empty", () => {
@@ -246,9 +245,8 @@ describe("which selection the list can show", () => {
     expect(["@O5@", "@N1@", null].map((xref) => listSelection(index, xref))).toEqual([null, null, null]);
   });
 
-  it("is an event the file names, which the list shows among the events", () => {
-    expect(recordKind(index, "event:@I1@:BIRT:0")).toBe("events");
-    expect(listSelection(index, "event:@I1@:BIRT:0")).toBe("event:@I1@:BIRT:0");
-    expect(listSelection(index, "event:@I1@:BIRT:999")).toBeNull();
+  it("is nothing for an event id, which names no kind of the list", () => {
+    expect(recordKind(index, "event:@I1@:BIRT:0")).toBeNull();
+    expect(listSelection(index, "event:@I1@:BIRT:0")).toBeNull();
   });
 });

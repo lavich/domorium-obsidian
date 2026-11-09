@@ -12,6 +12,7 @@ The user's requirement, in their words and by date:
 - 2026-11-09: «удали доказательства» — the Evidence section is removed from every card, with the notes of the vault that link to a record that it listed.
 - 2026-11-09: «в карточке семьи можно удалить раздел Family; аналогично в Source надо оставить только галерею из старого» — the family card loses its Family section, and the source card keeps only its heading, the tree and its gallery.
 - 2026-11-09: «убери из правых вкладок шапку с историей» — the header of the card, with Back, Forward and the record's name, is removed, and with it the history of the records a card has shown.
+- 2026-11-09: «еще удали список Events и карточки для Event» — the Events list of the List view and the cards of events are removed; the list is the first part of this, the cards the second.
 - 2026-11-09: «пока не делаем перетаскивание», and, before it, «для начала сделаем поля не редактируемыми — просто отображение» — this step only reads.
 
 The proposed scope:
@@ -34,6 +35,8 @@ The proposed scope:
 
 ### Removed Capabilities
 
+- The Events kind of `genealogy-list`, with its requirements `Events` and `The Events has no actions`; the other requirements of the list that spoke of events are restated without them.
+
 - `genealogy-evidence`: the Evidence section of the cards, the citations it listed, and the notes of the vault that link to a record. What an event cites is shown as rows of its card, and the citations of a record are lines of its tree.
 
 ### Modified Capabilities
@@ -43,6 +46,7 @@ The proposed scope:
 
 ## Non-goals
 
+- An Events kind in the List, and a saved Events kind, which opens the people.
 - A header on the card, Back and Forward between the records it has shown, and the scroll position restored on returning to a record.
 - On the family card, a section of spouses and children and the marks of a child who is adopted, foster or sealing; on the source card, the repository's address and web address and the list of the records that cite it. The tree shows the pointers, and the person card's family section is unchanged.
 - An Evidence section, or a list of the notes of the vault that link to a record, on any card.

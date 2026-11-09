@@ -93,6 +93,7 @@ describe("what a tab keeps of the desk", () => {
       .toEqual({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } });
     expect(readDeskState({ list: "wide" })).toEqual({});
     expect(readDeskState({ list: { kind: "everyone" } })).toEqual({ list: {} });
+    expect(readDeskState({ mode: "list", list: { kind: "events", sort: { events: { by: "date", dir: "asc" } } } })).toEqual({ mode: "list", list: {} });
   });
 
   it("ignores what it does not recognise, so the setting decides", () => {

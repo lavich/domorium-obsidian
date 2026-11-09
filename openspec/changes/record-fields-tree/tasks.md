@@ -53,6 +53,11 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 - [x] 8.1 Remove the bar of `recordCard.ts`, `RecordHistory` and its test, the history in `GedcomView`, `CardTab.history`, `back`, `forward` and `arrivedBy`, the `history` origin and `addsStep`, the remembered scroll of the session, the strings `card.back` and `card.forward` and the rules of the bar; verify in `src/desk/recordCard.test.ts` that the card has no bar and no Back or Forward and keeps the focus on the toggle, in `src/desk/detail/treeSession.test.ts` that the session keeps the open nodes of twenty records, and in `tests/desk.spec.ts` that the body starts at the top of the card, scrolls, starts another record at its top and keeps the focus across a redraw
 - [x] 8.2 Specs: `Moving between records in the card` removed; the sidebar, source, narrow-panel and controls requirements of `genealogy-record-card` and the selected-row requirement of `genealogy-list` modified, their old scenarios kept by name; verify with `npm run openspec:validate`
 
+## 9. The Events list goes
+
+- [x] 9.1 Remove the Events kind: `ListKind`, `LIST_KINDS`, its columns, rows, search, sort and counts in `src/desk/listRows.ts` and `src/desk/fileList.ts`, `collectEvents`, `eventRows`, `eventCells` and `EventRow` in `src/desk/eventRows.ts`, their strings, and `src/desk/eventRows.test.ts`; verify in `src/desk/listRows.test.ts` that a saved events kind and its sort are dropped and that an event id has no kind, in `src/desk/deskState.test.ts` that a saved list state naming the events reads as empty, in `src/desk/fileList.test.ts` that the list has four kinds, and in `tests/fileList.spec.ts` the same at 1400 and 390 pixels
+- [x] 9.2 Specs: `Events` and `The Events has no actions` removed, the six list requirements that spoke of events restated without them under new names; verify with `npm run openspec:validate`
+
 ## 5. Docs and gate
 
 - [x] 5.1 `README.md` where it describes the card; verify the text names the tree and the controls on hover

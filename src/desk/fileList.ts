@@ -16,7 +16,6 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
-import { collectEvents } from "./eventRows";
 import { placeId, placeKeyOf, placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
@@ -38,42 +37,36 @@ const KIND_LABEL: Record<ListKind, MessageKey> = {
   families: "list.families",
   sources: "list.sources",
   places: "list.places",
-  events: "list.events",
 };
 const SEARCH_HINT: Record<ListKind, MessageKey> = {
   people: "list.search.people",
   families: "list.search.families",
   sources: "list.search.sources",
   places: "list.search.places",
-  events: "list.search.events",
 };
 const NOTHING: Record<ListKind, MessageKey> = {
   people: "list.nothing.people",
   families: "list.nothing.families",
   sources: "list.nothing.sources",
   places: "list.nothing.places",
-  events: "list.nothing.events",
 };
 const NONE: Record<ListKind, MessageKey> = {
   people: "list.none.people",
   families: "list.none.families",
   sources: "list.none.sources",
   places: "list.none.places",
-  events: "list.none.events",
 };
 const COUNT: Record<ListKind, MessageKey> = {
   people: "list.count.people",
   families: "list.count.families",
   sources: "list.count.sources",
   places: "list.count.places",
-  events: "list.count.events",
 };
 const COUNT_OF: Record<ListKind, MessageKey> = {
   people: "list.countOf.people",
   families: "list.countOf.families",
   sources: "list.countOf.sources",
   places: "list.countOf.places",
-  events: "list.countOf.events",
 };
 
 let boards = 0;
@@ -237,7 +230,7 @@ export class ListBoard {
     const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
-    if ((this.kind === "places" || this.kind === "events") && kind !== "places" && kind !== "events" && !fromCard) {
+    if (this.kind === "places" && kind !== "places" && !fromCard) {
       this.applyMarks();
       return;
     }
@@ -445,9 +438,6 @@ export class ListBoard {
     }
     if (this.kind === "places") {
       return placesOf(index).length;
-    }
-    if (this.kind === "events") {
-      return collectEvents(index).length;
     }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;
@@ -660,7 +650,7 @@ export class ListBoard {
     if (row === undefined) {
       return;
     }
-    const xref = row.xref ?? ("owner" in row ? row.key : placeId((row as PlaceRow).key));
+    const xref = row.xref ?? placeId((row as PlaceRow).key);
     this.marked = xref;
     this.setActive(at, scrollTo);
     this.host.select(xref);
