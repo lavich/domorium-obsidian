@@ -30,7 +30,6 @@ export interface OriginRules {
   cursorToRecord: boolean;
   editorFocus: boolean;
   revealsView: boolean;
-  addsStep: "visit" | "follow" | "none";
   placesCard: boolean;
   opensDrawer: boolean;
 }
@@ -40,7 +39,6 @@ export function originRules(origin: Origin, mobile: boolean): OriginRules {
     cursorToRecord: origin === "card" || origin === "link",
     editorFocus: origin === "link",
     revealsView: origin !== "view" && origin !== "cursor",
-    addsStep: origin === "cursor" ? "follow" : origin === "history" ? "none" : "visit",
     placesCard: origin !== "cursor",
     opensDrawer: mobile && origin === "view",
   };

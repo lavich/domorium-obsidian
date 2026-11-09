@@ -3,11 +3,9 @@ import { GedcomLanguageService, type Position, type Range } from "@domorium/lang
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
-import { pageKind } from "../src/desk/deskState";
 import type { FactKey } from "../src/desk/personPage";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
-import { RecordHistory } from "../src/desk/recordHistory";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
 import { installObsidianDom } from "../src/testing/obsidianDom";
@@ -58,13 +56,11 @@ declare global {
 installObsidianDom();
 
 const calls: DeskCalls = { shownInSource: [], filesOpened: [] };
-const history = new RecordHistory();
 let service: GedcomLanguageService;
 let index: GenealogyIndex;
 let record: string | null = null;
 let fact: FactKey | null = null;
 let hasTab = true;
-let arrival: "history" | "other" = "other";
 let session = new TreeSession();
 
 function element(id: string): HTMLElement {
@@ -74,8 +70,6 @@ function element(id: string): HTMLElement {
   }
   return found;
 }
-
-const exists = (xref: string): boolean => pageKind(index, xref) !== null;
 
 function mediaItem(at: Position): MediaItem | null {
   const reference = service.getMediaAt(at);
@@ -97,15 +91,6 @@ function mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
     const item = mediaItem(one.at);
     return item ? [{ ...item, ...(one.record ? { record: one.record } : {}) }] : [];
   });
-}
-
-function step(xref: string | null): void {
-  if (xref !== null) {
-    record = xref;
-    fact = null;
-    arrival = "history";
-    draw();
-  }
 }
 
 const tab: CardTab = {
@@ -132,21 +117,11 @@ const tab: CardTab = {
   openFile: (path) => {
     calls.filesOpened.push(path);
   },
-  history: () => ({ canBack: history.canBack(exists), canForward: history.canForward(exists) }),
-  back: () => {
-    step(history.back(exists));
-  },
-  forward: () => {
-    step(history.forward(exists));
-  },
-  arrivedBy: () => arrival,
 };
 
 function selectRecord(xref: string): void {
   record = xref;
   fact = null;
-  arrival = "other";
-  history.visit(xref);
   draw();
 }
 
@@ -172,14 +147,9 @@ function mount(options: DeskOptions): void {
   index = buildIndex(service);
   hasTab = !(options.noTab ?? false);
   session = new TreeSession();
-  arrival = "other";
   const first = options.record ?? index.people.find((row) => row.xref)?.xref ?? "";
   record = first === "" ? null : first;
   fact = options.fact ?? null;
-  history.reset();
-  if (record !== null) {
-    history.visit(record);
-  }
   element("card").empty();
   draw();
 }

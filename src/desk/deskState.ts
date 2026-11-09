@@ -90,7 +90,7 @@ export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
   return eventAt(index, xref) ? "event" : null;
 }
 
-export type Origin = "view" | "card" | "link" | "history" | "cursor";
+export type Origin = "view" | "card" | "link" | "cursor";
 
 export interface ModeButton {
   mode: DeskMode;

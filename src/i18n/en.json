@@ -243,8 +243,6 @@
   "fileGraph.nodeUndated": "Family of {couple}, no marriage date",
   "command.openRecordCard": "Show the record card",
   "card.title": "Record",
-  "card.back": "Back",
-  "card.forward": "Forward",
   "card.noTab": "Open a GEDCOM file to see its records.",
   "card.nothing": "Select a record in the graph, the timeline or the list.",
   "card.empty": "The file holds nothing to show.",

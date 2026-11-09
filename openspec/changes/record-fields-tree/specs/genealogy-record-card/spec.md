@@ -170,8 +170,7 @@ A source card SHALL show, in this order and with no other section: the source's 
 
 The card SHALL be readable and usable in one column at the width a sidebar has,
 from 320 pixels up, and at a phone's width, without horizontal scrolling of the
-card. The card as a whole SHALL scroll beneath a header carrying Back and Forward,
-which stays at the top. Choosing a fact SHALL open the card of its event, as the
+card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. Choosing a fact SHALL open the card of its event, as the
 requirement on the event card says, and a place named in a fact or an entry SHALL open the card of that place. Redrawing the card for the same record — the file changing —
 SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record, an event or a place SHALL scroll the card to
 the top.
@@ -204,17 +203,17 @@ the top.
 
 #### Scenario: The header stays
 - **WHEN** the reader scrolls to the end of Marie's card
-- **THEN** Back and Forward are still at the top of the card
+- **THEN** the card has no header: no bar, no Back or Forward control, and its body began at the top of the card
 
 ### Requirement: The controls of a card are easy to see and to hit
 
 Every control of a card — the buttons that select a relative, a source, an event or a place, the
-links *Show in source*, the notes' lines, the picture of a media card, and Back and Forward — SHALL
+links *Show in source*, the notes' lines, and the picture of a media card — SHALL
 show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
 when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
 them SHALL have an activation area at least 32 pixels tall without changing the size of its text,
 and a control that is a block of its own — a relative, a source, a note's line, the heading of a
-fold, Back and Forward (44 by 44) — 44 pixels; where two controls stand closer together than that,
+fold — 44 pixels; where two controls stand closer together than that,
 the space between them is shared. The control of a node of the tree, its arrow, SHALL stay shown, like any control that opens or closes a part of the card; the one control that opens or closes every node of a tree SHALL be shown only while the pointer is over the tree or the focus is within it, SHALL NOT shift anything when it appears or disappears, SHALL stay reachable by assistive technology while it is not shown, and SHALL stay shown where the pointer cannot hover. The headings of the sections of a card and the secondary lines under
 them SHALL be set in the muted text colour of the theme, not the faint one. A date at the left of an event SHALL be set
 in the muted text colour; a notice that a source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
@@ -540,3 +539,189 @@ is selected nobody is marked there; a media record has no row in the list.
 - **WHEN** the reader selects Marie's birth on her card and then presses her name at the
   top of the card of her birth
 - **THEN** the card shows Marie
+
+### Requirement: The card lives in the right sidebar and follows the GEDCOM tab
+
+While the **Genealogy interface** setting is on, the plugin SHALL offer a view
+named **Record**, the record card, in the right sidebar. It SHALL be placed there, without taking the focus, the first time in a session a record is selected in a
+GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, by Back or Forward in the card, or by a relative, a citation or a tile in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
+SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
+is open.
+
+The card SHALL show the selected record of the GEDCOM tab most recently active,
+and SHALL follow that tab as the reader moves between tabs, whatever the mode of
+the tab. Where no GEDCOM tab is open it SHALL say so. Where the tab has nothing
+selected it SHALL say to select a record in the graph, the timeline or the list;
+where the file declares no person, family or source it SHALL say that the file holds nothing to show. When the record it shows changes, the card SHALL announce the record's name in a polite live region, in the reader's language.
+
+#### Scenario: The first selection
+- **WHEN** the Genealogy interface is on, no card is open, and the reader opens
+  `curie.ged` in Graph mode and activates Marie's card
+- **THEN** the right sidebar gains the Record view as one of its tabs showing
+  Marie Skłodowska-Curie, and the graph keeps the focus
+
+#### Scenario: Closed by the reader
+- **WHEN** the setting **Open the record card when selecting** is off, the card was placed, the reader closed it, and selects Pierre Curie
+- **THEN** the card is not put back during that session
+
+#### Scenario: Closed by the reader, with the setting on
+- **WHEN** the setting is on, the card was placed, the reader closed it, and clicks Pierre Curie's card in the graph
+- **THEN** the card is put back in the right sidebar showing Pierre Curie, and the graph keeps the focus
+
+#### Scenario: The command
+- **WHEN** the card is open behind another tab of the right sidebar, or the
+  sidebar is collapsed, and the reader runs **Show the record card**
+- **THEN** the right sidebar is open on the card
+
+#### Scenario: The interface is off
+- **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
+- **THEN** no card is placed and the palette does not offer **Show the record
+  card**
+
+#### Scenario: Turning it off with the card open
+- **WHEN** the card is open and the reader turns the interface off
+- **THEN** the card is closed
+
+#### Scenario: No GEDCOM tab
+- **WHEN** the card is open and no GEDCOM tab is
+- **THEN** the card says no GEDCOM file is open
+
+#### Scenario: Nothing selected
+- **WHEN** the active GEDCOM tab is in Graph mode with nothing selected
+- **THEN** the card says to select a record in the graph, the timeline or the
+  list
+
+#### Scenario: A file with no people
+- **WHEN** the active GEDCOM tab holds a file declaring no `INDI`, `FAM` or `SOUR`
+  record
+- **THEN** the card says the file holds nothing to show
+
+#### Scenario: Following the tab
+- **WHEN** Marie is selected in the tab of `curie.ged` and the reader moves to
+  another GEDCOM tab with Pierre Curie selected
+- **THEN** the card shows Pierre Curie, and shows Marie again when the reader
+  returns to the first tab
+
+#### Scenario: Moving to a Markdown note
+- **WHEN** the reader moves from the GEDCOM tab to a Markdown note
+- **THEN** the card still shows the record of that GEDCOM tab
+
+#### Scenario: On a phone
+- **WHEN** the reader touches Marie's card in the graph on a phone, and then
+  touches it again
+- **THEN** the right drawer opens on Marie's card
+
+#### Scenario: On a phone after the card was closed
+- **WHEN** the card was placed and closed in this session, and the reader touches
+  Marie's card in the graph on a phone twice
+- **THEN** the right drawer opens on Marie's card
+
+#### Scenario: A collapsed sidebar on a desktop
+- **WHEN** the setting is off, the card is open, the right sidebar is collapsed, and the reader activates
+  Marie's card in the graph
+- **THEN** the sidebar stays collapsed, and the card shows Marie when it is opened
+
+#### Scenario: Both sidebars collapsed
+- **WHEN** the setting is on, both sidebars are collapsed, and the reader clicks Marie's card in the graph on a desktop
+- **THEN** the right sidebar expands on the card showing Marie, the left sidebar stays collapsed, and the graph keeps the focus
+
+#### Scenario: The setting is off
+- **WHEN** the setting is off, both sidebars are collapsed, and the reader clicks Marie's card in the graph
+- **THEN** both sidebars stay collapsed
+
+#### Scenario: A card already visible
+- **WHEN** the setting is on, the card is open in the expanded right sidebar and the reader clicks Pierre's card in the graph
+- **THEN** the sidebar is not expanded, switched or moved, and the card shows Pierre
+
+#### Scenario: Collapsed again by the reader
+- **WHEN** the setting is on and the reader collapsed the right sidebar after the card opened, then clicks Marie's card in the graph
+- **THEN** the right sidebar expands again on the card
+
+#### Scenario: Following the cursor in Source
+- **WHEN** the setting is on, both sidebars are collapsed, the tab is in Source mode, and the cursor rests in Pierre's record
+- **THEN** no sidebar opens
+
+#### Scenario: Back in the card
+- **WHEN** the setting is on, the card is open in the expanded right sidebar, the reader collapsed the left sidebar, and activates a relative in the card
+- **THEN** neither sidebar is expanded, switched or moved
+
+#### Scenario: A row of the list
+- **WHEN** the setting is on, the right sidebar is collapsed and the tab is in List mode, and the reader clicks Marie's row
+- **THEN** the right sidebar expands on the card showing Marie, and the list keeps the focus
+
+#### Scenario: On a phone, a row of the list
+- **WHEN** the reader taps Marie's row in the list on a phone
+- **THEN** the right drawer opens on Marie's card
+
+#### Scenario: The announcement
+- **WHEN** the reader selects Pierre Curie
+- **THEN** a polite live region of the card reads `Pierre Curie`
+
+### Requirement: In Source mode the cursor and the selection go together
+
+In Source mode, selecting a record from a link, *Go to record* or by activating something in the card SHALL put the cursor at the record's first line and scroll it into view; the editor SHALL take the focus when the selection came from a link or *Go to record*, and SHALL NOT when it came from the card. A selection that came from the cursor itself, and one that came from the card's Back and Forward, SHALL NOT move the cursor or take the focus. While the Genealogy interface is off, following a link or choosing *Go to record* in Source mode SHALL still put the cursor at the record, and nothing SHALL be selected. Moving the cursor into a
+record that has a card SHALL, once the cursor has rested, select that record
+without moving the cursor; a cursor in a record with no card, or between records,
+SHALL leave the selection as it is.
+
+Switching to Source mode with a record selected SHALL put the cursor at the start
+of the selected fact's lines, or else of the record's lines, and scroll it into
+view, unless the cursor is already within those lines. Leaving Source mode SHALL
+select the record under the cursor where it has a card.
+
+#### Scenario: Opening Pierre in the source
+- **WHEN** the tab is in Source mode and the reader follows `[[curie.ged#@I2@]]`
+- **THEN** the tab stays in Source mode with the cursor on `0 @I2@ INDI`, and the
+  card shows Pierre Curie
+
+#### Scenario: Opening a family in the source
+- **WHEN** the tab is in Source mode and the reader follows `[[curie.ged#@F3@]]`
+- **THEN** the tab stays in Source mode with the cursor on `0 @F3@ FAM`, and the
+  card shows the Curies' family
+
+#### Scenario: A relative in the card
+- **WHEN** the tab is in Source mode and the reader activates Pierre Curie among
+  Marie's relatives in the card
+- **THEN** the cursor is on `0 @I2@ INDI`, in view, the card shows Pierre Curie,
+  and the focus is still in the card
+
+#### Scenario: Back in the source
+- **WHEN** the tab is in Source mode, the reader selected Marie and then Pierre by
+  links, the cursor is on `0 @I2@ INDI`, and the reader activates Marie among Pierre's relatives in the card
+- **THEN** the card shows Marie, the cursor is on `0 @I1@ INDI`, in view, and the focus is still in the card
+
+#### Scenario: The interface is off
+- **WHEN** the Genealogy interface is off and the reader follows `[[curie.ged#@I1@]]`
+- **THEN** the tab is in Source mode with the cursor on `0 @I1@ INDI`, and nothing is
+  selected
+
+#### Scenario: The cursor moves into a record
+- **WHEN** the tab is in Source mode and the reader moves the cursor into Marie's
+  record and rests there
+- **THEN** the card shows Marie Skłodowska-Curie
+
+#### Scenario: A note at the cursor
+- **WHEN** Marie is selected and the reader moves the cursor into the shared note
+  record `@N1@`
+- **THEN** the card still shows Marie
+
+#### Scenario: Switching to the source from Marie's birth
+- **WHEN** Marie's birth is selected on her card and the reader switches to Source
+  mode
+- **THEN** the cursor is on her `1 BIRT` line, in view
+
+#### Scenario: Switching to the source from the graph
+- **WHEN** the cursor is in Pierre Curie's record in Source mode, and the reader
+  switches to Graph mode and then to Source mode
+- **THEN** the cursor is where it was
+
+#### Scenario: Through the graph
+- **WHEN** the cursor is on a line inside Pierre Curie's record, and the reader
+  switches to Graph mode
+- **THEN** Pierre Curie is selected, and the card shows Pierre Curie
+
+## REMOVED Requirements
+
+### Requirement: Moving between records in the card
+**Reason**: The header of the card, which held Back and Forward and the record's name, is removed at the user's request of 2026-11-09 («убери из правых вкладок шапку с историей»); the history of the records a card has shown had no other way to be used.
+**Migration**: Select the record again in the graph, the timeline or the list, from a relative or a link in the card, or with *Go to record*.

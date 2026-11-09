@@ -306,8 +306,8 @@ describe("what each origin of a selection asks for", () => {
     expect(rules("view", true).opensDrawer).toBe(true);
   });
 
-  it("never moves the cursor or takes the focus for the cursor and for history", () => {
-    for (const origin of ["cursor", "history"] as const) {
+  it("never moves the cursor or takes the focus for the cursor", () => {
+    for (const origin of ["cursor"] as const) {
       expect(rules(origin)).toMatchObject({ cursorToRecord: false, editorFocus: false });
     }
   });
@@ -320,22 +320,14 @@ describe("what each origin of a selection asks for", () => {
 
   it("moves a view for every origin but a click in it", () => {
     expect(rules("view").revealsView).toBe(false);
-    for (const origin of ["card", "link", "history"] as const) {
+    for (const origin of ["card", "link"] as const) {
       expect(rules(origin).revealsView).toBe(true);
-    }
-  });
-
-  it("adds a follow step for the cursor, none for history and a visit for the rest", () => {
-    expect(rules("cursor").addsStep).toBe("follow");
-    expect(rules("history").addsStep).toBe("none");
-    for (const origin of ["view", "card", "link"] as const) {
-      expect(rules(origin).addsStep).toBe("visit");
     }
   });
 
   it("places the card for every origin but the cursor", () => {
     expect(rules("cursor").placesCard).toBe(false);
-    for (const origin of ["view", "card", "link", "history"] as const) {
+    for (const origin of ["view", "card", "link"] as const) {
       expect(rules(origin).placesCard).toBe(true);
     }
   });
@@ -343,7 +335,7 @@ describe("what each origin of a selection asks for", () => {
   it("opens the drawer only for a view, and only on mobile", () => {
     expect(rules("view", true).opensDrawer).toBe(true);
     expect(rules("view", false).opensDrawer).toBe(false);
-    for (const origin of ["card", "link", "history", "cursor"] as const) {
+    for (const origin of ["card", "link", "cursor"] as const) {
       expect(rules(origin, true).opensDrawer).toBe(false);
     }
   });

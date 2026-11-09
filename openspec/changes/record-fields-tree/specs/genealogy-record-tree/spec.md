@@ -146,7 +146,7 @@ Pressing, focusing, selecting, opening or closing in the tree SHALL NOT write to
 
 ### Requirement: The tree fits a narrow panel and a phone
 
-The tree SHALL be readable in one column from 320 pixels up and at a phone's width, without horizontal scrolling. The indentation of nested lines SHALL stop growing after the fourth level beneath the root, so that a line nested deeper keeps the width of a line at the fourth. A long value SHALL wrap, and a long label SHALL wrap. A redraw of the card for a change of the file SHALL keep the focus on the same control and SHALL NOT scroll the card; returning to a record with Back or Forward SHALL restore its scroll position, and showing a record in any other way SHALL scroll the card to its top.
+The tree SHALL be readable in one column from 320 pixels up and at a phone's width, without horizontal scrolling. The indentation of nested lines SHALL stop growing after the fourth level beneath the root, so that a line nested deeper keeps the width of a line at the fourth. A long value SHALL wrap, and a long label SHALL wrap. A redraw of the card for a change of the file SHALL keep the focus on the same control and SHALL NOT scroll the card; showing another record SHALL scroll the card to its top.
 
 #### Scenario: A deep line at a sidebar's width
 - **WHEN** a record nests a line six levels deep and the card is 320 pixels wide

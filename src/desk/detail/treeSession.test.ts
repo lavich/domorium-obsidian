@@ -41,23 +41,4 @@ describe("the choices of the reader in the trees", () => {
 
     expect(state.isOpen("A[0]")).toBe(false);
   });
-
-  it("keep the scroll of a record shown, and none for one never shown", () => {
-    const session = new TreeSession();
-    session.stateFor("a");
-    session.rememberScroll("a", 340);
-
-    expect(session.scrollOf("a")).toBe(340);
-    expect(session.scrollOf("never")).toBe(0);
-  });
-
-  it("forget the scroll of a record with the oldest of twenty-one", () => {
-    const session = new TreeSession();
-    session.rememberScroll("first", 50);
-    for (let at = 0; at < 20; at += 1) {
-      session.stateFor(`r${at}`);
-    }
-
-    expect(session.scrollOf("first")).toBe(0);
-  });
 });

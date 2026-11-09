@@ -33,10 +33,6 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
     selectFact: vi.fn(),
     showInSource: vi.fn(),
     openFile: vi.fn(),
-    history: () => ({ canBack: false, canForward: false }),
-    back: vi.fn(),
-    forward: vi.fn(),
-    arrivedBy: () => "other",
   };
   const view: CardView = { setIcon: vi.fn(), session: new TreeSession() };
   container.replaceChildren();

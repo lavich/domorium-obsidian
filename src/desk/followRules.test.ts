@@ -59,8 +59,8 @@ describe("a cursor that rested and a selection made meanwhile", () => {
     expect(settle).toHaveBeenCalledTimes(1);
   });
 
-  it("does not settle after Back, the card or a link selected another record", () => {
-    for (const origin of ["history", "card", "link", "view"] as const) {
+  it("does not settle after the card or a link selected another record", () => {
+    for (const origin of ["card", "link", "view"] as const) {
       vi.useFakeTimers();
       const settle = vi.fn();
       const follow = new CursorFollow(window, settle);

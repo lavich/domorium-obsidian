@@ -27,11 +27,6 @@ export interface CardTab {
   selectFact(key: FactKey | null): void;
   showInSource(range: Range): void;
   openFile(path: string): void;
-  history(): { canBack: boolean; canForward: boolean };
-  back(): void;
-  forward(): void;
-  /** How the record shown was last chosen: by Back or Forward, or any other way. */
-  arrivedBy(): "history" | "other";
 }
 
 export interface CardView {
@@ -42,7 +37,7 @@ export interface CardView {
 
 const FOCUS_KEY = "data-focus-key";
 const OPEN_KEY = "data-open";
-const CARD_KEYS: ReadonlySet<string> = new Set(["card.back", "card.forward", "tree:toggle"]);
+const TOGGLE_KEY = "tree:toggle";
 
 const hasTree = (index: GenealogyIndex, record: string): boolean =>
   index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;
@@ -94,11 +89,6 @@ export function renderRecordCard(
   const focusKey = focusWas?.closest(`[${FOCUS_KEY}]`)?.getAttribute(FOCUS_KEY) ?? null;
   const scrollTop = before?.scrollTop ?? 0;
   const previous = root.getAttribute("data-shown");
-  const previousDrawsTree = root.getAttribute("data-tree") === "1";
-  if (previous && previousDrawsTree) {
-    view.session.rememberScroll(previous, scrollTop);
-  }
-
   for (const stale of [...root.children]) {
     if (stale !== live) {
       stale.remove();
@@ -111,9 +101,6 @@ export function renderRecordCard(
   const record = tab && index && selection.record && pageKind(index, selection.record) ? selection.record : null;
   const shown = tab && record ? `${tab.filePath() ?? ""}\n${record}` : "";
 
-  if (tab) {
-    renderHeader(root, tab, view, index && record ? recordName(index, record) : null);
-  }
   const body = root.createDiv({ cls: "gedcom-card-body" });
   body.setAttribute("tabindex", "-1");
 
@@ -137,18 +124,15 @@ export function renderRecordCard(
   }
 
   root.setAttribute("data-shown", shown);
-  root.setAttribute("data-tree", drawsTree ? "1" : "0");
   if (live && shown !== previous) {
     live.setText(tab && index && record ? t("card.announce", { name: recordName(index, record) }) : "");
   }
   if (shown === previous) {
     body.scrollTop = scrollTop;
-  } else if (drawsTree && tab?.arrivedBy() === "history") {
-    body.scrollTop = view.session.scrollOf(shown);
   }
   if (focusWas !== null) {
     const same =
-      focusKey === null || (shown !== previous && !CARD_KEYS.has(focusKey))
+      focusKey === null || (shown !== previous && focusKey !== TOGGLE_KEY)
         ? null
         : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`)].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
     (same ?? body).focus({ preventScroll: true });
@@ -162,28 +146,6 @@ function makeRoot(container: HTMLElement): HTMLElement {
   live.setAttribute("aria-live", "polite");
   live.setAttribute("role", "status");
   return root;
-}
-
-function renderHeader(root: HTMLElement, tab: CardTab, view: CardView, name: string | null): void {
-  const head = root.createDiv({ cls: "gedcom-card-head" });
-  const { canBack, canForward } = tab.history();
-  const button = (label: "card.back" | "card.forward", icon: string, enabled: boolean, go: () => void): void => {
-    const element = head.createEl("button", { cls: ["gedcom-card-nav", "clickable-icon"] });
-    element.setAttribute("type", "button");
-    element.setAttribute("aria-label", t(label));
-    element.setAttribute(FOCUS_KEY, label);
-    if (!enabled) {
-      element.setAttribute("disabled", "");
-    }
-    view.setIcon(element, icon);
-    element.addEventListener("click", go);
-  };
-  button("card.back", "chevron-left", canBack, () => tab.back());
-  button("card.forward", "chevron-right", canForward, () => tab.forward());
-  if (name !== null) {
-    const title = head.createDiv({ cls: "gedcom-card-head-name", text: name });
-    title.setAttribute("aria-hidden", "true");
-  }
 }
 
 function drawRecord(

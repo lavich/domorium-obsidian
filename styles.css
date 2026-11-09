@@ -294,35 +294,6 @@
   min-width: 0;
 }
 
-.gedcom-card-head {
-  flex: none;
-  display: flex;
-  gap: var(--size-2-2);
-  padding: var(--size-2-3) var(--size-4-2);
-  border-bottom: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-}
-
-.gedcom-card-head {
-  align-items: center;
-}
-
-.gedcom-card-head-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin-inline-start: var(--size-2-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-button.gedcom-card-nav:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 .gedcom-card-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -331,7 +302,7 @@ button.gedcom-card-nav:disabled {
   overflow-y: auto;
   overflow-wrap: anywhere;
   container: gedcom-card / inline-size;
-  padding: var(--size-4-2) var(--size-4-4) var(--size-4-16);
+  padding: var(--size-4-4) var(--size-4-4) var(--size-4-16);
 }
 
 .is-mobile .gedcom-card-body {
@@ -786,8 +757,7 @@ button.gedcom-desk-fact-name:focus-visible,
 button.gedcom-desk-moment-what:focus-visible,
 button.gedcom-desk-fold-button:focus-visible,
 button.gedcom-desk-media-stage:focus-visible,
-button.gedcom-desk-tile-face:focus-visible,
-button.gedcom-card-nav:focus-visible {
+button.gedcom-desk-tile-face:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
 }
@@ -796,11 +766,6 @@ button.gedcom-card-nav:focus-visible {
   .gedcom-desk-event-owner {
     min-height: 44px;
     align-items: center;
-  }
-
-  button.gedcom-card-nav {
-    min-width: 44px;
-    min-height: 44px;
   }
 
   button.gedcom-desk-person,
@@ -834,11 +799,6 @@ button.gedcom-card-nav:focus-visible {
 .is-mobile .gedcom-desk-event-owner {
   min-height: 44px;
   align-items: center;
-}
-
-.is-mobile button.gedcom-card-nav {
-  min-width: 44px;
-  min-height: 44px;
 }
 
 .is-mobile button.gedcom-desk-person,

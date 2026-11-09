@@ -44,8 +44,10 @@ const openEveryNode = async (page: Page): Promise<void> => {
   }
 };
 
-const back = (page: Page) => page.locator('.gedcom-card-nav[aria-label="Back"]');
-const forward = (page: Page) => page.locator('.gedcom-card-nav[aria-label="Forward"]');
+const show = (page: Page, xref: string) =>
+  page.evaluate((record) => {
+    window.desk.selectRecord(record);
+  }, xref);
 
 const SIZES = [
   { name: "320 pixels", width: 320, phone: false, viewport: { width: 1400, height: 760 } },
@@ -114,26 +116,24 @@ for (const size of SIZES) {
       expect(await overflowsSideways(page)).toBe(false);
     });
 
-    test("keeps the header at the top while the body scrolls to the end", async ({ page }) => {
-      const before = await page.locator(".gedcom-card-head").boundingBox();
+    test("has no header, and the body scrolls from the top of the card to its end", async ({ page }) => {
+      await expect(page.locator(".gedcom-card-head, .gedcom-card-nav, .gedcom-card-head-name")).toHaveCount(0);
+      const card = await page.locator(".gedcom-card").boundingBox();
+      const before = await page.locator(".gedcom-card-body").boundingBox();
       await page.locator(".gedcom-card-body").evaluate((body) => {
         body.scrollTop = body.scrollHeight;
       });
-      const after = await page.locator(".gedcom-card-head").boundingBox();
-      const body = await page.locator(".gedcom-card-body").boundingBox();
 
+      expect(before?.y).toBe(card?.y);
       expect(await scrollTopOf(page)).toBeGreaterThan(0);
-      expect(after?.y).toBe(before?.y);
-      expect(body?.y ?? 0).toBeGreaterThanOrEqual((after?.y ?? 0) + (after?.height ?? 0) - 1);
-      await expect(back(page)).toBeInViewport();
     });
 
-    test("opens the card of an event when a fact is tapped, and Back returns to her card", async ({ page }) => {
+    test("opens the card of an event when a fact is tapped, and selecting her again shows her card", async ({ page }) => {
       await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
       await expect(page.locator(".gedcom-card-evidence")).toHaveCount(0);
-      await back(page).click();
+      await show(page, "@I1@");
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     });
 
@@ -151,9 +151,7 @@ for (const size of SIZES) {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
     });
 
-    test("shows Pierre Curie from his top, and Back and Forward return by the buttons", async ({ page }) => {
-      await expect(back(page)).toBeDisabled();
-      await expect(forward(page)).toBeDisabled();
+    test("shows Pierre Curie from his top, with no Back or Forward to return by", async ({ page }) => {
       await page.locator(".gedcom-card-body").evaluate((body) => {
         body.scrollTop = body.scrollHeight;
       });
@@ -161,13 +159,7 @@ for (const size of SIZES) {
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
       expect(await scrollTopOf(page)).toBe(0);
-      await expect(back(page)).toBeEnabled();
-      await back(page).click();
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
-      await expect(forward(page)).toBeEnabled();
-      await forward(page).click();
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
-      await expect(forward(page)).toBeDisabled();
+      await expect(page.locator(".gedcom-card-nav")).toHaveCount(0);
     });
 
     test("shows no evidence on the card of her birth, and returns to her by the record at its top", async ({ page }) => {
@@ -206,7 +198,7 @@ test.describe("Obsidian's own button styling", () => {
 });
 
 test.describe("the card of an event", () => {
-  test("shows the event, links to its record, and Back returns to it", async ({ page }) => {
+  test("shows the event and links to its record", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { record: "event:@I1@:BIRT:0" });
 
@@ -215,9 +207,6 @@ test.describe("the card of an event", () => {
     await expect(page.locator(".gedcom-desk-subtitle")).toHaveText("7 NOV 1867 · Warsaw, Congress Poland");
     await page.locator(".gedcom-desk-event-owner .gedcom-desk-link", { hasText: "Marie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
-    await expect(back(page)).toBeEnabled();
-    await back(page).click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
   });
 });
 
@@ -271,7 +260,7 @@ test.describe("the family card", () => {
     await treeRow(page, "Marriage").locator("button.gedcom-tree-label").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
 
-    await back(page).click();
+    await show(page, "@F3@");
     await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Ève Curie" }).click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
   });
@@ -379,7 +368,7 @@ test.describe("the controls of a card", () => {
 const hitSweep = (page: Page): Promise<string[]> =>
   page.evaluate(() => {
     const missed: string[] = [];
-    const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
+    const selectors = ".gedcom-card-body button:not(:disabled)";
     for (const control of document.querySelectorAll<HTMLElement>(selectors)) {
       control.scrollIntoView({ block: "center" });
       const box = control.getBoundingClientRect();
@@ -699,26 +688,29 @@ test.describe("the tree of a record", () => {
     await mountDesk(page, { width: 420 });
     await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-    await back(page).click();
+    await show(page, "@I1@");
 
     await pressArrow(page, "Birth");
     await treeRow(page, "Place").locator(".gedcom-desk-link").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
   });
 
-  test("restores the scroll on Back, and starts another record at its top", async ({ page }) => {
+  test("starts another record at its top, and keeps the focus on the toggle and on a control of the same record across a redraw", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 420 });
     await mountDesk(page, { width: 360 });
     await openEveryNode(page);
     await page.locator(".gedcom-card-body").evaluate((body) => {
       body.scrollTop = 300;
     });
-    await page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" }).first().evaluate((one) => (one as HTMLElement).click());
-    expect(await scrollTopOf(page)).toBe(0);
-    await back(page).click();
-
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
+    await page.locator(".gedcom-tree-toggle").focus();
+    await show(page, "@I1@");
+    await expect(page.locator(".gedcom-tree-toggle")).toBeFocused();
     expect(await scrollTopOf(page)).toBe(300);
+
+    await page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" }).first().evaluate((one) => (one as HTMLElement).click());
+    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
+    expect(await scrollTopOf(page)).toBe(0);
+    await expect(page.locator(".gedcom-tree-toggle")).toBeFocused();
   });
 
   for (const [width, phone] of [[320, false], [390, true]] as const) {

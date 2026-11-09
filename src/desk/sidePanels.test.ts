@@ -15,7 +15,6 @@ describe("opensCard", () => {
     ["view", true],
     ["link", true],
     ["card", false],
-    ["history", false],
     ["cursor", false],
   ])("%s opens the card: %s", (origin, opens) => {
     expect(opensCard(origin)).toBe(opens);
@@ -60,9 +59,5 @@ describe("sidePanelPlan", () => {
 
   it("does nothing for the cursor following in Source", () => {
     expect(plan({ origin: "cursor" })).toBe("none");
-  });
-
-  it("does nothing for Back in the card", () => {
-    expect(plan({ origin: "history" })).toBe("none");
   });
 });

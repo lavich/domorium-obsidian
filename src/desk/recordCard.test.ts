@@ -9,13 +9,11 @@ import { TreeSession } from "./detail/treeSession";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
 let container: HTMLElement;
-let state: { record: string | null; fact: string | null; canBack: boolean; canForward: boolean; arrival: "history" | "other" };
+let state: { record: string | null; fact: string | null };
 let tab: CardTab;
 let calls: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
   selectFact: ReturnType<typeof vi.fn<(key: string | null) => void>>;
-  back: ReturnType<typeof vi.fn<() => void>>;
-  forward: ReturnType<typeof vi.fn<() => void>>;
 };
 let view: {
   setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
@@ -34,8 +32,8 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
   index = curieIndex();
-  state = { record: "@I1@", fact: null, canBack: false, canForward: false, arrival: "other" };
-  calls = { select: vi.fn(), selectFact: vi.fn(), back: vi.fn(), forward: vi.fn() };
+  state = { record: "@I1@", fact: null };
+  calls = { select: vi.fn(), selectFact: vi.fn() };
   tab = {
     filePath: () => "curie.ged",
     index: () => index,
@@ -51,14 +49,6 @@ beforeEach(() => {
     },
     showInSource: vi.fn(),
     openFile: vi.fn(),
-    history: () => ({ canBack: state.canBack, canForward: state.canForward }),
-    back: () => {
-      calls.back();
-    },
-    forward: () => {
-      calls.forward();
-    },
-    arrivedBy: () => state.arrival,
   };
   view = {
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
@@ -74,14 +64,12 @@ const draw = (): void => {
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 const body = () => container.querySelector<HTMLElement>(".gedcom-card-body");
-const nav = (label: string) => container.querySelector<HTMLButtonElement>(`.gedcom-card-nav[aria-label="${label}"]`);
 
 describe("the empty states of the card", () => {
   it("says no GEDCOM file is open without a tab", () => {
     renderRecordCard(container, null, view);
 
     expect(texts(".gedcom-card-state")).toEqual(["Open a GEDCOM file to see its records."]);
-    expect(container.querySelector(".gedcom-card-head")).toBeNull();
   });
 
   it("says to select a record where the tab has none selected, or a selected one the file lacks", () => {
@@ -125,11 +113,13 @@ describe("the page of each kind of record", () => {
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
-  it("names the record in the header, hidden from assistive technology, beside the page's own heading", () => {
+  it("has no header: no bar, no Back or Forward control, and the record's name only in its own heading and the live region", () => {
     draw();
 
-    expect(texts(".gedcom-card-head-name")).toEqual(["Marie Skłodowska-Curie"]);
-    expect(container.querySelector(".gedcom-card-head-name")?.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelector(".gedcom-card-head, .gedcom-card-nav, .gedcom-card-head-name")).toBeNull();
+    expect(container.querySelector('[data-focus-key="card.back"], [data-focus-key="card.forward"]')).toBeNull();
+    expect(container.firstElementChild?.firstElementChild?.classList.contains("gedcom-card-live")).toBe(true);
+    expect(container.querySelector(".gedcom-card")?.children[1]?.classList.contains("gedcom-card-body")).toBe(true);
     expect(texts("h1")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
@@ -176,7 +166,6 @@ describe("the page of each kind of record", () => {
     container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-value .gedcom-desk-link")?.click();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Paris, France"]);
-    expect(texts(".gedcom-card-head-name")).toEqual(["Paris, France"]);
     expect(calls.select).toHaveBeenCalledTimes(1);
   });
 
@@ -189,7 +178,6 @@ describe("the page of each kind of record", () => {
     expect(texts(".gedcom-desk-event-kind")).toEqual(["Person"]);
     expect(texts(".gedcom-desk-event-owner .gedcom-desk-link")).toEqual(["Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
-    expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-subtitle")).toEqual(["7 NOV 1867 · Warsaw, Congress Poland"]);
     expect(container.querySelector(".gedcom-desk-event-details")).toBeNull();
     expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
@@ -305,40 +293,6 @@ describe("the folds of a person card", () => {
   });
 });
 
-describe("Back and Forward", () => {
-  it("are disabled where there is nowhere to go, and enabled by the tab's history", () => {
-    draw();
-    expect(nav("Back")?.disabled).toBe(true);
-    expect(nav("Forward")?.disabled).toBe(true);
-
-    state.canBack = true;
-    state.canForward = true;
-    draw();
-    expect(nav("Back")?.disabled).toBe(false);
-    expect(nav("Forward")?.disabled).toBe(false);
-    expect(nav("Back")?.getAttribute("data-icon")).toBe("chevron-left");
-  });
-
-  it("step through the tab", () => {
-    state.canBack = true;
-    state.canForward = true;
-    draw();
-    nav("Back")?.click();
-    nav("Forward")?.click();
-
-    expect(calls.back).toHaveBeenCalledTimes(1);
-    expect(calls.forward).toHaveBeenCalledTimes(1);
-  });
-
-  it("are named in Russian", () => {
-    setLanguage("ru");
-    draw();
-
-    expect(nav("Назад")).not.toBeNull();
-    expect(nav("Вперёд")).not.toBeNull();
-  });
-});
-
 describe("redrawing the card", () => {
   it("keeps the scroll for the same record and goes to the top for another", () => {
     draw();
@@ -370,16 +324,6 @@ describe("redrawing the card", () => {
 
     expect(container.querySelector('[data-focus-key="t:NAME[0]"]')).not.toBeNull();
     expect(document.activeElement).toBe(body());
-  });
-
-  it("keeps the focus on a control of the card itself when another record is shown", () => {
-    state.canBack = true;
-    draw();
-    nav("Back")?.focus();
-    state.record = "@I2@";
-    draw();
-
-    expect(document.activeElement).toBe(nav("Back"));
   });
 
   it("keeps the focus on the toggle of every node when another record is shown, and flips its icon with the state", () => {
@@ -453,32 +397,6 @@ describe("the tree of a record on the card", () => {
     state.record = "@I1@";
     draw();
     expect(toggled("t:BIRT[0]")).toBe("true");
-  });
-
-  it("restores the scroll of a record the reader returns to by Back, and not one reached by a link", () => {
-    draw();
-    const first = body();
-    if (first) {
-      first.scrollTop = 300;
-    }
-    state.record = "@I2@";
-    draw();
-    state.arrival = "history";
-    state.record = "@I1@";
-    draw();
-    expect(body()?.scrollTop).toBe(300);
-
-    const again = body();
-    if (again) {
-      again.scrollTop = 120;
-    }
-    state.arrival = "other";
-    state.record = "@I2@";
-    draw();
-    expect(body()?.scrollTop).toBe(0);
-    state.record = "@I1@";
-    draw();
-    expect(body()?.scrollTop).toBe(0);
   });
 
   it("does not scroll the card for a link to the record it already shows", () => {

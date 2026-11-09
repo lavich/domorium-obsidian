@@ -2,7 +2,6 @@ const REMEMBERED = 20;
 
 interface RecordMemory {
   open: Set<string>;
-  scroll: number;
 }
 
 /** What the tree of one record asks of the reader's choices, and where it tells of a change. */
@@ -11,12 +10,12 @@ export interface TreeState {
   setOpen(key: string, open: boolean): void;
 }
 
-/** The choices of the reader in the trees of the last twenty records shown: the nodes and notes opened and the scroll. */
+/** The choices of the reader in the trees of the last twenty records shown: the nodes and notes opened. */
 export class TreeSession {
   private readonly records = new Map<string, RecordMemory>();
 
   private memory(record: string): RecordMemory {
-    const held = this.records.get(record) ?? { open: new Set<string>([""]), scroll: 0 };
+    const held = this.records.get(record) ?? { open: new Set<string>([""]) };
     this.records.delete(record);
     this.records.set(record, held);
     for (const oldest of this.records.keys()) {
@@ -40,14 +39,6 @@ export class TreeSession {
         }
       },
     };
-  }
-
-  scrollOf(record: string): number {
-    return this.records.get(record)?.scroll ?? 0;
-  }
-
-  rememberScroll(record: string, scroll: number): void {
-    this.memory(record).scroll = scroll;
   }
 }
 
