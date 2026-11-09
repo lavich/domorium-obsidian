@@ -2702,13 +2702,6 @@ button.gedcom-tree-label:hover {
   text-decoration: underline;
 }
 
-.gedcom-tree-tag {
-  flex: none;
-  color: var(--text-muted);
-  font-family: var(--font-monospace);
-  font-size: var(--font-ui-smaller);
-}
-
 .gedcom-tree-main {
   display: flex;
   flex: 1 1 9rem;

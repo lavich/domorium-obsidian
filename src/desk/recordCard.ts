@@ -41,13 +41,11 @@ export interface CardView {
   openNote(path: string, line: number): void;
   /** What the reader chose in the trees of the records shown, kept while the plugin is loaded. */
   session: TreeSession;
-  /** Redraws every card. */
-  redraw(): void;
 }
 
 const FOCUS_KEY = "data-focus-key";
 const OPEN_KEY = "data-open";
-const CARD_KEYS: ReadonlySet<string> = new Set(["card.back", "card.forward", "tags", "tree:toggle"]);
+const CARD_KEYS: ReadonlySet<string> = new Set(["card.back", "card.forward", "tree:toggle"]);
 
 const hasTree = (index: GenealogyIndex, record: string): boolean =>
   index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;
@@ -138,7 +136,7 @@ export function renderRecordCard(
     drawsTree = hasTree(index, record);
     drawRecord(body, tab, index, record, selection.fact, notes, view, {
       ...foldsOf(root),
-      ...(drawsTree ? { tree: view.session.stateFor(shown, () => view.redraw()) } : {}),
+      ...(drawsTree ? { tree: view.session.stateFor(shown) } : {}),
     });
   }
 

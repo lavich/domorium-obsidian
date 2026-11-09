@@ -21,9 +21,7 @@ let view: {
   setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
   openNote: ReturnType<typeof vi.fn<CardView["openNote"]>>;
   session: TreeSession;
-  redraw: () => void;
 };
-const redraw = vi.fn<() => void>();
 let index: GenealogyIndex;
 const scrollIntoView = vi.fn();
 
@@ -69,9 +67,7 @@ beforeEach(() => {
     }),
     openNote: vi.fn(),
     session: new TreeSession(),
-    redraw,
   };
-  redraw.mockReset();
 });
 
 const draw = (notes: Parameters<typeof renderRecordCard>[2] = []): void => {
@@ -505,21 +501,6 @@ describe("the tree of a record on the card", () => {
     draw();
 
     expect(body()?.scrollTop).toBe(200);
-  });
-
-  it("holds the tags on another record and in another tab, and tells every card to redraw", () => {
-    draw();
-    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.textContent === "Show GEDCOM tags")?.click();
-    expect(redraw).toHaveBeenCalledTimes(1);
-
-    state.record = "@I2@";
-    draw();
-    expect(container.querySelector(".gedcom-tree-tag")).not.toBeNull();
-
-    const other = document.createElement("div");
-    document.body.append(other);
-    renderRecordCard(other, { ...tab, filePath: () => "other.ged" }, [], view);
-    expect(other.querySelector(".gedcom-tree-tag")).not.toBeNull();
   });
 
   it("shows no tree for a card of an event, a place or a media record", () => {

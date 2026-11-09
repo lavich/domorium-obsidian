@@ -168,7 +168,6 @@ function draw(): void {
       calls.notesOpened.push({ path, line });
     },
     session,
-    redraw: draw,
   });
 }
 

@@ -79,35 +79,8 @@ class Tree {
     this.row(this.root.createDiv({ cls: "gedcom-tree-list" }), this.record, this.record, "", 0, 0);
   }
 
-  private redraw(): void {
-    const active = this.root.ownerDocument.activeElement;
-    const focused = active !== null && this.root.contains(active) ? active.closest("[data-focus-key]") : null;
-    const focusKey = focused?.getAttribute("data-focus-key") ?? null;
-    this.draw();
-    if (focusKey !== null) {
-      [...this.root.querySelectorAll<HTMLElement>("[data-focus-key]")]
-        .find((one) => one.getAttribute("data-focus-key") === focusKey)
-        ?.focus({ preventScroll: true });
-    }
-  }
-
   private toolbar(): void {
-    const { state } = this.options;
     const bar = this.root.createDiv({ cls: "gedcom-tree-bar" });
-    const button = (key: string, text: string, act: () => void): void => {
-      const one = bar.createEl("button", { cls: "gedcom-tree-control", text });
-      one.setAttribute("type", "button");
-      one.setAttribute("data-focus-key", key);
-      one.addEventListener("click", act);
-    };
-    button("tags", t(state.tags() ? "tree.hideTags" : "tree.showTags"), () => {
-      state.setTags(!state.tags());
-      if (state.changed) {
-        state.changed();
-      } else {
-        this.redraw();
-      }
-    });
     const toggle = bar.createEl("button", { cls: ["gedcom-tree-control", "gedcom-tree-toggle", "clickable-icon"] });
     toggle.setAttribute("type", "button");
     toggle.setAttribute("data-focus-key", "tree:toggle");
@@ -255,9 +228,6 @@ class Tree {
       name.setAttribute("type", "button");
       name.setAttribute("data-focus-key", `t:${key}:label`);
       name.addEventListener("click", () => host.openRecord(eventId));
-    }
-    if (state.tags() && label !== line.tag) {
-      header.createSpan({ cls: "gedcom-tree-tag", text: line.tag });
     }
     const main = header.createDiv({ cls: "gedcom-tree-main" });
 

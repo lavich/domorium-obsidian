@@ -604,12 +604,11 @@ test.describe("the tree of a record", () => {
     await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
   });
 
-  test("keeps a node open across a redraw and across a visit to another record", async ({ page }) => {
+  test("keeps a node open across a visit to another record", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
     const birth = treeRow(page, "Birth").locator(".gedcom-tree-chevron");
     await birth.click();
-    await page.locator(".gedcom-tree-control", { hasText: "Show GEDCOM tags" }).click();
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "true");
 
     await page.evaluate(() => {
@@ -641,34 +640,6 @@ test.describe("the tree of a record", () => {
     await toggle.click();
     await expect(toggle).toHaveAttribute("aria-label", "Open every node");
     expect(await page.locator(".gedcom-tree-chevron[aria-expanded=true]").count()).toBe(0);
-  });
-
-  test("keeps the focus on the same control across a redraw", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 760 });
-    await mountDesk(page, { width: 420 });
-    const tags = page.locator(".gedcom-tree-control", { hasText: "Show GEDCOM tags" });
-    await tags.focus();
-    await page.keyboard.press("Enter");
-
-    await expect(page.locator(".gedcom-tree-control:focus")).toHaveText("Hide GEDCOM tags");
-    await expect(page.locator(".gedcom-tree-control:focus")).toHaveAttribute("data-focus-key", "tags");
-  });
-
-  test("shows each tag after its label on request, hides them again, and holds the choice on another record", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 760 });
-    await mountDesk(page, { width: 420 });
-    await expect(page.locator(".gedcom-tree-tag")).toHaveCount(0);
-    await page.locator(".gedcom-tree").hover();
-    await page.locator(".gedcom-tree-control", { hasText: "Show GEDCOM tags" }).click();
-    await expect(treeRow(page, "Birth").locator(".gedcom-tree-tag")).toHaveText("BIRT");
-
-    await page.evaluate(() => {
-      window.desk.selectRecord("@I2@");
-    });
-    await expect(treeRow(page, "Birth").locator(".gedcom-tree-tag")).toHaveText("BIRT");
-    await page.locator(".gedcom-tree").hover();
-    await page.locator(".gedcom-tree-control", { hasText: "Hide GEDCOM tags" }).click();
-    await expect(page.locator(".gedcom-tree-tag")).toHaveCount(0);
   });
 
   test("opens the card of a fact from its label and the card of a place from its line", async ({ page }) => {

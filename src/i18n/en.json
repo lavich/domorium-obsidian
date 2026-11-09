@@ -499,8 +499,6 @@
   "record.void": "Names no record",
   "record.husbandAge": "Husband's age",
   "record.wifeAge": "Wife's age",
-  "tree.showTags": "Show GEDCOM tags",
-  "tree.hideTags": "Hide GEDCOM tags",
   "tree.openAll": "Open every node",
   "tree.closeAll": "Close every node",
   "tree.showInSource": "Show in source: {name}"

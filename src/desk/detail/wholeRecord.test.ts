@@ -38,7 +38,7 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
     forward: vi.fn(),
     arrivedBy: () => "other",
   };
-  const view: CardView = { setIcon: vi.fn(), openNote: vi.fn(), session: new TreeSession(), redraw: vi.fn() };
+  const view: CardView = { setIcon: vi.fn(), openNote: vi.fn(), session: new TreeSession() };
   container.replaceChildren();
   renderRecordCard(container, tab, [], view);
   container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline other");

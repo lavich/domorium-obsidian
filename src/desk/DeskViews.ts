@@ -14,7 +14,6 @@ export interface DeskViewsHost {
   notesFor(path: string, xref: string): Promise<NoteHit[]>;
   openNote(path: string, line: number): void;
   session(): TreeSession;
-  redrawDesk(): void;
 }
 
 export class RecordCardView extends ItemView {
@@ -80,9 +79,6 @@ export class RecordCardView extends ItemView {
         this.host.openNote(notePath, line);
       },
       session: this.host.session(),
-      redraw: () => {
-        this.host.redrawDesk();
-      },
     });
   }
 

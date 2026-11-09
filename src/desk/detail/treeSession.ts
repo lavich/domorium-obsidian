@@ -10,18 +10,13 @@ interface RecordMemory {
 export interface TreeState {
   isOpen(key: string): boolean;
   setOpen(key: string, open: boolean): void;
-  tags(): boolean;
-  setTags(on: boolean): void;
   pressed(): string | null;
   press(key: string | null): void;
-  /** Redraws every card; where it is absent the tree redraws itself. */
-  changed?(): void;
 }
 
-/** The choices of the reader in the trees of the last twenty records shown, and whether tags are shown in all of them. */
+/** The choices of the reader in the trees of the last twenty records shown: the nodes and notes opened, the row last pressed and the scroll. */
 export class TreeSession {
   private readonly records = new Map<string, RecordMemory>();
-  private tagsShown = false;
 
   private memory(record: string): RecordMemory {
     const held = this.records.get(record) ?? { open: new Set<string>([""]), scroll: 0, pressed: null };
@@ -36,7 +31,7 @@ export class TreeSession {
     return held;
   }
 
-  stateFor(record: string, changed?: () => void): TreeState {
+  stateFor(record: string): TreeState {
     const held = this.memory(record);
     return {
       isOpen: (key) => held.open.has(key),
@@ -47,15 +42,10 @@ export class TreeSession {
           held.open.delete(key);
         }
       },
-      tags: () => this.tagsShown,
-      setTags: (on) => {
-        this.tagsShown = on;
-      },
       pressed: () => held.pressed,
       press: (key) => {
         held.pressed = key;
       },
-      ...(changed === undefined ? {} : { changed }),
     };
   }
 

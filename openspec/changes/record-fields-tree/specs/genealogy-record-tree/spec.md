@@ -84,17 +84,17 @@ Each line of the tree SHALL be a **row** of a label and a value. The label SHALL
 - **WHEN** a record states `1 _TRIBE Highlander`
 - **THEN** the row is labelled `_TRIBE`
 
-### Requirement: Tags are shown when asked for
+### Requirement: No tag, level number or identifier is shown
 
-The tree SHALL show no tag the standard names, no level number and no cross-reference identifier by default. A control of the tree SHALL show the tag of each line, after its label, in the secondary text colour and in the monospace face, and hide it again; no level number and no identifier SHALL be shown either way. The choice SHALL hold for every record the card shows, in every tab, until the plugin reloads.
+The tree SHALL show no tag the standard names, no level number and no cross-reference identifier, on any row, the root included. A tag the standard does not name, a custom one beginning with an underscore among them, is its own label and is shown as written.
 
-#### Scenario: Tags off
-- **WHEN** the card shows Marie's tree and the reader has not asked for tags
-- **THEN** no row shows `NAME`, `BIRT` or any other tag the standard names, no level number and no `@I1@`
+#### Scenario: The standard's tags
+- **WHEN** the card shows Marie's tree
+- **THEN** no row shows `INDI`, `NAME`, `BIRT` or any other tag the standard names, no level number and no `@I1@`
 
-#### Scenario: Tags on
-- **WHEN** the reader asks for tags
-- **THEN** each row shows its tag after its label, `BIRT` after `Birth`, and the choice holds on Pierre Curie's card
+#### Scenario: A custom tag
+- **WHEN** a record states `1 _TRIBE Highlander`
+- **THEN** the row is labelled `_TRIBE` and shows no second tag
 
 ### Requirement: An event or an attribute opens its card from its name
 
@@ -114,7 +114,7 @@ Where a line of the tree is an event or an attribute that the card of the record
 
 ### Requirement: The controls of the tree appear only where the reader is
 
-The controls that act on one row — *Show in source* — and those that act on the whole tree — show or hide tags, and the one icon toggle that opens or closes every node — SHALL be shown only while the pointer is over the row or the tree or the focus is within it, and SHALL NOT shift anything when they appear or disappear: the row keeps the room for them. They SHALL remain focusable and in the accessibility tree while they are not shown, SHALL be shown when their row takes the focus, and SHALL be named for their action and for the row they act on, as `Show in source: Birth`. The controls of a node, and of a row that holds a link or a button of its own, SHALL be in the tab order after that row's other controls; those of a plain value, which is a field that is not in the tab order, SHALL be reachable by the pointer, by touch and by assistive technology but not by Tab, and the node that holds the value has one for the keyboard. The control that opens and closes a node SHALL stay shown, and a node's control SHALL say whether the node is open; the controls of the tree are not among those that stay shown. Where the pointer cannot hover — a touch screen, the mobile app — the controls of a row SHALL be shown on the row the reader last pressed and those of the tree SHALL stay shown, each at least 44 pixels in each direction. *Show in source* on a row SHALL select exactly the lines that state it, the lines beneath it included; on the root that is the whole record, as the control in the heading selects it, which the heading keeps. The toggle that opens or closes every node includes the root. The toggle SHALL be a single icon button, in the style of the icon buttons of Obsidian's own file explorer, that shows the icon of the action it will do now — expanding all while any node is closed, collapsing all while every node is open, the state taken from the tree itself and updated whenever the reader opens or closes a node — and SHALL be named for that action, *Open every node* or *Close every node*. Opening every node SHALL open every node of the record, drawing what is beneath each as it is opened.
+The controls that act on one row — *Show in source* — and those that act on the whole tree — the one icon toggle that opens or closes every node — SHALL be shown only while the pointer is over the row or the tree or the focus is within it, and SHALL NOT shift anything when they appear or disappear: the row keeps the room for them. They SHALL remain focusable and in the accessibility tree while they are not shown, SHALL be shown when their row takes the focus, and SHALL be named for their action and for the row they act on, as `Show in source: Birth`. The controls of a node, and of a row that holds a link or a button of its own, SHALL be in the tab order after that row's other controls; those of a plain value, which is a field that is not in the tab order, SHALL be reachable by the pointer, by touch and by assistive technology but not by Tab, and the node that holds the value has one for the keyboard. The control that opens and closes a node SHALL stay shown, and a node's control SHALL say whether the node is open; the controls of the tree are not among those that stay shown. Where the pointer cannot hover — a touch screen, the mobile app — the controls of a row SHALL be shown on the row the reader last pressed and those of the tree SHALL stay shown, each at least 44 pixels in each direction. *Show in source* on a row SHALL select exactly the lines that state it, the lines beneath it included; on the root that is the whole record, as the control in the heading selects it, which the heading keeps. The toggle that opens or closes every node includes the root. The toggle SHALL be a single icon button, in the style of the icon buttons of Obsidian's own file explorer, that shows the icon of the action it will do now — expanding all while any node is closed, collapsing all while every node is open, the state taken from the tree itself and updated whenever the reader opens or closes a node — and SHALL be named for that action, *Open every node* or *Close every node*. Opening every node SHALL open every node of the record, drawing what is beneath each as it is opened.
 
 #### Scenario: A quiet card
 - **WHEN** the card is shown and the pointer is outside the tree
@@ -149,7 +149,7 @@ The controls that act on one row — *Show in source* — and those that act on 
 Pressing, focusing, selecting, opening or closing in the tree SHALL NOT write to the file. The tree SHALL NOT offer to change a value, add a line, remove one or move one.
 
 #### Scenario: Reading
-- **WHEN** the reader opens every node, shows tags, selects a value and presses a link
+- **WHEN** the reader opens every node, selects a value and presses a link
 - **THEN** the text of the file is as it was
 
 ### Requirement: The tree fits a narrow panel and a phone

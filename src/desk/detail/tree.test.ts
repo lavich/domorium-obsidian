@@ -326,7 +326,7 @@ describe("the root of the tree", () => {
     expect(labelOf(root())).toBe("Человек");
   });
 
-  it("shows its tag when tags are asked for, and is opened and closed by the toggle with the rest", () => {
+  it("is opened and closed by the toggle with the rest", () => {
     draw(make(["0 @I1@ INDI", "1 NAME A /B/", "2 NICK Ab"]));
     control("Open every node").click();
     expect(rows().map(labelOf)).toEqual(["Name", "Nickname"]);
@@ -334,8 +334,6 @@ describe("the root of the tree", () => {
     expect(root().querySelector(".gedcom-tree-chevron")?.getAttribute("aria-expanded")).toBe("false");
     control("Open every node").click();
     expect(root().querySelector(".gedcom-tree-chevron")?.getAttribute("aria-expanded")).toBe("true");
-    control("Show GEDCOM tags").click();
-    expect(root().querySelector(".gedcom-tree-tag")?.textContent).toBe("INDI");
   });
 
   it("keeps the focus keys of the root apart from those of its children", () => {
@@ -703,48 +701,31 @@ describe("the controls", () => {
 
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.filter((key) => /^@[^@]+@$/u.test(key))).toEqual([]);
-    expect(keys).toContain("tags");
+    expect(keys).toContain("tree:toggle");
     expect(keys.some((key) => key.startsWith("src:"))).toBe(true);
     expect(rows().every((row) => row.hasAttribute("data-line"))).toBe(true);
   });
 });
 
 describe("the tags", () => {
-  it("are off at first, and no row shows a tag the standard names", () => {
+  it("are never shown for a tag the standard names, nor a level number, nor an identifier, and a custom tag is its own label", () => {
     draw(make(["0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "1 _X y"]));
 
     expect(box.querySelector(".gedcom-tree-tag")).toBeNull();
-    expect(box.textContent).not.toMatch(/NAME|BIRT|@I1@/u);
-  });
-
-  it("show after each label that is not itself the tag, and hide again", () => {
-    draw(make(["0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "1 _X y"]));
-    control("Show GEDCOM tags").click();
-
-    expect([...box.querySelectorAll(".gedcom-tree-tag")].map((tag) => tag.textContent)).toEqual(["INDI", "NAME", "BIRT"]);
-    control("Hide GEDCOM tags").click();
-    expect(box.querySelector(".gedcom-tree-tag")).toBeNull();
-  });
-
-  it("tell the card to redraw where the state has a way to, and leave the redraw to it", () => {
-    const changed = vi.fn();
-    const state = { ...new TreeSession().stateFor("rec"), changed };
-    draw(make(["0 @I1@ INDI", "1 BIRT"]), state);
-    control("Show GEDCOM tags").click();
-
-    expect(changed).toHaveBeenCalledTimes(1);
+    expect(box.textContent).not.toMatch(/NAME|BIRT|INDI|@I1@/u);
+    expect(rows().map(labelOf)).toEqual(["Name", "Birth", "_X"]);
+    expect([...box.querySelectorAll(".gedcom-tree-control")].map((one) => one.className)).toHaveLength(1);
   });
 });
 
 describe("the tree changes nothing", () => {
-  it("leaves the document as it was after opening, closing, pressing, showing tags and opening every node", () => {
+  it("leaves the document as it was after opening, closing, pressing and opening every node", () => {
     const made = make(["0 @I1@ INDI", "1 NAME A /B/", "2 NICK Ab", "1 ASSO @I2@", "1 SEX F", "0 @I2@ INDI", "1 NAME P /C/"]);
     const before = JSON.stringify(made.service.getDocumentSymbols());
     draw(made);
     open("Name");
     chevron(rowNamed("Name")).click();
     rowNamed("Associated person").querySelector<HTMLButtonElement>("button.gedcom-desk-link")?.click();
-    control("Show GEDCOM tags").click();
     control("Open every node").click();
     rowNamed("Sex").querySelector("textarea")?.dispatchEvent(new Event("input", { bubbles: true }));
 

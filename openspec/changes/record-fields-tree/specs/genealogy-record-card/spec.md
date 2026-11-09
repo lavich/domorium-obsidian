@@ -2,7 +2,7 @@
 
 ### Requirement: The person card
 
-A person card SHALL show, without any cross-reference identifier or level number, and without a tag unless the reader has asked for tags in the tree of the record, in this order, each section left out where the record holds nothing for it, except
+A person card SHALL show, without any cross-reference identifier, level number or tag the standard names, in this order, each section left out where the record holds nothing for it, except
 the two that say what is missing: the parents in the family, and the evidence. A section
 that lists things of one kind SHALL show how many in its heading; the family, the lines of the record and the evidence, which
 are made of several kinds, show no count.
@@ -116,7 +116,7 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 ### Requirement: The family card
 
-A family card SHALL show, without any cross-reference identifier or level number, and without a tag unless the reader has asked for tags in the tree of the record, each section left out where the record holds nothing for it, in this order, with no section for events, notes, related people, identifiers or other data apart from the lines of the record:
+A family card SHALL show, without any cross-reference identifier, level number or tag the standard names, each section left out where the record holds nothing for it, in this order, with no section for events, notes, related people, identifiers or other data apart from the lines of the record:
 
 - a heading naming the family by its spouses, in the order the record names them,
   with the marriage date and place where the record states them; a family naming

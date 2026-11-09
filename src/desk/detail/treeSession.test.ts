@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { ephemeralTreeState, TreeSession } from "./treeSession";
+import { TreeSession } from "./treeSession";
 
 describe("the choices of the reader in the trees", () => {
   it("keep a node opened on Marie open after Pierre and Marie again", () => {
@@ -42,14 +42,6 @@ describe("the choices of the reader in the trees", () => {
     expect(state.isOpen("A[0]")).toBe(false);
   });
 
-  it("hold the tags off at first and on for another record once they are asked for", () => {
-    const session = new TreeSession();
-    expect(session.stateFor("a").tags()).toBe(false);
-
-    session.stateFor("a").setTags(true);
-    expect(session.stateFor("b").tags()).toBe(true);
-  });
-
   it("keep the scroll of a record shown, and none for one never shown", () => {
     const session = new TreeSession();
     session.stateFor("a");
@@ -75,15 +67,5 @@ describe("the choices of the reader in the trees", () => {
 
     expect(session.stateFor("a").pressed()).toBe("SEX[0]");
     expect(session.stateFor("b").pressed()).toBeNull();
-  });
-
-  it("tell a card of a change only where the card gave a way to", () => {
-    const changed = vi.fn();
-    const session = new TreeSession();
-
-    session.stateFor("a", changed).changed?.();
-    ephemeralTreeState().changed?.();
-
-    expect(changed).toHaveBeenCalledTimes(1);
   });
 });

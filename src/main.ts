@@ -509,7 +509,7 @@ export default class GedcomPlugin
     return this.treeSession;
   }
 
-  redrawDesk(): void {
+  private redrawDesk(): void {
     for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
       if (leaf.view instanceof RecordCardView) {
         leaf.view.redraw();
