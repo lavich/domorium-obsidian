@@ -551,6 +551,18 @@ body {
   transition: transform 0.1s ease-in-out;
 }
 
+.collapse-icon.is-collapsed svg.svg-icon {
+  transform: rotate(calc(var(--direction) * -1 * 90deg));
+}
+
+body {
+  --direction: 1;
+}
+
+body[dir="rtl"] {
+  --direction: -1;
+}
+
 .tree-item-self {
   align-items: baseline;
   display: flex;

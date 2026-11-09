@@ -582,6 +582,32 @@ describe("the controls", () => {
     expect(box.querySelector(".gedcom-tree-source")).toBeNull();
   });
 
+  it("mark a closed node and its arrow as collapsed, in step with every opening and closing, and draw the app's triangle", () => {
+    const icons: string[] = [];
+    const made = make(["0 @I1@ INDI", "1 _A x", "2 _B y", "1 _D w", "2 _E v"]);
+    renderTree(box, made.record, {
+      index: made.index,
+      host: { openRecord: opened, showInSource: shown, setIcon: (_, icon) => icons.push(icon) },
+      facts: new Map(),
+      state: ephemeralTreeState(),
+    });
+    const collapsed = (label: string): boolean[] => {
+      const row = rowNamed(label);
+      return [row.closest(".tree-item")?.classList.contains("is-collapsed") ?? false, chevron(row).classList.contains("is-collapsed")];
+    };
+
+    expect(icons).toContain("right-triangle");
+    expect(collapsed("_A")).toEqual([true, true]);
+    chevron(rowNamed("_A")).click();
+    expect(collapsed("_A")).toEqual([false, false]);
+    expect(collapsed("_D")).toEqual([true, true]);
+    control("Open every node").click();
+    expect(collapsed("_D")).toEqual([false, false]);
+    control("Close every node").click();
+    expect(collapsed("_A")).toEqual([true, true]);
+    expect(box.querySelector(".is-root")?.classList.contains("is-collapsed")).toBe(true);
+  });
+
   it("have the toolbar first in the tree, and the arrow first in its row", () => {
     draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]));
 

@@ -9,6 +9,7 @@ interface Shape {
 }
 
 const ICONS: Record<string, Shape[]> = {
+  "right-triangle": [{ tag: "path", attrs: { d: "M3 8L12 17L21 8" } }],
   "chevrons-up-down": [
     { tag: "path", attrs: { d: "m7 15 5 5 5-5" } },
     { tag: "path", attrs: { d: "m7 9 5-5 5 5" } },

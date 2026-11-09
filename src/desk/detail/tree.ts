@@ -200,7 +200,7 @@ class Tree {
     let chevron: HTMLElement | null = null;
     if (isNode) {
       chevron = header.createEl("button", { cls: ["gedcom-tree-chevron", "tree-item-icon", "collapse-icon"] });
-      host.setIcon?.(chevron, "chevron-right");
+      host.setIcon?.(chevron, "right-triangle");
       chevron.setAttribute("type", "button");
       chevron.setAttribute("aria-label", named);
       chevron.setAttribute("aria-controls", childrenId);
@@ -289,6 +289,8 @@ class Tree {
     let filled = false;
     const show = (): void => {
       node.toggleClass("is-open", open);
+      node.toggleClass("is-collapsed", isNode && !open);
+      chevron?.toggleClass("is-collapsed", !open);
       chevron?.setAttribute("aria-expanded", String(open));
       if (children) {
         children.toggleAttribute("hidden", !open);

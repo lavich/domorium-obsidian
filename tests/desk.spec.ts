@@ -567,6 +567,25 @@ test.describe("the tree of a record", () => {
     await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
   });
 
+  test("turns the closed arrow with the app's rule and leaves the open one, in both directions of writing", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 420 });
+    const turn = (label: string) =>
+      treeRow(page, label).locator(".gedcom-tree-chevron svg").evaluate((node) => getComputedStyle(node).transform);
+
+    expect(await turn("Birth")).toBe("matrix(0, -1, 1, 0, 0, 0)");
+    await pressArrow(page, "Birth");
+    await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).not.toHaveClass(/is-collapsed/);
+    await page.waitForTimeout(250);
+    expect(await turn("Birth")).toBe("none");
+    expect(await treeRow(page, "Birth").locator(".gedcom-tree-chevron svg path").getAttribute("d")).toBe("M3 8L12 17L21 8");
+    await page.evaluate(() => {
+      document.body.dir = "rtl";
+    });
+    await page.waitForTimeout(250);
+    expect(await turn("Death")).toBe("matrix(0, 1, -1, 0, 0, 0)");
+  });
+
   test("toggles a node by a press on its arrow and on its header", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });

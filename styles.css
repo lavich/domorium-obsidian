@@ -2632,7 +2632,7 @@ button.gedcom-fg-pop-open {
   min-width: 0;
   margin-bottom: 0;
   padding-block: var(--size-4-1);
-  padding-inline: 24px var(--size-4-2);
+  padding-inline: var(--size-4-6) var(--size-4-2);
   border-radius: var(--clickable-icon-radius);
   font-size: var(--nav-item-size);
   line-height: var(--line-height-tight);
@@ -2789,11 +2789,12 @@ button.gedcom-fg-pop-open {
 .gedcom-tree button.gedcom-tree-chevron {
   position: absolute;
   top: 0;
-  display: inline-flex;
+  inset-inline-start: calc(var(--size-4-6) - var(--size-4-5));
+  display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 22px;
+  width: var(--size-4-4);
   height: 28px;
   min-height: 0;
   margin: 0;
@@ -2801,37 +2802,13 @@ button.gedcom-fg-pop-open {
   background: none;
   border: 0;
   box-shadow: none;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-.gedcom-tree button.gedcom-tree-chevron {
-  inset-inline-start: 0;
   color: var(--nav-collapse-icon-color);
   opacity: 1;
+  cursor: pointer;
 }
 
 .gedcom-tree button.gedcom-tree-chevron::before {
   content: none;
-}
-
-.gedcom-tree button.gedcom-tree-chevron .svg-icon {
-  width: var(--icon-xs);
-  height: var(--icon-xs);
-  stroke-width: var(--icon-stroke);
-  transform: rotate(0deg);
-}
-
-.gedcom-tree .gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron .svg-icon {
-  transform: rotate(90deg);
-}
-
-.gedcom-tree button.gedcom-tree-chevron:dir(rtl) .svg-icon {
-  transform: scaleX(-1);
-}
-
-.gedcom-tree .gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:dir(rtl) .svg-icon {
-  transform: scaleX(-1) rotate(90deg);
 }
 
 .gedcom-tree button.gedcom-tree-chevron:hover {
@@ -2845,15 +2822,11 @@ button.gedcom-fg-pop-open {
   height: 5px;
   border-inline-end: 1.5px solid currentColor;
   border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.gedcom-tree button.gedcom-tree-chevron.is-collapsed:empty::before {
   transform: rotate(-45deg);
-}
-
-.gedcom-tree button.gedcom-tree-chevron:empty:dir(rtl)::before {
-  transform: rotate(45deg);
-}
-
-.gedcom-tree .gedcom-tree-node.is-open > .gedcom-tree-row > button.gedcom-tree-chevron:empty::before {
-  transform: rotate(45deg);
 }
 
 .gedcom-tree button.gedcom-tree-control:focus-visible,
@@ -2878,11 +2851,12 @@ button.gedcom-fg-pop-open {
 .is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
   min-height: 44px;
   padding-block: 12px;
-  padding-inline: 30px var(--size-4-2);
+  padding-inline: var(--size-4-6) var(--size-4-2);
 }
 
 .is-mobile .gedcom-tree button.gedcom-tree-chevron {
-  width: 30px;
+  inset-inline-start: 0;
+  width: var(--size-4-6);
   height: 44px;
 }
 
@@ -2902,11 +2876,12 @@ button.gedcom-fg-pop-open {
   .gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
     min-height: 44px;
     padding-block: 12px;
-    padding-inline: 30px var(--size-4-2);
+    padding-inline: var(--size-4-6) var(--size-4-2);
   }
 
   .gedcom-tree button.gedcom-tree-chevron {
-    width: 30px;
+    inset-inline-start: 0;
+    width: var(--size-4-6);
     height: 44px;
   }
 }
