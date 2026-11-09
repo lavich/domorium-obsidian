@@ -61,11 +61,11 @@ for (const size of SIZES) {
       await mountDesk(page, { width: size.width, phone: size.phone });
     });
 
-    test("runs the lines of her record, Family, Media, Timeline and Evidence, with no tab bar and nothing to scroll sideways", async ({ page }) => {
+    test("runs the lines of her record, Family, Media and Timeline, with no tab bar and nothing to scroll sideways", async ({ page }) => {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
       await expect(page.locator(".gedcom-tree")).toHaveCount(1);
       await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-        "Family", "Media", "Timeline", "Evidence",
+        "Family", "Media", "Timeline",
       ]);
       const tops = await page
         .locator(".gedcom-card-body h2.gedcom-desk-section")
@@ -132,7 +132,7 @@ for (const size of SIZES) {
       await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-      await expect(page.locator(".gedcom-card-evidence")).toBeVisible();
+      await expect(page.locator(".gedcom-card-evidence")).toHaveCount(0);
       await back(page).click();
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
     });
@@ -170,16 +170,15 @@ for (const size of SIZES) {
       await expect(forward(page)).toBeDisabled();
     });
 
-    test("shows the evidence of her birth on its card, and returns to her by the record at its top", async ({ page }) => {
+    test("shows no evidence on the card of her birth, and returns to her by the record at its top", async ({ page }) => {
       await treeRow(page, "Birth").locator("button.gedcom-tree-label").click();
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Birth");
-      await expect(page.locator(".gedcom-card-evidence .gedcom-desk-subsection")).toHaveText(["Sources of this fact"]);
-      await expect(page.locator(".gedcom-desk-evidence-head")).toHaveCount(0);
-      await expect(page.locator(".gedcom-desk-note, .gedcom-desk-cite")).toHaveCount(0);
+      await expect(page.locator(".gedcom-card-evidence, .gedcom-desk-note, .gedcom-desk-cite")).toHaveCount(0);
+      await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).not.toContainText(["Evidence"]);
 
       await page.locator(".gedcom-desk-event-owner .gedcom-desk-link").click();
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
-      await expect(page.locator(".gedcom-card-evidence .gedcom-desk-subsection").first()).toContainText("Sources of the record");
+      await expect(page.locator(".gedcom-card-evidence")).toHaveCount(0);
     });
   });
 }
@@ -197,7 +196,6 @@ test.describe("Obsidian's own button styling", () => {
       ".gedcom-desk-person",
       ".gedcom-desk-link",
       ".gedcom-desk-fact-name",
-      ".gedcom-desk-cite",
     ]) {
       expect(await look(selector), selector).toEqual({
         background: "rgba(0, 0, 0, 0)",
@@ -269,7 +267,7 @@ test.describe("the family card", () => {
     await expect(page.locator(".gedcom-desk-person-name")).toHaveText([
       "Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie",
     ]);
-    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toHaveText("Evidence");
+    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText(["Family"]);
     await treeRow(page, "Marriage").locator("button.gedcom-tree-label").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Marriage");
 
@@ -286,12 +284,13 @@ test.describe("the source card and the media card", () => {
     await expect(page.locator(".gedcom-desk-citer .gedcom-desk-person-name")).toHaveText([
       "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Frédéric Joliot",
     ]);
-    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toContainText("Notes in the vault");
+    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section").last()).toHaveText("Cited by");
   });
 
-  test("selects a source from a citation on a card", async ({ page }) => {
+  test("selects a source from its row in the tree of a card", async ({ page }) => {
     await mountDesk(page);
-    await page.locator(".gedcom-desk-cite", { hasText: "Physics 1903" }).click();
+    await treeRow(page, "Source").first().locator(".gedcom-tree-chevron").click();
+    await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Physics 1903" }).click();
 
     await expect(page.locator(".gedcom-desk-title")).toHaveText("The Nobel Prize in Physics 1903");
     await expect(page.locator(".gedcom-desk-citer .gedcom-desk-person-name")).toHaveText([
@@ -344,17 +343,6 @@ test.describe("media", () => {
       "Marie Skłodowska-Curie", "Pierre Curie",
     ]);
     await expect(page.locator(".gedcom-desk-user .is-cropped")).toHaveCount(2);
-  });
-
-  test("lists the notes that link Marie, and opens one at its line", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 800 });
-    await mountDesk(page);
-    await page.locator(".gedcom-desk-note-line").click();
-
-    await expect(page.locator(".gedcom-desk-note-line mark")).toHaveText("Marie Skłodowska-Curie");
-    expect(await page.evaluate(() => window.desk.calls.notesOpened)).toEqual([
-      { path: "Notes/Radium.md", line: 6 },
-    ]);
   });
 });
 
@@ -472,9 +460,9 @@ test.describe("the card of a record that states everything", () => {
         await mountDesk(page, { doc: rich(), record: "@I1@", width: size.width, phone: size.phone });
       });
 
-      test("runs the lines of the record, then its sections, ends with Evidence, folds the Timeline, and does not scroll sideways", async ({ page }) => {
+      test("runs the lines of the record, then its sections, folds the Timeline, and does not scroll sideways", async ({ page }) => {
         await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-          "Family", "Media", "Timeline", "Evidence",
+          "Family", "Media", "Timeline",
         ]);
         await expect(page.locator(".gedcom-desk-fold-button")).toHaveCount(1);
         await expect(page.locator(".gedcom-desk-fold-body[hidden]")).toHaveCount(1);

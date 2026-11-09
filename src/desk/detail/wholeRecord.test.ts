@@ -38,11 +38,11 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
     forward: vi.fn(),
     arrivedBy: () => "other",
   };
-  const view: CardView = { setIcon: vi.fn(), openNote: vi.fn(), session: new TreeSession() };
+  const view: CardView = { setIcon: vi.fn(), session: new TreeSession() };
   container.replaceChildren();
-  renderRecordCard(container, tab, [], view);
+  renderRecordCard(container, tab, view);
   container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline other");
-  renderRecordCard(container, tab, [], view);
+  renderRecordCard(container, tab, view);
   for (const control of container.querySelectorAll<HTMLElement>(".gedcom-tree-control")) {
     if (control.getAttribute("aria-label") === "Open every node") {
       control.click();

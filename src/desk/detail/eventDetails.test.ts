@@ -84,14 +84,14 @@ describe("what an event states beyond its date and place", () => {
     expect(labels()).toEqual(["Temple", "Status"]);
   });
 
-  it("sends the notes, the associates and the media to sections of their own, the sources to Evidence, and the rest to Other data", () => {
+  it("sends the notes, the associates and the media to sections of their own, the sources to rows of their own, and the rest to Other data", () => {
     const { parts } = event(["1 BIRT", "2 NOTE n", "2 SNOTE @N1@", "2 ASSO @I2@", "2 OBJE @O1@", "2 SOUR @S1@", "2 _WEATHER Rain", "2 TYPE x"]);
 
     expect(parts.notes.map((line) => line.tag)).toEqual(["NOTE", "SNOTE"]);
     expect(parts.related.map((line) => line.tag)).toEqual(["ASSO"]);
     expect(parts.media.map((line) => line.tag)).toEqual(["OBJE"]);
     expect(parts.other.map((line) => line.tag)).toEqual(["_WEATHER"]);
-    expect(parts.rows.map((line) => line.tag)).toEqual(["TYPE"]);
+    expect(parts.rows.map((line) => line.tag)).toEqual(["SOUR", "TYPE"]);
   });
 
   it("leaves TYPE to the title where the title uses it", () => {

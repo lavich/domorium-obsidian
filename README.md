@@ -21,8 +21,7 @@ adapted per editor.
 - An optional genealogy interface, off until you turn it on: a graph and a
   timeline of the whole file, a sortable list of its people, families,
   sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
-  record with their facts, names, family, timeline and what each fact
-  rests on
+  record with their facts, names, family and timeline
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -112,13 +111,12 @@ open comes back open when you return to that record. Each node has an arrow, and
 their parents (marked adoptive, foster or sealing where the file says so), siblings,
 spouses with the events of each marriage, and children, each of whom selects that person; their
 media; a **timeline** of their events and their close relatives', folded under its heading,
-which shows how many entries it holds; and last the **evidence** — what the whole record rests
-on, each citation with everything it states. A family's card and a source's card show their
+which shows how many entries it holds. A family's card and a source's card show their
 own lines as a tree in the same way; a section the record holds nothing for is left out. Tapping a fact, or
 an entry of the timeline, opens the card of its event: the person or the family it
 belongs to as a link above its name, its date and place under it, then everything else
 the event states — age, cause, agency, address, contacts, what the place states, notes,
-associates — and the evidence that is its own below; a place named there opens the card of that place, which lists
+associates, and the sources it cites; a place named there opens the card of that place, which lists
 the events held there as the facts of a person are listed, and a list in view
 shows the event or the place. Every control of a card shows a focus ring for the
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a

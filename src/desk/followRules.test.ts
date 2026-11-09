@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CursorFollow, adoptsFollow, fallbackFollowed, noteChangeMatters, shouldFollowCursor } from "./followRules";
+import { CursorFollow, adoptsFollow, fallbackFollowed, shouldFollowCursor } from "./followRules";
 
 const rest = { interfaceOn: true, mode: "source" as const, selected: "@I1@", atCursor: "@I2@", hasCard: true };
 
@@ -42,16 +42,6 @@ describe("which tab the sidebars follow", () => {
   it("falls back to the most recently active tab still open", () => {
     expect(fallbackFollowed(["c", "b", "a"], (view) => view !== "c")).toBe("b");
     expect(fallbackFollowed(["c"], () => false)).toBeNull();
-  });
-});
-
-describe("which changed note matters to the card", () => {
-  it("is the file itself or a note that links it", () => {
-    const linking = new Set(["Notes/Radium.md"]);
-
-    expect(noteChangeMatters("curie.ged", ["curie.ged"], linking)).toBe(true);
-    expect(noteChangeMatters("Notes/Radium.md", ["curie.ged"], linking)).toBe(true);
-    expect(noteChangeMatters("Notes/Other.md", ["curie.ged"], linking)).toBe(false);
   });
 });
 

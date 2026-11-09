@@ -5,7 +5,7 @@ import { renderLine, renderLines, renderRest, type DetailContext } from "./lineV
 import { NOTE_TAGS } from "./notes";
 import { sectionHeading } from "./section";
 
-/** What an event states beyond its date and place, drawn as a row each. */
+/** What an event states beyond its date and place, drawn as a row each; its citations are rows too, in the order it writes them. */
 const DETAIL_TAGS: ReadonlySet<string> = new Set([
   "AGE", "CAUS", "AGNC", "RELI", "RESN", "SDATE", "TEMP", "STAT", "ADDR", "PHON", "EMAIL", "FAX", "WWW", "FAMC", "UID",
   "EXID", "REFN", "HUSB", "WIFE",
@@ -54,7 +54,9 @@ export function splitEvent(line: RecordLine, titled: boolean): EventParts {
       parts.related.push(child);
     } else if (child.tag === "OBJE") {
       parts.media.push(child);
-    } else if (child.tag !== "SOUR") {
+    } else if (child.tag === "SOUR") {
+      rows.push(child);
+    } else {
       parts.other.push(child);
     }
   }

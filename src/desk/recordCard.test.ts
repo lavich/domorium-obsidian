@@ -19,7 +19,6 @@ let calls: {
 };
 let view: {
   setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
-  openNote: ReturnType<typeof vi.fn<CardView["openNote"]>>;
   session: TreeSession;
 };
 let index: GenealogyIndex;
@@ -65,13 +64,12 @@ beforeEach(() => {
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
       element.setAttribute("data-icon", icon);
     }),
-    openNote: vi.fn(),
     session: new TreeSession(),
   };
 });
 
-const draw = (notes: Parameters<typeof renderRecordCard>[2] = []): void => {
-  renderRecordCard(container, tab, notes, view);
+const draw = (): void => {
+  renderRecordCard(container, tab, view);
 };
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
@@ -80,7 +78,7 @@ const nav = (label: string) => container.querySelector<HTMLButtonElement>(`.gedc
 
 describe("the empty states of the card", () => {
   it("says no GEDCOM file is open without a tab", () => {
-    renderRecordCard(container, null, null, view);
+    renderRecordCard(container, null, view);
 
     expect(texts(".gedcom-card-state")).toEqual(["Open a GEDCOM file to see its records."]);
     expect(container.querySelector(".gedcom-card-head")).toBeNull();
@@ -106,7 +104,7 @@ describe("the empty states of the card", () => {
 
   it("speaks Russian", () => {
     setLanguage("ru");
-    renderRecordCard(container, null, null, view);
+    renderRecordCard(container, null, view);
     expect(texts(".gedcom-card-state")).toEqual(["Откройте файл GEDCOM, чтобы увидеть его записи."]);
 
     state.record = null;
@@ -118,11 +116,11 @@ describe("the empty states of the card", () => {
   });
 });
 
-describe("the page of each kind of record, with its evidence", () => {
-  it("shows Marie's sections in order, ending with Evidence", () => {
+describe("the page of each kind of record", () => {
+  it("shows Marie's sections in order, ending with the Timeline", () => {
     draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Family", "Media", "Timeline", "Evidence"]);
+    expect(texts(".gedcom-card-body h2")).toEqual(["Family", "Media", "Timeline"]);
     expect(container.querySelector(".gedcom-card-body .gedcom-tree")).not.toBeNull();
     expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
   });
@@ -135,46 +133,32 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(texts("h1")).toEqual(["Marie Skłodowska-Curie"]);
   });
 
-  it("shows the Curies' family with its evidence", () => {
+  it("shows the Curies' family without an Evidence section", () => {
     state.record = "@F3@";
     draw();
 
     expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Evidence");
+    expect(texts(".gedcom-card-body h2")).toEqual(["Family"]);
   });
 
-  it("shows a source with the notes section last", () => {
-    state.record = "@S3@";
-    draw([]);
+  it("shows a source and a multimedia record with no Evidence section and no notes of the vault", () => {
+    for (const [record, title] of [["@S3@", "The Nobel Prize in Chemistry 1911 and 1935"], ["@O5@", "The Curie family, about 1908"]]) {
+      state.record = record ?? null;
+      draw();
 
-    expect(texts(".gedcom-desk-title")).toEqual(["The Nobel Prize in Chemistry 1911 and 1935"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault");
-    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
+      expect(texts(".gedcom-desk-title")).toEqual([title]);
+      expect(texts(".gedcom-card-body h2")).not.toContain("Evidence");
+      expect(texts(".gedcom-card-body h2")).not.toContain("Notes in the vault");
+      expect(container.querySelector(".gedcom-card-evidence, .gedcom-desk-note")).toBeNull();
+    }
   });
 
-  it("shows a multimedia record with the notes section last", () => {
-    state.record = "@O5@";
-    draw([]);
-
-    expect(texts(".gedcom-desk-title")).toEqual(["The Curie family, about 1908"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault");
-  });
-
-  it("lists the notes of the vault in Marie's evidence", () => {
-    draw([{ path: "Notes/Radium.md", name: "Radium", lines: [{ line: 1, before: "by ", link: "Marie", after: "" }] }]);
-    container.querySelector<HTMLElement>(".gedcom-desk-note-line")?.click();
-
-    expect(texts(".gedcom-desk-note-name")).toEqual(["Radium"]);
-    expect(view.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
-  });
-
-  it("lists no note and none of the record's sources on the card of an event", () => {
+  it("shows the card of an event without an Evidence section", () => {
     state.record = "event:@I1@:BIRT:0";
-    draw([{ path: "Notes/Radium.md", name: "Radium", lines: [{ line: 1, before: "by ", link: "Marie", after: "" }] }]);
+    draw();
 
-    expect(container.querySelector(".gedcom-desk-note")).toBeNull();
-    expect(container.querySelector(".gedcom-desk-cite")).toBeNull();
-    expect(texts(".gedcom-card-body h2")).toEqual(["Evidence"]);
+    expect(texts(".gedcom-card-body h2")).not.toContain("Evidence");
+    expect(container.querySelector(".gedcom-card-evidence, .gedcom-desk-cite")).toBeNull();
   });
 
   it("opens the card of an event from a place's card", () => {
@@ -192,11 +176,10 @@ describe("the page of each kind of record, with its evidence", () => {
 
     expect(texts(".gedcom-desk-title")).toEqual(["Paris, France"]);
     expect(texts(".gedcom-card-head-name")).toEqual(["Paris, France"]);
-    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
     expect(calls.select).toHaveBeenCalledTimes(1);
   });
 
-  it("shows an event with its record, date and place as links, and its evidence below", () => {
+  it("shows an event with its record, date and place as links", () => {
     state.record = "event:@I1@:BIRT:0";
     draw();
     container.querySelector<HTMLElement>(".gedcom-desk-event-owner .gedcom-desk-link")?.click();
@@ -208,7 +191,6 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
     expect(texts(".gedcom-desk-subtitle")).toEqual(["7 NOV 1867 · Warsaw, Congress Poland"]);
     expect(container.querySelector(".gedcom-desk-event-details")).toBeNull();
-    expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
     expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
   });
 
@@ -233,20 +215,26 @@ describe("the page of each kind of record, with its evidence", () => {
     expect(texts(".gedcom-desk-none")).toContain("This event states no date, place or source.");
   });
 
-  it("links a cited source record, and shows an inline citation as text", () => {
+  it("shows the citations of an event as rows of its card, a source as a link, an inline one as text, and the page beneath", () => {
     index = indexOf(
-      ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S1@", "2 SOUR An inline note", "0 @S1@ SOUR", "1 TITL Parish registers", "0 TRLR"].join("\n"),
+      [
+        "0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S1@", "3 PAGE 12", "3 QUAY 3", "2 SOUR An inline note",
+        "0 @S1@ SOUR", "1 TITL Parish registers", "0 TRLR",
+      ].join("\n"),
     );
     state.record = "event:@I1@:BIRT:0";
     draw();
-    container.querySelector<HTMLElement>("button.gedcom-desk-cite")?.click();
+    const rows = [...container.querySelectorAll(".gedcom-detail-label")].map((node) => node.textContent);
+    container.querySelector<HTMLElement>("button.gedcom-desk-link:not(.gedcom-desk-event-owner button)")?.click();
 
-    expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish registers"]);
-    expect(texts(".gedcom-desk-cite-inline")).toEqual(["An inline note"]);
-    expect(calls.select).toHaveBeenCalledWith("@S1@");
+    expect(rows).toEqual(["Source", "Page", "Quality", "Source"]);
+    expect(texts(".gedcom-detail-value").join(" ")).toContain("12");
+    expect(texts(".gedcom-detail-value").join(" ")).toContain("An inline note");
+    expect(texts("button.gedcom-desk-link")).toContain("Parish registers");
+    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
   });
 
-  it("marks a citation of a source the file does not declare as missing", () => {
+  it("marks a citation of a source the file does not declare as missing, with the way to its line", () => {
     index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S9@", "0 TRLR"].join("\n"));
     state.record = "event:@I1@:BIRT:0";
     draw();

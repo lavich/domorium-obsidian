@@ -3,7 +3,6 @@ import { GedcomLanguageService, type Position, type Range } from "@domorium/lang
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
-import type { NoteHit } from "../src/desk/noteLinks";
 import { pageKind } from "../src/desk/deskState";
 import type { FactKey } from "../src/desk/personPage";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
@@ -33,7 +32,6 @@ export interface DeskOptions {
 export interface DeskCalls {
   shownInSource: Range[];
   filesOpened: string[];
-  notesOpened: { path: string; line: number }[];
 }
 
 /** What is in demo-vault, which the harness page reaches as ../demo-vault/. */
@@ -44,15 +42,6 @@ const VAULT_FILES = new Set([
   "Media/pierre-curie.svg",
   "Sources/nobel-diploma-1903.svg",
 ]);
-
-/** A note of the demo vault, as Obsidian's link cache would yield it for Marie. */
-const MARIE_NOTES: NoteHit[] = [
-  {
-    path: "Notes/Radium.md",
-    name: "Radium",
-    lines: [{ line: 6, before: "announced in December 1898 by ", link: "Marie Skłodowska-Curie", after: " and" }],
-  },
-];
 
 declare global {
   interface Window {
@@ -68,7 +57,7 @@ declare global {
 
 installObsidianDom();
 
-const calls: DeskCalls = { shownInSource: [], filesOpened: [], notesOpened: [] };
+const calls: DeskCalls = { shownInSource: [], filesOpened: [] };
 const history = new RecordHistory();
 let service: GedcomLanguageService;
 let index: GenealogyIndex;
@@ -162,11 +151,8 @@ function selectRecord(xref: string): void {
 }
 
 function draw(): void {
-  renderRecordCard(element("card"), hasTab ? tab : null, record === "@I1@" ? MARIE_NOTES : [], {
+  renderRecordCard(element("card"), hasTab ? tab : null, {
     setIcon: stubSetIcon,
-    openNote: (path, line) => {
-      calls.notesOpened.push({ path, line });
-    },
     session,
   });
 }
@@ -182,7 +168,6 @@ function mount(options: DeskOptions): void {
   element("card-pane").style.width = `${options.width ?? (phone ? 390 : 360)}px`;
   calls.shownInSource = [];
   calls.filesOpened = [];
-  calls.notesOpened = [];
   service = new GedcomLanguageService(options.doc ?? curie);
   index = buildIndex(service);
   hasTab = !(options.noTab ?? false);

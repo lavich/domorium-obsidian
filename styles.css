@@ -347,10 +347,6 @@ button.gedcom-card-nav:disabled {
   text-align: center;
 }
 
-.gedcom-card-evidence > h2 {
-  scroll-margin-top: var(--size-4-2);
-}
-
 .gedcom-desk-subsection {
   font-size: var(--font-ui-small);
   font-weight: var(--font-semibold);
@@ -811,10 +807,8 @@ button.gedcom-desk-fold-button::after {
 
 button.gedcom-desk-link:focus-visible,
 button.gedcom-desk-person:focus-visible,
-button.gedcom-desk-cite:focus-visible,
 button.gedcom-desk-fact-name:focus-visible,
 button.gedcom-desk-moment-what:focus-visible,
-button.gedcom-desk-note-line:focus-visible,
 button.gedcom-desk-fold-button:focus-visible,
 button.gedcom-desk-media-stage:focus-visible,
 button.gedcom-desk-tile-face:focus-visible,
@@ -835,8 +829,6 @@ button.gedcom-card-nav:focus-visible {
   }
 
   button.gedcom-desk-person,
-  button.gedcom-desk-cite,
-  button.gedcom-desk-note-line,
   button.gedcom-desk-moment-what,
   button.gedcom-desk-fold-button {
     min-height: 44px;
@@ -875,8 +867,6 @@ button.gedcom-card-nav:focus-visible {
 }
 
 .is-mobile button.gedcom-desk-person,
-.is-mobile button.gedcom-desk-cite,
-.is-mobile button.gedcom-desk-note-line,
 .is-mobile button.gedcom-desk-moment-what,
 .is-mobile button.gedcom-desk-fold-button {
   min-height: 44px;
@@ -1271,56 +1261,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
   min-height: 44px;
 }
 
-.gedcom-desk-notice {
-  padding: var(--size-4-2) var(--size-4-3);
-  border-radius: var(--radius-m);
-  background: rgba(var(--color-orange-rgb), 0.12);
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  line-height: 1.45;
-}
-
-.gedcom-desk-notice-title {
-  color: var(--text-normal);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-desk-cite,
-button.gedcom-desk-cite {
-  display: block;
-  width: 100%;
-  height: auto;
-  padding: var(--size-4-2);
-  margin: 0 calc(-1 * var(--size-2-2));
-  background: none;
-  border: 0;
-  border-radius: var(--radius-s);
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font-weight: normal;
-}
-
-button.gedcom-desk-cite:hover {
-  background: var(--background-modifier-hover);
-}
-
-.gedcom-desk-cite-title {
-  color: var(--text-accent);
-  font-weight: var(--font-medium);
-}
-
-.gedcom-desk-cite-page,
-.gedcom-desk-cite-inline {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-cite-meta {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
 .gedcom-desk-who {
   display: flex;
   gap: var(--size-4-4);
@@ -1480,44 +1420,6 @@ button.gedcom-desk-media-stage {
 .gedcom-desk-user-caption {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-note {
-  padding: var(--size-2-3) 0;
-}
-
-.gedcom-desk-note-name {
-  font-weight: var(--font-medium);
-}
-
-button.gedcom-desk-note-line {
-  display: block;
-  width: 100%;
-  height: auto;
-  padding: var(--size-2-2) var(--size-2-3);
-  margin: 0 calc(-1 * var(--size-2-3));
-  background: none;
-  border: 0;
-  border-radius: var(--radius-s);
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font-weight: normal;
-  font-size: var(--font-ui-small);
-  line-height: 1.45;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-button.gedcom-desk-note-line:hover {
-  background: var(--background-modifier-hover);
-}
-
-.gedcom-desk-note-line mark {
-  background: var(--background-modifier-active-hover);
-  color: var(--text-accent);
-  border-radius: 3px;
-  padding: 0 2px;
 }
 
 .gedcom-desk-timeline {
@@ -2570,10 +2472,6 @@ button.gedcom-fg-pop-open {
   .gedcom-ft-age {
     transition: none;
   }
-}
-
-.gedcom-desk-cite-inline {
-  white-space: pre-line;
 }
 
 .gedcom-tree {

@@ -23,17 +23,14 @@ say that it is described in the record rather than as a source record.
 
 #### Scenario: A citation with a page
 - **WHEN** the whole record of Marie is shown
-- **THEN** `The Nobel Prize in Physics 1903` is listed with
-  `Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel`
-  and `Nobel Prize Outreach · nobelprize.org`
+- **THEN** `The Nobel Prize in Physics 1903` is listed with `Nobel Prize in Physics 1903, shared with Pierre Curie and Henri Becquerel` and `Nobel Prize Outreach · nobelprize.org`
 
 #### Scenario: A citation with a quality
 - **WHEN** a citation carries `QUAY 3`
 - **THEN** it shows that the evidence is primary
 
 #### Scenario: Opening a source
-- **WHEN** the reader activates `The Nobel Prize in Physics 1903` in the Evidence
-  section
+- **WHEN** the reader activates `The Nobel Prize in Physics 1903` in the Evidence section
 - **THEN** the card shows that source
 
 #### Scenario: A citation that quotes
@@ -60,8 +57,7 @@ with the record.
 
 #### Scenario: Notes linking to Marie
 - **WHEN** Marie's whole record is shown in the demo vault
-- **THEN** the Evidence section lists six notes, among them *Radium* with the line
-  "…announced in December 1898 by Marie Skłodowska-Curie and…", her name marked
+- **THEN** the Evidence section lists six notes, among them *Radium* with the line "…announced in December 1898 by Marie Skłodowska-Curie and…", her name marked
 
 #### Scenario: A note linking twice
 - **WHEN** *Nobel Prizes in the family* links Marie on two lines
@@ -79,8 +75,7 @@ citations of a family event are on the card of that event.
 
 #### Scenario: The Curies' marriage selected
 - **WHEN** the event card of the marriage of Pierre and Marie Curie is shown
-- **THEN** the section says the marriage has no source of its own and that the
-  family record cites nothing either
+- **THEN** the section says the marriage has no source of its own and that the family record cites nothing either
 
 ### Requirement: The section on a source card and a media card
 
@@ -90,8 +85,7 @@ The card's heading names the source or the file and offers Show in source.
 
 #### Scenario: A source page shown
 - **WHEN** the card shows `Parish registers of Warsaw`
-- **THEN** its heading names that source and offers Show in source, and the card
-  lists no citations of the source's own beneath it
+- **THEN** its heading names that source and offers Show in source, and the card lists no citations of the source's own beneath it
 
 ### Requirement: The evidence section closes the card and follows the selection
 
@@ -110,8 +104,7 @@ There SHALL be no Evidence view in the sidebar and no command that opens one.
 
 #### Scenario: Selecting a birth
 - **WHEN** the reader chooses Marie's birth on her card
-- **THEN** the event card of the birth is shown, and its Evidence section lists the sources of
-  the birth under *Sources of this fact* and has no head naming the birth
+- **THEN** the event card of the birth is shown, and its Evidence section lists the sources of the birth under *Sources of this fact* and has no head naming the birth
 
 #### Scenario: An event card has no whole record
 - **WHEN** the event card of Marie's birth is shown
@@ -122,10 +115,8 @@ There SHALL be no Evidence view in the sidebar and no command that opens one.
 - **THEN** Marie's card is shown, and its Evidence section shows her whole record
 
 #### Scenario: A person selected in the graph
-- **WHEN** the active GEDCOM tab is in Graph mode and the reader activates Pierre
-  Curie's card
-- **THEN** the Evidence section of the card lists `The Nobel Prize in Physics 1903`
-  among the sources of Pierre Curie's whole record
+- **WHEN** the active GEDCOM tab is in Graph mode and the reader activates Pierre Curie's card
+- **THEN** the Evidence section of the card lists `The Nobel Prize in Physics 1903` among the sources of Pierre Curie's whole record
 
 #### Scenario: The interface is off
 - **WHEN** the Genealogy interface is off and the reader opens `curie.ged`
@@ -144,8 +135,7 @@ own.
 
 #### Scenario: A fact with no source of its own
 - **WHEN** Marie's birth is selected
-- **THEN** the section says the birth has no source of its own and that the sources of the whole
-  record are on Marie's card, and lists no source
+- **THEN** the section says the birth has no source of its own and that the sources of the whole record are on Marie's card, and lists no source
 
 #### Scenario: A fact with its own source
 - **WHEN** a selected birth carries `2 SOUR @S2@` beneath it
@@ -153,5 +143,4 @@ own.
 
 #### Scenario: A record that cites nothing
 - **WHEN** a fact of Zofia Skłodowska is selected
-- **THEN** the section says the fact has no source of its own and that the record
-  cites nothing either
+- **THEN** the section says the fact has no source of its own and that the record cites nothing either

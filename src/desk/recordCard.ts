@@ -2,13 +2,11 @@ import type { Position, Range } from "@domorium/language-service";
 
 import type { GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
-import { renderEvidenceSection } from "./evidence";
 import { renderFamilyPage } from "./familyPage";
 import type { PortraitContent } from "./media";
 import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
-import type { NoteHit } from "./noteLinks";
 import { pageKind } from "./deskState";
 import { eventAt, eventTitle } from "./eventRows";
 import { renderEventPage } from "./eventPage";
@@ -38,7 +36,6 @@ export interface CardTab {
 
 export interface CardView {
   setIcon(element: HTMLElement, icon: string): void;
-  openNote(path: string, line: number): void;
   /** What the reader chose in the trees of the records shown, kept while the plugin is loaded. */
   session: TreeSession;
 }
@@ -86,7 +83,6 @@ function recordName(index: GenealogyIndex, xref: string): string {
 export function renderRecordCard(
   container: HTMLElement,
   tab: CardTab | null,
-  notes: NoteHit[] | null,
   view: CardView,
 ): void {
   const root = container.querySelector<HTMLElement>(":scope > .gedcom-card") ?? makeRoot(container);
@@ -134,7 +130,7 @@ export function renderRecordCard(
       root.removeAttribute(OPEN_KEY);
     }
     drawsTree = hasTree(index, record);
-    drawRecord(body, tab, index, record, selection.fact, notes, view, {
+    drawRecord(body, tab, index, record, selection.fact, view, {
       ...foldsOf(root),
       ...(drawsTree ? { tree: view.session.stateFor(shown) } : {}),
     });
@@ -196,7 +192,6 @@ function drawRecord(
   index: GenealogyIndex,
   record: string,
   fact: FactKey | null,
-  notes: NoteHit[] | null,
   view: CardView,
   folds: Pick<PersonPageOptions, "open" | "folded" | "tree">,
 ): void {
@@ -235,15 +230,6 @@ function drawRecord(
   } else if (event) {
     renderEventPage(body, event, index, host, folds);
   }
-  renderEvidenceSection(
-    body,
-    event ? { index, record: event.owner, event: event.event } : { index, record, notes },
-    {
-      openRecord: (xref) => tab.select(xref),
-      showInSource: (range) => tab.showInSource(range),
-      openNote: (path, line) => view.openNote(path, line),
-    },
-  );
 }
 
 function missingAt(at: Position): MediaItem {

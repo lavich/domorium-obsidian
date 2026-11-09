@@ -21,10 +21,6 @@ export function fallbackFollowed<T>(recent: readonly T[], isOpen: (view: T) => b
   return recent.find(isOpen) ?? null;
 }
 
-export function noteChangeMatters(changed: string, followedFiles: readonly string[], linkingNotes: ReadonlySet<string>): boolean {
-  return followedFiles.includes(changed) || linkingNotes.has(changed);
-}
-
 export class CursorFollow {
   private timer: number | null = null;
 

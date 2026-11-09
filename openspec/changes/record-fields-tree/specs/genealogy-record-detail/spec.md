@@ -27,10 +27,9 @@ the name of the record it points at.
 ### Requirement: The headings say how many, and an empty section is left out
 
 A section of a card that lists things of one kind SHALL show how many in its heading, in the same way on every
-card; the family, the lines of a record and the evidence, which are made of several kinds, show no count. A section the
-record holds nothing for SHALL be left out, with two exceptions that state what is missing and are
-what a researcher looks for: the parents of a person, in the family, and the evidence of a record,
-each of which says there is nothing recorded. No section SHALL show both a count of zero and a line
+card; the family and the lines of a record, which are made of several kinds, show no count. A section the
+record holds nothing for SHALL be left out, with one exception that states what is missing and is
+what a researcher looks for: the parents of a person, in the family, which says there is nothing recorded. No section SHALL show both a count of zero and a line
 that says it is empty.
 
 #### Scenario: A person with nothing recorded in a section
@@ -39,7 +38,7 @@ that says it is empty.
 
 #### Scenario: A record that cites nothing
 - **WHEN** a record cites no source
-- **THEN** the Evidence section says the record cites no source, once, with no count beside it
+- **THEN** the card has no section about sources and no line that says the record cites none
 
 ### Requirement: Notes, folded where they are long
 
