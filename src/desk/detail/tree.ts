@@ -120,21 +120,26 @@ class Tree {
     for (const line of lines) {
       const nth = seen.get(line.tag) ?? 0;
       seen.set(line.tag, nth + 1);
-      this.row(parent, line, owner, keyOf(parentKey, line.tag, nth), depth);
+      const same = lines.filter((one) => one.tag === line.tag).length;
+      this.row(parent, line, owner, keyOf(parentKey, line.tag, nth), depth, same > 1 ? nth + 1 : 0);
     }
   }
 
-  private place(parent: HTMLElement, name: string, focusKey: string): void {
+  private place(parent: HTMLElement, name: string, focusKey: string, clipped = false): void {
     const id = placeId(name);
     if (placeAt(this.options.index, id) === undefined) {
       parent.appendText(name);
       return;
     }
-    linkButton(parent, name, () => this.options.host.openRecord(id)).setAttribute("data-focus-key", focusKey);
+    const link = linkButton(parent, clipped ? "" : name, () => this.options.host.openRecord(id));
+    link.setAttribute("data-focus-key", focusKey);
+    if (clipped) {
+      link.createSpan({ cls: "gedcom-tree-clip", text: name });
+    }
   }
 
   /** What a closed node says of its line, as the parts of one line; a part that is a place is a link. */
-  private summary(line: RecordLine, owner: RecordLine, fact: TreeFact | undefined): { text: string; place?: boolean }[] {
+  private summary(line: RecordLine, owner: RecordLine, fact: TreeFact | undefined): { text: string; kind: "value" | "date" | "place" }[] {
     const { index } = this.options;
     let value: string | undefined;
     if (line.void) {
@@ -148,28 +153,29 @@ class Tree {
     } else if (line.text !== undefined && !(fact && line.text === "Y")) {
       value = valueText(line, owner);
     }
-    const parts: { text: string; place?: boolean }[] = [];
+    const parts: { text: string; kind: "value" | "date" | "place" }[] = [];
     if (value !== undefined && value !== "") {
-      parts.push({ text: firstLine(value) });
+      parts.push({ text: firstLine(value), kind: "value" });
     }
     if (fact) {
       const date = fact.event.date?.text;
       const place = fact.event.place?.trim();
       if (date) {
-        parts.push({ text: date });
+        parts.push({ text: date, kind: "date" });
       }
       if (place) {
-        parts.push({ text: place, place: true });
+        parts.push({ text: place, kind: "place" });
       }
     }
     return parts;
   }
 
-  private row(container: HTMLElement, line: RecordLine, owner: RecordLine, key: string, depth: number): void {
+  private row(container: HTMLElement, line: RecordLine, owner: RecordLine, key: string, depth: number, ordinal: number): void {
     const { host, index, state, facts } = this.options;
     const fact = facts.get(line.range.start.line);
     const isNode = line.children.length > 0;
     const label = tagLabel(line.tag);
+    const named = ordinal > 0 ? `${label} ${ordinal}` : label;
     const node = container.createDiv({ cls: "gedcom-tree-node" });
     node.setAttribute("data-depth", String(depth));
     node.setAttribute("data-key", key);
@@ -193,7 +199,7 @@ class Tree {
     if (isNode) {
       chevron = header.createEl("button", { cls: "gedcom-tree-chevron" });
       chevron.setAttribute("type", "button");
-      chevron.setAttribute("aria-label", t("tree.toggle", { name: label }));
+      chevron.setAttribute("aria-label", named);
       chevron.setAttribute("aria-controls", childrenId);
       chevron.setAttribute("data-focus-key", `t:${key}`);
     }
@@ -215,10 +221,11 @@ class Tree {
 
     const missing =
       line.pointer !== undefined && !line.void && recordTitle(index, line.pointer) === undefined;
-    if (!missing) {
-      const source = header.createEl("button", { cls: "gedcom-tree-source" });
+    let source: HTMLElement | null = null;
+    if (!missing || isNode) {
+      source = header.createEl("button", { cls: "gedcom-tree-source" });
       source.setAttribute("type", "button");
-      source.setAttribute("aria-label", t("tree.showInSource", { name: label }));
+      source.setAttribute("aria-label", t("tree.showInSource", { name: named }));
       source.setAttribute("data-focus-key", `src:${key}`);
       if (host.setIcon) {
         host.setIcon(source, "code");
@@ -236,6 +243,7 @@ class Tree {
       folded: (id, now) => state.setOpen(id, now),
     };
     const paintValue = (): void => {
+      detail.notes = { drawn: 0, prefix: `${key}.` };
       if (line.void || line.pointer !== undefined) {
         renderPointer(main, line, detail, `t:${key}:link`);
       } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE")) {
@@ -258,9 +266,9 @@ class Tree {
           if (at > 0) {
             text.createSpan({ cls: "gedcom-tree-join", text: " · " });
           }
-          const one = text.createSpan({ cls: "gedcom-tree-part" });
-          if (part.place) {
-            this.place(one, part.text, `t:${key}:place`);
+          const one = text.createSpan({ cls: ["gedcom-tree-part", `is-${part.kind}`] });
+          if (part.kind === "place") {
+            this.place(one, part.text, `t:${key}:place`, true);
           } else {
             one.setText(part.text);
           }
@@ -277,6 +285,7 @@ class Tree {
     };
     const paint = (): void => {
       main.empty();
+      source?.toggleAttribute("hidden", missing && !(isNode && !open));
       if (isNode && !open) {
         paintSummary();
       } else {

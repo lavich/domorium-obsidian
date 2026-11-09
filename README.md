@@ -108,7 +108,7 @@ order the file writes them and nested as the file nests them, with no sections o
 own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
 the file puts them. Every node starts closed with a one-line summary — an event shows its date
 and place, an attribute its value — and a quiet dot after it where it cites a source; what you
-open stays open while you look at other records, and **Show tags** adds the GEDCOM tag after each
+open comes back open when you return to that record, and **Show tags** adds the GEDCOM tag after each
 label. The controls of a row, **Show in source**, and those of the tree appear only where the pointer or the keyboard focus
 is, and on a phone on the row you last pressed; the tree only reads. Below it come
 their parents (marked adoptive, foster or sealing where the file says so), siblings,

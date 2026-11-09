@@ -25,13 +25,15 @@ function overflowsSideways(page: Page): Promise<boolean> {
 const scrollTopOf = (page: Page) =>
   page.locator(".gedcom-card-body").evaluate((body) => body.scrollTop);
 
+const opacityOf = (locator: Locator) => locator.evaluate((node) => getComputedStyle(node).opacity);
+
 const treeRow = (page: Page, label: string) =>
   page.locator(".gedcom-tree-row", { has: page.locator(".gedcom-tree-label", { hasText: new RegExp(`^${label}$`, "u") }) }).first();
 
-const openEveryNode = (page: Page) =>
-  page.locator(".gedcom-tree-control", { hasText: "Open every node" }).evaluate((one) => {
-    (one as HTMLElement).click();
-  });
+const openEveryNode = async (page: Page): Promise<void> => {
+  await page.locator(".gedcom-tree").hover();
+  await page.locator(".gedcom-tree-control", { hasText: "Open every node" }).click();
+};
 
 const back = (page: Page) => page.locator('.gedcom-card-nav[aria-label="Back"]');
 const forward = (page: Page) => page.locator('.gedcom-card-nav[aria-label="Forward"]');
@@ -378,10 +380,37 @@ test.describe("the controls of a card", () => {
   });
 });
 
+const hitSweep = (page: Page): Promise<string[]> =>
+  page.evaluate(() => {
+    const missed: string[] = [];
+    const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
+    for (const control of document.querySelectorAll<HTMLElement>(selectors)) {
+      if (control.matches(".gedcom-tree-source") && !control.closest(".is-pressed")) {
+        continue;
+      }
+      control.scrollIntoView({ block: "center" });
+      const box = control.getBoundingClientRect();
+      if (box.width === 0) {
+        continue;
+      }
+      const x = box.left + Math.min(box.width / 2, 6);
+      const hits: number[] = [];
+      for (let y = box.top - 30; y <= box.bottom + 30; y += 2) {
+        if (document.elementFromPoint(x, y)?.closest("button") === control) {
+          hits.push(y);
+        }
+      }
+      if (hits.length === 0 || Math.max(...hits) - Math.min(...hits) < 32) {
+        missed.push(`${control.className} ${control.textContent ?? ""}`);
+      }
+    }
+    return missed;
+  });
+
 test.describe("the controls of a card on a phone", () => {
   test.use({ hasTouch: true });
 
-  test("can be hit over a height of at least 32 pixels", async ({ page }) => {
+  test("can be hit over a height of at least 32 pixels, closed and open, and a pressed row's Show in source over 44", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     const rich = readFileSync("demo-vault/rich-record.ged", "utf8");
     const cases: [string, string | undefined][] = [
@@ -389,7 +418,17 @@ test.describe("the controls of a card on a phone", () => {
       ["event:@I1@:BIRT:0", undefined], ["@I1@", rich], ["@F3@", rich], ["event:@I1@:BIRT:0", rich], ["event:@F3@:MARR:0", rich],
     ];
     for (const [record, doc] of cases) {
+      const name = `${record}${doc === undefined ? "" : " (rich)"}`;
       await mountDesk(page, { record, phone: true, ...(doc === undefined ? {} : { doc }) });
+      expect(await hitSweep(page), `${name}, closed`).toEqual([]);
+
+      const rows = page.locator(".gedcom-tree-row");
+      for (let at = 0; at < Math.min(await rows.count(), 6); at += 1) {
+        await rows.nth(at).dispatchEvent("pointerdown");
+        expect(await hitSweep(page), `${name}, row ${at} pressed`).toEqual([]);
+        const box = await rows.nth(at).locator(".gedcom-tree-source").boundingBox();
+        expect(box?.height ?? 0, `${name}, row ${at}`).toBeGreaterThanOrEqual(44);
+      }
       for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
         await button.click();
       }
@@ -399,33 +438,30 @@ test.describe("the controls of a card on a phone", () => {
       for (const button of await page.locator(".gedcom-detail-more").all()) {
         await button.click();
       }
-      const misses = await page.evaluate(() => {
-        const missed: string[] = [];
-        const selectors = ".gedcom-card-body button:not(:disabled), .gedcom-card-nav";
-        for (const control of document.querySelectorAll<HTMLElement>(selectors)) {
-          if (getComputedStyle(control).pointerEvents === "none") {
-            continue;
-          }
-          control.scrollIntoView({ block: "center" });
-          const box = control.getBoundingClientRect();
-          if (box.width === 0) {
-            continue;
-          }
-          const x = box.left + Math.min(box.width / 2, 6);
-          const hits: number[] = [];
-          for (let y = box.top - 30; y <= box.bottom + 30; y += 2) {
-            if (document.elementFromPoint(x, y)?.closest("button") === control) {
-              hits.push(y);
-            }
-          }
-          if (Math.max(...hits) - Math.min(...hits) < 32) {
-            missed.push(`${control.className} ${control.textContent ?? ""}`);
-          }
-        }
-        return missed;
-      });
-      expect(misses, `${record}${doc === undefined ? "" : " (rich)"}`).toEqual([]);
+      expect(await hitSweep(page), `${name}, open`).toEqual([]);
     }
+  });
+});
+
+test.describe("the controls of a card where the pointer is coarse", () => {
+  test.use({ hasTouch: true, isMobile: true });
+
+  test("show the pressed row's control and the toolbar without the app's mobile class", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await mountDesk(page, { width: 390 });
+    expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
+    expect(await page.evaluate(() => document.body.classList.contains("is-mobile"))).toBe(false);
+
+    const row = treeRow(page, "Occupation");
+    await row.dispatchEvent("pointerdown");
+    await expect(row.locator(".gedcom-tree-source")).toHaveCSS("opacity", "1");
+    expect(await opacityOf(treeRow(page, "Sex").locator(".gedcom-tree-source"))).toBe("0");
+    const box = await row.locator(".gedcom-tree-source").boundingBox();
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("position", "static");
+    expect((await hitSweep(page)).filter((name) => name.includes("gedcom-tree"))).toEqual([]);
   });
 });
 
@@ -511,7 +547,6 @@ const longDoc = (events: number): string => {
   return [...lines, "0 @S1@ SOUR", "1 TITL Register", "0 TRLR", ""].join("\n");
 };
 
-const opacityOf = (locator: Locator) => locator.evaluate((node) => getComputedStyle(node).opacity);
 
 test.describe("the tree of a record", () => {
   test("keeps the controls of a row and of the tree out of sight until the pointer is there, and shifts nothing when they appear", async ({ page }) => {
@@ -569,7 +604,7 @@ test.describe("the tree of a record", () => {
     await mountDesk(page, { width: 420 });
     const birth = treeRow(page, "Birth").locator(".gedcom-tree-chevron");
     await birth.click();
-    await page.locator(".gedcom-tree-control", { hasText: "Show tags" }).click();
+    await page.locator(".gedcom-tree-control", { hasText: "Show GEDCOM tags" }).click();
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "true");
 
     await page.evaluate(() => {
@@ -586,11 +621,11 @@ test.describe("the tree of a record", () => {
   test("keeps the focus on the same control across a redraw", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
-    const tags = page.locator(".gedcom-tree-control", { hasText: "Show tags" });
+    const tags = page.locator(".gedcom-tree-control", { hasText: "Show GEDCOM tags" });
     await tags.focus();
     await page.keyboard.press("Enter");
 
-    await expect(page.locator(".gedcom-tree-control:focus")).toHaveText("Hide tags");
+    await expect(page.locator(".gedcom-tree-control:focus")).toHaveText("Hide GEDCOM tags");
     await expect(page.locator(".gedcom-tree-control:focus")).toHaveAttribute("data-focus-key", "tags");
   });
 
@@ -599,7 +634,7 @@ test.describe("the tree of a record", () => {
     await mountDesk(page, { width: 420 });
     await expect(page.locator(".gedcom-tree-tag")).toHaveCount(0);
     await page.locator(".gedcom-tree").hover();
-    await page.locator(".gedcom-tree-control", { hasText: "Show tags" }).click();
+    await page.locator(".gedcom-tree-control", { hasText: "Show GEDCOM tags" }).click();
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-tag")).toHaveText("BIRT");
 
     await page.evaluate(() => {
@@ -607,7 +642,7 @@ test.describe("the tree of a record", () => {
     });
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-tag")).toHaveText("BIRT");
     await page.locator(".gedcom-tree").hover();
-    await page.locator(".gedcom-tree-control", { hasText: "Hide tags" }).click();
+    await page.locator(".gedcom-tree-control", { hasText: "Hide GEDCOM tags" }).click();
     await expect(page.locator(".gedcom-tree-tag")).toHaveCount(0);
   });
 
@@ -655,7 +690,75 @@ test.describe("the tree of a record", () => {
     });
   }
 
-  test("times the first draw and Open every node of a record of several hundred lines", async ({ page }, info) => {
+  test("selects the lines of a row when its control is pressed with the mouse after the pointer is over the row", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 420 });
+    const row = treeRow(page, "Occupation");
+    const line = Number(await row.getAttribute("data-line"));
+    await row.hover();
+    await row.locator(".gedcom-tree-source").click();
+
+    const shown = await page.evaluate(() => window.desk.calls.shownInSource);
+    expect(shown.at(-1)?.start.line).toBe(line);
+  });
+
+  test("keeps the room of the controls at the end of the row in a right-to-left card", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 420 });
+    await page.evaluate(() => {
+      document.body.dir = "rtl";
+    });
+    const row = treeRow(page, "Occupation");
+    const source = await row.locator(".gedcom-tree-source").boundingBox();
+    const main = await row.locator(".gedcom-tree-main").boundingBox();
+
+    expect(source).not.toBeNull();
+    expect(main).not.toBeNull();
+    expect(main?.x ?? 0).toBeGreaterThanOrEqual((source?.x ?? 0) + (source?.width ?? 0) - 0.5);
+  });
+
+  for (const width of [320, 390]) {
+    test(`cuts a long value of a closed row with an ellipsis and keeps its date visible at ${width} pixels`, async ({ page }) => {
+      await page.setViewportSize({ width: 1400, height: 800 });
+      const doc = [
+        "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 NAME A /B/",
+        `1 OCCU ${"A very long occupation that goes on and on ".repeat(4)}`, "2 DATE 1900", "2 PLAC Paris, France", "0 TRLR", "",
+      ].join("\n");
+      await mountDesk(page, { doc, record: "@I1@", width, phone: width === 390 });
+      const row = treeRow(page, "Occupation");
+      const date = row.locator(".gedcom-tree-part.is-date");
+      const value = row.locator(".gedcom-tree-part.is-value");
+
+      await expect(date).toHaveText("1900");
+      const box = await date.boundingBox();
+      const rowBox = await row.boundingBox();
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual((rowBox?.x ?? 0) + (rowBox?.width ?? 0));
+      expect(await date.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
+      expect(await value.evaluate((node) => getComputedStyle(node).textOverflow)).toBe("ellipsis");
+      expect(await value.evaluate((node) => node.scrollWidth > node.clientWidth)).toBe(true);
+      await page.locator("#card-pane").screenshot({ path: `/tmp/impl-record-fields-tree/long-value-${width}.png` });
+    });
+  }
+
+  test("paints the focus ring of a place link in a closed row", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 800 });
+    await mountDesk(page, { width: 420 });
+    const link = treeRow(page, "Birth").locator(".gedcom-tree-summary .gedcom-desk-link");
+    const box = await link.boundingBox();
+    const clip = { x: (box?.x ?? 0) - 4, y: (box?.y ?? 0) - 4, width: (box?.width ?? 0) + 8, height: (box?.height ?? 0) + 8 };
+    await page.mouse.move(2, 2);
+    const plain = await page.screenshot({ clip });
+    await treeRow(page, "Birth").locator("button.gedcom-tree-label").focus();
+    await page.keyboard.press("Tab");
+    await expect(link).toBeFocused();
+    expect(await link.evaluate((node) => node.matches(":focus-visible"))).toBe(true);
+    const ringed = await page.screenshot({ clip });
+
+    expect(ringed.equals(plain)).toBe(false);
+    await page.screenshot({ clip: { x: clip.x - 40, y: clip.y - 10, width: clip.width + 80, height: clip.height + 20 }, path: "/tmp/impl-record-fields-tree/focused-place-link.png" });
+  });
+
+  test("draws a record of several hundred lines, and opens every node of it, within a loose budget", async ({ page }, info) => {
     await page.setViewportSize({ width: 1400, height: 800 });
     await page.goto(pathToFileURL(resolve("harness/desk.html")).href);
     const doc = longDoc(80);
@@ -674,5 +777,7 @@ test.describe("the tree of a record", () => {
 
     info.annotations.push({ type: "timing", description: `first draw ${timing.first.toFixed(0)} ms; open every node ${timing.open.toFixed(0)} ms; ${timing.rows} rows` });
     expect(timing.rows).toBeGreaterThan(500);
+    expect(timing.first).toBeLessThan(500);
+    expect(timing.open).toBeLessThan(500);
   });
 });

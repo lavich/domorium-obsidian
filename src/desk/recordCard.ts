@@ -47,6 +47,10 @@ export interface CardView {
 
 const FOCUS_KEY = "data-focus-key";
 const OPEN_KEY = "data-open";
+const CARD_KEYS: ReadonlySet<string> = new Set(["card.back", "card.forward", "tags", "tree:open", "tree:close"]);
+
+const hasTree = (index: GenealogyIndex, record: string): boolean =>
+  index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;
 
 function foldsOf(root: HTMLElement): Required<Pick<PersonPageOptions, "open" | "folded">> {
   const open = new Set((root.getAttribute(OPEN_KEY) ?? "").split(" ").filter(Boolean));
@@ -96,7 +100,8 @@ export function renderRecordCard(
   const focusKey = focusWas?.closest(`[${FOCUS_KEY}]`)?.getAttribute(FOCUS_KEY) ?? null;
   const scrollTop = before?.scrollTop ?? 0;
   const previous = root.getAttribute("data-shown");
-  if (previous) {
+  const previousDrawsTree = root.getAttribute("data-tree") === "1";
+  if (previous && previousDrawsTree) {
     view.session.rememberScroll(previous, scrollTop);
   }
 
@@ -106,6 +111,7 @@ export function renderRecordCard(
     }
   }
 
+  let drawsTree = false;
   const selection = tab?.selection() ?? { record: null, fact: null };
   const index = tab?.index();
   const record = tab && index && selection.record && pageKind(index, selection.record) ? selection.record : null;
@@ -129,24 +135,26 @@ export function renderRecordCard(
     if (shown !== previous) {
       root.removeAttribute(OPEN_KEY);
     }
+    drawsTree = hasTree(index, record);
     drawRecord(body, tab, index, record, selection.fact, notes, view, {
       ...foldsOf(root),
-      tree: view.session.stateFor(shown, () => view.redraw()),
+      ...(drawsTree ? { tree: view.session.stateFor(shown, () => view.redraw()) } : {}),
     });
   }
 
   root.setAttribute("data-shown", shown);
+  root.setAttribute("data-tree", drawsTree ? "1" : "0");
   if (live && shown !== previous) {
     live.setText(tab && index && record ? t("card.announce", { name: recordName(index, record) }) : "");
   }
   if (shown === previous) {
     body.scrollTop = scrollTop;
-  } else if (record && tab?.arrivedBy() === "history") {
+  } else if (drawsTree && tab?.arrivedBy() === "history") {
     body.scrollTop = view.session.scrollOf(shown);
   }
   if (focusWas !== null) {
     const same =
-      focusKey === null
+      focusKey === null || (shown !== previous && !CARD_KEYS.has(focusKey))
         ? null
         : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`)].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
     (same ?? body).focus({ preventScroll: true });

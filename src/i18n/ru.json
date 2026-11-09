@@ -543,10 +543,9 @@
   "record.void": "Запись не указана",
   "record.husbandAge": "Возраст мужа",
   "record.wifeAge": "Возраст жены",
-  "tree.showTags": "Показать теги",
-  "tree.hideTags": "Скрыть теги",
+  "tree.showTags": "Показать теги GEDCOM",
+  "tree.hideTags": "Скрыть теги GEDCOM",
   "tree.openAll": "Открыть все узлы",
   "tree.closeAll": "Закрыть все узлы",
-  "tree.toggle": "Развернуть или свернуть: {name}",
   "tree.showInSource": "Показать в исходнике: {name}"
 }

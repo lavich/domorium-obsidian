@@ -2577,12 +2577,16 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree {
-  margin-top: var(--size-4-2);
+  position: relative;
+  margin-top: var(--size-4-3);
 }
 
 .gedcom-tree-bar {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap-reverse;
   justify-content: flex-end;
   opacity: 0;
   pointer-events: none;
@@ -2620,7 +2624,8 @@ button.gedcom-tree-control:hover {
   gap: 0 var(--size-4-2);
   box-sizing: border-box;
   min-width: 0;
-  padding: var(--size-2-1) 28px var(--size-2-1) 22px;
+  padding-block: var(--size-2-1);
+  padding-inline: 22px 28px;
   border-radius: var(--radius-s);
 }
 
@@ -2705,24 +2710,44 @@ button.gedcom-tree-label:hover {
   display: flex;
   flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
   white-space: pre;
   color: var(--text-muted);
 }
 
+.gedcom-tree-join {
+  flex: none;
+}
+
 .gedcom-tree-part {
-  flex: 0 0 auto;
   min-width: 0;
+}
+
+.gedcom-tree-part.is-value {
+  flex: 0 1 auto;
+  min-width: 4ch;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.gedcom-tree-part:last-child {
-  flex-shrink: 1;
+.gedcom-tree-part.is-date {
+  flex: 0 0 auto;
+}
+
+.gedcom-tree-part.is-place {
+  display: flex;
+  flex: 0 1000 auto;
+  min-width: 5ch;
 }
 
 .gedcom-tree-summary .gedcom-desk-link {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
+}
+
+.gedcom-tree-clip {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: pre;
@@ -2806,6 +2831,11 @@ button.gedcom-tree-source:focus-visible {
   outline-offset: 1px;
 }
 
+.is-mobile .gedcom-tree-bar {
+  position: static;
+  flex-wrap: wrap;
+}
+
 .is-mobile .gedcom-tree-bar,
 .is-mobile .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
   opacity: 1;
@@ -2819,7 +2849,7 @@ button.gedcom-tree-source:focus-visible {
 
 .is-mobile .gedcom-tree-row {
   min-height: 44px;
-  align-items: center;
+  padding-block: 12px;
   padding-inline: 34px 44px;
 }
 
@@ -2834,6 +2864,11 @@ button.gedcom-tree-source:focus-visible {
 }
 
 @media (pointer: coarse) {
+  .gedcom-tree-bar {
+    position: static;
+    flex-wrap: wrap;
+  }
+
   .gedcom-tree-bar,
   .gedcom-tree-row.is-pressed > button.gedcom-tree-source {
     opacity: 1;
@@ -2847,7 +2882,7 @@ button.gedcom-tree-source:focus-visible {
 
   .gedcom-tree-row {
     min-height: 44px;
-    align-items: center;
+    padding-block: 12px;
     padding-inline: 34px 44px;
   }
 

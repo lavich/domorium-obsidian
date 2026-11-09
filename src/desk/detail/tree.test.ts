@@ -194,6 +194,22 @@ describe("a pointer", () => {
     expect(shown).toHaveBeenCalledWith(made.record.children[0]?.range);
   });
 
+  it("has a way to its line in a closed node that points to a record not in the file, and never two once it is open", () => {
+    const made = make(["0 @I1@ INDI", "1 ASSO @I9@", "2 RELA friend"]);
+    draw(made);
+    const row = rowNamed("Associated person");
+    const source = (): HTMLElement | null => row.querySelector<HTMLElement>(".gedcom-tree-source");
+
+    expect(source()?.hasAttribute("hidden")).toBe(false);
+    source()?.click();
+    expect(shown).toHaveBeenCalledWith(made.record.children[0]?.range);
+    open("Associated person");
+    expect(source()?.hasAttribute("hidden")).toBe(true);
+    expect(row.querySelectorAll(".gedcom-desk-missing button")).toHaveLength(1);
+    open("Associated person");
+    expect(source()?.hasAttribute("hidden")).toBe(false);
+  });
+
   it("names no record where a 7.0 file writes @VOID@, with no way to the source of a missing record", () => {
     draw(make(["0 @I1@ INDI", "1 ASSO @VOID@"]));
     const row = rowNamed("Associated person");
@@ -255,6 +271,30 @@ describe("a note", () => {
   });
 });
 
+describe("a shared note in a node", () => {
+  const made = (): Made =>
+    make([
+      "0 @I1@ INDI", "1 SNOTE @N1@", "2 _X y",
+      "0 @N1@ SNOTE shared", ...Array.from({ length: 11 }, (_, at) => `1 CONT line ${at}`),
+      "1 NOTE inside", ...Array.from({ length: 11 }, (_, at) => `2 CONT inner ${at}`),
+    ]);
+
+  it("stays shown in full when the node is closed and opened again", () => {
+    draw(made());
+    open("Shared note");
+    const more = (): HTMLButtonElement[] => [...box.querySelectorAll<HTMLButtonElement>(".gedcom-detail-more")];
+    more().forEach((button) => {
+      button.click();
+    });
+    expect(more().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+
+    open("Shared note");
+    open("Shared note");
+    expect(more().map((button) => button.getAttribute("aria-expanded"))).toEqual(["true", "true"]);
+    expect(more().map((button) => button.getAttribute("data-focus-key"))).toEqual(["note:SNOTE[0].0", "note:SNOTE[0].1"]);
+  });
+});
+
 describe("a name", () => {
   const maria = ["0 @I1@ INDI", "1 NAME Maria /Skłodowska/", "2 TYPE BIRTH", "2 GIVN Maria"];
 
@@ -288,6 +328,29 @@ describe("a name", () => {
     draw(make(["0 @I1@ INDI", "1 NAME //", "2 NICK Manya"]));
 
     expect(summaryOf(rowNamed("Name"))).toBe("Unnamed");
+  });
+
+  it("names the controls of two names apart, and the chevron by its row alone", () => {
+    draw(make(["0 @I1@ INDI", "1 NAME A /B/", "2 NICK Ab", "1 NAME C /D/", "2 NICK Cd", "1 SEX F"]));
+
+    expect(
+      [...box.querySelectorAll(".gedcom-tree-source")].map((one) => one.getAttribute("aria-label")),
+    ).toEqual(["Show in source: Name 1", "Show in source: Name 2", "Show in source: Sex"]);
+    expect(chevron(rowNamed("Name", 1)).getAttribute("aria-label")).toBe("Name 2");
+  });
+
+  it("reads the type of the second name and a translation of a name, as the old section did", () => {
+    draw(make([
+      "0 @I1@ INDI", "1 NAME Maria /Curie/", "2 TYPE BIRTH", "2 TRAN Мария Кюри", "3 LANG ru",
+      "1 NAME Marie /Curie/", "2 TYPE MARRIED",
+    ]));
+    open("Name", 0);
+    open("Name", 1);
+    open("Translation");
+
+    expect(box.querySelector('[data-key="NAME[1].TYPE[0]"] .gedcom-field')?.getAttribute("data-value")).toBe("Married");
+    expect(valuesOf(rowNamed("Translation"))).toEqual(["Мария Кюри"]);
+    expect(valuesOf(rowNamed("Language"))).toEqual(["ru"]);
   });
 
   it("reads a type as written where it is not under a name", () => {
@@ -554,10 +617,10 @@ describe("the tags", () => {
 
   it("show after each label that is not itself the tag, and hide again", () => {
     draw(make(["0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "1 _X y"]));
-    control("Show tags").click();
+    control("Show GEDCOM tags").click();
 
     expect([...box.querySelectorAll(".gedcom-tree-tag")].map((tag) => tag.textContent)).toEqual(["NAME", "BIRT"]);
-    control("Hide tags").click();
+    control("Hide GEDCOM tags").click();
     expect(box.querySelector(".gedcom-tree-tag")).toBeNull();
   });
 
@@ -565,7 +628,7 @@ describe("the tags", () => {
     const changed = vi.fn();
     const state = { ...new TreeSession().stateFor("rec"), changed };
     draw(make(["0 @I1@ INDI", "1 BIRT"]), state);
-    control("Show tags").click();
+    control("Show GEDCOM tags").click();
 
     expect(changed).toHaveBeenCalledTimes(1);
   });
@@ -579,7 +642,7 @@ describe("the tree changes nothing", () => {
     open("Name");
     chevron(rowNamed("Name")).click();
     rowNamed("Associated person").querySelector<HTMLButtonElement>("button.gedcom-desk-link")?.click();
-    control("Show tags").click();
+    control("Show GEDCOM tags").click();
     control("Open every node").click();
     rowNamed("Sex").querySelector("textarea")?.dispatchEvent(new Event("input", { bubbles: true }));
 

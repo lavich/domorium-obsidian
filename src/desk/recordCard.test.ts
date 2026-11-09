@@ -377,6 +377,26 @@ describe("redrawing the card", () => {
     expect(document.activeElement).toBe(container.querySelector('[data-focus-key="t:BIRT[0]"]'));
   });
 
+  it("puts the focus on the body, not on a control of the same key, when another record is shown", () => {
+    draw();
+    container.querySelector<HTMLElement>('[data-focus-key="t:NAME[0]"]')?.focus();
+    state.record = "@I2@";
+    draw();
+
+    expect(container.querySelector('[data-focus-key="t:NAME[0]"]')).not.toBeNull();
+    expect(document.activeElement).toBe(body());
+  });
+
+  it("keeps the focus on a control of the card itself when another record is shown", () => {
+    state.canBack = true;
+    draw();
+    nav("Back")?.focus();
+    state.record = "@I2@";
+    draw();
+
+    expect(document.activeElement).toBe(nav("Back"));
+  });
+
   it("keeps the focus on a control that the reader pressed to open a node", () => {
     draw();
     const chevron = container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]');
@@ -476,7 +496,7 @@ describe("the tree of a record on the card", () => {
 
   it("holds the tags on another record and in another tab, and tells every card to redraw", () => {
     draw();
-    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.textContent === "Show tags")?.click();
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.textContent === "Show GEDCOM tags")?.click();
     expect(redraw).toHaveBeenCalledTimes(1);
 
     state.record = "@I2@";
@@ -494,5 +514,28 @@ describe("the tree of a record on the card", () => {
     draw();
 
     expect(container.querySelector(".gedcom-tree")).toBeNull();
+  });
+});
+
+describe("what a card remembers", () => {
+  it("does not spend a slot of the twenty on the card of a place or an event", () => {
+    const lines = ["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 DATE 1900"];
+    for (let at = 0; at < 25; at += 1) {
+      lines.push(`1 RESI`, `2 PLAC Town ${at}`);
+    }
+    index = indexOf([...lines, "0 TRLR"].join("\n"));
+    const key = '[data-focus-key="t:BIRT[0]"]';
+    draw();
+    container.querySelector<HTMLElement>(key)?.click();
+    for (let at = 0; at < 25; at += 1) {
+      state.record = `place:town ${at}`;
+      draw();
+      state.record = `event:@I1@:RESI:${at}`;
+      draw();
+    }
+    state.record = "@I1@";
+    draw();
+
+    expect(container.querySelector<HTMLElement>(key)?.getAttribute("aria-expanded")).toBe("true");
   });
 });

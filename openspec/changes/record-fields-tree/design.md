@@ -91,3 +91,7 @@ Where the code differs from the plan above, or settled something the plan left o
 - The person page's own `drawTree` helper serves the family and the source page; the `FactKey` selection of the heading's *Show in source* is unchanged.
 - Timing, 80 events of seven lines (561 rows once open), the harness in headless Chromium: first draw about 30 ms and *Open every node* about 33 ms; the card of `main` draws the same record in 21 to 32 ms (it draws only the compact event rows, no notes and no sources).
 - Not checked: Obsidian itself on desktop and on a phone (task 4.2); only the harness was looked at, in both themes at 320 and 390 pixels.
+- A record without an identifier cannot be selected, so no card shows one and a card needs no tree for it; the inert label of a fact with no `eventId` is covered on the renderer alone.
+- The tree is drawn for person, family and source cards only, and only those take a slot of the twenty and a remembered scroll. Focus is restored by key only while the same record is shown; for another record only the card-level controls (Back, Forward and the toolbar) keep it.
+- The toolbar sits above the first row, out of the flow, so a hidden toolbar leaves no band; on a touch device it is in the flow and shown. A control's name carries its ordinal where a tag repeats among its siblings (`Show in source: Name 2`); the chevron is named by its row alone.
+- A closed node that points at a record not in the file keeps the row's *Show in source* while closed; once open, the pointer's own action is the only one.
