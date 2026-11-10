@@ -11,7 +11,7 @@ import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type PageHost, type PersonPageOptions } from "./personPage";
 import { renderSourcePage } from "./sourcePage";
-import type { FieldChoice } from "./detail/tree";
+import type { FieldChoice, PointerChoice } from "./detail/tree";
 import type { TreeSession } from "./detail/treeSession";
 
 export interface CardTab {
@@ -33,6 +33,7 @@ export interface CardView {
   session: TreeSession;
   /** Lists the fields of the standard, the ones with no room left disabled, below the pointer. */
   chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
+  choosePointer?(choices: PointerChoice[]): void;
   /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
   header?: HTMLElement;
 }
@@ -148,6 +149,7 @@ function drawRecord(
     openRecord: (xref) => tab.select(xref),
     showInSource: (range) => tab.showInSource(range),
     openFile: (path) => tab.openFile(path),
+    ...(view.choosePointer ? { choosePointer: (choices: PointerChoice[]) => view.choosePointer?.(choices) } : {}),
     ...(tab.pointerChoicesAt
       ? { pointerChoicesAt: (parent: Position, tag: string) => tab.pointerChoicesAt?.(parent, tag) ?? [] }
       : {}),

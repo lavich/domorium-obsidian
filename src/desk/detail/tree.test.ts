@@ -6,7 +6,7 @@ import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealog
 import { resetLanguage, setLanguage } from "../../i18n";
 import { curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { addableAt, choicesAt } from "../addableFields";
+import { addableAt, choicesAt, pointerChoicesAt } from "../addableFields";
 import { factsOf } from "../personPage";
 import { factsByLine, renderTree, type TreeHost } from "./tree";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
@@ -150,6 +150,22 @@ describe("the lines of a record as rows", () => {
       select.dispatchEvent(new Event("change"));
     }
     expect(select?.value).toBe("F");
+  });
+
+  it("opens a searchable list of the records a pointer may point at, the one it points at marked", () => {
+    const choose = vi.fn<NonNullable<TreeHost["choosePointer"]>>();
+    const made = make(["0 @F1@ FAM", "1 HUSB @I1@", "0 @I1@ INDI", "1 NAME Pierre /Curie/", "0 @I2@ INDI", "1 NAME Marie /Curie/"], "7.0", "@F1@");
+    const host = {
+      openRecord: opened,
+      showInSource: shown,
+      choosePointer: choose,
+      pointerChoicesAt: (at: Position, tag: string) => pointerChoicesAt(made.service, at, tag),
+    };
+    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    rowNamed("Husband").querySelector<HTMLElement>(".gedcom-tree-pick")?.click();
+
+    expect(choose.mock.calls[0]?.[0]).toContainEqual({ title: "Pierre Curie", xref: "@I1@", checked: true });
+    expect(choose.mock.calls[0]?.[0]).toContainEqual({ title: "Marie Curie", xref: "@I2@", checked: false });
   });
 
   it("draws nothing for a record that states nothing beneath its opening line", () => {

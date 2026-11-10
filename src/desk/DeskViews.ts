@@ -3,6 +3,7 @@ import { ItemView, Menu, setIcon, type WorkspaceLeaf } from "obsidian";
 import type { GedcomView } from "../GedcomView";
 import { t } from "../i18n";
 import type { TreeSession } from "./detail/treeSession";
+import { PointerModal } from "./pointerModal";
 import { renderRecordCard } from "./recordCard";
 
 export const RECORD_VIEW_TYPE = "domorium-record";
@@ -61,6 +62,9 @@ export class RecordCardView extends ItemView {
         setIcon(element, icon);
       },
       session: this.host.session(),
+      choosePointer: (choices) => {
+        new PointerModal(this.app, choices).open();
+      },
       chooseField: (event, fields) => {
         const menu = new Menu();
         for (const { title, disabled, checked } of fields) {

@@ -1,7 +1,7 @@
 import type { PointerCandidate, Position, Range, StructureFieldDescription } from "@domorium/language-service";
 
 import type { GenealogyIndex, Person, PersonEvent, PersonRow, RecordLine } from "../genealogy";
-import { factsByLine, renderTree, type FieldChoice } from "./detail/tree";
+import { factsByLine, renderTree, type FieldChoice, type PointerChoice } from "./detail/tree";
 import { ephemeralTreeState, type TreeState } from "./detail/treeSession";
 
 export interface Fact {
@@ -19,6 +19,7 @@ export interface PageHost {
   choicesAt?(at: Position): string[];
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
   chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
+  choosePointer?(choices: PointerChoice[]): void;
 }
 
 export interface PersonPageOptions {
@@ -57,6 +58,7 @@ export function drawTree(
     host: {
       openRecord: (xref) => host.openRecord(xref),
       showInSource: (range) => host.showInSource(range),
+      ...(host.choosePointer === undefined ? {} : { choosePointer: (choices: PointerChoice[]) => host.choosePointer?.(choices) }),
       ...(host.pointerChoicesAt === undefined
         ? {}
         : { pointerChoicesAt: (parent: Position, tag: string) => host.pointerChoicesAt?.(parent, tag) ?? [] }),

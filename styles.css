@@ -2295,6 +2295,8 @@ button.gedcom-fg-pop-open {
 
 .gedcom-tree .gedcom-tree-pick {
   --icon-size: var(--icon-xs);
+  align-self: center;
+  background: none;
   display: flex;
   flex: none;
   align-items: center;
@@ -2304,6 +2306,11 @@ button.gedcom-fg-pop-open {
   height: calc(1em * var(--line-height-tight));
   padding: 0;
   opacity: 0;
+}
+
+.gedcom-tree .gedcom-tree-pick:hover {
+  background: none;
+  color: var(--nav-item-color-hover);
 }
 
 .gedcom-tree .gedcom-tree-row:hover .gedcom-tree-pick,

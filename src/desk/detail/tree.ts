@@ -31,6 +31,13 @@ export interface FieldChoice {
   checked?: boolean;
 }
 
+/** A record a pointer may point at, named for the list. */
+export interface PointerChoice {
+  title: string;
+  xref: string;
+  checked: boolean;
+}
+
 export interface TreeHost extends DetailHost {
   setIcon?(element: HTMLElement, icon: string): void;
   /** The fields the dialect lets be added to the line at this position; where the host cannot say, every node is offered a button and no list. */
@@ -40,6 +47,8 @@ export interface TreeHost extends DetailHost {
   /** The records a pointer of this tag under the line at `parent` may point at. */
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
   chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
+  /** Opens a searchable list of the records a pointer may point at. */
+  choosePointer?(choices: PointerChoice[]): void;
 }
 
 export interface TreeOptions {
@@ -62,8 +71,6 @@ interface SummaryPart {
 }
 
 let drawn = 0;
-
-const MENU_LIMIT = 49;
 
 function keyOf(parent: string, tag: string, nth: number): string {
   return `${parent === "" ? "" : `${parent}.`}${tag}[${nth}]`;
@@ -122,16 +129,14 @@ class Tree {
 
   private pick(parent: HTMLElement, line: RecordLine, owner: RecordLine, focusKey: string): void {
     const { host, index } = this.options;
-    if (line.void || line.pointer === undefined || !host.pointerChoicesAt || !host.chooseField) {
+    if (line.void || line.pointer === undefined || !host.pointerChoicesAt || !host.choosePointer) {
       return;
     }
     const candidates = host.pointerChoicesAt(owner.range.start, line.tag);
     if (candidates.length === 0) {
       return;
     }
-    const titleOf = (one: PointerCandidate): string => one.label ?? recordTitle(index, one.xref) ?? one.xref;
-    const current = candidates.find((one) => one.xref === line.pointer);
-    const shown = [...(current ? [current] : []), ...candidates.filter((one) => one !== current).slice(0, MENU_LIMIT)];
+    const titleOf = (one: PointerCandidate): string => recordTitle(index, one.xref) ?? one.label ?? one.xref;
     const button = parent.createDiv({ cls: ["gedcom-tree-pick", "clickable-icon"] });
     button.setAttribute("role", "button");
     button.setAttribute("tabindex", "0");
@@ -144,10 +149,7 @@ class Tree {
     }
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      host.chooseField?.(
-        event,
-        shown.map((one) => ({ title: titleOf(one), disabled: false, checked: one.xref === line.pointer })),
-      );
+      host.choosePointer?.(candidates.map((one) => ({ title: titleOf(one), xref: one.xref, checked: one.xref === line.pointer })));
     });
     button.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
