@@ -1,9 +1,8 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GedcomLanguageService } from "@domorium/language-service";
 import { buildIndex, type GenealogyIndex } from "../genealogy";
-import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { renderFamilyPage } from "./familyPage";
@@ -25,7 +24,6 @@ beforeEach(() => {
   container = document.createElement("div");
   host = pageHost();
 });
-afterEach(resetLanguage);
 
 function draw(
   xref: string,
@@ -43,21 +41,12 @@ const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
 describe("the family page", () => {
-  it("is headed by the spouses with the marriage", () => {
-    draw("@F3@");
-
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-desk-subtitle")).toEqual(["Married 26 JUL 1895, Sceaux"]);
-  });
-
-  it("is the heading, the tree of the lines of the record and the gallery, with no section of its own", () => {
+  it("is the tree of the lines of the record and nothing else", () => {
     draw("@F3@");
     const labels = [...container.querySelectorAll(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
 
     expect(labels).toEqual(["Husband", "Wife", "Child", "Child", "Marriage"]);
-    expect(texts("h2")).toEqual([]);
-    expect(container.querySelector(".gedcom-desk-heading + .gedcom-tree")).not.toBeNull();
-    expect(container.querySelector(".gedcom-desk-family, .gedcom-desk-kin")).toBeNull();
+    expect([...container.children].map((child) => child.className)).toEqual(["gedcom-tree"]);
     expect(texts(".gedcom-tree-summary")).toEqual(["26 JUL 1895 · Sceaux, France"]);
     expect(container.querySelector(".gedcom-desk-source")).toBeNull();
   });
@@ -71,15 +60,11 @@ describe("the family page", () => {
     expect(host.openRecord).toHaveBeenCalledWith("@I13@");
   });
 
-  it("draws the label of the marriage as text that opens nothing, and the heading shows the whole family in the source", () => {
-    const index = curieIndex();
-    draw("@F3@", { index });
+  it("draws the label of the marriage as text that opens nothing", () => {
+    draw("@F3@");
     container.querySelector<HTMLElement>(".gedcom-tree-label")?.click();
     expect(container.querySelector("button.gedcom-tree-label")).toBeNull();
     expect(host.openRecord).not.toHaveBeenCalled();
-
-    container.querySelector<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")?.click();
-    expect(host.showInSource).toHaveBeenCalledWith(index.family("@F3@")?.range);
   });
 
   it("shows a spouse and a child the file does not declare as pointers to records that are not in the file", () => {
@@ -92,7 +77,6 @@ describe("the family page", () => {
       ].join("\n"))),
     });
 
-    expect(texts(".gedcom-desk-title")).toEqual(["Anna Nowak"]);
     expect(texts(".gedcom-desk-missing span")).toEqual(["Points to a record that is not in the file"]);
     container.querySelector<HTMLElement>(".gedcom-desk-missing .gedcom-desk-link")?.click();
     expect(host.showInSource).toHaveBeenCalled();
@@ -125,12 +109,5 @@ describe("the family page", () => {
 
     expect(texts(".gedcom-detail-text-body")).toEqual(["Married in the church."]);
     expect(container.textContent).not.toContain("Adopted");
-  });
-
-  it("names the couple in Russian", () => {
-    setLanguage("ru");
-    draw("@F3@");
-
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
   });
 });

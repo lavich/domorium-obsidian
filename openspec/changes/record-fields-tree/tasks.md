@@ -65,7 +65,20 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 - [x] 10.3 Remove the strings `desk.person`, `desk.eventStatesNothing`, `record.notes`, `record.other`, `record.related`, `record.husbandAge` and `record.wifeAge` and the rules of the event card and of the buttons for a fact's name; verify with `npm run typecheck` and `npm run lint`
 - [x] 10.4 Specs: `The event card` and `An event stays selected while the cursor is in its record` removed, with `Related people and other records of the person` and `Other data` of the detail spec, and `An event or an attribute opens its card from its name` of the tree spec replaced by one on the place; the requirements on the event row, the selected record, the narrow panel and *Show in source* restated without the events under new names; verify with `npm run openspec:validate` and an archive of a copy of `openspec/`
 
+## 11. The card is the tree and nothing else
+
+- [x] 11.1 `personPage.ts`, `familyPage.ts`, `sourcePage.ts` draw only the tree: remove the heading, the portrait, the family section, the gallery and the timeline fold, `src/desk/timeline.ts`, `timelineView.ts`, `fold.ts`, `detail/lazyFold.ts`, `detail/section.ts`, `renderGallery`, `renderPortrait`, `CardTab.mediaItems` and `portrait`, `GedcomView.portrait` and `mediaItems`, `portraitOf`, `mediaItemsOf`, `shortPlace`, `parentsHeading`, `childMark` and `renderRest`; verify in `src/desk/personPage.test.ts`, `src/desk/familyPage.test.ts`, `src/desk/sourcePage.test.ts` and `src/desk/recordCard.test.ts` that each card is the tree and nothing else, and in `tests/desk.spec.ts` the same at 1400, 390 and 320 pixels
+- [x] 11.2 Remove the strings `desk.family`, `desk.parents`, `desk.siblings`, `desk.husband`, `desk.wife`, `desk.spouse`, `desk.children`, `desk.notRecorded`, `desk.married`, `desk.with`, `desk.noAuthor`, `desk.familyPage`, `desk.timeline`, the person's `timeline.*`, `record.pedi.*` and `record.childMark.*`, and the rules of the heading, the portrait, the family section, the folds and the timeline in `styles.css`; verify with `npm run typecheck`, `npm run lint` and `npm run build`
+- [x] 11.3 Specs: `The timeline of a person` removed; the person, family and source cards, the controls, the media card, the narrow panel and the selection restated for the tree alone, *Show in source* kept for a pointer to a record that is not in the file, and the event row kept at a place; verify with `npm run openspec:validate`
+- [x] 11.4 `README.md` where it describes the card; verify the text names the tree and no heading, section, pictures or timeline
+
 ## 5. Docs and gate
 
 - [x] 5.1 `README.md` where it describes the card; verify the text names the tree and the controls on hover
 - [x] 5.2 `npm run check` and `npm run test:browser`
+
+## 12. The tree's header is always shown
+
+- [x] 12.1 The toggle is `div.gedcom-tree-toggle.clickable-icon.nav-action-button` (`role="button"`, `tabindex="0"`, Enter and Space) in `div.nav-buttons-container` in `div.gedcom-tree-bar.nav-header`, always shown; the bar rules of `styles.css` and the hover reveal are removed; verify in `src/desk/detail/tree.test.ts` the markup and the keyboard, and in `tests/desk.spec.ts` that it is visible at rest, shows a focus ring for the keyboard and can be hit on a phone
+- [x] 12.2 `harness/palette.css` carries the app's `nav-header` and `nav-buttons-container` rules and the touch size of `nav-action-button`; verify with `npm run test:browser`
+- [x] 12.3 `README.md` and the specs say the toggle is always shown in a header; verify with `npm run openspec:validate`

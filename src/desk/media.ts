@@ -7,10 +7,7 @@ import {
 
 import type { MediaPreviewContent } from "../editor/media";
 import { t, type MessageKey } from "../i18n";
-import { sectionHeading } from "./detail/section";
 import { linkButton } from "./dom";
-
-export type PortraitContent = Extract<MediaPreviewContent, { kind: "image" }>;
 
 export interface MediaItem {
   content: MediaPreviewContent;
@@ -83,21 +80,6 @@ function caption(content: MediaPreviewContent): string {
   }
 }
 
-export function renderGallery(
-  parent: HTMLElement,
-  items: MediaItem[],
-  host: MediaHost,
-): void {
-  if (items.length === 0) {
-    return;
-  }
-  sectionHeading(parent, t("desk.media"), items.length);
-  const gallery = parent.createDiv({ cls: "gedcom-desk-gallery" });
-  for (const item of items) {
-    renderTile(gallery, item, host);
-  }
-}
-
 export function renderTile(parent: HTMLElement, item: MediaItem, host: MediaHost): HTMLElement {
   const { content } = item;
   const tile = parent.createDiv({ cls: ["gedcom-desk-tile", `is-${content.kind}`] });
@@ -134,15 +116,5 @@ function tileNote(content: Exclude<MediaPreviewContent, { kind: "image" }>): str
       return t(content.state === "not-an-image" ? "desk.notAnImage" : "desk.fromWeb");
     case "missing":
       return t("desk.notInVault");
-  }
-}
-
-export function renderPortrait(parent: HTMLElement, items: MediaItem[]): void {
-  const portrait = items.find(
-    (item): item is MediaItem & { content: Extract<MediaPreviewContent, { kind: "image" }> } =>
-      item.content.kind === "image",
-  );
-  if (portrait) {
-    drawPicture(parent.createDiv({ cls: "gedcom-desk-portrait" }), portrait.content, 76, 95);
   }
 }

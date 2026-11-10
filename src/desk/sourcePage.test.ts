@@ -37,18 +37,11 @@ const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
 describe("the source page", () => {
-  it("heads the page with the title, author and publication", () => {
-    draw("@S1@");
-
-    expect(texts(".gedcom-desk-title")).toEqual(["The Nobel Prize in Physics 1903"]);
-    expect(texts(".gedcom-desk-subtitle")).toEqual(["Nobel Prize Outreach · nobelprize.org"]);
-  });
-
-  it("is the heading, the tree of the lines of the record and the gallery, and nothing else", () => {
+  it("is the tree of the lines of the record and nothing else", () => {
     draw("@S2@");
     const labels = [...container.querySelectorAll(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
 
-    expect(container.querySelector(".gedcom-desk-heading + .gedcom-tree")).not.toBeNull();
+    expect([...container.children].map((child) => child.className)).toEqual(["gedcom-tree"]);
     expect(labels).toEqual(expect.arrayContaining(["Title", "Repository"]));
     expect(texts("h2")).toEqual([]);
     expect(container.querySelector(".gedcom-desk-repository, .gedcom-desk-cited-by, .gedcom-desk-citer")).toBeNull();

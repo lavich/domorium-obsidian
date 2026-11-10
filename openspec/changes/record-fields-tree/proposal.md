@@ -14,16 +14,18 @@ The user's requirement, in their words and by date:
 - 2026-11-09: «убери из правых вкладок шапку с историей» — the header of the card, with Back, Forward and the record's name, is removed, and with it the history of the records a card has shown.
 - 2026-11-09: «еще удали список Events и карточки для Event» — the Events list of the List view and the cards of events are removed; the list is the first part of this, the cards the second.
 - 2026-11-09: «пока не делаем перетаскивание», and, before it, «для начала сделаем поля не редактируемыми — просто отображение» — this step only reads.
+- 2026-11-10: «я хочу чтобы в панелях справа остались только деревья - удали все остальное, включая заголовок» — the card of a person, a family and a source is the tree and nothing else: the heading, the family section, the pictures and the timeline go.
+- 2026-11-10: «да, и кнопку используй такую <div class="clickable-icon nav-action-button" aria-label="Collapse all">… и <div class="clickable-icon nav-action-button" aria-label="Expand all">… и не скрывай ее больше» — the open-all toggle sits in a `nav-header` above the tree, is that icon button, and is never hidden.
 
 The proposed scope:
 
-- The card of a person, a family and a source shows, below its heading, one **tree of the lines of the record**, in the file's order, nested as the file nests them. The sections it replaces are removed: names, events, details, notes, related people, identifiers and record information, other data, and the family card's list of events.
+- The card of a person, a family and a source shows one **tree of the lines of the record**, and nothing else,, in the file's order, nested as the file nests them. The sections it replaces are removed: names, events, details, notes, related people, identifiers and record information, other data, and the family card's list of events.
 - A row is a label and a value, in the reader's language. A line with substructures is a node, closed when the card is first drawn, with a one-line summary (an event shows its value, date and place); the reader's choice is kept for each record while the plugin is loaded.
 - Tags are hidden, as the product principles ask. A closed node that cites a source carries the quiet dot the event row has.
-- The node arrows stay in view; the one icon toggle that opens or closes every node appears on hover and on keyboard focus and stays shown on a touch device. Rows have no control of their own.
+- The node arrows stay in view; the one icon toggle that opens or closes every node is always shown, in a header above the tree made as the header of Obsidian's file explorer is (`nav-header`, `nav-buttons-container`, an icon button of the `clickable-icon nav-action-button` kind). Rows have no control of their own.
 - A line that is an event or an attribute opens its event card from its label, and a place opens the card of the place, as they do on the card today.
-- What the card computes from the whole file stays as it is: the heading, the family section (parents, siblings, spouses with their events, children), the pictures, the timeline, and the spouses and children of a family card.
-- The card's event, place and media pages keep their own forms.
+- What the card once computed from the whole file — the heading, the family section, the pictures, the timeline — is removed on 2026-11-10; the card is the tree.
+- The card's place and media pages keep their own forms, heading included.
 
 **This repository or upstream.** The change is entirely in this repository: it reads `RecordLine`, which the published packages already give. Nothing waits on a release of `@domorium/*`. Moving a line, which the user asked for and deferred, will need an operation upstream; the issue is drafted when that step is taken.
 
@@ -47,8 +49,9 @@ The proposed scope:
 ## Non-goals
 
 - A card for an event, a selection of an event, the opening of an event from its name in the tree, from a row of the family section, from a place's card or from a timeline entry, and an Events kind in the List, and a saved Events kind, which opens the people.
+- A heading on the card of a person, a family or a source, a section of relatives, pictures, a timeline, a fold of any kind, and *Show in source* for a whole record. The tree shows the pointers; *Show in source* stays on a pointer to a record that is not in the file.
 - A header on the card, Back and Forward between the records it has shown, and the scroll position restored on returning to a record.
-- On the family card, a section of spouses and children and the marks of a child who is adopted, foster or sealing; on the source card, the repository's address and web address and the list of the records that cite it. The tree shows the pointers, and the person card's family section is unchanged.
+- On the family card, a section of spouses and children and the marks of a child who is adopted, foster or sealing; on the source card, the repository's address and web address and the list of the records that cite it. The tree shows the pointers.
 - An Evidence section, or a list of the notes of the vault that link to a record, on any card.
 - Editing, adding, removing and reordering lines. They follow on this view; reordering needs a new operation upstream.
 - A tree for the event, place and media pages, which are computed pages and keep their form.

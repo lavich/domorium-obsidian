@@ -1,4 +1,4 @@
-import { ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Menu, setIcon, type WorkspaceLeaf } from "obsidian";
 
 import type { GedcomView } from "../GedcomView";
 import { t } from "../i18n";
@@ -14,6 +14,7 @@ export interface DeskViewsHost {
 
 export class RecordCardView extends ItemView {
   private stale = false;
+  private bar: HTMLElement | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -36,6 +37,8 @@ export class RecordCardView extends ItemView {
 
   onOpen(): Promise<void> {
     this.contentEl.addClass("gedcom-record-view");
+    this.bar = this.containerEl.createDiv({ cls: ["gedcom-card-header", "nav-header"] });
+    this.containerEl.prepend(this.bar);
     this.redraw();
     return Promise.resolve();
   }
@@ -58,6 +61,14 @@ export class RecordCardView extends ItemView {
         setIcon(element, icon);
       },
       session: this.host.session(),
+      chooseField: (event, fields) => {
+        const menu = new Menu();
+        for (const { title, disabled, checked } of fields) {
+          menu.addItem((item) => item.setTitle(title).setDisabled(disabled).setChecked(checked ?? null).onClick(() => undefined));
+        }
+        menu.showAtMouseEvent(event);
+      },
+      ...(this.bar ? { header: this.bar } : {}),
     });
   }
 }

@@ -4,7 +4,6 @@ import type {
 } from "@domorium/language-service";
 
 import type { MediaItem } from "../desk/media";
-import type { PortraitContent } from "../desk/media";
 import {
   mediaPreviewContent,
   mediaVaultPath,
@@ -41,19 +40,4 @@ export function mediaItemAt(
   const content = mediaPreviewContent(reference, vault, remoteImages);
   const path = mediaVaultPath(reference, vault);
   return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
-}
-
-export function mediaItemsOf(
-  media: { at: Position; record?: string }[],
-  itemAt: (at: Position) => MediaItem | null,
-): MediaItem[] {
-  return media.flatMap((one) => {
-    const item = itemAt(one.at);
-    return item ? [{ ...item, ...(one.record ? { record: one.record } : {}) }] : [];
-  });
-}
-
-export function portraitOf(items: MediaItem[]): PortraitContent | null {
-  const found = items.find((item) => item.content.kind === "image");
-  return found?.content.kind === "image" ? found.content : null;
 }

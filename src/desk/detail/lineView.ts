@@ -125,19 +125,6 @@ export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: Detail
   }
 }
 
-/** The children of a line other than those a section has drawn for itself. */
-export function renderRest(
-  parent: HTMLElement,
-  line: RecordLine,
-  handled: ReadonlySet<string>,
-  ctx: DetailContext,
-): void {
-  const rest = line.children.filter((child) => !handled.has(child.tag));
-  if (rest.length > 0) {
-    renderLines(parent, rest, ctx, line);
-  }
-}
-
 /** One line as a row of a label and a value, its substructure nested beneath the value, none dropped. */
 export function renderLine(parent: HTMLElement, line: RecordLine, ctx: DetailContext, owner?: RecordLine): void {
   const label = parent.createDiv({ cls: "gedcom-detail-label", text: tagLabel(line.tag) });

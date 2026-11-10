@@ -534,6 +534,22 @@ body {
   position: fixed;
 }
 
+.nav-header {
+  padding: var(--size-4-2) var(--size-4-3) 0;
+}
+
+.nav-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 1px;
+}
+
+.is-mobile .nav-action-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 .collapse-icon {
   display: flex;
   align-items: center;

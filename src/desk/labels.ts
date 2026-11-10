@@ -74,7 +74,3 @@ export function yearsOf(row: PersonRow, now = new Date().getFullYear()): string 
   }
   return died ? `?–${died}` : "";
 }
-
-export function shortPlace(place: string | undefined): string | undefined {
-  return place?.split(",")[0]?.trim() || undefined;
-}

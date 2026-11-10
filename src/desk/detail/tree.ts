@@ -1,4 +1,7 @@
+import type { PointerCandidate, Position, StructureFieldDescription } from "@domorium/language-service";
+
 import type { GenealogyIndex, PersonEvent, RecordLine } from "../../genealogy";
+import { isFull } from "../addableFields";
 import { plural, t } from "../../i18n";
 import { linkButton, tipPlace } from "../dom";
 import { placeAt, placeId } from "../placeRows";
@@ -20,8 +23,23 @@ export interface TreeFact {
   event: PersonEvent;
 }
 
+/** A field the menu names; `disabled` where the standard allows no more of it. */
+export interface FieldChoice {
+  title: string;
+  disabled: boolean;
+  /** Set on the one a pointer points at now. */
+  checked?: boolean;
+}
+
 export interface TreeHost extends DetailHost {
   setIcon?(element: HTMLElement, icon: string): void;
+  /** The fields the dialect lets be added to the line at this position; where the host cannot say, every node is offered a button and no list. */
+  addableAt?(at: Position): StructureFieldDescription[];
+  /** The values the standard limits the line to, or none where it limits no list. */
+  choicesAt?(at: Position): string[];
+  /** The records a pointer of this tag under the line at `parent` may point at. */
+  pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
+  chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
 }
 
 export interface TreeOptions {
@@ -30,6 +48,8 @@ export interface TreeOptions {
   /** The facts of the record by the number of their line. */
   facts: ReadonlyMap<number, TreeFact>;
   state: TreeState;
+  /** Where the toolbar goes, when it sits outside the scrolling tree; the tree makes its own otherwise. */
+  header?: HTMLElement;
 }
 
 export function factsByLine(facts: readonly TreeFact[]): Map<number, TreeFact> {
@@ -42,6 +62,8 @@ interface SummaryPart {
 }
 
 let drawn = 0;
+
+const MENU_LIMIT = 49;
 
 function keyOf(parent: string, tag: string, nth: number): string {
   return `${parent === "" ? "" : `${parent}.`}${tag}[${nth}]`;
@@ -77,14 +99,79 @@ class Tree {
   }
 
   private toolbar(): void {
-    const bar = this.root.createDiv({ cls: "gedcom-tree-bar" });
-    const toggle = bar.createEl("button", { cls: ["gedcom-tree-control", "gedcom-tree-toggle", "clickable-icon"] });
-    toggle.setAttribute("type", "button");
+    const bar = this.options.header ?? this.root.createDiv({ cls: ["gedcom-tree-bar", "nav-header"] });
+    bar.empty();
+    const toggle = bar
+      .createDiv({ cls: "nav-buttons-container" })
+      .createDiv({ cls: ["gedcom-tree-control", "gedcom-tree-toggle", "clickable-icon", "nav-action-button"] });
+    toggle.setAttribute("role", "button");
+    toggle.setAttribute("tabindex", "0");
     toggle.setAttribute("data-focus-key", "tree:toggle");
     tipPlace(toggle, "bottom");
-    toggle.addEventListener("click", () => this.setAll(!this.allOpen()));
+    const press = (): void => this.setAll(!this.allOpen());
+    toggle.addEventListener("click", press);
+    toggle.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        press();
+      }
+    });
     this.toggle = toggle;
     this.refreshToggle();
+  }
+
+  private pick(parent: HTMLElement, line: RecordLine, owner: RecordLine, focusKey: string): void {
+    const { host, index } = this.options;
+    if (line.void || line.pointer === undefined || !host.pointerChoicesAt || !host.chooseField) {
+      return;
+    }
+    const candidates = host.pointerChoicesAt(owner.range.start, line.tag);
+    if (candidates.length === 0) {
+      return;
+    }
+    const titleOf = (one: PointerCandidate): string => one.label ?? recordTitle(index, one.xref) ?? one.xref;
+    const current = candidates.find((one) => one.xref === line.pointer);
+    const shown = [...(current ? [current] : []), ...candidates.filter((one) => one !== current).slice(0, MENU_LIMIT)];
+    const button = parent.createDiv({ cls: ["gedcom-tree-pick", "clickable-icon"] });
+    button.setAttribute("role", "button");
+    button.setAttribute("tabindex", "0");
+    button.setAttribute("aria-label", t("tree.changePointer"));
+    button.setAttribute("data-focus-key", focusKey);
+    if (host.setIcon) {
+      host.setIcon(button, "chevron-down");
+    } else {
+      button.setText("▾");
+    }
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      host.chooseField?.(
+        event,
+        shown.map((one) => ({ title: titleOf(one), disabled: false, checked: one.xref === line.pointer })),
+      );
+    });
+    button.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        button.click();
+      }
+    });
+  }
+
+  private choice(parent: HTMLElement, line: RecordLine, owner: RecordLine, choices: readonly string[], labelledBy: string): void {
+    const written = line.text ?? "";
+    const values = choices.includes(written) ? choices : [written, ...choices];
+    const select = parent.createEl("select", { cls: ["dropdown", "gedcom-tree-choice"] });
+    select.setAttribute("aria-labelledby", labelledBy);
+    select.setAttribute("data-kind", "choice");
+    for (const value of values) {
+      const option = select.createEl("option", { text: valueText({ ...line, text: value }, owner) });
+      option.value = value;
+    }
+    select.value = written;
+    select.addEventListener("change", () => {
+      select.value = written;
+    });
   }
 
   private allOpen(): boolean {
@@ -198,9 +285,10 @@ class Tree {
     const childrenId = `gedcom-tree-children-${drawn}`;
     let chevron: HTMLElement | null = null;
     if (isNode) {
-      chevron = header.createEl("button", { cls: ["gedcom-tree-chevron", "tree-item-icon", "collapse-icon"] });
+      chevron = header.createDiv({ cls: ["gedcom-tree-chevron", "tree-item-icon", "collapse-icon"] });
       host.setIcon?.(chevron, "right-triangle");
-      chevron.setAttribute("type", "button");
+      chevron.setAttribute("role", "button");
+      chevron.setAttribute("tabindex", "0");
       chevron.setAttribute("aria-label", named);
       chevron.setAttribute("aria-controls", childrenId);
       chevron.setAttribute("data-focus-key", `t:${key}`);
@@ -230,14 +318,20 @@ class Tree {
       detail.notes = { drawn: 0, prefix: `${key}.` };
       if (line.void || line.pointer !== undefined) {
         renderPointer(main, line, detail, `t:${key}:link`);
+        this.pick(main, line, owner, `t:${key}:pick`);
       } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE")) {
         renderNoteText(main, line.text, line.range.start.line, detail, `note:${key}`);
       } else if (line.text !== undefined && !(fact && line.text === "Y")) {
         if (line.tag === "PLAC") {
           this.place(main, line.text, `t:${key}:place`);
         } else {
-          const field = renderField(main, valueText(line, owner), fieldKind(line, owner), { labelledBy: name.id });
-          field.area.setAttribute("dir", "auto");
+          const choices = fieldKind(line, owner) === "choice" ? (host.choicesAt?.(line.range.start) ?? []) : [];
+          if (choices.length > 0) {
+            this.choice(main, line, owner, choices, name.id);
+          } else {
+            const field = renderField(main, valueText(line, owner), fieldKind(line, owner), { labelledBy: name.id });
+            field.area.setAttribute("dir", "auto");
+          }
         }
       }
     };
@@ -279,6 +373,32 @@ class Tree {
       }
     };
 
+    const addable = host.addableAt ? host.addableAt(line.range.start) : null;
+    if (addable ? addable.some((field) => !isFull(field)) : isNode) {
+      const add = header.createDiv({ cls: ["gedcom-tree-add", "clickable-icon"] });
+      add.setAttribute("role", "button");
+      add.setAttribute("tabindex", "0");
+      add.setAttribute("aria-label", t("tree.addField"));
+      add.setAttribute("data-focus-key", `t:${key}:add`);
+      if (host.setIcon) {
+        host.setIcon(add, "plus");
+      } else {
+        add.setText("+");
+      }
+      const choose = (event: MouseEvent): void => {
+        event.stopPropagation();
+        host.chooseField?.(event, (addable ?? []).map((field) => ({ title: tagLabel(field.tag), disabled: isFull(field) })));
+      };
+      add.addEventListener("click", choose);
+      add.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          add.click();
+        }
+      });
+    }
+
     const children = isNode ? node.createDiv({ cls: ["gedcom-tree-children", "tree-item-children"] }) : null;
     let filled = false;
     const show = (): void => {
@@ -306,8 +426,14 @@ class Tree {
         }
       });
       chevron?.addEventListener("click", () => this.nodes.get(key)?.(!open));
+      chevron?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          this.nodes.get(key)?.(!open);
+        }
+      });
       header.addEventListener("click", (click) => {
-        if (!(click.target as HTMLElement).closest("button, a, textarea")) {
+        if (!(click.target as HTMLElement).closest("button, [role=button], a, textarea, select")) {
           this.nodes.get(key)?.(!open);
         }
       });

@@ -3,12 +3,12 @@ import { GedcomLanguageService, type Position, type Range } from "@domorium/lang
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
+import { addableAt, choicesAt, pointerChoicesAt } from "../src/desk/addableFields";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
 import { installObsidianDom } from "../src/testing/obsidianDom";
-import type { PortraitContent } from "../src/desk/media";
 import { stubSetIcon } from "./icons";
 
 export interface DeskOptions {
@@ -82,24 +82,11 @@ function mediaItem(at: Position): MediaItem | null {
   return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
 }
 
-function mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
-  return media.flatMap((one) => {
-    const item = mediaItem(one.at);
-    return item ? [{ ...item, ...(one.record ? { record: one.record } : {}) }] : [];
-  });
-}
-
 const tab: CardTab = {
   filePath: () => "curie.ged",
   index: () => index,
   selection: () => ({ record }),
-  mediaItems,
   mediaItem,
-  portrait: (xref: string): PortraitContent | null => {
-    const person = index.person(xref);
-    const found = person ? mediaItems(person.media).find((item) => item.content.kind === "image") : undefined;
-    return found?.content.kind === "image" ? found.content : null;
-  },
   select: (xref) => {
     selectRecord(xref);
   },
@@ -109,6 +96,9 @@ const tab: CardTab = {
   openFile: (path) => {
     calls.filesOpened.push(path);
   },
+  addableAt: (at) => addableAt(service, at),
+  choicesAt: (at) => choicesAt(service, at),
+  pointerChoicesAt: (parent, tag) => pointerChoicesAt(service, parent, tag),
 };
 
 function selectRecord(xref: string): void {

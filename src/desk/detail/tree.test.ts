@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
-import { GedcomLanguageService } from "@domorium/language-service";
+import { GedcomLanguageService, type Position } from "@domorium/language-service";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { resetLanguage, setLanguage } from "../../i18n";
 import { curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
+import { addableAt, choicesAt } from "../addableFields";
 import { factsOf } from "../personPage";
 import { factsByLine, renderTree, type TreeHost } from "./tree";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
@@ -79,8 +80,8 @@ const open = (label: string, at = 0): void => {
 const summaryOf = (row: Element): string | undefined => row.querySelector(".gedcom-tree-summary")?.textContent ?? undefined;
 const valuesOf = (row: Element): string[] =>
   [...row.querySelectorAll<HTMLElement>(".gedcom-field")].map((field) => field.getAttribute("data-value") ?? "");
-const control = (name: string): HTMLButtonElement => {
-  const found = [...box.querySelectorAll<HTMLButtonElement>(".gedcom-tree-control")].find((one) => one.textContent === name || one.getAttribute("aria-label") === name);
+const control = (name: string): HTMLElement => {
+  const found = [...box.querySelectorAll<HTMLElement>(".gedcom-tree-control")].find((one) => one.textContent === name || one.getAttribute("aria-label") === name);
   if (!found) {
     throw new Error(`no control ${name}`);
   }
@@ -105,6 +106,50 @@ describe("the lines of a record as rows", () => {
 
     expect(rows().map(labelOf)).toEqual(["Birth", "Name", "Sex"]);
     expect(box.querySelector("h1, h2, h3")).toBeNull();
+  });
+
+  it("offers a plus on a row that holds lines, and on none that holds only a value", () => {
+    draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900", "1 SEX F"]));
+
+    expect(rowNamed("Birth").querySelector(".gedcom-tree-add")?.getAttribute("aria-label")).toBe("Add a field");
+    expect(rowNamed("Sex").querySelector(".gedcom-tree-add")).toBeNull();
+  });
+
+  it("lists the fields that can still be added, by name, when the plus is pressed", () => {
+    const choose = vi.fn<NonNullable<TreeHost["chooseField"]>>();
+    const made = make(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
+    const service = made.service;
+    const host = { openRecord: opened, showInSource: shown, chooseField: choose, addableAt: (at: Position) => addableAt(service, at) };
+    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+
+    expect(choose).toHaveBeenCalledOnce();
+    expect(choose.mock.calls[0]?.[1]).toContainEqual({ title: "Given names", disabled: false });
+  });
+
+  it("lists a field that has no room left, disabled", () => {
+    const choose = vi.fn<NonNullable<TreeHost["chooseField"]>>();
+    const made = make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900"]);
+    const host = { openRecord: opened, showInSource: shown, chooseField: choose, addableAt: (at: Position) => addableAt(made.service, at) };
+    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    rowNamed("Birth").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+
+    expect(choose.mock.calls[0]?.[1]).toContainEqual({ title: "Date", disabled: true });
+  });
+
+  it("draws a value the standard limits as a list of its values, the written one chosen, and keeps it where one is picked", () => {
+    const made = make(["0 @I1@ INDI", "1 SEX F"]);
+    const host = { openRecord: opened, showInSource: shown, choicesAt: (at: Position) => choicesAt(made.service, at) };
+    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    const select = rowNamed("Sex").querySelector<HTMLSelectElement>("select.gedcom-tree-choice");
+
+    expect(select?.selectedOptions[0]?.textContent).toBe("Female");
+    expect([...(select?.options ?? [])].map((one) => one.value)).toEqual(expect.arrayContaining(["M", "F"]));
+    if (select) {
+      select.value = "M";
+      select.dispatchEvent(new Event("change"));
+    }
+    expect(select?.value).toBe("F");
   });
 
   it("draws nothing for a record that states nothing beneath its opening line", () => {
@@ -561,14 +606,20 @@ describe("a fact", () => {
 });
 
 describe("the controls", () => {
-  it("are real buttons that say whether their node is open and which part they control", () => {
+  it("are buttons that say whether their node is open and which part they control, and answer Enter and Space", () => {
     draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "1 SEX F"]));
     const arrow = chevron(rowNamed("Birth"));
 
-    expect(arrow.tagName).toBe("BUTTON");
+    expect(arrow.tagName).toBe("DIV");
+    expect(arrow.getAttribute("role")).toBe("button");
+    expect(arrow.getAttribute("tabindex")).toBe("0");
     expect(arrow.getAttribute("aria-label")).toBe("Birth");
     expect(arrow.getAttribute("aria-expanded")).toBe("false");
     expect(box.querySelector(`#${arrow.getAttribute("aria-controls")}`)).not.toBeNull();
+    arrow.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(arrow.getAttribute("aria-expanded")).toBe("true");
+    arrow.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+    expect(arrow.getAttribute("aria-expanded")).toBe("false");
     expect(box.querySelector(".gedcom-tree-source")).toBeNull();
   });
 
@@ -605,6 +656,35 @@ describe("the controls", () => {
     expect(rowNamed("Birth").firstElementChild?.className).toContain("gedcom-tree-chevron");
   });
 
+  it("has an always shown header with one focusable icon button, as the file explorer has", () => {
+    draw(make(["0 @I1@ INDI", "1 _A x", "2 _B y"]));
+    const bar = box.querySelector(".gedcom-tree > .gedcom-tree-bar");
+    const toggle = bar?.querySelector(".nav-buttons-container > div.gedcom-tree-toggle");
+
+    expect(bar?.classList.contains("nav-header")).toBe(true);
+    expect(toggle?.classList.contains("clickable-icon")).toBe(true);
+    expect(toggle?.classList.contains("nav-action-button")).toBe(true);
+    expect(toggle?.getAttribute("role")).toBe("button");
+    expect(toggle?.getAttribute("tabindex")).toBe("0");
+    expect(bar?.querySelectorAll("button, .gedcom-tree-control")).toHaveLength(1);
+  });
+
+  it("opens and closes every node from the keyboard with Enter and Space", () => {
+    draw(make(["0 @I1@ INDI", "1 _A x", "2 _B y"]));
+    const toggle = control("Open every node");
+    const press = (key: string): void => {
+      toggle.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    };
+
+    press("Enter");
+    expect(toggle.getAttribute("aria-label")).toBe("Close every node");
+    expect(box.querySelectorAll('.gedcom-tree-chevron[aria-expanded="false"]')).toHaveLength(0);
+    press(" ");
+    expect(toggle.getAttribute("aria-label")).toBe("Open every node");
+    press("a");
+    expect(toggle.getAttribute("aria-label")).toBe("Open every node");
+  });
+
   it("open every node of the record, drawing what is beneath each as it is opened, and close them again, the focus staying on the control", () => {
     draw(make(["0 @I1@ INDI", "1 _A x", "2 _B y", "3 _C z", "1 _D w", "2 _E v"]));
     const all = control("Open every node");
@@ -629,7 +709,7 @@ describe("the controls", () => {
       facts: new Map(),
       state: ephemeralTreeState(),
     });
-    const toggle = box.querySelector<HTMLButtonElement>(".gedcom-tree-toggle");
+    const toggle = box.querySelector<HTMLElement>(".gedcom-tree-toggle");
 
     expect(toggle?.getAttribute("aria-label")).toBe("Open every node");
     expect(icons.at(-1)).toBe("chevrons-up-down");

@@ -40,7 +40,7 @@ import {
 
 import { createGedcomComposition } from "./editor/composition";
 import { isDarkTheme } from "./editor/darkTheme";
-import { mediaItemAt, mediaItemsOf, mediaVaultOf, portraitOf } from "./editor/mediaItems";
+import { mediaItemAt, mediaVaultOf } from "./editor/mediaItems";
 import { PreviewPopovers } from "./editor/previewPopovers";
 import { pushSearchScope } from "./editor/searchScope";
 import { openVaultFile } from "./editor/vaultFile";
@@ -80,18 +80,18 @@ import { listSelection } from "./desk/listRows";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
+import { addableAt, choicesAt, pointerChoicesAt } from "./desk/addableFields";
 import type { CardTab } from "./desk/recordCard";
 import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
 import { documentRef, type GenealogyIndex } from "./genealogy";
-import type { Position } from "@domorium/language-service";
+import type { PointerCandidate, Position, StructureFieldDescription } from "@domorium/language-service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
-import type { PortraitContent } from "./desk/media";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -749,14 +749,16 @@ export class GedcomView extends TextFileView implements CardTab {
     this.host.genealogyChanged(this);
   }
 
-  /** The picture a person's page shows, for a card: the first of their media that can be drawn. */
-  portrait(xref: string): PortraitContent | null {
-    const person = this.genealogy().person(xref);
-    return person ? portraitOf(this.mediaItems(person.media)) : null;
+  pointerChoicesAt(parent: Position, tag: string): PointerCandidate[] {
+    return pointerChoicesAt(this.language.update(this.editor.state.doc), parent, tag);
   }
 
-  mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
-    return mediaItemsOf(media, (at) => this.mediaItem(at));
+  choicesAt(at: Position): string[] {
+    return choicesAt(this.language.update(this.editor.state.doc), at);
+  }
+
+  addableAt(at: Position): StructureFieldDescription[] {
+    return addableAt(this.language.update(this.editor.state.doc), at);
   }
 
   mediaItem(at: Position): MediaItem | null {

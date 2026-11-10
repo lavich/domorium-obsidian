@@ -17,6 +17,7 @@ let calls: {
 let view: {
   setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
   session: TreeSession;
+  header?: HTMLElement;
 };
 let index: GenealogyIndex;
 const scrollIntoView = vi.fn();
@@ -37,9 +38,7 @@ beforeEach(() => {
     filePath: () => "curie.ged",
     index: () => index,
     selection: () => ({ record: state.record }),
-    mediaItems: (media) => media.map(({ at }) => ({ content: { kind: "missing", target: "" }, at })),
     mediaItem: () => null,
-    portrait: () => null,
     select: (xref) => {
       calls.select(xref);
     },
@@ -101,43 +100,44 @@ describe("the empty states of the card", () => {
 });
 
 describe("the page of each kind of record", () => {
-  it("shows Marie's sections in order, ending with the Timeline", () => {
-    draw();
+  it("shows a person, a family and a source as their tree and nothing else", () => {
+    for (const record of ["@I1@", "@F3@", "@S3@"]) {
+      state.record = record;
+      draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Family", "Media", "Timeline"]);
-    expect(container.querySelector(".gedcom-card-body .gedcom-tree")).not.toBeNull();
-    expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
+      expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
+    }
   });
 
-  it("has no header: no bar, no Back or Forward control, and the record's name only in its own heading and the live region", () => {
+  it("has no header: no bar, no Back or Forward control, and the record's name only in the live region", () => {
     draw();
 
     expect(container.querySelector(".gedcom-card-head, .gedcom-card-nav, .gedcom-card-head-name")).toBeNull();
     expect(container.querySelector('[data-focus-key="card.back"], [data-focus-key="card.forward"]')).toBeNull();
     expect(container.firstElementChild?.firstElementChild?.classList.contains("gedcom-card-live")).toBe(true);
-    expect(container.querySelector(".gedcom-card")?.children[1]?.classList.contains("gedcom-card-body")).toBe(true);
-    expect(texts("h1")).toEqual(["Marie Skłodowska-Curie"]);
+    const card = container.querySelector(".gedcom-card");
+    expect(card?.children[1]?.classList.contains("nav-header")).toBe(true);
+    expect(card?.children[2]?.classList.contains("gedcom-card-body")).toBe(true);
+    expect(card?.querySelectorAll(".gedcom-card-body .nav-header")).toHaveLength(0);
+    expect(container.querySelector("h1")).toBeNull();
   });
 
-  it("shows the Curies' family as a heading and a tree, with no section", () => {
-    state.record = "@F3@";
+  it("fills a toolbar the host keeps outside the card, and hides it where there is no tree", () => {
+    const bar = document.createElement("div");
+    view = { ...view, header: bar };
     draw();
 
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-card-body h2")).toEqual([]);
-    expect(container.querySelector(".gedcom-card-body .gedcom-tree")).not.toBeNull();
+    expect(bar.querySelector(".gedcom-tree-toggle")).not.toBeNull();
+    expect(bar.hidden).toBe(false);
+    expect(container.querySelector(".gedcom-card .nav-header")).toBeNull();
   });
 
-  it("shows a source and a multimedia record with no Evidence section and no notes of the vault", () => {
-    for (const [record, title] of [["@S3@", "The Nobel Prize in Chemistry 1911 and 1935"], ["@O5@", "The Curie family, about 1908"]]) {
-      state.record = record ?? null;
-      draw();
+  it("shows a multimedia record with no Evidence section and no notes of the vault", () => {
+    state.record = "@O5@";
+    draw();
 
-      expect(texts(".gedcom-desk-title")).toEqual([title]);
-      expect(texts(".gedcom-card-body h2")).not.toContain("Evidence");
-      expect(texts(".gedcom-card-body h2")).not.toContain("Notes in the vault");
-      expect(container.querySelector(".gedcom-card-evidence, .gedcom-desk-note")).toBeNull();
-    }
+    expect(texts(".gedcom-desk-title")).toEqual(["The Curie family, about 1908"]);
+    expect(container.querySelector(".gedcom-card-evidence, .gedcom-desk-note")).toBeNull();
   });
 
   it("shows no card for an event id, and says to select a record", () => {
@@ -159,41 +159,13 @@ describe("the page of each kind of record", () => {
     expect(calls.select.mock.calls[0]?.[0]).not.toMatch(/^event:/u);
   });
 
-  it("selects a relative through the tab", () => {
+  it("selects a record through a pointer of the tree", () => {
     draw();
-    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]
-      .find((node) => node.textContent?.startsWith("Pierre Curie"))
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")]
+      .find((node) => node.textContent?.includes("Curie"))
       ?.click();
 
-    expect(calls.select).toHaveBeenCalledWith("@I2@");
-  });
-});
-
-describe("the folds of a person card", () => {
-  const timelineOpen = (): string | null | undefined =>
-    container.querySelector(".gedcom-desk-fold-button")?.getAttribute("aria-expanded");
-
-  it("stay open while the card shows the same record, and close for another", () => {
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-fold-button")?.click();
-    draw();
-    expect(timelineOpen()).toBe("true");
-
-    state.record = "@I2@";
-    draw();
-    state.record = "@I1@";
-    draw();
-    expect(timelineOpen()).toBe("false");
-  });
-
-  it("keep the focus on the heading that was pressed", () => {
-    draw();
-    const button = container.querySelector<HTMLElement>(".gedcom-desk-fold-button");
-    button?.focus();
-    button?.click();
-    draw();
-
-    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("fold:timeline");
+    expect(calls.select).toHaveBeenCalled();
   });
 });
 

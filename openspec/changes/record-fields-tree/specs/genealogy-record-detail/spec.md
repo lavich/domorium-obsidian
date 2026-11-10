@@ -2,7 +2,7 @@
 
 ### Requirement: Nothing the record writes is left out
 
-Every line of a person's record, of a family's record and of a source's record SHALL be shown on the card of that record, in the tree of its lines — the heading of the card showing the first `NAME`. A structure shown in the tree SHALL show every
+Every line of a person's record, of a family's record and of a source's record SHALL be shown on the card of that record, in the tree of its lines, the card having no heading. A structure shown in the tree SHALL show every
 substructure of its own too, to any depth. No line SHALL be dropped for being unknown, custom, from the other
 dialect, or deeply nested. The only lines not shown as lines of their own are those the card shows
 in another form: a `CONC` or `CONT` is joined to the line it continues, and a pointer is shown as
@@ -106,8 +106,8 @@ a field. Pressing, focusing or selecting a field SHALL NOT write to the file.
 **Migration**: The tree shows these lines, named in the reader's language.
 
 ### Requirement: Events are told from details
-**Reason**: A person's events and details are lines of the record and are shown in the tree in the order the file writes them, not in two sections. The events of a family a person is a spouse of stay in the person's family section, under that family's spouse, as the person card says.
-**Migration**: The tree shows each event and each attribute as a line of the record; the family section and the card of a place keep the rows of events.
+**Reason**: A person's events and details are lines of the record and are shown in the tree in the order the file writes them, not in two sections. 
+**Migration**: The tree shows each event and each attribute as a line of the record; the card of a place keeps the rows of events.
 
 ### Requirement: Related people and other records of the person
 **Reason**: It spoke of the related people of an event card; the event cards are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»).

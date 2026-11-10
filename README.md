@@ -21,7 +21,7 @@ adapted per editor.
 - An optional genealogy interface, off until you turn it on: a graph and a
   timeline of the whole file, a sortable list of its people, families,
   sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
-  record with their facts, names, family and timeline
+  record as a tree of its lines
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
 - Semantic highlighting for levels, tags, and cross-references
@@ -98,24 +98,18 @@ nothing. With it off, the first selection in a session puts the card in the
 right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a tap on a
-row of the list, opens. A person's card shows everything the record says, in the
-reader's language. Below the heading it shows the **lines of the record as a tree**, in the
-order the file writes them and nested as the file nests them, with no sections of the plugin's
+row of the list, opens. The card of a person, a family or a source is the **lines of the record as a tree** and nothing else: no heading, no section of relatives, pictures or timeline. The tree runs in the
+order the file writes the lines and nests them as the file nests them, with no sections of the plugin's
 own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
-the file puts them. Every node starts closed with a one-line summary — an event shows its date
+the file puts them, in the reader's language. Every node starts closed with a one-line summary — an event shows its date
 and place, an attribute its value — and a quiet dot after it where it cites a source; what you
-open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon beside the tree opens or closes every node and appears where the pointer or the keyboard focus is, and on a phone always. The tree only reads. Below it come
-their parents (marked adoptive, foster or sealing where the file says so), siblings,
-spouses with the events of each marriage, and children, each of whom selects that person; their
-media; a **timeline** of their events and their close relatives', folded under its heading,
-which shows how many entries it holds. A family's card and a source's card show their
-heading, their own lines as a tree in the same way, and their pictures, and nothing else; a section the record holds nothing for is left out. A place named in a fact or an entry of the timeline opens the card of that place, which lists
+open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon in the header above the tree, as in Obsidian's file explorer, opens or closes every node and is always shown. The tree only reads. A place named in a fact opens the card of that place, which lists
 the events held there, each with a link to the person or the family it belongs to. Every control of a card shows a focus ring for the
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a
 source, a place and a media record have cards of their own, and the card has no header: select a record again in the
 graph, the timeline or the list to return to it. The card reads the file and
-never writes to it. **Show in source** on a card or a missing relative
-switches to Source with exactly those lines selected, which is where a
+never writes to it. **Show in source** on a pointer to a record the file does not
+declare switches to Source with that line selected, which is where a
 correction is made.
 
 What selects a record: a click or tap on a card or a node in Graph, or a bar in

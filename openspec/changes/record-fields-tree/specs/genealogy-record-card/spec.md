@@ -2,84 +2,51 @@
 
 ### Requirement: The person card
 
-A person card SHALL show, without any cross-reference identifier, level number or tag the standard names, in this order, each section left out where the record holds nothing for it, except
-the one that says what is missing: the parents in the family. A section
-that lists things of one kind SHALL show how many in its heading; the family and the lines of the record, which
-are made of several kinds, show no count.
-
-- a heading with the person's portrait where there is one, their name, one line with their sex as
-  the record states it, the years of birth and death where a year can be read, marked when a year is
-  approximate or one end of a range, and the places of birth and death, a part the record does not
-  state being left out;
-- the **lines of the record**, as the requirement on the tree of a record says: every line the record states, in the order the file writes them, with no section of its own for names, events, details, notes, related people, identifiers or other data;
-- their **family**, as a list of people and not a drawing: for each family the person is a
-  child of, its parents under a head that says how the person belongs to it where the file says
-  it is not by birth — *Adoptive parents*, *Foster parents*, *Sealing parents* — and the status
-  the file states for the link; where the person is a child of no family, a line saying the
-  parents are not recorded; siblings; and for each family the person is a spouse of, the other
-  spouse with the events of that family — the marriage, a divorce, an engagement — as rows under them,
-  the children of that family, and a way to that family's card;
-- their **media**, the portrait and the media of the record drawn as tiles, as the requirement on portrait and media says;
-- their **timeline**, a section of the card below the one before it, not a tab, and
-  **folded** under its heading, which shows how many entries it holds: it is closed
-  when a card is opened, and stays open while the card shows the same record,
-  across a redraw of the card for a change of the file, and closes again when
-  another record is shown. The card SHALL have no
-  section of places: a place is a link in a fact and in an entry of the timeline;
-
-Every relative shown SHALL select that person. A relative the file points at but
-does not declare SHALL be shown as a pointer to a record that is not in the file,
-with an action that shows it in the source. No section of the card SHALL be a tab
-or a separate page, and the card SHALL NOT draw the family as a tree.
+A person card SHALL show the lines of the person's record as one tree, as the requirement on the tree of a record says, and nothing else: no heading, no portrait, no section of relatives, no media, no timeline and no fold. Every line the record states SHALL be in the tree, in the order the file writes them, without any cross-reference identifier, level number or tag the standard names, with no section of its own for names, events, details, notes, related people, identifiers or other data. The parents, siblings, spouses and children are the pointers the record states, shown as rows of the tree. No part of the card SHALL be a tab or a separate page, and the card SHALL NOT draw the family as a tree of people.
 
 #### Scenario: Marie's facts
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** below the heading it shows her record's lines as a tree in the order the file writes them under a root named *Person* that is open, every node beneath it closed: her names, her sex, her birth with the summary `7 NOV 1867 · Warsaw, Congress Poland`, her death with `4 JUL 1934 · Passy, Haute-Savoie, France`, her occupation `Physicist and chemist`; her family section shows her marriage with Pierre Curie, `26 JUL 1895` and `Sceaux, France`, as a row under Pierre; and no row carries a dot
+- **THEN** it shows her record's lines as a tree in the order the file writes them under a root named *Person* that is open, every node beneath it closed: her names, her sex, her birth with the summary `7 NOV 1867 · Warsaw, Congress Poland`, her death with `4 JUL 1934 · Passy, Haute-Savoie, France`, her occupation `Physicist and chemist`; and no row carries a dot
 
 #### Scenario: The sections in order
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** below the heading it shows, from the top, the lines of her record, Family, Media where she has pictures, and Timeline, and no section named Names, Events, Details, Notes, Related people, Identifiers and record information or Other data
+- **THEN** the card is the tree and nothing else: no heading, no Family, Media or Timeline section, and no section named Names, Events, Details, Notes, Related people, Identifiers and record information or Other data
 
 #### Scenario: Folded sections
 - **WHEN** the card shows Marie Skłodowska-Curie from the demo vault
-- **THEN** Timeline is folded and shows its count, and pressing it shows her entries; the root of her tree is open and the nodes beneath it are closed, and Family and Media are open
+- **THEN** the root of her tree is open and the nodes beneath it are closed, and the card has no fold of any other kind
 
 #### Scenario: A fold kept across a redraw
-- **WHEN** the reader has opened Marie's Timeline and the file changes on disk
-- **THEN** her card is redrawn with the Timeline open, and after the card shows Pierre
-  Curie and then Marie again it is closed
+- **WHEN** the reader has opened a node of Marie's tree and the file changes on disk
+- **THEN** her card is redrawn with that node open, and after the card shows Pierre Curie and then Marie again it is still open
 
 #### Scenario: Marie's family as a list
 - **WHEN** the card shows Marie Skłodowska-Curie
-- **THEN** the family section lists her parents Władysław Skłodowski and Bronisława
-  Boguska, her four siblings, her husband Pierre Curie with the way to their
-  family, and her children Irène Joliot-Curie and Ève Curie
+- **THEN** the card has no list of her parents, siblings, husband and children, and her tree shows the pointers to the families the record states
 
 #### Scenario: Two marriages
 - **WHEN** a person is a spouse of two families
-- **THEN** the family section shows two spouses, each with the events and the children of that
-  family under them
+- **THEN** the tree shows two pointers to families, in the order the record writes them, and no section of spouses
 
 #### Scenario: A parent who is not in the file
-- **WHEN** a person's child-family names a husband the file does not declare
-- **THEN** the parents show the declared parent and a pointer to a record that is
-  not in the file
+- **WHEN** a person's record points at a family the file does not declare
+- **THEN** the tree shows a pointer to a record that is not in the file, with an action that shows it in the source
 
 #### Scenario: Following a relative
-- **WHEN** the reader activates Pierre Curie in Marie's family section
-- **THEN** the card shows Pierre Curie, and the tab's mode is as it was
+- **WHEN** the reader activates a pointer to a family in Marie's tree
+- **THEN** the card shows that family, and the tab's mode is as it was
 
 #### Scenario: An adopted child
 - **WHEN** a person is a child of one family by birth and of another by `2 PEDI ADOPTED`
-- **THEN** the family section shows the parents of the first under *Parents* and those of the second under *Adoptive parents*
+- **THEN** the tree shows both pointers in the order the record writes them, the second with its `PEDI` line beneath it, and the card has no head that says *Adoptive parents*
 
 #### Scenario: No parents recorded
 - **WHEN** a person is a child of no family
-- **THEN** the family section says the parents are not recorded
+- **THEN** the card says nothing about parents
 
 #### Scenario: Sex
 - **WHEN** a person's record states `1 SEX F`
-- **THEN** the line under the name reads the sex in the reader's language together with the years and places
+- **THEN** the tree shows a row named Sex with the sex in the reader's language, and no line under a heading
 
 #### Scenario: A fact that cites a source
 - **WHEN** a person's `1 BIRT` carries `2 SOUR @S2@` beneath it
@@ -115,23 +82,16 @@ or a separate page, and the card SHALL NOT draw the family as a tree.
 
 ### Requirement: The family card
 
-A family card SHALL show, without any cross-reference identifier, level number or tag the standard names, in this order, with no other section: a heading, the lines of the record as a tree, and the media.
+A family card SHALL show the lines of the family's record as one tree, as the requirement on the tree of a record says, and nothing else: no heading, no section of spouses or children and no media.
 
-- a heading naming the family by its spouses, in the order the record names them,
-  with the marriage date and place where the record states them; a family naming
-  no spouse SHALL be headed by a stated placeholder, and the heading offers **Show in source** for the whole record;
-- the **lines of the record**, as the requirement on the tree of a record says: every line the record states, in the order the file writes them, the events, the pointers to the husband, the wife and the children, the number of children, the notes, the related people and the identifiers among them. A pointer to a person the file declares is that person's name as a link that selects their card; a pointer to a record the file does not declare is shown as a pointer to a record that is not in the file, with an action that shows it in the source;
-- its **media**, as a person's are.
-
-The card SHALL NOT have a section of its own for the spouses or the children, and SHALL NOT mark a child as adopted, foster or sealing: the tree states what the family's own record states.
+The tree shows every line the record states, in the order the file writes them, the events, the pointers to the husband, the wife and the children, the number of children, the notes, the related people and the identifiers among them. A pointer to a person the file declares is that person's name as a link that selects their card; a pointer to a record the file does not declare is shown as a pointer to a record that is not in the file, with an action that shows it in the source. The card SHALL NOT mark a child as adopted, foster or sealing: the tree states what the family's own record states.
 
 #### Scenario: The Curies' family
 - **WHEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
-- **THEN** it is headed by both names with `26 JUL 1895` and Sceaux, and its tree shows, in the file's order, Pierre Curie as husband, Marie as wife, Irène Joliot-Curie and Ève Curie as children, each a link that selects that person, and the marriage with its date and place, and the card has no section of spouses or children
+- **THEN** its tree shows, in the file's order, Pierre Curie as husband, Marie as wife, Irène Joliot-Curie and Ève Curie as children, each a link that selects that person, and the marriage with its date and place, and the card has no heading and no section of spouses or children
 
 #### Scenario: From a person to their family
-- **WHEN** the reader is on Marie's card and chooses the family card beside Pierre
-  Curie in her family section
+- **WHEN** the reader activates a pointer to a family in Marie's tree
 - **THEN** the card shows the family of Pierre Curie and Marie Skłodowska-Curie
 
 #### Scenario: An adopted child
@@ -148,11 +108,11 @@ The card SHALL NOT have a section of its own for the spouses or the children, an
 
 ### Requirement: The source card
 
-A source card SHALL show, in this order and with no other section: the source's title, its author and publication where the record states them in the heading, the lines of the record as a tree, as the requirement on the tree of a record says, and its media. A line that points at a repository is a row of the tree like any pointer, showing the repository's name. The card SHALL NOT list the records that cite the source, and SHALL NOT show the repository's address and web address.
+A source card SHALL show the lines of the source's record as one tree, as the requirement on the tree of a record says, and nothing else: no heading with its title, author or publication, and no media. A line that points at a repository is a row of the tree like any pointer, showing the repository's name. The card SHALL NOT list the records that cite the source, and SHALL NOT show the repository's address and web address.
 
 #### Scenario: A source
 - **WHEN** the card shows `The Nobel Prize in Chemistry 1911 and 1935`
-- **THEN** it shows its title and author in the heading, the tree of its lines and its pictures where it has some, and no section of repository or of the records that cite it
+- **THEN** it shows the tree of its lines and nothing else: no heading, no pictures, and no section of repository or of the records that cite it
 
 #### Scenario: A source cited by three people
 - **WHEN** the card shows `The Nobel Prize in Chemistry 1911 and 1935`
@@ -168,28 +128,27 @@ A source card SHALL show, in this order and with no other section: the source's 
 
 ### Requirement: The controls of a card are easy to see and to hit
 
-Every control of a card — the buttons that select a relative, a source or a place, the
-links *Show in source*, the notes' lines, and the picture of a media card — SHALL
+Every control of a card — the pointers that select a record, the place links, the
+links *Show in source* of a missing pointer, the notes' lines, and the picture of a media card — SHALL
 show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
 when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
 them SHALL have an activation area at least 32 pixels tall without changing the size of its text,
-and a control that is a block of its own — a relative, a source, a note's line, the heading of a
-fold — 44 pixels; where two controls stand closer together than that,
-the space between them is shared. The control of a node of the tree, its arrow, SHALL stay shown, like any control that opens or closes a part of the card; the one control that opens or closes every node of a tree SHALL be shown only while the pointer is over the tree or the focus is within it, SHALL NOT shift anything when it appears or disappears, SHALL stay reachable by assistive technology while it is not shown, and SHALL stay shown where the pointer cannot hover. The headings of the sections of a card and the secondary lines under
+and a control that is a block of its own — a pointer, a note's line — 44 pixels; where two controls stand closer together than that,
+the space between them is shared. The control of a node of the tree, its arrow, SHALL stay shown, like any control that opens or closes a part of the card; the one control that opens or closes every node of a tree SHALL always be shown, in a header above the tree. The headings of the sections of a card and the secondary lines under
 them SHALL be set in the muted text colour of the theme, not the faint one. A date at the left of an event SHALL be set
 in the muted text colour; a notice that a source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
 
 #### Scenario: Keyboard focus
-- **WHEN** the reader reaches `Pierre Curie` in Marie's family section with the Tab key
+- **WHEN** the reader reaches a pointer to a family in Marie's tree with the Tab key
 - **THEN** a ring in the accent colour surrounds it
 
 #### Scenario: A press with the pointer
-- **WHEN** the reader presses `Pierre Curie` with a pointer
+- **WHEN** the reader presses a pointer to a family in Marie's tree with a pointer device
 - **THEN** no ring is drawn around it
 
 #### Scenario: A phone
 - **WHEN** Marie's card is shown 390 pixels wide on a phone
-- **THEN** the area that activates a place link in her birth is at least 32 pixels tall, and the area that activates `Pierre Curie` and Back at least 44
+- **THEN** the area that activates a place link in her birth is at least 32 pixels tall, and the area that activates a pointer to a family at least 44
 
 #### Scenario: A fact without a source
 - **WHEN** Marie's card is shown
@@ -201,46 +160,7 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 
 #### Scenario: The arrows of a node
 - **WHEN** the card is shown and the pointer is not over the tree
-- **THEN** the arrows of the nodes are visible, and the control that opens or closes every node is not until the pointer or the focus is in the tree
-
-### Requirement: The timeline of a person
-
-The timeline section of a person card SHALL list, ordered by the year read from
-each date, the person's own events and the events of the families they married
-into, and the following events of close relatives: their parents' marriage; their
-parents' deaths; their siblings' births and deaths; their spouses' deaths; their
-children's births, marriages and deaths; and their grandchildren's births. A
-relative's event SHALL be listed only from the person's parents' marriage, or their
-own birth where that is earlier or the marriage is not dated, to the person's
-death, where that is dated.
-
-Each entry SHALL show its year, its date as written, what happened — the event's
-name, and for a relative's event the relationship and the relative's name — and its
-place. The person's own entries SHALL be told apart from their relatives'. An event
-of the person's with no year read from it SHALL be listed apart, as undated, within
-the section. No age SHALL be shown.
-
-Activating a relative in an entry SHALL select that relative; the person's own entries SHALL open nothing, and the place of an entry SHALL open the card of that place.
-
-#### Scenario: Marie's timeline
-- **WHEN** Marie's card is shown
-- **THEN** its timeline section begins with her parents' marriage in 1860, lists
-  the births of her four siblings before her own birth in 1867, her mother's death
-  in 1878, her marriage to Pierre Curie in 1895, her daughters' births, her
-  husband's death in 1906, her grandchildren's births, and ends with her death in
-  1934, and lists her occupation as undated
-
-#### Scenario: A relative's event after the person's death
-- **WHEN** a person died in 1934 and their daughter died in 1956
-- **THEN** the daughter's death is not in the person's timeline
-
-#### Scenario: Selecting an entry
-- **WHEN** the reader activates the entry for Marie's birth in the timeline section
-- **THEN** nothing opens, the entry being text, and activating the entry of her husband's death selects Pierre Curie
-
-#### Scenario: A place in an entry
-- **WHEN** the reader activates the place of an entry in the timeline section
-- **THEN** the card of that place is shown
+- **THEN** the arrows of the nodes are visible, and so is the control that opens or closes every node, in the header above the tree
 
 ### Requirement: The media card
 
@@ -248,8 +168,7 @@ Selecting a multimedia record SHALL show its **media card**, which SHALL show th
 file as large as the card allows — or say what it is, or that it is missing or not
 loaded, as a tile does — with its caption and every record that links it. Each of
 those SHALL show the part of the picture its link names, with its own caption, and
-SHALL select that record. A multimedia record is selected by following a link to it and from the
-tile of a file on another card, and has no row in the list.
+SHALL select that record. A multimedia record is selected by following a link to it and from a pointer to it in the tree of another card, and has no row in the list.
 
 #### Scenario: The family photograph
 - **WHEN** the reader follows `[[curie.ged#@O5@]]`
@@ -257,15 +176,14 @@ tile of a file on another card, and has no row in the list.
   with their own part of it and their own caption
 
 #### Scenario: From a tile to its media card
-- **WHEN** the reader chooses the media card of the family photograph from Marie's
-  media
+- **WHEN** the reader activates the pointer to the family photograph in Marie's tree
 - **THEN** the card shows the media card of `@O5@`
 
 ### Requirement: The card lives in the right sidebar and follows the GEDCOM tab
 
 While the **Genealogy interface** setting is on, the plugin SHALL offer a view
 named **Record**, the record card, in the right sidebar. It SHALL be placed there, without taking the focus, the first time in a session a record is selected in a
-GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, by Back or Forward in the card, or by a relative, a citation or a tile in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
+GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, by Back or Forward in the card, or by a pointer, a citation or a place in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
 SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
 is open.
 
@@ -363,7 +281,7 @@ where the file declares no person, family or source it SHALL say that the file h
 - **THEN** no sidebar opens
 
 #### Scenario: Back in the card
-- **WHEN** the setting is on, the card is open in the expanded right sidebar, the reader collapsed the left sidebar, and activates a relative in the card
+- **WHEN** the setting is on, the card is open in the expanded right sidebar, the reader collapsed the left sidebar, and activates a pointer in the card
 - **THEN** neither sidebar is expanded, switched or moved
 
 #### Scenario: A row of the list
@@ -401,14 +319,14 @@ select the record under the cursor where it has a card.
   card shows the Curies' family
 
 #### Scenario: A relative in the card
-- **WHEN** the tab is in Source mode and the reader activates Pierre Curie among
-  Marie's relatives in the card
+- **WHEN** the tab is in Source mode and the reader activates the pointer to Pierre Curie in
+  the tree of the Curies' family
 - **THEN** the cursor is on `0 @I2@ INDI`, in view, the card shows Pierre Curie,
   and the focus is still in the card
 
 #### Scenario: Back in the source
 - **WHEN** the tab is in Source mode, the reader selected Marie and then Pierre by
-  links, the cursor is on `0 @I2@ INDI`, and the reader activates Marie among Pierre's relatives in the card
+  links, the cursor is on `0 @I2@ INDI`, and the reader activates the pointer to Marie in the tree of the Curies' family
 - **THEN** the card shows Marie, the cursor is on `0 @I1@ INDI`, in view, and the focus is still in the card
 
 #### Scenario: The interface is off
@@ -447,17 +365,17 @@ select the record under the cursor where it has a card.
 
 The card SHALL be readable and usable in one column at the width a sidebar has,
 from 320 pixels up, and at a phone's width, without horizontal scrolling of the
-card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. A place named in a fact or an entry SHALL open the card of that place. Redrawing the card for the same record — the file changing —
+card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. A place named in a fact SHALL open the card of that place. Redrawing the card for the same record — the file changing —
 SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record or a place SHALL scroll the card to
 the top.
 
 #### Scenario: A person card at a sidebar's width
 - **WHEN** Marie's card is shown 320 pixels wide
-- **THEN** every line of her record and every relative is visible without scrolling sideways
+- **THEN** every line of her record is visible without scrolling sideways
 
 #### Scenario: A person card on a phone
 - **WHEN** Marie's card is shown 390 pixels wide
-- **THEN** every line of her record and every relative is visible without scrolling sideways
+- **THEN** every line of her record is visible without scrolling sideways
 
 #### Scenario: Tapping a place in a fact
 - **WHEN** the reader taps `Warsaw, Congress Poland` in Marie's birth
@@ -465,8 +383,8 @@ the top.
 
 #### Scenario: Another record
 - **WHEN** the card is scrolled to the end of Marie's card and the reader activates
-  Pierre Curie in her family section
-- **THEN** Pierre Curie's card is shown from its top
+  a pointer to a family in her tree
+- **THEN** that family's card is shown from its top
 
 #### Scenario: The header stays
 - **WHEN** the reader scrolls to the end of Marie's card
@@ -477,7 +395,7 @@ the top.
 A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
 source or a multimedia record of its file, or or a place that the file names. It SHALL be selected by activating a
 person's card, a family node, a name or a lifeline in Graph or Timeline; by
-activating a row of the list; by activating a relative, a citation, a person, a
+activating a row of the list; by activating a pointer, a citation, a person, a
 family, a source or a media record in the card; by following a link into the file
 and by choosing a record with **Go to record**, where the record is of one of those
 four kinds; and in Source mode by the cursor, as the requirement on Source says.
@@ -566,39 +484,33 @@ is selected nobody is marked there; a media record has no row in the list.
 - **THEN** nothing is selected, the card says to select a record, and no row of the
   list is marked
 
-### Requirement: Show in source for a record and a relative
+### Requirement: Show in source for a pointer that is not in the file
 
-Every relative that is not in the file, and the record a card shows
-SHALL offer **Show in source**. It SHALL switch the tab to Source mode and select,
-and scroll into view, exactly the lines of the file that state it.
+A pointer in the tree to a record the file does not declare SHALL offer **Show in source**. It SHALL switch the tab to Source mode and select, and scroll into view, exactly the lines of the file that state it. The card SHALL NOT offer it for the whole record it shows.
 
-#### Scenario: Showing a whole record
-- **WHEN** the reader chooses Show in source on Pierre Curie's card
-- **THEN** the lines of Pierre Curie's record are selected and in view
+#### Scenario: Showing a missing record
+- **WHEN** the reader chooses Show in source on a pointer to a family the file does not declare
+- **THEN** the lines that state the pointer are selected and in view
 
-### Requirement: An event is one row in a family section and at a place
+#### Scenario: A whole record
+- **WHEN** the card shows Pierre Curie
+- **THEN** it offers no Show in source for his whole record
 
-The events of a family under a spouse in a person's family section and the
-events at a place on the card of that place SHALL each be drawn as one **event row**: its date as the file writes it on
+### Requirement: An event is one row at a place
+
+The events at a place on the card of that place SHALL each be drawn as one **event row**: its date as the file writes it on
 the left, a dash where it has none; its name in the reader's language, which opens nothing, with its text where it has
 one; its place, as a link to the place, under the name; and, where it cites any source, a quiet dot after the name, which says
-how many in its accessible name and title; an event that cites none carries no dot. On the card of a
-place the row SHALL also name the record the event belongs to, as a link that selects that record, under the name. On a phone each link SHALL be a target of its own that the
-other does not cover.
-The timeline of a person SHALL keep its own form, a chronology, and SHALL show the same detail of an
-event. An event that states nothing SHALL be drawn as *recorded, no details*,.
-
-#### Scenario: A fact on a person's card
-- **WHEN** Marie's card shows her marriage under Pierre in her family section
-- **THEN** its row shows `26 JUL 1895` on the left, names `Marriage`, shows `Sceaux, France` as a link under the name, and carries no dot
-
-#### Scenario: A fact that cites a source
-- **WHEN** a marriage carries `2 SOUR @S2@` and a person's family section shows it
-- **THEN** its row shows a dot after the name, which says it cites one source
+how many in its accessible name and title; an event that cites none carries no dot. The row SHALL also name the record the event belongs to, as a link that selects that record, under the name. On a phone each link SHALL be a target of its own that the
+other does not cover. An event that states nothing SHALL be drawn as *recorded, no details*,.
 
 #### Scenario: An event at a place
 - **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
 - **THEN** the row shows `7 NOV 1867`, names `Birth`, and links `Marie Skłodowska-Curie` under the name
+
+#### Scenario: A fact that cites a source
+- **WHEN** an event at a place carries `2 SOUR @S2@`
+- **THEN** its row shows a dot after the name, which says it cites one source
 
 #### Scenario: The record from a place
 - **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
@@ -632,3 +544,7 @@ event. An event that states nothing SHALL be drawn as *recorded, no details*,.
 ### Requirement: An event stays selected while the cursor is in its record
 **Reason**: The event cards and the Events list are removed at the user's request of 2026-11-09 («еще удали список Events и карточки для Event»).
 **Migration**: The tree of a record shows the lines of an event; the place of an event is a link to the card of the place; what the reader asked to remove is not replaced.
+
+### Requirement: The timeline of a person
+**Reason**: The timeline section of a person card is removed at the user's request of 2026-11-10 («я хочу чтобы в панелях справа остались только деревья - удали все остальное, включая заголовок»).
+**Migration**: The tree of a record shows every line the record states; what the reader asked to remove is not replaced.

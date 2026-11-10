@@ -44,6 +44,9 @@ const openEveryNode = async (page: Page): Promise<void> => {
   }
 };
 
+const shownRecord = (page: Page, xref: string) =>
+  expect(page.locator(".gedcom-card")).toHaveAttribute("data-shown", new RegExp(`\\n${xref}$`, "u"));
+
 const show = (page: Page, xref: string) =>
   page.evaluate((record) => {
     window.desk.selectRecord(record);
@@ -63,31 +66,23 @@ for (const size of SIZES) {
       await mountDesk(page, { width: size.width, phone: size.phone });
     });
 
-    test("runs the lines of her record, Family, Media and Timeline, with no tab bar and nothing to scroll sideways", async ({ page }) => {
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
-      await expect(page.locator(".gedcom-tree")).toHaveCount(1);
-      await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-        "Family", "Media", "Timeline",
-      ]);
-      const tops = await page
-        .locator(".gedcom-card-body h2.gedcom-desk-section")
-        .evaluateAll((headings) => headings.map((heading) => heading.getBoundingClientRect().top));
-      expect(tops).toEqual([...tops].sort((a, b) => a - b));
+    test("draws only the tree of her record, with no tab bar and nothing to scroll sideways", async ({ page }) => {
+      await expect(page.locator(".gedcom-card-body > *")).toHaveCount(1);
+      await expect(page.locator(".gedcom-card-body > .gedcom-tree")).toHaveCount(1);
+      await expect(page.locator(".gedcom-card-body h1, .gedcom-card-body h2")).toHaveCount(0);
       await expect(page.locator(".gedcom-desk-tabs, .gedcom-fg-canvas")).toHaveCount(0);
       expect(await overflowsSideways(page)).toBe(false);
     });
 
-    test("lists her lines as closed nodes beneath an open root, and the kin she has", async ({ page }) => {
+    test("lists her lines as closed nodes beneath an open root", async ({ page }) => {
       await expect(page.locator(".gedcom-tree-list > .gedcom-tree-node.is-root")).toHaveCount(1);
       await expect(page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-label")).toHaveText("Person");
       await expect(page.locator('.gedcom-tree-node[data-depth="1"]')).toHaveCount(14);
       await expect(page.locator(".gedcom-tree-chevron[aria-expanded=true]")).toHaveCount(1);
       await expect(treeRow(page, "Birth").locator(".gedcom-tree-summary")).toContainText("7 NOV 1867");
-      await expect(page.locator(".gedcom-desk-fact")).toHaveCount(1);
-      await expect(page.locator(".gedcom-desk-kin-label")).toHaveText(["Parents", "Siblings", "Husband", "Children"]);
       const inside = await page.evaluate(() => {
         const body = document.querySelector(".gedcom-card-body")?.getBoundingClientRect();
-        return [...document.querySelectorAll(".gedcom-tree-row, .gedcom-desk-fact, .gedcom-desk-person")].every(
+        return [...document.querySelectorAll(".gedcom-tree-row")].every(
           (row) => {
             const box = row.getBoundingClientRect();
             return body !== undefined && box.left >= body.left - 0.5 && box.right <= body.right + 0.5;
@@ -97,29 +92,11 @@ for (const size of SIZES) {
       expect(inside).toBe(true);
     });
 
-    test("sets a fold's heading at the start of its line", async ({ page }) => {
-      const justify = await page.locator(".gedcom-desk-fold-button").first().evaluate((node) => getComputedStyle(node).justifyContent);
-
-      expect(justify).toBe("flex-start");
-    });
-
-    test("keeps the timeline inside the card once its fold is opened", async ({ page }) => {
-      await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
-      const inside = await page.evaluate(() => {
-        const body = document.querySelector(".gedcom-card-body")?.getBoundingClientRect();
-        return [...document.querySelectorAll(".gedcom-desk-moment")].every((row) => {
-          const box = row.getBoundingClientRect();
-          return body !== undefined && box.width > 0 && box.left >= body.left - 0.5 && box.right <= body.right + 0.5;
-        });
-      });
-      expect(inside).toBe(true);
-      expect(await overflowsSideways(page)).toBe(false);
-    });
-
     test("has no header, and the body scrolls from the top of the card to its end", async ({ page }) => {
+      await openEveryNode(page);
       await expect(page.locator(".gedcom-card-head, .gedcom-card-nav, .gedcom-card-head-name")).toHaveCount(0);
       const card = await page.locator(".gedcom-card").boundingBox();
-      const before = await page.locator(".gedcom-card-body").boundingBox();
+      const before = await page.locator(".gedcom-card > .nav-header").boundingBox();
       await page.locator(".gedcom-card-body").evaluate((body) => {
         body.scrollTop = body.scrollHeight;
       });
@@ -132,7 +109,7 @@ for (const size of SIZES) {
       await expect(page.locator("button.gedcom-tree-label, .is-fact")).toHaveCount(0);
       await treeRow(page, "Sex").locator(".gedcom-tree-label").click();
 
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Marie Skłodowska-Curie");
+      await shownRecord(page, "@I1@");
     });
 
     test("opens the place of a fact", async ({ page }) => {
@@ -142,24 +119,6 @@ for (const size of SIZES) {
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
     });
 
-    test("draws her own entries of the timeline as text, and opens the relative of an entry", async ({ page }) => {
-      await page.locator(".gedcom-desk-fold-button", { hasText: "Timeline" }).click();
-      await expect(page.locator(".gedcom-desk-moment-what", { hasText: /^Birth$/u })).toBeDisabled();
-      await page.locator(".gedcom-desk-moment-what", { hasText: "Death of husband Pierre Curie" }).evaluate((entry) => (entry as HTMLElement).click());
-
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
-    });
-
-    test("shows Pierre Curie from his top, with no Back or Forward to return by", async ({ page }) => {
-      await page.locator(".gedcom-card-body").evaluate((body) => {
-        body.scrollTop = body.scrollHeight;
-      });
-      await page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" }).first().evaluate((one) => (one as HTMLElement).click());
-
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
-      expect(await scrollTopOf(page)).toBe(0);
-      await expect(page.locator(".gedcom-card-nav")).toHaveCount(0);
-    });
   });
 }
 
@@ -173,9 +132,7 @@ test.describe("Obsidian's own button styling", () => {
       });
 
     for (const selector of [
-      ".gedcom-desk-person",
       ".gedcom-desk-link",
-      ".gedcom-desk-fact-name",
     ]) {
       expect(await look(selector), selector).toEqual({
         background: "rgba(0, 0, 0, 0)",
@@ -232,29 +189,27 @@ test.describe("the empty states", () => {
 });
 
 test.describe("the family card", () => {
-  test("leads from Marie to her family, and from the family to a child", async ({ page }) => {
+  test("is its tree alone, and leads from it to a child", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 800 });
-    await mountDesk(page);
-    await page.locator(".gedcom-desk-link", { hasText: "Family card" }).click();
+    await mountDesk(page, { record: "@F3@" });
 
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie ⚭ Marie Skłodowska-Curie");
+    await expect(page.locator(".gedcom-card-body > *")).toHaveCount(1);
+    await expect(page.locator(".gedcom-card-body > .gedcom-tree")).toHaveCount(1);
     await expect(page.locator(".gedcom-tree .gedcom-tree-row", { hasText: "Husband" }).locator(".gedcom-desk-link")).toHaveText("Pierre Curie");
     await expect(page.locator(".gedcom-tree .gedcom-tree-row", { hasText: "Wife" }).locator(".gedcom-desk-link")).toHaveText("Marie Skłodowska-Curie");
-    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveCount(0);
-    await expect(page.locator(".gedcom-desk-kin, .gedcom-desk-person")).toHaveCount(0);
-    await show(page, "@F3@");
+    await expect(page.locator(".gedcom-card-body h1, .gedcom-card-body h2, .gedcom-desk-kin, .gedcom-desk-person")).toHaveCount(0);
     await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Ève Curie" }).click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Ève Curie");
+    await shownRecord(page, "@I13@");
   });
 });
 
 test.describe("the source card and the media card", () => {
-  test("shows a source as its heading, its tree and its gallery, and nothing else", async ({ page }) => {
+  test("shows a source as its tree and nothing else", async ({ page }) => {
     await mountDesk(page, { record: "@S3@" });
 
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("The Nobel Prize in Chemistry 1911 and 1935");
-    await expect(page.locator(".gedcom-desk-heading + .gedcom-tree")).toHaveCount(1);
-    await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveCount(0);
+    await expect(page.locator(".gedcom-card-body > *")).toHaveCount(1);
+    await expect(page.locator(".gedcom-card-body > .gedcom-tree")).toHaveCount(1);
+    await expect(page.locator(".gedcom-card-body h1, .gedcom-card-body h2")).toHaveCount(0);
     await expect(page.locator(".gedcom-desk-citer, .gedcom-desk-repository")).toHaveCount(0);
   });
 
@@ -263,7 +218,7 @@ test.describe("the source card and the media card", () => {
     await treeRow(page, "Source").first().locator(".gedcom-tree-chevron").click();
     await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Physics 1903" }).click();
 
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("The Nobel Prize in Physics 1903");
+    await shownRecord(page, "@S1@");
   });
 
   test("lists the two people a photograph is linked by", async ({ page }) => {
@@ -277,48 +232,11 @@ test.describe("the source card and the media card", () => {
   });
 });
 
-test.describe("media", () => {
-  test("shows Marie's portrait and gallery, her part of the family photograph cut out", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 800 });
-    await mountDesk(page);
-
-    await expect(page.locator(".gedcom-desk-portrait img")).toHaveAttribute(
-      "src", "../demo-vault/Media/marie-sklodowska-curie.svg",
-    );
-    await expect(page.locator(".gedcom-desk-tile-caption")).toHaveText([
-      "Marie Skłodowska-Curie", "Marie, on the left", "A portrait the plugin fetches only when asked",
-    ]);
-    const cropped = page.locator(".gedcom-desk-tile .gedcom-desk-picture.is-cropped");
-    await expect(cropped).toHaveCount(1);
-    const box = await cropped.boundingBox();
-    expect(Math.round(box?.height ?? 0)).toBe(120);
-    expect(Math.round(box?.width ?? 0)).toBe(65);
-    await expect(page.locator(".gedcom-desk-tile-note")).toHaveText(["From the web, not loaded"]);
-  });
-
-  test("opens a file, and the media card with everyone who links it", async ({ page }) => {
-    await page.setViewportSize({ width: 1400, height: 800 });
-    await mountDesk(page);
-    await page.locator(".gedcom-desk-tile-face").first().click();
-    expect(await page.evaluate(() => window.desk.calls.filesOpened)).toEqual([
-      "Media/marie-sklodowska-curie.svg",
-    ]);
-
-    await page.locator(".gedcom-desk-tile", { hasText: "Marie, on the left" })
-      .locator(".gedcom-desk-link", { hasText: "Media card" }).click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("The Curie family, about 1908");
-    await expect(page.locator(".gedcom-desk-user .gedcom-desk-person-name")).toHaveText([
-      "Marie Skłodowska-Curie", "Pierre Curie",
-    ]);
-    await expect(page.locator(".gedcom-desk-user .is-cropped")).toHaveCount(2);
-  });
-});
-
 test.describe("the controls of a card", () => {
   test("show a focus ring for the keyboard and none for the pointer", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page);
-    const pierre = page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" });
+    const pierre = treeRow(page, "Birth").locator(".gedcom-desk-link").first();
     const ring = () => pierre.evaluate((node) => getComputedStyle(node).outlineStyle);
 
     await pierre.focus();
@@ -334,23 +252,25 @@ test.describe("the controls of a card", () => {
     await page.mouse.up();
   });
 
-  test("are muted, and a source is a quiet dot, not an orange mark", async ({ page }) => {
+  test("show the always visible toggle of the tree with a focus ring for the keyboard", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page);
-    const colour = (selector: string, property: "color" | "backgroundColor") =>
-      page.locator(selector).first().evaluate((node, name) => getComputedStyle(node)[name], property);
-    const muted = await colour(".gedcom-desk-subtitle", "color");
+    const toggle = page.locator(".gedcom-tree-toggle");
 
-    expect(await colour("h2.gedcom-desk-section", "color")).toBe(muted);
-    await expect(page.locator(".gedcom-desk-unsourced")).toHaveCount(0);
-    expect(await colour(".gedcom-desk-fact-date", "color")).toBe(muted);
+    await expect(toggle).toBeVisible();
+    await toggle.focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
+    expect(await toggle.evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
+    await page.keyboard.press("Enter");
+    await expect(toggle).toHaveAttribute("aria-label", "Close every node");
   });
 });
 
 const hitSweep = (page: Page): Promise<string[]> =>
   page.evaluate(() => {
     const missed: string[] = [];
-    const selectors = ".gedcom-card-body button:not(:disabled)";
+    const selectors = ".gedcom-card button:not(:disabled), .gedcom-card .nav-action-button";
     for (const control of document.querySelectorAll<HTMLElement>(selectors)) {
       control.scrollIntoView({ block: "center" });
       const box = control.getBoundingClientRect();
@@ -360,7 +280,7 @@ const hitSweep = (page: Page): Promise<string[]> =>
       const x = box.left + Math.min(box.width / 2, 6);
       const hits: number[] = [];
       for (let y = box.top - 30; y <= box.bottom + 30; y += 2) {
-        if (document.elementFromPoint(x, y)?.closest("button") === control) {
+        if (document.elementFromPoint(x, y)?.closest("button, [role=button]") === control) {
           hits.push(y);
         }
       }
@@ -386,9 +306,6 @@ test.describe("the controls of a card on a phone", () => {
       await mountDesk(page, { record, phone: true, ...(doc === undefined ? {} : { doc }) });
       expect(await hitSweep(page), `${name}, closed`).toEqual([]);
 
-      for (const button of await page.locator(".gedcom-desk-fold-button").all()) {
-        await button.click();
-      }
       if ((await page.locator(".gedcom-tree-control").count()) > 0) {
         await openEveryNode(page);
       }
@@ -403,19 +320,15 @@ test.describe("the controls of a card on a phone", () => {
 test.describe("the controls of a card where the pointer is coarse", () => {
   test.use({ hasTouch: true, isMobile: true });
 
-  test("keep the arrows and the toolbar shown, at touch sizes, without the app's mobile class", async ({ page }) => {
+  test("keep the arrows shown, at touch sizes, without the app's mobile class", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await mountDesk(page, { width: 390 });
     expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
     expect(await page.evaluate(() => document.body.classList.contains("is-mobile"))).toBe(false);
 
-    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
-    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("position", "static");
-    const box = await page.locator(".gedcom-tree-toggle").boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
+    await expect(page.locator(".gedcom-tree-toggle")).toBeVisible();
     expect((await page.locator(".gedcom-tree-chevron").first().boundingBox())?.height).toBeGreaterThanOrEqual(44);
-    expect((await hitSweep(page)).filter((name) => name.includes("gedcom-tree"))).toEqual([]);
+    expect((await hitSweep(page)).filter((name) => name.includes("gedcom-tree-chevron"))).toEqual([]);
   });
 });
 
@@ -428,12 +341,9 @@ test.describe("the card of a record that states everything", () => {
         await mountDesk(page, { doc: rich(), record: "@I1@", width: size.width, phone: size.phone });
       });
 
-      test("runs the lines of the record, then its sections, folds the Timeline, and does not scroll sideways", async ({ page }) => {
-        await expect(page.locator(".gedcom-card-body h2.gedcom-desk-section")).toHaveText([
-          "Family", "Media", "Timeline",
-        ]);
-        await expect(page.locator(".gedcom-desk-fold-button")).toHaveCount(1);
-        await expect(page.locator(".gedcom-desk-fold-body[hidden]")).toHaveCount(1);
+      test("draws only its tree, and does not scroll sideways", async ({ page }) => {
+        await expect(page.locator(".gedcom-card-body > *")).toHaveCount(1);
+        await expect(page.locator(".gedcom-card-body h1, .gedcom-card-body h2")).toHaveCount(0);
         expect(await overflowsSideways(page)).toBe(false);
       });
 
@@ -443,8 +353,8 @@ test.describe("the card of a record that states everything", () => {
 
         await expect(names).toHaveText(["Maria Skłodowska", "Marie Curie"]);
         await expect(page.locator(".gedcom-tree-label", { hasText: "Given names" }).first()).toBeVisible();
-        await expect(page.locator('.gedcom-tree-node[data-key="NAME[0].TYPE[0]"] .gedcom-field')).toHaveText("Birth");
-        await expect(page.locator('.gedcom-tree-node[data-key="NAME[0].TYPE[0]"] .gedcom-field')).toHaveAttribute("data-kind", "choice");
+        await expect(page.locator('.gedcom-tree-node[data-key="NAME[0].TYPE[0]"] .gedcom-tree-choice')).toHaveAttribute("data-kind", "choice");
+        expect(await page.locator('.gedcom-tree-node[data-key="NAME[0].TYPE[0]"] .gedcom-tree-choice').evaluate((one) => (one as HTMLSelectElement).selectedOptions[0]?.textContent)).toBe("Birth");
       });
 
       test("folds a long note and shows the rest on a press, and keeps what it shows inside the card", async ({ page }) => {
@@ -463,7 +373,6 @@ test.describe("the card of a record that states everything", () => {
       });
 
       test("shows the custom line nested once the nodes are open, without scrolling sideways", async ({ page }) => {
-        await page.locator(".gedcom-desk-fold-button").first().click();
         await openEveryNode(page);
         await expect(page.locator(".gedcom-tree-label", { hasText: "_MILITARY" }).first()).toBeVisible();
         await expect(page.locator(".gedcom-tree-label", { hasText: "_SINCE" }).first()).toBeVisible();
@@ -494,24 +403,19 @@ const longDoc = (events: number): string => {
 
 
 test.describe("the tree of a record", () => {
-  test("keeps the open-all toggle out of sight until the pointer is over the tree, and the arrows of the nodes always in sight", async ({ page }) => {
+  test("shows the header with the open-all toggle at rest, and the arrows of the nodes always in sight", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
     await page.mouse.move(2, 2);
 
-    expect(await opacityOf(page.locator(".gedcom-tree-bar"))).toBe("0");
+    await expect(page.locator(".gedcom-card > .nav-header .nav-action-button.gedcom-tree-toggle")).toBeVisible();
+    expect(await opacityOf(page.locator(".gedcom-card > .nav-header"))).toBe("1");
     for (const chevron of await page.locator(".gedcom-tree-chevron").all()) {
       expect(await opacityOf(chevron)).toBe("1");
       expect(await chevron.evaluate((node) => getComputedStyle(node).pointerEvents)).toBe("auto");
       await expect(chevron).toHaveAttribute("aria-label", /.+/u);
       expect(await chevron.evaluate((node) => (node as HTMLButtonElement).tabIndex)).toBe(0);
     }
-    await page.locator(".gedcom-tree").hover();
-    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
-    await page.mouse.move(2, 2);
-    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "0");
-    await page.locator(".gedcom-tree-toggle").focus();
-    await expect(page.locator(".gedcom-tree-bar")).toHaveCSS("opacity", "1");
   });
 
   test("turns the closed arrow with the app's rule and leaves the open one, in both directions of writing", async ({ page }) => {
@@ -628,7 +532,7 @@ test.describe("the tree of a record", () => {
     await page.evaluate(() => {
       window.desk.selectRecord("@I2@");
     });
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
+    await shownRecord(page, "@I2@");
     await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "false");
     await page.evaluate(() => {
       window.desk.selectRecord("@I1@");
@@ -639,7 +543,6 @@ test.describe("the tree of a record", () => {
   test("opens and closes every node with one icon toggle that flips and keeps the focus", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
-    await page.locator(".gedcom-tree").hover();
     const toggle = page.locator(".gedcom-tree-toggle");
 
     await expect(toggle.locator("svg")).toHaveCount(1);
@@ -676,8 +579,8 @@ test.describe("the tree of a record", () => {
     await expect(page.locator(".gedcom-tree-toggle")).toBeFocused();
     expect(await scrollTopOf(page)).toBe(300);
 
-    await page.locator(".gedcom-desk-person", { hasText: "Pierre Curie" }).first().evaluate((one) => (one as HTMLElement).click());
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Pierre Curie");
+    await show(page, "@I2@");
+    await shownRecord(page, "@I2@");
     expect(await scrollTopOf(page)).toBe(0);
     await expect(page.locator(".gedcom-tree-toggle")).toBeFocused();
   });

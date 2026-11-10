@@ -1,9 +1,8 @@
-import type { Position, Range } from "@domorium/language-service";
+import type { PointerCandidate, Position, Range, StructureFieldDescription } from "@domorium/language-service";
 
 import type { GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
 import { renderFamilyPage } from "./familyPage";
-import type { PortraitContent } from "./media";
 import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
@@ -12,47 +11,37 @@ import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type PageHost, type PersonPageOptions } from "./personPage";
 import { renderSourcePage } from "./sourcePage";
+import type { FieldChoice } from "./detail/tree";
 import type { TreeSession } from "./detail/treeSession";
 
 export interface CardTab {
   filePath(): string | null;
   index(): GenealogyIndex;
   selection(): { record: string | null };
-  mediaItems(media: { at: Position; record?: string }[]): MediaItem[];
   mediaItem(at: Position): MediaItem | null;
-  portrait(xref: string): PortraitContent | null;
   select(xref: string): void;
   showInSource(range: Range): void;
   openFile(path: string): void;
+  addableAt?(at: Position): StructureFieldDescription[];
+  choicesAt?(at: Position): string[];
+  pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
 }
 
 export interface CardView {
   setIcon(element: HTMLElement, icon: string): void;
   /** What the reader chose in the trees of the records shown, kept while the plugin is loaded. */
   session: TreeSession;
+  /** Lists the fields of the standard, the ones with no room left disabled, below the pointer. */
+  chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
+  /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
+  header?: HTMLElement;
 }
 
 const FOCUS_KEY = "data-focus-key";
-const OPEN_KEY = "data-open";
 const TOGGLE_KEY = "tree:toggle";
 
 const hasTree = (index: GenealogyIndex, record: string): boolean =>
   index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;
-
-function foldsOf(root: HTMLElement): Required<Pick<PersonPageOptions, "open" | "folded">> {
-  const open = new Set((root.getAttribute(OPEN_KEY) ?? "").split(" ").filter(Boolean));
-  return {
-    open,
-    folded: (id, now) => {
-      if (now) {
-        open.add(id);
-      } else {
-        open.delete(id);
-      }
-      root.setAttribute(OPEN_KEY, [...open].join(" "));
-    },
-  };
-}
 
 function recordName(index: GenealogyIndex, xref: string): string {
   const person = index.person(xref);
@@ -81,7 +70,7 @@ export function renderRecordCard(
   const before = root.querySelector<HTMLElement>(":scope > .gedcom-card-body");
   const doc = container.ownerDocument;
   const active = doc.activeElement;
-  const focusWas = active !== null && root.contains(active) ? active : null;
+  const focusWas = active !== null && (root.contains(active) || view.header?.contains(active)) ? active : null;
   const focusKey = focusWas?.closest(`[${FOCUS_KEY}]`)?.getAttribute(FOCUS_KEY) ?? null;
   const scrollTop = before?.scrollTop ?? 0;
   const previous = root.getAttribute("data-shown");
@@ -97,6 +86,9 @@ export function renderRecordCard(
   const record = tab && index && selection.record && pageKind(index, selection.record) ? selection.record : null;
   const shown = tab && record ? `${tab.filePath() ?? ""}\n${record}` : "";
 
+  const drawsTreeFor = Boolean(tab && index && record && hasTree(index, record));
+  const header = view.header ?? (drawsTreeFor ? root.createDiv({ cls: ["gedcom-card-header", "nav-header"] }) : null);
+  header?.empty();
   const body = root.createDiv({ cls: "gedcom-card-body" });
   body.setAttribute("tabindex", "-1");
 
@@ -109,16 +101,16 @@ export function renderRecordCard(
       text: t(holdsNothing ? "card.empty" : "card.nothing"),
     });
   } else {
-    if (shown !== previous) {
-      root.removeAttribute(OPEN_KEY);
-    }
     drawsTree = hasTree(index, record);
-    drawRecord(body, tab, index, record, view, {
-      ...foldsOf(root),
-      ...(drawsTree ? { tree: view.session.stateFor(shown) } : {}),
-    });
+    drawRecord(body, tab, index, record, view, drawsTree ? { tree: view.session.stateFor(shown), ...(header ? { header } : {}) } : {});
+    if (header && !header.hasChildNodes() && !view.header) {
+      header.remove();
+    }
   }
 
+  if (view.header) {
+    view.header.hidden = !view.header.hasChildNodes();
+  }
   root.setAttribute("data-shown", shown);
   if (live && shown !== previous) {
     live.setText(tab && index && record ? t("card.announce", { name: recordName(index, record) }) : "");
@@ -130,7 +122,7 @@ export function renderRecordCard(
     const same =
       focusKey === null || (shown !== previous && focusKey !== TOGGLE_KEY)
         ? null
-        : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`)].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
+        : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`), ...(view.header?.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`) ?? [])].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
     (same ?? body).focus({ preventScroll: true });
   }
 }
@@ -150,14 +142,19 @@ function drawRecord(
   index: GenealogyIndex,
   record: string,
   view: CardView,
-  folds: Pick<PersonPageOptions, "open" | "folded" | "tree">,
+  folds: PersonPageOptions,
 ): void {
   const host: PageHost & { openFile(path: string): void } = {
     openRecord: (xref) => tab.select(xref),
     showInSource: (range) => tab.showInSource(range),
     openFile: (path) => tab.openFile(path),
+    ...(tab.pointerChoicesAt
+      ? { pointerChoicesAt: (parent: Position, tag: string) => tab.pointerChoicesAt?.(parent, tag) ?? [] }
+      : {}),
+    ...(tab.choicesAt ? { choicesAt: (at: Position) => tab.choicesAt?.(at) ?? [] } : {}),
+    ...(tab.addableAt ? { addableAt: (at: Position) => tab.addableAt?.(at) ?? [] } : {}),
+    ...(view.chooseField ? { chooseField: (event: MouseEvent, fields: FieldChoice[]) => view.chooseField?.(event, fields) } : {}),
     setIcon: (element, icon) => view.setIcon(element, icon),
-    portrait: (xref) => tab.portrait(xref),
   };
   const person = index.person(record);
   const family = person ? undefined : index.family(record);
@@ -165,11 +162,11 @@ function drawRecord(
   const media = person || family || source ? undefined : index.media(record);
   const place = person || family || source || media ? undefined : placeAt(index, record);
   if (person) {
-    renderPersonPage(body, person, index, { media: tab.mediaItems(person.media), ...folds }, host);
+    renderPersonPage(body, person, index, folds, host);
   } else if (family) {
-    renderFamilyPage(body, family, index, { media: tab.mediaItems(family.media), ...folds }, host);
+    renderFamilyPage(body, family, index, folds, host);
   } else if (source) {
-    renderSourcePage(body, source, index, host, tab.mediaItems(source.media), folds);
+    renderSourcePage(body, source, index, host, folds);
   } else if (media) {
     const whole = media.at ? tab.mediaItem(media.at) : null;
     renderMediaPage(

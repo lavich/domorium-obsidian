@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
+import { renderLines, type DetailContext } from "./lineView";
 
 beforeAll(installObsidianDom);
 
@@ -98,22 +98,5 @@ describe("a pointer", () => {
     renderLines(box.createDiv({ cls: "gedcom-detail" }), record.children, ctx);
 
     expect(box.querySelector(".gedcom-detail-text-body")?.textContent).toBe("The note text");
-  });
-});
-
-describe("the rest of a structure", () => {
-  it("draws the children a section did not draw, and none of those it did", () => {
-    const { ctx, record } = make(["0 @I1@ INDI", "1 NAME A /B/", "2 TYPE BIRTH", "2 NICK Ab", "2 _SPELLING Polish"]);
-    const name = record.children[0];
-    renderRest(box.createDiv({ cls: "gedcom-detail" }), name, new Set(["TYPE", "NICK"]), ctx);
-
-    expect(rows(".gedcom-detail-label")).toEqual(["_SPELLING"]);
-  });
-
-  it("draws one line on its own", () => {
-    const { ctx, record } = make(["0 @I1@ INDI", "1 REFN 123", "2 TYPE user"]);
-    renderLine(box.createDiv({ cls: "gedcom-detail" }), record.children[0], ctx);
-
-    expect(rows(".gedcom-detail-label")).toEqual(["Reference number", "Type"]);
   });
 });
