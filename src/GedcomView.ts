@@ -49,7 +49,7 @@ import type { AllowScope } from "./editor/mediaPreviewView";
 import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
-import { t } from "./i18n";
+import { plural, t } from "./i18n";
 import { DESK_MODES, type GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
@@ -80,7 +80,8 @@ import { listSelection } from "./desk/listRows";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
-import { addableAt, choicesAt, pointerChoicesAt } from "./desk/addableFields";
+import { ConfirmModal } from "./desk/confirmModal";
+import { addableAt, choicesAt, pointerChoicesAt, removableAt } from "./desk/addableFields";
 import type { CardTab } from "./desk/recordCard";
 import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
@@ -747,6 +748,26 @@ export class GedcomView extends TextFileView implements CardTab {
     this.dropGoneSelection();
     this.drawViews();
     this.host.genealogyChanged(this);
+  }
+
+  removableAt(parent: Position, tag: string): boolean {
+    return removableAt(this.language.update(this.editor.state.doc), parent, tag);
+  }
+
+  removeAt(at: Position, nested: number): void {
+    const remove = (): void => {
+      const result = this.language.update(this.editor.state.doc).removeStructure(at, this.language.getVersion());
+      if (!result.ok) {
+        new Notice(result.message);
+      } else if (!this.applyWorkspaceEdit(result.edit)) {
+        new Notice(t("tree.removeFailed"));
+      }
+    };
+    if (nested === 0) {
+      remove();
+    } else {
+      new ConfirmModal(this.app, plural("tree.removeNested", nested), t("tree.removeField"), remove).open();
+    }
   }
 
   pointerChoicesAt(parent: Position, tag: string): PointerCandidate[] {

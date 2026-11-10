@@ -426,5 +426,11 @@
   "tree.openAll": "Open every node",
   "tree.closeAll": "Close every node",
   "tree.addField": "Add a field",
-  "tree.changePointer": "Choose another record"
+  "tree.changePointer": "Choose another record",
+  "tree.removeField": "Remove the field",
+  "tree.removeFailed": "Could not remove the field",
+  "tree.removeNested": {
+    "one": "The field and the {count} line under it will be removed. You can undo it.",
+    "other": "The field and the {count} lines under it will be removed. You can undo it."
+  }
 }

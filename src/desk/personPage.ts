@@ -17,6 +17,8 @@ export interface PageHost {
   setIcon?(element: HTMLElement, icon: string): void;
   addableAt?(at: Position): StructureFieldDescription[];
   choicesAt?(at: Position): string[];
+  removableAt?(parent: Position, tag: string): boolean;
+  removeAt?(at: Position, nested: number): void;
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
   chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
   choosePointer?(choices: PointerChoice[]): void;
@@ -59,6 +61,8 @@ export function drawTree(
       openRecord: (xref) => host.openRecord(xref),
       showInSource: (range) => host.showInSource(range),
       ...(host.choosePointer === undefined ? {} : { choosePointer: (choices: PointerChoice[]) => host.choosePointer?.(choices) }),
+      ...(host.removableAt === undefined ? {} : { removableAt: (parent: Position, tag: string) => host.removableAt?.(parent, tag) ?? false }),
+      ...(host.removeAt === undefined ? {} : { removeAt: (at: Position, nested: number) => host.removeAt?.(at, nested) }),
       ...(host.pointerChoicesAt === undefined
         ? {}
         : { pointerChoicesAt: (parent: Position, tag: string) => host.pointerChoicesAt?.(parent, tag) ?? [] }),

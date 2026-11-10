@@ -24,6 +24,8 @@ export interface CardTab {
   openFile(path: string): void;
   addableAt?(at: Position): StructureFieldDescription[];
   choicesAt?(at: Position): string[];
+  removableAt?(parent: Position, tag: string): boolean;
+  removeAt?(at: Position, nested: number): void;
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
 }
 
@@ -150,6 +152,8 @@ function drawRecord(
     showInSource: (range) => tab.showInSource(range),
     openFile: (path) => tab.openFile(path),
     ...(view.choosePointer ? { choosePointer: (choices: PointerChoice[]) => view.choosePointer?.(choices) } : {}),
+    ...(tab.removableAt ? { removableAt: (parent: Position, tag: string) => tab.removableAt?.(parent, tag) ?? false } : {}),
+    ...(tab.removeAt ? { removeAt: (at: Position, nested: number) => tab.removeAt?.(at, nested) } : {}),
     ...(tab.pointerChoicesAt
       ? { pointerChoicesAt: (parent: Position, tag: string) => tab.pointerChoicesAt?.(parent, tag) ?? [] }
       : {}),

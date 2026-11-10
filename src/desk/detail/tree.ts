@@ -47,6 +47,10 @@ export interface TreeHost extends DetailHost {
   /** The records a pointer of this tag under the line at `parent` may point at. */
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
   chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
+  /** Whether the line with this tag under the line at `parent` may go without breaking the standard. */
+  removableAt?(parent: Position, tag: string): boolean;
+  /** Removes the line at this position; `nested` is how many lines under it go with it. */
+  removeAt?(at: Position, nested: number): void;
   /** Opens a searchable list of the records a pointer may point at. */
   choosePointer?(choices: PointerChoice[]): void;
 }
@@ -85,6 +89,9 @@ function nodeKeys(lines: readonly RecordLine[], parent: string): string[] {
     return line.children.length > 0 ? [key, ...nodeKeys(line.children, key)] : [];
   });
 }
+
+const descendants = (line: RecordLine): number =>
+  line.children.reduce((sum, child) => sum + 1 + descendants(child), 0);
 
 const firstLine = (text: string): string => text.split("\n")[0] ?? "";
 
@@ -376,8 +383,35 @@ class Tree {
     };
 
     const addable = host.addableAt ? host.addableAt(line.range.start) : null;
-    if (addable ? addable.some((field) => !isFull(field)) : isNode) {
-      const add = header.createDiv({ cls: ["gedcom-tree-add", "clickable-icon"] });
+    const canAdd = addable ? addable.some((field) => !isFull(field)) : isNode;
+    const canRemove = !root && (host.removableAt?.(owner.range.start, line.tag) ?? false) && host.removeAt !== undefined;
+    const actions = canAdd || canRemove ? header.createDiv({ cls: "gedcom-tree-actions" }) : null;
+    if (actions && canRemove) {
+      const nested = descendants(line);
+      const remove = actions.createDiv({ cls: ["gedcom-tree-remove", "clickable-icon"] });
+      remove.setAttribute("role", "button");
+      remove.setAttribute("tabindex", "0");
+      remove.setAttribute("aria-label", t("tree.removeField"));
+      remove.setAttribute("data-focus-key", `t:${key}:remove`);
+      if (host.setIcon) {
+        host.setIcon(remove, "trash-2");
+      } else {
+        remove.setText("×");
+      }
+      remove.addEventListener("click", (event) => {
+        event.stopPropagation();
+        host.removeAt?.(line.range.start, nested);
+      });
+      remove.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          remove.click();
+        }
+      });
+    }
+    if (actions && canAdd) {
+      const add = actions.createDiv({ cls: ["gedcom-tree-add", "clickable-icon"] });
       add.setAttribute("role", "button");
       add.setAttribute("tabindex", "0");
       add.setAttribute("aria-label", t("tree.addField"));

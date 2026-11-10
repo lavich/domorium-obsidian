@@ -3,7 +3,7 @@ import { GedcomLanguageService, type Position, type Range } from "@domorium/lang
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
-import { addableAt, choicesAt, pointerChoicesAt } from "../src/desk/addableFields";
+import { addableAt, choicesAt, pointerChoicesAt, removableAt } from "../src/desk/addableFields";
 import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
@@ -98,6 +98,7 @@ const tab: CardTab = {
   },
   addableAt: (at) => addableAt(service, at),
   choicesAt: (at) => choicesAt(service, at),
+  removableAt: (parent, tag) => removableAt(service, parent, tag),
   pointerChoicesAt: (parent, tag) => pointerChoicesAt(service, parent, tag),
 };
 

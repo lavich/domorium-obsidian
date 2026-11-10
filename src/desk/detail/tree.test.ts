@@ -6,7 +6,7 @@ import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealog
 import { resetLanguage, setLanguage } from "../../i18n";
 import { curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { addableAt, choicesAt, pointerChoicesAt } from "../addableFields";
+import { addableAt, choicesAt, pointerChoicesAt, removableAt } from "../addableFields";
 import { factsOf } from "../personPage";
 import { factsByLine, renderTree, type TreeHost } from "./tree";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
@@ -166,6 +166,22 @@ describe("the lines of a record as rows", () => {
 
     expect(choose.mock.calls[0]?.[0]).toContainEqual({ title: "Pierre Curie", xref: "@I1@", checked: true });
     expect(choose.mock.calls[0]?.[0]).toContainEqual({ title: "Marie Curie", xref: "@I2@", checked: false });
+  });
+
+  it("offers to remove a line that may go, with the number of lines beneath it, and a line the standard requires no trash", () => {
+    const removeAt = vi.fn<NonNullable<TreeHost["removeAt"]>>();
+    const made = make(["0 @I1@ INDI", "1 NAME Marie /Curie/", "2 GIVN Marie", "2 SURN Curie", "1 BIRT", "2 DATE 1 JAN 1900"]);
+    const host = {
+      openRecord: opened,
+      showInSource: shown,
+      removeAt,
+      removableAt: (at: Position, tag: string) => removableAt(made.service, at, tag),
+    };
+    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-remove")?.click();
+
+    expect(removeAt).toHaveBeenCalledWith(expect.objectContaining({ line: 4 }), 2);
+    expect(box.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-remove")).toBeNull();
   });
 
   it("draws nothing for a record that states nothing beneath its opening line", () => {

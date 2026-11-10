@@ -29,3 +29,12 @@ export function pointerChoicesAt(service: GedcomLanguageService, parent: Positio
   }
   return described.fields.find((field) => field.tag === tag)?.candidates ?? [];
 }
+
+export function removableAt(service: GedcomLanguageService, parent: Position, tag: string): boolean {
+  const described = service.describeStructure(parent);
+  if ("ok" in described) {
+    return false;
+  }
+  const field = described.fields.find((one) => one.tag === tag);
+  return field === undefined || field.occurrences.length > field.min;
+}
