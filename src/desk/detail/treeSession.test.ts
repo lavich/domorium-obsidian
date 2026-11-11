@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { TreeSession } from "./treeSession";
+import type { StructureFieldDescription } from "@domorium/language-service";
+
+import { TreeSession, unwrittenId, type Unwritten } from "./treeSession";
+
+const nickname = (): Unwritten => ({
+  id: unwrittenId(),
+  field: { tag: "NICK" } as StructureFieldDescription,
+  value: "",
+  children: [],
+  parent: { tag: "NAME", text: "Manya /Skłodowska/", range: { start: { line: 6, character: 0 } } },
+});
 
 describe("the choices of the reader in the trees", () => {
   it("keep a node opened on Marie open after Pierre and Marie again", () => {
@@ -40,5 +50,29 @@ describe("the choices of the reader in the trees", () => {
     state.setOpen("A[0]", false);
 
     expect(state.isOpen("A[0]")).toBe(false);
+  });
+
+  it("keep an unwritten row under its record and the key of the line it goes under, until it is dropped", () => {
+    const session = new TreeSession();
+    const row = nickname();
+    session.stateFor("a").setUnwritten("NAME[1]", [row]);
+
+    expect(session.stateFor("a").unwritten("NAME[1]")).toEqual([row]);
+    expect(session.stateFor("b").unwritten("NAME[1]")).toEqual([]);
+    expect(session.stateFor("a").unwrittenParents()).toEqual(["NAME[1]"]);
+    session.stateFor("a").setUnwritten("NAME[1]", []);
+    expect(session.stateFor("a").unwrittenParents()).toEqual([]);
+  });
+
+  it("keep a draft and a message for a field, and the focus wanted once, through a redraw", () => {
+    const state = new TreeSession().stateFor("a");
+    state.setDraft("DATE[0]", { text: "31 NOV 1867", over: "7 NOV 1867" });
+    state.setMessage("DATE[0]", { text: "No", kind: "error" });
+    state.wishFocus({ key: "", parts: ["add"] });
+
+    expect(state.draft("DATE[0]")?.text).toBe("31 NOV 1867");
+    expect(state.message("DATE[0]")?.kind).toBe("error");
+    expect(state.takeFocus()).toEqual({ key: "", parts: ["add"] });
+    expect(state.takeFocus()).toBeUndefined();
   });
 });

@@ -1,7 +1,5 @@
-import type { PointerCandidate, Position, Range, StructureFieldDescription } from "@domorium/language-service";
-
 import type { GenealogyIndex, Person, PersonEvent, PersonRow, RecordLine } from "../genealogy";
-import { factsByLine, renderTree, type FieldChoice, type PointerChoice } from "./detail/tree";
+import { factsByLine, renderTree, type TreeHost } from "./detail/tree";
 import { ephemeralTreeState, type TreeState } from "./detail/treeSession";
 
 export interface Fact {
@@ -10,18 +8,8 @@ export interface Fact {
   spouse?: PersonRow;
 }
 
-export interface PageHost {
-  openRecord(xref: string): void;
-  showInSource(range: Range): void;
+export interface PageHost extends TreeHost {
   openFile(path: string): void;
-  setIcon?(element: HTMLElement, icon: string): void;
-  addableAt?(at: Position): StructureFieldDescription[];
-  choicesAt?(at: Position): string[];
-  removableAt?(parent: Position, tag: string): boolean;
-  removeAt?(at: Position, nested: number): void;
-  pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
-  chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
-  choosePointer?(choices: PointerChoice[]): void;
 }
 
 export interface PersonPageOptions {
@@ -57,20 +45,7 @@ export function drawTree(
   }
   renderTree(container, lines, {
     index,
-    host: {
-      openRecord: (xref) => host.openRecord(xref),
-      showInSource: (range) => host.showInSource(range),
-      ...(host.choosePointer === undefined ? {} : { choosePointer: (choices: PointerChoice[]) => host.choosePointer?.(choices) }),
-      ...(host.removableAt === undefined ? {} : { removableAt: (parent: Position, tag: string) => host.removableAt?.(parent, tag) ?? false }),
-      ...(host.removeAt === undefined ? {} : { removeAt: (at: Position, nested: number) => host.removeAt?.(at, nested) }),
-      ...(host.pointerChoicesAt === undefined
-        ? {}
-        : { pointerChoicesAt: (parent: Position, tag: string) => host.pointerChoicesAt?.(parent, tag) ?? [] }),
-      ...(host.choicesAt === undefined ? {} : { choicesAt: (at: Position) => host.choicesAt?.(at) ?? [] }),
-      ...(host.addableAt === undefined ? {} : { addableAt: (at: Position) => host.addableAt?.(at) ?? [] }),
-      ...(host.chooseField === undefined ? {} : { chooseField: (event: MouseEvent, fields: FieldChoice[]) => host.chooseField?.(event, fields) }),
-      ...(host.setIcon === undefined ? {} : { setIcon: (element, icon) => host.setIcon?.(element, icon) }),
-    },
+    host,
     facts: factsByLine(facts),
     state: options.tree ?? ephemeralTreeState(),
     ...(options.header === undefined ? {} : { header: options.header }),

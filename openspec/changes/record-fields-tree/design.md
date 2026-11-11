@@ -107,11 +107,11 @@ Added on 2026-11-11, when the user asked for the tree to write; it was first pla
 
 **A field holds the file's value while it is edited.** The tree draws a value in the reader's words (`valueText`); on focus the field's text becomes the payload as the file writes it (`line.text`: a name with its slashes, `F` for a 5.5.1 sex the service lists no values for), and on blur it reads in the reader's words again. A value the service lists is a dropdown whose options carry the standard's values and show the reader's words, so no translated word is ever written. A multiple enumeration (`RESN`) is an Obsidian `Menu` of checked values written as the standard's comma list.
 
-**What is multi-line is the plugin's list, because the description cannot say.** `describeStructure` reports `NOTE`, `CAUS`, `OCCU` and `GIVN` all as `text`. The text of a `NOTE`, an inline `SNOTE` and a `TEXT` takes Enter as a new line; every other field turns a typed or pasted line break into a space, because the service writes it as `CONT` even under a `DATE`. Both are raised upstream.
+**Enter follows the description; line breaks are the service's to judge.** Since lavich/domorium#524 the description of a line says `lineBreaks` (the standard lets the value span lines) and `prose` (a line break is the ordinary case: a note, a shared note, a citation's text, an address). A field whose line is `prose` takes Enter as a new line and is written when it is left; every other field is written on Enter. A line break typed or pasted anywhere goes to the service, which writes it as `CONT` where `lineBreaks` allows it and refuses it otherwise, and the refusal is shown as any other. The plugin keeps no list of its own.
 
 **Adding is decided by the field's description.** `none`, and `boolean` for an event, are written at once, the event as `Y` — the input this plugin gives the service, so that an added event says it happened; the service would write `1 DEAT` with a warning. A pointer opens the list first and writes on choice; a pointer with no candidates, and one marked `reciprocal`, is disabled in the menu. `text-or-pointer` (5.5.1 `NOTE`, `SOUR`) is offered twice. Anything else becomes an **unwritten row**, with an empty field for each field the description of the new structure marks required (`describeSchemaPath` on the path of the new field: `ROLE` for `ASSO`, `TYPE` for `EVEN` and `FACT`, `LANG` for `TRAN`), each checked with `validateValue` as it is committed, and written with `addStructure(…, { value | pointer, children })` once all have values; left empty, it is dropped. An unwritten row is kept in the session under the record and the parent's node key together with the parent line's text and range at the time it was made; on a redraw it is shown only if the parent at that key still has that text, otherwise it is dropped, and at commit its position is the parent as drawn with the drawn version (above).
 
-**An emptied field is the service's to judge.** The plugin writes an empty value where the service accepts one and shows the refusal where the standard requires a value (`value-required`). The service rewrites `NAME` when `GIVN` is emptied (` /Curie/`); that is raised upstream, not worked around.
+**An emptied field is the service's to judge.** The plugin writes an empty value where the service accepts one and shows the refusal where the standard requires a value (`value-required`). An emptied `GIVN` or `SURN` is taken out of the `NAME` by the service (lavich/domorium#524); the plugin writes what it gives.
 
 **Paired pointers are not offered.** A field the description marks `reciprocal` (`FAMS`, `FAMC`, `HUSB`, `WIFE`, `CHIL`) has no list on its row and is disabled in the menu, with a line saying the link is changed on the other record.
 
@@ -125,7 +125,7 @@ Added on 2026-11-11, when the user asked for the tree to write; it was first pla
 
 **A place is a field with a control that opens its card.** The user chose (2026-11-11) that the value of a `PLAC` row is a field like any other, and a small control beside it, named for the place, opens the place's card; the place in a closed node's summary stays a link. Alternative: the place stays a link and is edited in Source. Rejected by the user.
 
-**Custom lines.** The service does not describe a `_TAG`, but sets its value and removes it: such a line keeps its field and its removal and has no menu.
+**Custom lines.** The service describes a `_TAG` and the lines beneath it with `extension: true` and no known fields, sets its value and removes it: such a line keeps its field and its removal and has no menu, because its description offers nothing to add — no rule of the plugin's reads the tag.
 
 **No dialect, no editing.** `describeStructure` refusing with `no-dialect` makes the host answer no addable fields, no choices, no removals, read-only fields, and the tree says once why. A record with nothing beneath its opening line shows its root alone, with its menu.
 
@@ -135,7 +135,7 @@ Added on 2026-11-11, when the user asked for the tree to write; it was first pla
 - [Pointers the standard pairs cannot be changed] → Said on the row; changing them waits for upstream.
 - [An added field lands where the service puts it] → The node is opened and the new row takes the focus, so it is in view.
 - [Obsidian's `Menu` and `FuzzySuggestModal` cannot run in the harness] → The callbacks they call are tested through a stand-in; the real menus are checked by hand in the demo vault and on a phone.
-- [Upstream gaps: no multi-line marker in the description, a line break accepted under `DATE`, `NAME` rewritten when `GIVN` is emptied] → Raised upstream; the plugin's list of multi-line fields and the space for a line break are recorded here as the only plugin-side rules, to be removed when the description says.
+- [Upstream gaps: no multi-line marker in the description, a line break accepted under `DATE`, `NAME` rewritten when `GIVN` is emptied, a custom line not described] → Answered upstream in lavich/domorium#524: the description carries `lineBreaks`, `prose` and `extension`, a line break the standard does not allow is refused, an emptied `GIVN` or `SURN` is taken out of the `NAME`; no plugin-side rule is left.
 
 ## Implementation
 

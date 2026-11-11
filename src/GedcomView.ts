@@ -81,12 +81,32 @@ import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
 import { ConfirmModal } from "./desk/confirmModal";
-import { addableAt, choicesAt, pointerChoicesAt, removableAt } from "./desk/addableFields";
+import { addableAt, choicesAt, describes, pairedAt, pointerChoicesAt, proseAt, removableAt, type Choices } from "./desk/addableFields";
+import {
+  addAt,
+  checkValue,
+  commit,
+  refusalText,
+  removeAt,
+  requiredBeneath,
+  setValueAt,
+  STALE,
+  type EditTarget,
+  type Refusal,
+  type WriteOutcome,
+} from "./desk/edits";
 import type { CardTab } from "./desk/recordCard";
 import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
 import { documentRef, type GenealogyIndex } from "./genealogy";
-import type { PointerCandidate, Position, StructureFieldDescription } from "@domorium/language-service";
+import type {
+  GedcomLanguageService,
+  PointerCandidate,
+  Position,
+  StructureFieldDescription,
+  StructureInput,
+  StructureValueInput,
+} from "@domorium/language-service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
@@ -750,18 +770,44 @@ export class GedcomView extends TextFileView implements CardTab {
     this.host.genealogyChanged(this);
   }
 
-  removableAt(parent: Position, tag: string): boolean {
-    return removableAt(this.language.update(this.editor.state.doc), parent, tag);
+  private service(): GedcomLanguageService {
+    return this.language.update(this.editor.state.doc);
   }
 
-  removeAt(at: Position, nested: number): void {
+  private readonly editTarget: EditTarget = {
+    service: () => this.service(),
+    apply: (edit) => this.applyWorkspaceEdit(edit),
+  };
+
+  private wrote(outcome: WriteOutcome): WriteOutcome {
+    if (outcome.ok) {
+      this.announceEdit.cancel();
+    } else if (outcome.code === STALE) {
+      new Notice(refusalText(outcome));
+    }
+    return outcome;
+  }
+
+  version(): number {
+    this.service();
+    return this.language.getVersion();
+  }
+
+  describes(at: Position): boolean {
+    return describes(this.service(), at);
+  }
+
+  setValueAt(at: Position, input: StructureValueInput, version: number): WriteOutcome {
+    return this.wrote(commit(this.editTarget, setValueAt(this.service(), at, version, input)));
+  }
+
+  addAt(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome {
+    return this.wrote(commit(this.editTarget, addAt(this.service(), parent, version, tag, input)));
+  }
+
+  removeAt(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void {
     const remove = (): void => {
-      const result = this.language.update(this.editor.state.doc).removeStructure(at, this.language.getVersion());
-      if (!result.ok) {
-        new Notice(result.message);
-      } else if (!this.applyWorkspaceEdit(result.edit)) {
-        new Notice(t("tree.removeFailed"));
-      }
+      done(this.wrote(commit(this.editTarget, removeAt(this.service(), at, version))));
     };
     if (nested === 0) {
       remove();
@@ -770,16 +816,41 @@ export class GedcomView extends TextFileView implements CardTab {
     }
   }
 
-  pointerChoicesAt(parent: Position, tag: string): PointerCandidate[] {
-    return pointerChoicesAt(this.language.update(this.editor.state.doc), parent, tag);
+  settle(): void {
+    this.announceEdit.cancel();
+    this.editsSettled();
   }
 
-  choicesAt(at: Position): string[] {
-    return choicesAt(this.language.update(this.editor.state.doc), at);
+  removableAt(parent: Position, tag: string): boolean {
+    return removableAt(this.service(), parent, tag);
+  }
+
+  pointerChoicesAt(parent: Position, tag: string): PointerCandidate[] {
+    return pointerChoicesAt(this.service(), parent, tag);
+  }
+
+  pairedAt(parent: Position, tag: string): boolean {
+    return pairedAt(this.service(), parent, tag);
+  }
+
+  choicesAt(at: Position): Choices | null {
+    return choicesAt(this.service(), at);
+  }
+
+  proseAt(at: Position): boolean {
+    return proseAt(this.service(), at);
   }
 
   addableAt(at: Position): StructureFieldDescription[] {
-    return addableAt(this.language.update(this.editor.state.doc), at);
+    return addableAt(this.service(), at);
+  }
+
+  requiredBeneath(field: StructureFieldDescription): StructureFieldDescription[] {
+    return requiredBeneath(this.service(), field);
+  }
+
+  checkValue(at: Position, tag: string, input: StructureValueInput, replacing: boolean): Refusal | null {
+    return checkValue(this.service(), at, tag, input, replacing);
   }
 
   mediaItem(at: Position): MediaItem | null {

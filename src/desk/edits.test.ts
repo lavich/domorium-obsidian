@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage, setLanguage } from "../i18n";
 import { TextTab } from "../testing/textTab";
 import { addableAt } from "./addableFields";
-import { addAt, addPlan, checkValue, commit, refusalText, removeAt, requiredBeneath, setValueAt, writtenValue } from "./edits";
+import { addAt, addPlan, checkValue, commit, refusalText, removeAt, requiredBeneath, setValueAt } from "./edits";
 
 afterEach(resetLanguage);
 
@@ -48,7 +48,7 @@ describe("a value set", () => {
   it("writes a note of two lines with a continuation", () => {
     const tab = tabOf(["0 @I1@ INDI", "1 NOTE first"]);
 
-    commit(tab, setValueAt(tab.service(), at(4), tab.version, { value: writtenValue("NOTE", "one\ntwo") }));
+    commit(tab, setValueAt(tab.service(), at(4), tab.version, { value: "one\ntwo" }));
 
     expect(linesOf(tab)).toEqual(expect.arrayContaining(["1 NOTE one", "2 CONT two"]));
   });
@@ -157,10 +157,10 @@ describe("a refusal", () => {
 });
 
 describe("a line break in a value", () => {
-  it("is a space outside a note or a text, and kept in them", () => {
-    expect(writtenValue("DATE", "1 JAN\n1900")).toBe("1 JAN 1900");
-    expect(writtenValue("DATE", "1 JAN\r\n1900")).toBe("1 JAN 1900");
-    expect(writtenValue("NOTE", "a\nb")).toBe("a\nb");
-    expect(writtenValue("TEXT", "a\nb")).toBe("a\nb");
+  it("is refused where the standard does not let the value span lines", () => {
+    const tab = tabOf(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]);
+
+    expect(commit(tab, setValueAt(tab.service(), at(5), tab.version, { value: "1 JAN\n1900" }))).toMatchObject({ ok: false, code: "payload-datatype" });
+    expect(tab.writes).toBe(0);
   });
 });

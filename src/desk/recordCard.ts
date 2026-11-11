@@ -1,4 +1,11 @@
-import type { PointerCandidate, Position, Range, StructureFieldDescription } from "@domorium/language-service";
+import type {
+  PointerCandidate,
+  Position,
+  Range,
+  StructureFieldDescription,
+  StructureInput,
+  StructureValueInput,
+} from "@domorium/language-service";
 
 import type { GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
@@ -11,7 +18,9 @@ import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type PageHost, type PersonPageOptions } from "./personPage";
 import { renderSourcePage } from "./sourcePage";
-import type { FieldChoice, PointerChoice } from "./detail/tree";
+import type { Choices } from "./addableFields";
+import type { Refusal, WriteOutcome } from "./edits";
+import type { FieldChoice, MenuAt, PointerChoice, ValueChoice } from "./detail/tree";
 import type { TreeSession } from "./detail/treeSession";
 
 export interface CardTab {
@@ -23,19 +32,32 @@ export interface CardTab {
   showInSource(range: Range): void;
   openFile(path: string): void;
   addableAt?(at: Position): StructureFieldDescription[];
-  choicesAt?(at: Position): string[];
+  choicesAt?(at: Position): Choices | null;
+  proseAt?(at: Position): boolean;
   removableAt?(parent: Position, tag: string): boolean;
-  removeAt?(at: Position, nested: number): void;
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
+  pairedAt?(parent: Position, tag: string): boolean;
+  requiredBeneath?(field: StructureFieldDescription): StructureFieldDescription[];
+  checkValue?(at: Position, tag: string, input: StructureValueInput, replacing: boolean): Refusal | null;
+  /** The version of the text the index was read from; every write the card asks for carries the one it was drawn at. */
+  version?(): number;
+  /** Whether the service describes the line at this position, so that the card may write to it. */
+  describes?(at: Position): boolean;
+  setValueAt?(at: Position, input: StructureValueInput, version: number): WriteOutcome;
+  addAt?(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome;
+  removeAt?(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void;
+  /** Draws every view of the tab again from its text, at once. */
+  settle?(): void;
 }
 
 export interface CardView {
   setIcon(element: HTMLElement, icon: string): void;
   /** What the reader chose in the trees of the records shown, kept while the plugin is loaded. */
   session: TreeSession;
-  /** Lists the fields of the standard, the ones with no room left disabled, below the pointer. */
-  chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
-  choosePointer?(choices: PointerChoice[]): void;
+  /** Lists the fields of the standard, the ones that cannot be added disabled. */
+  chooseField?(at: MenuAt, fields: FieldChoice[]): void;
+  chooseValues?(at: MenuAt, values: ValueChoice[]): void;
+  choosePointer?(choices: PointerChoice[], chosen: (xref: string) => void): void;
   /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
   header?: HTMLElement;
 }
@@ -105,7 +127,10 @@ export function renderRecordCard(
     });
   } else {
     drawsTree = hasTree(index, record);
-    drawRecord(body, tab, index, record, view, drawsTree ? { tree: view.session.stateFor(shown), ...(header ? { header } : {}) } : {});
+    const announce = (text: string): void => {
+      live?.setText(text);
+    };
+    drawRecord(body, tab, index, record, view, announce, drawsTree ? { tree: view.session.stateFor(shown), ...(header ? { header } : {}) } : {});
     if (header && !header.hasChildNodes() && !view.header) {
       header.remove();
     }
@@ -121,7 +146,8 @@ export function renderRecordCard(
   if (shown === previous) {
     body.scrollTop = scrollTop;
   }
-  if (focusWas !== null) {
+  const drawnFocus = doc.activeElement;
+  if (focusWas !== null && !(drawnFocus !== null && drawnFocus !== body && root.contains(drawnFocus))) {
     const same =
       focusKey === null || (shown !== previous && focusKey !== TOGGLE_KEY)
         ? null
@@ -145,23 +171,42 @@ function drawRecord(
   index: GenealogyIndex,
   record: string,
   view: CardView,
+  announce: (text: string) => void,
   folds: PersonPageOptions,
 ): void {
-  const host: PageHost & { openFile(path: string): void } = {
+  const version = tab.version?.();
+  const opening = index.record(record)?.range.start;
+  const writes = version !== undefined && opening !== undefined && (tab.describes?.(opening) ?? false);
+  const host: PageHost = {
     openRecord: (xref) => tab.select(xref),
     showInSource: (range) => tab.showInSource(range),
     openFile: (path) => tab.openFile(path),
-    ...(view.choosePointer ? { choosePointer: (choices: PointerChoice[]) => view.choosePointer?.(choices) } : {}),
-    ...(tab.removableAt ? { removableAt: (parent: Position, tag: string) => tab.removableAt?.(parent, tag) ?? false } : {}),
-    ...(tab.removeAt ? { removeAt: (at: Position, nested: number) => tab.removeAt?.(at, nested) } : {}),
-    ...(tab.pointerChoicesAt
-      ? { pointerChoicesAt: (parent: Position, tag: string) => tab.pointerChoicesAt?.(parent, tag) ?? [] }
-      : {}),
-    ...(tab.choicesAt ? { choicesAt: (at: Position) => tab.choicesAt?.(at) ?? [] } : {}),
-    ...(tab.addableAt ? { addableAt: (at: Position) => tab.addableAt?.(at) ?? [] } : {}),
-    ...(view.chooseField ? { chooseField: (event: MouseEvent, fields: FieldChoice[]) => view.chooseField?.(event, fields) } : {}),
     setIcon: (element, icon) => view.setIcon(element, icon),
+    announce,
+    addableAt: tab.addableAt?.bind(tab),
+    choicesAt: tab.choicesAt?.bind(tab),
+    proseAt: tab.proseAt?.bind(tab),
+    removableAt: tab.removableAt?.bind(tab),
+    pointerChoicesAt: tab.pointerChoicesAt?.bind(tab),
+    pairedAt: tab.pairedAt?.bind(tab),
+    requiredBeneath: tab.requiredBeneath?.bind(tab),
+    checkValue: tab.checkValue?.bind(tab),
+    chooseField: view.chooseField?.bind(view),
+    chooseValues: view.chooseValues?.bind(view),
+    choosePointer: view.choosePointer?.bind(view),
+    uneditable: tab.setValueAt !== undefined && !writes,
   };
+  if (writes) {
+    const setValueAt = tab.setValueAt?.bind(tab);
+    const addAt = tab.addAt?.bind(tab);
+    const removeAt = tab.removeAt?.bind(tab);
+    host.setValueAt = setValueAt && ((at, input) => setValueAt(at, input, version));
+    host.addAt = addAt && ((parent, tag, input) => addAt(parent, tag, input, version));
+    host.removeAt = removeAt && ((at, nested, done) => {
+      removeAt(at, nested, version, done);
+    });
+    host.settle = tab.settle?.bind(tab);
+  }
   const person = index.person(record);
   const family = person ? undefined : index.family(record);
   const source = person || family ? undefined : index.source(record);

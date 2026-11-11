@@ -62,15 +62,22 @@ export class RecordCardView extends ItemView {
         setIcon(element, icon);
       },
       session: this.host.session(),
-      choosePointer: (choices) => {
-        new PointerModal(this.app, choices).open();
+      choosePointer: (choices, chosen) => {
+        new PointerModal(this.app, choices, chosen).open();
       },
-      chooseField: (event, fields) => {
+      chooseField: (at, fields) => {
         const menu = new Menu();
-        for (const { title, disabled, checked } of fields) {
-          menu.addItem((item) => item.setTitle(title).setDisabled(disabled).setChecked(checked ?? null).onClick(() => undefined));
+        for (const { title, disabled, choose } of fields) {
+          menu.addItem((item) => item.setTitle(title).setDisabled(disabled).onClick(choose));
         }
-        menu.showAtMouseEvent(event);
+        menu.showAtPosition(at);
+      },
+      chooseValues: (at, values) => {
+        const menu = new Menu();
+        for (const { title, checked, toggle } of values) {
+          menu.addItem((item) => item.setTitle(title).setChecked(checked).onClick(toggle));
+        }
+        menu.showAtPosition(at);
       },
       ...(this.bar ? { header: this.bar } : {}),
     });

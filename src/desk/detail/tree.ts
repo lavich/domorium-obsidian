@@ -1,10 +1,18 @@
-import type { PointerCandidate, Position, StructureFieldDescription } from "@domorium/language-service";
+import type {
+  PointerCandidate,
+  Position,
+  StructureFieldDescription,
+  StructureInput,
+  StructureValueInput,
+} from "@domorium/language-service";
 
 import type { GenealogyIndex, PersonEvent, RecordLine } from "../../genealogy";
-import { isFull } from "../addableFields";
+import { isFull, type Choices } from "../addableFields";
+import { addPlan, refusalText, STALE, type Refusal, type WriteOutcome } from "../edits";
 import { plural, t } from "../../i18n";
 import { linkButton, tipPlace } from "../dom";
 import { placeAt, placeId } from "../placeRows";
+import { EditableField, showMessage } from "./fieldEdit";
 import { labelId, renderField } from "./fields";
 import { tagLabel } from "./labels";
 import {
@@ -16,19 +24,31 @@ import {
   type DetailContext,
   type DetailHost,
 } from "./lineView";
-import type { TreeState } from "./treeSession";
+import { unwrittenId, type FocusWish, type TreeState, type Unwritten } from "./treeSession";
 
 /** An event or an attribute the page knows on one of the lines of the record. */
 export interface TreeFact {
   event: PersonEvent;
 }
 
-/** A field the menu names; `disabled` where the standard allows no more of it. */
+/** Where a menu opens: at the pointer, or under its control when the keyboard opened it. */
+export interface MenuAt {
+  x: number;
+  y: number;
+}
+
+/** A field the menu names; `disabled` where it cannot be added. */
 export interface FieldChoice {
   title: string;
   disabled: boolean;
-  /** Set on the one a pointer points at now. */
-  checked?: boolean;
+  choose: () => void;
+}
+
+/** One of the values of a field that may hold several, checked where the line holds it. */
+export interface ValueChoice {
+  title: string;
+  checked: boolean;
+  toggle: () => void;
 }
 
 /** A record a pointer may point at, named for the list. */
@@ -40,19 +60,36 @@ export interface PointerChoice {
 
 export interface TreeHost extends DetailHost {
   setIcon?(element: HTMLElement, icon: string): void;
-  /** The fields the dialect lets be added to the line at this position; where the host cannot say, every node is offered a button and no list. */
+  /** The fields the dialect lets be added beneath the line at this position. */
   addableAt?(at: Position): StructureFieldDescription[];
   /** The values the standard limits the line to, or none where it limits no list. */
-  choicesAt?(at: Position): string[];
+  choicesAt?(at: Position): Choices | null;
+  /** Whether a line break is the ordinary case of the line's value. */
+  proseAt?(at: Position): boolean;
   /** The records a pointer of this tag under the line at `parent` may point at. */
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
-  chooseField?(event: MouseEvent, fields: FieldChoice[]): void;
+  /** Whether a pointer of this tag under the line at `parent` is one the standard pairs with one back. */
+  pairedAt?(parent: Position, tag: string): boolean;
   /** Whether the line with this tag under the line at `parent` may go without breaking the standard. */
   removableAt?(parent: Position, tag: string): boolean;
-  /** Removes the line at this position; `nested` is how many lines under it go with it. */
-  removeAt?(at: Position, nested: number): void;
+  /** The lines the standard requires beneath a new field. */
+  requiredBeneath?(field: StructureFieldDescription): StructureFieldDescription[];
+  /** Why the service would refuse a value under the line at `at`, or at it where `replacing`. */
+  checkValue?(at: Position, tag: string, input: StructureValueInput, replacing: boolean): Refusal | null;
+  setValueAt?(at: Position, input: StructureValueInput): WriteOutcome;
+  addAt?(parent: Position, tag: string, input: StructureInput): WriteOutcome;
+  /** Removes the line at this position, asking first where `nested` lines go with it. */
+  removeAt?(at: Position, nested: number, done: (outcome: WriteOutcome) => void): void;
+  /** Draws the card again from the text, at once, after a write of its own. */
+  settle?(): void;
+  /** Says something through the card's polite live region. */
+  announce?(text: string): void;
+  chooseField?(at: MenuAt, fields: FieldChoice[]): void;
+  chooseValues?(at: MenuAt, values: ValueChoice[]): void;
   /** Opens a searchable list of the records a pointer may point at. */
-  choosePointer?(choices: PointerChoice[]): void;
+  choosePointer?(choices: PointerChoice[], chosen: (xref: string) => void): void;
+  /** Set where the card could write but the service does not describe the record. */
+  uneditable?: boolean;
 }
 
 export interface TreeOptions {
@@ -90,26 +127,143 @@ function nodeKeys(lines: readonly RecordLine[], parent: string): string[] {
   });
 }
 
+function linesByKey(line: RecordLine, key: string, into: Map<string, RecordLine>): Map<string, RecordLine> {
+  into.set(key, line);
+  const seen = new Map<string, number>();
+  for (const child of line.children) {
+    const nth = seen.get(child.tag) ?? 0;
+    seen.set(child.tag, nth + 1);
+    linesByKey(child, keyOf(key, child.tag, nth), into);
+  }
+  return into;
+}
+
 const descendants = (line: RecordLine): number =>
   line.children.reduce((sum, child) => sum + 1 + descendants(child), 0);
 
 const firstLine = (text: string): string => text.split("\n")[0] ?? "";
 
+const pressable = (element: HTMLElement, label: string, focusKey: string): void => {
+  element.setAttribute("role", "button");
+  element.setAttribute("tabindex", "0");
+  element.setAttribute("aria-label", label);
+  element.setAttribute("data-focus-key", focusKey);
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.stopPropagation();
+      element.click();
+    }
+  });
+};
+
+function menuAt(event: MouseEvent, control: HTMLElement): MenuAt {
+  if (event.detail === 0) {
+    const box = control.getBoundingClientRect();
+    return { x: box.left, y: box.bottom };
+  }
+  return { x: event.clientX, y: event.clientY };
+}
+
+const multipleText = (values: readonly string[]): string => values.join(", ");
+const multipleValues = (text: string): string[] =>
+  text.split(",").map((one) => one.trim()).filter((one) => one !== "");
+
 class Tree {
   private readonly nodes = new Map<string, (open: boolean) => void>();
   private toggle: HTMLElement | null = null;
+  private active: EditableField | null = null;
 
   constructor(
     private readonly root: HTMLElement,
     private readonly record: RecordLine,
     private readonly options: TreeOptions,
-  ) {}
+  ) {
+    root.addEventListener("pointerdown", (event) => this.commitFirst(event), true);
+  }
+
+  private get editable(): boolean {
+    return this.options.host.setValueAt !== undefined;
+  }
 
   draw(): void {
     this.root.empty();
     this.nodes.clear();
+    this.active = null;
+    this.dropOrphans();
     this.toolbar();
+    if (this.options.host.uneditable) {
+      this.root.createDiv({ cls: "gedcom-tree-note", text: t("edit.noDialect") });
+    }
     this.row(this.root.createDiv({ cls: "gedcom-tree-list" }), this.record, this.record, "", 0, 0);
+    this.focusWished();
+  }
+
+  private live(): boolean {
+    return this.root.isConnected;
+  }
+
+  /** A press on another control writes the value being typed first, and then acts on the card drawn from it. */
+  private commitFirst(event: PointerEvent): void {
+    const active = this.active;
+    const target = event.target as HTMLElement;
+    if (!active?.pending() || active.owns(target)) {
+      return;
+    }
+    const control = target.closest<HTMLElement>("[data-focus-key]");
+    const row = control ? null : target.closest<HTMLElement>(".gedcom-tree-node");
+    const key = control?.getAttribute("data-focus-key") ?? (row ? `t:${row.getAttribute("data-key") ?? ""}` : null);
+    if (key === null) {
+      return;
+    }
+    event.preventDefault();
+    const card = this.root.closest(".gedcom-card") ?? this.root.ownerDocument;
+    active.commit();
+    if (this.live()) {
+      return;
+    }
+    const twin = [...card.querySelectorAll<HTMLElement>("[data-focus-key]")].find((one) => one.getAttribute("data-focus-key") === key);
+    if (twin instanceof HTMLTextAreaElement || twin instanceof HTMLSelectElement) {
+      twin.focus();
+    } else {
+      twin?.click();
+    }
+  }
+
+  private settle(): void {
+    this.options.host.settle?.();
+  }
+
+  private say(text: string): void {
+    this.options.host.announce?.(text);
+  }
+
+  private focusWished(): void {
+    const wish = this.options.state.takeFocus();
+    if (!wish) {
+      return;
+    }
+    const target = this.wished(wish);
+    if (target) {
+      target.focus();
+      target.scrollIntoView({ block: "nearest" });
+    }
+  }
+
+  private wished(wish: FocusWish): HTMLElement | null {
+    const keyed = (focusKey: string): HTMLElement | null =>
+      [...this.root.querySelectorAll<HTMLElement>("[data-focus-key]")].find((one) => one.getAttribute("data-focus-key") === focusKey) ?? null;
+    if ("unwritten" in wish) {
+      return this.root.querySelector<HTMLElement>(`[data-unwritten="${wish.unwritten}"] :is(textarea, select, [role=button])`);
+    }
+    if ("key" in wish) {
+      return wish.parts.map((part) => keyed(part === "" ? `t:${wish.key}` : `t:${wish.key}:${part}`)).find((one) => one !== null) ?? keyed("tree:toggle");
+    }
+    const node = [...this.root.querySelectorAll<HTMLElement>(".gedcom-tree-node")].find(
+      (one) => one.getAttribute("data-line") === String(wish.line) && one.parentElement?.closest(".gedcom-tree-node")?.getAttribute("data-key") === wish.under,
+    );
+    const key = node?.getAttribute("data-key");
+    return key === undefined || key === null ? null : this.wished({ key, parts: wish.parts });
   }
 
   private toolbar(): void {
@@ -134,21 +288,34 @@ class Tree {
     this.refreshToggle();
   }
 
-  private pick(parent: HTMLElement, line: RecordLine, owner: RecordLine, focusKey: string): void {
-    const { host, index } = this.options;
-    if (line.void || line.pointer === undefined || !host.pointerChoicesAt || !host.choosePointer) {
+  /** Unwritten rows whose line is gone, or reads otherwise than when the row was made, are dropped. */
+  private dropOrphans(): void {
+    const { state } = this.options;
+    const lines = linesByKey(this.record, "", new Map());
+    for (const key of state.unwrittenParents()) {
+      const line = lines.get(key);
+      state.setUnwritten(
+        key,
+        state.unwritten(key).filter((row) => line !== undefined && line.tag === row.parent.tag && line.text === row.parent.text),
+      );
+    }
+  }
+
+  private pick(parent: HTMLElement, line: RecordLine, owner: RecordLine, key: string): void {
+    const { host } = this.options;
+    if (line.void || line.pointer === undefined || !this.editable || !host.pointerChoicesAt || !host.choosePointer) {
+      return;
+    }
+    if (host.pairedAt?.(owner.range.start, line.tag)) {
+      parent.createDiv({ cls: "gedcom-tree-paired", text: t("edit.paired") });
       return;
     }
     const candidates = host.pointerChoicesAt(owner.range.start, line.tag);
     if (candidates.length === 0) {
       return;
     }
-    const titleOf = (one: PointerCandidate): string => recordTitle(index, one.xref) ?? one.label ?? one.xref;
     const button = parent.createDiv({ cls: ["gedcom-tree-pick", "clickable-icon"] });
-    button.setAttribute("role", "button");
-    button.setAttribute("tabindex", "0");
-    button.setAttribute("aria-label", t("tree.changePointer"));
-    button.setAttribute("data-focus-key", focusKey);
+    pressable(button, t("tree.changePointer"), `t:${key}:pick`);
     if (host.setIcon) {
       host.setIcon(button, "chevron-down");
     } else {
@@ -156,31 +323,98 @@ class Tree {
     }
     button.addEventListener("click", (event) => {
       event.stopPropagation();
-      host.choosePointer?.(candidates.map((one) => ({ title: titleOf(one), xref: one.xref, checked: one.xref === line.pointer })));
-    });
-    button.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        event.stopPropagation();
-        button.click();
+      if (!this.live()) {
+        return;
       }
+      host.choosePointer?.(this.pointerChoices(candidates, line.pointer), (xref) => {
+        if (xref !== line.pointer) {
+          this.writeValue(line, key, { pointer: xref });
+        }
+      });
     });
   }
 
-  private choice(parent: HTMLElement, line: RecordLine, owner: RecordLine, choices: readonly string[], labelledBy: string): void {
+  private pointerChoices(candidates: readonly PointerCandidate[], current?: string): PointerChoice[] {
+    const { index } = this.options;
+    return candidates.map((one) => ({
+      title: recordTitle(index, one.xref) ?? one.label ?? one.xref,
+      xref: one.xref,
+      checked: one.xref === current,
+    }));
+  }
+
+  /** Writes a value of a line and draws the card again, or says under the line why it was not written. */
+  private writeValue(line: RecordLine, key: string, input: StructureValueInput, field?: EditableField, control?: HTMLElement): void {
+    const { host, state } = this.options;
+    const outcome = host.setValueAt?.(line.range.start, input);
+    if (!outcome) {
+      return;
+    }
+    if (outcome.ok) {
+      field?.wrote(input.value ?? "");
+      const warning = outcome.warnings.length > 0 ? { text: outcome.warnings.join(" "), kind: "warning" as const } : undefined;
+      state.setMessage(key, warning);
+      if (warning) {
+        this.say(warning.text);
+      }
+      this.settle();
+      return;
+    }
+    const message = { text: refusalText(outcome), kind: "error" as const };
+    if (field) {
+      field.refused(message);
+    } else {
+      state.setMessage(key, message);
+      if (control) {
+        showMessage(control, control, message);
+      }
+    }
+    this.say(message.text);
+    if (outcome.code === STALE) {
+      this.settle();
+    }
+  }
+
+  private choice(parent: HTMLElement, line: RecordLine, owner: RecordLine, key: string, values: readonly string[], labelledBy: string): void {
     const written = line.text ?? "";
-    const values = choices.includes(written) ? choices : [written, ...choices];
+    const listed = values.includes(written) ? values : [written, ...values];
     const select = parent.createEl("select", { cls: ["dropdown", "gedcom-tree-choice"] });
     select.setAttribute("aria-labelledby", labelledBy);
     select.setAttribute("data-kind", "choice");
-    for (const value of values) {
+    select.setAttribute("data-focus-key", `t:${key}:value`);
+    for (const value of listed) {
       const option = select.createEl("option", { text: valueText({ ...line, text: value }, owner) });
       option.value = value;
     }
     select.value = written;
+    showMessage(select, select, this.options.state.message(key));
     select.addEventListener("change", () => {
-      select.value = written;
+      if (this.live() && select.value !== written) {
+        this.writeValue(line, key, { value: select.value }, undefined, select);
+      }
     });
+  }
+
+  private several(parent: HTMLElement, label: string, current: readonly string[], values: readonly string[], focusKey: string, set: (values: string[]) => void): HTMLElement {
+    const { host } = this.options;
+    const button = parent.createDiv({ cls: ["gedcom-tree-several", "clickable-icon"] });
+    pressable(button, t("edit.chooseValues", { field: label }), focusKey);
+    button.setText(current.length > 0 ? multipleText(current) : t("edit.noValues"));
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (!this.live()) {
+        return;
+      }
+      host.chooseValues?.(
+        menuAt(event, button),
+        values.map((value) => ({
+          title: value,
+          checked: current.includes(value),
+          toggle: () => set(current.includes(value) ? current.filter((one) => one !== value) : values.filter((one) => one === value || current.includes(one))),
+        })),
+      );
+    });
+    return button;
   }
 
   private allOpen(): boolean {
@@ -221,19 +455,42 @@ class Tree {
       const same = lines.filter((one) => one.tag === line.tag).length;
       this.row(parent, line, owner, keyOf(parentKey, line.tag, nth), depth, same > 1 ? nth + 1 : 0);
     }
+    for (const row of this.options.state.unwritten(parentKey)) {
+      this.unwrittenRow(parent, row, owner, parentKey, depth);
+    }
   }
 
-  private place(parent: HTMLElement, name: string, focusKey: string, clipped = false): void {
+  private place(parent: HTMLElement, name: string, focusKey: string): void {
     const id = placeId(name);
     if (placeAt(this.options.index, id) === undefined) {
       parent.appendText(name);
       return;
     }
-    const link = linkButton(parent, clipped ? "" : name, () => this.options.host.openRecord(id));
+    const link = linkButton(parent, "", () => this.options.host.openRecord(id));
     link.setAttribute("data-focus-key", focusKey);
-    if (clipped) {
-      link.createSpan({ cls: "gedcom-tree-clip", text: name });
+    link.createSpan({ cls: "gedcom-tree-clip", text: name });
+  }
+
+  /** The control beside a place's field that opens the card of the place, where the card knows it. */
+  private placeControl(parent: HTMLElement, name: string, key: string): void {
+    const { host, index } = this.options;
+    const id = placeId(name);
+    if (placeAt(index, id) === undefined) {
+      return;
     }
+    const button = parent.createDiv({ cls: ["gedcom-tree-place", "clickable-icon"] });
+    pressable(button, t("edit.openPlace", { place: name }), `t:${key}:place`);
+    if (host.setIcon) {
+      host.setIcon(button, "map-pin");
+    } else {
+      button.setText("⌖");
+    }
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (this.live()) {
+        host.openRecord(id);
+      }
+    });
   }
 
   /** What a closed node says of its line, as the parts of one line; a part that is a place is a link. */
@@ -268,11 +525,49 @@ class Tree {
     return parts;
   }
 
+  private valueField(main: HTMLElement, line: RecordLine, owner: RecordLine, key: string, labelledBy: string): void {
+    const { host, state } = this.options;
+    const text = line.text ?? "";
+    if (!this.editable) {
+      const field = renderField(main, valueText(line, owner), fieldKind(line, owner), { labelledBy });
+      field.area.setAttribute("dir", "auto");
+      return;
+    }
+    const choices = host.choicesAt?.(line.range.start) ?? null;
+    if (choices && !choices.multiple) {
+      this.choice(main, line, owner, key, choices.values, labelledBy);
+      return;
+    }
+    if (choices?.multiple) {
+      const current = multipleValues(text);
+      const button = this.several(main, tagLabel(line.tag), current, choices.values, `t:${key}:value`, (next) =>
+        this.writeValue(line, key, { value: multipleText(next) }, undefined, button),
+      );
+      showMessage(button, button, state.message(key));
+      return;
+    }
+    new EditableField(main, {
+      key,
+      prose: host.proseAt?.(line.range.start) ?? false,
+      fileText: text,
+      readerText: valueText(line, owner),
+      labelledBy,
+      state,
+      focusKey: `t:${key}:value`,
+      ...(host.setIcon ? { setIcon: host.setIcon.bind(host) } : {}),
+      write: (value, field) => this.writeValue(line, key, { value }, field),
+      focused: (field) => {
+        this.active = field;
+      },
+    });
+  }
+
   private row(container: HTMLElement, line: RecordLine, owner: RecordLine, key: string, depth: number, ordinal: number): void {
     const { host, index, state, facts } = this.options;
     const root = depth === 0;
     const fact = root ? undefined : facts.get(line.range.start.line);
-    const isNode = line.children.length > 0;
+    const unwritten = state.unwritten(key);
+    const isNode = line.children.length > 0 || unwritten.length > 0;
     const label = tagLabel(line.tag);
     const named = ordinal > 0 ? `${label} ${ordinal}` : label;
     const node = container.createDiv({
@@ -284,6 +579,7 @@ class Tree {
     });
     node.setAttribute("data-depth", String(depth));
     node.setAttribute("data-key", key);
+    node.setAttribute("data-line", String(line.range.start.line));
     const header = node.createDiv({
       cls: isNode ? ["gedcom-tree-row", "tree-item-self", "is-clickable", "mod-collapsible"] : "gedcom-tree-row",
     });
@@ -327,20 +623,13 @@ class Tree {
       detail.notes = { drawn: 0, prefix: `${key}.` };
       if (line.void || line.pointer !== undefined) {
         renderPointer(main, line, detail, `t:${key}:link`);
-        this.pick(main, line, owner, `t:${key}:pick`);
-      } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE")) {
+        this.pick(main, line, owner, key);
+      } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE") && !this.editable) {
         renderNoteText(main, line.text, line.range.start.line, detail, `note:${key}`);
       } else if (line.text !== undefined && !(fact && line.text === "Y")) {
+        this.valueField(main, line, owner, key, name.id);
         if (line.tag === "PLAC") {
-          this.place(main, line.text, `t:${key}:place`);
-        } else {
-          const choices = fieldKind(line, owner) === "choice" ? (host.choicesAt?.(line.range.start) ?? []) : [];
-          if (choices.length > 0) {
-            this.choice(main, line, owner, choices, name.id);
-          } else {
-            const field = renderField(main, valueText(line, owner), fieldKind(line, owner), { labelledBy: name.id });
-            field.area.setAttribute("dir", "auto");
-          }
+          this.placeControl(main, line.text, key);
         }
       }
     };
@@ -355,7 +644,7 @@ class Tree {
           }
           const one = text.createSpan({ cls: ["gedcom-tree-part", `is-${part.kind}`] });
           if (part.kind === "place") {
-            this.place(one, part.text, `t:${key}:place`, true);
+            this.place(one, part.text, `t:${key}:place`);
           } else {
             one.setText(part.text);
           }
@@ -382,55 +671,50 @@ class Tree {
       }
     };
 
-    const addable = host.addableAt ? host.addableAt(line.range.start) : null;
-    const canAdd = addable ? addable.some((field) => !isFull(field)) : isNode;
-    const canRemove = !root && (host.removableAt?.(owner.range.start, line.tag) ?? false) && host.removeAt !== undefined;
+    const addable = host.addAt ? (host.addableAt?.(line.range.start) ?? []) : [];
+    const canAdd = addable.length > 0;
+    const canRemove = !root && host.removeAt !== undefined && (host.removableAt?.(owner.range.start, line.tag) ?? false);
     const actions = canAdd || canRemove ? header.createDiv({ cls: "gedcom-tree-actions" }) : null;
     if (actions && canRemove) {
-      const nested = descendants(line);
       const remove = actions.createDiv({ cls: ["gedcom-tree-remove", "clickable-icon"] });
-      remove.setAttribute("role", "button");
-      remove.setAttribute("tabindex", "0");
-      remove.setAttribute("aria-label", t("tree.removeField"));
-      remove.setAttribute("data-focus-key", `t:${key}:remove`);
+      pressable(remove, t("tree.removeField"), `t:${key}:remove`);
       if (host.setIcon) {
         host.setIcon(remove, "trash-2");
       } else {
         remove.setText("×");
       }
+      const ownerKey = key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : "";
       remove.addEventListener("click", (event) => {
         event.stopPropagation();
-        host.removeAt?.(line.range.start, nested);
-      });
-      remove.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          event.stopPropagation();
-          remove.click();
+        if (!this.live()) {
+          return;
         }
+        host.removeAt?.(line.range.start, descendants(line), (outcome) => {
+          if (outcome.ok) {
+            state.setMessage(key, undefined);
+            state.wishFocus({ key: ownerKey, parts: ["add", ""] });
+            this.settle();
+            return;
+          }
+          this.say(refusalText(outcome));
+          if (outcome.code === STALE) {
+            this.settle();
+          }
+        });
       });
     }
     if (actions && canAdd) {
       const add = actions.createDiv({ cls: ["gedcom-tree-add", "clickable-icon"] });
-      add.setAttribute("role", "button");
-      add.setAttribute("tabindex", "0");
-      add.setAttribute("aria-label", t("tree.addField"));
-      add.setAttribute("data-focus-key", `t:${key}:add`);
+      pressable(add, t("tree.addField"), `t:${key}:add`);
       if (host.setIcon) {
         host.setIcon(add, "plus");
       } else {
         add.setText("+");
       }
-      const choose = (event: MouseEvent): void => {
+      add.addEventListener("click", (event) => {
         event.stopPropagation();
-        host.chooseField?.(event, (addable ?? []).map((field) => ({ title: tagLabel(field.tag), disabled: isFull(field) })));
-      };
-      add.addEventListener("click", choose);
-      add.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          event.stopPropagation();
-          add.click();
+        if (this.live()) {
+          host.chooseField?.(menuAt(event, add), this.fieldChoices(line, key, addable));
         }
       });
     }
@@ -476,12 +760,231 @@ class Tree {
     }
     show();
   }
+
+  /** The entries of a line's menu: every field the dialect allows beneath it, those that cannot be added disabled. */
+  private fieldChoices(line: RecordLine, key: string, fields: readonly StructureFieldDescription[]): FieldChoice[] {
+    const offPointer = (field: StructureFieldDescription): boolean => field.reciprocal || (field.candidates ?? []).length === 0;
+    return fields.flatMap((field): FieldChoice[] => {
+      const title = tagLabel(field.tag);
+      const full = isFull(field);
+      if (field.payload.kind === "text-or-pointer") {
+        return [
+          { title: t("edit.asText", { field: title }), disabled: full, choose: () => this.add(line, key, field, "text") },
+          { title: t("edit.asRecord", { field: title }), disabled: full || offPointer(field), choose: () => this.add(line, key, field, "pointer") },
+        ];
+      }
+      const disabled = full || (field.payload.kind === "pointer" && offPointer(field));
+      return [{ title, disabled, choose: () => this.add(line, key, field, "text") }];
+    });
+  }
+
+  private add(line: RecordLine, key: string, field: StructureFieldDescription, as: "text" | "pointer"): void {
+    const { host, state } = this.options;
+    const plan = addPlan(field, as);
+    if (plan.kind === "now") {
+      this.written(host.addAt?.(line.range.start, field.tag, plan.input), key, ["add", "value", ""]);
+      return;
+    }
+    const required = host.requiredBeneath?.(field) ?? [];
+    const unwritten = (pointer?: string): void => {
+      const row: Unwritten = {
+        id: unwrittenId(),
+        field,
+        value: "",
+        ...(pointer === undefined ? {} : { pointer }),
+        children: required.map((one) => ({ field: one, value: "" })),
+        parent: { tag: line.tag, text: line.text, range: line.range },
+      };
+      state.setUnwritten(key, [...state.unwritten(key), row]);
+      state.setOpen(key, true);
+      state.wishFocus({ unwritten: row.id });
+      this.redraw();
+    };
+    if (plan.kind === "pointer") {
+      host.choosePointer?.(this.pointerChoices(field.candidates ?? []), (xref) => {
+        if (required.length > 0) {
+          unwritten(xref);
+        } else {
+          this.written(host.addAt?.(line.range.start, field.tag, { pointer: xref }), key, ["pick", "link", "add"]);
+        }
+      });
+      return;
+    }
+    unwritten();
+  }
+
+  /** After a line was added: its parent opened and the focus on the new line, or the refusal said. */
+  private written(outcome: WriteOutcome | undefined, under: string, parts: string[]): boolean {
+    if (!outcome) {
+      return false;
+    }
+    if (!outcome.ok) {
+      this.say(refusalText(outcome));
+      if (outcome.code === STALE) {
+        this.settle();
+      }
+      return false;
+    }
+    this.options.state.setOpen(under, true);
+    this.options.state.wishFocus({ under, line: outcome.line, parts });
+    this.settle();
+    return true;
+  }
+
+  private redraw(): void {
+    if (this.live()) {
+      this.draw();
+    }
+  }
+
+  /** A field chosen in a menu, drawn with what the standard requires beneath it, written once each has a value. */
+  private unwrittenRow(container: HTMLElement, row: Unwritten, owner: RecordLine, parentKey: string, depth: number): void {
+    const { host, state } = this.options;
+    const node = container.createDiv({ cls: ["gedcom-tree-node", "tree-item", "is-unwritten"] });
+    node.setAttribute("data-depth", String(depth));
+    node.setAttribute("data-unwritten", String(row.id));
+    node.setAttribute("title", t("edit.unwritten"));
+    const messageKey = `u:${row.id}`;
+    const save = (next: Unwritten): void => {
+      state.setUnwritten(parentKey, state.unwritten(parentKey).map((one) => (one.id === row.id ? next : one)));
+    };
+    const drop = (): void => {
+      state.setUnwritten(parentKey, state.unwritten(parentKey).filter((one) => one.id !== row.id));
+      state.setMessage(messageKey, undefined);
+    };
+    const empty = (one: Unwritten): boolean =>
+      one.value === "" && one.pointer === undefined && one.children.every((child) => child.value === "");
+    const complete = (one: Unwritten): boolean =>
+      (one.value !== "" || one.pointer !== undefined || !one.field.payloadRequired || one.field.payload.kind === "none") &&
+      one.children.every((child) => child.value !== "") &&
+      !empty(one);
+    const current = (): Unwritten => state.unwritten(parentKey).find((one) => one.id === row.id) ?? row;
+    let mainControl: HTMLElement | null = null;
+    const refuse = (refusal: Refusal): void => {
+      const message = { text: refusalText(refusal), kind: "error" as const };
+      state.setMessage(messageKey, message);
+      if (mainControl) {
+        showMessage(mainControl.closest(".gedcom-field") ?? mainControl, mainControl, message);
+      }
+      this.say(message.text);
+    };
+    const changed = (next: Unwritten): void => {
+      save(next);
+      if (next.value !== "" && host.checkValue) {
+        const refusal = host.checkValue(owner.range.start, next.field.tag, { value: next.value }, false);
+        if (refusal) {
+          refuse(refusal);
+          return;
+        }
+      }
+      if (!complete(next)) {
+        return;
+      }
+      const input: StructureInput = {
+        ...(next.pointer === undefined ? (next.value === "" ? {} : { value: next.value }) : { pointer: next.pointer }),
+        ...(next.children.length > 0 ? { children: next.children.map((child) => ({ tag: child.field.tag, value: child.value })) } : {}),
+      };
+      const outcome = host.addAt?.(owner.range.start, next.field.tag, input);
+      if (!outcome) {
+        return;
+      }
+      if (outcome.ok) {
+        drop();
+        this.written(outcome, parentKey, ["value", "add", ""]);
+      } else {
+        refuse(outcome);
+        if (outcome.code === STALE) {
+          this.settle();
+        }
+      }
+    };
+    const gone = (): void => {
+      if (!node.isConnected || node.contains(node.ownerDocument.activeElement)) {
+        return;
+      }
+      if (empty(current())) {
+        drop();
+        this.redraw();
+      }
+    };
+    const left = (): void => {
+      window.setTimeout(gone, 0);
+    };
+
+    const control = (parent: HTMLElement, field: StructureFieldDescription, value: string, labelledBy: string, key: string, set: (value: string) => void): HTMLElement => {
+      const { payload } = field;
+      if (payload.kind === "enum" && !payload.multiple) {
+        const select = parent.createEl("select", { cls: ["dropdown", "gedcom-tree-choice"] });
+        select.setAttribute("aria-labelledby", labelledBy);
+        select.setAttribute("data-focus-key", key);
+        select.createEl("option", { text: "" }).value = "";
+        for (const one of payload.values) {
+          select.createEl("option", { text: valueText({ tag: field.tag, text: one } as RecordLine, { tag: owner.tag } as RecordLine) }).value = one;
+        }
+        select.value = value;
+        select.addEventListener("change", () => set(select.value));
+        select.addEventListener("blur", left);
+        return select;
+      }
+      if (payload.kind === "enum") {
+        const button = this.several(parent, tagLabel(field.tag), multipleValues(value), payload.values, key, (next) => set(multipleText(next)));
+        button.addEventListener("blur", left);
+        return button;
+      }
+      const editor = new EditableField(parent, {
+        key: `${messageKey}:${field.tag}`,
+        prose: field.prose,
+        fileText: value,
+        readerText: value,
+        labelledBy,
+        state,
+        focusKey: key,
+        ...(host.setIcon ? { setIcon: host.setIcon.bind(host) } : {}),
+        write: (text, self) => {
+          self.wrote(text);
+          set(text);
+        },
+        focused: (field) => {
+          this.active = field;
+        },
+        left: gone,
+      });
+      return editor.field.area;
+    };
+
+    const header = node.createDiv({ cls: "gedcom-tree-row" });
+    const name = header.createSpan({ cls: "gedcom-tree-label", text: tagLabel(row.field.tag) });
+    name.id = labelId();
+    const main = header.createDiv({ cls: "gedcom-tree-main" });
+    if (row.pointer !== undefined) {
+      main.createSpan({ cls: "gedcom-tree-chosen", text: recordTitle(this.options.index, row.pointer) ?? row.pointer });
+    } else if (row.field.payload.kind !== "none") {
+      mainControl = control(main, row.field, row.value, name.id, `u:${row.id}:value`, (value) => changed({ ...current(), value }));
+      const message = state.message(messageKey);
+      showMessage(mainControl.closest(".gedcom-field") ?? mainControl, mainControl, message);
+    }
+    if (row.children.length > 0) {
+      const children = node.createDiv({ cls: ["gedcom-tree-children", "tree-item-children"] });
+      row.children.forEach((child, at) => {
+        const childNode = children.createDiv({ cls: ["gedcom-tree-node", "tree-item", "is-unwritten"] });
+        childNode.setAttribute("data-depth", String(depth + 1));
+        const childRow = childNode.createDiv({ cls: "gedcom-tree-row" });
+        const childName = childRow.createSpan({ cls: "gedcom-tree-label", text: tagLabel(child.field.tag) });
+        childName.id = labelId();
+        const childMain = childRow.createDiv({ cls: "gedcom-tree-main" });
+        const made = control(childMain, child.field, child.value, childName.id, `u:${row.id}:${child.field.tag}`, (value) => {
+          const now = current();
+          changed({ ...now, children: now.children.map((one, which) => (which === at ? { ...one, value } : one)) });
+        });
+        if (mainControl === null) {
+          mainControl = made;
+        }
+      });
+    }
+  }
 }
 
-/** The lines of a record as a tree of rows in the file's order, nodes closed until the reader opens them; none where the record states nothing but its opening line. */
+/** The lines of a record as a tree of rows in the file's order, beneath its opening line; nodes are closed until the reader opens them. */
 export function renderTree(parent: HTMLElement, record: RecordLine, options: TreeOptions): void {
-  if (record.children.length === 0) {
-    return;
-  }
   new Tree(parent.createDiv({ cls: "gedcom-tree" }), record, options).draw();
 }

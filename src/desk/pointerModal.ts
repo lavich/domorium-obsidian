@@ -6,6 +6,7 @@ export class PointerModal extends FuzzySuggestModal<PointerChoice> {
   constructor(
     app: App,
     private readonly choices: PointerChoice[],
+    private readonly chosen: (xref: string) => void,
   ) {
     super(app);
   }
@@ -18,5 +19,7 @@ export class PointerModal extends FuzzySuggestModal<PointerChoice> {
     return `${item.checked ? "✓ " : ""}${item.title}`;
   }
 
-  onChooseItem(): void {}
+  onChooseItem(item: PointerChoice): void {
+    this.chosen(item.xref);
+  }
 }

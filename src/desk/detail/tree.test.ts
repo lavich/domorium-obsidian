@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
-import { GedcomLanguageService, type Position } from "@domorium/language-service";
+import { GedcomLanguageService } from "@domorium/language-service";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { resetLanguage, setLanguage } from "../../i18n";
 import { curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { addableAt, choicesAt, pointerChoicesAt, removableAt } from "../addableFields";
+import { TextTab } from "../../testing/textTab";
+import { addableAt, choicesAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
+import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../edits";
 import { factsOf } from "../personPage";
-import { factsByLine, renderTree, type TreeHost } from "./tree";
+import { factsByLine, renderTree, type FieldChoice, type TreeHost } from "./tree";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
 
 beforeAll(installObsidianDom);
@@ -58,6 +60,91 @@ function draw(made: Made, state: TreeState = ephemeralTreeState(), parent: HTMLE
   });
 }
 
+type Asked = "chooseField" | "chooseValues" | "choosePointer" | "announce";
+type EditingHost = Omit<TreeHost, Asked> & {
+  chooseField: ReturnType<typeof vi.fn<NonNullable<TreeHost["chooseField"]>>>;
+  chooseValues: ReturnType<typeof vi.fn<NonNullable<TreeHost["chooseValues"]>>>;
+  choosePointer: ReturnType<typeof vi.fn<NonNullable<TreeHost["choosePointer"]>>>;
+  announce: ReturnType<typeof vi.fn<NonNullable<TreeHost["announce"]>>>;
+};
+
+interface Editing {
+  tab: TextTab;
+  host: EditingHost;
+  state: TreeState;
+  draws: () => number;
+}
+
+/** A tree that writes through the real service into a text, and is drawn again from it after each write, as the card is. */
+function editing(lines: string[], version: "7.0" | "5.5.1" = "7.0", xref = "@I1@", extra: Partial<Omit<TreeHost, Asked>> = {}, state = ephemeralTreeState()): Editing {
+  const tab = new TextTab([...HEAD[version], ...lines, "0 TRLR"].join("\n"));
+  let drawn = tab.version;
+  let draws = 0;
+  const service = () => tab.service();
+  const host: EditingHost = {
+    openRecord: opened,
+    showInSource: shown,
+    addableAt: (at) => addableAt(service(), at),
+    choicesAt: (at) => choicesAt(service(), at),
+    proseAt: (at) => proseAt(service(), at),
+    removableAt: (at, tag) => removableAt(service(), at, tag),
+    pointerChoicesAt: (at, tag) => pointerChoicesAt(service(), at, tag),
+    pairedAt: (at, tag) => pairedAt(service(), at, tag),
+    requiredBeneath: (field) => requiredBeneath(service(), field),
+    checkValue: (at, tag, input, replacing) => checkValue(service(), at, tag, input, replacing),
+    setValueAt: (at, input) => commit(tab, setValueAt(service(), at, drawn, input)),
+    addAt: (at, tag, input) => commit(tab, addAt(service(), at, drawn, tag, input)),
+    removeAt: (at, _nested, done) => {
+      done(commit(tab, removeAt(service(), at, drawn)));
+    },
+    settle: () => {
+      redraw();
+    },
+    chooseField: vi.fn(),
+    chooseValues: vi.fn(),
+    choosePointer: vi.fn(),
+    announce: vi.fn(),
+    ...extra,
+  };
+  const redraw = (): void => {
+    drawn = tab.version;
+    draws += 1;
+    const index = buildIndex(service());
+    const record = index.record(xref);
+    if (!record) {
+      throw new Error(`no record ${xref}`);
+    }
+    const person = index.person(xref);
+    box.replaceChildren();
+    renderTree(box, record, {
+      index,
+      host,
+      facts: person ? factsByLine(factsOf(person)) : new Map(),
+      state,
+    });
+  };
+  redraw();
+  return { tab, host, state, draws: () => draws };
+}
+
+const menu = (host: EditingHost): FieldChoice[] => host.chooseField.mock.calls.at(-1)?.[1] ?? [];
+const menuEntry = (host: EditingHost, title: string): FieldChoice => {
+  const found = menu(host).find((one) => one.title === title);
+  if (!found) {
+    throw new Error(`no entry ${title}; entries: ${menu(host).map((one) => one.title).join(", ")}`);
+  }
+  return found;
+};
+const fileLines = (tab: TextTab): string[] => tab.text.split("\n");
+const settled = (): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, 0));
+
+const rootRow = (): HTMLElement => {
+  const found = box.querySelector<HTMLElement>(".gedcom-tree-node.is-root > .gedcom-tree-row");
+  if (!found) {
+    throw new Error("no root");
+  }
+  return found;
+};
 const rows = (): HTMLElement[] => [...box.querySelectorAll<HTMLElement>(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row")];
 const labelOf = (row: Element): string => row.querySelector(".gedcom-tree-label")?.textContent ?? "";
 const rowNamed = (label: string, at = 0): HTMLElement => {
@@ -108,86 +195,67 @@ describe("the lines of a record as rows", () => {
     expect(box.querySelector("h1, h2, h3")).toBeNull();
   });
 
-  it("offers a plus on a row that holds lines, and on none that holds only a value", () => {
-    draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900", "1 SEX F"]));
+  it("offers a menu on every line that may hold lines, and on none where the card cannot write", () => {
+    editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900", "1 SEX F"]);
 
     expect(rowNamed("Birth").querySelector(".gedcom-tree-add")?.getAttribute("aria-label")).toBe("Add a field");
-    expect(rowNamed("Sex").querySelector(".gedcom-tree-add")).toBeNull();
+    expect(rootRow().querySelector(".gedcom-tree-add")).not.toBeNull();
+    box.replaceChildren();
+    draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900"]));
+    expect(box.querySelector(".gedcom-tree-add")).toBeNull();
   });
 
   it("lists the fields that can still be added, by name, when the plus is pressed", () => {
-    const choose = vi.fn<NonNullable<TreeHost["chooseField"]>>();
-    const made = make(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
-    const service = made.service;
-    const host = { openRecord: opened, showInSource: shown, chooseField: choose, addableAt: (at: Position) => addableAt(service, at) };
-    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    const { host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
     rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
 
-    expect(choose).toHaveBeenCalledOnce();
-    expect(choose.mock.calls[0]?.[1]).toContainEqual({ title: "Given names", disabled: false });
+    expect(host.chooseField).toHaveBeenCalledOnce();
+    expect(menu(host)).toContainEqual(expect.objectContaining({ title: "Given names", disabled: false }));
   });
 
   it("lists a field that has no room left, disabled", () => {
-    const choose = vi.fn<NonNullable<TreeHost["chooseField"]>>();
-    const made = make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900"]);
-    const host = { openRecord: opened, showInSource: shown, chooseField: choose, addableAt: (at: Position) => addableAt(made.service, at) };
-    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    const { host } = editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 1 JAN 1900"]);
     rowNamed("Birth").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
 
-    expect(choose.mock.calls[0]?.[1]).toContainEqual({ title: "Date", disabled: true });
+    expect(menu(host)).toContainEqual(expect.objectContaining({ title: "Date", disabled: true }));
   });
 
-  it("draws a value the standard limits as a list of its values, the written one chosen, and keeps it where one is picked", () => {
-    const made = make(["0 @I1@ INDI", "1 SEX F"]);
-    const host = { openRecord: opened, showInSource: shown, choicesAt: (at: Position) => choicesAt(made.service, at) };
-    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+  it("draws a value the standard limits as a list of its values, the written one chosen", () => {
+    editing(["0 @I1@ INDI", "1 SEX F"]);
     const select = rowNamed("Sex").querySelector<HTMLSelectElement>("select.gedcom-tree-choice");
 
     expect(select?.selectedOptions[0]?.textContent).toBe("Female");
     expect([...(select?.options ?? [])].map((one) => one.value)).toEqual(expect.arrayContaining(["M", "F"]));
-    if (select) {
-      select.value = "M";
-      select.dispatchEvent(new Event("change"));
-    }
-    expect(select?.value).toBe("F");
   });
 
   it("opens a searchable list of the records a pointer may point at, the one it points at marked", () => {
-    const choose = vi.fn<NonNullable<TreeHost["choosePointer"]>>();
-    const made = make(["0 @F1@ FAM", "1 HUSB @I1@", "0 @I1@ INDI", "1 NAME Pierre /Curie/", "0 @I2@ INDI", "1 NAME Marie /Curie/"], "7.0", "@F1@");
-    const host = {
-      openRecord: opened,
-      showInSource: shown,
-      choosePointer: choose,
-      pointerChoicesAt: (at: Position, tag: string) => pointerChoicesAt(made.service, at, tag),
-    };
-    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
-    rowNamed("Husband").querySelector<HTMLElement>(".gedcom-tree-pick")?.click();
+    const { host } = editing(["0 @I1@ INDI", "1 ASSO @I2@", "2 ROLE FRIEND", "0 @I2@ INDI", "1 NAME Pierre /Curie/", "0 @I3@ INDI", "1 NAME Irène /Curie/"]);
+    open("Associated person");
+    rowNamed("Associated person").querySelector<HTMLElement>(".gedcom-tree-pick")?.click();
 
-    expect(choose.mock.calls[0]?.[0]).toContainEqual({ title: "Pierre Curie", xref: "@I1@", checked: true });
-    expect(choose.mock.calls[0]?.[0]).toContainEqual({ title: "Marie Curie", xref: "@I2@", checked: false });
+    expect(host.choosePointer).toHaveBeenCalledOnce();
+    expect(host.choosePointer.mock.calls[0]?.[0]).toContainEqual({ title: "Pierre Curie", xref: "@I2@", checked: true });
+    expect(host.choosePointer.mock.calls[0]?.[0]).toContainEqual({ title: "Irène Curie", xref: "@I3@", checked: false });
   });
 
   it("offers to remove a line that may go, with the number of lines beneath it, and a line the standard requires no trash", () => {
     const removeAt = vi.fn<NonNullable<TreeHost["removeAt"]>>();
-    const made = make(["0 @I1@ INDI", "1 NAME Marie /Curie/", "2 GIVN Marie", "2 SURN Curie", "1 BIRT", "2 DATE 1 JAN 1900"]);
-    const host = {
-      openRecord: opened,
-      showInSource: shown,
-      removeAt,
-      removableAt: (at: Position, tag: string) => removableAt(made.service, at, tag),
-    };
-    renderTree(box, made.record, { index: made.index, host, facts: new Map(), state: ephemeralTreeState() });
+    editing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "2 GIVN Marie", "2 SURN Curie", "1 BIRT", "2 DATE 1 JAN 1900"], "7.0", "@I1@", { removeAt });
     rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-remove")?.click();
 
-    expect(removeAt).toHaveBeenCalledWith(expect.objectContaining({ line: 4 }), 2);
-    expect(box.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-remove")).toBeNull();
+    expect(removeAt).toHaveBeenCalledWith(expect.objectContaining({ line: 4 }), 2, expect.any(Function));
+    expect(rootRow().querySelector(".gedcom-tree-remove")).toBeNull();
   });
 
-  it("draws nothing for a record that states nothing beneath its opening line", () => {
-    draw(make(["0 @I1@ INDI"]));
+  it("draws the root alone, with its menu, for a record that states nothing beneath its opening line", () => {
+    const { host, tab } = editing(["0 @I1@ INDI"]);
 
-    expect(box.querySelector(".gedcom-tree")).toBeNull();
+    expect(rows()).toHaveLength(0);
+    expect(rootRow().querySelector(".gedcom-tree-label")?.textContent).toBe("Person");
+    rootRow().querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Death").choose();
+    expect(tab.text).toContain("0 @I1@ INDI\n1 DEAT Y");
+    expect(rowNamed("Death")).toBeDefined();
   });
 
   it("draws a bare death with no value, no dash, no summary and no node", () => {
@@ -608,7 +676,7 @@ describe("a fact", () => {
     expect(opened).not.toHaveBeenCalled();
   });
 
-  it("opens the card of the place from the summary and, once opened, from the place line", () => {
+  it("opens the card of the place from the summary and, once opened, from the control beside the place's field", () => {
     draw(marie());
     const summaryPlace = rowNamed("Birth").querySelector<HTMLButtonElement>(".gedcom-tree-summary button");
     expect(summaryPlace?.textContent).toBe("Warsaw, Congress Poland");
@@ -616,10 +684,12 @@ describe("a fact", () => {
     expect(opened).toHaveBeenLastCalledWith("place:warsaw, congress poland");
 
     open("Birth");
-    const line = rowNamed("Place").querySelector<HTMLButtonElement>("button.gedcom-desk-link");
-    line?.click();
+    expect(valuesOf(rowNamed("Place"))).toEqual(["Warsaw, Congress Poland"]);
+    const control = rowNamed("Place").querySelector<HTMLElement>(".gedcom-tree-place");
+    expect(control?.getAttribute("aria-label")).toBe("Open the place Warsaw, Congress Poland");
+    expect(control?.getAttribute("role")).toBe("button");
+    control?.click();
     expect(opened).toHaveBeenLastCalledWith("place:warsaw, congress poland");
-    expect(valuesOf(rowNamed("Place"))).toEqual([]);
   });
 
   it("shows the summary of a fact and its place as a link while the label is text", () => {
@@ -797,5 +867,483 @@ describe("the tree changes nothing", () => {
     expect(JSON.stringify(made.service.getDocumentSymbols())).toBe(before);
     expect(box.querySelectorAll("textarea:not([readonly])")).toHaveLength(0);
     expect(shown).not.toHaveBeenCalled();
+  });
+});
+
+const fieldOf = (row: Element): HTMLTextAreaElement => {
+  const found = row.querySelector<HTMLTextAreaElement>("textarea.gedcom-field-input");
+  if (!found) {
+    throw new Error("no field");
+  }
+  return found;
+};
+const type = (area: HTMLTextAreaElement, text: string): void => {
+  area.focus();
+  area.value = text;
+  area.dispatchEvent(new Event("input", { bubbles: true }));
+};
+const press = (area: HTMLElement, key: string, init: KeyboardEventInit = {}): void => {
+  area.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...init }));
+};
+const messageOf = (control: Element): string | undefined => {
+  const id = control.getAttribute("aria-describedby");
+  return id === null ? undefined : (document.getElementById(id)?.textContent ?? undefined);
+};
+
+describe("a value in its field", () => {
+  it("is written on Enter, and the row shows it", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria"]);
+    open("Name");
+    const area = fieldOf(rowNamed("Given names"));
+
+    type(area, "Marie");
+    press(area, "Enter");
+
+    expect(fileLines(tab)).toContain("2 GIVN Marie");
+    expect(valuesOf(rowNamed("Given names"))).toEqual(["Marie"]);
+  });
+
+  it("holds a name with its slashes while it has the focus, and leaving it untouched writes nothing", async () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
+    const area = fieldOf(rowNamed("Name"));
+
+    expect(area.value).toBe("Maria Curie");
+    area.focus();
+    expect(area.value).toBe("Maria /Curie/");
+    area.blur();
+    await settled();
+    expect(tab.writes).toBe(0);
+    expect(area.value).toBe("Maria Curie");
+  });
+
+  it("holds a 5.5.1 sex as the letter the file writes, and leaving it untouched writes nothing", async () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 SEX F"], "5.5.1");
+    const area = fieldOf(rowNamed("Sex"));
+
+    expect(area.value).toBe("Female");
+    area.focus();
+    expect(area.value).toBe("F");
+    area.blur();
+    await settled();
+    expect(tab.writes).toBe(0);
+  });
+
+  it("is written once for Enter and then leaving the field", async () => {
+    const tab = new TextTab([...HEAD["7.0"], "0 @I1@ INDI", "1 _MILITARY Cavalry", "0 TRLR"].join("\n"));
+    const index = buildIndex(tab.service());
+    renderTree(box, index.record("@I1@") as RecordLine, {
+      index,
+      host: { openRecord: opened, showInSource: shown, setValueAt: (at, input) => commit(tab, setValueAt(tab.service(), at, tab.version, input)) },
+      facts: new Map(),
+      state: ephemeralTreeState(),
+    });
+    const area = fieldOf(rowNamed("_MILITARY"));
+
+    type(area, "Hussar");
+    press(area, "Enter");
+    area.blur();
+    await settled();
+    expect(tab.writes).toBe(1);
+    expect(fileLines(tab)).toContain("1 _MILITARY Hussar");
+  });
+
+  it("is not written by the Enter that confirms a composed character", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+
+    type(area, "騎兵");
+    press(area, "Enter", { isComposing: true });
+    expect(tab.writes).toBe(0);
+    press(area, "Enter");
+    expect(fileLines(tab)).toContain("1 _MILITARY 騎兵");
+  });
+
+  it("sends a pasted line break in a date to the service, which refuses it and says why", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]);
+    open("Birth");
+    const area = fieldOf(rowNamed("Date"));
+
+    type(area, "1 JAN\n1900");
+    press(area, "Enter");
+    expect(tab.writes).toBe(0);
+    expect(area.value).toBe("1 JAN\n1900");
+    expect(messageOf(area)).toBe("The standard cannot read this value here.");
+  });
+
+  it("writes an occupation on Enter, where a line break is not the ordinary case", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 OCCU Physicist"]);
+    const area = fieldOf(rowNamed("Occupation"));
+
+    type(area, "Chemist");
+    press(area, "Enter");
+    expect(fileLines(tab)).toContain("1 OCCU Chemist");
+  });
+
+  it("writes an emptied given name as the service writes it", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria"]);
+    open("Name");
+    const area = fieldOf(rowNamed("Given names"));
+
+    type(area, "");
+    press(area, "Enter");
+    expect(fileLines(tab)).toEqual(expect.arrayContaining(["1 NAME /Curie/", "2 GIVN"]));
+  });
+
+  it("takes Enter as a new line in a note, and is written with a continuation when it is left", async () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 NOTE first"]);
+    const area = fieldOf(rowNamed("Note"));
+
+    type(area, "one\ntwo");
+    press(area, "Enter");
+    expect(tab.writes).toBe(0);
+    area.blur();
+    await settled();
+    expect(fileLines(tab)).toEqual(expect.arrayContaining(["1 NOTE one", "2 CONT two"]));
+  });
+
+  it("puts back the value the file holds on Escape, writes nothing, and keeps the focus", async () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+
+    type(area, "Hussar");
+    press(area, "Escape");
+    expect(area.value).toBe("Cavalry");
+    expect(document.activeElement).toBe(area);
+    area.blur();
+    await settled();
+    expect(tab.writes).toBe(0);
+  });
+
+  it("has a control that puts back the file's value, for a phone, where there is no Escape", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+
+    type(area, "Hussar");
+    const revert = rowNamed("_MILITARY").querySelector<HTMLElement>(".gedcom-field-revert");
+    expect(revert?.getAttribute("aria-label")).toBe("Put back the value the file holds");
+    expect(area.closest(".gedcom-field")?.classList.contains("is-changed")).toBe(true);
+    revert?.click();
+    expect(area.value).toBe("Cavalry");
+    expect(tab.writes).toBe(0);
+  });
+
+  it("sends an emptied field to the service, which refuses an empty sex and says why under it", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 SEX F"], "5.5.1");
+    const area = fieldOf(rowNamed("Sex"));
+
+    type(area, "");
+    press(area, "Enter");
+
+    expect(tab.writes).toBe(0);
+    expect(messageOf(area)).toBe("The standard requires a value here.");
+    expect(area.getAttribute("aria-invalid")).toBe("true");
+    expect(host.announce).toHaveBeenCalledWith("The standard requires a value here.");
+    type(area, "M");
+    expect(messageOf(area)).toBeUndefined();
+  });
+
+  it("folds a long note until the focus is put in it", () => {
+    editing(["0 @I1@ INDI", "1 NOTE first", ...Array.from({ length: 7 }, (_, at) => `2 CONT line ${at}`)]);
+    const area = fieldOf(rowNamed("Note"));
+
+    expect(area.closest(".gedcom-field")?.classList.contains("is-folded")).toBe(true);
+    area.focus();
+    expect(area.closest(".gedcom-field")?.classList.contains("is-folded")).toBe(false);
+  });
+
+  it("is not a field for a shared note's text, nor for the Y of an event", () => {
+    editing(["0 @I1@ INDI", "1 SNOTE @N1@", "1 DEAT Y", "0 @N1@ SNOTE The shared text"]);
+
+    expect(rowNamed("Shared note").querySelector("textarea:not([readonly])")).toBeNull();
+    expect(rowNamed("Death").querySelector("textarea")).toBeNull();
+  });
+
+  it("writes a value refused for not being in the list nowhere, and says why", () => {
+    const setValueAt = vi.fn<NonNullable<TreeHost["setValueAt"]>>(() => ({ ok: false, code: "value-not-in-enum", message: "Value for X should be in set" }));
+    editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"], "7.0", "@I1@", { setValueAt });
+    const area = fieldOf(rowNamed("_MILITARY"));
+
+    type(area, "Hussar");
+    press(area, "Enter");
+    expect(messageOf(area)).toBe("This value is not one of those the standard lists here.");
+    expect(area.value).toBe("Hussar");
+  });
+
+  it("says that a date does not exist, in English and in Russian", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 7 NOV 1867"]);
+    open("Birth");
+    const area = fieldOf(rowNamed("Date"));
+
+    type(area, "31 NOV 1867");
+    press(area, "Enter");
+    expect(tab.writes).toBe(0);
+    expect(messageOf(area)).toBe("There is no November 31: November has 30 days.");
+    setLanguage("ru");
+    press(area, "Enter");
+    expect(messageOf(area)).toBe("Даты «31 ноября» не бывает: ноябрь длится 30 дней.");
+  });
+
+  it("shows a warning that came with a written value under its field, through the redraw", () => {
+    const { host } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+
+    type(area, "Hussar");
+    press(area, "Enter");
+    const after = fieldOf(rowNamed("_MILITARY"));
+    expect(messageOf(after)).toContain("_MILITARY");
+    expect(after.getAttribute("aria-invalid")).toBeNull();
+    expect(host.announce).toHaveBeenCalledWith(expect.stringContaining("_MILITARY"));
+  });
+
+  it("keeps what was typed and says the file changed where the text moved since the card was drawn", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+    tab.replace(tab.text.replace("0 @I1@ INDI", "0 @I1@ INDI\n1 SEX F"));
+
+    type(area, "Hussar");
+    press(area, "Enter");
+
+    expect(fileLines(tab)).toContain("1 _MILITARY Cavalry");
+    const after = fieldOf(rowNamed("_MILITARY"));
+    expect(after.value).toBe("Hussar");
+    expect(messageOf(after)).toContain("The file changed");
+  });
+});
+
+describe("a value from a list", () => {
+  it("writes the standard's value of the chosen one", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 SEX F"]);
+    const select = rowNamed("Sex").querySelector<HTMLSelectElement>("select");
+    if (!select) {
+      throw new Error("no select");
+    }
+
+    select.value = "M";
+    select.dispatchEvent(new Event("change"));
+    expect(fileLines(tab)).toContain("1 SEX M");
+    expect(rowNamed("Sex").querySelector<HTMLSelectElement>("select")?.selectedOptions[0]?.textContent).toBe("Male");
+  });
+
+  it("is a menu of checked values where the line may hold several, written as the standard's list", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 RESN CONFIDENTIAL"]);
+    const button = rowNamed("Restriction").querySelector<HTMLElement>(".gedcom-tree-several");
+
+    expect(button?.textContent).toBe("CONFIDENTIAL");
+    button?.click();
+    const values = host.chooseValues.mock.calls[0]?.[1] ?? [];
+    expect(values.map((one) => [one.title, one.checked])).toEqual([["CONFIDENTIAL", true], ["LOCKED", false], ["PRIVACY", false]]);
+    values[2]?.toggle();
+    expect(fileLines(tab)).toContain("1 RESN CONFIDENTIAL, PRIVACY");
+  });
+});
+
+describe("a pointer pointed at another record", () => {
+  it("writes the record chosen in the list", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 ASSO @I2@", "2 ROLE FRIEND", "0 @I2@ INDI", "1 NAME Pierre /Curie/", "0 @I3@ INDI", "1 NAME Irène /Curie/"]);
+    open("Associated person");
+    rowNamed("Associated person").querySelector<HTMLElement>(".gedcom-tree-pick")?.click();
+    host.choosePointer.mock.calls[0]?.[1]("@I3@");
+
+    expect(fileLines(tab)).toContain("1 ASSO @I3@");
+    expect(rowNamed("Associated person").querySelector("button.gedcom-desk-link")?.textContent).toBe("Irène Curie");
+  });
+
+  it("offers no list for a pointer the standard pairs, and says it is changed on the other record", () => {
+    editing(["0 @I1@ INDI", "1 FAMS @F1@", "0 @F1@ FAM", "1 WIFE @I1@", "0 @F2@ FAM"]);
+    const row = rowNamed("Spouse in family");
+
+    expect(row.querySelector(".gedcom-tree-pick")).toBeNull();
+    expect(row.querySelector(".gedcom-tree-paired")?.textContent).toBe("This link is changed on the other record.");
+  });
+});
+
+describe("a place", () => {
+  it("is a field that writes the place and a control beside it that opens its card", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 BIRT", "2 PLAC Paris", "0 @I2@ INDI", "1 BIRT", "2 PLAC Paris"]);
+    open("Birth");
+    rowNamed("Place").querySelector<HTMLElement>(".gedcom-tree-place")?.click();
+    expect(opened).toHaveBeenCalledWith("place:paris");
+
+    const area = fieldOf(rowNamed("Place"));
+    type(area, "Paris, France");
+    press(area, "Enter");
+    expect(fileLines(tab)).toContain("2 PLAC Paris, France");
+  });
+});
+
+describe("the menu of a line", () => {
+  it("adds a nickname as an unwritten row, written with what is typed on Enter", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria"]);
+    open("Name");
+    rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Nickname").choose();
+
+    expect(tab.writes).toBe(0);
+    const area = document.activeElement as HTMLTextAreaElement;
+    expect(area.closest(".is-unwritten")?.textContent).toContain("Nickname");
+    type(area, "Manya");
+    press(area, "Enter");
+    expect(fileLines(tab)).toContain("2 NICK Manya");
+    expect(box.querySelector(".is-unwritten")).toBeNull();
+    expect(document.activeElement).toBe(fieldOf(rowNamed("Nickname")));
+  });
+
+  it("adds a death at once as Y, opens it, and puts the focus on its menu", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/"]);
+    rootRow().querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Death").choose();
+
+    expect(fileLines(tab)).toContain("1 DEAT Y");
+    expect(document.activeElement).toBe(rowNamed("Death").querySelector(".gedcom-tree-add"));
+  });
+
+  it("adds a source to a birth through the list of records", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 1867", "0 @S1@ SOUR", "1 TITL Register"]);
+    rowNamed("Birth").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Source").choose();
+
+    expect(host.choosePointer.mock.calls[0]?.[0]).toEqual([{ title: "Register", xref: "@S1@", checked: false }]);
+    host.choosePointer.mock.calls[0]?.[1]("@S1@");
+    expect(fileLines(tab)).toContain("2 SOUR @S1@");
+  });
+
+  it("writes an associated person only once the role it requires is given, the two together", () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "0 @I2@ INDI", "1 NAME Pierre /Curie/"]);
+    rootRow().querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Associated person").choose();
+    host.choosePointer.mock.calls[0]?.[1]("@I2@");
+
+    expect(tab.writes).toBe(0);
+    const unwritten = box.querySelector<HTMLElement>(".is-unwritten");
+    expect(unwritten?.textContent).toContain("Pierre Curie");
+    const role = unwritten?.querySelector<HTMLSelectElement>("select");
+    if (!role) {
+      throw new Error("no role");
+    }
+    role.value = "FRIEND";
+    role.dispatchEvent(new Event("change"));
+    expect(fileLines(tab)).toEqual(expect.arrayContaining(["1 ASSO @I2@", "2 ROLE FRIEND"]));
+  });
+
+  it("drops a field left empty and writes nothing", async () => {
+    const { tab, host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria"]);
+    open("Name");
+    rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Surname").choose();
+    (document.activeElement as HTMLElement).blur();
+    await settled();
+
+    expect(box.querySelector(".is-unwritten")).toBeNull();
+    expect(tab.writes).toBe(0);
+  });
+
+  it("offers a 5.5.1 note as a text and as a record", () => {
+    const { host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "0 @N1@ NOTE Shared"], "5.5.1");
+    rootRow().querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+
+    expect(menu(host).map((one) => one.title)).toEqual(expect.arrayContaining(["Note as text", "Note as a record"]));
+  });
+
+  it("shows a field there may be only one of, and a pointer there is no record for, disabled", () => {
+    const { host } = editing(["0 @I1@ INDI", "1 SEX F"]);
+    rootRow().querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+
+    expect(menuEntry(host, "Sex").disabled).toBe(true);
+    expect(menuEntry(host, "Source").disabled).toBe(true);
+    expect(menuEntry(host, "Spouse in family").disabled).toBe(true);
+    expect(menuEntry(host, "Death").disabled).toBe(false);
+  });
+
+  it("opens at its control when the keyboard opens it, and at the pointer otherwise", () => {
+    const { host } = editing(["0 @I1@ INDI", "1 SEX F"]);
+    const add = rootRow().querySelector<HTMLElement>(".gedcom-tree-add");
+    if (!add) {
+      throw new Error("no menu");
+    }
+    add.getBoundingClientRect = () => ({ left: 40, bottom: 70, right: 60, top: 50, width: 20, height: 20, x: 40, y: 50, toJSON: () => ({}) });
+
+    press(add, "Enter");
+    expect(host.chooseField.mock.calls[0]?.[0]).toEqual({ x: 40, y: 70 });
+    add.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1, clientX: 12, clientY: 34 }));
+    expect(host.chooseField.mock.calls[1]?.[0]).toEqual({ x: 12, y: 34 });
+  });
+});
+
+describe("an unwritten row", () => {
+  it("survives a redraw while its line reads as it did, and is dropped once that line is gone", () => {
+    const state = ephemeralTreeState();
+    const { tab, host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria", "1 NAME Manya /Skłodowska/", "2 GIVN Manya"], "7.0", "@I1@", {}, state);
+    open("Name", 1);
+    rowNamed("Name", 1).querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Nickname").choose();
+    host.settle?.();
+    expect(box.querySelectorAll(".is-unwritten")).toHaveLength(1);
+
+    tab.replace(tab.text.replace("1 NAME Maria /Curie/\n2 GIVN Maria\n", ""));
+    host.settle?.();
+    expect(box.querySelector(".is-unwritten")).toBeNull();
+    expect(state.unwrittenParents()).toEqual([]);
+  });
+});
+
+describe("removing a line", () => {
+  it("puts the focus on the menu of the line it was under, not on a sibling that took its place", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "1 NAME Manya /Skłodowska/"]);
+    const remove = rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-remove");
+    remove?.focus();
+    if (remove) {
+      press(remove, "Enter");
+    }
+
+    expect(fileLines(tab)).not.toContain("1 NAME Maria /Curie/");
+    expect(document.activeElement).toBe(rootRow().querySelector(".gedcom-tree-add"));
+  });
+
+  it("writes the value being typed first when another control is pressed, and then acts on the card drawn from it", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry", "1 SEX F"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+    type(area, "Hussar");
+    const remove = rowNamed("Sex").querySelector<HTMLElement>(".gedcom-tree-remove");
+
+    remove?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true }));
+    remove?.click();
+
+    expect(fileLines(tab)).toContain("1 _MILITARY Hussar");
+    expect(fileLines(tab)).not.toContain("1 SEX F");
+    expect(tab.writes).toBe(2);
+  });
+
+  it("ignores the leaving of a field the card itself took away", async () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const area = fieldOf(rowNamed("_MILITARY"));
+    type(area, "Hussar");
+    box.replaceChildren();
+    area.blur();
+    await settled();
+
+    expect(tab.writes).toBe(0);
+  });
+});
+
+describe("a record the card cannot write", () => {
+  it("has no editing control, and one line says why", () => {
+    draw(make(["0 @I1@ INDI", "1 SEX F", "1 BIRT", "2 DATE 1900"]), ephemeralTreeState());
+    box.replaceChildren();
+    const made = make(["0 @I1@ INDI", "1 SEX F", "1 BIRT", "2 DATE 1900"]);
+    renderTree(box, made.record, { index: made.index, host: { openRecord: opened, showInSource: shown, uneditable: true }, facts: new Map(), state: ephemeralTreeState() });
+
+    expect(box.querySelector(".gedcom-tree-note")?.textContent).toBe(
+      "This file names no GEDCOM version the plugin can check, so its records cannot be edited here.",
+    );
+    expect(box.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-pick, textarea:not([readonly]), select")).toHaveLength(0);
+  });
+
+  it("keeps a field and a removal on a custom line, and no menu", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    const row = rowNamed("_MILITARY");
+
+    expect(row.querySelector(".gedcom-tree-add")).toBeNull();
+    row.querySelector<HTMLElement>(".gedcom-tree-remove")?.click();
+    expect(fileLines(tab)).not.toContain("1 _MILITARY Cavalry");
   });
 });

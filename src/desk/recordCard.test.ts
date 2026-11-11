@@ -1,11 +1,14 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { GenealogyIndex } from "../genealogy";
+import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
+import { TextTab } from "../testing/textTab";
+import { addableAt, describes, removableAt } from "./addableFields";
 import { TreeSession } from "./detail/treeSession";
+import { addAt, commit, removeAt, setValueAt } from "./edits";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
 let container: HTMLElement;
@@ -18,6 +21,7 @@ let view: {
   setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
   session: TreeSession;
   header?: HTMLElement;
+  chooseField?: CardView["chooseField"];
 };
 let index: GenealogyIndex;
 const scrollIntoView = vi.fn();
@@ -312,5 +316,118 @@ describe("what a card remembers", () => {
     draw();
 
     expect(container.querySelector<HTMLElement>(key)?.getAttribute("aria-expanded")).toBe("true");
+  });
+});
+
+describe("a card that writes", () => {
+  const HEAD = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
+  let doc: TextTab;
+  let asked: (() => void) | null;
+
+  const writing = (lines: string[], head = HEAD): CardTab => {
+    doc = new TextTab([...head, ...lines, "0 TRLR"].join("\n"));
+    asked = null;
+    let read = { version: 0, index: curieIndex() };
+    const service = () => doc.service();
+    return {
+      ...tab,
+      index: () => {
+        if (read.version !== doc.version) {
+          read = { version: doc.version, index: buildIndex(service()) };
+        }
+        return read.index;
+      },
+      version: () => doc.version,
+      describes: (at) => describes(service(), at),
+      addableAt: (at) => addableAt(service(), at),
+      removableAt: (at, tag) => removableAt(service(), at, tag),
+      setValueAt: (at, input, version) => commit(doc, setValueAt(service(), at, version, input)),
+      addAt: (at, tag, input, version) => commit(doc, addAt(service(), at, version, tag, input)),
+      removeAt: (at, nested, version, done) => {
+        const go = (): void => {
+          done(commit(doc, removeAt(service(), at, version)));
+        };
+        if (nested === 0) {
+          go();
+        } else {
+          asked = go;
+        }
+      },
+      settle: () => {
+        draw();
+      },
+    };
+  };
+  const removeOf = (label: string): HTMLElement | null =>
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")]
+      .find((row) => row.querySelector(".gedcom-tree-label")?.textContent === label)
+      ?.querySelector<HTMLElement>(".gedcom-tree-remove") ?? null;
+
+  it("removes one line for two presses on its removal before the card is drawn again, and none after it", () => {
+    tab = writing(["0 @I1@ INDI", "1 SEX F", "1 NAME Marie /Curie/", "1 NAME Manya /Skłodowska/"]);
+    draw();
+    const remove = removeOf("Sex");
+
+    remove?.click();
+    remove?.click();
+    expect(doc.text).not.toContain("1 SEX F");
+    expect(doc.text).toContain("1 NAME Marie /Curie/");
+    expect(doc.writes).toBe(1);
+  });
+
+  it("draws the card again from the new text right after a write", () => {
+    tab = writing(["0 @I1@ INDI", "1 SEX F", "1 _MILITARY Cavalry"]);
+    draw();
+    removeOf("Sex")?.click();
+
+    expect(texts(".gedcom-tree-label")).not.toContain("Sex");
+  });
+
+  it("removes nothing when the file changed while the question was open, and draws the card from the new text", () => {
+    tab = writing(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "2 PLAC Paris"]);
+    draw();
+    removeOf("Birth")?.click();
+    doc.replace(doc.text.replace("0 @I1@ INDI", "0 @I1@ INDI\n1 SEX F"));
+    asked?.();
+
+    expect(doc.text).toContain("1 BIRT");
+    expect(texts(".gedcom-tree-label")).toContain("Sex");
+  });
+
+  it("keeps the focus on a field it wrote", () => {
+    tab = writing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    draw();
+    const area = container.querySelector<HTMLTextAreaElement>('[data-focus-key="t:_MILITARY[0]:value"]');
+    area?.focus();
+    if (area) {
+      area.value = "Hussar";
+      area.dispatchEvent(new Event("input"));
+      area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+
+    expect(doc.text).toContain("1 _MILITARY Hussar");
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:_MILITARY[0]:value");
+    expect(document.activeElement).not.toBe(area);
+  });
+
+  it("puts the focus on the new line's menu after adding a death, not back where it was", () => {
+    view.chooseField = vi.fn();
+    tab = writing(["0 @I1@ INDI", "1 SEX F"]);
+    draw();
+    const add = container.querySelector<HTMLElement>('[data-focus-key="t::add"]');
+    add?.focus();
+    add?.click();
+    vi.mocked(view.chooseField).mock.calls[0]?.[1].find((one) => one.title === "Death")?.choose();
+
+    expect(doc.text).toContain("1 DEAT Y");
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:DEAT[0]:add");
+  });
+
+  it("offers no editing where the service has no dialect for the file, and says why", () => {
+    tab = writing(["0 @I1@ INDI", "1 SEX F"], []);
+    draw();
+
+    expect(container.querySelector(".gedcom-tree-note")?.textContent).toContain("cannot be edited here");
+    expect(container.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, textarea:not([readonly]), select")).toHaveLength(0);
   });
 });

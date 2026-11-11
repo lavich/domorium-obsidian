@@ -109,15 +109,6 @@ export function requiredBeneath(service: GedcomLanguageService, field: Structure
   return "ok" in described ? [] : described.fields.filter((one) => one.required);
 }
 
-const MULTI_LINE: ReadonlySet<string> = new Set(["NOTE", "SNOTE", "TEXT"]);
-
-export const takesLines = (tag: string): boolean => MULTI_LINE.has(tag);
-
-/** A value as it is written: the service writes a line break as `CONT` under any tag, so one is a space outside a note or a text. */
-export function writtenValue(tag: string, text: string): string {
-  return takesLines(tag) ? text : text.replace(/\r\n?|\n/g, " ");
-}
-
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
 function noSuchDay(message: string): { date: string; month: string; count: number } | null {
