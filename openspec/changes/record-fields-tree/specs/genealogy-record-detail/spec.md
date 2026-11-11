@@ -65,7 +65,7 @@ the file does not declare SHALL be shown as a pointer to a record that is not in
 - **WHEN** a 5.5.1 person's record states `1 NOTE @N1@` and the file declares `0 @N1@ NOTE The only person to have won...`
 - **THEN** the tree shows that text
 
-### Requirement: A value is a field that cannot be changed yet
+### Requirement: A value is a field
 
 The value of a row of a card — a part of a name, a type, a sex, an age, a cause, an address, an identifier, the text of a note, the
 text of a line no section knows — SHALL be drawn as a **field**: a text area that holds the value, grows with it so that all of it is
@@ -116,3 +116,7 @@ a field. Pressing, focusing or selecting a field SHALL NOT write to the file; on
 **Reason**: It spoke of the other data of an event card; the event cards are removed at the user's request of 2026-11-09.
 **Migration**: Every line of a record is a row of its tree, to any depth, in the order the file writes it.
 
+## RENAMED Requirements
+
+- FROM: `### Requirement: A value is a field that cannot be changed yet`
+- TO: `### Requirement: A value is a field`

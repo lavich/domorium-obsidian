@@ -10,13 +10,13 @@ See `proposal.md` for why and for what the user decided. What the code does toda
 - A place in an event row is a link to the place card (`personPage.test.ts`, `tests/desk.spec.ts`).
 - The event card (`eventPage.ts`) uses `renderNotes`, `renderRelated` and `renderOther`; `NOTE_TAGS` and `RELATED_TAGS` come from `claims.ts` for `notes.ts`, `related.ts` and `eventDetails.ts`. The family section and the place card draw the event row of `factRow.ts`.
 - `RecordCardView` is created for each leaf (`DeskViews.ts`); `CardView` holds `setIcon` and `openNote` only.
-- No new data is needed: nothing in this change calls a language-service method that is not already used.
+- Reading needs no new data; editing calls the language-service methods of lavich/domorium#522 (`describeStructure`, `addStructure`, `setValue`, `removeStructure`, `validateValue`).
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- One renderer that draws a record's lines as they are, so that a later step can make rows editable without a new layout.
+- One renderer that draws a record's lines as they are, so that rows can be edited without a new layout.
 - A card that fits 320 pixels and a phone and that does not show a control until the reader is there.
 
 **Non-Goals:**
@@ -99,26 +99,41 @@ Added on 2026-11-11, when the user asked for the tree to write; it was first pla
 
 ### Decisions
 
-**Every write goes through `GedcomView`, the way removal already does.** The tree's host gains `setValueAt(at, value)` and `addAt(parent, tag, input)`, which call the service with `this.language.getVersion()` and apply the result with `applyWorkspaceEdit`; they return the refusal or the warnings to the tree, which shows them. The card never sees the service, the version or the editor. Alternative: the card applies edits. Rejected: the version and the editor would be the card's to keep right.
+**The write logic is pure functions over the service; `GedcomView` is a thin wrapper.** `src/desk/edits.ts` (new) takes a `GedcomLanguageService`, a position, a version and an input, and returns the edit, the refusal or the warnings; `addableFields.ts` keeps answering what may be added. They are unit-tested against the real service. `GedcomView` passes its service, applies the edit with `applyWorkspaceEdit`, and redraws; `PointerModal` and the field menu only call back. The `obsidian` package cannot be imported at runtime in a unit test, which is why nothing that needs testing lives in those wrappers.
 
-**A text field commits on leaving and on Enter; a multi-line one on leaving only.** As the user chose for the first plan («по Сохранить или по потере фокуса»). Multi-line is decided by the payload kind the service describes (`text` under `NOTE`, `SNOTE`, `TEXT`), not by a list of tags in the plugin, where the description allows it; where it does not, the tags are the fallback and the design notes them. Escape puts back the file's value. An emptied field writes nothing and says to use removal: the service writes an empty line for an empty value, which the file should not carry.
+**Positions and the version come from the drawing, not from the commit.** When the card is drawn, `GedcomView` updates its service from the editor's text and hands the tree that version with the lines; every write the tree asks for carries the version and the position of the line as drawn. At commit, `GedcomView` updates the service from the current text and calls the operation with the drawn version, so a change made against text that has moved — the card's own write not yet redrawn, a second press, a question left open while the file changed, an edit in Source — is refused by the service as `stale-document`, and the card is redrawn with the typed value kept and a notice. The removal already on the branch reads the version at commit and is changed to the same path. Alternative: read the version at commit. Rejected: the service then always agrees, and an old position lands on whatever line is there now.
 
-**Adding is decided by the field's payload.** `none` and `boolean` are written at once, `boolean` as `Y` so that an event added with no detail is not a warning; the new node opens and its menu takes the focus. A pointer opens the list first and writes on choice. An `enum` or a text field becomes an **unwritten row** — drawn in the tree under its parent, at the end of its siblings, with its control — written on a value, dropped when left empty. Unwritten rows are kept in the session per record and per parent key, so a redraw (another write, the file changing) does not lose them. Alternative: write an empty line at once and fill it in. Rejected: it leaves an empty line in the file whenever the reader changes their mind.
+**A write the card makes redraws the card at once.** After a successful `applyWorkspaceEdit` that came from the card, `GedcomView` cancels the pending debounced redraw and redraws synchronously, so the next action is made on the new lines. A field remembers the value it last wrote and writes nothing when the draft equals it, so Enter followed by leaving the field is one write.
 
-**The menu and the list are Obsidian's own.** The field menu stays an Obsidian `Menu`, its items now carrying the field's description; the record list stays a `FuzzySuggestModal`, its `onChooseItem` now writing. The menu is operated by arrow keys, Enter and Escape as the app's menus are.
+**A field holds the file's value while it is edited.** The tree draws a value in the reader's words (`valueText`); on focus the field's text becomes the payload as the file writes it (`line.text`: a name with its slashes, `F` for a 5.5.1 sex the service lists no values for), and on blur it reads in the reader's words again. A value the service lists is a dropdown whose options carry the standard's values and show the reader's words, so no translated word is ever written. A multiple enumeration (`RESN`) is an Obsidian `Menu` of checked values written as the standard's comma list.
 
-**Refusals are shown by code, in the plugin's words.** Keys `edit.refusal.<code>` in both catalogues, with the service's message as the fallback (the service speaks English). A refusal for a pointer the standard pairs gets words saying the link is changed on the other record. `stale-document` redraws the card with the typed value restored from the field's draft and a notice. Warnings are shown under the field and announced through the card's polite live region.
+**What is multi-line is the plugin's list, because the description cannot say.** `describeStructure` reports `NOTE`, `CAUS`, `OCCU` and `GIVN` all as `text`. The text of a `NOTE`, an inline `SNOTE` and a `TEXT` takes Enter as a new line; every other field turns a typed or pasted line break into a space, because the service writes it as `CONT` even under a `DATE`. Both are raised upstream.
 
-**Focus after a change.** A written value keeps the focus on its field (its `data-focus-key` is stable). An added line puts the focus on its field or, for a node, on its menu. A removal puts it on the menu of the line above.
+**Adding is decided by the field's description.** `none`, and `boolean` for an event, are written at once, the event as `Y` — the input this plugin gives the service, so that an added event says it happened; the service would write `1 DEAT` with a warning. A pointer opens the list first and writes on choice; a pointer with no candidates, and one marked `reciprocal`, is disabled in the menu. `text-or-pointer` (5.5.1 `NOTE`, `SOUR`) is offered twice. Anything else becomes an **unwritten row**, with an empty field for each field the description of the new structure marks required (`describeSchemaPath` on the path of the new field: `ROLE` for `ASSO`, `TYPE` for `EVEN` and `FACT`, `LANG` for `TRAN`), each checked with `validateValue` as it is committed, and written with `addStructure(…, { value | pointer, children })` once all have values; left empty, it is dropped. An unwritten row is kept in the session under the record and the parent's node key together with the parent line's text and range at the time it was made; on a redraw it is shown only if the parent at that key still has that text, otherwise it is dropped, and at commit its position is the parent as drawn with the drawn version (above).
 
-**No dialect, no editing.** `describeStructure` refusing with `no-dialect` makes the host answer no addable fields, no choices, no removals and read-only fields, and the tree says once why.
+**An emptied field is the service's to judge.** The plugin writes an empty value where the service accepts one and shows the refusal where the standard requires a value (`value-required`). The service rewrites `NAME` when `GIVN` is emptied (` /Curie/`); that is raised upstream, not worked around.
+
+**Paired pointers are not offered.** A field the description marks `reciprocal` (`FAMS`, `FAMC`, `HUSB`, `WIFE`, `CHIL`) has no list on its row and is disabled in the menu, with a line saying the link is changed on the other record.
+
+**Commit before another control acts; a way to cancel on touch.** Every control of the tree commits the focused field's pending value on `pointerdown` before its own action, because a tap on a `div` role button does not move the focus on iOS. A blur during the card's own teardown is ignored. On a touch device a small control beside a changed field puts the file's value back, where there is no Escape. Enter while an input method is composing (`isComposing`) does not commit.
+
+**The menus are Obsidian's own; a keyboard-opened menu opens at its control.** The field menu is an Obsidian `Menu`, its items the fields' names in the reader's language; opened with the keyboard it is shown with `showAtPosition` at the control's rectangle, not at the synthetic click's (0, 0). The record list is a `FuzzySuggestModal`. Their keyboard handling is Obsidian's and is checked by hand in the demo vault; the harness tests a stand-in that calls the same callbacks.
+
+**Refusals are shown by code, in the plugin's words.** Keys `edit.refusal.<code>` in both catalogues, with the service's message as the fallback (the service speaks English). Warnings are shown under the field and announced through the card's polite live region.
+
+**Focus after a change.** A written value keeps the focus on its field. An added line puts it on its field or, for a node, on its menu. A removal puts it on the menu of the line the removed line was under, not on a sibling that took the removed line's key.
+
+**Custom lines.** The service does not describe a `_TAG`, but sets its value and removes it: such a line keeps its field and its removal and has no menu.
+
+**No dialect, no editing.** `describeStructure` refusing with `no-dialect` makes the host answer no addable fields, no choices, no removals, read-only fields, and the tree says once why. A record with nothing beneath its opening line shows its root alone, with its menu.
 
 ### Risks
 
-- [The change cannot merge before the upstream release] → The whole change waits for that release. Built against a local link until then.
-- [A redraw between a keystroke and a commit loses typing] → The field's draft is kept with the unwritten rows in the session and put back after a redraw.
-- [Pointers the standard pairs cannot be changed] → Said under the row; changing them waits for upstream.
-- [An added field lands where the service puts it, which may not be where the reader expected] → The node is opened and the new row takes the focus, so it is in view.
+- [The change cannot merge before the upstream release] → The whole change waits for that release; built against a local link until then.
+- [Pointers the standard pairs cannot be changed] → Said on the row; changing them waits for upstream.
+- [An added field lands where the service puts it] → The node is opened and the new row takes the focus, so it is in view.
+- [Obsidian's `Menu` and `FuzzySuggestModal` cannot run in the harness] → The callbacks they call are tested through a stand-in; the real menus are checked by hand in the demo vault and on a phone.
+- [Upstream gaps: no multi-line marker in the description, a line break accepted under `DATE`, `NAME` rewritten when `GIVN` is emptied] → Raised upstream; the plugin's list of multi-line fields and the space for a line break are recorded here as the only plugin-side rules, to be removed when the description says.
 
 ## Implementation
 

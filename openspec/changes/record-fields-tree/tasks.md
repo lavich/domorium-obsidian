@@ -83,35 +83,38 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 - [x] 12.2 `harness/palette.css` carries the app's `nav-header` and `nav-buttons-container` rules and the touch size of `nav-action-button`; verify with `npm run test:browser`
 - [x] 12.3 `README.md` and the specs say the toggle is always shown in a header; verify with `npm run openspec:validate`
 
-## 13. Editing: The write path
+## 13. Editing: the write path
 
-- [ ] 13.1 `GedcomView.setValueAt(at, value)` and `addAt(parent, tag, input)` over `setValue` / `addStructure` with the tab's version, applied by `applyWorkspaceEdit`, returning the refusal or the warnings; verify in `src/GedcomView` unit coverage in `src/desk/addableFields.test.ts` (new) against the real service: a value set, a pointer set, a line added, a refusal returned, a stale version refused
-- [ ] 13.2 `TreeHost.setValueAt`, `addAt` passed through `recordCard.ts` and `DeskViews.ts`; verify in `src/desk/recordCard.test.ts` that the tree receives them only where the service describes the record
+- [ ] 13.1 `src/desk/edits.ts` (new): pure functions over the service — set a value, set a pointer, add a structure with children, remove — taking the drawn version and position, returning the edit, the refusal or the warnings; verify in `src/desk/edits.test.ts` (new) against the real linked service, 7.0 and 5.5.1: a value set, a pointer set, a line added with a required child, a refusal returned, a stale version refused as `stale-document`
+- [ ] 13.2 `GedcomView` hands the tree its drawn version; `setValueAt`, `addAt` and the existing `removeAt` use it; a write from the card cancels the debounce and redraws at once; verify in `src/desk/recordCard.test.ts` with a host stand-in that a second removal press after the first is refused and that the card is redrawn right after a write
+- [ ] 13.3 `TreeHost.setValueAt`, `addAt` through `recordCard.ts` and `DeskViews.ts`, given only where the service describes the record; verify in `src/desk/recordCard.test.ts`
 
-## 14. Editing: Values
+## 14. Editing: values
 
-- [ ] 14.1 Editable fields in the tree: text area in the tab order, commit on leave and Enter, multi-line on leave only, Escape restores, unchanged writes nothing, emptied writes nothing and says so; verify in `src/desk/detail/tree.test.ts`
-- [ ] 14.2 The dropdown writes on change; verify in `src/desk/detail/tree.test.ts` with `1 SEX F` → `M`
-- [ ] 14.3 The record list writes on choice (`PointerModal.onChooseItem`); a pointer the standard pairs shows its reason; verify in `src/desk/detail/tree.test.ts` and `src/desk/pointerModal.test.ts` (new)
+- [ ] 14.1 Editable fields: the file's value on focus and the reader's words on blur, commit on leave and on Enter (not while composing), Escape and a touch revert control restore, a value equal to the last written writes nothing, a line break becomes a space except in `NOTE`, inline `SNOTE` and `TEXT`, an emptied field goes to the service, a long note unfolds into its field on focus, a shared note's text is not a field; verify in `src/desk/detail/tree.test.ts` with a `NAME` keeping its slashes, a 5.5.1 `SEX F`, Enter then blur, a composition Enter, a pasted line break in a `DATE`, and an emptied `SEX`
+- [ ] 14.2 Dropdowns write the standard's value on change; a multiple enumeration is a checked menu; verify in `src/desk/detail/tree.test.ts` with 7.0 `SEX F` → `M` and `RESN`
+- [ ] 14.3 The record list writes on choice; a reciprocal pointer has no list and says why; verify in `src/desk/detail/tree.test.ts` with `ASSO` and `FAMS` (the modal itself is a wrapper)
 
-## 15. Editing: Adding
+## 15. Editing: adding and removing
 
-- [ ] 15.1 The field menu's items add: `none`/`boolean` at once (`Y` for an event), pointer through the list, enum and text as an unwritten row; verify in `src/desk/detail/tree.test.ts`
-- [ ] 15.2 Unwritten rows kept in the session per record and parent, dropped when left empty, and a field's draft restored after a redraw; verify in `src/desk/detail/treeSession.test.ts` and `src/desk/detail/tree.test.ts`
-- [ ] 15.3 Focus after adding, writing and removing; verify in `src/desk/recordCard.test.ts`
+- [ ] 15.1 The field menu: names in the reader's language, full, candidate-less and reciprocal entries disabled, `text-or-pointer` offered twice; items add — `none`/`boolean` at once (`Y` for an event), pointer through the list, anything else as an unwritten row with the required children from `describeSchemaPath`, checked with `validateValue`; verify in `src/desk/edits.test.ts` and `src/desk/detail/tree.test.ts` with `NICK`, `DEAT`, `SOUR`, `ASSO` with `ROLE`, 5.5.1 `NOTE`, and a full `SEX`
+- [ ] 15.2 Unwritten rows kept in the session under record, parent key and the parent's text and range; dropped when left empty or when the parent changed or is gone; verify in `src/desk/detail/treeSession.test.ts` and `src/desk/detail/tree.test.ts`, including a nickname pending under the second name when the first name is removed in Source
+- [ ] 15.3 The root is drawn with its menu for a record with nothing beneath its opening line; verify in `src/desk/detail/tree.test.ts`
+- [ ] 15.4 Focus after a write, an add and a removal (to the parent's menu, also when siblings share the tag); a keyboard-opened menu at its control (`showAtPosition`); every control commits a pending value on `pointerdown`; blur during teardown ignored; verify in `src/desk/recordCard.test.ts` and `src/desk/detail/tree.test.ts`
 
-## 16. Editing: Refusals and history
+## 16. Editing: refusals, words, no dialect
 
-- [ ] 16.1 Messages under a field by code in `src/i18n/en.json` and `src/i18n/ru.json`, fallback to the service's message, `aria-describedby`, announced politely, cleared on typing; warnings the same; verify in `src/desk/detail/tree.test.ts` with `31 NOV 1867`, `SEX Z` and a warning, and in `src/i18n/i18n.test.ts` that both catalogues hold the same keys
-- [ ] 16.2 `stale-document`: redraw with the typed value kept and a notice; verify in `src/desk/recordCard.test.ts`
-- [ ] 16.3 No dialect: no editing controls and one line saying why; verify in `src/desk/detail/tree.test.ts`
+- [ ] 16.1 Messages under a field by code in `src/i18n/en.json` and `src/i18n/ru.json`, fallback to the service's message, `aria-describedby`, announced politely, cleared on typing; warnings the same; the stale notice; verify in `src/desk/detail/tree.test.ts` with `31 NOV 1867`, a value outside a list, a warning, and in `src/i18n/i18n.test.ts` that both catalogues hold the same keys
+- [ ] 16.2 No dialect: no editing controls and one line saying why; custom lines keep field and removal, no menu; verify in `src/desk/detail/tree.test.ts`
 
-## 17. Editing: Style and browser
+## 17. Editing: style and browser
 
-- [ ] 17.1 `styles.css`: the editing state of a field, the unwritten row, the message under a field, 44-pixel targets on touch; verify by screenshots of the harness at 320 and 390 pixels, light and dark, with Obsidian's `app.css` prepended
-- [ ] 17.2 `harness/desk.ts` gains a host that writes through the real service, and `tests/desk.spec.ts`: change a given name with Enter, choose a sex, add a nickname, add a death, add a source through the list, remove a line, a refused date, the keyboard path through the menu; verify with `npm run test:browser`
+- [ ] 17.1 `styles.css`: a field being edited, the unwritten row, the message under a field, the touch revert control, 44-pixel targets on touch; verify by screenshots of the harness at 320 and 390 pixels, light and dark, with Obsidian's `app.css` prepended
+- [ ] 17.2 `harness/desk.ts` gains a host that writes through the real service and a stand-in for the menu and the list; `tests/desk.spec.ts`: change a given name with Enter, choose a sex, add a nickname, add a death, add a source through the stand-in list, add an associated person with its role, remove a line, two quick removal presses, a refused date, a mobile run in which a tap on another control commits first; verify with `npm run test:browser`
+- [ ] 17.3 By hand in the demo vault, desktop and phone: the Obsidian menu and list by keyboard and touch; record it in the PR's test plan
 
-## 18. Editing: Docs and gate
+## 18. Editing: upstream, docs and gate
 
-- [ ] 18.1 `README.md` where it describes the card: what can be edited and how
-- [ ] 18.2 `npm run check` and `npm run test:browser`
+- [ ] 18.1 Draft for lavich/domorium (filed only with the user's permission): no multi-line marker in the description; a line break accepted under `DATE` and written as `CONT`; `NAME` rewritten when `GIVN` is emptied; `describeStructure` refusing a custom line that `setValue` accepts
+- [ ] 18.2 `README.md` where it describes the card: what can be edited and how
+- [ ] 18.3 `npm run check` and `npm run test:browser`
