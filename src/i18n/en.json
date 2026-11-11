@@ -432,5 +432,31 @@
   "tree.removeNested": {
     "one": "The field and the {count} line under it will be removed. You can undo it.",
     "other": "The field and the {count} lines under it will be removed. You can undo it."
-  }
+  },
+  "edit.refusal.value-not-in-enum": "This value is not one of those the standard lists here.",
+  "edit.refusal.payload-datatype": "The standard cannot read this value here.",
+  "edit.refusal.value-required": "The standard requires a value here.",
+  "edit.refusal.unresolved-pointer": "The file has no such record.",
+  "edit.refusal.required-field-missing": "A line the standard requires beneath it is missing.",
+  "edit.refusal.cardinality-exceeded": "The standard allows no more of this field here.",
+  "edit.refusal.stale-document": "The file changed, so nothing was written. The card now shows the file as it is.",
+  "edit.refusal.reciprocal-pointer-unsupported": "This link is changed on the other record.",
+  "edit.refusal.rule-violation": "The standard does not allow this value here.",
+  "edit.refusal.unknown-field": "The standard does not know this field here.",
+  "edit.refusal.not-a-structure": "This line cannot be changed here.",
+  "edit.refusal.record-edit-unsupported": "A record's opening line cannot be changed here.",
+  "edit.refusal.no-dialect": "This file names no GEDCOM version the plugin can check.",
+  "edit.refusal.noSuchDay": {
+    "one": "There is no {date}: {month} has {count} day.",
+    "other": "There is no {date}: {month} has {count} days."
+  },
+  "edit.noDialect": "This file names no GEDCOM version the plugin can check, so its records cannot be edited here.",
+  "edit.paired": "This link is changed on the other record.",
+  "edit.revert": "Put back the value the file holds",
+  "edit.asText": "{field} as text",
+  "edit.asRecord": "{field} as a record",
+  "edit.openPlace": "Open the place {place}",
+  "edit.chooseValues": "Choose the values of {field}",
+  "edit.noValues": "None",
+  "edit.unwritten": "Not written until it has a value"
 }

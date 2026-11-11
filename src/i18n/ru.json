@@ -480,5 +480,33 @@
     "few": "Поле и {count} вложенные строки будут удалены. Это можно отменить.",
     "many": "Поле и {count} вложенных строк будут удалены. Это можно отменить.",
     "other": "Поле и {count} вложенной строки будут удалены. Это можно отменить."
-  }
+  },
+  "edit.refusal.value-not-in-enum": "Этого значения нет среди тех, что стандарт допускает здесь.",
+  "edit.refusal.payload-datatype": "Стандарт не может прочитать здесь такое значение.",
+  "edit.refusal.value-required": "Стандарт требует здесь значение.",
+  "edit.refusal.unresolved-pointer": "В файле нет такой записи.",
+  "edit.refusal.required-field-missing": "Не хватает строки, которую стандарт требует внутри.",
+  "edit.refusal.cardinality-exceeded": "Стандарт не допускает здесь ещё одно такое поле.",
+  "edit.refusal.stale-document": "Файл изменился, поэтому ничего не записано. Карточка показывает файл таким, какой он сейчас.",
+  "edit.refusal.reciprocal-pointer-unsupported": "Эта связь меняется в другой записи.",
+  "edit.refusal.rule-violation": "Стандарт не допускает здесь такое значение.",
+  "edit.refusal.unknown-field": "Стандарт не знает здесь такого поля.",
+  "edit.refusal.not-a-structure": "Эту строку здесь изменить нельзя.",
+  "edit.refusal.record-edit-unsupported": "Первую строку записи здесь изменить нельзя.",
+  "edit.refusal.no-dialect": "В файле не указана версия GEDCOM, которую плагин умеет проверять.",
+  "edit.refusal.noSuchDay": {
+    "one": "Даты «{date}» не бывает: {month} длится {count} день.",
+    "few": "Даты «{date}» не бывает: {month} длится {count} дня.",
+    "many": "Даты «{date}» не бывает: {month} длится {count} дней.",
+    "other": "Даты «{date}» не бывает: {month} длится {count} дня."
+  },
+  "edit.noDialect": "В файле не указана версия GEDCOM, которую плагин умеет проверять, поэтому его записи здесь не редактируются.",
+  "edit.paired": "Эта связь меняется в другой записи.",
+  "edit.revert": "Вернуть значение из файла",
+  "edit.asText": "{field}: текст",
+  "edit.asRecord": "{field}: запись",
+  "edit.openPlace": "Открыть место {place}",
+  "edit.chooseValues": "Выбрать значения поля «{field}»",
+  "edit.noValues": "Нет",
+  "edit.unwritten": "Не записано, пока нет значения"
 }

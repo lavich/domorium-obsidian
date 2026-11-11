@@ -85,7 +85,7 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 
 ## 13. Editing: the write path
 
-- [ ] 13.1 `src/desk/edits.ts` (new): pure functions over the service — set a value, set a pointer, add a structure with children, remove — taking the drawn version and position, returning the edit, the refusal or the warnings; verify in `src/desk/edits.test.ts` (new) against the real linked service, 7.0 and 5.5.1: a value set, a pointer set, a line added with a required child, a refusal returned, a stale version refused as `stale-document`
+- [x] 13.1 `src/desk/edits.ts` (new): pure functions over the service — set a value, set a pointer, add a structure with children, remove — taking the drawn version and position, returning the edit, the refusal or the warnings; verify in `src/desk/edits.test.ts` (new) against the real linked service, 7.0 and 5.5.1: a value set, a pointer set, a line added with a required child, a refusal returned, a stale version refused as `stale-document`
 - [ ] 13.2 `GedcomView` hands the tree its drawn version; `setValueAt`, `addAt` and the existing `removeAt` use it; a write from the card cancels the debounce and redraws at once; verify in `src/desk/recordCard.test.ts` with a host stand-in that a second removal press after the first is refused and that the card is redrawn right after a write
 - [ ] 13.3 `TreeHost.setValueAt`, `addAt` through `recordCard.ts` and `DeskViews.ts`, given only where the service describes the record; verify in `src/desk/recordCard.test.ts`
 
