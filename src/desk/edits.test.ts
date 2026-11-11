@@ -54,6 +54,59 @@ describe("a value set", () => {
   });
 });
 
+describe("the value of a record's opening line", () => {
+  it("replaces a 7.0 shared note of one line, and of two lines with a continuation", () => {
+    const tab = tabOf(["0 @N1@ SNOTE First"]);
+
+    commit(tab, setValueAt(tab.service(), at(3), tab.version, { value: "Replaced" }));
+    expect(linesOf(tab)).toContain("0 @N1@ SNOTE Replaced");
+
+    commit(tab, setValueAt(tab.service(), at(3), tab.version, { value: "One\nTwo" }));
+    expect(linesOf(tab).slice(3, 5)).toEqual(["0 @N1@ SNOTE One", "1 CONT Two"]);
+  });
+
+  it("replaces a 5.5.1 note record continued with CONC and CONT, and keeps the source beneath it", () => {
+    const tab = tabOf(["0 @N1@ NOTE Te", "1 CONC xt", "1 CONT more", "1 SOUR @S1@", "0 @S1@ SOUR"], "5.5.1");
+
+    const outcome = commit(tab, setValueAt(tab.service(), at(5), tab.version, { value: "New one\nline" }));
+
+    expect(outcome).toMatchObject({ ok: true, line: 5 });
+    expect(linesOf(tab).slice(5, 8)).toEqual(["0 @N1@ NOTE New one", "1 CONT line", "1 SOUR @S1@"]);
+  });
+
+  it("replaces the value of a record of the file's own", () => {
+    const tab = tabOf(["0 @P1@ _PLAN Custom value", "1 NAME Research plan"]);
+
+    commit(tab, setValueAt(tab.service(), at(3), tab.version, { value: "Another" }));
+
+    expect(linesOf(tab).slice(3, 5)).toEqual(["0 @P1@ _PLAN Another", "1 NAME Research plan"]);
+  });
+
+  it("is refused on a person and on the header, which hold no value, in the reader's words", () => {
+    const tab = tabOf(["0 @I1@ INDI"]);
+
+    const person = commit(tab, setValueAt(tab.service(), at(3), tab.version, { value: "x" }));
+    const header = commit(tab, setValueAt(tab.service(), at(0), tab.version, { value: "x" }));
+
+    expect([person, header]).toMatchObject([{ ok: false, code: "value-not-allowed" }, { ok: false, code: "value-not-allowed" }]);
+    expect(refusalText(person as Refusal)).toBe("The standard allows no value on this line.");
+    setLanguage("ru");
+    expect(refusalText(header as Refusal)).toBe("Стандарт не допускает значения в этой строке.");
+    expect(tab.writes).toBe(0);
+  });
+
+  it("is refused for a version the text has moved on from", () => {
+    const tab = tabOf(["0 @N1@ SNOTE First"]);
+    const stale = tab.version;
+    tab.replace(tab.text.replace("First", "Changed"));
+
+    const outcome = commit(tab, setValueAt(tab.service(), at(3), stale, { value: "Late" }));
+
+    expect(outcome).toMatchObject({ ok: false, code: "stale-document" });
+    expect(linesOf(tab)).toContain("0 @N1@ SNOTE Changed");
+  });
+});
+
 describe("a pointer set", () => {
   it("points an associated person at another record", () => {
     const tab = tabOf(["0 @I1@ INDI", "1 ASSO @I2@", "2 ROLE FRIEND", "0 @I2@ INDI", "0 @I3@ INDI"]);

@@ -7,7 +7,7 @@ import { resetLanguage, setLanguage } from "../../i18n";
 import { curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { TextTab } from "../../testing/textTab";
-import { addableAt, choicesAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
+import { addableAt, choicesAt, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
 import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../edits";
 import { factsOf } from "../personPage";
 import { factsByLine, renderTree, type FieldChoice, type TreeHost } from "./tree";
@@ -87,6 +87,7 @@ function editing(lines: string[], version: "7.0" | "5.5.1" = "7.0", xref = "@I1@
     addableAt: (at) => addableAt(service(), at),
     choicesAt: (at) => choicesAt(service(), at),
     proseAt: (at) => proseAt(service(), at),
+    holdsValueAt: (at) => holdsValueAt(service(), at),
     removableAt: (at, tag) => removableAt(service(), at, tag),
     pointerChoicesAt: (at, tag) => pointerChoicesAt(service(), at, tag),
     pairedAt: (at, tag) => pairedAt(service(), at, tag),
@@ -1371,5 +1372,148 @@ describe("a field left for another", () => {
     menuEntry(host, "Nickname").choose();
 
     expect(box.querySelectorAll(".is-unwritten")).toHaveLength(1);
+  });
+});
+
+describe("the value of a record's own opening line", () => {
+  const rootField = (): HTMLTextAreaElement | null => rootRow().querySelector<HTMLTextAreaElement>("textarea.gedcom-field-input:not([readonly])");
+
+  it("shows a shared note's text on its root, its continuation joined as a second line and no CONT row", () => {
+    draw(make(["0 @N1@ SNOTE The only person", "1 CONT physics and chemistry", "0 @I1@ INDI"], "7.0", "@N1@"));
+
+    expect(labelOf(rootRow())).toBe("Shared note");
+    expect(rootRow().querySelector(".gedcom-detail-text-body")?.textContent).toBe("The only person\nphysics and chemistry");
+    expect(rows().map(labelOf)).not.toContain("CONT");
+  });
+
+  it("shows the described value of a record of the file's own as a field, its tag as written, and names it by its name once closed", () => {
+    draw(make(["0 @P1@ _PLAN Custom value", "1 NAME Research plan", "0 @I1@ INDI"], "7.0", "@P1@"));
+
+    expect(labelOf(rootRow())).toBe("_PLAN");
+    expect(valuesOf(rootRow())).toEqual(["Custom value"]);
+    chevron(rootRow()).click();
+    expect(summaryOf(rootRow())).toBe("Research plan");
+  });
+
+  it("shows no value on a repository, a person or the header", () => {
+    draw(make(["0 @R1@ REPO", "1 NAME Archive", "0 @I1@ INDI"], "7.0", "@R1@"));
+    expect(valuesOf(rootRow())).toEqual([]);
+
+    box.replaceChildren();
+    editing(["0 @I1@ INDI", "1 SEX F"]);
+    expect(rootField()).toBeNull();
+
+    box.replaceChildren();
+    editing(["0 @I1@ INDI"], "7.0", "header:");
+    expect(rootField()).toBeNull();
+  });
+
+  it("replaces a 7.0 shared note of one line, and of two lines with a continuation", async () => {
+    const { tab } = editing(["0 @N1@ SNOTE First", "0 @I1@ INDI"], "7.0", "@N1@");
+    const area = rootField();
+    expect(area?.value).toBe("First");
+
+    if (area) {
+      type(area, "Replaced");
+      area.blur();
+    }
+    await settled();
+    expect(fileLines(tab)).toContain("0 @N1@ SNOTE Replaced");
+
+    const again = rootField();
+    if (again) {
+      type(again, "One\nTwo");
+      again.blur();
+    }
+    await settled();
+    expect(fileLines(tab)).toEqual(expect.arrayContaining(["0 @N1@ SNOTE One", "1 CONT Two"]));
+  });
+
+  it("replaces a 5.5.1 note record continued with CONC and CONT, and keeps the source beneath it", async () => {
+    const { tab } = editing(["0 @N1@ NOTE Te", "1 CONC xt", "1 CONT more", "1 SOUR @S1@", "0 @S1@ SOUR", "0 @I1@ INDI"], "5.5.1", "@N1@");
+    const area = rootField();
+    expect(area?.value).toBe("Text\nmore");
+
+    if (area) {
+      type(area, "New text");
+      area.blur();
+    }
+    await settled();
+    const lines = fileLines(tab);
+    expect(lines).toContain("0 @N1@ NOTE New text");
+    expect(lines).not.toContain("1 CONC xt");
+    expect(lines).not.toContain("1 CONT more");
+    expect(lines[lines.indexOf("0 @N1@ NOTE New text") + 1]).toBe("1 SOUR @S1@");
+  });
+
+  it("replaces the value of a record of the file's own", () => {
+    const { tab } = editing(["0 @P1@ _PLAN Custom value", "1 NAME Research plan", "0 @I1@ INDI"], "7.0", "@P1@");
+    const area = rootField();
+
+    if (area) {
+      type(area, "Another value");
+      press(area, "Enter");
+    }
+
+    expect(fileLines(tab)).toEqual(expect.arrayContaining(["0 @P1@ _PLAN Another value", "1 NAME Research plan"]));
+  });
+
+  it("shows a shared note's text as read where the card does not write", () => {
+    draw(make(["0 @N1@ SNOTE Read only", "0 @I1@ INDI"], "7.0", "@N1@"));
+
+    expect(rootField()).toBeNull();
+    expect(rootRow().querySelector(".gedcom-detail-text-body")?.textContent).toBe("Read only");
+  });
+});
+
+describe("opening a shared note from a pointer to it", () => {
+  const noteControl = (row: Element): HTMLElement | null => row.querySelector<HTMLElement>(".gedcom-tree-open-note");
+
+  it("is a control beside the note's text, reached by the keyboard, that selects the note", () => {
+    draw(make(["0 @I1@ INDI", "1 SNOTE @N1@", "0 @N1@ SNOTE The shared text"]));
+    const control = noteControl(rowNamed("Shared note"));
+
+    expect(control?.getAttribute("role")).toBe("button");
+    expect(control?.getAttribute("tabindex")).toBe("0");
+    expect(control?.getAttribute("aria-label")).toBe("Open note");
+    expect(control?.getAttribute("data-focus-key")).toBe("t:SNOTE[0]:note");
+    control?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+    expect(opened).toHaveBeenCalledWith("@N1@");
+  });
+
+  it("stands before the lines of the note, beside its text", () => {
+    draw(make(["0 @I1@ INDI", "1 SNOTE @N1@", "0 @N1@ SNOTE The shared text", "1 LANG en"]));
+    const main = rowNamed("Shared note").querySelector(".gedcom-tree-main");
+
+    expect([...(main?.children ?? [])].map((child) => child.className.split(" ")[0])).toEqual(["gedcom-detail-text", "gedcom-tree-open-note", "gedcom-detail"]);
+  });
+
+  it("is not in the closed summary of a pointer with a citation beneath it, and once opened it leaves the node open", () => {
+    draw(make(["0 @I1@ INDI", "1 SNOTE @N1@", "2 SOUR @S1@", "0 @N1@ SNOTE First line", "1 CONT second", "0 @S1@ SOUR", "1 TITL Register"]));
+    const row = rowNamed("Shared note");
+
+    expect(summaryOf(row)).toBe("First line");
+    expect(noteControl(row)).toBeNull();
+    open("Shared note");
+    const control = noteControl(rowNamed("Shared note"));
+    control?.click();
+
+    expect(opened).toHaveBeenCalledWith("@N1@");
+    expect(chevron(rowNamed("Shared note")).getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("is in Russian", () => {
+    setLanguage("ru");
+    draw(make(["0 @I1@ INDI", "1 SNOTE @N1@", "0 @N1@ SNOTE The shared text"]));
+
+    expect(noteControl(rowNamed("Общая заметка"))?.getAttribute("aria-label")).toBe("Открыть заметку");
+  });
+
+  it("is not offered on a pointer to another record, and a pointer to a repository or a submitter is a link", () => {
+    draw(make(["0 @S1@ SOUR", "1 REPO @R1@", "1 _SUBM @U1@", "0 @R1@ REPO", "1 NAME Archive", "0 @U1@ SUBM", "1 NAME Domorium", "0 @I1@ INDI"], "7.0", "@S1@"));
+
+    expect(box.querySelector(".gedcom-tree-open-note")).toBeNull();
+    const links = [...box.querySelectorAll<HTMLElement>("button.gedcom-desk-link")].map((link) => link.textContent);
+    expect(links).toEqual(expect.arrayContaining(["Archive", "Domorium"]));
   });
 });

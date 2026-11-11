@@ -66,6 +66,8 @@ export interface TreeHost extends DetailHost {
   choicesAt?(at: Position): Choices | null;
   /** Whether a line break is the ordinary case of the line's value. */
   proseAt?(at: Position): boolean;
+  /** Whether the standard gives the line at this position a value at all, as it does a shared note's opening line and not a person's. */
+  holdsValueAt?(at: Position): boolean;
   /** The records a pointer of this tag under the line at `parent` may point at. */
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
   /** Whether a pointer of this tag under the line at `parent` is one the standard pairs with one back. */
@@ -493,6 +495,47 @@ class Tree {
     });
   }
 
+  /** The control beside a shared note's text, drawn where the pointer is, that opens the note's own card. */
+  private noteControl(parent: HTMLElement, line: RecordLine, key: string): void {
+    const { host, index } = this.options;
+    const xref = line.pointer;
+    const target = xref === undefined ? undefined : index.record(xref);
+    if (xref === undefined || (target?.tag !== "SNOTE" && target?.tag !== "NOTE")) {
+      return;
+    }
+    const button = createDiv({ cls: ["gedcom-tree-open-note", "clickable-icon"] });
+    parent.insertBefore(button, parent.querySelector(":scope > .gedcom-detail"));
+    pressable(button, t("desk.openNote"), `t:${key}:note`);
+    if (host.setIcon) {
+      host.setIcon(button, "sticky-note");
+    } else {
+      button.setText("↗");
+    }
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (this.live()) {
+        host.openRecord(xref);
+      }
+    });
+  }
+
+  /** The value a record's own opening line writes: a field where the standard gives that line one and the card writes, as read otherwise. */
+  private rootValue(main: HTMLElement, line: RecordLine, key: string, labelledBy: string, detail: DetailContext): void {
+    const text = line.text;
+    if (text === undefined) {
+      return;
+    }
+    if (this.editable && (this.options.host.holdsValueAt?.(line.range.start) ?? false)) {
+      this.valueField(main, line, line, key, labelledBy);
+      return;
+    }
+    if (line.tag === "SNOTE" || line.tag === "NOTE") {
+      renderNoteText(main, text, line.range.start.line, detail, `note:${key}`);
+      return;
+    }
+    renderField(main, text, "text", { labelledBy }).area.setAttribute("dir", "auto");
+  }
+
   /** What a closed node says of its line, as the parts of one line; a part that is a place is a link. */
   private summary(line: RecordLine, owner: RecordLine, fact: TreeFact | undefined): SummaryPart[] {
     const { index } = this.options;
@@ -618,11 +661,13 @@ class Tree {
     };
     const paintValue = (): void => {
       if (root) {
+        this.rootValue(main, line, key, name.id, detail);
         return;
       }
       detail.notes = { drawn: 0, prefix: `${key}.` };
       if (line.void || line.pointer !== undefined) {
         renderPointer(main, line, detail, `t:${key}:link`);
+        this.noteControl(main, line, key);
         this.pick(main, line, owner, key);
       } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE") && !this.editable) {
         renderNoteText(main, line.text, line.range.start.line, detail, `note:${key}`);

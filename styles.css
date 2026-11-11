@@ -2499,7 +2499,8 @@ button.gedcom-fg-pop-open {
   font-style: italic;
 }
 
-.gedcom-tree .gedcom-tree-place {
+.gedcom-tree .gedcom-tree-place,
+.gedcom-tree .gedcom-tree-open-note {
   --icon-size: var(--icon-xs);
   align-self: center;
   display: flex;
@@ -2513,6 +2514,10 @@ button.gedcom-fg-pop-open {
   color: var(--text-muted);
 }
 
+.gedcom-tree .gedcom-tree-open-note {
+  align-self: flex-start;
+}
+
 .gedcom-tree .gedcom-tree-several {
   flex: 0 1 auto;
   min-width: 0;
@@ -2523,6 +2528,7 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree .gedcom-tree-place:focus-visible,
+.gedcom-tree .gedcom-tree-open-note:focus-visible,
 .gedcom-tree .gedcom-tree-several:focus-visible,
 .gedcom-tree .gedcom-field-revert:focus-visible {
   outline: 2px solid var(--interactive-accent);
@@ -2536,6 +2542,7 @@ button.gedcom-fg-pop-open {
 
   .gedcom-tree .gedcom-field-revert,
   .gedcom-tree .gedcom-tree-place,
+  .gedcom-tree .gedcom-tree-open-note,
   .gedcom-tree .gedcom-tree-pick {
     --icon-size: var(--icon-s);
     width: 44px;
@@ -2556,6 +2563,7 @@ button.gedcom-fg-pop-open {
 
 .is-mobile .gedcom-tree .gedcom-field-revert,
 .is-mobile .gedcom-tree .gedcom-tree-place,
+.is-mobile .gedcom-tree .gedcom-tree-open-note,
 .is-mobile .gedcom-tree .gedcom-tree-pick {
   --icon-size: var(--icon-s);
   width: 44px;

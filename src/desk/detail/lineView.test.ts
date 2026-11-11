@@ -103,6 +103,18 @@ describe("a pointer", () => {
   });
 });
 
+describe("a pointer to a record that has a card", () => {
+  it("is a link to a repository and to a submitter, named as the list names them, that selects it", () => {
+    const { ctx, record } = make(["0 @I1@ INDI", "1 _REPO @R1@", "1 _SUBM @U1@", "0 @R1@ REPO", "1 NAME Archive", "0 @U1@ SUBM", "1 NAME Domorium"]);
+    renderLines(box.createDiv({ cls: "gedcom-detail" }), record.children, ctx);
+    const links = [...box.querySelectorAll<HTMLElement>("button.gedcom-desk-link")];
+
+    expect(links.map((link) => link.textContent)).toEqual(["Archive", "Domorium"]);
+    links[0]?.click();
+    expect(opened).toHaveBeenCalledWith("@R1@");
+  });
+});
+
 describe("the one name of every record", () => {
   const curie = curieIndex();
 

@@ -82,7 +82,7 @@ import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
 import { ConfirmModal } from "./desk/confirmModal";
-import { addableAt, choicesAt, describes, pairedAt, pointerChoicesAt, proseAt, removableAt, type Choices } from "./desk/addableFields";
+import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt, type Choices } from "./desk/addableFields";
 import {
   addAt,
   checkValue,
@@ -836,6 +836,10 @@ export class GedcomView extends TextFileView implements CardTab {
 
   proseAt(at: Position): boolean {
     return proseAt(this.service(), at);
+  }
+
+  holdsValueAt(at: Position): boolean {
+    return holdsValueAt(this.service(), at);
   }
 
   addableAt(at: Position): StructureFieldDescription[] {

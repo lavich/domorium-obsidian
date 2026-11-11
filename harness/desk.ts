@@ -3,7 +3,7 @@ import type { Position, Range } from "@domorium/language-service";
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
-import { addableAt, choicesAt, describes, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../src/desk/addableFields";
+import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../src/desk/addableFields";
 import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../src/desk/edits";
 import { renderRecordCard, type CardTab, type CardView } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
@@ -118,6 +118,7 @@ const tab: CardTab = {
   addableAt: (at) => addableAt(service(), at),
   choicesAt: (at) => choicesAt(service(), at),
   proseAt: (at) => proseAt(service(), at),
+  holdsValueAt: (at) => holdsValueAt(service(), at),
   removableAt: (parent, tag) => removableAt(service(), parent, tag),
   pointerChoicesAt: (parent, tag) => pointerChoicesAt(service(), parent, tag),
   pairedAt: (parent, tag) => pairedAt(service(), parent, tag),

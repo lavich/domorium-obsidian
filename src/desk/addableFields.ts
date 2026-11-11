@@ -39,6 +39,12 @@ export function proseAt(service: GedcomLanguageService, at: Position): boolean {
   return !("ok" in described) && described.prose;
 }
 
+/** Whether the standard gives the line at this position a value at all. */
+export function holdsValueAt(service: GedcomLanguageService, at: Position): boolean {
+  const described = service.describeStructure(at);
+  return !("ok" in described) && described.payload.kind !== "none";
+}
+
 /** Whether the service describes the line at this position, which is what lets the card write to it. */
 export function describes(service: GedcomLanguageService, at: Position): boolean {
   return !("ok" in service.describeStructure(at));

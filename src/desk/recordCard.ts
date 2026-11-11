@@ -35,6 +35,7 @@ export interface CardTab {
   addableAt?(at: Position): StructureFieldDescription[];
   choicesAt?(at: Position): Choices | null;
   proseAt?(at: Position): boolean;
+  holdsValueAt?(at: Position): boolean;
   removableAt?(parent: Position, tag: string): boolean;
   pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
   pairedAt?(parent: Position, tag: string): boolean;
@@ -179,6 +180,7 @@ function drawRecord(
     addableAt: tab.addableAt?.bind(tab),
     choicesAt: tab.choicesAt?.bind(tab),
     proseAt: tab.proseAt?.bind(tab),
+    holdsValueAt: tab.holdsValueAt?.bind(tab),
     removableAt: tab.removableAt?.bind(tab),
     pointerChoicesAt: tab.pointerChoicesAt?.bind(tab),
     pairedAt: tab.pairedAt?.bind(tab),
