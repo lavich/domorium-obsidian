@@ -109,6 +109,10 @@ const ICONS: Record<string, Shape[]> = {
     { tag: "path", attrs: { d: "M10 11v6" } },
     { tag: "path", attrs: { d: "M14 11v6" } },
   ],
+  "sticky-note": [
+    { tag: "path", attrs: { d: "M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z" } },
+    { tag: "path", attrs: { d: "M15 3v6h6" } },
+  ],
   "map-pin": [
     { tag: "path", attrs: { d: "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" } },
     { tag: "circle", attrs: { cx: 12, cy: 10, r: 3 } },

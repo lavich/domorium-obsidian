@@ -35,11 +35,11 @@ Depends on lavich/domorium#527 (`setValue` on a record's opening line) as well a
 
 ## 6. The browser
 
-- [ ] 6.1 `tests/generated.ts`: `generatedNotes(count, dialect)` making 7.0 `SNOTE` and 5.5.1 `NOTE` records with `CONC`/`CONT`, each pointed at by a person
-- [ ] 6.2 `src/testing/curie.ts`, `harness/fileViews.ts` and `harness/desk.ts`: a fixture with a `_PLAN` record, a 5.5.1 file with a `SUBN`, and the generated notes
-- [ ] 6.3 `tests/fileList.spec.ts`: the eight buttons at 1400 px, the dropdown at 390 px and when narrowed, buttons again only past the margin, in English and Russian; each new kind's rows, sort, search and two-line phone rows at 390 and 320 px; 1478 notes in both dialects windowed, the first rows drawn within 1000 ms of choosing Notes in headless Chromium; the header row first under a sort; a person from the graph keeps the Notes
-- [ ] 6.4 `tests/desk.spec.ts`: choosing a note, a repository, a submitter, a `_PLAN` record and the header; the header has no editing control; *Open note* from Marie's tree; the repository from a source's tree; the announcement
-- [ ] 6.5 `styles.css` for the dropdown, the new columns and their two-line rows; verify by screenshots of the harness at 320 and 390 px, light and dark
+- [x] 6.1 `tests/generated.ts`: `generatedNotes(count, dialect)` making 7.0 `SNOTE` and 5.5.1 `NOTE` records with `CONC`/`CONT`, each pointed at by a person
+- [x] 6.2 `src/testing/curie.ts`, `harness/fileViews.ts` and `harness/desk.ts`: a fixture with a `_PLAN` record, a 5.5.1 file with a `SUBN`, and the generated notes
+- [x] 6.3 `tests/fileList.spec.ts`: the eight buttons at 1400 px, the dropdown at 390 px and when narrowed, buttons again only past the margin, in English and Russian; each new kind's rows, sort, search and two-line phone rows at 390 and 320 px; 1478 notes in both dialects windowed, the first rows drawn within 1000 ms of choosing Notes in headless Chromium; the header row first under a sort; a person from the graph keeps the Notes
+- [x] 6.4 `tests/desk.spec.ts`: choosing a note, a repository, a submitter, a `_PLAN` record and the header; the header has no editing control; *Open note* from Marie's tree; the repository from a source's tree; the announcement
+- [x] 6.5 `styles.css` for the dropdown, the new columns and their two-line rows; verify by screenshots of the harness at 320 and 390 px, light and dark
 
 ## 7. Docs and gate
 

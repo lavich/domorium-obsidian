@@ -28,7 +28,7 @@ beforeAll(() => {
     const compact = this.closest(".gedcom-list")?.classList.contains("is-compact") ?? false;
     const sized = this.classList.contains("gedcom-list-row") || this.classList.contains("gedcom-list-probe");
     const height = sized ? (compact ? box.compact : box.wide) : 0;
-    const width = this.classList.contains("gedcom-list-kinds-probe")
+    const width = this.parentElement?.classList.contains("gedcom-list-kinds-probe")
       ? [...this.children].reduce((sum, one) => sum + (one.textContent ?? "").length * 7 + 24, 0)
       : this.classList.contains("gedcom-list-find-toggle")
         ? 30

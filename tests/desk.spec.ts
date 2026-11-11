@@ -153,11 +153,11 @@ test.describe("an event id", () => {
 });
 
 test.describe("every kind of card in a narrow column", () => {
-  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@"]) {
+  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "@N1@", "@R2@", "@U1@", "@P1@", "header:"]) {
     for (const [width, phone, language] of [[320, false, "en"], [320, false, "ru"], [390, true, "ru"]] as const) {
       test(`${record} at ${width} pixels in ${language} has nothing to scroll sideways`, async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 760 });
-        await mountDesk(page, { record, width, phone, language });
+        await mountDesk(page, { record, width, phone, language, plan: true });
 
         expect(await overflowsSideways(page)).toBe(false);
       });
@@ -786,5 +786,109 @@ test.describe("editing on a phone", () => {
 
     expect(text).toContain("1 OCCU Physicist\n");
     expect(text).not.toContain("1 SEX F\n");
+  });
+});
+
+test.describe("the cards of notes, repositories and the other records", () => {
+  const live = (page: Page) => page.locator(".gedcom-card-live");
+  const rootRow = (page: Page) => page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row");
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+  });
+
+  test("shows a shared note as its tree, its whole text on the root, and announces its first line", async ({ page }) => {
+    await mountDesk(page, { record: "@N1@" });
+
+    await expect(page.locator(".gedcom-card-body > *")).toHaveCount(1);
+    await expect(rootRow(page).locator(".gedcom-tree-label")).toHaveText("Shared note");
+    await expect(rootRow(page).locator("textarea")).toHaveValue(
+      "The only person to have won a Nobel Prize in two different sciences:\nphysics in 1903 and chemistry in 1911.",
+    );
+    await expect(live(page)).toHaveText("Shown: The only person to have won a Nobel Prize in two different sciences:");
+  });
+
+  test("writes a shared note's new text from its root, its second line as a continuation", async ({ page }) => {
+    await mountDesk(page, { record: "@N2@" });
+    const field = rootRow(page).locator("textarea");
+
+    await field.fill("Wrote the biography of her mother.\nIn 1937.");
+    await page.locator(".gedcom-card-body").click({ position: { x: 4, y: 4 } });
+
+    await expect.poll(() => page.evaluate(() => window.desk.text())).toContain("0 @N2@ SNOTE Wrote the biography of her mother.\n1 CONT In 1937.\n");
+  });
+
+  test("shows a repository's name and address, with the city and the country once the address is opened", async ({ page }) => {
+    await mountDesk(page, { record: "@R2@" });
+
+    await expect(rootRow(page).locator(".gedcom-tree-label")).toHaveText("Repository");
+    await expect(rootRow(page).locator("textarea")).toHaveCount(0);
+    await pressArrow(page, "Address");
+    await expect(treeRow(page, "City").locator("textarea")).toHaveValue("Warsaw");
+    await expect(treeRow(page, "Country").locator("textarea")).toHaveValue("Poland");
+  });
+
+  test("leads from a source's tree to its repository", async ({ page }) => {
+    await mountDesk(page, { record: "@S2@" });
+    await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "State Archive in Warsaw" }).click();
+
+    await shownRecord(page, "@R2@");
+    await expect(live(page)).toHaveText("Shown: State Archive in Warsaw");
+  });
+
+  test("changes a submitter's web address in its tree", async ({ page }) => {
+    await mountDesk(page, { record: "@U1@" });
+    const field = treeRow(page, "Web address").locator("textarea");
+
+    await field.fill("https://example.org/");
+    await field.press("Enter");
+
+    expect(await page.evaluate(() => window.desk.text())).toContain("0 @U1@ SUBM\n1 NAME Domorium\n1 WWW https://example.org/\n");
+  });
+
+  test("shows a record of the file's own under its tag, its own value on its root and its name once closed", async ({ page }) => {
+    await mountDesk(page, { record: "@P1@", plan: true });
+
+    await expect(rootRow(page).locator(".gedcom-tree-label")).toHaveText("_PLAN");
+    await expect(rootRow(page).locator("textarea")).toHaveValue("Custom value");
+    await expect(treeRow(page, "_STEP").locator("textarea")).toHaveValue("Visit the archive");
+    await rootRow(page).locator(".gedcom-tree-chevron").click();
+    await expect(rootRow(page).locator(".gedcom-tree-summary")).toHaveText("Research plan");
+  });
+
+  test("shows the header read-only, with no field, menu or removal, and its submitter as a link", async ({ page }) => {
+    await mountDesk(page, { record: "header:" });
+    await openEveryNode(page);
+
+    await expect(rootRow(page).locator(".gedcom-tree-label")).toHaveText("Header");
+    await expect(treeRow(page, "VERS").first().locator("textarea")).toHaveValue("7.0");
+    await expect(page.locator(".gedcom-tree textarea:not([readonly]), .gedcom-tree select, .gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-pick")).toHaveCount(0);
+    await expect(page.locator(".gedcom-tree-note")).toHaveCount(0);
+    await expect(live(page)).toHaveText("Shown: File header");
+    await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Domorium" }).click();
+    await shownRecord(page, "@U1@");
+  });
+
+  test("opens a shared note from Marie's tree through the control beside its text", async ({ page }) => {
+    await mountDesk(page);
+    const row = treeRow(page, "Shared note");
+    const control = row.locator(".gedcom-tree-open-note");
+
+    await expect(control).toHaveAttribute("aria-label", "Open note");
+    await control.focus();
+    await page.keyboard.press("Enter");
+
+    await shownRecord(page, "@N1@");
+  });
+
+  test("gives the control a 44 pixel target where the pointer is coarse", async ({ browser }) => {
+    const context = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 760 } });
+    const page = await context.newPage();
+    await mountDesk(page, { phone: true });
+    const box = await treeRow(page, "Shared note").locator(".gedcom-tree-open-note").boundingBox();
+
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    await context.close();
   });
 });

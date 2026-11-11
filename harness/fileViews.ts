@@ -4,7 +4,7 @@ import type { ViewKind } from "../src/desk/deskState";
 import { FileViews, memoryToShow, type ViewMemory } from "../src/desk/fileViews";
 import { listSelection } from "../src/desk/listRows";
 import { setLanguage } from "../src/i18n";
-import { CURIE, curieWithEvents, indexOf } from "../src/testing/curie";
+import { CURIE, curieWithEvents, curieWithPlan, indexOf } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
 import { stubSetIcon } from "./icons";
 
@@ -21,6 +21,8 @@ export interface TabOptions {
   touch?: boolean;
   language?: string;
   events?: boolean;
+  /** The demo file with a record of its own, `@P1@ _PLAN`. */
+  plan?: boolean;
 }
 
 export interface TabCalls {
@@ -117,7 +119,7 @@ function mount(options: TabOptions): void {
   calls.selected = [];
   calls.shownInSource = [];
   calls.changed = 0;
-  index = indexOf(options.doc ?? (options.events ? curieWithEvents() : CURIE));
+  index = indexOf(options.doc ?? (options.events ? curieWithEvents() : options.plan ? curieWithPlan() : CURIE));
   memory = options.memory ?? {};
   around = options.around;
   selected = null;

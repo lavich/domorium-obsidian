@@ -165,8 +165,9 @@ export class ListBoard {
     }
     this.kindSelect.toggle(false);
     this.kindSelect.addEventListener("change", () => this.showKind(this.kindSelect.value as ListKind));
-    this.kindsProbe = bar.createDiv({ cls: "gedcom-list-seg gedcom-list-kinds-probe" });
-    this.kindsProbe.setAttribute("aria-hidden", "true");
+    const probe = bar.createDiv({ cls: "gedcom-list-kinds-probe" });
+    probe.setAttribute("aria-hidden", "true");
+    this.kindsProbe = probe.createDiv({ cls: "gedcom-list-seg" });
     for (const kind of LIST_KINDS) {
       const button = this.kindsProbe.createEl("button", { cls: "gedcom-list-seg-button", text: t(KIND_LABEL[kind]) });
       button.setAttribute("type", "button");

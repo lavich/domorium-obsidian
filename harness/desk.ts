@@ -9,6 +9,7 @@ import { renderRecordCard, type CardTab, type CardView } from "../src/desk/recor
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
+import { curieWithPlan } from "../src/testing/curie";
 import { installObsidianDom } from "../src/testing/obsidianDom";
 import { TextTab } from "../src/testing/textTab";
 import { stubSetIcon } from "./icons";
@@ -25,6 +26,8 @@ export interface DeskOptions {
   language?: string;
   /** Draws the card as it is with no GEDCOM tab. */
   noTab?: boolean;
+  /** The demo file with a record of its own, `@P1@ _PLAN`. */
+  plan?: boolean;
 }
 
 export interface DeskCalls {
@@ -200,7 +203,7 @@ function mount(options: DeskOptions): void {
   calls.filesOpened = [];
   calls.asked = [];
   confirmed = null;
-  doc = new TextTab(options.doc ?? curie);
+  doc = new TextTab(options.doc ?? (options.plan ? curieWithPlan() : curie));
   indexed = -1;
   index = tab.index();
   hasTab = !(options.noTab ?? false);

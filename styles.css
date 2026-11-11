@@ -724,10 +724,16 @@ button.gedcom-list-seg-button {
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
-  width: max-content;
-  max-width: none;
+  width: 0;
+  height: 0;
+  overflow: hidden;
   visibility: hidden;
   pointer-events: none;
+}
+
+.gedcom-list-kinds-probe > .gedcom-list-seg {
+  width: max-content;
+  max-width: none;
 }
 
 .gedcom-list-kinds-probe button.gedcom-list-seg-button {
@@ -854,6 +860,26 @@ button.gedcom-list-direction:disabled {
 .gedcom-list-head.is-places,
 .gedcom-list-row.is-places {
   grid-template-columns: minmax(0, 3.4fr) minmax(0, 5.5em) minmax(0, 1.4fr);
+}
+
+.gedcom-list-head.is-media,
+.gedcom-list-row.is-media {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 7em);
+}
+
+.gedcom-list-head.is-notes,
+.gedcom-list-row.is-notes {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 7em);
+}
+
+.gedcom-list-head.is-repositories,
+.gedcom-list-row.is-repositories {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 5.5em);
+}
+
+.gedcom-list-head.is-other,
+.gedcom-list-row.is-other {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 3fr) minmax(0, 7em);
 }
 
 .gedcom-list-head.is-events,
@@ -1016,6 +1042,49 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
 
 .gedcom-list.is-compact .gedcom-list-row.is-events .gedcom-list-cell:nth-child(3) {
   grid-area: c2;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-media .gedcom-list-cell:nth-child(2) {
+  grid-area: c3;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-media .gedcom-list-cell:nth-child(3) {
+  grid-area: c4;
+  text-align: end;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-media .gedcom-list-cell:nth-child(4),
+.gedcom-list.is-compact .gedcom-list-row.is-notes .gedcom-list-cell:nth-child(2),
+.gedcom-list.is-compact .gedcom-list-row.is-repositories .gedcom-list-cell:nth-child(3),
+.gedcom-list.is-compact .gedcom-list-row.is-other .gedcom-list-cell:nth-child(3) {
+  grid-area: c2;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-notes .gedcom-list-cell:nth-child(1) {
+  grid-area: 1 / 1 / 3 / 2;
+  display: -webkit-box;
+  align-self: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-repositories .gedcom-list-cell:nth-child(2) {
+  grid-area: 2 / 1 / 3 / 3;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-other .gedcom-list-cell:nth-child(2) {
+  grid-area: c1;
+  color: inherit;
+  font-size: inherit;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-other .gedcom-list-cell:nth-child(1) {
+  grid-area: 2 / 1 / 3 / 3;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
 }
 
 .gedcom-list.is-compact .gedcom-list-count {

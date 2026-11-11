@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
 import type { TabOptions } from "../harness/fileViews";
-import { generated } from "./generated";
+import { generated, generatedNotes } from "./generated";
 
 async function mountList(page: Page, options: TabOptions = {}): Promise<void> {
   await page.goto(pathToFileURL(resolve("harness/fileViews.html")).href);
@@ -30,7 +30,17 @@ const names = (page: Page) =>
 const cellTexts = (page: Page, xref: string) =>
   rowOf(page, xref).locator(".gedcom-list-cell").evaluateAll((cells) => cells.map((cell) => cell.textContent));
 const header = (page: Page, label: string) => page.locator(".gedcom-list-sort", { hasText: label });
-const seg = (page: Page, label: string) => page.locator(".gedcom-list-seg-button", { hasText: label });
+const KIND_BUTTON = ".gedcom-list-bar > .gedcom-list-seg > .gedcom-list-seg-button";
+const seg = (page: Page, label: string) => page.locator(KIND_BUTTON, { hasText: label });
+const kindSelect = (page: Page) => page.locator(".gedcom-list-kind-select");
+
+async function chooseKind(page: Page, label: string): Promise<void> {
+  if (await kindSelect(page).isVisible()) {
+    await kindSelect(page).selectOption({ label });
+  } else {
+    await seg(page, label).click();
+  }
+}
 const selected = (page: Page) => page.evaluate(() => window.tab.calls.selected);
 const drawnRows = (page: Page) => rows(page).count();
 const scrollTopOf = (page: Page) => page.locator(".gedcom-list-scroll").evaluate((node) => node.scrollTop);
@@ -378,8 +388,8 @@ test.describe("the list on a wide tab", () => {
       for (const width of [1400, 390, 320]) {
         await page.setViewportSize({ width, height: 800 });
         await mountList(page, { doc: longFile(), language, phone: width < 400, touch: width < 400 });
-        for (const label of language === "ru" ? ["Люди", "Семьи", "Источники"] : ["People", "Families", "Sources"]) {
-          await seg(page, label).click();
+        for (const label of language === "ru" ? ["Люди", "Семьи", "Источники", "Медиа", "Заметки", "Хранилища", "Прочее"] : ["People", "Families", "Sources", "Media", "Notes", "Repositories", "Other"]) {
+          await chooseKind(page, label);
           expect(await sidewaysOverflow(page), `${label} at ${width}`).toBe(false);
         }
       }
@@ -397,21 +407,20 @@ test.describe("the list on a wide tab", () => {
   });
 
   for (const width of [260, 200]) {
-    test(`keeps the three kind buttons inside their bar at ${width} px`, async ({ page }) => {
+    test(`keeps the kinds' dropdown inside the toolbar at ${width} px`, async ({ page }) => {
       await mountList(page);
       await page.evaluate((to) => {
         document.getElementById("leaf")?.style.setProperty("width", `${to}px`);
         window.tab.resized();
       }, width);
       const fit = await page.evaluate(() => {
-        const bar = document.querySelector(".gedcom-list-seg")?.getBoundingClientRect();
-        return [...document.querySelectorAll(".gedcom-list-seg-button")].every((button) => {
-          const box = button.getBoundingClientRect();
-          return bar !== undefined && box.left >= bar.left - 0.5 && box.right <= bar.right + 0.5;
-        });
+        const bar = document.querySelector(".gedcom-list-bar")?.getBoundingClientRect();
+        const box = document.querySelector(".gedcom-list-kind-select")?.getBoundingClientRect();
+        return bar !== undefined && box !== undefined && box.width > 0 && box.left >= bar.left - 0.5 && box.right <= bar.right + 0.5;
       });
 
       expect(fit).toBe(true);
+      await expect(page.locator(".gedcom-list-bar > .gedcom-list-seg")).toBeHidden();
       expect(await sidewaysOverflow(page)).toBe(false);
     });
   }
@@ -457,10 +466,11 @@ async function expectOneControlHeight(page: Page): Promise<void> {
   const heights = await page.evaluate(() => {
     const height = (selector: string) => [...document.querySelectorAll(selector)].map((node) => node.getBoundingClientRect().height);
     return {
-      bar: height(".gedcom-list-seg"),
-      buttons: height(".gedcom-list-seg-button"),
+      bar: height(".gedcom-list-bar > .gedcom-list-seg").filter((one) => one > 0),
+      buttons: height(".gedcom-list-bar > .gedcom-list-seg > .gedcom-list-seg-button").filter((one) => one > 0),
       filter: height(".gedcom-list-find"),
       select: height(".gedcom-list-sort-select").filter((one) => one > 0),
+      kinds: height(".gedcom-list-kind-select").filter((one) => one > 0),
     };
   });
   const control = heights.filter[0] ?? NaN;
@@ -472,8 +482,10 @@ async function expectOneControlHeight(page: Page): Promise<void> {
       expect(Math.abs(one - control), name).toBeLessThanOrEqual(1);
     }
   }
-  expect(Math.max(...heights.buttons) - Math.min(...heights.buttons)).toBeLessThanOrEqual(1);
-  expect(heights.buttons[0] ?? NaN).toBeLessThanOrEqual(control);
+  if (heights.buttons.length > 0) {
+    expect(Math.max(...heights.buttons) - Math.min(...heights.buttons)).toBeLessThanOrEqual(1);
+    expect(heights.buttons[0] ?? NaN).toBeLessThanOrEqual(control);
+  }
 }
 
 test.describe("the toolbar's controls", () => {
@@ -516,7 +528,7 @@ test.describe("the list on a phone", () => {
   test("makes every control at least 44 pixels tall", async ({ page }) => {
     await mountList(page, { phone: true, touch: true });
 
-    for (const selector of [".gedcom-list-sort-select", ".gedcom-list-direction", ".gedcom-list-seg-button", ".gedcom-list-find"]) {
+    for (const selector of [".gedcom-list-sort-select", ".gedcom-list-direction", ".gedcom-list-kind-select", ".gedcom-list-find"]) {
       const boxes = await page.locator(selector).evaluateAll((all) => all.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...boxes), selector).toBeGreaterThanOrEqual(43.5);
     }
@@ -531,7 +543,7 @@ test.describe("the list on a tablet", () => {
 
     await expect(page.locator(".gedcom-list")).toHaveClass(/is-compact/);
     expect((await rowOf(page, "@I1@").boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-    for (const selector of [".gedcom-list-seg-button", ".gedcom-list-find"]) {
+    for (const selector of [KIND_BUTTON, ".gedcom-list-find"]) {
       const heights = await page.locator(selector).evaluateAll((all) => all.map((node) => node.getBoundingClientRect().height));
       expect(Math.min(...heights), selector).toBeGreaterThanOrEqual(43.5);
     }
@@ -733,7 +745,12 @@ for (const viewport of [WIDE, PHONE]) {
     test("has no button in the row of the kinds but the kinds", async ({ page }) => {
       await mountPlaces(page);
 
-      await expect(page.locator(".gedcom-list-bar button.gedcom-list-seg-button")).toHaveCount(4);
+      await expect(page.locator(KIND_BUTTON)).toHaveCount(8);
+      await expect(phone ? kindSelect(page) : page.locator(".gedcom-list-bar > .gedcom-list-seg")).toBeVisible();
+      const parts = await page.locator(".gedcom-list-bar > *").evaluateAll((all) =>
+        all.filter((one) => !one.classList.contains("gedcom-visually-hidden")).map((one) => one.classList[0]),
+      );
+      expect(parts).toEqual(["gedcom-list-seg", "gedcom-list-kind-select", "gedcom-list-kinds-probe", "gedcom-list-find"]);
       await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
     });
 
@@ -762,8 +779,273 @@ for (const viewport of [WIDE, PHONE]) {
     test("has no Events kind", async ({ page }) => {
       await mountList(page, { events: true, phone, touch: phone });
 
-      await expect(page.locator(".gedcom-list-seg-button")).toHaveText(["People", "Families", "Sources", "Places"]);
-      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("People");
+      const kinds = ["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"];
+      if (phone) {
+        await expect(kindSelect(page).locator("option")).toHaveText(kinds);
+        await expect(kindSelect(page)).toHaveValue("people");
+      } else {
+        await expect(page.locator(KIND_BUTTON)).toHaveText(kinds);
+        await expect(page.locator(`${KIND_BUTTON}.is-active`)).toHaveText("People");
+      }
+    });
+  });
+}
+
+async function setLeafWidth(page: Page, width: number): Promise<void> {
+  await page.evaluate((to) => {
+    document.getElementById("leaf")?.style.setProperty("width", `${to}px`);
+    window.tab.resized();
+  }, width);
+}
+
+const kindsState = (page: Page) =>
+  page.evaluate(() => {
+    const bar = document.querySelector<HTMLElement>(".gedcom-list-bar");
+    const probe = document.querySelector<HTMLElement>(".gedcom-list-kinds-probe > .gedcom-list-seg");
+    const icon = document.querySelector<HTMLElement>(".gedcom-list-find-toggle");
+    const gap = Number.parseFloat(bar ? getComputedStyle(bar).columnGap : "") || 0;
+    return {
+      bar: bar?.clientWidth ?? 0,
+      needed: (probe?.getBoundingClientRect().width ?? 0) + gap + (icon?.getBoundingClientRect().width ?? 0),
+      dropdown: (document.querySelector<HTMLElement>(".gedcom-list-kind-select")?.offsetWidth ?? 0) > 0,
+    };
+  });
+
+test.describe("the kinds as buttons or a dropdown", () => {
+  test.use({ viewport: WIDE });
+
+  for (const language of ["en", "ru"] as const) {
+    test(`switch at the measured width of the buttons and back past the margin, in ${language}`, async ({ page }) => {
+      await mountList(page, { language });
+      expect((await kindsState(page)).dropdown).toBe(false);
+
+      let width = 1000;
+      let before = await kindsState(page);
+      for (; width > 200; width -= 2) {
+        await setLeafWidth(page, width);
+        const now = await kindsState(page);
+        if (now.dropdown) {
+          expect(now.bar).toBeLessThan(now.needed);
+          expect(before.bar).toBeGreaterThanOrEqual(before.needed);
+          break;
+        }
+        before = now;
+      }
+      expect(width).toBeGreaterThan(200);
+
+      for (; width < 1000; width += 2) {
+        await setLeafWidth(page, width);
+        const now = await kindsState(page);
+        if (!now.dropdown) {
+          expect(now.bar).toBeGreaterThan(now.needed + 40);
+          break;
+        }
+        expect(now.bar).toBeLessThanOrEqual(now.needed + 40);
+      }
+      expect(width).toBeLessThan(1000);
+    });
+  }
+
+  test("are measured in the language shown", async ({ page }) => {
+    await mountList(page, { language: "en" });
+    const english = (await kindsState(page)).needed;
+    await mountList(page, { language: "ru" });
+    const russian = (await kindsState(page)).needed;
+
+    expect(Math.abs(english - russian)).toBeGreaterThan(1);
+  });
+
+  test("offer the eight kinds in one dropdown named as the kind of records, and choosing Notes shows the notes", async ({ page }) => {
+    await page.setViewportSize(PHONE);
+    await mountList(page, { phone: true, touch: true });
+
+    await expect(kindSelect(page)).toBeVisible();
+    await expect(kindSelect(page).locator("option")).toHaveText(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
+    expect(await kindSelect(page).evaluate((select) => document.getElementById(select.getAttribute("aria-labelledby") ?? "")?.textContent)).toBe("Kind of records");
+    expect((await kindSelect(page).boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(43.5);
+    await kindSelect(page).selectOption("notes");
+    await expect(page.locator(".gedcom-list-count")).toHaveText("2 notes");
+  });
+
+  test("is where the buttons were in the order of the keyboard", async ({ page }) => {
+    await page.setViewportSize(PHONE);
+    await mountList(page, { phone: true, touch: true });
+    await page.locator(".gedcom-list-kind-select").focus();
+    await page.keyboard.press("Tab");
+
+    await expect(page.locator(".gedcom-list-find-toggle")).toBeFocused();
+  });
+});
+
+test.describe("the media, notes, repositories and other records", () => {
+  test.use({ viewport: WIDE });
+
+  test("show their rows, counts and headers", async ({ page }) => {
+    await mountList(page);
+
+    await chooseKind(page, "Media");
+    await expect(page.locator(".gedcom-list-count")).toHaveText("7 media");
+    expect(await cellTexts(page, "@O5@")).toEqual(["The Curie family, about 1908", "Media/curie-family-1908.svg", "image/svg+xml", "2"]);
+    expect(await cellTexts(page, "@O7@")).toEqual(["A plate nobody can find", "Media/lost-daguerreotype.jpg", "image/jpeg", "0"]);
+
+    await chooseKind(page, "Notes");
+    await expect(page.locator(".gedcom-list-count")).toHaveText("2 notes");
+    expect(await cellTexts(page, "@N1@")).toEqual(["The only person to have won a Nobel Prize in two different sciences:", "1"]);
+    await expect(page.locator(".gedcom-list-headcell:visible")).toHaveText(["Text", "Linked from"]);
+
+    await chooseKind(page, "Repositories");
+    await expect(page.locator(".gedcom-list-count")).toHaveText("2 repositories");
+    expect(await cellTexts(page, "@R1@")).toEqual(["Nobel Prize Outreach", "", "2"]);
+    expect(await cellTexts(page, "@R2@")).toEqual(["State Archive in Warsaw", "Krzywe Koło 7", "1"]);
+
+    await chooseKind(page, "Other");
+    await expect(page.locator(".gedcom-list-count")).toHaveText("2 records");
+    expect(await cellTexts(page, "header:")).toEqual(["Header", "File header", ""]);
+    expect(await cellTexts(page, "@U1@")).toEqual(["Submitter", "Domorium", "1"]);
+  });
+
+  test("search the whole note, the address without marks and the kind", async ({ page }) => {
+    await mountList(page);
+
+    await chooseKind(page, "Notes");
+    await searchFor(page, "chemistry");
+    expect(await names(page)).toEqual(["The only person to have won a Nobel Prize in two different sciences:"]);
+    await expect(page.locator(".gedcom-list-count")).toHaveText("1 of 2 notes");
+
+    await chooseKind(page, "Repositories");
+    await searchFor(page, "kolo");
+    expect(await names(page)).toEqual(["State Archive in Warsaw"]);
+
+    await chooseKind(page, "Other");
+    await searchFor(page, "submitter");
+    await expect(rows(page)).toHaveCount(1);
+    expect(await cellTexts(page, "@U1@")).toEqual(["Submitter", "Domorium", "1"]);
+  });
+
+  test("sort the notes by how many link them, and keep the header first under a sort", async ({ page }) => {
+    await mountList(page, { plan: true });
+
+    await chooseKind(page, "Other");
+    await header(page, "Name").click();
+    expect(await names(page)).toEqual(["Header", "Submitter", "_PLAN"]);
+    await header(page, "Name").click();
+    expect(await names(page)).toEqual(["Header", "_PLAN", "Submitter"]);
+    await header(page, "Linked from").click();
+    expect((await names(page))[0]).toBe("Header");
+  });
+
+  test("select a note, a repository and the header from their rows", async ({ page }) => {
+    await mountList(page);
+
+    await chooseKind(page, "Notes");
+    await rowOf(page, "@N2@").click();
+    await chooseKind(page, "Repositories");
+    await rowOf(page, "@R2@").click();
+    await chooseKind(page, "Other");
+    await rowOf(page, "header:").click();
+
+    expect(await selected(page)).toEqual(["@N2@", "@R2@", "header:"]);
+    await expect(rowOf(page, "header:")).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("keep the notes for a person selected in the graph, and switch to the notes for a note from a link", async ({ page }) => {
+    await mountList(page, { memory: { list: { kind: "notes" } } });
+
+    await page.locator("#show-graph").click();
+    await page.evaluate(() => window.tab.select("@I2@", true));
+    await page.locator("#show-list").click();
+    await expect(seg(page, "Notes")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(0);
+
+    await chooseKind(page, "People");
+    await searchFor(page, "joliot");
+    await page.evaluate(() => window.tab.select("@N2@", true));
+    await expect(seg(page, "Notes")).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".gedcom-list-search")).toHaveValue("");
+    await expect(rowOf(page, "@N2@")).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("switch to the media for a medium that was selected while the notes were shown", async ({ page }) => {
+    await mountList(page, { memory: { list: { kind: "notes" } } });
+    await page.locator("#show-source").click();
+    await page.evaluate(() => window.tab.select("@O5@", false));
+    await page.locator("#show-list").click();
+
+    await expect(seg(page, "Media")).toHaveAttribute("aria-pressed", "true");
+    await expect(rowOf(page, "@O5@")).toHaveAttribute("aria-selected", "true");
+  });
+});
+
+for (const width of [390, 320]) {
+  test.describe(`the new kinds on a phone, ${width} pixels wide`, () => {
+    test.use({ viewport: { width, height: 800 } });
+
+    const lines = (page: Page, xref: string) =>
+      rowOf(page, xref).locator(".gedcom-list-cell").evaluateAll((cells) =>
+        cells.map((cell) => ({ top: Math.round(cell.getBoundingClientRect().top), text: cell.textContent ?? "", shown: cell.getBoundingClientRect().width > 0 })),
+      );
+
+    test("take two lines of at least 44 pixels, the name and its count on the first", async ({ page }) => {
+      await mountList(page, { phone: true, touch: true });
+
+      await chooseKind(page, "Media");
+      const media = await lines(page, "@O5@");
+      expect(media.map((one) => one.text)).toEqual(["The Curie family, about 1908", "Media/curie-family-1908.svg", "image/svg+xml", "Linked from 2"]);
+      expect(Math.abs((media[3]?.top ?? 0) - (media[0]?.top ?? 0))).toBeLessThanOrEqual(3);
+      expect((media[1]?.top ?? 0) - (media[0]?.top ?? 0)).toBeGreaterThan(8);
+      expect(Math.abs((media[2]?.top ?? 0) - (media[1]?.top ?? 0))).toBeLessThanOrEqual(3);
+
+      await chooseKind(page, "Notes");
+      const note = await lines(page, "@N1@");
+      expect(note.map((one) => one.text)).toEqual(["The only person to have won a Nobel Prize in two different sciences:", "Linked from 1"]);
+      expect(Math.abs((note[1]?.top ?? 0) - (note[0]?.top ?? 0))).toBeLessThanOrEqual(3);
+      const noteHeight = await rowOf(page, "@N1@").locator(".gedcom-list-cell").first().evaluate((cell) => ({ height: cell.getBoundingClientRect().height, line: Number.parseFloat(getComputedStyle(cell).lineHeight) }));
+      expect(noteHeight.height).toBeGreaterThan(noteHeight.line * 1.5);
+
+      await chooseKind(page, "Repositories");
+      const repository = await lines(page, "@R2@");
+      expect(repository.map((one) => one.text)).toEqual(["State Archive in Warsaw", "Krzywe Koło 7", "1 source"]);
+      expect(Math.abs((repository[2]?.top ?? 0) - (repository[0]?.top ?? 0))).toBeLessThanOrEqual(3);
+      expect((repository[1]?.top ?? 0) - (repository[0]?.top ?? 0)).toBeGreaterThan(8);
+
+      await chooseKind(page, "Other");
+      const submitter = await lines(page, "@U1@");
+      expect(submitter.map((one) => one.text)).toEqual(["Submitter", "Domorium", "Linked from 1"]);
+      expect(Math.abs((submitter[1]?.top ?? 0) - (submitter[2]?.top ?? 0))).toBeLessThanOrEqual(3);
+      expect((submitter[0]?.top ?? 0) - (submitter[1]?.top ?? 0)).toBeGreaterThan(8);
+
+      for (const label of ["Media", "Notes", "Repositories", "Other"]) {
+        await chooseKind(page, label);
+        expect((await rows(page).first().boundingBox())?.height ?? 0, label).toBeGreaterThanOrEqual(44);
+        expect(await sidewaysOverflow(page), label).toBe(false);
+      }
+    });
+  });
+}
+
+for (const dialect of ["7.0", "5.5.1"] as const) {
+  test.describe(`a file of 1478 notes in ${dialect}`, () => {
+    test.use({ viewport: WIDE });
+
+    test("lists them all in a window, counted, and draws the first rows within a second of choosing Notes", async ({ page }) => {
+      await mountList(page, { doc: generatedNotes(1478, dialect) });
+
+      const took = await page.evaluate(() => {
+        const button = document.querySelector<HTMLElement>('.gedcom-list-bar > .gedcom-list-seg > [data-kind="notes"]');
+        const start = performance.now();
+        button?.click();
+        const drawn = document.querySelector(".gedcom-list-row.is-notes");
+        return drawn ? performance.now() - start : Number.POSITIVE_INFINITY;
+      });
+
+      expect(took).toBeLessThan(1000);
+      await expect(page.locator(".gedcom-list-count")).toHaveText("1478 notes");
+      expect(await drawnRows(page)).toBeLessThan(200);
+      expect(await cellTexts(page, "@N1@")).toEqual(["Note 1 about a parish register", "1"]);
+      await page.locator(".gedcom-list-scroll").evaluate((node) => {
+        node.scrollTop = node.scrollHeight;
+      });
+      await expect(rowOf(page, "@N1478@")).toBeVisible();
     });
   });
 }
