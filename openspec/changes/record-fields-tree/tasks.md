@@ -110,8 +110,8 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 
 ## 17. Editing: style and browser
 
-- [ ] 17.1 `styles.css`: a field being edited, the unwritten row, the message under a field, the touch revert control, 44-pixel targets on touch; verify by screenshots of the harness at 320 and 390 pixels, light and dark, with Obsidian's `app.css` prepended
-- [ ] 17.2 `harness/desk.ts` gains a host that writes through the real service and a stand-in for the menu and the list; `tests/desk.spec.ts`: change a given name with Enter, choose a sex, add a nickname, add a death, add a source through the stand-in list, add an associated person with its role, remove a line, two quick removal presses, a refused date, a mobile run in which a tap on another control commits first; verify with `npm run test:browser`
+- [x] 17.1 `styles.css`: a field being edited, the unwritten row, the message under a field, the touch revert control, 44-pixel targets on touch; verify by screenshots of the harness at 320 and 390 pixels, light and dark, with Obsidian's `app.css` prepended
+- [x] 17.2 `harness/desk.ts` gains a host that writes through the real service and a stand-in for the menu and the list; `tests/desk.spec.ts`: change a given name with Enter, choose a sex, add a nickname, add a death, add a source through the stand-in list, add an associated person with its role, remove a line, two quick removal presses, a refused date, a mobile run in which a tap on another control commits first; verify with `npm run test:browser`
 - [ ] 17.3 By hand in the demo vault, desktop and phone: the Obsidian menu and list by keyboard and touch; record it in the PR's test plan
 
 ## 18. Editing: upstream, docs and gate

@@ -114,7 +114,7 @@ for (const size of SIZES) {
 
     test("opens the place of a fact", async ({ page }) => {
       await pressArrow(page, "Birth");
-      await treeRow(page, "Place").locator(".gedcom-desk-link").first().click();
+      await treeRow(page, "Place").locator(".gedcom-tree-place").click();
 
       await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
     });
@@ -357,19 +357,16 @@ test.describe("the card of a record that states everything", () => {
         expect(await page.locator('.gedcom-tree-node[data-key="NAME[0].TYPE[0]"] .gedcom-tree-choice').evaluate((one) => (one as HTMLSelectElement).selectedOptions[0]?.textContent)).toBe("Birth");
       });
 
-      test("folds a long note and shows the rest on a press, and keeps what it shows inside the card", async ({ page }) => {
+      test("folds a long note until the focus is put in its field, and keeps it inside the card", async ({ page }) => {
         await openEveryNode(page);
-        const more = page.locator(".gedcom-detail-more").first();
-        await more.scrollIntoViewIfNeeded();
-        await expect(more).toHaveText("Show more");
-        await expect(page.getByText("Line 12 of a long note.")).toBeHidden();
-        await more.click();
-        await expect(page.getByText("Line 12 of a long note.")).toBeVisible();
-        await expect(more).toHaveText("Show less");
+        await page.locator(".gedcom-field.is-folded").first().evaluate((one) => one.setAttribute("data-probe", ""));
+        const note = page.locator(".gedcom-field[data-probe]");
+        await note.scrollIntoViewIfNeeded();
+        const folded = (await note.boundingBox())?.height ?? 0;
+        await note.locator("textarea").focus();
+        await expect(note).not.toHaveClass(/is-folded/u);
+        expect((await note.boundingBox())?.height ?? 0).toBeGreaterThan(folded);
         expect(await overflowsSideways(page)).toBe(false);
-        if (size.phone) {
-          expect((await more.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
-        }
       });
 
       test("shows the custom line nested once the nodes are open, without scrolling sideways", async ({ page }) => {
@@ -563,7 +560,8 @@ test.describe("the tree of a record", () => {
     await page.setViewportSize({ width: 1400, height: 760 });
     await mountDesk(page, { width: 420 });
     await pressArrow(page, "Birth");
-    await treeRow(page, "Place").locator(".gedcom-desk-link").click();
+    await expect(treeRow(page, "Place").locator("textarea")).toHaveValue("Warsaw, Congress Poland");
+    await treeRow(page, "Place").locator(".gedcom-tree-place").click();
     await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
   });
 
@@ -664,5 +662,129 @@ test.describe("the tree of a record", () => {
     expect(timing.rows).toBeGreaterThan(500);
     expect(timing.first).toBeLessThan(500);
     expect(timing.open).toBeLessThan(500);
+  });
+});
+
+const marieText = (page: Page): Promise<string> =>
+  page.evaluate(() => {
+    const text = window.desk.text();
+    const start = text.indexOf("0 @I1@ INDI");
+    return `${text.slice(start, text.indexOf("\n0 ", start))}\n`;
+  });
+
+test.describe("editing a record in its tree", () => {
+  const fileText = (page: Page) => marieText(page);
+  const choose = (page: Page, title: string) => page.locator(".harness-chooser button", { hasText: new RegExp(`^(✓ )?${title}$`, "u") }).click();
+  const field = (page: Page, label: string) => treeRow(page, label).locator("textarea");
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { width: 390 });
+  });
+
+  test("changes a given name with Enter", async ({ page }) => {
+    await pressArrow(page, "Name");
+    await field(page, "Given names").fill("Maria");
+    await field(page, "Given names").press("Enter");
+
+    expect(await fileText(page)).toContain("2 GIVN Maria\n");
+    await expect(field(page, "Given names")).toBeFocused();
+    await expect(field(page, "Given names")).toHaveValue("Maria");
+  });
+
+  test("chooses a sex from its list", async ({ page }) => {
+    await treeRow(page, "Sex").locator("select").selectOption("M");
+
+    expect(await fileText(page)).toContain("1 SEX M\n");
+  });
+
+  test("adds a nickname under a name, written on Enter", async ({ page }) => {
+    await pressArrow(page, "Name");
+    await treeRow(page, "Name").locator(".gedcom-tree-add").click();
+    await choose(page, "Nickname");
+    await expect(page.locator(".is-unwritten textarea")).toBeFocused();
+    await page.keyboard.type("Manya");
+    await page.keyboard.press("Enter");
+
+    expect(await fileText(page)).toContain("2 NICK Manya\n");
+    await expect(page.locator(".is-unwritten")).toHaveCount(0);
+  });
+
+  test("adds a death at once, with the focus on its menu", async ({ page }) => {
+    await mountDesk(page, { width: 390, doc: "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n1 NAME Marie /Curie/\n0 TRLR\n" });
+    await page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-add").click();
+    await choose(page, "Death");
+
+    expect(await fileText(page)).toContain("1 DEAT Y\n");
+    await expect(treeRow(page, "Death").locator(".gedcom-tree-add")).toBeFocused();
+  });
+
+  test("adds a source to a birth through the list of records", async ({ page }) => {
+    await treeRow(page, "Birth").locator(".gedcom-tree-add").click();
+    await choose(page, "Source");
+    await page.locator(".harness-chooser button").first().click();
+
+    expect(await fileText(page)).toMatch(/1 BIRT\n(?:2 .*\n)*2 SOUR @S\d+@/u);
+  });
+
+  test("adds an associated person with the role it requires, the two written together", async ({ page }) => {
+    await page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-add").click();
+    await choose(page, "Associated person");
+    await choose(page, "Pierre Curie");
+    expect(await fileText(page)).not.toContain("1 ASSO");
+    await page.locator(".is-unwritten select").selectOption("FRIEND");
+
+    expect(await fileText(page)).toContain("1 ASSO @I2@\n2 ROLE FRIEND\n");
+  });
+
+  test("removes a line, and one line only for two quick presses", async ({ page }) => {
+    const before = await fileText(page);
+    const remove = treeRow(page, "Sex").locator(".gedcom-tree-remove");
+    await remove.evaluate((button: HTMLElement) => {
+      button.click();
+      button.click();
+    });
+    const after = await fileText(page);
+
+    expect(after).not.toContain("1 SEX F\n");
+    expect(before.split("\n").length - after.split("\n").length).toBe(1);
+    await expect(page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-add")).toBeFocused();
+  });
+
+  test("asks before removing a line with lines beneath it, and removes nothing once the file changed meanwhile", async ({ page }) => {
+    await treeRow(page, "Birth").locator(".gedcom-tree-remove").click();
+    await page.evaluate(() => {
+      window.desk.replace(window.desk.text().replace("0 @I1@ INDI\n", "0 @I1@ INDI\n1 _X y\n"));
+      window.desk.confirm();
+    });
+
+    expect(await fileText(page)).toContain("1 BIRT\n2 DATE 7 NOV 1867");
+    await expect(page.locator(".gedcom-tree-label", { hasText: "_X" })).toHaveCount(1);
+  });
+
+  test("refuses a date that does not exist and says why under it", async ({ page }) => {
+    await pressArrow(page, "Birth");
+    await field(page, "Date").fill("31 NOV 1867");
+    await field(page, "Date").press("Enter");
+
+    expect(await fileText(page)).toContain("2 DATE 7 NOV 1867");
+    await expect(treeRow(page, "Date").locator(".gedcom-tree-message")).toHaveText("There is no November 31: November has 30 days.");
+    await expect(field(page, "Date")).toHaveAttribute("aria-invalid", "true");
+  });
+});
+
+test.describe("editing on a phone", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 760 } });
+
+  test("writes the changed value first when another line's removal is tapped, then removes that line", async ({ page }) => {
+    await mountDesk(page, { phone: true });
+    await treeRow(page, "Occupation").locator("textarea").fill("Physicist");
+    await expect(treeRow(page, "Occupation").locator(".gedcom-field-revert")).toBeVisible();
+    expect((await treeRow(page, "Occupation").locator(".gedcom-field-revert").boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await treeRow(page, "Sex").locator(".gedcom-tree-remove").tap();
+    const text = await marieText(page);
+
+    expect(text).toContain("1 OCCU Physicist\n");
+    expect(text).not.toContain("1 SEX F\n");
   });
 });

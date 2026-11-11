@@ -1,14 +1,16 @@
-import { GedcomLanguageService, type Position, type Range } from "@domorium/language-service";
+import type { Position, Range } from "@domorium/language-service";
 
 import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
-import { addableAt, choicesAt, pointerChoicesAt, removableAt } from "../src/desk/addableFields";
-import { renderRecordCard, type CardTab } from "../src/desk/recordCard";
+import { addableAt, choicesAt, describes, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../src/desk/addableFields";
+import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../src/desk/edits";
+import { renderRecordCard, type CardTab, type CardView } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
 import { setLanguage } from "../src/i18n";
 import { installObsidianDom } from "../src/testing/obsidianDom";
+import { TextTab } from "../src/testing/textTab";
 import { stubSetIcon } from "./icons";
 
 export interface DeskOptions {
@@ -28,6 +30,8 @@ export interface DeskOptions {
 export interface DeskCalls {
   shownInSource: Range[];
   filesOpened: string[];
+  /** The questions asked before a removal, answered by `confirm`. */
+  asked: string[];
 }
 
 /** What is in demo-vault, which the harness page reaches as ../demo-vault/. */
@@ -46,15 +50,24 @@ declare global {
       calls: DeskCalls;
       record(): string | null;
       selectRecord(xref: string): void;
+      /** The text of the tab as the card has written it. */
+      text(): string;
+      /** Changes the text from outside the card, as Source would. */
+      replace(text: string): void;
+      /** Answers the question asked before a removal. */
+      confirm(): void;
     };
   }
 }
 
 installObsidianDom();
 
-const calls: DeskCalls = { shownInSource: [], filesOpened: [] };
-let service: GedcomLanguageService;
+const calls: DeskCalls = { shownInSource: [], filesOpened: [], asked: [] };
+let doc: TextTab;
 let index: GenealogyIndex;
+let indexed = -1;
+let confirmed: (() => void) | null = null;
+const service = () => doc.service();
 let record: string | null = null;
 let hasTab = true;
 let session = new TreeSession();
@@ -68,13 +81,13 @@ function element(id: string): HTMLElement {
 }
 
 function mediaItem(at: Position): MediaItem | null {
-  const reference = service.getMediaAt(at);
+  const reference = service().getMediaAt(at);
   if (!reference) {
     return null;
   }
   const vault = {
     documentPath: "curie.ged",
-    dialect: service.getDocument().getDialect(),
+    dialect: service().getDocument().getDialect(),
     resolve: (path: string) => (VAULT_FILES.has(path) ? `../demo-vault/${path}` : null),
   };
   const content = mediaPreviewContent(reference, vault);
@@ -84,7 +97,13 @@ function mediaItem(at: Position): MediaItem | null {
 
 const tab: CardTab = {
   filePath: () => "curie.ged",
-  index: () => index,
+  index: () => {
+    if (indexed !== doc.version) {
+      index = buildIndex(service());
+      indexed = doc.version;
+    }
+    return index;
+  },
   selection: () => ({ record }),
   mediaItem,
   select: (xref) => {
@@ -96,10 +115,62 @@ const tab: CardTab = {
   openFile: (path) => {
     calls.filesOpened.push(path);
   },
-  addableAt: (at) => addableAt(service, at),
-  choicesAt: (at) => choicesAt(service, at),
-  removableAt: (parent, tag) => removableAt(service, parent, tag),
-  pointerChoicesAt: (parent, tag) => pointerChoicesAt(service, parent, tag),
+  addableAt: (at) => addableAt(service(), at),
+  choicesAt: (at) => choicesAt(service(), at),
+  proseAt: (at) => proseAt(service(), at),
+  removableAt: (parent, tag) => removableAt(service(), parent, tag),
+  pointerChoicesAt: (parent, tag) => pointerChoicesAt(service(), parent, tag),
+  pairedAt: (parent, tag) => pairedAt(service(), parent, tag),
+  requiredBeneath: (field) => requiredBeneath(service(), field),
+  checkValue: (at, tag, input, replacing) => checkValue(service(), at, tag, input, replacing),
+  version: () => doc.version,
+  describes: (at) => describes(service(), at),
+  setValueAt: (at, input, version) => commit(doc, setValueAt(service(), at, version, input)),
+  addAt: (at, tag, input, version) => commit(doc, addAt(service(), at, version, tag, input)),
+  removeAt: (at, nested, version, done) => {
+    const go = (): void => {
+      confirmed = null;
+      done(commit(doc, removeAt(service(), at, version)));
+    };
+    if (nested === 0) {
+      go();
+    } else {
+      calls.asked.push(String(nested));
+      confirmed = go;
+    }
+  },
+  settle: () => {
+    draw();
+  },
+};
+
+/** Stands in for Obsidian's menu and list, which the harness cannot load: a list of buttons that call the same callbacks. */
+function chooser(items: { title: string; disabled?: boolean; checked?: boolean; act: () => void }[], at?: { x: number; y: number }): void {
+  document.querySelector(".harness-chooser")?.remove();
+  const box = document.body.createDiv({ cls: "harness-chooser" });
+  box.setAttribute("role", "menu");
+  box.setCssProps({ left: `${at?.x ?? 0}px`, top: `${at?.y ?? 0}px` });
+  for (const item of items) {
+    const button = box.createEl("button", { text: `${item.checked ? "✓ " : ""}${item.title}` });
+    button.setAttribute("role", "menuitem");
+    button.disabled = item.disabled ?? false;
+    button.addEventListener("click", () => {
+      box.remove();
+      item.act();
+    });
+  }
+}
+
+const view: Omit<CardView, "setIcon" | "session"> = {
+  chooseField: (at, fields) => {
+    chooser(fields.map((one) => ({ title: one.title, disabled: one.disabled, act: one.choose })), at);
+  },
+  chooseValues: (at, values) => {
+    chooser(values.map((one) => ({ title: one.title, checked: one.checked, act: one.toggle })), at);
+  },
+  choosePointer: (choices, chosen) => {
+    chooser(choices.map((one) => ({ title: one.title, checked: one.checked, act: () => chosen(one.xref) })));
+  },
 };
 
 function selectRecord(xref: string): void {
@@ -111,6 +182,7 @@ function draw(): void {
   renderRecordCard(element("card"), hasTab ? tab : null, {
     setIcon: stubSetIcon,
     session,
+    ...view,
   });
 }
 
@@ -125,8 +197,11 @@ function mount(options: DeskOptions): void {
   element("card-pane").style.width = `${options.width ?? (phone ? 390 : 360)}px`;
   calls.shownInSource = [];
   calls.filesOpened = [];
-  service = new GedcomLanguageService(options.doc ?? curie);
-  index = buildIndex(service);
+  calls.asked = [];
+  confirmed = null;
+  doc = new TextTab(options.doc ?? curie);
+  indexed = -1;
+  index = tab.index();
   hasTab = !(options.noTab ?? false);
   session = new TreeSession();
   const first = options.record ?? index.people.find((row) => row.xref)?.xref ?? "";
@@ -140,4 +215,11 @@ window.desk = {
   calls,
   record: () => record,
   selectRecord,
+  text: () => doc.text,
+  replace: (text) => {
+    doc.replace(text);
+  },
+  confirm: () => {
+    confirmed?.();
+  },
 };

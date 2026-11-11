@@ -102,6 +102,21 @@ const ICONS: Record<string, Shape[]> = {
     { tag: "path", attrs: { d: "M5 12h14" } },
     { tag: "path", attrs: { d: "M12 5v14" } },
   ],
+  "trash-2": [
+    { tag: "path", attrs: { d: "M3 6h18" } },
+    { tag: "path", attrs: { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" } },
+    { tag: "path", attrs: { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" } },
+    { tag: "path", attrs: { d: "M10 11v6" } },
+    { tag: "path", attrs: { d: "M14 11v6" } },
+  ],
+  "map-pin": [
+    { tag: "path", attrs: { d: "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" } },
+    { tag: "circle", attrs: { cx: 12, cy: 10, r: 3 } },
+  ],
+  "rotate-ccw": [
+    { tag: "path", attrs: { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" } },
+    { tag: "path", attrs: { d: "M3 3v5h5" } },
+  ],
   "chevron-up": [{ tag: "path", attrs: { d: "m18 15-6-6-6 6" } }],
   "chevron-down": [{ tag: "path", attrs: { d: "m6 9 6 6 6-6" } }],
   x: [
