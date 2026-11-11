@@ -340,12 +340,12 @@ describe("selecting", () => {
     expect(all(".is-selected")).toHaveLength(0);
   });
 
-  it("changes nothing for a media record or a record the file does not hold", () => {
+  it("changes nothing for a record the file does not hold", () => {
     const made = board();
     made.select("@I9@", true);
     type("");
 
-    for (const xref of ["@O5@", "@I999@"]) {
+    for (const xref of ["@I999@", "@X9@"]) {
       made.select(xref, true);
       expect(all(".is-selected")).toHaveLength(0);
       expect(text(".gedcom-list-count")).toBe("17 people");
@@ -779,7 +779,7 @@ describe("the places", () => {
   it("is the fourth kind, after the sources", () => {
     board();
 
-    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
   });
 
   it("lists every place of the file, alphabetically, with its events and years", () => {
@@ -890,7 +890,7 @@ describe("the places", () => {
   it("has no button but the kinds on the places", () => {
     open();
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
@@ -913,7 +913,7 @@ describe("no events kind", () => {
   it("has no button but the kinds, and no Events among them", () => {
     board({}, index);
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places"]);
+    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
@@ -941,5 +941,115 @@ describe("no events kind", () => {
     made.select("event:@I1@:BIRT:0", true);
 
     expect(all("[aria-selected=true]")).toHaveLength(0);
+  });
+});
+
+describe("the media, notes, repositories and other records", () => {
+  it("lists each kind with its columns and counts", () => {
+    board();
+
+    click(button(".gedcom-list-seg-button", "Media"));
+    expect(text(".gedcom-list-count")).toBe("7 media");
+    expect([0, 1, 2, 3].map((at) => cell(row("@O5@"), at))).toEqual(["The Curie family, about 1908", "Media/curie-family-1908.svg", "image/svg+xml", "2"]);
+
+    click(button(".gedcom-list-seg-button", "Notes"));
+    expect(text(".gedcom-list-count")).toBe("2 notes");
+    expect(all(".gedcom-list-headcell:not([hidden])").map((one) => one.textContent)).toEqual(["Text", "Linked from"]);
+
+    click(button(".gedcom-list-seg-button", "Repositories"));
+    expect(text(".gedcom-list-count")).toBe("2 repositories");
+    expect([0, 1, 2].map((at) => cell(row("@R2@"), at))).toEqual(["State Archive in Warsaw", "Krzywe Koło 7", "1"]);
+
+    click(button(".gedcom-list-seg-button", "Other"));
+    expect(text(".gedcom-list-count")).toBe("2 records");
+    expect(names()).toEqual(["Header", "Submitter"]);
+    expect(cell(row("header:"), 2)).toBe("");
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "other" });
+  });
+
+  it("narrows the notes by a later line and counts what is left", () => {
+    board({ kind: "notes" });
+    type("chemistry");
+
+    expect(xrefs()).toEqual(["@N1@"]);
+    expect(text(".gedcom-list-count")).toBe("1 of 2 notes");
+    type("zzz");
+    expect(text(".gedcom-list-none")).toBe("Nothing matches “zzz”. Search covers the text of the notes.");
+  });
+
+  it("selects the header from its row under its own id", () => {
+    board({ kind: "other" });
+
+    click(row("header:"));
+
+    expect(host.select).toHaveBeenCalledWith("header:");
+    expect(row("header:")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("says the file holds no repositories", () => {
+    board({ kind: "repositories" }, indexOf("0 HEAD\n1 GEDC\n2 VERS 7.0\n0 TRLR\n"));
+
+    expect(text(".gedcom-list-none")).toBe("The file holds no repositories.");
+  });
+
+  it("spells out the counts of a compact row, and leaves the header's blank", () => {
+    box.width = 500;
+    const made = board({ kind: "notes" });
+    made.resized();
+    expect(cell(row("@N1@"), 1)).toBe("Linked from 1");
+
+    click(button(".gedcom-list-seg-button", "Repositories"));
+    expect(cell(row("@R1@"), 2)).toBe("2 sources");
+    expect(cell(row("@R2@"), 2)).toBe("1 source");
+
+    click(button(".gedcom-list-seg-button", "Other"));
+    expect(cell(row("header:"), 2)).toBe("");
+    expect(cell(row("@U1@"), 2)).toBe("Linked from 1");
+  });
+
+  it("keeps the notes for a person, a family or a source selected from outside, and marks no row", () => {
+    const made = board({ kind: "notes" });
+
+    for (const xref of ["@I2@", "@F3@", "@S1@"]) {
+      made.select(xref, true);
+      expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Notes"]);
+      expect(all("[aria-selected=true]")).toHaveLength(0);
+    }
+    expect(host.changed).not.toHaveBeenCalled();
+  });
+
+  it("switches to the kind of a note, a repository or another record selected from anywhere, and clears a filter that hides it", () => {
+    const made = board();
+    type("joliot");
+
+    made.select("@N2@", true);
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Notes"]);
+    expect(row("@N2@")?.getAttribute("aria-selected")).toBe("true");
+
+    made.select("@R2@", true);
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Repositories"]);
+
+    made.select("header:", true);
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Other"]);
+    expect(row("header:")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("keeps the notes for a medium selected without bringing it into view, and switches to the media when it is", () => {
+    const made = board({ kind: "notes" });
+
+    made.select("@O5@", false);
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Notes"]);
+
+    made.select("@O5@", true);
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["Media"]);
+    expect(row("@O5@")?.getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("switches to the people for a person pressed in a card while the notes are shown", () => {
+    const made = board({ kind: "notes" });
+
+    made.select("@I2@", true, true);
+
+    expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["People"]);
   });
 });

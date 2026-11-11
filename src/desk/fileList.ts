@@ -6,6 +6,7 @@ import {
   cellsOf,
   collatorFor,
   columnsOf,
+  isRecordKind,
   LIST_KINDS,
   listRows,
   nextSort,
@@ -37,37 +38,64 @@ const KIND_LABEL: Record<ListKind, MessageKey> = {
   families: "list.families",
   sources: "list.sources",
   places: "list.places",
+  media: "list.media",
+  notes: "list.notes",
+  repositories: "list.repositories",
+  other: "list.other",
 };
 const SEARCH_HINT: Record<ListKind, MessageKey> = {
   people: "list.search.people",
   families: "list.search.families",
   sources: "list.search.sources",
   places: "list.search.places",
+  media: "list.search.media",
+  notes: "list.search.notes",
+  repositories: "list.search.repositories",
+  other: "list.search.other",
 };
 const NOTHING: Record<ListKind, MessageKey> = {
   people: "list.nothing.people",
   families: "list.nothing.families",
   sources: "list.nothing.sources",
   places: "list.nothing.places",
+  media: "list.nothing.media",
+  notes: "list.nothing.notes",
+  repositories: "list.nothing.repositories",
+  other: "list.nothing.other",
 };
 const NONE: Record<ListKind, MessageKey> = {
   people: "list.none.people",
   families: "list.none.families",
   sources: "list.none.sources",
   places: "list.none.places",
+  media: "list.none.media",
+  notes: "list.none.notes",
+  repositories: "list.none.repositories",
+  other: "list.none.other",
 };
 const COUNT: Record<ListKind, MessageKey> = {
   people: "list.count.people",
   families: "list.count.families",
   sources: "list.count.sources",
   places: "list.count.places",
+  media: "list.count.media",
+  notes: "list.count.notes",
+  repositories: "list.count.repositories",
+  other: "list.count.other",
 };
 const COUNT_OF: Record<ListKind, MessageKey> = {
   people: "list.countOf.people",
   families: "list.countOf.families",
   sources: "list.countOf.sources",
   places: "list.countOf.places",
+  media: "list.countOf.media",
+  notes: "list.countOf.notes",
+  repositories: "list.countOf.repositories",
+  other: "list.countOf.other",
 };
+
+/** Kinds that keep the list while a person, a family or a source is selected from outside it. */
+const HOLDING: ReadonlySet<ListKind> = new Set(["places", "media", "notes", "repositories", "other"]);
 
 let boards = 0;
 
@@ -230,7 +258,7 @@ export class ListBoard {
     const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
-    if (this.kind === "places" && kind !== "places" && !fromCard) {
+    if (HOLDING.has(this.kind) && !HOLDING.has(kind) && !fromCard) {
       this.applyMarks();
       return;
     }
@@ -238,7 +266,7 @@ export class ListBoard {
       this.applyMarks();
       return;
     }
-    if (fresh || (fromCard && kind !== this.kind)) {
+    if (fresh || (kind !== this.kind && (fromCard || HOLDING.has(kind)))) {
       if (kind !== this.kind) {
         this.switchKind(kind);
       }
@@ -439,6 +467,9 @@ export class ListBoard {
     if (this.kind === "places") {
       return placesOf(index).length;
     }
+    if (isRecordKind(this.kind)) {
+      return index.lists[this.kind].length;
+    }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;
   }
@@ -552,7 +583,7 @@ export class ListBoard {
           cell.appendText(` ${this.countLabel(column.key, 0)}`);
         }
       } else {
-        cell.setText(this.compact && column.numeric ? this.countLabel(column.key, Number(text)) : text);
+        cell.setText(this.compact && column.numeric && text !== "" ? this.countLabel(column.key, Number(text)) : text);
       }
     });
     return el;
@@ -561,6 +592,9 @@ export class ListBoard {
   private countLabel(key: SortKey, count: number): string {
     if (key === "events") {
       return plural("list.compact.events", count);
+    }
+    if (key === "linkedFrom") {
+      return t("list.compact.linkedFrom", { count });
     }
     return key === "citedBy" ? t("list.compact.citedBy", { count }) : plural(key === "children" ? "list.compact.children" : "list.compact.sources", count);
   }

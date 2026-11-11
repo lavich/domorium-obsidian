@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { resetLanguage } from "../i18n";
+import { HEADER_ID } from "../genealogy";
+import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, indexOf } from "../testing/curie";
 import {
   cellsOf,
@@ -110,6 +111,93 @@ describe("what a row counts", () => {
     expect(columnsOf("people").map((column) => column.key)).toEqual(["name", "years", "place", "sources"]);
     expect(columnsOf("families").map((column) => column.key)).toEqual(["spouses", "marriage", "place", "children"]);
     expect(columnsOf("sources").map((column) => column.key)).toEqual(["title", "author", "repository", "citedBy"]);
+  });
+});
+
+const cells = (kind: ListKind, source = index): string[][] =>
+  listRows(source, { kind, query: "", sort: undefined }, collator).map((row) => cellsOf(kind, row, source).texts);
+
+describe("the rows of the media, notes, repositories and other records", () => {
+  it("reads the media of curie.ged in the file's order, with what links each", () => {
+    const media = cells("media");
+
+    expect(media).toHaveLength(7);
+    expect(media[3]).toEqual(["The Curie family, about 1908", "Media/curie-family-1908.svg", "image/svg+xml", "2"]);
+    expect(media.find((row) => row[0] === "A plate nobody can find")?.[3]).toBe("0");
+  });
+
+  it("reads the notes by their first line, each linked from the person who points at it", () => {
+    expect(cells("notes")).toEqual([
+      ["The only person to have won a Nobel Prize in two different sciences:", "1"],
+      ["Wrote Madame Curie, the biography of her mother, in 1937. Her husband", "1"],
+    ]);
+  });
+
+  it("reads the repositories with the first line of their address and the sources that point at them", () => {
+    expect(cells("repositories")).toEqual([
+      ["Nobel Prize Outreach", "", "2"],
+      ["State Archive in Warsaw", "Krzywe Koło 7", "1"],
+    ]);
+  });
+
+  it("reads the header first, with nothing under Linked from, then the submitter", () => {
+    expect(cells("other")).toEqual([
+      ["Header", "File header", ""],
+      ["Submitter", "Domorium", "1"],
+    ]);
+  });
+
+  it("reads the kind of a record in the reader's language, and a tag the plugin does not name as written", () => {
+    const own = indexOf(["0 HEAD", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8", "0 @SUB1@ SUBN", "0 @X1@ _PLAN", "1 NAME Research plan", "0 TRLR"].join("\n"));
+    setLanguage("ru");
+
+    expect(cells("other", own)).toEqual([
+      ["Заголовок", "Заголовок файла", ""],
+      ["Передача", "Передача", "0"],
+      ["_PLAN", "Research plan", "0"],
+    ]);
+  });
+
+  it("finds a note by a later line, a repository without marks, and another record by its kind", () => {
+    expect(xrefs("notes", { query: "chemistry" })).toEqual(["@N1@"]);
+    expect(xrefs("repositories", { query: "kolo" })).toEqual(["@R2@"]);
+    expect(xrefs("other", { query: "submitter" })).toEqual(["@U1@"]);
+    expect(xrefs("other", { query: "SUBM" })).toEqual(["@U1@"]);
+    expect(xrefs("media", { query: "jpeg" })).toEqual(["@O6@", "@O7@"]);
+    expect(xrefs("media", { query: "CURIE-FAMILY" })).toEqual(["@O5@"]);
+  });
+
+  it("keeps the header first under any sort, and sorts the rest", () => {
+    const named = indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @U1@ SUBM", "1 NAME Zygmunt", "0 @X1@ _ALBUM", "1 NAME Album", "0 TRLR"].join("\n"));
+
+    expect(xrefs("other", { source: named, sort: asc("name") })).toEqual([HEADER_ID, "@X1@", "@U1@"]);
+    expect(xrefs("other", { source: named, sort: desc("name") })).toEqual([HEADER_ID, "@U1@", "@X1@"]);
+    expect(xrefs("other", { source: named, sort: desc("linkedFrom") })[0]).toBe(HEADER_ID);
+  });
+
+  it("sorts the notes by how many link them, and puts a medium with no format and a repository with no address last", () => {
+    const linked = indexOf(
+      [
+        "0 HEAD", "1 GEDC", "2 VERS 7.0",
+        "0 @I1@ INDI", "1 SNOTE @N1@", "1 SNOTE @N3@", "0 @I2@ INDI", "1 SNOTE @N1@", "0 @F1@ FAM", "1 SNOTE @N1@",
+        "0 @N1@ SNOTE Three", "0 @N2@ SNOTE None", "0 @N3@ SNOTE One",
+        "0 @O1@ OBJE", "1 FILE b.jpg", "0 @O2@ OBJE", "1 FILE a.jpg", "2 FORM image/jpeg",
+        "0 TRLR",
+      ].join("\n"),
+    );
+
+    expect(xrefs("notes", { source: linked, sort: desc("linkedFrom") })).toEqual(["@N1@", "@N3@", "@N2@"]);
+    expect(xrefs("media", { source: linked, sort: asc("format") })).toEqual(["@O2@", "@O1@"]);
+    expect(xrefs("media", { source: linked, sort: desc("format") })).toEqual(["@O2@", "@O1@"]);
+    expect(xrefs("repositories", { sort: asc("address") })).toEqual(["@R2@", "@R1@"]);
+    expect(xrefs("repositories", { sort: desc("address") })).toEqual(["@R2@", "@R1@"]);
+  });
+
+  it("has the columns each kind names", () => {
+    expect(columnsOf("media").map((column) => column.key)).toEqual(["title", "file", "format", "linkedFrom"]);
+    expect(columnsOf("notes").map((column) => column.key)).toEqual(["text", "linkedFrom"]);
+    expect(columnsOf("repositories").map((column) => column.key)).toEqual(["name", "address", "sources"]);
+    expect(columnsOf("other").map((column) => column.key)).toEqual(["kind", "name", "linkedFrom"]);
   });
 });
 
@@ -240,9 +328,14 @@ describe("reading a saved list state", () => {
 });
 
 describe("which selection the list can show", () => {
-  it("is a person, a family or a source, and nothing for a media record, a note or nobody", () => {
-    expect(["@I1@", "@F3@", "@S2@"].map((xref) => listSelection(index, xref))).toEqual(["@I1@", "@F3@", "@S2@"]);
-    expect(["@O5@", "@N1@", null].map((xref) => listSelection(index, xref))).toEqual([null, null, null]);
+  it("is any record a kind lists, the header among them, and nothing for one the file lacks or nobody", () => {
+    const listed = ["@I1@", "@F3@", "@S2@", "place:paris, france", "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID];
+
+    expect(listed.map((xref) => listSelection(index, xref))).toEqual(listed);
+    expect(listed.map((xref) => recordKind(index, xref))).toEqual([
+      "people", "families", "sources", "places", "media", "notes", "repositories", "other", "other",
+    ]);
+    expect(["@X9@", null].map((xref) => listSelection(index, xref))).toEqual([null, null]);
   });
 
   it("is nothing for an event id, which names no kind of the list", () => {
