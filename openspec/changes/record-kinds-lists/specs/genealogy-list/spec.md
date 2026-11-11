@@ -492,9 +492,10 @@ derived from that text size, so that it follows the reader's font size.
 - **THEN** the row of `Paris, France` is marked again
 
 #### Scenario: A place in a person's card
-- **WHEN** the reader presses `Paris, France` in an entry of the opened timeline of Marie's card
-- **THEN** the list shows the places with the row of `Paris, France` marked and in view, and the
-  card shows `Paris, France`
+- **WHEN** the list shows the people and the reader presses `Warsaw, Congress Poland` in the
+  summary of the closed birth in Marie's tree
+- **THEN** the list shows the places with the row of `Warsaw, Congress Poland` marked and in
+  view, and the card shows `Warsaw, Congress Poland`
 
 #### Scenario: A record selected elsewhere
 - **WHEN** the list shows the places and Marie is selected in the graph
@@ -524,7 +525,9 @@ source from a link, *Go to record*, the graph, the timeline or the cursor SHALL 
 the list away from the kind it shows, and no row of it SHALL be marked; the selection of a
 place, a multimedia record, a shared note, a repository or a record of the Other kind,
 however it was made, SHALL switch the list to the kind that holds its row and bring that row
-into view. A record that the reader selects in the record card — a person on the card of a place, a repository on the card of a source, a note opened from a card, for some — SHALL switch the list to the kind of that record and bring its row into view.
+into view when the list brings a selection into view as this requirement says: at once for
+one made from the card, by a link or by *Go to record*, and, for one made by the cursor in
+Source, when the list is next shown. A record that the reader selects in the record card — a person on the card of a place, a repository on the card of a source, a note opened from a card, for some — SHALL switch the list to the kind of that record and bring its row into view.
 
 #### Scenario: Entering the list with a selection
 - **WHEN** a file of 500 people has its 400th person selected in Graph mode and the
@@ -603,6 +606,11 @@ into view. A record that the reader selects in the record card — a person on t
   reader presses `State Archive in Warsaw` in the tree of its card
 - **THEN** the list shows the repositories with the row of `State Archive in Warsaw` marked
   and in view
+
+#### Scenario: A medium selected by the cursor
+- **WHEN** the list shows the notes, the reader moves the cursor into `@O5@` in Source mode
+  and rests there, and then switches to List mode
+- **THEN** the list shows the media with the row of the family photograph marked and in view
 
 #### Scenario: A note from a link while the people are shown
 - **WHEN** the list shows the people, filtered by `joliot`, and the reader follows
@@ -747,7 +755,8 @@ end of the first.
 #### Scenario: A file with many notes
 - **WHEN** the list shows the notes of a file that declares 1478 shared notes
 - **THEN** 1478 rows are listed, the count reads `1478 notes`, only a window of the rows is
-  in the page, and scrolling draws the rows that come into view
+  in the page, scrolling draws the rows that come into view, and the first rows are drawn
+  within a second of choosing Notes in headless Chromium
 
 #### Scenario: A phone
 - **WHEN** the reader opens the notes of `curie.ged` on a phone, 390 pixels wide
@@ -782,14 +791,14 @@ such as `0 @X1@ _PLAN`. The trailer of the file and any record without an identi
 than the header SHALL NOT be listed. Its columns SHALL be **Kind**, the record's kind in the
 reader's language where the plugin names it — *Header*, *Submitter*, *Submission* among them —
 and its tag as written otherwise; **Name**, the record's name as the card names it; and
-**Linked from**, how many records point at it. The count above the rows SHALL be of records,
-the header included. Choosing a row SHALL select the record and show its card. On a phone a
+**Linked from**, how many records point at it, left blank on the header's row, which nothing
+can point at. The count above the rows SHALL be of records, the header included. Choosing a row SHALL select the record and show its card. On a phone a
 row SHALL take two lines: the name with the count at its end, and the kind beneath.
 
 #### Scenario: The header and a submitter
 - **WHEN** the list shows the other records of `curie.ged`
-- **THEN** the first row reads *Header* and *File header*, the second *Submitter*,
-  `Domorium` and `1`, no row is the trailer, and the count reads `2 records`
+- **THEN** the first row reads *Header* and *File header* and nothing under Linked from, the
+  second *Submitter*, `Domorium` and `1`, no row is the trailer, and the count reads `2 records`
 
 #### Scenario: A record of the file's own
 - **WHEN** a file declares `0 @X1@ _PLAN` with `1 NAME Research plan`

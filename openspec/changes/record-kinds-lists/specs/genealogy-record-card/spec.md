@@ -4,7 +4,7 @@
 
 While the **Genealogy interface** setting is on, the plugin SHALL offer a view
 named **Record**, the record card, in the right sidebar. It SHALL be placed there, without taking the focus, the first time in a session a record is selected in a
-GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, by Back or Forward in the card, or by a pointer, a citation, a place or the control that opens a shared note in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
+GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, or by a pointer, a citation, a place or the control that opens a shared note in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
 SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
 is open.
 
@@ -133,15 +133,15 @@ named as the list, the pointers and the root of the tree name it.
 
 ### Requirement: In Source mode the cursor and the selection go together
 
-In Source mode, selecting a record from a link, *Go to record* or by activating something in the card SHALL put the cursor at the record's first line and scroll it into view; the editor SHALL take the focus when the selection came from a link or *Go to record*, and SHALL NOT when it came from the card. A selection that came from the cursor itself, and one that came from the card's Back and Forward, SHALL NOT move the cursor or take the focus. While the Genealogy interface is off, following a link or choosing *Go to record* in Source mode SHALL still put the cursor at the record, and nothing SHALL be selected. Moving the cursor into a
+In Source mode, selecting a record from a link, *Go to record* or by activating something in the card SHALL put the cursor at the record's first line and scroll it into view; the editor SHALL take the focus when the selection came from a link or *Go to record*, and SHALL NOT when it came from the card. A selection that came from the cursor itself SHALL NOT move the cursor or take the focus. While the Genealogy interface is off, following a link or choosing *Go to record* in Source mode SHALL still put the cursor at the record, and nothing SHALL be selected. Moving the cursor into a
 person, a family, a source or a multimedia record SHALL, once the cursor has rested, select that record
 without moving the cursor; a cursor in any other record — a shared note, a repository, a
 submitter, a record of the file's own, the header, the trailer, though the first five have
 cards — or between records, SHALL leave the selection as it is.
 
 Switching to Source mode with a record selected SHALL put the cursor at the start
-of the selected fact's lines, or else of the record's lines — for the header, of the
-header's lines — and scroll it into view, unless the cursor is already within those lines.
+of the selected record's lines — for the header, of the header's lines — and scroll it
+into view, unless the cursor is already within those lines.
 Leaving Source mode SHALL select the record under the cursor where it is a person, a family,
 a source or a multimedia record, and SHALL leave the selection as it is otherwise.
 
@@ -195,9 +195,9 @@ a source or a multimedia record, and SHALL leave the selection as it is otherwis
 - **THEN** the cursor is on `0 HEAD`, in view, and the card still shows the header
 
 #### Scenario: Switching to the source from Marie's birth
-- **WHEN** Marie's birth is selected on her card and the reader switches to Source
-  mode
-- **THEN** the cursor is on her `1 BIRT` line, in view
+- **WHEN** Marie is selected in Graph mode, the cursor in Source was left in Pierre Curie's
+  record, and the reader switches to Source mode
+- **THEN** the cursor is on her `0 @I1@ INDI` line, in view
 
 #### Scenario: Switching to the source from the graph
 - **WHEN** the cursor is in Pierre Curie's record in Source mode, and the reader
@@ -387,14 +387,16 @@ person is, except the card of the header, which the requirements on editing keep
 
 The plugin SHALL name a record by one rule wherever it names it: in the first text column
 of its row in the list, in the announcement of the card, as the text of a pointer to it in
-the tree, and as the summary of the closed root of its tree. A person SHALL be named as the
+the tree — a shared note excepted, below — and as the summary of the closed root of its tree. A person SHALL be named as the
 person card names them, a family by its spouses, a source by its title, a place as the
 Places list names it; a multimedia record by its title, or by the name of its first file
 where it states none; a shared note by the first line of its text that is not empty, read
 with its `CONC` and `CONT` lines joined; a repository and a submitter by their `NAME`; a
 record of the file's own, and any other record, by its `NAME`, else its `TITL`, else the value
-of the first line beneath it that has one, else its kind as the tree labels it; and the header
-of the file as *File header*.
+its own opening line writes after its tag, else the value of the first line beneath it that
+has one, else its kind as the tree labels it; and the header of the file as *File header*.
+A pointer to a shared note is the one exception to the pointer's text: it shows the note's
+whole text where it stands, as the tree says, and not only its name.
 
 #### Scenario: A note in the list and on a card
 - **WHEN** Marie's tree points at the note `@N1@` and the reader opens that note's card
@@ -408,3 +410,7 @@ of the file as *File header*.
 #### Scenario: A record with no name
 - **WHEN** a file declares `0 @X2@ _LOG` with nothing beneath it
 - **THEN** its row's Name, the announcement of its card and its pointers read `_LOG`
+
+#### Scenario: A record named by its own value
+- **WHEN** a file declares `0 @P1@ _PLAN Custom value` with no `NAME` or `TITL` beneath it
+- **THEN** its row's Name and the summary of its closed root read `Custom value`

@@ -183,7 +183,7 @@ SHALL select that record. A multimedia record is selected by following a link to
 
 While the **Genealogy interface** setting is on, the plugin SHALL offer a view
 named **Record**, the record card, in the right sidebar. It SHALL be placed there, without taking the focus, the first time in a session a record is selected in a
-GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, by Back or Forward in the card, or by a pointer, a citation or a place in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
+GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, or by a pointer, a citation or a place in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
 SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
 is open.
 
@@ -298,13 +298,13 @@ where the file declares no person, family or source it SHALL say that the file h
 
 ### Requirement: In Source mode the cursor and the selection go together
 
-In Source mode, selecting a record from a link, *Go to record* or by activating something in the card SHALL put the cursor at the record's first line and scroll it into view; the editor SHALL take the focus when the selection came from a link or *Go to record*, and SHALL NOT when it came from the card. A selection that came from the cursor itself, and one that came from the card's Back and Forward, SHALL NOT move the cursor or take the focus. While the Genealogy interface is off, following a link or choosing *Go to record* in Source mode SHALL still put the cursor at the record, and nothing SHALL be selected. Moving the cursor into a
+In Source mode, selecting a record from a link, *Go to record* or by activating something in the card SHALL put the cursor at the record's first line and scroll it into view; the editor SHALL take the focus when the selection came from a link or *Go to record*, and SHALL NOT when it came from the card. A selection that came from the cursor itself SHALL NOT move the cursor or take the focus. While the Genealogy interface is off, following a link or choosing *Go to record* in Source mode SHALL still put the cursor at the record, and nothing SHALL be selected. Moving the cursor into a
 record that has a card SHALL, once the cursor has rested, select that record
 without moving the cursor; a cursor in a record with no card, or between records,
 SHALL leave the selection as it is.
 
 Switching to Source mode with a record selected SHALL put the cursor at the start
-of the selected fact's lines, or else of the record's lines, and scroll it into
+of the selected record's lines, and scroll it into
 view, unless the cursor is already within those lines. Leaving Source mode SHALL
 select the record under the cursor where it has a card.
 
@@ -345,9 +345,9 @@ select the record under the cursor where it has a card.
 - **THEN** the card still shows Marie
 
 #### Scenario: Switching to the source from Marie's birth
-- **WHEN** Marie's birth is selected on her card and the reader switches to Source
-  mode
-- **THEN** the cursor is on her `1 BIRT` line, in view
+- **WHEN** Marie is selected in Graph mode, the cursor in Source was left in Pierre Curie's
+  record, and the reader switches to Source mode
+- **THEN** the cursor is on her `0 @I1@ INDI` line, in view
 
 #### Scenario: Switching to the source from the graph
 - **WHEN** the cursor is in Pierre Curie's record in Source mode, and the reader
@@ -548,3 +548,7 @@ other does not cover. An event that states nothing SHALL be drawn as *recorded, 
 ### Requirement: The timeline of a person
 **Reason**: The timeline section of a person card is removed at the user's request of 2026-11-10 («я хочу чтобы в панелях справа остались только деревья - удали все остальное, включая заголовок»).
 **Migration**: The tree of a record shows every line the record states; what the reader asked to remove is not replaced.
+
+### Requirement: Portrait and media on a card
+**Reason**: The card of a person, a family and a source is the tree of the record's lines and nothing else, at the user's request of 2026-11-10 («я хочу чтобы в панелях справа остались только деревья - удали все остальное, включая заголовок»); the heading with its portrait and the Media section are gone.
+**Migration**: A record's links to its media are pointer rows of its tree; a pointer selects the media card, which shows the file, its caption and the records that link it.

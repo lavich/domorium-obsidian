@@ -48,6 +48,7 @@ The proposed scope:
 ### Modified Capabilities
 
 - `genealogy-record-card`: the person, family and source cards, *Show in source*, the narrow panel, the controls, and the event row, as they change for the tree.
+- `genealogy-view`: a selection by a pointer, a citation or a place inside the card opens no sidebar; the card's Back and Forward, which that requirement named, are gone.
 - `genealogy-record-detail`: what the card leaves out, headings and counts, notes, a value as a field, the related people and other data of an event; the sections of names, identifiers and record information, and the person's events and details are removed.
 
 ## Non-goals

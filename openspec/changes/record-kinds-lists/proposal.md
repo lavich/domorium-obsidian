@@ -34,7 +34,8 @@ None.
 - `genealogy-record-card`: the cards of the new records; one naming rule; the empty state; what can be selected and how; the cursor in Source; the media card's row.
 - `genealogy-record-tree`: the root of every card's tree and its value; *Open note* on a pointer to a shared note; a pointer to a repository or a submitter is a link.
 - `genealogy-record-edit`: the header's card is read-only, every other new card edits.
-- `genealogy-view`: links and *Go to record* open the new cards; copying a link to a selected record of any kind.
+- `genealogy-view`: links and *Go to record* open the new cards; copying a link to a selected record of any kind; List in the four modes names every kind.
+- `genealogy-record-detail`: notes of any record whose card is a tree.
 - `genealogy-read-model`: the media, notes, repositories and other records a document declares, the header's lines, and the records that point at each.
 
 ## Non-goals
@@ -49,13 +50,13 @@ None.
 
 ## Impact
 
-- `src/genealogy/build.ts`, `index.ts`, `types.ts`, `recordLines.ts`: the lists of the new kinds, the header's lines under `header:`, the root value of a record of the file's own, and `linkedFrom` / `sourcesOf` from one lazy walk.
+- `src/genealogy/build.ts`, `index.ts`, `types.ts`, `recordLines.ts`: the lists of the new kinds, the header's lines under `header:`, the root value of a record of the file's own read from `describeStructure` (`IndexSource` gains it), and `linkedFrom` / `sourcesOf` from one lazy walk.
 - `src/desk/listRows.ts`: `ListKind`, `LIST_KINDS`, `COLUMNS`, `SortKey`, `cellsOf`, `sortValue`, `listRows`, search with `foldText`, `recordKind`, `listSelection`, the header row kept first.
 - `src/desk/fileList.ts`: the kinds' buttons and the measured dropdown in `resized()`, `place()` and `activate()` for the new kinds and the header id, `markedKey`, `totalOfKind`, `countLabel`, the label tables.
-- `src/desk/deskState.ts`: `PageKind` gains `record`, `pageKind`, `HEADER_ID`, `followsCursor`, `shownRange`, the target of *Go to record*.
+- `src/desk/deskState.ts`: `PageKind` gains `record`, `pageKind`, `HEADER_ID`, `followsCursor`, `shownRange`, and `routeRecord`, the one pure routing of links, URLs and *Go to record*, replacing `routeLink`.
 - `src/desk/tabModes.ts`, `src/desk/followRules.ts`: leaving Source and the cursor's rest select only what `followsCursor` allows.
-- `src/GedcomView.ts`: `goToRecord` for the header, `selectRecord` placing the cursor from `shownRange`, `cursorSettled` and `has()` through `followsCursor`.
+- `src/GedcomView.ts`: a thin caller of `routeRecord` and `followsCursor` in `goToXref`, `goToRecord`, `cursorSettled` and `has()`; `selectRecord` placing the cursor from `shownRange`.
 - `src/desk/recordCard.ts`: `hasTree`, the empty state, the announcement through `recordTitle`, `drawRecord` drawing the new cards and keeping the header read-only; `src/desk/recordPage.ts` (new) for the new cards' tree.
-- `src/desk/detail/lineView.ts` (`recordTitle`, `renderPointer` with *Open note*), `src/desk/detail/tree.ts` (the root's value), `src/desk/mediaPage.ts` (its private namer replaced).
+- `src/desk/detail/lineView.ts` (`recordTitle`), `src/desk/detail/tree.ts` (the root's value, *Open note* in `paintValue`), `src/desk/mediaPage.ts` (its private namer replaced).
 - `src/i18n/en.json`, `src/i18n/ru.json`, `styles.css`, `harness/fileViews.ts`, `harness/desk.ts`, `src/testing/curie.ts`, `tests/generated.ts`, `tests/fileList.spec.ts`, `tests/desk.spec.ts`, `README.md`.
 - Unit tests beside each module listed in `tasks.md`.
