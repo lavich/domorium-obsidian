@@ -85,6 +85,41 @@ None: no setting, no data. Rollback is a revert of the change.
 
 **The card is the tree and nothing else.** The user asked for it on 2026-11-10. `renderPersonPage`, `renderFamilyPage` and `renderSourcePage` call only `drawTree`; the heading, the portrait, the family section (`renderFamily`, `kinGroup`, `relative`, `missingRelative`, `belonging`, `markOf`), the gallery and the timeline fold are gone, with `timeline.ts`, `timelineView.ts`, `fold.ts`, `lazyFold`, `sectionHeading`, `renderGallery`, `renderPortrait`, `CardTab.mediaItems` and `portrait`, `GedcomView.portrait` and `mediaItems`, `shortPlace`, `parentsHeading`, `childMark`, `renderRest`, their strings (`desk.family`, `desk.parents`, `desk.siblings`, `desk.husband`, `desk.wife`, `desk.spouse`, `desk.children`, `desk.notRecorded`, `desk.married`, `desk.with`, `desk.noAuthor`, `desk.familyPage`, `desk.timeline`, the person's `timeline.*`, `record.pedi.*`, `record.childMark.*`) and rules. *Show in source* remains only on a tree row that points at a record the file does not declare (`tree.ts`); the whole-record link lived in the heading and goes. The media and place cards keep their heading and form, and the media card keeps `renderTile`. The tree's root summary still reads the record's name, from the same label helpers.
 
+## Editing
+
+Added on 2026-11-11, when the user asked for the tree to write; it was first planned as a change of its own stacked on this one and folded in.
+
+### Context
+
+- The tree (`src/desk/detail/tree.ts`) is drawn from `RecordLine`s of `index.record(xref)`; each line carries its `range`. Its host (`TreeHost`) already has `addableAt`, `choicesAt`, `pointerChoicesAt`, `removableAt`, `removeAt`, `chooseField` and `choosePointer`, answered in `GedcomView` from `src/desk/addableFields.ts` over `this.language.update(this.editor.state.doc)`.
+- What writes today: `GedcomView.removeAt` calls `removeStructure(at, this.language.getVersion())` and applies the result with `applyWorkspaceEdit` (one CodeMirror transaction, refused if the version moved), with a `ConfirmModal` when lines go with it.
+- What does not: `DeskViews.chooseField` builds an Obsidian `Menu` whose items do `onClick(() => undefined)`; `PointerModal.onChooseItem()` is empty; the tree's dropdown resets itself on `change`; values are read-only text areas (`renderField`).
+- The card is redrawn from the text after every change (`editsSettled`, 300 ms debounce, and a redraw when a write is applied); focus is restored by `data-focus-key`; per-record node state lives in the session (`treeSession.ts`).
+- The language service (linked from the upstream worktree of lavich/domorium#522) answers, probed on a 7.0 text: `addStructure(at, "SURN", {})` writes an empty `2 SURN` line; `addStructure(at, "DEAT", {})` writes `1 DEAT` with the warning `VAL010`, `{value: "Y"}` writes `1 DEAT Y` clean; a `NOTE` value with a newline is written with `CONT`; refusals come back with codes — `value-not-in-enum`, `payload-datatype` (with a message such as "NOV has 30 days"), `unresolved-pointer`, `reciprocal-pointer-unsupported` for `FAMS`, `cardinality-exceeded`, `stale-document` for a stale version.
+
+### Decisions
+
+**Every write goes through `GedcomView`, the way removal already does.** The tree's host gains `setValueAt(at, value)` and `addAt(parent, tag, input)`, which call the service with `this.language.getVersion()` and apply the result with `applyWorkspaceEdit`; they return the refusal or the warnings to the tree, which shows them. The card never sees the service, the version or the editor. Alternative: the card applies edits. Rejected: the version and the editor would be the card's to keep right.
+
+**A text field commits on leaving and on Enter; a multi-line one on leaving only.** As the user chose for the first plan («по Сохранить или по потере фокуса»). Multi-line is decided by the payload kind the service describes (`text` under `NOTE`, `SNOTE`, `TEXT`), not by a list of tags in the plugin, where the description allows it; where it does not, the tags are the fallback and the design notes them. Escape puts back the file's value. An emptied field writes nothing and says to use removal: the service writes an empty line for an empty value, which the file should not carry.
+
+**Adding is decided by the field's payload.** `none` and `boolean` are written at once, `boolean` as `Y` so that an event added with no detail is not a warning; the new node opens and its menu takes the focus. A pointer opens the list first and writes on choice. An `enum` or a text field becomes an **unwritten row** — drawn in the tree under its parent, at the end of its siblings, with its control — written on a value, dropped when left empty. Unwritten rows are kept in the session per record and per parent key, so a redraw (another write, the file changing) does not lose them. Alternative: write an empty line at once and fill it in. Rejected: it leaves an empty line in the file whenever the reader changes their mind.
+
+**The menu and the list are Obsidian's own.** The field menu stays an Obsidian `Menu`, its items now carrying the field's description; the record list stays a `FuzzySuggestModal`, its `onChooseItem` now writing. The menu is operated by arrow keys, Enter and Escape as the app's menus are.
+
+**Refusals are shown by code, in the plugin's words.** Keys `edit.refusal.<code>` in both catalogues, with the service's message as the fallback (the service speaks English). A refusal for a pointer the standard pairs gets words saying the link is changed on the other record. `stale-document` redraws the card with the typed value restored from the field's draft and a notice. Warnings are shown under the field and announced through the card's polite live region.
+
+**Focus after a change.** A written value keeps the focus on its field (its `data-focus-key` is stable). An added line puts the focus on its field or, for a node, on its menu. A removal puts it on the menu of the line above.
+
+**No dialect, no editing.** `describeStructure` refusing with `no-dialect` makes the host answer no addable fields, no choices, no removals and read-only fields, and the tree says once why.
+
+### Risks
+
+- [The change cannot merge before the upstream release] → The whole change waits for that release. Built against a local link until then.
+- [A redraw between a keystroke and a commit loses typing] → The field's draft is kept with the unwritten rows in the session and put back after a redraw.
+- [Pointers the standard pairs cannot be changed] → Said under the row; changing them waits for upstream.
+- [An added field lands where the service puts it, which may not be where the reader expected] → The node is opened and the new row takes the focus, so it is in view.
+
 ## Implementation
 
 Where the code differs from the plan above, or settled something the plan left open:

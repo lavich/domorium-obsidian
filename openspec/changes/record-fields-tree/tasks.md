@@ -82,3 +82,36 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 - [x] 12.1 The toggle is `div.gedcom-tree-toggle.clickable-icon.nav-action-button` (`role="button"`, `tabindex="0"`, Enter and Space) in `div.nav-buttons-container` in `div.gedcom-tree-bar.nav-header`, always shown; the bar rules of `styles.css` and the hover reveal are removed; verify in `src/desk/detail/tree.test.ts` the markup and the keyboard, and in `tests/desk.spec.ts` that it is visible at rest, shows a focus ring for the keyboard and can be hit on a phone
 - [x] 12.2 `harness/palette.css` carries the app's `nav-header` and `nav-buttons-container` rules and the touch size of `nav-action-button`; verify with `npm run test:browser`
 - [x] 12.3 `README.md` and the specs say the toggle is always shown in a header; verify with `npm run openspec:validate`
+
+## 13. Editing: The write path
+
+- [ ] 13.1 `GedcomView.setValueAt(at, value)` and `addAt(parent, tag, input)` over `setValue` / `addStructure` with the tab's version, applied by `applyWorkspaceEdit`, returning the refusal or the warnings; verify in `src/GedcomView` unit coverage in `src/desk/addableFields.test.ts` (new) against the real service: a value set, a pointer set, a line added, a refusal returned, a stale version refused
+- [ ] 13.2 `TreeHost.setValueAt`, `addAt` passed through `recordCard.ts` and `DeskViews.ts`; verify in `src/desk/recordCard.test.ts` that the tree receives them only where the service describes the record
+
+## 14. Editing: Values
+
+- [ ] 14.1 Editable fields in the tree: text area in the tab order, commit on leave and Enter, multi-line on leave only, Escape restores, unchanged writes nothing, emptied writes nothing and says so; verify in `src/desk/detail/tree.test.ts`
+- [ ] 14.2 The dropdown writes on change; verify in `src/desk/detail/tree.test.ts` with `1 SEX F` → `M`
+- [ ] 14.3 The record list writes on choice (`PointerModal.onChooseItem`); a pointer the standard pairs shows its reason; verify in `src/desk/detail/tree.test.ts` and `src/desk/pointerModal.test.ts` (new)
+
+## 15. Editing: Adding
+
+- [ ] 15.1 The field menu's items add: `none`/`boolean` at once (`Y` for an event), pointer through the list, enum and text as an unwritten row; verify in `src/desk/detail/tree.test.ts`
+- [ ] 15.2 Unwritten rows kept in the session per record and parent, dropped when left empty, and a field's draft restored after a redraw; verify in `src/desk/detail/treeSession.test.ts` and `src/desk/detail/tree.test.ts`
+- [ ] 15.3 Focus after adding, writing and removing; verify in `src/desk/recordCard.test.ts`
+
+## 16. Editing: Refusals and history
+
+- [ ] 16.1 Messages under a field by code in `src/i18n/en.json` and `src/i18n/ru.json`, fallback to the service's message, `aria-describedby`, announced politely, cleared on typing; warnings the same; verify in `src/desk/detail/tree.test.ts` with `31 NOV 1867`, `SEX Z` and a warning, and in `src/i18n/i18n.test.ts` that both catalogues hold the same keys
+- [ ] 16.2 `stale-document`: redraw with the typed value kept and a notice; verify in `src/desk/recordCard.test.ts`
+- [ ] 16.3 No dialect: no editing controls and one line saying why; verify in `src/desk/detail/tree.test.ts`
+
+## 17. Editing: Style and browser
+
+- [ ] 17.1 `styles.css`: the editing state of a field, the unwritten row, the message under a field, 44-pixel targets on touch; verify by screenshots of the harness at 320 and 390 pixels, light and dark, with Obsidian's `app.css` prepended
+- [ ] 17.2 `harness/desk.ts` gains a host that writes through the real service, and `tests/desk.spec.ts`: change a given name with Enter, choose a sex, add a nickname, add a death, add a source through the list, remove a line, a refused date, the keyboard path through the menu; verify with `npm run test:browser`
+
+## 18. Editing: Docs and gate
+
+- [ ] 18.1 `README.md` where it describes the card: what can be edited and how
+- [ ] 18.2 `npm run check` and `npm run test:browser`

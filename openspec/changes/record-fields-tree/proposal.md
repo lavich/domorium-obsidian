@@ -13,9 +13,11 @@ The user's requirement, in their words and by date:
 - 2026-11-09: «в карточке семьи можно удалить раздел Family; аналогично в Source надо оставить только галерею из старого» — the family card loses its Family section, and the source card keeps only its heading, the tree and its gallery.
 - 2026-11-09: «убери из правых вкладок шапку с историей» — the header of the card, with Back, Forward and the record's name, is removed, and with it the history of the records a card has shown.
 - 2026-11-09: «еще удали список Events и карточки для Event» — the Events list of the List view and the cards of events are removed; the list is the first part of this, the cards the second.
-- 2026-11-09: «пока не делаем перетаскивание», and, before it, «для начала сделаем поля не редактируемыми — просто отображение» — this step only reads.
+- 2026-11-09: «пока не делаем перетаскивание», and, before it, «для начала сделаем поля не редактируемыми — просто отображение» — the first step only read; editing was added to this change on 2026-11-11, below.
 - 2026-11-10: «я хочу чтобы в панелях справа остались только деревья - удали все остальное, включая заголовок» — the card of a person, a family and a source is the tree and nothing else: the heading, the family section, the pictures and the timeline go.
 - 2026-11-10: «да, и кнопку используй такую <div class="clickable-icon nav-action-button" aria-label="Collapse all">… и <div class="clickable-icon nav-action-button" aria-label="Expand all">… и не скрывай ее больше» — the open-all toggle sits in a `nav-header` above the tree, is that icon button, and is never hidden.
+- 2026-11-10: «давай добавим возможность из форм менять gedcom … плюсик с выпадающим меню о том, какое поле ещё добавить» — the tree edits the record.
+- 2026-11-11: «да» — to finishing adding, choosing a pointer and changing values through `addStructure` and `setValue`; and, asked whether it goes in the same branch, «да» — in this change and this PR.
 
 The proposed scope:
 
@@ -23,17 +25,19 @@ The proposed scope:
 - A row is a label and a value, in the reader's language. A line with substructures is a node, closed when the card is first drawn, with a one-line summary (an event shows its value, date and place); the reader's choice is kept for each record while the plugin is loaded.
 - Tags are hidden, as the product principles ask. A closed node that cites a source carries the quiet dot the event row has.
 - The node arrows stay in view; the one icon toggle that opens or closes every node is always shown, in a header above the tree made as the header of Obsidian's file explorer is (`nav-header`, `nav-buttons-container`, an icon button of the `clickable-icon nav-action-button` kind). Rows have no control of their own.
-- A line that is an event or an attribute opens its event card from its label, and a place opens the card of the place, as they do on the card today.
+- A place opens the card of the place.
+- The tree edits the record (capability `genealogy-record-edit`): a value is changed in its field — written on leaving it or on Enter, Escape puts the file's value back, a listed value is a dropdown, a note takes several lines; a pointer is pointed at another record from a searchable list; the "+" menu of a line adds the chosen field beneath it; a line is removed with its control, the reader asked once when lines go with it. What the language service refuses is not written and the reason is shown under the field; every change is one undo step in Source.
 - What the card once computed from the whole file — the heading, the family section, the pictures, the timeline — is removed on 2026-11-10; the card is the tree.
 - The card's place and media pages keep their own forms, heading included.
 
-**This repository or upstream.** The change is entirely in this repository: it reads `RecordLine`, which the published packages already give. Nothing waits on a release of `@domorium/*`. Moving a line, which the user asked for and deferred, will need an operation upstream; the issue is drafted when that step is taken.
+**This repository or upstream.** Reading the tree uses `RecordLine`, which the published packages already give. Editing uses what lavich/domorium#521 adds to the language service — `describeStructure`, `addStructure`, `setValue`, `removeStructure` — from PR lavich/domorium#522, not yet published: the rules of what a line may hold, where it goes and what is valid are the service's. Until a release of `@domorium/language-service` and `@domorium/validator` carries them, the branch is built against a local link of that worktree, CI fails, and the change cannot merge. Moving a line waits on lavich/domorium#523.
 
 ## Capabilities
 
 ### New Capabilities
 
 - `genealogy-record-tree`: the tree of the lines of a record, its rows, summaries, controls, narrow-panel behaviour and words.
+- `genealogy-record-edit`: changing a value, pointing a pointer, adding and removing a line from the tree, refusals, history, and where editing is not offered.
 
 ### Removed Capabilities
 
@@ -53,7 +57,7 @@ The proposed scope:
 - A header on the card, Back and Forward between the records it has shown, and the scroll position restored on returning to a record.
 - On the family card, a section of spouses and children and the marks of a child who is adopted, foster or sealing; on the source card, the repository's address and web address and the list of the records that cite it. The tree shows the pointers.
 - An Evidence section, or a list of the notes of the vault that link to a record, on any card.
-- Editing, adding, removing and reordering lines. They follow on this view; reordering needs a new operation upstream.
+- Moving a line by dragging it (lavich/domorium#523); creating or removing a whole record; changing a record's identifier; writing a pointer the standard pairs with one on the other record, which the service refuses.
 - A tree for the event, place and media pages, which are computed pages and keep their form.
 - Grouping or sorting lines, or hiding a kind of line.
 - Showing level numbers or cross-reference identifiers.
@@ -70,3 +74,4 @@ The proposed scope:
 - `src/desk/evidence.ts`, `src/desk/noteLinks.ts` and their tests, the notes plumbing of `DeskViews.ts` and `main.ts`, `noteChangeMatters`, the `evidence.*` and `quality.*` strings and the rules of the evidence section: removed.
 - `src/i18n/en.json`, `src/i18n/ru.json`, `styles.css`, `harness/desk.ts`, `tests/desk.spec.ts`, `README.md`.
 - Specs: new `genealogy-record-tree`; deltas to `genealogy-record-card` and `genealogy-record-detail`. The later change `edit-person-names-in-card`, not yet in the repository, modifies "The names of a person", which this change removes; it is rewritten on this tree and is not archived as it stands.
+- The untracked plan `openspec/changes/edit-person-names-in-card/` in the main checkout is superseded by this change and is not archived.
