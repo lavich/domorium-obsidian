@@ -43,5 +43,5 @@ Depends on lavich/domorium#527 (`setValue` on a record's opening line) as well a
 
 ## 7. Docs and gate
 
-- [ ] 7.1 `README.md` where it describes the list and the card
-- [ ] 7.2 `npm run check` and `npm run test:browser`
+- [x] 7.1 `README.md` where it describes the list and the card
+- [x] 7.2 `npm run check` and `npm run test:browser`

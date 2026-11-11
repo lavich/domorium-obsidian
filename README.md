@@ -20,7 +20,7 @@ adapted per editor.
 
 - An optional genealogy interface, off until you turn it on: a graph and a
   timeline of the whole file, a sortable list of its people, families,
-  sources and places, and a record card in the right sidebar that shows the selected person, family, source or media
+  sources, places, media, shared notes, repositories and other records, and a record card in the right sidebar that shows the selected
   record as a tree of its lines
 - Context-aware GEDCOM tag autocomplete
 - Real-time validation errors and warnings
@@ -70,13 +70,20 @@ the search of the mode the tab is in: the editor's panel in Source, the search
 over the board in Graph and Timeline, and the filter field in List;
 **Replace** stays in Source.
 
-In **List** mode the tab shows the file's people, families, sources or places as a
-table, switched by the buttons at its top. People show name, years, place and
+In **List** mode the tab shows the file's people, families, sources, places,
+media, shared notes, repositories or other records as a table, switched by the
+buttons at its top, or by one dropdown where the toolbar is too narrow for the
+eight buttons in the language shown. People show name, years, place and
 how many sources the record cites, with a mark where it cites none; families
 show the spouses, the year and place of the marriage and the number of
 children; sources show the title, author, repository and how many records cite
 them; places lists each place the file names once, however it is spelt in case or
-spacing, with its number of events and their years. A click on a column header sorts by it, a second click reverses the order
+spacing, with its number of events and their years. Media show the title, file,
+format and how many records link them; notes their first line and how many
+records link them, and the search reads their whole text; repositories their
+name, address and how many sources point at them; and **Other** lists the file's
+header first, then submitters, submission records and records of the file's own,
+with their kind and name. A click on a column header sorts by it, a second click reverses the order
 and a third restores the file's; a filter field narrows the rows by name, year
 and place. Sorting people by Sources puts those whose records cite no source
 first. A count says how many rows are shown. Clicking a row, or pressing Enter
@@ -98,7 +105,7 @@ nothing. With it off, the first selection in a session puts the card in the
 right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a tap on a
-row of the list, opens. The card of a person, a family or a source is the **lines of the record as a tree** and nothing else: no heading, no section of relatives, pictures or timeline. The tree runs in the
+row of the list, opens. The card of a person, a family, a source, a shared note, a repository, a submitter or any other record is the **lines of the record as a tree** and nothing else: no heading, no section of relatives, pictures or timeline. The tree runs in the
 order the file writes the lines and nests them as the file nests them, with no sections of the plugin's
 own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
 the file puts them, in the reader's language. Every node starts closed with a one-line summary — an event shows its date
@@ -106,8 +113,11 @@ and place, an attribute its value — and a quiet dot after it where it cites a 
 open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon in the header above the tree, as in Obsidian's file explorer, opens or closes every node and is always shown. A place named in a closed fact, or the pin beside a place's
 field, opens the card of that place, which lists
 the events held there, each with a link to the person or the family it belongs to. Every control of a card shows a focus ring for the
-keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a
-source, a place and a media record have cards of their own, and the card has no header: select a record again in the
+keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A pointer
+to a shared note shows the note's text where it stands, with an **Open note** control beside it
+that opens the note's own card. The text of a shared note and the value of a record of the file's
+own are a field on the root of its tree. The header's card is read-only: change the header in
+Source. A place and a media record have cards of their own, and the card has no header: select a record again in the
 graph, the timeline or the list to return to it. **Show in source** on a pointer to a record the file does not
 declare switches to Source with that line selected.
 
@@ -138,7 +148,8 @@ record** also glide to the person or bring the row into view; a relative, a
 citation or a tile in the card selects that record. In
 Source a link or the card puts the cursor on the record's
 first line, and the cursor, once it rests in a record that has a card, selects
-it — a note or a repository at the cursor leaves the selection alone. The
+it when it is a person, a family, a source or a media record — a note, a repository, a
+submitter, a record of the file's own or the header at the cursor leaves the selection alone. The
 selection is kept when the tab changes mode and across a restart.
 
 The command **Open the list of the GEDCOM file** brings the GEDCOM tab
