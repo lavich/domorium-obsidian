@@ -1,6 +1,6 @@
 import type { GenealogyIndex, MediaRecord } from "../genealogy";
 import { t } from "../i18n";
-import { familyTitle, personName, sourceTitle } from "./labels";
+import { recordTitle } from "./detail/lineView";
 import { drawPicture, renderTile, type MediaHost, type MediaItem } from "./media";
 import { linkButton } from "./dom";
 import type { PageHost } from "./personPage";
@@ -8,19 +8,6 @@ import type { PageHost } from "./personPage";
 export interface MediaPageItems {
   whole: MediaItem | null;
   links: MediaItem[];
-}
-
-function recordName(index: GenealogyIndex, xref: string): string {
-  const person = index.person(xref);
-  if (person) {
-    return personName(person);
-  }
-  const family = index.family(xref);
-  if (family) {
-    return familyTitle(family.spouseNames);
-  }
-  const source = index.source(xref);
-  return source ? sourceTitle(source.title) : t("desk.wholeRecord");
 }
 
 export function renderMediaPage(
@@ -69,7 +56,7 @@ export function renderMediaPage(
     const text = entry.createDiv({ cls: "gedcom-desk-user-text" });
     const button = text.createEl("button", { cls: "gedcom-desk-person" });
     button.setAttribute("type", "button");
-    button.createSpan({ cls: "gedcom-desk-person-name", text: recordName(index, link.record) });
+    button.createSpan({ cls: "gedcom-desk-person-name", text: recordTitle(index, link.record) ?? t("desk.wholeRecord") });
     button.addEventListener("click", () => host.openRecord(link.record));
     if (link.title) {
       text.createDiv({ cls: "gedcom-desk-user-caption", text: link.title });

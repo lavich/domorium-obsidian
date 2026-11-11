@@ -10,7 +10,6 @@ import type {
 import type { GenealogyIndex } from "../genealogy";
 import { t } from "../i18n";
 import { renderFamilyPage } from "./familyPage";
-import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
 import { pageKind } from "./deskState";
@@ -21,6 +20,7 @@ import { renderSourcePage } from "./sourcePage";
 import type { Choices } from "./addableFields";
 import type { Refusal, WriteOutcome } from "./edits";
 import type { FieldChoice, MenuAt, PointerChoice, ValueChoice } from "./detail/tree";
+import { recordTitle } from "./detail/lineView";
 import type { TreeSession } from "./detail/treeSession";
 
 export interface CardTab {
@@ -67,23 +67,6 @@ const TOGGLE_KEY = "tree:toggle";
 
 const hasTree = (index: GenealogyIndex, record: string): boolean =>
   index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;
-
-function recordName(index: GenealogyIndex, xref: string): string {
-  const person = index.person(xref);
-  if (person) {
-    return personName(person);
-  }
-  const family = index.family(xref);
-  if (family) {
-    return familyTitle(family.spouseNames);
-  }
-  const source = index.source(xref);
-  if (source) {
-    return sourceTitle(source.title);
-  }
-  const media = index.media(xref);
-  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? t("desk.media");
-}
 
 export function renderRecordCard(
   container: HTMLElement,
@@ -141,7 +124,7 @@ export function renderRecordCard(
   }
   root.setAttribute("data-shown", shown);
   if (live && shown !== previous) {
-    live.setText(tab && index && record ? t("card.announce", { name: recordName(index, record) }) : "");
+    live.setText(tab && index && record ? t("card.announce", { name: recordTitle(index, record) ?? "" }) : "");
   }
   if (shown === previous) {
     body.scrollTop = scrollTop;

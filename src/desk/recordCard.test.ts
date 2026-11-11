@@ -260,6 +260,12 @@ describe("the live region", () => {
 
     expect(live()).toBe("Показано: Marie Skłodowska-Curie");
   });
+
+  it("reads a medium by its title", () => {
+    state.record = "@O5@";
+    draw();
+    expect(live()).toBe("Shown: The Curie family, about 1908");
+  });
 });
 
 describe("the tree of a record on the card", () => {

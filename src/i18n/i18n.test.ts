@@ -140,6 +140,20 @@ describe("spelling a count", () => {
     expect(plural("list.compact.events", 11)).toBe("11 событий");
   });
 
+  it("spells the count lines of the media, notes, repositories and other records in both languages", () => {
+    expect(plural("list.count.media", 7)).toBe("7 media");
+    expect(plural("list.count.notes", 1478)).toBe("1478 notes");
+    expect(plural("list.countOf.notes", 2, { shown: 1 })).toBe("1 of 2 notes");
+    expect(plural("list.count.repositories", 2)).toBe("2 repositories");
+    expect(plural("list.count.other", 2)).toBe("2 records");
+    expect(t("list.compact.linkedFrom", { count: 2 })).toBe("Linked from 2");
+    setLanguage("ru");
+    expect([1, 2, 5, 21].map((count) => plural("list.count.notes", count))).toEqual(["1 заметка", "2 заметки", "5 заметок", "21 заметка"]);
+    expect([1, 3, 7].map((count) => plural("list.count.media", count))).toEqual(["1 медиафайл", "3 медиафайла", "7 медиафайлов"]);
+    expect(plural("list.count.repositories", 5)).toBe("5 хранилищ");
+    expect(plural("list.countOf.other", 2, { shown: 1 })).toBe("1 из 2 записей");
+  });
+
   it("carries the other parameters through", () => {
     expect(
       plural("notice.references", 3),

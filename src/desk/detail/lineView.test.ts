@@ -2,9 +2,11 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
+import { buildIndex, HEADER_ID, type GenealogyIndex, type RecordLine } from "../../genealogy";
+import { curieIndex } from "../../testing/curie";
+import { placeId } from "../placeRows";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { renderLines, type DetailContext } from "./lineView";
+import { recordTitle, renderLines, type DetailContext } from "./lineView";
 
 beforeAll(installObsidianDom);
 
@@ -98,5 +100,56 @@ describe("a pointer", () => {
     renderLines(box.createDiv({ cls: "gedcom-detail" }), record.children, ctx);
 
     expect(box.querySelector(".gedcom-detail-text-body")?.textContent).toBe("The note text");
+  });
+});
+
+describe("the one name of every record", () => {
+  const curie = curieIndex();
+
+  it("names a person, a family, a source, a place, a medium, a note, a repository, a submitter and the header", () => {
+    expect(
+      ["@I1@", "@F3@", "@S2@", placeId("Paris, France"), "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID].map((xref) => recordTitle(curie, xref)),
+    ).toEqual([
+      "Marie Skłodowska-Curie",
+      "Pierre Curie ⚭ Marie Skłodowska-Curie",
+      "Parish registers of Warsaw",
+      "Paris, France",
+      "The Curie family, about 1908",
+      "The only person to have won a Nobel Prize in two different sciences:",
+      "State Archive in Warsaw",
+      "Domorium",
+      "File header",
+    ]);
+  });
+
+  it("names a medium with no title by the base name of its file", () => {
+    const { index } = make(["0 @O1@ OBJE", "1 FILE scans/letter.jpg", "0 @I1@ INDI"]);
+
+    expect(recordTitle(index, "@O1@")).toBe("letter.jpg");
+  });
+
+  it("names a note by its first line that is not empty", () => {
+    const { index } = make(["0 @N1@ SNOTE", "1 CONT", "1 CONT Second", "0 @I1@ INDI"]);
+
+    expect(recordTitle(index, "@N1@")).toBe("Second");
+  });
+
+  it("names a record of the file's own by its name, its title, its own value, its first value, or its kind", () => {
+    const { index } = make([
+      "0 @P1@ _PLAN Custom value", "1 TITL A title", "1 NAME Research plan",
+      "0 @P2@ _PLAN Custom value", "1 TITL A title",
+      "0 @P3@ _PLAN Custom value", "1 _STEP First step",
+      "0 @P4@ _PLAN", "1 _STEP First step",
+      "0 @X2@ _LOG",
+      "0 @I1@ INDI",
+    ]);
+
+    expect(["@P1@", "@P2@", "@P3@", "@P4@", "@X2@"].map((xref) => recordTitle(index, xref))).toEqual([
+      "Research plan", "A title", "Custom value", "First step", "_LOG",
+    ]);
+  });
+
+  it("names nothing the file does not declare", () => {
+    expect(recordTitle(curie, "@X9@")).toBeUndefined();
   });
 });

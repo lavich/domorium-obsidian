@@ -244,6 +244,11 @@
   "list.families": "Семьи",
   "list.sources": "Источники",
   "list.places": "Места",
+  "list.media": "Медиа",
+  "list.notes": "Заметки",
+  "list.repositories": "Хранилища",
+  "list.other": "Прочее",
+  "list.kind": "Вид записей",
   "list.column.name": "Имя",
   "list.column.years": "Годы",
   "list.column.place": "Место",
@@ -256,6 +261,12 @@
   "list.column.repository": "Хранилище",
   "list.column.citedBy": "Цитируют",
   "list.column.events": "События",
+  "list.column.file": "Файл",
+  "list.column.format": "Формат",
+  "list.column.linkedFrom": "Ссылаются",
+  "list.column.text": "Текст",
+  "list.column.address": "Адрес",
+  "list.column.kind": "Вид",
   "list.count.people": {
     "one": "{count} человек",
     "few": "{count} человека",
@@ -279,6 +290,30 @@
     "few": "{count} места",
     "many": "{count} мест",
     "other": "{count} места"
+  },
+  "list.count.media": {
+    "one": "{count} медиафайл",
+    "few": "{count} медиафайла",
+    "many": "{count} медиафайлов",
+    "other": "{count} медиафайла"
+  },
+  "list.count.notes": {
+    "one": "{count} заметка",
+    "few": "{count} заметки",
+    "many": "{count} заметок",
+    "other": "{count} заметки"
+  },
+  "list.count.repositories": {
+    "one": "{count} хранилище",
+    "few": "{count} хранилища",
+    "many": "{count} хранилищ",
+    "other": "{count} хранилища"
+  },
+  "list.count.other": {
+    "one": "{count} запись",
+    "few": "{count} записи",
+    "many": "{count} записей",
+    "other": "{count} записи"
   },
   "list.count.events": {
     "one": "{count} событие",
@@ -310,6 +345,30 @@
     "many": "{shown} из {count} мест",
     "other": "{shown} из {count} места"
   },
+  "list.countOf.media": {
+    "one": "{shown} из {count} медиафайла",
+    "few": "{shown} из {count} медиафайлов",
+    "many": "{shown} из {count} медиафайлов",
+    "other": "{shown} из {count} медиафайла"
+  },
+  "list.countOf.notes": {
+    "one": "{shown} из {count} заметки",
+    "few": "{shown} из {count} заметок",
+    "many": "{shown} из {count} заметок",
+    "other": "{shown} из {count} заметки"
+  },
+  "list.countOf.repositories": {
+    "one": "{shown} из {count} хранилища",
+    "few": "{shown} из {count} хранилищ",
+    "many": "{shown} из {count} хранилищ",
+    "other": "{shown} из {count} хранилища"
+  },
+  "list.countOf.other": {
+    "one": "{shown} из {count} записи",
+    "few": "{shown} из {count} записей",
+    "many": "{shown} из {count} записей",
+    "other": "{shown} из {count} записи"
+  },
   "list.countOf.events": {
     "one": "{shown} из {count} события",
     "few": "{shown} из {count} событий",
@@ -320,14 +379,26 @@
   "list.search.families": "Имена, год, место…",
   "list.search.sources": "Название, автор, хранилище…",
   "list.search.places": "Название места…",
+  "list.search.media": "Название, файл, формат…",
+  "list.search.notes": "Текст заметки…",
+  "list.search.repositories": "Название, адрес…",
+  "list.search.other": "Вид, название…",
   "list.nothing.people": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.families": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.sources": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям, авторам и хранилищам.",
   "list.nothing.places": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям мест.",
+  "list.nothing.media": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям, файлам и форматам.",
+  "list.nothing.notes": "Ничего не найдено по запросу «{query}». Поиск идёт по тексту заметок.",
+  "list.nothing.repositories": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям и адресам.",
+  "list.nothing.other": "Ничего не найдено по запросу «{query}». Поиск идёт по видам и названиям.",
   "list.none.people": "В файле нет людей.",
   "list.none.families": "В файле нет семей.",
   "list.none.sources": "В файле нет источников.",
   "list.none.places": "В файле нет мест.",
+  "list.none.media": "В файле нет медиа.",
+  "list.none.notes": "В файле нет общих заметок.",
+  "list.none.repositories": "В файле нет хранилищ.",
+  "list.none.other": "В файле нет других записей.",
   "list.sortBy": "Сортировать по",
   "list.sortAscending": "По возрастанию",
   "list.sortDescending": "По убыванию",
@@ -348,6 +419,7 @@
     "other": "{count} ребёнка"
   },
   "list.compact.citedBy": "Цитируют: {count}",
+  "list.compact.linkedFrom": "Ссылаются: {count}",
   "list.compact.events": {
     "one": "{count} событие",
     "few": "{count} события",
@@ -387,6 +459,8 @@
   "record.tag.CREA": "Создано",
   "record.tag.CHAN": "Изменено",
   "record.tag.SUBM": "Автор записи",
+  "record.tag.SUBN": "Передача",
+  "record.tag.HEAD": "Заголовок",
   "record.tag.ANCI": "Интерес к предкам",
   "record.tag.DESI": "Интерес к потомкам",
   "record.tag.DATE": "Дата",
@@ -469,6 +543,7 @@
   "record.more": "Показать полностью",
   "record.less": "Свернуть",
   "record.void": "Запись не указана",
+  "record.header": "Заголовок файла",
   "tree.openAll": "Открыть все узлы",
   "tree.closeAll": "Закрыть все узлы",
   "tree.addField": "Добавить поле",
@@ -495,6 +570,7 @@
   "edit.refusal.not-a-structure": "Эту строку здесь изменить нельзя.",
   "edit.refusal.record-edit-unsupported": "Первую строку записи здесь изменить нельзя.",
   "edit.refusal.no-dialect": "В файле не указана версия GEDCOM, которую плагин умеет проверять.",
+  "edit.refusal.value-not-allowed": "Стандарт не допускает значения в этой строке.",
   "edit.refusal.noSuchDay": {
     "one": "Даты «{date}» не бывает: {month} длится {count} день.",
     "few": "Даты «{date}» не бывает: {month} длится {count} дня.",
@@ -507,6 +583,7 @@
   "edit.asText": "{field}: текст",
   "edit.asRecord": "{field}: запись",
   "edit.openPlace": "Открыть место {place}",
+  "desk.openNote": "Открыть заметку",
   "edit.chooseValues": "Выбрать значения поля «{field}»",
   "edit.noValues": "Нет",
   "edit.unwritten": "Не записано, пока нет значения"

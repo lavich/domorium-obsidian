@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { curieIndex } from "../testing/curie";
+import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import type { MediaHost, MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
@@ -65,6 +65,18 @@ describe("the media page", () => {
       "Marie, on the left", "Pierre, in the middle",
     ]);
     expect(container.querySelectorAll(".gedcom-desk-user .is-cropped")).toHaveLength(2);
+  });
+
+  it("names a source that links it as everywhere else, and a record of the file's own by its name", () => {
+    const other = indexOf(
+      ["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @O1@ OBJE", "1 FILE a.jpg", "0 @S1@ SOUR", "1 TITL Letters", "1 OBJE @O1@", "0 @X1@ _ALBUM", "1 NAME Album", "1 OBJE @O1@", "0 TRLR"].join("\n"),
+    );
+    const medium = other.media("@O1@");
+    if (medium) {
+      renderMediaPage(container, medium, { whole: null, links: [] }, other, host);
+    }
+
+    expect(texts(".gedcom-desk-user .gedcom-desk-person-name")).toEqual(["Letters", "Album"]);
   });
 
   it("draws the whole picture as a button a keyboard can reach", () => {

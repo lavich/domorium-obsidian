@@ -8,7 +8,7 @@ Depends on lavich/domorium#527 (`setValue` on a record's opening line) as well a
 
 ## 2. Naming
 
-- [ ] 2.1 `recordTitle` in `src/desk/detail/lineView.ts` names every kind (place, medium by title or file base name, note by first non-empty joined line, repository and submitter by `NAME`, other records by `NAME`/`TITL`/first value/kind, `header:` as *File header*); `recordCard.ts` and `mediaPage.ts` drop their own namers and call it; verify in `src/desk/detail/lineView.test.ts`, `src/desk/recordCard.test.ts` (announcement) and `src/desk/mediaPage.test.ts`
+- [x] 2.1 `recordTitle` in `src/desk/detail/lineView.ts` names every kind (place, medium by title or file base name, note by first non-empty joined line, repository and submitter by `NAME`, other records by `NAME`/`TITL`/first value/kind, `header:` as *File header*); `recordCard.ts` and `mediaPage.ts` drop their own namers and call it; verify in `src/desk/detail/lineView.test.ts`, `src/desk/recordCard.test.ts` (announcement) and `src/desk/mediaPage.test.ts`
 
 ## 3. The list
 

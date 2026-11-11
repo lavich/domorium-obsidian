@@ -1,10 +1,11 @@
 import type { Range } from "@domorium/language-service";
 
-import type { GenealogyIndex, RecordLine } from "../../genealogy";
+import { HEADER_ID, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { readName, UNNAMED } from "../../genealogy/names";
 import { t } from "../../i18n";
 import { pageKind } from "../deskState";
 import { linkButton } from "../dom";
+import { placeAt } from "../placeRows";
 import { familyTitle, personName, sourceTitle } from "../labels";
 import { labelId, renderField } from "./fields";
 import { renderFoldedText } from "./foldedText";
@@ -25,8 +26,15 @@ export interface DetailContext {
   notes?: { drawn: number; prefix?: string };
 }
 
-/** What a reader calls the record a pointer names, with no identifier. */
+const firstFilled = (text: string): string | undefined => text.split("\n").find((line) => line.trim() !== "");
+
+const baseName = (file: string): string => file.split(/[\\/]/u).filter(Boolean).pop() ?? file;
+
+/** What a reader calls a record wherever it is named, with no identifier: in the list, the card's announcement, a pointer, the root of a tree. */
 export function recordTitle(index: GenealogyIndex, xref: string): string | undefined {
+  if (xref === HEADER_ID) {
+    return index.record(HEADER_ID) ? t("record.header") : undefined;
+  }
   const person = index.person(xref);
   if (person) {
     return personName(person);
@@ -39,18 +47,25 @@ export function recordTitle(index: GenealogyIndex, xref: string): string | undef
   if (source) {
     return sourceTitle(source.title);
   }
+  const place = placeAt(index, xref);
+  if (place) {
+    return place.name;
+  }
   const media = index.media(xref);
   if (media) {
-    return media.title ?? media.file ?? t("desk.media");
+    return media.title ?? (media.file === undefined ? t("desk.media") : baseName(media.file));
   }
   const lines = index.record(xref);
   if (!lines) {
     return undefined;
   }
-  if (lines.text !== undefined) {
-    return lines.text.split("\n")[0];
+  if (lines.tag === "SNOTE" || lines.tag === "NOTE") {
+    return (lines.text === undefined ? undefined : firstFilled(lines.text)) ?? tagLabel(lines.tag);
   }
-  return lines.children.find((child) => child.tag === "NAME")?.text ?? tagLabel(lines.tag);
+  const child = (tag: string): string | undefined => lines.children.find((one) => one.tag === tag)?.text;
+  const own = lines.text === undefined ? undefined : firstFilled(lines.text);
+  const first = lines.children.find((one) => one.text !== undefined && one.text !== "")?.text;
+  return child("NAME") ?? child("TITL") ?? own ?? (first === undefined ? undefined : firstFilled(first)) ?? tagLabel(lines.tag);
 }
 
 /** What a line's value reads as: a sex, a role, a name or the type of a name in the reader's language, anything else as written. */
