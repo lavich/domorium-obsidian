@@ -435,6 +435,7 @@
   },
   "edit.refusal.value-not-in-enum": "This value is not one of those the standard lists here.",
   "edit.refusal.payload-datatype": "The standard cannot read this value here.",
+  "edit.refusal.value-spans-lines": "A line break is not allowed in this value: it keeps to one line.",
   "edit.refusal.value-required": "The standard requires a value here.",
   "edit.refusal.unresolved-pointer": "The file has no such record.",
   "edit.refusal.required-field-missing": "A line the standard requires beneath it is missing.",

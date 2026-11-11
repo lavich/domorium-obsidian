@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage, setLanguage } from "../i18n";
 import { TextTab } from "../testing/textTab";
 import { addableAt } from "./addableFields";
-import { addAt, addPlan, checkValue, commit, refusalText, removeAt, requiredBeneath, setValueAt } from "./edits";
+import { addAt, addPlan, checkValue, commit, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
 
 afterEach(resetLanguage);
 
@@ -118,9 +118,22 @@ describe("a refusal", () => {
 
     expect(outcome).toMatchObject({ ok: false, code: "payload-datatype" });
     expect(tab.text).toBe(before);
-    expect(refusalText(outcome as { code: string; message: string })).toBe("There is no November 31: November has 30 days.");
+    expect(outcome).toMatchObject({ data: { day: 31, month: "NOV", monthLength: 30 } });
+    expect(refusalText(outcome as Refusal)).toBe("There is no November 31: November has 30 days.");
     setLanguage("ru");
-    expect(refusalText(outcome as { code: string; message: string })).toBe("Даты «31 ноября» не бывает: ноябрь длится 30 дней.");
+    expect(refusalText(outcome as Refusal)).toBe("Даты «31 ноября» не бывает: ноябрь длится 30 дней.");
+  });
+
+  it("names the missing day from the facts of the refusal, whatever the service's message says", () => {
+    expect(refusalText({ code: "payload-datatype", message: "anything", data: { day: 30, month: "FEB", monthLength: 28 } })).toBe(
+      "There is no February 30: February has 28 days.",
+    );
+  });
+
+  it("falls back to the plugin's words for a malformed value that names no day", () => {
+    expect(refusalText({ code: "payload-datatype", message: "Value for DATE names 31 NOV, and NOV has 30 days" })).toBe(
+      "The standard cannot read this value here.",
+    );
   });
 
   it("is checked before a value is written, by the service", () => {
@@ -160,7 +173,12 @@ describe("a line break in a value", () => {
   it("is refused where the standard does not let the value span lines", () => {
     const tab = tabOf(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]);
 
-    expect(commit(tab, setValueAt(tab.service(), at(5), tab.version, { value: "1 JAN\n1900" }))).toMatchObject({ ok: false, code: "payload-datatype" });
+    const outcome = commit(tab, setValueAt(tab.service(), at(5), tab.version, { value: "1 JAN\n1900" }));
+
+    expect(outcome).toMatchObject({ ok: false, code: "value-spans-lines" });
     expect(tab.writes).toBe(0);
+    expect(refusalText(outcome as Refusal)).toBe("A line break is not allowed in this value: it keeps to one line.");
+    setLanguage("ru");
+    expect(refusalText(outcome as Refusal)).toBe("В этом значении нельзя переносить строку: оно занимает одну строку.");
   });
 });

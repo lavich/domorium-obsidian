@@ -967,7 +967,7 @@ describe("a value in its field", () => {
     press(area, "Enter");
     expect(tab.writes).toBe(0);
     expect(area.value).toBe("1 JAN\n1900");
-    expect(messageOf(area)).toBe("The standard cannot read this value here.");
+    expect(messageOf(area)).toBe("A line break is not allowed in this value: it keeps to one line.");
   });
 
   it("writes an occupation on Enter, where a line break is not the ordinary case", () => {

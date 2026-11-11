@@ -1,4 +1,5 @@
 import type {
+  DiagnosticData,
   EditRefusal,
   GedcomLanguageService,
   Position,
@@ -15,6 +16,7 @@ export interface Refusal {
   ok: false;
   code: string;
   message: string;
+  data?: DiagnosticData;
 }
 
 /** What a write the card asked for came to: the first line it wrote and the service's warnings, or why nothing was written. */
@@ -58,7 +60,7 @@ export function removeAt(
 /** Applies what the service answered, or says why it was not; an edit the tab no longer matches is refused as stale. */
 export function commit(target: EditTarget, result: StructureEditResult | EditRefusal): WriteOutcome {
   if (!result.ok) {
-    return { ok: false, code: result.code, message: result.message };
+    return { ok: false, code: result.code, message: result.message, ...(result.data ? { data: result.data } : {}) };
   }
   if (!target.apply(result.edit)) {
     return { ok: false, code: STALE, message: "The document changed before the edit could be applied." };
@@ -80,10 +82,10 @@ export function checkValue(
 ): Refusal | null {
   const checked = service.validateValue(at, tag, input, { replacing });
   if (!checked.ok) {
-    return { ok: false, code: checked.code, message: checked.message };
+    return { ok: false, code: checked.code, message: checked.message, ...(checked.data ? { data: checked.data } : {}) };
   }
   const problem = checked.problems.find((one) => one.severity === "error");
-  return problem ? { ok: false, code: problem.code, message: problem.message } : null;
+  return problem ? { ok: false, code: problem.code, message: problem.message, ...(problem.data ? { data: problem.data } : {}) } : null;
 }
 
 /** How a field chosen in the menu is added: written at once, through the list of records, or as an unwritten row. */
@@ -111,25 +113,25 @@ export function requiredBeneath(service: GedcomLanguageService, field: Structure
 
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
-function noSuchDay(message: string): { date: string; month: string; count: number } | null {
-  const found = /names (\d{1,2}) ([A-Z]{3}), and \2 has (\d+) days/.exec(message);
-  const at = MONTHS.indexOf(found?.[2] ?? "");
-  if (!found || at < 0) {
+function noSuchDay(data: DiagnosticData | undefined): { date: string; month: string; count: number } | null {
+  const at = MONTHS.indexOf(data?.month ?? "");
+  if (data?.day === undefined || data.monthLength === undefined || at < 0) {
     return null;
   }
+  const { day } = data;
   const language = currentLanguage();
   const first = new Date(2000, at, 1);
   const date = new Intl.DateTimeFormat(language, { day: "numeric", month: "long" })
     .formatToParts(first)
-    .map((part) => (part.type === "day" ? found[1] : part.value))
+    .map((part) => (part.type === "day" ? String(day) : part.value))
     .join("");
   const month = new Intl.DateTimeFormat(language, { month: "long" }).format(first);
-  return { date, month, count: Number(found[3]) };
+  return { date, month, count: data.monthLength };
 }
 
 /** Why a value was not written, in the reader's language where the plugin has words for the code, in the service's otherwise. */
-export function refusalText(refusal: Pick<Refusal, "code" | "message">): string {
-  const day = refusal.code === "payload-datatype" ? noSuchDay(refusal.message) : null;
+export function refusalText(refusal: Pick<Refusal, "code" | "message" | "data">): string {
+  const day = noSuchDay(refusal.data);
   if (day) {
     return plural("edit.refusal.noSuchDay", day.count, { date: day.date, month: day.month });
   }

@@ -483,6 +483,7 @@
   },
   "edit.refusal.value-not-in-enum": "Этого значения нет среди тех, что стандарт допускает здесь.",
   "edit.refusal.payload-datatype": "Стандарт не может прочитать здесь такое значение.",
+  "edit.refusal.value-spans-lines": "В этом значении нельзя переносить строку: оно занимает одну строку.",
   "edit.refusal.value-required": "Стандарт требует здесь значение.",
   "edit.refusal.unresolved-pointer": "В файле нет такой записи.",
   "edit.refusal.required-field-missing": "Не хватает строки, которую стандарт требует внутри.",
