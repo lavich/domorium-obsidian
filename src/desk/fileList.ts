@@ -29,6 +29,7 @@ export interface ListHost {
 
 const COMPACT_BELOW = 640;
 const WIDE_FROM = 680;
+const KINDS_MARGIN = WIDE_FROM - COMPACT_BELOW;
 const MARGIN = 10;
 const FIRST_WINDOW = 40;
 const FALLBACK_ROW = { wide: 36, compact: 56 } as const;
@@ -107,7 +108,10 @@ const keyOf = (row: ListRow): string => ("key" in row ? row.key : (row.xref ?? "
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
+  private readonly barEl: HTMLElement;
   private readonly segEl: HTMLElement;
+  private readonly kindSelect: HTMLSelectElement;
+  private readonly kindsProbe: HTMLElement;
   private readonly find: FloatingSearch;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
@@ -133,6 +137,8 @@ export class ListBoard {
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
+  private kindsDropdown = false;
+  private iconWidth = 0;
   private readonly live = new Map<number, HTMLElement>();
 
   constructor(
@@ -143,6 +149,7 @@ export class ListBoard {
     this.root = parent.createDiv({ cls: "gedcom-list" });
     this.root.toggleClass("is-touch", this.compact);
     const bar = this.root.createDiv({ cls: "gedcom-list-bar" });
+    this.barEl = bar;
     this.segEl = bar.createDiv({ cls: "gedcom-list-seg" });
     this.segEl.setAttribute("role", "group");
     for (const kind of LIST_KINDS) {
@@ -150,6 +157,20 @@ export class ListBoard {
       button.setAttribute("type", "button");
       button.dataset.kind = kind;
       button.addEventListener("click", () => this.showKind(kind));
+    }
+    this.kindSelect = bar.createEl("select", { cls: "gedcom-list-kind-select dropdown" });
+    nameBy(this.kindSelect, bar, t("list.kind"));
+    for (const kind of LIST_KINDS) {
+      this.kindSelect.createEl("option", { text: t(KIND_LABEL[kind]), attr: { value: kind } });
+    }
+    this.kindSelect.toggle(false);
+    this.kindSelect.addEventListener("change", () => this.showKind(this.kindSelect.value as ListKind));
+    this.kindsProbe = bar.createDiv({ cls: "gedcom-list-seg gedcom-list-kinds-probe" });
+    this.kindsProbe.setAttribute("aria-hidden", "true");
+    for (const kind of LIST_KINDS) {
+      const button = this.kindsProbe.createEl("button", { cls: "gedcom-list-seg-button", text: t(KIND_LABEL[kind]) });
+      button.setAttribute("type", "button");
+      button.tabIndex = -1;
     }
     this.find = new FloatingSearch(bar, {
       prefix: "gedcom-list",
@@ -210,6 +231,7 @@ export class ListBoard {
       this.observer = new ResizeObserver(() => this.resized());
       this.observer.observe(this.root);
       this.observer.observe(this.probeEl);
+      this.observer.observe(this.kindsProbe);
     }
   }
 
@@ -305,6 +327,7 @@ export class ListBoard {
   }
 
   resized(): void {
+    this.fitKinds();
     const width = this.root.clientWidth;
     if (width > 0) {
       const compact = this.host.coarsePointer() || (this.compact ? width < WIDE_FROM : width < COMPACT_BELOW);
@@ -315,6 +338,32 @@ export class ListBoard {
     }
     this.remeasure();
     this.drawWindow();
+  }
+
+  /** The buttons need their natural width beside the search icon, measured as drawn, so that the language and the font decide and not a breakpoint. */
+  private fitKinds(): void {
+    const bar = this.barEl.clientWidth;
+    if (bar <= 0) {
+      return;
+    }
+    const icon = this.barEl.querySelector(".gedcom-list-find-toggle")?.getBoundingClientRect().width ?? 0;
+    if (icon > 0) {
+      this.iconWidth = icon;
+    }
+    const gap = Number.parseFloat(this.barEl.ownerDocument.defaultView?.getComputedStyle(this.barEl).columnGap ?? "") || 0;
+    const needed = this.kindsProbe.getBoundingClientRect().width + gap + this.iconWidth;
+    const dropdown = this.kindsDropdown ? bar <= needed + KINDS_MARGIN : bar < needed;
+    if (dropdown !== this.kindsDropdown) {
+      this.kindsDropdown = dropdown;
+      const focused = this.root.ownerDocument.activeElement;
+      const hadFocus = focused === this.kindSelect || (focused !== null && this.segEl.contains(focused));
+      this.segEl.toggle(!dropdown);
+      this.kindSelect.toggle(dropdown);
+      this.root.toggleClass("has-kinds-dropdown", dropdown);
+      if (hadFocus) {
+        (dropdown ? this.kindSelect : this.segEl.querySelector<HTMLElement>(".is-active"))?.focus();
+      }
+    }
   }
 
   dispose(): void {
@@ -441,6 +490,7 @@ export class ListBoard {
       button.toggleClass("is-active", on);
       button.setAttribute("aria-pressed", String(on));
     }
+    this.kindSelect.value = this.kind;
     this.find.describe(t(SEARCH_HINT[this.kind]));
     this.find.refresh();
     const total = this.totalOfKind();

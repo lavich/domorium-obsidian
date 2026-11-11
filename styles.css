@@ -674,6 +674,7 @@ button.gedcom-desk-tile-face:focus-visible {
 }
 
 .gedcom-list-bar {
+  position: relative;
   flex: none;
   display: flex;
   flex-wrap: wrap;
@@ -717,6 +718,33 @@ button.gedcom-list-seg-button {
     padding-inline: var(--size-4-1);
     font-size: var(--font-ui-smaller);
   }
+}
+
+.gedcom-list-bar > .gedcom-list-kinds-probe {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: max-content;
+  max-width: none;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.gedcom-list-kinds-probe button.gedcom-list-seg-button {
+  flex: none;
+}
+
+.gedcom-list-kind-select {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: var(--gedcom-list-control);
+  border-radius: var(--input-radius, var(--radius-s));
+}
+
+.gedcom-list.is-touch .gedcom-list-kind-select {
+  height: max(var(--gedcom-list-control), 44px);
 }
 
 button.gedcom-list-seg-button.is-active {

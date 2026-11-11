@@ -2,7 +2,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { generated } from "../../tests/generated";
-import { resetLanguage } from "../i18n";
+import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, curieWithEvents, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { ListBoard, type ListHost } from "./fileList";
@@ -15,7 +15,7 @@ beforeAll(() => {
   Object.defineProperty(proto, "clientWidth", {
     configurable: true,
     get(this: HTMLElement) {
-      return this.classList.contains("gedcom-list") ? box.width : 0;
+      return this.classList.contains("gedcom-list") || this.classList.contains("gedcom-list-bar") ? box.width : 0;
     },
   });
   Object.defineProperty(proto, "clientHeight", {
@@ -28,7 +28,12 @@ beforeAll(() => {
     const compact = this.closest(".gedcom-list")?.classList.contains("is-compact") ?? false;
     const sized = this.classList.contains("gedcom-list-row") || this.classList.contains("gedcom-list-probe");
     const height = sized ? (compact ? box.compact : box.wide) : 0;
-    return { height } as DOMRect;
+    const width = this.classList.contains("gedcom-list-kinds-probe")
+      ? [...this.children].reduce((sum, one) => sum + (one.textContent ?? "").length * 7 + 24, 0)
+      : this.classList.contains("gedcom-list-find-toggle")
+        ? 30
+        : 0;
+    return { height, width } as DOMRect;
   };
 });
 afterAll(() => {
@@ -78,6 +83,7 @@ const names = (): (string | undefined)[] => rows().map((row) => cell(row, 0));
 const xrefs = (): (string | undefined)[] => rows().map((row) => row.dataset.xref);
 const row = (xref: string): HTMLElement | undefined => rows().find((one) => one.dataset.xref === xref);
 const scroller = (): HTMLElement => query(".gedcom-list-scroll");
+const shownKinds = (): HTMLElement[] => all(".gedcom-list-seg-button").filter((one) => !one.closest(".gedcom-list-kinds-probe"));
 const text = (selector: string): string => query(selector).textContent ?? "";
 const press = (key: string, target: HTMLElement = scroller()): KeyboardEvent => {
   const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
@@ -779,7 +785,7 @@ describe("the places", () => {
   it("is the fourth kind, after the sources", () => {
     board();
 
-    expect(all(".gedcom-list-seg-button").map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
+    expect(shownKinds().map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
   });
 
   it("lists every place of the file, alphabetically, with its events and years", () => {
@@ -890,7 +896,7 @@ describe("the places", () => {
   it("has no button but the kinds on the places", () => {
     open();
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
+    expect(all(".gedcom-list-bar button").filter((one) => !one.closest(".gedcom-list-kinds-probe")).map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
@@ -913,7 +919,7 @@ describe("no events kind", () => {
   it("has no button but the kinds, and no Events among them", () => {
     board({}, index);
 
-    expect(all(".gedcom-list-bar button").map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
+    expect(all(".gedcom-list-bar button").filter((one) => !one.closest(".gedcom-list-kinds-probe")).map((one) => one.textContent).filter((label) => label)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
     expect(all(".gedcom-list-action")).toHaveLength(0);
   });
 
@@ -1051,5 +1057,65 @@ describe("the media, notes, repositories and other records", () => {
     made.select("@I2@", true, true);
 
     expect(all(".gedcom-list-seg-button.is-active").map((one) => one.textContent)).toEqual(["People"]);
+  });
+});
+
+describe("the kinds where the toolbar is too narrow for their buttons", () => {
+  const kindSelect = (): HTMLSelectElement => query<HTMLSelectElement>(".gedcom-list-kind-select");
+  const dropdown = (): boolean => kindSelect().style.display !== "none" && query(".gedcom-list-seg").style.display === "none";
+  const at = (made: ListBoard, width: number): boolean => {
+    box.width = width;
+    made.resized();
+    return dropdown();
+  };
+
+  it("are buttons while the bar holds them beside the search icon, and a dropdown below", () => {
+    const made = board();
+
+    expect([1000, 601, 600].map((width) => at(made, width))).toEqual([false, false, false]);
+    expect(at(made, 599)).toBe(true);
+  });
+
+  it("become buttons again only past the margin", () => {
+    const made = board();
+    at(made, 599);
+
+    expect([600, 620, 640].map((width) => at(made, width))).toEqual([true, true, true]);
+    expect(at(made, 641)).toBe(false);
+  });
+
+  it("are measured in the language shown", () => {
+    setLanguage("ru");
+    const russian = board();
+    expect(at(russian, 590)).toBe(false);
+
+    resetLanguage();
+    parent.replaceChildren();
+    const english = board();
+    expect(at(english, 590)).toBe(true);
+  });
+
+  it("offer the eight kinds in order in one dropdown named as the kind shown, where the buttons were", () => {
+    const made = board({ kind: "sources" });
+    at(made, 390);
+
+    expect([...kindSelect().options].map((one) => one.textContent)).toEqual(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
+    expect(kindSelect().value).toBe("sources");
+    expect(document.getElementById(kindSelect().getAttribute("aria-labelledby") ?? "")?.textContent).toBe("Kind of records");
+    expect(kindSelect().previousElementSibling?.classList.contains("gedcom-list-seg")).toBe(true);
+
+    kindSelect().value = "notes";
+    kindSelect().dispatchEvent(new Event("change"));
+    expect(text(".gedcom-list-count")).toBe("2 notes");
+    expect(host.changed).toHaveBeenLastCalledWith({ kind: "notes" });
+  });
+
+  it("follow the kind a selection switches to", () => {
+    const made = board();
+    at(made, 390);
+
+    made.select("@R2@", true);
+
+    expect(kindSelect().value).toBe("repositories");
   });
 });
