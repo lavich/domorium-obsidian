@@ -98,10 +98,10 @@ The tree SHALL show no tag the standard names, no level number and no cross-refe
 
 ### Requirement: A place in the tree is a link
 
-The value of a `PLAC` line, where the card knows the place, SHALL be a link that opens the card of that place, and so SHALL the place in the summary of a closed row. The label of a line, whether the line is an event or an attribute or not, SHALL be text and SHALL NOT act: no card of an event exists. Opening a card SHALL NOT write to the file.
+The place in the summary of a closed row, where the card knows the place, SHALL be a link that opens the card of that place. On the row of a `PLAC` line the value SHALL be a field the reader can change, as the requirements on editing a record say, and a control beside it, named for the place, SHALL open the card of that place where the card knows it. The label of a line, whether the line is an event or an attribute or not, SHALL be text and SHALL NOT act: no card of an event exists. Opening a card SHALL NOT write to the file.
 
 #### Scenario: Opening a place
-- **WHEN** the reader presses `Warsaw, Congress Poland` in the opened birth of Marie's tree
+- **WHEN** the reader presses the control beside `Warsaw, Congress Poland` in the opened birth of Marie's tree, or that place in the summary of her closed birth
 - **THEN** the card of that place is shown
 
 #### Scenario: A label

@@ -25,7 +25,7 @@ The proposed scope:
 - A row is a label and a value, in the reader's language. A line with substructures is a node, closed when the card is first drawn, with a one-line summary (an event shows its value, date and place); the reader's choice is kept for each record while the plugin is loaded.
 - Tags are hidden, as the product principles ask. A closed node that cites a source carries the quiet dot the event row has.
 - The node arrows stay in view; the one icon toggle that opens or closes every node is always shown, in a header above the tree made as the header of Obsidian's file explorer is (`nav-header`, `nav-buttons-container`, an icon button of the `clickable-icon nav-action-button` kind). Rows have no control of their own.
-- A place opens the card of the place.
+- A place opens the card of the place: from the summary of a closed node, and on an open place's row from a control beside its value, which is a field (user's choice, 2026-11-11, «а»).
 - The tree edits the record (capability `genealogy-record-edit`): a value is changed in its field — written on leaving it or on Enter, Escape puts the file's value back, a listed value is a dropdown, a note takes several lines; a pointer is pointed at another record from a searchable list; the "+" menu of a line adds the chosen field beneath it; a line is removed with its control, the reader asked once when lines go with it. What the language service refuses is not written and the reason is shown under the field; every change is one undo step in Source.
 - What the card once computed from the whole file — the heading, the family section, the pictures, the timeline — is removed on 2026-11-10; the card is the tree.
 - The card's place and media pages keep their own forms, heading included.

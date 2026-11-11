@@ -123,6 +123,8 @@ Added on 2026-11-11, when the user asked for the tree to write; it was first pla
 
 **Focus after a change.** A written value keeps the focus on its field. An added line puts it on its field or, for a node, on its menu. A removal puts it on the menu of the line the removed line was under, not on a sibling that took the removed line's key.
 
+**A place is a field with a control that opens its card.** The user chose (2026-11-11) that the value of a `PLAC` row is a field like any other, and a small control beside it, named for the place, opens the place's card; the place in a closed node's summary stays a link. Alternative: the place stays a link and is edited in Source. Rejected by the user.
+
 **Custom lines.** The service does not describe a `_TAG`, but sets its value and removes it: such a line keeps its field and its removal and has no menu.
 
 **No dialect, no editing.** `describeStructure` refusing with `no-dialect` makes the host answer no addable fields, no choices, no removals, read-only fields, and the tree says once why. A record with nothing beneath its opening line shows its root alone, with its menu.

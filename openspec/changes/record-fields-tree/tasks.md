@@ -93,6 +93,7 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 
 - [ ] 14.1 Editable fields: the file's value on focus and the reader's words on blur, commit on leave and on Enter (not while composing), Escape and a touch revert control restore, a value equal to the last written writes nothing, a line break becomes a space except in `NOTE`, inline `SNOTE` and `TEXT`, an emptied field goes to the service, a long note unfolds into its field on focus, a shared note's text is not a field; verify in `src/desk/detail/tree.test.ts` with a `NAME` keeping its slashes, a 5.5.1 `SEX F`, Enter then blur, a composition Enter, a pasted line break in a `DATE`, and an emptied `SEX`
 - [ ] 14.2 Dropdowns write the standard's value on change; a multiple enumeration is a checked menu; verify in `src/desk/detail/tree.test.ts` with 7.0 `SEX F` → `M` and `RESN`
+- [ ] 14.4 A `PLAC` row's value is a field and a control beside it opens the place card where the card knows the place; the summary's place stays a link; verify in `src/desk/detail/tree.test.ts` and `tests/desk.spec.ts`
 - [ ] 14.3 The record list writes on choice; a reciprocal pointer has no list and says why; verify in `src/desk/detail/tree.test.ts` with `ASSO` and `FAMS` (the modal itself is a wrapper)
 
 ## 15. Editing: adding and removing
@@ -115,6 +116,6 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 
 ## 18. Editing: upstream, docs and gate
 
-- [ ] 18.1 Draft for lavich/domorium (filed only with the user's permission): no multi-line marker in the description; a line break accepted under `DATE` and written as `CONT`; `NAME` rewritten when `GIVN` is emptied; `describeStructure` refusing a custom line that `setValue` accepts
+- [x] 18.1 Filed upstream with the user's permission as lavich/domorium#524: no multi-line marker in the description; a line break accepted under `DATE` and written as `CONT`; `NAME` rewritten when `GIVN` is emptied; `describeStructure` refusing a custom line that `setValue` accepts
 - [ ] 18.2 `README.md` where it describes the card: what can be edited and how
 - [ ] 18.3 `npm run check` and `npm run test:browser`
