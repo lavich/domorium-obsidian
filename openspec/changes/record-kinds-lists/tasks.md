@@ -20,10 +20,10 @@ Depends on lavich/domorium#527 (`setValue` on a record's opening line) as well a
 
 ## 4. Selection, links and Source
 
-- [ ] 4.1 `PageKind` gains `record`; `pageKind` answers it for the new records and `header:`; `HEADER_ID`, `followsCursor`, `routeRecord` (a link, a URL and a *Go to record* entry → select an id, Source at a position, or nowhere, with the interface on and off) and `shownRange` for these records and the header in `src/desk/deskState.ts`, replacing `routeLink`; verify in `src/desk/deskState.test.ts` ("which records have a card", "where a link into a record lands", "where the source opens when the tab switches to it")
-- [ ] 4.2 `TabModes.setMode` selects on leaving Source only where `followsCursor` allows; verify in `src/desk/tabModes.test.ts`; `shouldFollowCursor` is fed `followsCursor` in `GedcomView.has()`; verify in `src/desk/followRules.test.ts`
-- [ ] 4.3 `src/GedcomView.ts` becomes a thin caller: `goToXref` and `goToRecord` apply `routeRecord`, `selectRecord` places the cursor from `shownRange`, `cursorSettled` and `has()` ask `followsCursor`; verify in `src/desk/deskState.test.ts` ("where a link into a record lands": `@N1@`, `@R1@`, `@U1@`, `HEAD` → `header:`, `TRLR` → Source at its start, an undeclared `@X9@` → nowhere, each with the interface off → Source)
-- [ ] 4.4 Copying a link offered for a selected note and not for the header; verify in `src/commands.test.ts`
+- [x] 4.1 `PageKind` gains `record`; `pageKind` answers it for the new records and `header:`; `HEADER_ID`, `followsCursor`, `routeRecord` (a link, a URL and a *Go to record* entry → select an id, Source at a position, or nowhere, with the interface on and off) and `shownRange` for these records and the header in `src/desk/deskState.ts`, replacing `routeLink`; verify in `src/desk/deskState.test.ts` ("which records have a card", "where a link into a record lands", "where the source opens when the tab switches to it")
+- [x] 4.2 `TabModes.setMode` selects on leaving Source only where `followsCursor` allows; verify in `src/desk/tabModes.test.ts`; `shouldFollowCursor` is fed `followsCursor` in `GedcomView.has()`; verify in `src/desk/followRules.test.ts`
+- [x] 4.3 `src/GedcomView.ts` becomes a thin caller: `goToXref` and `goToRecord` apply `routeRecord`, `selectRecord` places the cursor from `shownRange`, `cursorSettled` and `has()` ask `followsCursor`; verify in `src/desk/deskState.test.ts` ("where a link into a record lands": `@N1@`, `@R1@`, `@U1@`, `HEAD` → `header:`, `TRLR` → Source at its start, an undeclared `@X9@` → nowhere, each with the interface off → Source)
+- [x] 4.4 Copying a link offered for a selected note and not for the header; verify in `src/commands.test.ts`
 
 ## 5. The cards
 

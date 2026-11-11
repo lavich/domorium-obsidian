@@ -2,6 +2,7 @@ import type { GenealogyIndex } from "../genealogy";
 import {
   effectiveMode,
   isViewMode,
+  followsCursor,
   pageKind,
   toggleTarget,
   type DeskMode,
@@ -77,7 +78,7 @@ export class TabModes {
     let selectionChanged = false;
     if (before === "source") {
       const atCursor = leaving.cursorRecord;
-      if (atCursor && pageKind(leaving.index(), atCursor)) {
+      if (atCursor && followsCursor(leaving.index(), atCursor)) {
         selectionChanged = atCursor !== this.selected;
         this.selected = atCursor;
       }

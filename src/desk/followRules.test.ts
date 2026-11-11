@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { curieIndex } from "../testing/curie";
+import { followsCursor } from "./deskState";
 import { CursorFollow, adoptsFollow, fallbackFollowed, shouldFollowCursor } from "./followRules";
 
 const rest = { interfaceOn: true, mode: "source" as const, selected: "@I1@", atCursor: "@I2@", hasCard: true };
@@ -14,6 +16,13 @@ describe("when the cursor's record is selected", () => {
     expect(shouldFollowCursor({ ...rest, atCursor: "@I1@" })).toBe(false);
     expect(shouldFollowCursor({ ...rest, hasCard: false })).toBe(false);
     expect(shouldFollowCursor({ ...rest, atCursor: undefined })).toBe(false);
+  });
+
+  it("is for a multimedia record and not for a note, a repository or a submitter, though they have cards", () => {
+    const curie = curieIndex();
+    const resting = (atCursor: string): boolean => shouldFollowCursor({ ...rest, atCursor, hasCard: followsCursor(curie, atCursor) });
+
+    expect(["@O5@", "@N1@", "@R1@", "@U1@"].map(resting)).toEqual([true, false, false, false]);
   });
 
   it("is not in another mode, nor with the interface off", () => {

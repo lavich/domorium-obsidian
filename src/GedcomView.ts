@@ -68,10 +68,11 @@ import {
   isViewMode,
   modeButtons,
   modeLook,
-  pageKind,
   readDeskState,
   shownRange,
-  routeLink,
+  followsCursor,
+  routeRecord,
+  type RecordTarget,
   type DeskMode,
   type Origin,
   type ViewKind,
@@ -471,7 +472,7 @@ export class GedcomView extends TextFileView implements CardTab {
     const rules = originRules(origin, Platform.isMobile);
     this.markInViews(rules.revealsView, origin === "card");
     if (this.modes.shown === "source" && rules.cursorToRecord) {
-      const start = this.records().find((entry) => entry.identifier === xref)?.start;
+      const start = shownRange(this.genealogy(), xref)?.start;
       if (start) {
         this.placeCursor(positionToOffset(this.editor.state.doc, start), rules.editorFocus);
       }
@@ -505,39 +506,35 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   goToXref(xref: string): boolean {
-    if (this.settings.genealogyInterface && pageKind(this.genealogy(), xref)) {
-      return this.selectRecord(xref, "link");
-    }
-    if (this.modes.shown !== "source") {
-      const route = routeLink(this.genealogy(), xref, (wanted) =>
-        this.records().some((entry) => entry.identifier === wanted),
-      );
-      if (route.to === "nowhere") {
-        return false;
-      }
-      this.setMode("source");
-    }
-    const record = this.records().find((entry) => entry.identifier === xref);
-    if (!record) {
-      return false;
-    }
-    this.goToRecord(record);
-    return true;
+    return this.goTo(xref);
   }
 
   goToRecord(record: GedcomRecord): void {
-    if (record.identifier && this.settings.genealogyInterface && pageKind(this.genealogy(), record.identifier)) {
-      this.selectRecord(record.identifier, "link");
-      return;
+    this.goTo(record);
+  }
+
+  private goTo(target: RecordTarget): boolean {
+    const route = routeRecord(
+      this.genealogy(),
+      target,
+      (wanted) => this.records().find((entry) => entry.identifier === wanted)?.start,
+      this.settings.genealogyInterface,
+    );
+    if (route.to === "select") {
+      return this.selectRecord(route.id, "link");
+    }
+    if (route.to === "nowhere") {
+      return false;
     }
     if (this.modes.shown !== "source") {
       this.setMode("source");
     }
-    this.placeCursor(positionToOffset(this.editor.state.doc, record.start), true);
+    this.placeCursor(positionToOffset(this.editor.state.doc, route.at), true);
+    return true;
   }
 
   private has(xref: string): boolean {
-    return pageKind(this.genealogy(), xref) !== null;
+    return followsCursor(this.genealogy(), xref);
   }
 
   private markInViews(reveal: boolean, fromCard = false): void {

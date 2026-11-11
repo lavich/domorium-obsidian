@@ -56,6 +56,32 @@ describe("the record a tab selects on leaving Source", () => {
     expect(change.selectionChanged).toBe(false);
   });
 
+  it("leaves the selection alone for a note, a repository, a submitter and the header, which have cards the cursor does not select", () => {
+    for (const xref of ["@N1@", "@R2@", "@U1@", "header:"]) {
+      const modes = tab("source");
+      modes.select("@I1@", index);
+
+      expect(modes.setMode("list", at(xref)).selectionChanged).toBe(false);
+      expect(modes.selected).toBe("@I1@");
+    }
+  });
+
+  it("selects a multimedia record under the cursor", () => {
+    const modes = tab("source");
+
+    modes.setMode("list", at("@O5@"));
+
+    expect(modes.selected).toBe("@O5@");
+  });
+
+  it("accepts a note, a repository and the header selected from elsewhere", () => {
+    const modes = tab("list");
+
+    expect(["@N1@", "@R2@", "header:"].map((xref) => modes.select(xref, index))).toEqual([true, true, true]);
+    expect(modes.selected).toBe("header:");
+    expect(modes.textChanged(index).selectionCleared).toBe(false);
+  });
+
   it("asks to move the cursor going to Source with a record selected, and not without one", () => {
     const withSelection = tab("graph");
     withSelection.select("@I2@", index);
@@ -107,15 +133,15 @@ describe("the toggle", () => {
 });
 
 describe("the selected record", () => {
-  it("is a person, a family, a source or a multimedia record, and not a note", () => {
-    for (const xref of ["@I2@", "@F3@", "@S3@", "@O5@"]) {
+  it("is any record with a card, and not one the file does not declare", () => {
+    for (const xref of ["@I2@", "@F3@", "@S3@", "@O5@", "@N1@", "@R1@", "@U1@", "header:"]) {
       const modes = tab("graph");
 
       expect(modes.select(xref, index)).toBe(true);
       expect(modes.selected).toBe(xref);
     }
     const modes = tab("graph");
-    expect(modes.select("@N1@", index)).toBe(false);
+    expect(modes.select("@X9@", index)).toBe(false);
     expect(modes.selected).toBeNull();
   });
 

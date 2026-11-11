@@ -1,18 +1,19 @@
 import type { Position, Range } from "@domorium/language-service";
 
-import type { GenealogyIndex } from "../genealogy";
+import { HEADER_ID, type GenealogyIndex } from "../genealogy";
 import type { MessageKey } from "../i18n";
 import { FILE_GRAPH_ICON, FILE_TIMELINE_ICON } from "../icon";
 import { DESK_MODES, readDeskMode, type DeskMode } from "../settingsData";
 import { initialFocus, initialTimelineFocus } from "./fileTimeline";
 import { readGraphState, type GraphState } from "./fileGraphView";
 import { readTimelineState, ZOOM as TIMELINE_ZOOM, type TimelineState } from "./fileTimelineView";
-import { readListState, type ListState } from "./listRows";
-import { placeAt } from "./placeRows";
+import { readListState, recordKind, type ListKind, type ListState } from "./listRows";
 
 export type { DeskMode };
+export { HEADER_ID };
 
-export type PageKind = "person" | "family" | "source" | "media" | "place";
+/** `record` is a shared note, a repository, a submitter, a submission, a record of the file's own or the header: a card that is its tree. */
+export type PageKind = "person" | "family" | "source" | "media" | "place" | "record";
 
 export type ViewKind = "graph" | "timeline" | "list";
 
@@ -75,23 +76,28 @@ export function rememberedMode(last: DeskMode, next: DeskMode, source: ModeSourc
   return source === "reader" ? next : last;
 }
 
+const PAGE_OF: Record<ListKind, PageKind> = {
+  people: "person",
+  families: "family",
+  sources: "source",
+  places: "place",
+  media: "media",
+  notes: "record",
+  repositories: "record",
+  other: "record",
+};
+
 export function pageKind(index: GenealogyIndex, xref: string): PageKind | null {
-  if (index.person(xref)) {
-    return "person";
-  }
-  if (index.family(xref)) {
-    return "family";
-  }
-  if (index.source(xref)) {
-    return "source";
-  }
-  if (index.media(xref)) {
-    return "media";
-  }
-  if (placeAt(index, xref)) {
-    return "place";
-  }
-  return null;
+  const kind = recordKind(index, xref);
+  return kind === null ? null : PAGE_OF[kind];
+}
+
+const FOLLOWED: ReadonlySet<PageKind> = new Set(["person", "family", "source", "media"]);
+
+/** Whether the cursor resting in a record, or leaving Source from it, selects it. */
+export function followsCursor(index: GenealogyIndex, xref: string): boolean {
+  const kind = pageKind(index, xref);
+  return kind !== null && FOLLOWED.has(kind);
 }
 
 export type Origin = "view" | "card" | "link" | "cursor";
@@ -152,26 +158,36 @@ export function openingMemory(
   return kind === "graph" ? scope : { ...scope, zoom: TIMELINE_ZOOM.initial };
 }
 
-export type LinkRoute =
-  | { to: "page"; xref: string }
-  | { to: "source"; xref: string }
+/** A link's identifier, or an entry of *Go to record*. */
+export type RecordTarget = string | { tag: string; identifier?: string; start: Position };
+
+export type RecordRoute =
+  | { to: "select"; id: string }
+  | { to: "source"; at: Position }
   | { to: "nowhere" };
 
-/** `declared` answers whether the file holds a record of any kind by that identifier. */
-export function routeLink(
+/** Where a link or *Go to record* lands; `declared` answers where the file starts a record of any kind by that identifier. */
+export function routeRecord(
   index: GenealogyIndex,
-  xref: string,
-  declared: (xref: string) => boolean,
-): LinkRoute {
-  if (pageKind(index, xref)) {
-    return { to: "page", xref };
+  target: RecordTarget,
+  declared: (xref: string) => Position | undefined,
+  interfaceOn: boolean,
+): RecordRoute {
+  const id = typeof target === "string" ? target : target.tag === "HEAD" ? HEADER_ID : target.identifier;
+  if (interfaceOn && id !== undefined && pageKind(index, id) !== null) {
+    return { to: "select", id };
   }
-  return declared(xref) ? { to: "source", xref } : { to: "nowhere" };
+  const at = typeof target === "string" ? declared(target) : target.start;
+  return at === undefined ? { to: "nowhere" } : { to: "source", at };
 }
 
 /** The lines of the record shown. */
 export function shownRange(index: GenealogyIndex, record: string): Range | null {
-  return (index.person(record) ?? index.family(record) ?? index.source(record) ?? index.media(record))?.range ?? null;
+  const kind = pageKind(index, record);
+  if (kind === null || kind === "place") {
+    return null;
+  }
+  return (index.person(record) ?? index.family(record) ?? index.source(record) ?? index.media(record) ?? index.record(record))?.range ?? null;
 }
 
 /** Leaves a cursor already inside the lines alone, so switching back and forth does not move it. */
