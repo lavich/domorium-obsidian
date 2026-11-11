@@ -14,6 +14,7 @@ export type {
   PersonEvent,
   PersonMedia,
   PersonRow,
+  RecordLists,
   Row,
   Source,
   SourceField,
@@ -25,4 +26,5 @@ export type { RecordLine } from "./recordLines";
 export { UNNAMED } from "./names";
 export { UNTITLED } from "./sources";
 export { buildIndex } from "./build";
+export { HEADER_ID } from "./types";
 export * from "./recordRef";

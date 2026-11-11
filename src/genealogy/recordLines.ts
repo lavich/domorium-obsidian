@@ -44,15 +44,16 @@ function lineOf(symbol: DocumentSymbol): RecordLine {
 
 /**
  * The lines of a record whole, to any depth. A note record carries its text in the label of its
- * symbol, the first line of it, and in `CONT` and `CONC` lines the rest.
+ * symbol, the first line of it, and in `CONT` and `CONC` lines the rest. Any other record's own
+ * value is not in its symbol, so it is handed in as `own`, already joined.
  */
-export function recordLines(symbol: DocumentSymbol): RecordLine {
+export function recordLines(symbol: DocumentSymbol, own?: string): RecordLine {
   const note = symbol.name === "NOTE" || symbol.name === "SNOTE";
   const first = symbol.label ?? (symbol.children.some((child) => child.name === "CONT") ? "" : undefined);
-  const text = note ? continued(symbol, first)?.replace(/@@/gu, "@") : undefined;
+  const text = note ? continued(symbol, first)?.replace(/@@/gu, "@") : own;
   return {
     tag: symbol.name,
-    ...(symbol.detail === undefined ? {} : { xref: symbol.detail }),
+    ...(symbol.detail === undefined || !POINTER.test(symbol.detail) ? {} : { xref: symbol.detail }),
     ...(text === undefined || text === "" ? {} : { text }),
     children: symbol.children.filter((child) => child.name !== "CONT" && child.name !== "CONC").map(lineOf),
     range: symbol.range,

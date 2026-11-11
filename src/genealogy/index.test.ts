@@ -1,9 +1,9 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 import { describe, expect, it, vi } from "vitest";
 
-import { CURIE } from "../testing/curie";
+import { CURIE, curieIndex, indexOf } from "../testing/curie";
 import { FIXTURE } from "./fixture";
-import { buildIndex, type GenealogyIndex } from "./index";
+import { buildIndex, HEADER_ID, type GenealogyIndex } from "./index";
 import { UNNAMED } from "./names";
 
 const index = (text = FIXTURE): GenealogyIndex =>
@@ -434,5 +434,103 @@ describe("multimedia records and the records that link them", () => {
 
     expect(at && service.getMediaAt(at)?.crop).toBeUndefined();
     expect(at && service.getMediaAt(at)?.targetText).toBe("Media/curie-family-1908.svg");
+  });
+});
+
+describe("the records of the other kinds", () => {
+  const curie = curieIndex();
+
+  it("lists the media, notes, repositories and other records of curie.ged in the file's order", () => {
+    expect(curie.lists.media).toEqual(["@O1@", "@O2@", "@O3@", "@O5@", "@O6@", "@O7@", "@O4@"]);
+    expect(curie.lists.notes).toEqual(["@N1@", "@N2@"]);
+    expect(curie.lists.repositories).toEqual(["@R1@", "@R2@"]);
+    expect(curie.lists.other).toEqual([HEADER_ID, "@U1@"]);
+  });
+
+  it("gives the header's lines under its own id", () => {
+    expect(curie.record(HEADER_ID)?.children.find((line) => line.tag === "SUBM")?.pointer).toBe("@U1@");
+  });
+
+  it("lists a 5.5.1 submission and a record of the file's own among the other records, and no trailer", () => {
+    const index = indexOf([
+      "0 HEAD", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8",
+      "0 @SUB1@ SUBN", "0 @X1@ _PLAN", "1 NAME Research plan", "0 _LOOSE", "0 @N1@ NOTE Te", "1 CONC xt", "0 TRLR",
+    ].join("\n"));
+
+    expect(index.lists.other).toEqual([HEADER_ID, "@SUB1@", "@X1@"]);
+    expect(index.lists.notes).toEqual(["@N1@"]);
+    expect(index.record("@N1@")?.text).toBe("Text");
+  });
+
+  it("reads the value of a record of the file's own during the pass", () => {
+    const index = indexOf(["0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @P1@ _PLAN Custom value", "0 TRLR"].join("\n"));
+
+    expect(index.record("@P1@")?.text).toBe("Custom value");
+  });
+});
+
+describe("the records that point at a record", () => {
+  const counted = (): GenealogyIndex =>
+    indexOf([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0", "1 SUBM @U1@",
+      "0 @U1@ SUBM",
+      "0 @I1@ INDI", "1 SNOTE @N1@", "1 BIRT", "2 SOUR @S1@", "3 SNOTE @N1@", "1 SNOTE @VOID@",
+      "0 @F1@ FAM", "1 SNOTE @N1@", "1 NOTE see", "2 CONT @N1@",
+      "0 @N1@ SNOTE Text", "1 SNOTE @N1@",
+      "0 @S1@ SOUR", "1 REPO @R1@",
+      "0 @S2@ SOUR", "1 REPO @R1@", "1 NOTE x", "1 REPO @R1@",
+      "0 @R1@ REPO", "1 NAME Archive",
+      "0 TRLR",
+    ].join("\n"));
+
+  it("counts a record once however many of its lines point, and leaves out itself and continuations", () => {
+    expect(counted().linkedFrom("@N1@")).toBe(2);
+  });
+
+  it("counts the header among the records", () => {
+    expect(counted().linkedFrom("@U1@")).toBe(1);
+    expect(curieIndex().linkedFrom("@U1@")).toBe(1);
+  });
+
+  it("counts no void pointer", () => {
+    expect(counted().linkedFrom("@VOID@")).toBe(0);
+  });
+
+  it("counts the source records that point at a repository", () => {
+    expect(counted().sourcesOf("@R1@")).toBe(2);
+    expect(counted().sourcesOf("@N1@")).toBe(0);
+    expect(curieIndex().sourcesOf("@R1@")).toBe(2);
+    expect(curieIndex().linkedFrom("@O5@")).toBe(2);
+  });
+
+  it("walks the lines once, when a count is first asked for, for every count of the revision", () => {
+    const symbols = new GedcomLanguageService(CURIE).getDocumentSymbols();
+    const reads = vi.fn();
+    const watched = (line: (typeof symbols)[number]): typeof line => {
+      const children = line.children.map(watched);
+      return Object.defineProperty({ ...line }, "children", {
+        get: () => {
+          reads();
+          return children;
+        },
+      });
+    };
+    const service = new GedcomLanguageService(CURIE);
+    const index = buildIndex({
+      getDocumentSymbols: () => symbols.map(watched),
+      readDate: (date) => service.readDate(date),
+      describeStructure: (at) => service.describeStructure(at),
+    });
+    reads.mockClear();
+
+    index.linkedFrom("@N1@");
+    const walked = reads.mock.calls.length;
+    for (const xref of [...index.lists.notes, ...index.lists.media, ...index.lists.other]) {
+      index.linkedFrom(xref);
+      index.sourcesOf(xref);
+    }
+
+    expect(walked).toBeGreaterThan(0);
+    expect(reads.mock.calls.length).toBe(walked);
   });
 });

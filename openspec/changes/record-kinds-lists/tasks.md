@@ -2,9 +2,9 @@ Depends on lavich/domorium#527 (`setValue` on a record's opening line) as well a
 
 ## 1. The read model
 
-- [ ] 1.1 In `src/genealogy/build.ts` and `types.ts` (`IndexSource` gains `describeStructure`), the lists of media, shared notes (7.0 `SNOTE`, 5.5.1 `NOTE`), repositories and other records (header first as `header:`, no `TRLR`, no record without an identifier) from the existing top-level loop; `record("header:")` answers the header's lines; verify in `src/genealogy/index.test.ts` with `curie.ged` (7 media, 2 notes, 2 repositories, header then `@U1@`), a 5.5.1 file with a `SUBN` and a `_PLAN` record
-- [ ] 1.2 `linkedFrom(xref)` and `sourcesOf(xref)` from one lazy walk of every line, kept per index; distinct records, the header counted, self, `@VOID@` and `CONC`/`CONT` excluded; verify in `src/genealogy/index.test.ts` (two pointers from one record count once, `@U1@` is 1 from the header, the walk runs once for all counts of a revision)
-- [ ] 1.3 The own value of a record of the file's own read in the pass from `describeStructure(start).value` (left out on a refusal) and put on its root by `recordLines`; a 5.5.1 note's text stays the joined text from the symbol; verify in `src/genealogy/recordLines.test.ts` and `src/genealogy/index.test.ts` (`0 @P1@ _PLAN Custom value`, a file with no dialect)
+- [x] 1.1 In `src/genealogy/build.ts` and `types.ts` (`IndexSource` gains `describeStructure`), the lists of media, shared notes (7.0 `SNOTE`, 5.5.1 `NOTE`), repositories and other records (header first as `header:`, no `TRLR`, no record without an identifier) from the existing top-level loop; `record("header:")` answers the header's lines; verify in `src/genealogy/index.test.ts` with `curie.ged` (7 media, 2 notes, 2 repositories, header then `@U1@`), a 5.5.1 file with a `SUBN` and a `_PLAN` record
+- [x] 1.2 `linkedFrom(xref)` and `sourcesOf(xref)` from one lazy walk of every line, kept per index; distinct records, the header counted, self, `@VOID@` and `CONC`/`CONT` excluded; verify in `src/genealogy/index.test.ts` (two pointers from one record count once, `@U1@` is 1 from the header, the walk runs once for all counts of a revision)
+- [x] 1.3 The own value of a record of the file's own read in the pass from `describeStructure(start).value` (left out on a refusal) and put on its root by `recordLines`; a 5.5.1 note's text stays the joined text from the symbol; verify in `src/genealogy/recordLines.test.ts` and `src/genealogy/index.test.ts` (`0 @P1@ _PLAN Custom value`, a file with no dialect)
 
 ## 2. Naming
 

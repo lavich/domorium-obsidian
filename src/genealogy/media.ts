@@ -115,9 +115,11 @@ export function mediaRecordOf(
   const fileLine = childOf(record, "FILE");
   const file = payload(fileLine);
   const title = payload(childOf(record, "TITL")) ?? payload(fileLine && childOf(fileLine, "TITL"));
+  const form = payload(fileLine && childOf(fileLine, "FORM"));
   return {
     xref,
     ...(file === undefined ? {} : { file }),
+    ...(form === undefined ? {} : { form }),
     ...(title === undefined ? {} : { title }),
     ...(fileLine && file !== undefined ? { at: payloadPosition(fileLine) } : {}),
     links,

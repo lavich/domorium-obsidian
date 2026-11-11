@@ -17,6 +17,7 @@ import {
   SPOUSE_FAMILY_TAG,
   SPOUSE_ROLE_TAGS,
 } from "./tags";
+import { HEADER_ID } from "./types";
 import type {
   ChildLink,
   ChildLinkKind,
@@ -31,6 +32,7 @@ import type {
   Missing,
   Person,
   PersonRow,
+  RecordLists,
   Source,
   SourceField,
   SourceRow,
@@ -44,6 +46,43 @@ function childLinkKind(value: string | undefined): ChildLinkKind {
   }
   const kind = value.trim().toLowerCase();
   return kind === "birth" || kind === "adopted" || kind === "foster" || kind === "sealing" ? kind : "other";
+}
+
+const IDENTIFIER = /^@[^@\s]+@$/u;
+const LISTED_ELSEWHERE: ReadonlySet<string> = new Set(["INDI", "FAM", "SOUR", "TRLR"]);
+const CONTINUATION: ReadonlySet<string> = new Set(["CONC", "CONT"]);
+
+/** The symbols carry no value of a record's own opening line but a note's, so the service is asked for it. */
+function ownValue(language: IndexSource, symbol: DocumentSymbol): string | undefined {
+  const described = language.describeStructure(symbol.range.start);
+  return "ok" in described || !described.value ? undefined : described.value;
+}
+
+/** Target → the records pointing at it, a record without an identifier under a key of its own. */
+function pointersOf(symbols: readonly DocumentSymbol[]): Map<string, Set<string>> {
+  const into = new Map<string, Set<string>>();
+  symbols.forEach((symbol, at) => {
+    const owner = symbol.name === "HEAD" ? HEADER_ID : symbol.detail !== undefined && IDENTIFIER.test(symbol.detail) ? symbol.detail : `#${at}`;
+    const walk = (line: DocumentSymbol): void => {
+      for (const child of line.children) {
+        if (CONTINUATION.has(child.name)) {
+          continue;
+        }
+        const target = child.detail;
+        if (target !== undefined && target !== owner && target !== "@VOID@" && IDENTIFIER.test(target)) {
+          let from = into.get(target);
+          if (!from) {
+            from = new Set();
+            into.set(target, from);
+          }
+          from.add(owner);
+        }
+        walk(child);
+      }
+    };
+    walk(symbol);
+  });
+  return into;
 }
 
 /**
@@ -75,10 +114,30 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
   const mediaLinks = new Map<string, MediaLink[]>();
   const declared = new Map<string, DocumentSymbol>();
   const converted = new Map<string, RecordLine>();
+  const lists: RecordLists = { media: [], notes: [], repositories: [], other: [] };
+  const ownValues = new Map<string, string>();
 
   for (const symbol of symbols) {
-    if (symbol.detail !== undefined && /^@[^@\s]+@$/u.test(symbol.detail)) {
-      declared.set(symbol.detail, symbol);
+    const xref = symbol.detail !== undefined && IDENTIFIER.test(symbol.detail) ? symbol.detail : undefined;
+    if (xref !== undefined) {
+      declared.set(xref, symbol);
+    }
+    if (symbol.name === "HEAD" && !declared.has(HEADER_ID)) {
+      declared.set(HEADER_ID, symbol);
+      lists.other.unshift(HEADER_ID);
+    } else if (xref !== undefined && !LISTED_ELSEWHERE.has(symbol.name)) {
+      const list =
+        symbol.name === "OBJE" ? lists.media
+        : symbol.name === "SNOTE" || symbol.name === "NOTE" ? lists.notes
+        : symbol.name === "REPO" ? lists.repositories
+        : lists.other;
+      list.push(xref);
+      if (list === lists.other) {
+        const own = ownValue(language, symbol);
+        if (own !== undefined) {
+          ownValues.set(xref, own);
+        }
+      }
     }
     if (symbol.name === "INDI" || symbol.name === "FAM") {
       readDatesOf(symbol, language, readings);
@@ -337,6 +396,9 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
   for (const symbol of familySymbols) {
     familyRows.push(familyRowOf(symbol));
   }
+
+  let pointers: Map<string, Set<string>> | undefined;
+  const pointing = (): Map<string, Set<string>> => (pointers ??= pointersOf(symbols));
   for (const symbol of sourceSymbols) {
     sourceRows.push(sourceRowOf(symbol));
   }
@@ -352,6 +414,7 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
       const record = objects.get(xref);
       return record ? mediaRecordOf(xref, record, mediaLinks.get(xref) ?? []) : undefined;
     },
+    lists,
     record: (xref) => {
       const symbol = declared.get(xref);
       if (!symbol) {
@@ -359,10 +422,20 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
       }
       let lines = converted.get(xref);
       if (!lines) {
-        lines = recordLines(symbol);
+        lines = recordLines(symbol, ownValues.get(xref));
         converted.set(xref, lines);
       }
       return lines;
+    },
+    linkedFrom: (xref) => pointing().get(xref)?.size ?? 0,
+    sourcesOf: (xref) => {
+      let count = 0;
+      for (const from of pointing().get(xref) ?? []) {
+        if (sourceRecords.has(from)) {
+          count += 1;
+        }
+      }
+      return count;
     },
     citesBy: (xref) => byCiter.get(xref) ?? [],
     citedBy: (xref) => byCited.get(xref) ?? [],
