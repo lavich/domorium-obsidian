@@ -7,6 +7,7 @@ The file's list shows people, families, sources and places, and the card opens p
 The user's requirement, in their words and by date:
 
 - 2026-11-11: «REPO (хранилище), общие заметки SNOTE/NOTE, медиа OBJE, свои _RECORD — их надо в табличные представления добавить, да?», then «Да, надо и списки и карточки добавить».
+- 2026-11-11, on the second review, asked whether to wait for the language service to write a record's own value or to make it read-only: «ждём upstream» — the text of a shared note and the value of a record of the file's own stay editable fields, and the change waits for lavich/domorium#527.
 - 2026-11-11, on the review of the first plan: built in this branch on top of `record-fields-tree`, not on `main`; the new cards are the tree of the record's lines, as the person, family and source cards are; the header's card is read-only; links, `obsidian://` URLs and *Go to record* open these cards; the cursor resting in Source does not select them; a pointer to a shared note keeps its text and gains *Open note*; eight kinds, and a dropdown where the buttons do not fit, decided by measuring them.
 
 The proposed scope:
@@ -18,9 +19,9 @@ The proposed scope:
 - One rule names every record, used by the list, the card's announcement, pointers and the tree's root.
 - The read model lists these records and counts, per record, how many records point at it.
 
-**This repository or upstream.** Entirely this repository: everything is read from `getDocumentSymbols()` and the record lines the language service already gives, and editing uses the operations `record-fields-tree` already calls. Nothing new is asked of lavich/domorium.
+**This repository or upstream.** The list, the cards and the routing are this repository's. The records are read from `getDocumentSymbols()` and the record lines built from them, except a record of the file's own whose opening line carries a value, which the symbols do not hold: that value is read from `describeStructure(at).value`, which the service already gives. Editing uses the operations `record-fields-tree` calls (lavich/domorium#522), and writing a record's own value — the text of a 7.0 `SNOTE`, a 5.5.1 `NOTE` record with its `CONC` and `CONT`, the value of a record of the file's own — needs `setValue` on a record's opening line, which the service refuses today (`record-edit-unsupported`) and lavich/domorium#527 asks for, with a refusal of its own for a record that holds no value by the standard, `validateValue` on an opening line and `describeStructure` agreeing. The change cannot merge before a release of `@domorium/language-service` and `@domorium/validator` carrying #522 and #527.
 
-**Order with the open work.** Built in branch `lavich/record-fields-tree` (PR #260) on top of `record-fields-tree`, and archived after it: every delta here is written against the specs as they stand once `record-fields-tree` is archived.
+**Order with the open work.** Depends on lavich/domorium#527 as well as #522. Built in branch `lavich/record-fields-tree` (PR #260) on top of `record-fields-tree`, and archived after it: every delta here is written against the specs as they stand once `record-fields-tree` is archived.
 
 ## Capabilities
 
