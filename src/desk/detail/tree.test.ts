@@ -1347,3 +1347,29 @@ describe("a record the card cannot write", () => {
     expect(fileLines(tab)).not.toContain("1 _MILITARY Cavalry");
   });
 });
+
+describe("a field left for another", () => {
+  it("leaves the field the reader went on to the one a press writes first, while a refused one is left behind", async () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 7 NOV 1867", "1 OCCU Physicist", "1 SEX F"]);
+    open("Birth");
+    const date = fieldOf(rowNamed("Date"));
+    type(date, "31 NOV 1867");
+    press(date, "Enter");
+    type(fieldOf(rowNamed("Occupation")), "Chemist");
+    await settled();
+    rowNamed("Sex").querySelector<HTMLElement>(".gedcom-tree-remove")?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true }));
+
+    expect(fileLines(tab)).toContain("1 OCCU Chemist");
+    expect(fileLines(tab)).not.toContain("1 SEX F");
+  });
+
+  it("draws an unwritten row chosen from a menu the card has since drawn again", () => {
+    const { host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria"]);
+    open("Name");
+    rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    host.settle?.();
+    menuEntry(host, "Nickname").choose();
+
+    expect(box.querySelectorAll(".is-unwritten")).toHaveLength(1);
+  });
+});

@@ -556,8 +556,8 @@ class Tree {
       focusKey: `t:${key}:value`,
       ...(host.setIcon ? { setIcon: host.setIcon.bind(host) } : {}),
       write: (value, field) => this.writeValue(line, key, { value }, field),
-      focused: (field) => {
-        this.active = field;
+      focused: (field, on) => {
+        this.active = on ? field : this.active === field ? null : this.active;
       },
     });
   }
@@ -675,6 +675,9 @@ class Tree {
     const canAdd = addable.length > 0;
     const canRemove = !root && host.removeAt !== undefined && (host.removableAt?.(owner.range.start, line.tag) ?? false);
     const actions = canAdd || canRemove ? header.createDiv({ cls: "gedcom-tree-actions" }) : null;
+    if (actions) {
+      header.setAttribute("data-actions", String(Number(canAdd) + Number(canRemove)));
+    }
     if (actions && canRemove) {
       const remove = actions.createDiv({ cls: ["gedcom-tree-remove", "clickable-icon"] });
       pressable(remove, t("tree.removeField"), `t:${key}:remove`);
@@ -834,6 +837,8 @@ class Tree {
   private redraw(): void {
     if (this.live()) {
       this.draw();
+    } else {
+      this.settle();
     }
   }
 
@@ -944,8 +949,8 @@ class Tree {
           self.wrote(text);
           set(text);
         },
-        focused: (field) => {
-          this.active = field;
+        focused: (field, on) => {
+          this.active = on ? field : this.active === field ? null : this.active;
         },
         left: gone,
       });

@@ -18,7 +18,7 @@ export interface EditableFieldOptions {
   focusKey: string;
   setIcon?(element: HTMLElement, icon: string): void;
   write(text: string, field: EditableField): void;
-  focused(field: EditableField | null): void;
+  focused(field: EditableField, on: boolean): void;
   /** Called once the focus has left the field and it wrote nothing. */
   left?(field: EditableField): void;
 }
@@ -88,10 +88,14 @@ export class EditableField {
     showMessage(box, area, options.state.message(options.key));
 
     area.addEventListener("focus", () => {
-      options.focused(this);
+      options.focused(this, true);
       this.fold(false);
-      if (this.draft() === undefined) {
+      if (this.draft() === undefined && area.value !== this.written) {
+        const whole = area.selectionStart === 0 && area.selectionEnd === area.value.length;
         this.show(this.written);
+        if (whole) {
+          area.select();
+        }
       }
     });
     area.addEventListener("input", () => {
@@ -146,7 +150,7 @@ export class EditableField {
     if (!area.isConnected || area.ownerDocument.activeElement === area) {
       return;
     }
-    this.options.focused(null);
+    this.options.focused(this, false);
     if (this.pending()) {
       this.commit();
       return;
