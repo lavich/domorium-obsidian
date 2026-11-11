@@ -103,14 +103,33 @@ order the file writes the lines and nests them as the file nests them, with no s
 own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
 the file puts them, in the reader's language. Every node starts closed with a one-line summary — an event shows its date
 and place, an attribute its value — and a quiet dot after it where it cites a source; what you
-open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon in the header above the tree, as in Obsidian's file explorer, opens or closes every node and is always shown. The tree only reads. A place named in a fact opens the card of that place, which lists
+open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon in the header above the tree, as in Obsidian's file explorer, opens or closes every node and is always shown. A place named in a closed fact, or the pin beside a place's
+field, opens the card of that place, which lists
 the events held there, each with a link to the person or the family it belongs to. Every control of a card shows a focus ring for the
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A family, a
 source, a place and a media record have cards of their own, and the card has no header: select a record again in the
-graph, the timeline or the list to return to it. The card reads the file and
-never writes to it. **Show in source** on a pointer to a record the file does not
-declare switches to Source with that line selected, which is where a
-correction is made.
+graph, the timeline or the list to return to it. **Show in source** on a pointer to a record the file does not
+declare switches to Source with that line selected.
+
+The tree also **edits the record**, always through the language service, so the
+file stays the source of truth and every change is one step that Undo in Source
+takes back. A value is a field: while you type in it, it holds the value as the
+file writes it — a name with the slashes around its surname — and it is written
+when you leave it or press Enter (in a note, Enter starts a new line and leaving
+writes). Escape, or the round arrow beside a changed field on a phone, puts the
+file's value back. A value the standard lists is a dropdown, one that may hold
+several of them a menu of checked values, and a pointer has a list of the records
+it may point at; a family, spouse or child link is changed on the other record.
+The **+** of a line opens a menu of what may be added beneath it, in the file's
+dialect: an event is written at once as `Y`, a pointer once you choose its record,
+and anything else waits as an unwritten row until it has a value and what the
+standard requires beneath it — a role for an associated person, for instance. The
+bin of a line removes it with everything beneath it, asking first when lines go
+with it. What the service refuses is not written, and the reason is shown under
+the field; a change made against text that has moved since the card was drawn —
+an edit in Source, a second press — is refused and the card is drawn again from
+the file. A file with no GEDCOM version the plugin can check is shown read-only,
+with a line saying so.
 
 What selects a record: a click or tap on a card or a node in Graph, or a bar in
 Timeline, marks the person and shows the card without moving the

@@ -117,5 +117,5 @@ No other change is open. The later change `edit-person-names-in-card` is rewritt
 ## 18. Editing: upstream, docs and gate
 
 - [x] 18.1 Filed upstream with the user's permission as lavich/domorium#524: no multi-line marker in the description; a line break accepted under `DATE` and written as `CONT`; `NAME` rewritten when `GIVN` is emptied; `describeStructure` refusing a custom line that `setValue` accepts
-- [ ] 18.2 `README.md` where it describes the card: what can be edited and how
+- [x] 18.2 `README.md` where it describes the card: what can be edited and how
 - [ ] 18.3 `npm run check` and `npm run test:browser`
