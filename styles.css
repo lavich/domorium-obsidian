@@ -2403,3 +2403,192 @@ button.gedcom-fg-pop-open {
   }
 }
 
+
+.gedcom-tree .gedcom-field.is-editable {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.gedcom-tree .gedcom-field.is-editable textarea.gedcom-field-input:not(:focus) {
+  cursor: text;
+}
+
+.gedcom-tree .gedcom-field.is-changed textarea.gedcom-field-input {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.gedcom-tree .gedcom-field.is-folded {
+  max-height: calc(5lh + 2px);
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black calc(100% - 1lh), transparent);
+}
+
+.gedcom-tree .gedcom-field-revert {
+  --icon-size: var(--icon-xs);
+  display: none;
+  grid-area: 1 / 2;
+  align-self: start;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: calc(1em * var(--line-height-tight));
+  height: calc(1em * var(--line-height-tight));
+  padding: 0;
+}
+
+.gedcom-tree .gedcom-tree-message {
+  flex-basis: 100%;
+  font-size: var(--font-ui-smaller);
+  line-height: var(--line-height-tight);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-message.is-error {
+  color: var(--text-error);
+}
+
+.gedcom-tree .gedcom-tree-message.is-warning {
+  color: var(--text-warning);
+}
+
+.gedcom-tree .gedcom-tree-paired,
+.gedcom-tree .gedcom-tree-note {
+  flex-basis: 100%;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  line-height: var(--line-height-tight);
+}
+
+.gedcom-tree .gedcom-tree-note {
+  padding: var(--size-4-1) var(--size-4-2) var(--size-4-2);
+}
+
+.gedcom-tree .gedcom-tree-node.is-unwritten > .gedcom-tree-row {
+  outline: 1px dashed var(--background-modifier-border-hover);
+  outline-offset: -1px;
+}
+
+.gedcom-tree .gedcom-tree-node.is-unwritten > .gedcom-tree-row > .gedcom-tree-label {
+  font-style: italic;
+}
+
+.gedcom-tree .gedcom-tree-place {
+  --icon-size: var(--icon-xs);
+  align-self: center;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: calc(1em * var(--line-height-tight));
+  height: calc(1em * var(--line-height-tight));
+  padding: 0;
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-several {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: auto;
+  padding: 0 var(--size-4-1);
+  overflow-wrap: anywhere;
+  color: var(--text-normal);
+}
+
+.gedcom-tree .gedcom-tree-place:focus-visible,
+.gedcom-tree .gedcom-tree-several:focus-visible,
+.gedcom-tree .gedcom-field-revert:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
+    display: flex;
+  }
+
+  .gedcom-tree .gedcom-field-revert,
+  .gedcom-tree .gedcom-tree-place,
+  .gedcom-tree .gedcom-tree-pick {
+    --icon-size: var(--icon-s);
+    width: 44px;
+    height: 44px;
+    margin-block: -12px;
+  }
+
+  .gedcom-tree .gedcom-tree-several,
+  .gedcom-tree .gedcom-tree-choice {
+    min-height: 44px;
+    margin-block: -12px;
+  }
+}
+
+.is-mobile .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
+  display: flex;
+}
+
+.is-mobile .gedcom-tree .gedcom-field-revert,
+.is-mobile .gedcom-tree .gedcom-tree-place,
+.is-mobile .gedcom-tree .gedcom-tree-pick {
+  --icon-size: var(--icon-s);
+  width: 44px;
+  height: 44px;
+  margin-block: -12px;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-several,
+.is-mobile .gedcom-tree .gedcom-tree-choice {
+  min-height: 44px;
+  margin-block: -12px;
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
+  position: absolute;
+  top: var(--size-4-1);
+  inset-inline-end: var(--size-4-2);
+  margin: 0;
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
+  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + 1em * var(--line-height-tight));
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
+  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + 2em * var(--line-height-tight));
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
+    top: 0;
+    margin: 0;
+  }
+
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
+    padding-inline-end: calc(var(--size-4-2) + 44px);
+  }
+
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
+    padding-inline-end: calc(var(--size-4-2) + 88px);
+  }
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
+  top: 0;
+  margin: 0;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
+  padding-inline-end: calc(var(--size-4-2) + 44px);
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
+  padding-inline-end: calc(var(--size-4-2) + 88px);
+}
+
+.gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick, > .gedcom-tree-place) {
+  flex-wrap: nowrap;
+}
+
+.gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick, > .gedcom-tree-place) > :is(.gedcom-desk-link, .gedcom-field) {
+  flex: 0 1 auto;
+  min-width: 0;
+}
