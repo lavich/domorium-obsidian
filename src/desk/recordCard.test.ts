@@ -89,6 +89,17 @@ describe("the empty states of the card", () => {
     expect(texts(".gedcom-card-state")).toEqual(["The file holds nothing to show."]);
   });
 
+  it("says to select a record in a file of notes alone, and that a file of a header alone holds nothing", () => {
+    state.record = null;
+    index = indexOf("0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @N1@ SNOTE A note\n0 TRLR\n");
+    draw();
+    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline or the list."]);
+
+    index = indexOf("0 HEAD\n1 GEDC\n2 VERS 7.0\n1 NOTE Only a header\n0 TRLR\n");
+    draw();
+    expect(texts(".gedcom-card-state")).toEqual(["The file holds nothing to show."]);
+  });
+
   it("speaks Russian", () => {
     setLanguage("ru");
     renderRecordCard(container, null, view);
@@ -111,6 +122,38 @@ describe("the page of each kind of record", () => {
 
       expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
     }
+  });
+
+  it("shows a note, a repository, a submitter, a record of the file's own and the header as their tree, rooted at their kind", () => {
+    index = indexOf(
+      [
+        "0 HEAD", "1 GEDC", "2 VERS 7.0", "1 SUBM @U1@",
+        "0 @U1@ SUBM", "1 NAME Domorium",
+        "0 @N1@ SNOTE First line", "1 CONT second line",
+        "0 @R1@ REPO", "1 NAME Archive", "1 ADDR Street 7", "2 CITY Warsaw",
+        "0 @P1@ _PLAN", "1 NAME Research plan",
+        "0 TRLR",
+      ].join("\n"),
+    );
+    const roots: [string, string][] = [];
+    for (const record of ["@N1@", "@R1@", "@U1@", "@P1@", "header:"]) {
+      state.record = record;
+      draw();
+
+      expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
+      roots.push([
+        container.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-label")?.textContent ?? "",
+        String(container.querySelectorAll(".gedcom-tree-node:not(.is-root)").length),
+      ]);
+    }
+
+    expect(roots).toEqual([
+      ["Shared note", "0"],
+      ["Repository", "2"],
+      ["Submitter", "1"],
+      ["_PLAN", "1"],
+      ["Header", "2"],
+    ]);
   });
 
   it("has no header: no bar, no Back or Forward control, and the record's name only in the live region", () => {
@@ -259,6 +302,16 @@ describe("the live region", () => {
     draw();
 
     expect(live()).toBe("Показано: Marie Skłodowska-Curie");
+  });
+
+  it("reads a note by the text of its row in the list, and the header as the file's header", () => {
+    state.record = "@N1@";
+    draw();
+    expect(live()).toBe("Shown: The only person to have won a Nobel Prize in two different sciences:");
+
+    state.record = "header:";
+    draw();
+    expect(live()).toBe("Shown: File header");
   });
 
   it("reads a medium by its title", () => {
@@ -427,6 +480,40 @@ describe("a card that writes", () => {
 
     expect(doc.text).toContain("1 DEAT Y");
     expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:DEAT[0]:add");
+  });
+
+  it("draws the header read-only, saying nothing of why, with its pointer to the submitter a link", () => {
+    tab = writing(["0 @U1@ SUBM", "1 NAME Domorium"], [...HEAD, "1 SUBM @U1@", "1 NOTE About the file"]);
+    state.record = "header:";
+    draw();
+
+    expect(container.querySelector(".gedcom-tree")).not.toBeNull();
+    expect(container.querySelector(".gedcom-tree-note")).toBeNull();
+    expect(container.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-pick, textarea:not([readonly]), select")).toHaveLength(0);
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")].find((link) => link.textContent === "Domorium")?.click();
+    expect(calls.select).toHaveBeenCalledWith("@U1@");
+  });
+
+  it("edits a submitter, a repository and a note", () => {
+    tab = writing(["0 @U1@ SUBM", "1 NAME Domorium", "1 WWW https://domorium.com/", "0 @R2@ REPO", "1 NAME Archive", "0 @N1@ SNOTE Text"]);
+    for (const record of ["@U1@", "@R2@", "@N1@"]) {
+      state.record = record;
+      draw();
+
+      expect(container.querySelector(".gedcom-tree-note"), record).toBeNull();
+      expect(container.querySelector(".gedcom-tree-add"), record).not.toBeNull();
+    }
+    state.record = "@U1@";
+    draw();
+    const area = container.querySelector<HTMLTextAreaElement>('[data-focus-key="t:WWW[0]:value"]');
+    area?.focus();
+    if (area) {
+      area.value = "https://example.org/";
+      area.dispatchEvent(new Event("input"));
+      area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+
+    expect(doc.text).toContain("0 @U1@ SUBM\n1 NAME Domorium\n1 WWW https://example.org/");
   });
 
   it("offers no editing where the service has no dialect for the file, and says why", () => {

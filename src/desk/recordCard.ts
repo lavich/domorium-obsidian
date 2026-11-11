@@ -12,10 +12,11 @@ import { t } from "../i18n";
 import { renderFamilyPage } from "./familyPage";
 import type { MediaItem } from "./media";
 import { renderMediaPage } from "./mediaPage";
-import { pageKind } from "./deskState";
+import { HEADER_ID, pageKind } from "./deskState";
 import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
 import { renderPersonPage, type PageHost, type PersonPageOptions } from "./personPage";
+import { renderRecordPage } from "./recordPage";
 import { renderSourcePage } from "./sourcePage";
 import type { Choices } from "./addableFields";
 import type { Refusal, WriteOutcome } from "./edits";
@@ -65,8 +66,17 @@ export interface CardView {
 const FOCUS_KEY = "data-focus-key";
 const TOGGLE_KEY = "tree:toggle";
 
-const hasTree = (index: GenealogyIndex, record: string): boolean =>
-  index.person(record) !== undefined || index.family(record) !== undefined || index.source(record) !== undefined;
+const TREES: ReadonlySet<string> = new Set(["person", "family", "source", "record"]);
+
+const hasTree = (index: GenealogyIndex, record: string): boolean => TREES.has(pageKind(index, record) ?? "");
+
+/** Nothing with an identifier: the header alone is nothing to show. */
+const holdsNothing = (index: GenealogyIndex): boolean =>
+  [index.people, index.families, index.sources].every((rows) => rows.every((row) => row.xref === undefined)) &&
+  index.lists.media.length === 0 &&
+  index.lists.notes.length === 0 &&
+  index.lists.repositories.length === 0 &&
+  index.lists.other.every((xref) => xref === HEADER_ID);
 
 export function renderRecordCard(
   container: HTMLElement,
@@ -103,10 +113,9 @@ export function renderRecordCard(
   if (!tab || !index) {
     body.createDiv({ cls: "gedcom-desk-none gedcom-card-state", text: t("card.noTab") });
   } else if (!record) {
-    const holdsNothing = index.people.length === 0 && index.families.length === 0 && index.sources.length === 0;
     body.createDiv({
       cls: "gedcom-desk-none gedcom-card-state",
-      text: t(holdsNothing ? "card.empty" : "card.nothing"),
+      text: t(holdsNothing(index) ? "card.empty" : "card.nothing"),
     });
   } else {
     drawsTree = hasTree(index, record);
@@ -159,7 +168,8 @@ function drawRecord(
 ): void {
   const version = tab.version?.();
   const opening = index.record(record)?.range.start;
-  const writes = version !== undefined && opening !== undefined && (tab.describes?.(opening) ?? false);
+  const readOnly = record === HEADER_ID;
+  const writes = !readOnly && version !== undefined && opening !== undefined && (tab.describes?.(opening) ?? false);
   const host: PageHost = {
     openRecord: (xref) => tab.select(xref),
     showInSource: (range) => tab.showInSource(range),
@@ -177,7 +187,7 @@ function drawRecord(
     chooseField: view.chooseField?.bind(view),
     chooseValues: view.chooseValues?.bind(view),
     choosePointer: view.choosePointer?.bind(view),
-    uneditable: tab.setValueAt !== undefined && !writes,
+    uneditable: !readOnly && tab.setValueAt !== undefined && !writes,
   };
   if (writes) {
     const setValueAt = tab.setValueAt?.bind(tab);
@@ -212,7 +222,8 @@ function drawRecord(
     );
   } else if (place) {
     renderPlacePage(body, place, index, host);
-    return;
+  } else {
+    renderRecordPage(body, record, index, host, folds);
   }
 }
 
