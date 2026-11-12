@@ -20,8 +20,7 @@ the media popover, the record switcher's placeholder, the rename dialog, the
 "line N" prefix of a problem listed under a `gedcom` block in a note, the
 mode buttons, the headings, labels, buttons and empty states of the record
 card, the column headings, buttons, counts and empty states of the list, the names of
-events and of the relationships they are shown under, and the quality of
-evidence a citation states.
+events and of the relationships they are shown under.
 
 Text the file itself states — a name, a place, a date, a title, a page — SHALL
 be shown as the file writes it, in either language.

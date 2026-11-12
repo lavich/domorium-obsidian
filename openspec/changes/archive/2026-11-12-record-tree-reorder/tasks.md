@@ -38,5 +38,5 @@ Archive order: `record-fields-tree`, then `record-kinds-lists`, then `record-tre
 ## 7. Docs and gate
 
 - [x] 7.1 `README.md`, in the paragraph on editing: one sentence that the six-dot grip at the end of a row drags a line among its siblings, and that what would change how the file is read is refused
-- [ ] 7.2 Once `record-fields-tree` is archived and `openspec/specs/genealogy-record-edit/spec.md` exists, add moving a line among its siblings to its Purpose (a delta's Purpose of an existing capability is ignored); verify by reading the archived spec after `openspec archive record-tree-reorder`
+- [x] 7.2 Once `record-fields-tree` is archived and `openspec/specs/genealogy-record-edit/spec.md` exists, add moving a line among its siblings to its Purpose (a delta's Purpose of an existing capability is ignored); verify by reading the archived spec after `openspec archive record-tree-reorder`
 - [x] 7.3 `npm run openspec:validate`, `npm run check` and `npm run test:browser`
