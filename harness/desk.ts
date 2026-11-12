@@ -4,7 +4,9 @@ import curie from "../demo-vault/curie.ged";
 import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
 import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../src/desk/addableFields";
+import { chooseDeviceFile } from "../src/desk/deviceFile";
 import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../src/desk/edits";
+import { mediaFileEdit } from "../src/desk/mediaFile";
 import { renderRecordCard, type CardTab, type CardView } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
@@ -35,16 +37,23 @@ export interface DeskCalls {
   filesOpened: string[];
   /** The questions asked before a removal, answered by `confirm`. */
   asked: string[];
+  /** The paths of the files copied into the vault. */
+  copied: string[];
 }
 
 /** What is in demo-vault, which the harness page reaches as ../demo-vault/. */
-const VAULT_FILES = new Set([
+const DEMO_FILES = [
   "Media/curie-family-1908.svg",
   "Media/irene-joliot-curie.svg",
   "Media/marie-sklodowska-curie.svg",
   "Media/pierre-curie.svg",
   "Sources/nobel-diploma-1903.svg",
-]);
+];
+const OTHER_FILES = ["curie.ged", "Start here.md", "Notes/Marie Curie.md"];
+
+/** The vault the card sees: each file's path and the address its picture is drawn from, copies kept as blobs. */
+let vault = new Map<string, string>();
+const freshVault = (): Map<string, string> => new Map(DEMO_FILES.map((path) => [path, `../demo-vault/${path}`]));
 
 declare global {
   interface Window {
@@ -65,7 +74,7 @@ declare global {
 
 installObsidianDom();
 
-const calls: DeskCalls = { shownInSource: [], filesOpened: [], asked: [] };
+const calls: DeskCalls = { shownInSource: [], filesOpened: [], asked: [], copied: [] };
 let doc: TextTab;
 let index: GenealogyIndex;
 let indexed = -1;
@@ -88,13 +97,13 @@ function mediaItem(at: Position): MediaItem | null {
   if (!reference) {
     return null;
   }
-  const vault = {
+  const media = {
     documentPath: "curie.ged",
     dialect: service().getDocument().getDialect(),
-    resolve: (path: string) => (VAULT_FILES.has(path) ? `../demo-vault/${path}` : null),
+    resolve: (path: string) => vault.get(path) ?? null,
   };
-  const content = mediaPreviewContent(reference, vault);
-  const path = mediaVaultPath(reference, vault);
+  const content = mediaPreviewContent(reference, media);
+  const path = mediaVaultPath(reference, media);
   return { content, at, ...(path && content.kind !== "missing" ? { path } : {}) };
 }
 
@@ -146,6 +155,15 @@ const tab: CardTab = {
   settle: () => {
     draw();
   },
+  vaultFiles: () => [...vault.keys(), ...OTHER_FILES],
+  vaultHas: (path) => vault.has(path) || OTHER_FILES.includes(path),
+  copyIntoVault: (path, data) => {
+    calls.copied.push(path);
+    vault.set(path, URL.createObjectURL(new Blob([data], { type: path.endsWith(".svg") ? "image/svg+xml" : "" })));
+    return Promise.resolve();
+  },
+  fileEditAt: (at, path, version, type) => mediaFileEdit(service(), "curie.ged", at, path, version, type),
+  writeFileAt: (at, path, version, type) => commit(doc, mediaFileEdit(service(), "curie.ged", at, path, version, type)),
 };
 
 /** Stands in for Obsidian's menu and list, which the harness cannot load: a list of buttons that call the same callbacks. */
@@ -175,6 +193,12 @@ const view: Omit<CardView, "setIcon" | "session"> = {
   choosePointer: (choices, chosen) => {
     chooser(choices.map((one) => ({ title: one.title, checked: one.checked, act: () => chosen(one.xref) })));
   },
+  chooseVaultFile: (choices, chosen) => {
+    chooser(choices.map((one) => ({ title: one.path, checked: one.checked, act: () => chosen(one.path) })));
+  },
+  chooseDeviceFile: (chosen) => {
+    chooseDeviceFile(document, chosen);
+  },
 };
 
 function selectRecord(xref: string): void {
@@ -202,6 +226,8 @@ function mount(options: DeskOptions): void {
   calls.shownInSource = [];
   calls.filesOpened = [];
   calls.asked = [];
+  calls.copied = [];
+  vault = freshVault();
   confirmed = null;
   doc = new TextTab(options.doc ?? (options.plan ? curieWithPlan() : curie));
   indexed = -1;

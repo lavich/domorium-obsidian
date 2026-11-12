@@ -1,3 +1,4 @@
+import { Buffer } from "node:buffer";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
@@ -29,6 +30,8 @@ const opacityOf = (locator: Locator) => locator.evaluate((node) => getComputedSt
 
 const treeRow = (page: Page, label: string) =>
   page.locator(".gedcom-tree-row", { has: page.locator(".gedcom-tree-label", { hasText: new RegExp(`^${label}$`, "u") }) }).first();
+
+const rootRow = (page: Page) => page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row");
 
 const pressArrow = async (page: Page, label: string): Promise<void> => {
   const row = treeRow(page, label);
@@ -221,14 +224,110 @@ test.describe("the source card and the media card", () => {
     await shownRecord(page, "@S1@");
   });
 
-  test("lists the two people a photograph is linked by", async ({ page }) => {
+  test("shows a photograph as its tree, the picture in the row of its file, and nothing else", async ({ page }) => {
     await mountDesk(page, { record: "@O5@" });
+    const picture = treeRow(page, "File").locator(".gedcom-tree-file img");
 
-    await expect(page.locator(".gedcom-desk-user .gedcom-desk-person-name")).toHaveText([
-      "Marie Skłodowska-Curie", "Pierre Curie",
-    ]);
-    await expect(page.locator(".gedcom-desk-user-caption")).toHaveText(["Marie, on the left", "Pierre, in the middle"]);
-    await expect(page.locator(".gedcom-desk-user .is-cropped")).toHaveCount(2);
+    await expect(page.locator(".gedcom-card-body > *")).toHaveCount(1);
+    await expect(rootRow(page).locator(".gedcom-tree-label")).toHaveText("Media");
+    await expect(page.locator(".gedcom-card-body h1, .gedcom-card-body h2, .gedcom-desk-user")).toHaveCount(0);
+    await expect(picture).toHaveAttribute("src", "../demo-vault/Media/curie-family-1908.svg");
+    await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    const box = await picture.boundingBox();
+    expect(box?.height ?? 0).toBeLessThanOrEqual(160.5);
+    expect(box?.height ?? 0).toBeGreaterThan(40);
+    await expect(treeRow(page, "File").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("shows the path of a file that is not in the vault beside a file icon", async ({ page }) => {
+    await mountDesk(page, { record: "@O7@" });
+
+    await expect(treeRow(page, "File").locator(".gedcom-tree-file-path")).toHaveText("Media/lost-daguerreotype.jpg");
+    await expect(treeRow(page, "File").locator(".gedcom-tree-file-icon svg")).toHaveCount(1);
+    await expect(treeRow(page, "File").locator("img")).toHaveCount(0);
+  });
+});
+
+test.describe("the file of a medium", () => {
+  const fileControl = (page: Page) => treeRow(page, "File").locator(".gedcom-tree-file");
+  const menu = (page: Page) => page.locator(".harness-chooser");
+  const PNG = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+
+  test("offers the vault and the device, and writes a file of the vault in its place", async ({ page }) => {
+    await mountDesk(page, { record: "@O5@" });
+    await fileControl(page).click();
+
+    await expect(menu(page).getByRole("menuitem")).toHaveText(["Choose from the vault", "Upload from device"]);
+    await menu(page).getByRole("menuitem", { name: "Choose from the vault" }).click();
+    const files = await menu(page).getByRole("menuitem").allTextContents();
+    expect(files.slice(0, 5).every((one) => one.replace("✓ ", "").endsWith(".svg"))).toBe(true);
+    expect(files).toContain("✓ Media/curie-family-1908.svg");
+    expect(files).not.toContain("curie.ged");
+    await menu(page).getByRole("menuitem", { name: "Media/pierre-curie.svg", exact: true }).click();
+
+    expect(await page.evaluate(() => window.desk.text())).toContain("0 @O5@ OBJE\n1 FILE Media/pierre-curie.svg\n2 FORM image/svg+xml\n");
+    await expect(fileControl(page).locator("img")).toHaveAttribute("src", "../demo-vault/Media/pierre-curie.svg");
+    await expect(fileControl(page)).toBeFocused();
+  });
+
+  test("copies a file from the device into the vault under a free name, and writes it with its format", async ({ page }) => {
+    await mountDesk(page, { record: "@O7@" });
+    await fileControl(page).click();
+    const chooser = page.waitForEvent("filechooser");
+    await menu(page).getByRole("menuitem", { name: "Upload from device" }).click();
+    await (await chooser).setFiles({ name: "plate.png", mimeType: "image/png", buffer: PNG });
+
+    await expect.poll(() => page.evaluate(() => window.desk.calls.copied)).toEqual(["Media/plate.png"]);
+    await expect.poll(() => page.evaluate(() => window.desk.text())).toContain("0 @O7@ OBJE\n1 FILE Media/plate.png\n2 FORM image/png\n");
+    await expect(fileControl(page).locator("img")).toHaveAttribute("src", /^blob:/u);
+
+    await fileControl(page).click();
+    const again = page.waitForEvent("filechooser");
+    await menu(page).getByRole("menuitem", { name: "Upload from device" }).click();
+    await (await again).setFiles({ name: "plate.png", mimeType: "image/png", buffer: PNG });
+    await expect.poll(() => page.evaluate(() => window.desk.calls.copied)).toEqual(["Media/plate.png", "Media/plate 1.png"]);
+    await expect(page.locator("input[type=file]")).toHaveCount(0);
+  });
+
+  test("copies nothing and says why where the standard refuses the format", async ({ page }) => {
+    const doc = [
+      "0 HEAD", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8",
+      "0 @O1@ OBJE", "1 FILE Media/a.jpg", "2 FORM jpg", "0 @I1@ INDI", "0 TRLR",
+    ].join("\n");
+    await mountDesk(page, { record: "@O1@", doc });
+    await fileControl(page).click();
+    const chooser = page.waitForEvent("filechooser");
+    await menu(page).getByRole("menuitem", { name: "Upload from device" }).click();
+    await (await chooser).setFiles({ name: "photo.png", mimeType: "image/png", buffer: PNG });
+
+    await expect(treeRow(page, "File").locator(".gedcom-tree-message.is-error")).toHaveText("This value is not one of those the standard lists here.");
+    expect(await page.evaluate(() => window.desk.calls.copied)).toEqual([]);
+    expect(await page.evaluate(() => window.desk.text())).toBe(doc);
+  });
+
+  test("opens its menu from the keyboard at the picture", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+    await mountDesk(page, { record: "@O5@" });
+    await fileControl(page).focus();
+    await page.keyboard.press("Enter");
+
+    const at = await fileControl(page).boundingBox();
+    const opened = await menu(page).boundingBox();
+    expect(Math.abs((opened?.x ?? 0) - (at?.x ?? -100))).toBeLessThan(2);
+    expect(Math.abs((opened?.y ?? 0) - ((at?.y ?? 0) + (at?.height ?? 0)))).toBeLessThan(2);
+    expect(await fileControl(page).evaluate((node) => getComputedStyle(node).outlineStyle)).toBe("solid");
+  });
+
+  test("is at least 44 pixels in each direction on a phone", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 760 });
+    await mountDesk(page, { record: "@O7@", phone: true });
+    const box = await fileControl(page).boundingBox();
+
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
   });
 });
 
@@ -791,7 +890,6 @@ test.describe("editing on a phone", () => {
 
 test.describe("the cards of notes, repositories and the other records", () => {
   const live = (page: Page) => page.locator(".gedcom-card-live");
-  const rootRow = (page: Page) => page.locator(".gedcom-tree-node.is-root > .gedcom-tree-row");
 
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 760 });
@@ -856,15 +954,27 @@ test.describe("the cards of notes, repositories and the other records", () => {
     await expect(rootRow(page).locator(".gedcom-tree-summary")).toHaveText("Research plan");
   });
 
-  test("shows the header read-only, with no field, menu or removal, and its submitter as a link", async ({ page }) => {
+  test("edits the header: a copyright from its menu, its version refused, its submitter a link", async ({ page }) => {
     await mountDesk(page, { record: "header:" });
     await openEveryNode(page);
 
     await expect(rootRow(page).locator(".gedcom-tree-label")).toHaveText("Header");
-    await expect(treeRow(page, "VERS").first().locator("textarea")).toHaveValue("7.0");
-    await expect(page.locator(".gedcom-tree textarea:not([readonly]), .gedcom-tree select, .gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-pick")).toHaveCount(0);
+    await expect(rootRow(page).locator("textarea")).toHaveCount(0);
     await expect(page.locator(".gedcom-tree-note")).toHaveCount(0);
     await expect(live(page)).toHaveText("Shown: File header");
+    const version = treeRow(page, "Version").first().locator("textarea");
+    await version.fill("7.1");
+    await version.press("Enter");
+    await expect(treeRow(page, "Version").first().locator(".gedcom-tree-message.is-error")).toHaveText("The standard does not allow this value here.");
+    expect(await page.evaluate(() => window.desk.text())).toContain("1 GEDC\n2 VERS 7.0\n");
+
+    await rootRow(page).locator(".gedcom-tree-add").click();
+    await page.locator(".harness-chooser").getByRole("menuitem", { name: "Copyright", exact: true }).click();
+    const copyright = page.locator(".gedcom-tree .is-unwritten textarea");
+    await copyright.fill("Domorium");
+    await copyright.press("Enter");
+    await expect.poll(() => page.evaluate(() => window.desk.text())).toContain("1 COPR Domorium\n");
+
     await page.locator(".gedcom-tree .gedcom-desk-link", { hasText: "Domorium" }).click();
     await shownRecord(page, "@U1@");
   });
