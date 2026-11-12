@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.19.0
+
+- **A card is the record's own lines, and they can be edited.** The card of a person,
+  a family, a source and a medium is one tree of the record's lines, in the order the
+  file writes them, labelled in the reader's language with the tags hidden. Nodes open
+  and close, and one button opens or closes them all. A value is changed in its field,
+  written on leaving it or on Enter, with Escape putting the file's value back; a value
+  from a list is a dropdown, and a pointer is chosen from a searchable list of records.
+  The + of a line adds a field it may hold, and the bin removes a line. What GEDCOM does
+  not allow is not written, and the card says why under the field. Every change is a
+  change of the file's text and one undo in Source.
+- **A line is moved by dragging its grip.** The six dots beside − and + move a line,
+  with everything beneath it, among the lines of the same level, so the first name can
+  be made the preferred one. On a touch screen the grip is always shown.
+- **A medium's file is chosen from its card.** A file row shows the picture, or its
+  path; pressing it offers *Choose from the vault* and *Upload from device*, and the
+  path and the format are written for you.
+- **The list holds every kind of record.** Media, Notes, Repositories and Other (the
+  header, submitters and records of the file's own) join People, Families and Sources,
+  each with its card; links, `obsidian://` URLs and *Go to record* open them too. Where
+  the toolbar has no room for the kinds, they become one dropdown, and in a narrow tab
+  on a desktop the sort controls are the size of the others.
+- **Less to read past.** The sections that retold a record (evidence, the family
+  section, the pictures and the timeline on a card), the card's header with Back and
+  Forward, the Events and Places lists, and the cards of events and places are gone.
+
 ## 1.18.2
 
 - **The cards on the right show the whole record.** A person's card lists every name
