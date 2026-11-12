@@ -5,7 +5,7 @@ import { mediaPreviewContent, mediaVaultPath } from "../src/editor/media";
 import type { MediaItem } from "../src/desk/media";
 import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../src/desk/addableFields";
 import { chooseDeviceFile } from "../src/desk/deviceFile";
-import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../src/desk/edits";
+import { addAt, checkValue, commit, describeMoveAt, moveAt, removeAt, requiredBeneath, setValueAt } from "../src/desk/edits";
 import { mediaFileEdit } from "../src/desk/mediaFile";
 import { renderRecordCard, type CardTab, type CardView } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
@@ -152,6 +152,8 @@ const tab: CardTab = {
       confirmed = go;
     }
   },
+  describeMoveAt: (at) => describeMoveAt(service(), at),
+  moveAt: (at, target, version) => commit(doc, moveAt(service(), at, version, target)),
   settle: () => {
     draw();
   },

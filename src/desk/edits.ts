@@ -2,6 +2,8 @@ import type {
   DiagnosticData,
   EditRefusal,
   GedcomLanguageService,
+  MoveDescription,
+  MoveTarget,
   Position,
   StructureEditResult,
   StructureFieldDescription,
@@ -57,6 +59,19 @@ export function removeAt(
   version: number,
 ): StructureEditResult | EditRefusal {
   return service.removeStructure(at, version);
+}
+
+export function describeMoveAt(service: GedcomLanguageService, at: Position): MoveDescription | EditRefusal {
+  return service.describeMove(at);
+}
+
+export function moveAt(
+  service: GedcomLanguageService,
+  at: Position,
+  version: number,
+  target: MoveTarget,
+): StructureEditResult | EditRefusal {
+  return service.moveStructure(at, target, version);
 }
 
 /** Applies what the service answered, or says why it was not; an edit the tab no longer matches is refused as stale. */

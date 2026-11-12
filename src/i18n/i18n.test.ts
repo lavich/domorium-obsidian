@@ -1,6 +1,7 @@
 import { evaluateSentenceCase } from "eslint-plugin-obsidianmd/dist/lib/rules/ui/sentenceCaseUtil.js";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { refusalText } from "../desk/edits";
 import {
   CATALOGUES,
   currentLanguage,
@@ -98,6 +99,21 @@ describe("filling a message", () => {
     expect(
       t("note.problemLine", { line: 3, message: "Missing required tag" }),
     ).toBe("Строка 3: Missing required tag");
+  });
+
+  it("names a grip and a move, and why a move was refused, in English and in Russian", () => {
+    const keys = ["tree.moveField", "tree.moved", "edit.refusal.reading-changed", "edit.refusal.not-a-sibling"] as const;
+    for (const key of keys) {
+      expect(placeholdersOf(ru[key] ?? "")).toEqual(placeholdersOf(en[key]));
+    }
+    const refused = (code: string): string => refusalText({ code, message: "service" });
+    expect(t("tree.moveField", { field: "Birth", keys: "Alt+↑ / Alt+↓" })).toBe("Move Birth: drag, or press Alt+↑ / Alt+↓");
+    expect(t("tree.moved", { field: "Sex", place: 2, count: 14 })).toBe("Sex moved to place 2 of 14");
+    expect([refused("reading-changed"), refused("not-a-sibling")]).toEqual([en["edit.refusal.reading-changed"], en["edit.refusal.not-a-sibling"]]);
+
+    setLanguage("ru");
+    expect(t("tree.moveField", { field: "Рождение", keys: "Alt+↑ / Alt+↓" })).toBe("Переместить «Рождение»: перетащите или нажмите Alt+↑ / Alt+↓");
+    expect([refused("reading-changed"), refused("not-a-sibling")]).toEqual([ru["edit.refusal.reading-changed"], ru["edit.refusal.not-a-sibling"]]);
   });
 });
 

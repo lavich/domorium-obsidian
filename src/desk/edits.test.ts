@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage, setLanguage } from "../i18n";
 import { TextTab } from "../testing/textTab";
 import { addableAt } from "./addableFields";
-import { addAt, addPlan, checkValue, commit, joinEdits, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
+import { addAt, addPlan, checkValue, commit, describeMoveAt, joinEdits, moveAt, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
 
 afterEach(resetLanguage);
 
@@ -139,6 +139,80 @@ describe("the value of a record's opening line", () => {
 
     expect(outcome).toMatchObject({ ok: false, code: "stale-document" });
     expect(linesOf(tab)).toContain("0 @N1@ SNOTE Changed");
+  });
+});
+
+describe("a line moved among its siblings", () => {
+  const marie = ["0 @I1@ INDI", "1 NAME Marie /Skłodowska-Curie/", "2 GIVN Marie", "1 NAME Maria Salomea /Skłodowska/", "2 TYPE BIRTH", "2 GIVN Maria Salomea", "1 SEX F"];
+
+  it("writes Marie's second name, its three lines together, before her first, and changes no other line", () => {
+    const tab = tabOf(marie);
+    const described = describeMoveAt(tab.service(), at(6));
+    if (!described.ok) {
+      throw new Error(described.message);
+    }
+    const first = described.slots.find((slot) => "before" in slot.target && slot.target.before.line === 4);
+    if (!first) {
+      throw new Error("no slot before the first name");
+    }
+
+    const outcome = commit(tab, moveAt(tab.service(), at(6), tab.version, first.target));
+
+    expect(outcome).toMatchObject({ ok: true });
+    expect(tab.writes).toBe(1);
+    expect(linesOf(tab).slice(3, 11)).toEqual([
+      "0 @I1@ INDI",
+      "1 NAME Maria Salomea /Skłodowska/",
+      "2 TYPE BIRTH",
+      "2 GIVN Maria Salomea",
+      "1 NAME Marie /Skłodowska-Curie/",
+      "2 GIVN Marie",
+      "1 SEX F",
+      "0 TRLR",
+    ]);
+  });
+
+  it("describes the line's own place and the place after it as keeping the order, which writes nothing", () => {
+    const tab = tabOf(marie);
+    const described = describeMoveAt(tab.service(), at(6));
+    if (!described.ok) {
+      throw new Error(described.message);
+    }
+
+    const keeping = described.slots.filter((slot) => !slot.changesOrder);
+    expect(keeping.map((slot) => ("before" in slot.target ? slot.target.before.line : "end"))).toEqual([6, 9]);
+    for (const slot of keeping) {
+      const answer = moveAt(tab.service(), at(6), tab.version, slot.target);
+      expect(answer.ok && answer.edit.edits).toEqual([]);
+    }
+  });
+
+  it("refuses a move that would change how the file is read", () => {
+    const tab = tabOf(["0 @I1@ INDI", "1 BIRT", "3 DATE 1900", "2 PLAC x"]);
+    const before = tab.text;
+
+    const outcome = commit(tab, moveAt(tab.service(), at(6), tab.version, { before: at(5) }));
+
+    expect(outcome).toMatchObject({ ok: false, code: "reading-changed" });
+    expect(tab.text).toBe(before);
+  });
+
+  it("refuses to move a record's opening line", () => {
+    const tab = tabOf(marie);
+
+    expect(describeMoveAt(tab.service(), at(3))).toMatchObject({ ok: false, code: "record-edit-unsupported" });
+  });
+
+  it("refuses a move against a version the text has moved on from", () => {
+    const tab = tabOf(marie);
+    const drawn = tab.version;
+    tab.replace(`${tab.text}\n`);
+    const before = tab.text;
+
+    const outcome = commit(tab, moveAt(tab.service(), at(6), drawn, { before: at(4) }));
+
+    expect(outcome).toMatchObject({ ok: false, code: "stale-document" });
+    expect(tab.text).toBe(before);
   });
 });
 

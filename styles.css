@@ -1973,7 +1973,7 @@ button.gedcom-fg-pop-open {
   margin-block-start: var(--size-2-2);
 }
 
-.gedcom-tree .gedcom-tree-node > .gedcom-tree-row:hover {
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-node > .gedcom-tree-row:hover {
   background: var(--nav-item-background-hover);
 }
 
@@ -1983,7 +1983,7 @@ button.gedcom-fg-pop-open {
   cursor: pointer;
 }
 
-.gedcom-tree .gedcom-tree-node > .gedcom-tree-row.mod-collapsible:hover {
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-node > .gedcom-tree-row.mod-collapsible:hover {
   color: var(--nav-item-color-hover);
 }
 
@@ -2158,7 +2158,7 @@ button.gedcom-fg-pop-open {
   color: var(--nav-item-color-hover);
 }
 
-.gedcom-tree .gedcom-tree-row:hover .gedcom-tree-pick,
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-row:hover .gedcom-tree-pick,
 .gedcom-tree .gedcom-tree-pick:focus-visible {
   opacity: 1;
 }
@@ -2178,13 +2178,14 @@ button.gedcom-fg-pop-open {
   opacity: 0;
 }
 
-.gedcom-tree .gedcom-tree-row:hover > .gedcom-tree-actions,
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-row:hover > .gedcom-tree-actions,
 .gedcom-tree .gedcom-tree-actions:focus-within {
   opacity: 1;
 }
 
 .gedcom-tree .gedcom-tree-add,
-.gedcom-tree .gedcom-tree-remove {
+.gedcom-tree .gedcom-tree-remove,
+.gedcom-tree .gedcom-tree-grip {
   --icon-size: var(--icon-s);
   display: flex;
   align-items: center;
@@ -2203,7 +2204,8 @@ button.gedcom-fg-pop-open {
   }
 
   .gedcom-tree .gedcom-tree-add,
-  .gedcom-tree .gedcom-tree-remove {
+  .gedcom-tree .gedcom-tree-remove,
+  .gedcom-tree .gedcom-tree-grip {
     --icon-size: var(--icon-s);
     width: 44px;
     height: 44px;
@@ -2216,7 +2218,8 @@ button.gedcom-fg-pop-open {
 }
 
 .is-mobile .gedcom-tree .gedcom-tree-add,
-.is-mobile .gedcom-tree .gedcom-tree-remove {
+.is-mobile .gedcom-tree .gedcom-tree-remove,
+.is-mobile .gedcom-tree .gedcom-tree-grip {
   --icon-size: var(--icon-s);
   width: 44px;
   height: 44px;
@@ -2393,6 +2396,7 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree .gedcom-tree-file:focus-visible,
+.gedcom-tree .gedcom-tree-grip:focus-visible,
 .gedcom-tree .gedcom-tree-open-note:focus-visible,
 .gedcom-tree .gedcom-tree-several:focus-visible,
 .gedcom-tree .gedcom-field-revert:focus-visible {
@@ -2467,6 +2471,10 @@ button.gedcom-fg-pop-open {
   padding-inline-end: calc(2 * var(--size-2-1) + 2 * var(--gedcom-tree-action) + var(--size-4-1));
 }
 
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="3"] {
+  padding-inline-end: calc(3 * var(--size-2-1) + 3 * var(--gedcom-tree-action) + var(--size-4-1));
+}
+
 @media (pointer: coarse) {
   .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
     top: 0;
@@ -2479,6 +2487,10 @@ button.gedcom-fg-pop-open {
 
   .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
     padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-1));
+  }
+
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="3"] {
+    padding-inline-end: calc(var(--size-4-2) + 132px + 2 * var(--size-2-1));
   }
 }
 
@@ -2493,6 +2505,51 @@ button.gedcom-fg-pop-open {
 
 .is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
   padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-1));
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="3"] {
+  padding-inline-end: calc(var(--size-4-2) + 132px + 2 * var(--size-2-1));
+}
+
+/* .grip-handle, .mod-dragged-item and --drag-item-* arrive with Obsidian 1.15; below it the grip and the lifted row are drawn here alike. */
+.gedcom-tree .gedcom-tree-grip {
+  border-radius: var(--clickable-icon-radius);
+  color: var(--text-faint);
+  cursor: grab;
+  touch-action: none;
+}
+
+.gedcom-tree .gedcom-tree-grip circle {
+  fill: currentColor;
+}
+
+.gedcom-tree .gedcom-tree-grip:hover {
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-grip:active,
+body.is-grabbing .gedcom-tree .gedcom-tree-grip {
+  cursor: grabbing;
+}
+
+body.is-grabbing .gedcom-tree {
+  user-select: none;
+}
+
+.gedcom-tree .drop-indicator {
+  left: auto;
+  width: auto;
+  inset-inline-end: 0;
+}
+
+.drag-reorder-ghost.gedcom-tree {
+  position: fixed;
+}
+
+.drag-reorder-ghost.gedcom-tree > .mod-dragged-item {
+  border-radius: var(--radius-s);
+  background-color: var(--drag-item-background, var(--background-primary));
+  box-shadow: var(--drag-item-shadow, 0 2px 8px var(--background-modifier-box-shadow));
 }
 
 .gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick) {

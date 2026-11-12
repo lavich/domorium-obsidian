@@ -32,7 +32,7 @@ export interface Unwritten {
 
 /** Where the focus goes once the tree is drawn again: a control of a node, or a part of the line written at `line` under a node. */
 export type FocusWish =
-  | { key: string; parts: string[] }
+  | { key: string; parts: string[]; reveal?: boolean }
   | { under: string; line: number; parts: string[] }
   | { unwritten: number };
 
@@ -50,6 +50,8 @@ export interface TreeState {
   unwrittenParents(): string[];
   wishFocus(wish: FocusWish | undefined): void;
   takeFocus(): FocusWish | undefined;
+  /** Gives every choice kept under an old key, or under a line beneath it, the new key, all at once. */
+  renameKeys(renames: ReadonlyMap<string, string>): void;
 }
 
 interface RecordMemory {
@@ -72,6 +74,27 @@ const put = <T>(map: Map<string, T>, key: string, value: T | undefined): void =>
   if (value === undefined) {
     map.delete(key);
   } else {
+    map.set(key, value);
+  }
+};
+
+const NOTE = "note:";
+
+function renamed(renames: ReadonlyMap<string, string>, key: string): string {
+  const note = key.startsWith(NOTE);
+  const rest = note ? key.slice(NOTE.length) : key;
+  for (const [from, to] of renames) {
+    if (rest === from || rest.startsWith(`${from}.`) || rest.startsWith(`${from}:`)) {
+      return `${note ? NOTE : ""}${to}${rest.slice(from.length)}`;
+    }
+  }
+  return key;
+}
+
+const renamedMap = <T>(renames: ReadonlyMap<string, string>, map: Map<string, T>): void => {
+  const entries = [...map].map(([key, value]): [string, T] => [renamed(renames, key), value]);
+  map.clear();
+  for (const [key, value] of entries) {
     map.set(key, value);
   }
 };
@@ -123,6 +146,22 @@ export class TreeSession {
         const wish = held.focus;
         held.focus = undefined;
         return wish;
+      },
+      renameKeys: (renames) => {
+        const open = [...held.open].map((key) => renamed(renames, key));
+        held.open.clear();
+        for (const key of open) {
+          held.open.add(key);
+        }
+        renamedMap(renames, held.drafts);
+        renamedMap(renames, held.messages);
+        renamedMap(renames, held.unwritten);
+        const wish = held.focus;
+        if (wish && "key" in wish) {
+          held.focus = { ...wish, key: renamed(renames, wish.key) };
+        } else if (wish && "under" in wish) {
+          held.focus = { ...wish, under: renamed(renames, wish.under) };
+        }
       },
     };
   }

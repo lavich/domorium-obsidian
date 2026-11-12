@@ -642,3 +642,52 @@ body:not(.is-grabbing) .tree-item-self.is-clickable:hover {
   margin-inline-start: var(--nav-item-children-margin-start);
   border-inline-start: var(--nav-indentation-guide-width) solid var(--nav-indentation-guide-color);
 }
+
+/* Obsidian's reordering classes, as its app.css draws them, for a drag in the harness. */
+body {
+  --layer-dragged-item: 80;
+  --drag-item-background: var(--background-primary);
+  --drag-item-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.drag-reorder-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-s);
+  z-index: var(--layer-dragged-item);
+  pointer-events: none;
+  cursor: grabbing;
+}
+
+.drag-reorder-ghost > .mod-dragged-item {
+  background-color: var(--drag-item-background);
+  box-shadow: var(--drag-item-shadow);
+}
+
+.drop-indicator {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
+  border: 2px solid var(--interactive-accent);
+  pointer-events: none;
+}
+
+.drop-indicator:not(.is-active) {
+  display: none;
+}
+
+.drag-ghost-hidden {
+  visibility: hidden;
+  position: relative;
+}
+
+.drag-ghost-hidden::before {
+  content: " ";
+  position: absolute;
+  inset: 0;
+  visibility: visible;
+  border-radius: 5px;
+  background-color: color-mix(in oklch, var(--interactive-accent) 30%, transparent);
+}

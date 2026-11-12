@@ -8,7 +8,7 @@ import { installObsidianDom } from "../testing/obsidianDom";
 import { TextTab } from "../testing/textTab";
 import { addableAt, describes, removableAt } from "./addableFields";
 import { TreeSession } from "./detail/treeSession";
-import { addAt, commit, removeAt, setValueAt } from "./edits";
+import { addAt, commit, describeMoveAt, moveAt, removeAt, setValueAt } from "./edits";
 import { mediaFileEdit } from "./mediaFile";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
@@ -405,6 +405,8 @@ describe("a card that writes", () => {
           asked = go;
         }
       },
+      describeMoveAt: (at) => describeMoveAt(service(), at),
+      moveAt: (at, target, version) => commit(doc, moveAt(service(), at, version, target)),
       settle: () => {
         draw();
       },
@@ -559,11 +561,63 @@ describe("a card that writes", () => {
     expect(doc.text).toContain("0 @U1@ SUBM\n1 NAME Domorium\n1 WWW https://example.org/");
   });
 
+  const gripOf = (label: string): HTMLElement | null =>
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")]
+      .find((row) => row.querySelector(".gedcom-tree-label")?.textContent === label)
+      ?.querySelector<HTMLElement>(".gedcom-tree-grip") ?? null;
+  const altUp = (grip: HTMLElement | null): void => {
+    grip?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", altKey: true, bubbles: true, cancelable: true }));
+  };
+
+  it("moves a line by its grip and brings the grip into view only after the scroll it kept", () => {
+    tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    draw();
+    const kept = body();
+    if (kept) {
+      kept.scrollTop = 120;
+    }
+    const seen: { key: string | null; scrollTop: number | undefined }[] = [];
+    scrollIntoView.mockImplementation(function (this: HTMLElement) {
+      seen.push({ key: this.getAttribute("data-focus-key"), scrollTop: body()?.scrollTop });
+    });
+    const grip = gripOf("Sex");
+    grip?.focus();
+    altUp(grip);
+
+    expect(doc.text).toContain("1 SEX F\n1 NAME Marie /Curie/");
+    expect(seen).toEqual([{ key: "t:SEX[0]:grip", scrollTop: 120 }]);
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:grip");
+    scrollIntoView.mockReset();
+  });
+
+  it("scrolls nothing into view for a redraw after the file changed", () => {
+    tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    draw();
+    gripOf("Sex")?.focus();
+    doc.replace(doc.text.replace("1 SEX F", "1 SEX M"));
+    draw();
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:grip");
+  });
+
+  it("refuses a move described from a text that moved on since the card was drawn, and draws the card again", () => {
+    tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    draw();
+    const grip = gripOf("Sex");
+    doc.replace(doc.text.replace("1 NAME Marie /Curie/", "1 NAME Maria /Curie/"));
+    altUp(grip);
+
+    expect(doc.text).toContain("1 NAME Maria /Curie/\n1 SEX F");
+    expect(doc.writes).toBe(0);
+    expect(texts(".gedcom-tree-row .gedcom-tree-summary, .gedcom-tree-row .gedcom-field")).toEqual(expect.arrayContaining([expect.stringContaining("Maria")]));
+  });
+
   it("offers no editing where the service has no dialect for the file, and says why", () => {
-    tab = writing(["0 @I1@ INDI", "1 SEX F"], []);
+    tab = writing(["0 @I1@ INDI", "1 SEX F", "1 NAME Marie /Curie/"], []);
     draw();
 
     expect(container.querySelector(".gedcom-tree-note")?.textContent).toContain("cannot be edited here");
-    expect(container.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, textarea:not([readonly]), select")).toHaveLength(0);
+    expect(container.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-grip, textarea:not([readonly]), select")).toHaveLength(0);
   });
 });

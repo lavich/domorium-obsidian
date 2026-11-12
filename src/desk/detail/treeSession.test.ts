@@ -75,4 +75,30 @@ describe("the choices of the reader in the trees", () => {
     expect(state.takeFocus()).toEqual({ key: "", parts: ["add"] });
     expect(state.takeFocus()).toBeUndefined();
   });
+
+  it("follow two names that swapped places, with what is beneath them, and leave every other line alone", () => {
+    const state = new TreeSession().stateFor("a");
+    const row = nickname();
+    state.setOpen("NAME[1]", true);
+    state.setOpen("NAME[1].SOUR[0]", true);
+    state.setOpen("note:NAME[1].0", true);
+    state.setOpen("NAME[10]", true);
+    state.setOpen("BIRT[0]", true);
+    state.setDraft("NAME[0]", { text: "Marie", over: "Maria" });
+    state.setMessage("NAME[1]:file", { text: "No", kind: "error" });
+    state.setUnwritten("NAME[1]", [row]);
+    state.wishFocus({ key: "NAME[0]", parts: ["grip"] });
+
+    state.renameKeys(new Map([["NAME[0]", "NAME[1]"], ["NAME[1]", "NAME[0]"]]));
+
+    expect(["NAME[0]", "NAME[1]", "NAME[0].SOUR[0]", "NAME[1].SOUR[0]", "note:NAME[0].0", "note:NAME[1].0", "NAME[10]", "BIRT[0]"].map((key) => state.isOpen(key))).toEqual([
+      true, false, true, false, true, false, true, true,
+    ]);
+    expect(state.draft("NAME[1]")?.text).toBe("Marie");
+    expect(state.draft("NAME[0]")).toBeUndefined();
+    expect(state.message("NAME[0]:file")?.text).toBe("No");
+    expect(state.unwritten("NAME[0]")).toEqual([row]);
+    expect(state.unwrittenParents()).toEqual(["NAME[0]"]);
+    expect(state.takeFocus()).toEqual({ key: "NAME[1]", parts: ["grip"] });
+  });
 });

@@ -468,6 +468,8 @@
     "one": "The field and the {count} line under it will be removed. You can undo it.",
     "other": "The field and the {count} lines under it will be removed. You can undo it."
   },
+  "tree.moveField": "Move {field}: drag, or press {keys}",
+  "tree.moved": "{field} moved to place {place} of {count}",
   "edit.refusal.value-not-in-enum": "This value is not one of those the standard lists here.",
   "edit.refusal.payload-datatype": "The standard cannot read this value here.",
   "edit.refusal.value-spans-lines": "A line break is not allowed in this value: it keeps to one line.",
@@ -476,6 +478,8 @@
   "edit.refusal.required-field-missing": "A line the standard requires beneath it is missing.",
   "edit.refusal.cardinality-exceeded": "The standard allows no more of this field here.",
   "edit.refusal.stale-document": "The file changed, so nothing was written. The card now shows the file as it is.",
+  "edit.refusal.reading-changed": "The file would be read otherwise with the line there, so nothing was written.",
+  "edit.refusal.not-a-sibling": "A line moves only among the lines beside it.",
   "edit.refusal.reciprocal-pointer-unsupported": "This link is changed on the other record.",
   "edit.refusal.rule-violation": "The standard does not allow this value here.",
   "edit.refusal.unknown-field": "The standard does not know this field here.",

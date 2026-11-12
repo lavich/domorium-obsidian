@@ -1,4 +1,7 @@
 import type {
+  MoveDescription,
+  MoveSlot,
+  MoveTarget,
   PointerCandidate,
   Position,
   StructureFieldDescription,
@@ -25,6 +28,7 @@ import {
   type DetailContext,
   type DetailHost,
 } from "./lineView";
+import { keyOf, movedKeys, TreeDrag } from "./treeMove";
 import { unwrittenId, type FocusWish, type TreeState, type Unwritten } from "./treeSession";
 
 /** An event or an attribute the page knows on one of the lines of the record. */
@@ -84,6 +88,13 @@ export interface TreeHost extends DetailHost {
   addAt?(parent: Position, tag: string, input: StructureInput): WriteOutcome;
   /** Removes the line at this position, asking first where `nested` lines go with it. */
   removeAt?(at: Position, nested: number, done: (outcome: WriteOutcome) => void): void;
+  /** Where the line at this position may go among its siblings, read from the text the card was drawn from. */
+  describeMoveAt?(at: Position): MoveDescription | Refusal;
+  moveAt?(at: Position, target: MoveTarget): WriteOutcome;
+  /** Whether the keys are named as a Macintosh names them. */
+  macKeys?: boolean;
+  /** Brings into view, once the card is drawn and its scroll restored, the grip of a line that moved. */
+  reveal?(element: HTMLElement): void;
   /** Draws the card again from the text, at once, after a write of its own. */
   settle?(): void;
   /** Says something through the card's polite live region. */
@@ -120,10 +131,6 @@ interface SummaryPart {
 
 let drawn = 0;
 
-function keyOf(parent: string, tag: string, nth: number): string {
-  return `${parent === "" ? "" : `${parent}.`}${tag}[${nth}]`;
-}
-
 function nodeKeys(lines: readonly RecordLine[], parent: string): string[] {
   const seen = new Map<string, number>();
   return lines.flatMap((line) => {
@@ -149,6 +156,8 @@ const descendants = (line: RecordLine): number =>
   line.children.reduce((sum, child) => sum + 1 + descendants(child), 0);
 
 const firstLine = (text: string): string => text.split("\n")[0] ?? "";
+
+const ownerKeyOf = (key: string): string => (key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : "");
 
 const pressable = (element: HTMLElement, label: string, focusKey: string): void => {
   element.setAttribute("role", "button");
@@ -252,8 +261,10 @@ class Tree {
     }
     const target = this.wished(wish);
     if (target) {
-      target.focus();
-      target.scrollIntoView({ block: "nearest" });
+      target.focus({ preventScroll: true });
+      if ("key" in wish && wish.reveal) {
+        this.options.host.reveal?.(target);
+      }
     }
   }
 
@@ -749,9 +760,15 @@ class Tree {
     const addable = host.addAt ? (host.addableAt?.(line.range.start) ?? []) : [];
     const canAdd = addable.length > 0;
     const canRemove = !root && host.removeAt !== undefined && (host.removableAt?.(owner.range.start, line.tag) ?? false);
-    const actions = canAdd || canRemove ? header.createDiv({ cls: "gedcom-tree-actions" }) : null;
+    const canMove =
+      !root &&
+      line.tag !== "" &&
+      host.moveAt !== undefined &&
+      host.describeMoveAt !== undefined &&
+      owner.children.filter((one) => one.tag !== "").length > 1;
+    const actions = canAdd || canRemove || canMove ? header.createDiv({ cls: "gedcom-tree-actions" }) : null;
     if (actions) {
-      header.setAttribute("data-actions", String(Number(canAdd) + Number(canRemove)));
+      header.setAttribute("data-actions", String(Number(canAdd) + Number(canRemove) + Number(canMove)));
     }
     if (actions && canRemove) {
       const remove = actions.createDiv({ cls: ["gedcom-tree-remove", "clickable-icon"] });
@@ -761,7 +778,7 @@ class Tree {
       } else {
         remove.setText("×");
       }
-      const ownerKey = key.includes(".") ? key.slice(0, key.lastIndexOf(".")) : "";
+      const ownerKey = ownerKeyOf(key);
       remove.addEventListener("click", (event) => {
         event.stopPropagation();
         if (!this.live()) {
@@ -795,6 +812,9 @@ class Tree {
           host.chooseField?.(menuAt(event, add), this.fieldChoices(line, key, addable));
         }
       });
+    }
+    if (actions && canMove) {
+      this.grip(actions, header, node, line, owner, key, named);
     }
 
     const children = isNode ? node.createDiv({ cls: ["gedcom-tree-children", "tree-item-children"] }) : null;
@@ -837,6 +857,93 @@ class Tree {
       });
     }
     show();
+  }
+
+  private grip(actions: HTMLElement, header: HTMLElement, node: HTMLElement, line: RecordLine, owner: RecordLine, key: string, named: string): void {
+    const { host } = this.options;
+    const grip = actions.createDiv({ cls: ["gedcom-tree-grip", "grip-handle"] });
+    grip.setAttribute("role", "button");
+    grip.setAttribute("tabindex", "0");
+    grip.setAttribute("data-focus-key", `t:${key}:grip`);
+    grip.setAttribute("aria-keyshortcuts", "Alt+ArrowUp Alt+ArrowDown");
+    grip.setAttribute("data-ignore-swipe", "true");
+    grip.setAttribute("aria-label", t("tree.moveField", { field: named, keys: host.macKeys ? "⌥↑ / ⌥↓" : "Alt+↑ / Alt+↓" }));
+    if (host.setIcon) {
+      host.setIcon(grip, "grip-vertical");
+    } else {
+      grip.setText("⋮⋮");
+    }
+    const refused = (refusal: Refusal): void => this.moveRefused(refusal, header, grip);
+    grip.addEventListener("keydown", (event) => {
+      const up = event.key === "ArrowUp";
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || (!up && event.key !== "ArrowDown")) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      const described = this.live() ? host.describeMoveAt?.(line.range.start) : undefined;
+      if (!described) {
+        return;
+      }
+      if (!described.ok) {
+        refused(described);
+        return;
+      }
+      const own = described.slots.findIndex((slot) => "before" in slot.target && slot.target.before.line === line.range.start.line);
+      const slot = own < 0 ? undefined : described.slots[up ? own - 1 : own + 2];
+      if (slot) {
+        this.move(line, owner, key, slot, refused);
+      }
+    });
+    grip.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0 || event.defaultPrevented || !this.live()) {
+        return;
+      }
+      new TreeDrag(event, {
+        grip,
+        node,
+        describe: () => host.describeMoveAt?.(line.range.start) ?? { ok: false, code: STALE, message: "" },
+        refused,
+        drop: (slot) => this.move(line, owner, key, slot, refused),
+      });
+    });
+  }
+
+  /** Moves a line to a slot among its siblings: the reader's choices follow it, and the focus goes to its grip. */
+  private move(line: RecordLine, owner: RecordLine, key: string, slot: MoveSlot, refused: (refusal: Refusal) => void): void {
+    const { host, state } = this.options;
+    const outcome = host.moveAt?.(line.range.start, slot.target);
+    if (!outcome) {
+      return;
+    }
+    if (!outcome.ok) {
+      refused(outcome);
+      return;
+    }
+    const { target } = slot;
+    const siblings = owner.children;
+    const before = "before" in target ? siblings.find((one) => one.range.start.line === target.before.line) : undefined;
+    const to = before ? siblings.indexOf(before) : siblings.length;
+    const renames = movedKeys(ownerKeyOf(key), siblings.map((one) => one.tag), siblings.indexOf(line), to);
+    const order = siblings.filter((one) => one !== line);
+    order.splice(before ? order.indexOf(before) : order.length, 0, line);
+    const tagged = order.filter((one) => one.tag !== "");
+    state.renameKeys(renames);
+    state.wishFocus({ key: renames.get(key) ?? key, parts: ["grip"], reveal: true });
+    this.say(t("tree.moved", { field: tagLabel(line.tag), place: tagged.indexOf(line) + 1, count: tagged.length }));
+    this.settle();
+  }
+
+  /** Says under the row why a move was not written; the message goes with the next drawing of the card. */
+  private moveRefused(refusal: Refusal, header: HTMLElement, grip: HTMLElement): void {
+    const message = { text: refusalText(refusal), kind: "error" as const };
+    if (grip.isConnected) {
+      showMessage(header, grip, message);
+    }
+    this.say(message.text);
+    if (refusal.code === STALE) {
+      this.settle();
+    }
   }
 
   /** The entries of a line's menu: every field the dialect allows beneath it, those that cannot be added disabled. */

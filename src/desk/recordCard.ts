@@ -1,4 +1,6 @@
 import type {
+  MoveDescription,
+  MoveTarget,
   PointerCandidate,
   Position,
   Range,
@@ -17,7 +19,7 @@ import { renderPersonPage, type PageHost, type PersonPageOptions } from "./perso
 import { renderRecordPage } from "./recordPage";
 import { renderSourcePage } from "./sourcePage";
 import type { Choices } from "./addableFields";
-import type { Refusal, WriteOutcome } from "./edits";
+import { STALE, type Refusal, type WriteOutcome } from "./edits";
 import type { FieldChoice, MenuAt, PointerChoice, TreeHost, ValueChoice } from "./detail/tree";
 import { recordTitle } from "./detail/lineView";
 import type { TreeSession } from "./detail/treeSession";
@@ -46,6 +48,8 @@ export interface CardTab {
   setValueAt?(at: Position, input: StructureValueInput, version: number): WriteOutcome;
   addAt?(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome;
   removeAt?(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void;
+  describeMoveAt?(at: Position): MoveDescription | Refusal;
+  moveAt?(at: Position, target: MoveTarget, version: number): WriteOutcome;
   /** Draws every view of the tab again from its text, at once. */
   settle?(): void;
   vaultFiles?(): string[];
@@ -67,6 +71,8 @@ export interface CardView {
   chooseDeviceFile?(chosen: (file: File) => void): void;
   /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
   header?: HTMLElement;
+  /** Whether the keys are named as a Macintosh names them. */
+  macKeys?: boolean;
 }
 
 const FOCUS_KEY = "data-focus-key";
@@ -105,6 +111,15 @@ export function renderRecordCard(
   }
 
   let drawsTree = false;
+  let drawing = true;
+  let revealed = null as HTMLElement | null;
+  const reveal = (element: HTMLElement): void => {
+    if (drawing) {
+      revealed = element;
+    } else {
+      element.scrollIntoView({ block: "nearest" });
+    }
+  };
   const selection = tab?.selection() ?? { record: null };
   const index = tab?.index();
   const record = tab && index && selection.record && pageKind(index, selection.record) ? selection.record : null;
@@ -128,7 +143,7 @@ export function renderRecordCard(
     const announce = (text: string): void => {
       live?.setText(text);
     };
-    drawRecord(body, tab, index, record, view, announce, drawsTree ? { tree: view.session.stateFor(shown), ...(header ? { header } : {}) } : {});
+    drawRecord(body, tab, index, record, view, announce, reveal, drawsTree ? { tree: view.session.stateFor(shown), ...(header ? { header } : {}) } : {});
     if (header && !header.hasChildNodes() && !view.header) {
       header.remove();
     }
@@ -144,6 +159,8 @@ export function renderRecordCard(
   if (shown === previous) {
     body.scrollTop = scrollTop;
   }
+  drawing = false;
+  revealed?.scrollIntoView({ block: "nearest" });
   const drawnFocus = doc.activeElement;
   if (focusWas !== null && !(drawnFocus !== null && drawnFocus !== body && root.contains(drawnFocus))) {
     const same =
@@ -170,6 +187,7 @@ function drawRecord(
   record: string,
   view: CardView,
   announce: (text: string) => void,
+  reveal: (element: HTMLElement) => void,
   folds: PersonPageOptions,
 ): void {
   const version = tab.version?.();
@@ -181,6 +199,8 @@ function drawRecord(
     openFile: (path) => tab.openFile(path),
     setIcon: (element, icon) => view.setIcon(element, icon),
     announce,
+    reveal,
+    ...(view.macKeys === undefined ? {} : { macKeys: view.macKeys }),
     addableAt: tab.addableAt?.bind(tab),
     choicesAt: tab.choicesAt?.bind(tab),
     proseAt: tab.proseAt?.bind(tab),
@@ -205,6 +225,17 @@ function drawRecord(
     host.removeAt = removeAt && ((at, nested, done) => {
       removeAt(at, nested, version, done);
     });
+    const describeMoveAt = tab.describeMoveAt?.bind(tab);
+    const moveAt = tab.moveAt?.bind(tab);
+    if (describeMoveAt && moveAt) {
+      host.describeMoveAt = (at) => {
+        const described = describeMoveAt(at);
+        return described.ok && described.version !== version
+          ? { ok: false, code: STALE, message: "The document changed since the card was drawn." }
+          : described;
+      };
+      host.moveAt = (at, target) => moveAt(at, target, version);
+    }
     host.settle = tab.settle?.bind(tab);
     host.replaceFile = replacingFile(tab, view, version, host);
   }

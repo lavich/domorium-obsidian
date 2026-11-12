@@ -87,6 +87,8 @@ import {
   addAt,
   checkValue,
   commit,
+  describeMoveAt,
+  moveAt,
   refusalText,
   removeAt,
   requiredBeneath,
@@ -102,7 +104,10 @@ import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
 import { documentRef, type GenealogyIndex } from "./genealogy";
 import type {
+  EditRefusal,
   GedcomLanguageService,
+  MoveDescription,
+  MoveTarget,
   PointerCandidate,
   Position,
   StructureFieldDescription,
@@ -801,6 +806,14 @@ export class GedcomView extends TextFileView implements CardTab {
 
   addAt(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome {
     return this.wrote(commit(this.editTarget, addAt(this.service(), parent, version, tag, input)));
+  }
+
+  describeMoveAt(at: Position): MoveDescription | EditRefusal {
+    return describeMoveAt(this.service(), at);
+  }
+
+  moveAt(at: Position, target: MoveTarget, version: number): WriteOutcome {
+    return this.wrote(commit(this.editTarget, moveAt(this.service(), at, version, target)));
   }
 
   removeAt(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void {

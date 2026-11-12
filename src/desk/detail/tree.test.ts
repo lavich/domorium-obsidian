@@ -4,13 +4,14 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { resetLanguage, setLanguage } from "../../i18n";
-import { curieIndex } from "../../testing/curie";
+import { CURIE, curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { TextTab } from "../../testing/textTab";
 import { addableAt, choicesAt, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
-import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../edits";
+import { addAt, checkValue, commit, describeMoveAt, moveAt, removeAt, requiredBeneath, setValueAt, STALE } from "../edits";
 import { factsOf } from "../personPage";
 import { factsByLine, renderTree, type FieldChoice, type TreeHost } from "./tree";
+import { movedKeys, slotAt, slotsByBoundary, TreeDrag } from "./treeMove";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
 
 beforeAll(installObsidianDom);
@@ -77,7 +78,11 @@ interface Editing {
 
 /** A tree that writes through the real service into a text, and is drawn again from it after each write, as the card is. */
 function editing(lines: string[], version: "7.0" | "5.5.1" = "7.0", xref = "@I1@", extra: Partial<Omit<TreeHost, Asked>> = {}, state = ephemeralTreeState()): Editing {
-  const tab = new TextTab([...HEAD[version], ...lines, "0 TRLR"].join("\n"));
+  return editingText([...HEAD[version], ...lines, "0 TRLR"].join("\n"), xref, extra, state);
+}
+
+function editingText(text: string, xref: string, extra: Partial<Omit<TreeHost, Asked>> = {}, state = ephemeralTreeState()): Editing {
+  const tab = new TextTab(text);
   let drawn = tab.version;
   let draws = 0;
   const service = () => tab.service();
@@ -98,6 +103,11 @@ function editing(lines: string[], version: "7.0" | "5.5.1" = "7.0", xref = "@I1@
     removeAt: (at, _nested, done) => {
       done(commit(tab, removeAt(service(), at, drawn)));
     },
+    describeMoveAt: (at) => {
+      const described = describeMoveAt(service(), at);
+      return described.ok && described.version !== drawn ? { ok: false, code: STALE, message: "stale" } : described;
+    },
+    moveAt: (at, target) => commit(tab, moveAt(service(), at, drawn, target)),
     settle: () => {
       redraw();
     },
@@ -1604,5 +1614,322 @@ describe("the file of a medium", () => {
     editing(["0 @O1@ OBJE", "1 FILE Media/a.jpg", "2 FORM image/jpeg"], "7.0", "@O1@", { replaceFile: vi.fn(), mediaFileAt: () => null });
 
     expect(fileControl()?.getAttribute("aria-label")).toBe("Сменить файл Media/a.jpg");
+  });
+});
+
+const gripOf = (row: Element): HTMLElement | null => row.querySelector<HTMLElement>(".gedcom-tree-grip");
+const grip = (label: string, at = 0): HTMLElement => {
+  const found = gripOf(rowNamed(label, at));
+  if (!found) {
+    throw new Error(`no grip on ${label}`);
+  }
+  return found;
+};
+const pointer = (target: EventTarget, type: string, x = 0, y = 0): void => {
+  target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
+};
+const dragged = (): Element[] => [...document.querySelectorAll(".drag-reorder-ghost, .drop-indicator, .drag-ghost-hidden, body.is-grabbing")];
+const marie = (extra: Partial<Omit<TreeHost, Asked>> = {}, state = ephemeralTreeState()): Editing => editingText(CURIE, "@I1@", extra, state);
+
+describe("the keys of a moved line", () => {
+  it("stay where a line moves among lines of other tags", () => {
+    expect(movedKeys("", ["NAME", "NAME", "SEX", "BIRT"], 2, 0)).toEqual(new Map());
+  });
+
+  it("swap for a name moved past another name, and nothing else is renamed", () => {
+    expect(movedKeys("", ["NAME", "SEX", "NAME"], 2, 0)).toEqual(new Map([["NAME[1]", "NAME[0]"], ["NAME[0]", "NAME[1]"]]));
+  });
+
+  it("follow a line moved to the end, beneath its parent's key", () => {
+    expect(movedKeys("BIRT[0]", ["SOUR", "SOUR", "DATE", "SOUR"], 0, 4)).toEqual(
+      new Map([["BIRT[0].SOUR[0]", "BIRT[0].SOUR[2]"], ["BIRT[0].SOUR[1]", "BIRT[0].SOUR[0]"], ["BIRT[0].SOUR[2]", "BIRT[0].SOUR[1]"]]),
+    );
+  });
+});
+
+describe("the place a dragged line would go", () => {
+  const boxes = [
+    { top: 0, middle: 10, bottom: 20 },
+    { top: 24, middle: 34, bottom: 90 },
+    { top: 94, middle: 104, bottom: 114 },
+  ];
+
+  it("is before a sibling above the middle of its row, and after it anywhere lower in its box, the lines beneath it included", () => {
+    expect([5, 15, 30, 40, 80, 100, 110].map((y) => slotAt(boxes, y))).toEqual([0, 1, 1, 2, 2, 2, 3]);
+  });
+
+  it("is none outside the band of the siblings", () => {
+    expect([slotAt(boxes, -1), slotAt(boxes, 115), slotAt([], 0)]).toEqual([null, null, null]);
+  });
+
+  it("is the description's slot matched by line, the end after the last row that has one, and none before a row with no tag", () => {
+    const at = (line: number) => ({ line, character: 0 });
+    const slots = [
+      { target: { before: at(4) }, changesOrder: true },
+      { target: { before: at(6) }, changesOrder: false },
+      { target: { end: true as const }, changesOrder: false },
+    ];
+
+    const placed = slotsByBoundary([4, 5, 6], slots);
+
+    expect([...placed.keys()]).toEqual([0, 2, 3]);
+    expect(placed.get(1)).toBeUndefined();
+    expect(placed.get(3)).toBe(slots[2]);
+  });
+});
+
+describe("the grip of a line", () => {
+  it("is on every line with a tagged sibling, never on the root, the type alone under a name, or a card that does not write", () => {
+    marie();
+    open("Name", 1);
+    open("Birth");
+
+    expect(gripOf(rootRow())).toBeNull();
+    expect(gripOf(rowNamed("Type"))).toBeNull();
+    expect([gripOf(rowNamed("Date")), gripOf(rowNamed("Place")), gripOf(rowNamed("Sex"))].every((one) => one !== null)).toBe(true);
+
+    box.replaceChildren();
+    draw(make(["0 @I1@ INDI", "1 NAME Maria /Curie/", "1 SEX F"]));
+    expect(box.querySelector(".gedcom-tree-grip")).toBeNull();
+  });
+
+  it("is the last control of the group, which counts it", () => {
+    marie();
+    const row = rowNamed("Name");
+
+    expect([...(row.querySelector(".gedcom-tree-actions")?.children ?? [])].map((one) => one.classList[0])).toEqual([
+      "gedcom-tree-remove",
+      "gedcom-tree-add",
+      "gedcom-tree-grip",
+    ]);
+    expect(row.getAttribute("data-actions")).toBe("3");
+  });
+
+  it("stands alone in the group of a line the standard requires and that takes no field", () => {
+    editing(["0 @U1@ SUBM", "1 NAME Domorium", "1 WWW https://example.org/"], "7.0", "@U1@");
+    const row = rowNamed("Name");
+
+    expect(row.querySelector(".gedcom-tree-actions")?.children).toHaveLength(1);
+    expect(gripOf(row)).not.toBeNull();
+    expect(row.getAttribute("data-actions")).toBe("1");
+  });
+
+  it("is on no line written as a level with no tag, which is not counted as a sibling", () => {
+    editing(["0 @I1@ INDI", "1 SEX F", "1", "1 NAME Maria /Curie/"]);
+
+    expect(rows().map((row) => gripOf(row) !== null)).toEqual([true, false, true]);
+  });
+
+  it("is a button named for its row and the keys that move it, as a Macintosh names them there", () => {
+    marie();
+    const named = grip("Name", 1);
+
+    expect(named.getAttribute("role")).toBe("button");
+    expect(named.getAttribute("tabindex")).toBe("0");
+    expect(named.getAttribute("aria-keyshortcuts")).toBe("Alt+ArrowUp Alt+ArrowDown");
+    expect(named.getAttribute("data-ignore-swipe")).toBe("true");
+    expect(named.getAttribute("data-focus-key")).toBe("t:NAME[1]:grip");
+    expect(named.getAttribute("aria-label")).toBe("Move Name 2: drag, or press Alt+↑ / Alt+↓");
+
+    marie({ macKeys: true });
+    expect(grip("Sex").getAttribute("aria-label")).toBe("Move Sex: drag, or press ⌥↑ / ⌥↓");
+  });
+
+  it("writes nothing and opens nothing for Enter, Space and a click", () => {
+    const { tab } = marie();
+    const birth = grip("Birth");
+    press(birth, "Enter");
+    press(birth, " ");
+    birth.click();
+
+    expect(tab.writes).toBe(0);
+    expect(rowNamed("Birth").parentElement?.classList.contains("is-open")).toBe(false);
+  });
+});
+
+describe("a line moved by the keyboard", () => {
+  it("goes up one place with Alt+↑, keeps the focus on its grip and says its new place", () => {
+    const { tab, host } = marie();
+    const sex = grip("Sex");
+    sex.focus();
+    press(sex, "ArrowUp", { altKey: true });
+
+    const lines = fileLines(tab);
+    expect(lines.indexOf("1 SEX F")).toBe(lines.indexOf("1 NAME Maria Salomea /Skłodowska/") - 1);
+    expect(tab.writes).toBe(1);
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:grip");
+    expect(host.announce).toHaveBeenCalledWith("Sex moved to place 2 of 14");
+  });
+
+  it("goes down one place with Alt+↓, and the second name then reads as the first", () => {
+    const { tab } = marie();
+    press(grip("Name"), "ArrowDown", { altKey: true });
+
+    const lines = fileLines(tab);
+    expect(lines.indexOf("1 NAME Maria Salomea /Skłodowska/")).toBeLessThan(lines.indexOf("1 NAME Marie /Skłodowska-Curie/"));
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:NAME[1]:grip");
+  });
+
+  it("writes nothing at the first place", () => {
+    const { tab } = marie();
+    const first = grip("Name");
+    first.focus();
+    press(first, "ArrowUp", { altKey: true });
+
+    expect(tab.writes).toBe(0);
+    expect(document.activeElement).toBe(first);
+  });
+
+  it("does nothing with another modifier held, or without Alt", () => {
+    const { tab } = marie();
+    press(grip("Sex"), "ArrowUp", { altKey: true, shiftKey: true });
+    press(grip("Sex"), "ArrowUp", { altKey: true, ctrlKey: true });
+    press(grip("Sex"), "ArrowUp");
+
+    expect(tab.writes).toBe(0);
+  });
+
+  it("takes an opened name with it, and leaves the name it passed closed", () => {
+    marie();
+    open("Name", 1);
+    press(grip("Name", 1), "ArrowUp", { altKey: true });
+
+    expect(rowNamed("Name", 0).parentElement?.classList.contains("is-open")).toBe(true);
+    expect(rowNamed("Name", 1).parentElement?.classList.contains("is-open")).toBe(false);
+    expect(rows().map(labelOf).slice(0, 3)).toEqual(["Name", "Type", "Name"]);
+  });
+
+  it("is refused where the file would be read otherwise, and says why under its row in Russian", () => {
+    setLanguage("ru");
+    const { tab, host } = editing(["0 @I1@ INDI", "1 BIRT", "3 DATE 1900", "2 PLAC x"]);
+    const before = tab.text;
+    open("Рождение");
+    const place = grip("Место");
+    press(place, "ArrowUp", { altKey: true });
+
+    expect(tab.text).toBe(before);
+    const said = "Со строкой на этом месте файл читался бы иначе, поэтому ничего не записано.";
+    expect(messageOf(place)).toBe(said);
+    expect(rowNamed("Место").nextElementSibling?.textContent).toBe(said);
+    expect(host.announce).toHaveBeenCalledWith(said);
+  });
+
+  it("is refused for a description of a text that moved on, and the card is drawn again", () => {
+    const { tab, draws } = editing(["0 @I1@ INDI", "1 SEX F", "1 NAME Maria /Curie/"]);
+    tab.replace(tab.text.replace("1 SEX F", "1 SEX M"));
+    const drawnBefore = draws();
+    press(grip("Name"), "ArrowUp", { altKey: true });
+
+    expect(fileLines(tab).indexOf("1 SEX M")).toBeLessThan(fileLines(tab).indexOf("1 NAME Maria /Curie/"));
+    expect(draws()).toBe(drawnBefore + 1);
+  });
+});
+
+describe("a line dragged by its grip", () => {
+  it("writes nothing and adds nothing for a press without movement", () => {
+    const { tab } = marie();
+    const sex = grip("Sex");
+    pointer(sex, "pointerdown");
+    pointer(sex, "pointermove", 2, 2);
+    pointer(sex, "pointerup", 2, 2);
+
+    expect(tab.writes).toBe(0);
+    expect(dragged()).toEqual([]);
+    expect([...document.body.children]).toEqual([box]);
+  });
+
+  it("lifts a copy of the row with no identifier or focus key, and leaves nothing once Escape ends it", () => {
+    const { tab } = marie();
+    const sex = grip("Sex");
+    pointer(sex, "pointerdown");
+    pointer(sex, "pointermove", 0, 20);
+
+    const ghost = document.querySelector(".drag-reorder-ghost");
+    expect(ghost?.getAttribute("aria-hidden")).toBe("true");
+    expect(ghost?.hasAttribute("inert")).toBe(true);
+    expect(ghost?.querySelector(".mod-dragged-item .gedcom-tree-label")?.textContent).toBe("Sex");
+    expect(ghost?.querySelectorAll("[id], [data-focus-key]")).toHaveLength(0);
+    expect(document.body.classList.contains("is-grabbing")).toBe(true);
+    expect(rowNamed("Sex").parentElement?.classList.contains("drag-ghost-hidden")).toBe(true);
+    expect(box.querySelectorAll(".gedcom-tree .drop-indicator")).toHaveLength(1);
+
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    pointer(sex, "pointerup", 0, 20);
+
+    expect(dragged()).toEqual([]);
+    expect(tab.writes).toBe(0);
+  });
+
+  it("ends once for every way it can end", () => {
+    marie();
+    const sex = grip("Sex");
+    const node = rowNamed("Sex").parentElement as HTMLElement;
+    const drop = vi.fn();
+    const drag = new TreeDrag(new PointerEvent("pointerdown", { pointerId: 7, cancelable: true }), {
+      grip: sex,
+      node,
+      describe: () => ({ ok: true, version: 1, range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, subtreeRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, slots: [] }),
+      refused: vi.fn(),
+      drop,
+    });
+    sex.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 7, clientY: 30 }));
+    drag.end();
+    drag.end();
+    sex.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 7, clientY: 30 }));
+
+    expect(dragged()).toEqual([]);
+    expect(drop).not.toHaveBeenCalled();
+  });
+
+  it("ends without writing when the pointer is cancelled", () => {
+    const { tab } = marie();
+    const sex = grip("Sex");
+    pointer(sex, "pointerdown");
+    pointer(sex, "pointermove", 0, 20);
+    pointer(sex, "pointercancel", 0, 20);
+
+    expect(dragged()).toEqual([]);
+    expect(tab.writes).toBe(0);
+  });
+
+  it("writes a value being typed first and starts no drag", () => {
+    const { tab } = marie();
+    type(fieldOf(rowNamed("Occupation")), "Physicist");
+    const sex = grip("Sex");
+    pointer(sex, "pointerdown");
+    pointer(sex, "pointermove", 0, 20);
+
+    expect(fileLines(tab)).toContain("1 OCCU Physicist");
+    expect(dragged()).toEqual([]);
+  });
+
+  it("starts no drag where a value being typed is refused, and the focus stays in its field", () => {
+    const { tab } = editing(["0 @I1@ INDI", "1 BIRT", "2 DATE 7 NOV 1867", "1 DEAT Y", "1 SEX F"]);
+    open("Birth");
+    const date = fieldOf(rowNamed("Date"));
+    type(date, "31 NOV 1867");
+    const death = grip("Death");
+    pointer(death, "pointerdown");
+    pointer(death, "pointermove", 0, 20);
+
+    expect(tab.writes).toBe(0);
+    expect(dragged()).toEqual([]);
+    expect(document.activeElement).toBe(date);
+    expect(messageOf(date)).toBeDefined();
+  });
+
+  it("leaves the focus in an empty unwritten row, which stays", async () => {
+    const { host } = editing(["0 @I1@ INDI", "1 NAME Maria /Curie/", "2 GIVN Maria", "1 SEX F"]);
+    open("Name");
+    rowNamed("Name").querySelector<HTMLElement>(".gedcom-tree-add")?.click();
+    menuEntry(host, "Nickname").choose();
+    const area = document.activeElement;
+    const sex = grip("Sex");
+    pointer(sex, "pointerdown");
+    pointer(sex, "pointerup");
+    await settled();
+
+    expect(document.activeElement).toBe(area);
+    expect(box.querySelectorAll(".is-unwritten")).toHaveLength(1);
   });
 });
