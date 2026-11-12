@@ -248,7 +248,7 @@ export class GedcomView extends TextFileView implements CardTab {
         });
         this.editor.scrollDOM.scrollTop = scroll;
       }
-      this.language.update(data);
+      this.language.update(this.editor.state.doc);
     } finally {
       this.applyingData = false;
     }
