@@ -71,7 +71,6 @@ export interface CardView {
   chooseDeviceFile?(chosen: (file: File) => void): void;
   /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
   header?: HTMLElement;
-  macKeys?: boolean;
 }
 
 const FOCUS_KEY = "data-focus-key";
@@ -199,7 +198,6 @@ function drawRecord(
     setIcon: (element, icon) => view.setIcon(element, icon),
     announce,
     reveal,
-    ...(view.macKeys === undefined ? {} : { macKeys: view.macKeys }),
     addableAt: tab.addableAt?.bind(tab),
     choicesAt: tab.choicesAt?.bind(tab),
     proseAt: tab.proseAt?.bind(tab),

@@ -30,11 +30,12 @@ export interface Unwritten {
   parent: { tag: string; text: string | undefined; range: { start: Position } };
 }
 
-/** Where the focus goes once the tree is drawn again: a control of a node, or a part of the line written at `line` under a node. */
+/** Where the focus goes once the tree is drawn again: a control of a node, or a part of the line written at `line` under a node; `reveal` only brings a moved line's grip into view. */
 export type FocusWish =
-  | { key: string; parts: string[]; reveal?: boolean; focus?: false }
+  | { key: string; parts: string[] }
   | { under: string; line: number; parts: string[] }
-  | { unwritten: number };
+  | { unwritten: number }
+  | { reveal: string };
 
 /** What the tree of one record asks of the reader's choices, and where it tells of a change. */
 export interface TreeState {
@@ -161,6 +162,8 @@ export class TreeSession {
           held.focus = { ...wish, key: renamed(renames, wish.key) };
         } else if (wish && "under" in wish) {
           held.focus = { ...wish, under: renamed(renames, wish.under) };
+        } else if (wish && "reveal" in wish) {
+          held.focus = { reveal: renamed(renames, wish.reveal) };
         }
       },
     };

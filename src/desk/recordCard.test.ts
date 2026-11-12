@@ -565,11 +565,22 @@ describe("a card that writes", () => {
     [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")]
       .find((row) => row.querySelector(".gedcom-tree-label")?.textContent === label)
       ?.querySelector<HTMLElement>(".gedcom-tree-grip") ?? null;
-  const altUp = (grip: HTMLElement | null): void => {
-    grip?.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", altKey: true, bubbles: true, cancelable: true }));
+  const pointer = (grip: HTMLElement | null, type: string, y: number): void => {
+    grip?.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, isPrimary: true, clientY: y }));
+  };
+  const laidOut = (): void => {
+    const nodes = [...container.querySelectorAll<HTMLElement>(".gedcom-tree-node.is-root > .gedcom-tree-children > .gedcom-tree-node")];
+    nodes.forEach((node, at) => {
+      const box = { x: 0, y: at * 30, top: at * 30, bottom: at * 30 + 26, left: 0, right: 300, width: 300, height: 26, toJSON: () => ({}) } as DOMRect;
+      node.getBoundingClientRect = () => box;
+      const row = node.querySelector<HTMLElement>(":scope > .gedcom-tree-row");
+      if (row) {
+        row.getBoundingClientRect = () => box;
+      }
+    });
   };
 
-  it("moves a line by its grip and brings the grip into view only after the scroll it kept", () => {
+  it("moves a line by its grip and brings the grip into view only after the scroll it kept", async () => {
     tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
     draw();
     const kept = body();
@@ -580,25 +591,28 @@ describe("a card that writes", () => {
     scrollIntoView.mockImplementation(function (this: HTMLElement) {
       seen.push({ key: this.getAttribute("data-focus-key"), scrollTop: body()?.scrollTop });
     });
+    laidOut();
     const grip = gripOf("Sex");
-    grip?.focus();
-    altUp(grip);
+    pointer(grip, "pointerdown", 43);
+    pointer(grip, "pointermove", 4);
+    pointer(grip, "pointerup", 4);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
 
     expect(doc.text).toContain("1 SEX F\n1 NAME Marie /Curie/");
     expect(seen).toEqual([{ key: "t:SEX[0]:grip", scrollTop: 120 }]);
-    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:grip");
+    expect(document.activeElement?.closest(".gedcom-tree-grip")).toBeNull();
     scrollIntoView.mockReset();
   });
 
   it("scrolls nothing into view for a redraw after the file changed", () => {
     tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
     draw();
-    gripOf("Sex")?.focus();
+    container.querySelector<HTMLElement>('[data-focus-key="t:SEX[0]:value"]')?.focus();
     doc.replace(doc.text.replace("1 SEX F", "1 SEX M"));
     draw();
 
     expect(scrollIntoView).not.toHaveBeenCalled();
-    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:grip");
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:value");
   });
 
   it("refuses a move described from a text that moved on since the card was drawn, and draws the card again", () => {
@@ -609,7 +623,8 @@ describe("a card that writes", () => {
     const drawn = doc.version;
     const grip = gripOf("Sex");
     doc.replace(doc.text.replace("1 NAME Marie /Curie/", "1 NAME Maria /Curie/"));
-    altUp(grip);
+    pointer(grip, "pointerdown", 43);
+    pointer(grip, "pointermove", 4);
 
     expect(asked).toHaveBeenCalledWith(expect.anything(), drawn);
     expect(asked.mock.results[0]?.value).toMatchObject({ ok: false, code: "stale-document" });

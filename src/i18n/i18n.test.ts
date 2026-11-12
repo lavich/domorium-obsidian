@@ -107,12 +107,12 @@ describe("filling a message", () => {
       expect(placeholdersOf(ru[key] ?? "")).toEqual(placeholdersOf(en[key]));
     }
     const refused = (code: string): string => refusalText({ code, message: "service" });
-    expect(t("tree.moveField", { field: "Birth", keys: "Alt+↑ / Alt+↓" })).toBe("Move Birth: drag, or press Alt+↑ / Alt+↓");
+    expect(t("tree.moveField", { field: "Birth" })).toBe("Drag to move Birth");
     expect(t("tree.moved", { field: "Sex", place: 2, count: 14 })).toBe("Sex moved to place 2 of 14");
     expect([refused("reading-changed"), refused("not-a-sibling")]).toEqual([en["edit.refusal.reading-changed"], en["edit.refusal.not-a-sibling"]]);
 
     setLanguage("ru");
-    expect(t("tree.moveField", { field: "Рождение", keys: "Alt+↑ / Alt+↓" })).toBe("Переместить «Рождение»: перетащите или нажмите Alt+↑ / Alt+↓");
+    expect(t("tree.moveField", { field: "Рождение" })).toBe("Перетащите, чтобы переместить «Рождение»");
     expect([refused("reading-changed"), refused("not-a-sibling")]).toEqual([ru["edit.refusal.reading-changed"], ru["edit.refusal.not-a-sibling"]]);
   });
 });

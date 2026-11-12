@@ -1035,11 +1035,7 @@ test.describe("moving a line among its siblings", () => {
     expect(await page.evaluate(() => document.querySelector(":focus-visible") === null)).toBe(true);
     await page.mouse.move(5, 5);
     await expect.poll(() => opacityOf(nthRow(page, "Name", 0).locator(".gedcom-tree-actions"))).toBe("0");
-
-    await moved.focus();
-    await page.keyboard.press("Alt+ArrowDown");
-    expect(await marieText(page)).toContain("1 NAME Marie /Skłodowska-Curie/\n2 GIVN Marie\n2 SURN Skłodowska-Curie\n1 NAME Maria Salomea");
-    await expect(page.locator('[data-focus-key="t:NAME[1]:grip"]')).toBeFocused();
+    expect(await moved.getAttribute("tabindex")).toBeNull();
   });
 
   test("draws the grip in the faint text colour and the drop line in the accent, as the app draws its own", async ({ page }) => {
@@ -1084,17 +1080,6 @@ test.describe("moving a line among its siblings", () => {
     expect(await marieText(page)).toContain("2 PLAC Warsaw, Congress Poland\n2 DATE 7 NOV 1867");
   });
 
-  test("writes nothing for Alt+↓ at the last place", async ({ page }) => {
-    await mountDesk(page, { width: 400 });
-    const before = await page.evaluate(() => window.desk.text());
-    const last = page.locator(".gedcom-tree-node.is-root > .gedcom-tree-children > .gedcom-tree-node:last-child > .gedcom-tree-row .gedcom-tree-grip");
-    await expect(last).toHaveAttribute("data-focus-key", "t:SOUR[1]:grip");
-    await last.focus();
-    await page.keyboard.press("Alt+ArrowDown");
-
-    expect(await page.evaluate(() => window.desk.text())).toBe(before);
-  });
-
   test("drops after a sibling over the lines nested beneath it, never between them", async ({ page }) => {
     await mountDesk(page, { width: 400 });
     await pressArrow(page, "Birth");
@@ -1114,8 +1099,9 @@ test.describe("moving a line among its siblings", () => {
     await mountDesk(page, { width: 400 });
     await nthRow(page, "Name", 1).hover();
     await nthRow(page, "Name", 1).locator(".gedcom-tree-chevron").click();
-    await gripOf(nthRow(page, "Name", 1)).focus();
-    await page.keyboard.press("Alt+ArrowUp");
+    const at = await press(page, gripOf(nthRow(page, "Name", 1)));
+    await page.mouse.move(at.x, (await top(nthRow(page, "Name", 0))) + 3, { steps: 4 });
+    await page.mouse.up();
 
     expect(await marieText(page)).toContain(SECOND_FIRST);
     await expect(treeRow(page, "Type")).toBeVisible();
@@ -1126,8 +1112,9 @@ test.describe("moving a line among its siblings", () => {
     await mountDesk(page, { width: 400, doc: "0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @I1@ INDI\n1 BIRT\n3 DATE 1900\n2 PLAC x\n0 TRLR\n" });
     const before = await page.evaluate(() => window.desk.text());
     await pressArrow(page, "Birth");
-    await gripOf(treeRow(page, "Place")).focus();
-    await page.keyboard.press("Alt+ArrowUp");
+    const at = await press(page, gripOf(treeRow(page, "Place")));
+    await page.mouse.move(at.x, (await top(treeRow(page, "Date"))) + 3, { steps: 4 });
+    await page.mouse.up();
 
     expect(await page.evaluate(() => window.desk.text())).toBe(before);
     await expect(page.locator(".gedcom-tree-row + .gedcom-tree-message")).toContainText("would be read differently");
@@ -1164,20 +1151,22 @@ test.describe("moving a line among its siblings", () => {
     await expect(page.locator(".drag-reorder-ghost")).toHaveCount(0);
   });
 
-  test("scrolls just enough to show the grip of a line moved past the bottom edge, and not for a change of the file", async ({ page }) => {
+  test("shows the grip of a line dropped at the bottom edge, and scrolls nothing for a change of the file", async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 420 });
-    await mountDesk(page, { width: 400, doc: longDoc(12) });
+    await mountDesk(page, { width: 400, doc: longDoc(40) });
     const body = page.locator(".gedcom-card-body");
-    await gripOf(nthRow(page, "Event", 0)).focus();
-    for (let at = 0; at < 8; at += 1) {
-      await page.keyboard.press("Alt+ArrowDown");
-    }
-    const grip = page.locator('[data-focus-key="t:EVEN[8]:grip"]');
-    await expect(grip).toBeFocused();
-    const shown = await grip.boundingBox();
     const view = await body.boundingBox();
+    const at = await press(page, gripOf(nthRow(page, "Event", 0)));
+    await page.mouse.move(at.x, (view?.y ?? 0) + (view?.height ?? 0) - 4, { steps: 6 });
+    await expect.poll(() => scrollTopOf(page)).toBeGreaterThan(100);
+    await page.mouse.up();
+
+    expect((await marieText(page)).indexOf("1 EVEN Event 0\n")).toBeGreaterThan((await marieText(page)).indexOf("1 EVEN Event 1\n"));
+    const grip = page.locator(".gedcom-tree-row", { hasText: /Event 0 ·/u }).locator(".gedcom-tree-grip");
+    const shown = await grip.boundingBox();
+    expect(shown && view ? shown.y : -1).toBeGreaterThanOrEqual(view?.y ?? 0);
     expect(shown && view ? shown.y + shown.height : 0).toBeLessThanOrEqual((view?.y ?? 0) + (view?.height ?? 0) + 1);
-    expect(shown && view ? shown.y + shown.height : 0).toBeGreaterThan((view?.y ?? 0) + (view?.height ?? 0) - 60);
+    await expect(grip).not.toBeFocused();
 
     const scrolled = await scrollTopOf(page);
     await page.evaluate(() => {

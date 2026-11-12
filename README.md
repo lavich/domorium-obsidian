@@ -134,8 +134,8 @@ and anything else waits as an unwritten row until it has a value and what the
 standard requires beneath it — a role for an associated person, for instance. The
 bin of a line removes it with everything beneath it, asking first when lines go
 with it. The six-dot grip at the end of a row drags the line, with everything
-beneath it, to another place among its siblings, or moves it one place with
-Alt+↑ / Alt+↓; a place that would change how the file is read is refused. What the service refuses is not written, and the reason is shown under
+beneath it, to another place among its siblings, with a mouse or a finger; a
+place that would change how the file is read is refused. What the service refuses is not written, and the reason is shown under
 the field; a change made against text that has moved since the card was drawn —
 an edit in Source, a second press — is refused and the card is drawn again from
 the file. The header edits as any record, and the language service refuses what

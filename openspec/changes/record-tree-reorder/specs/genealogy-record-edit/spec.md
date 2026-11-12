@@ -4,11 +4,23 @@
 
 In the tree of a record the card writes, every line that has a tag and at least one sibling with a tag — another line beneath the same line — SHALL carry a **grip**: the six-dot icon the app uses for reordering, as the last control of the group that holds the line's removal and add controls, at the end of its row, shown with them while the pointer is over the row or the group has the focus, and always shown, at least 44 pixels in each direction, where the pointer is coarse or the app is the mobile one. The root of the tree, an unwritten row, a line with no sibling, a line written as a level with no tag, a line beneath such a line, a line of a shared note drawn where its pointer is, and every line of a card that does not write SHALL carry no grip.
 
-Dragging the grip SHALL work the same with a mouse, a pen and a finger. A press that moves less than 5 pixels SHALL NOT start a drag and SHALL do nothing. Once the drag starts, a copy of the row SHALL follow the pointer, the line's place in the tree, the lines beneath it included, SHALL be marked as the app marks a dragged item's place, and no row SHALL be painted as under the pointer. A line in the accent colour SHALL show where the line would go, only at a place among its own siblings that changes the order: before a sibling, or after the last one. The lines nested beneath a sibling SHALL NOT be places: over them the line shows the place after that sibling. Over the line's own place, over the place right after it, and anywhere outside the band its siblings take, no line SHALL be shown. Releasing where a line is shown SHALL move the line, with every line beneath it and its continuation lines, to that place, as the language service writes it; releasing where none is shown, pressing Escape, or the system cancelling the pointer SHALL end the drag and write nothing. While the pointer is near the top or the bottom edge of the card, the card SHALL scroll in that direction. On touch the drag SHALL start as soon as the finger pulls the grip, without holding it first; a finger anywhere else on the row SHALL scroll the card as before, and dragging the grip SHALL NOT open, close or switch the side panels. A press on the grip SHALL NOT move the focus or select text, so a field that has the focus keeps it, an empty unwritten row among them. Where a value is being typed, a press on the grip SHALL first write it, as a press on any other control does, and SHALL start no drag, whether the value was written or refused; the reader drags again. A drag in progress SHALL end without writing when the card is drawn again.
+Dragging the grip SHALL work the same with a mouse, a pen and a finger. A press that moves less than 5 pixels SHALL NOT start a drag and SHALL do nothing. Once the drag starts, a copy of the row SHALL follow the pointer, the line's place in the tree, the lines beneath it included, SHALL be marked as the app marks a dragged item's place, and no row SHALL be painted as under the pointer. A line in the accent colour SHALL show where the line would go, only at a place among its own siblings that changes the order: before a sibling, or after the last one. The lines nested beneath a sibling SHALL NOT be places: over them the line shows the place after that sibling. Over the line's own place, over the place right after it, and anywhere outside the band its siblings take, no line SHALL be shown. Releasing where a line is shown SHALL move the line, with every line beneath it and its continuation lines, to that place, as the language service writes it; releasing where none is shown, pressing Escape, or the system cancelling the pointer SHALL end the drag and write nothing. While the pointer is near the top or the bottom edge of the card, the card SHALL scroll in that direction. On touch the drag SHALL start as soon as the finger pulls the grip, without holding it first; a finger anywhere else on the row SHALL scroll the card as before, and dragging the grip SHALL NOT open, close or switch the side panels. A press on the grip SHALL NOT move the focus or select text, so a field that has the focus keeps it, an empty unwritten row among them. Where a value is being typed, a press on the grip SHALL first write it, as a press on any other control does, and SHALL start no drag, whether the value was written or refused; the reader drags again. A drag in progress SHALL end without writing when the card is drawn again. After a drop that writes, the focus SHALL stay where it was, no focus ring SHALL be drawn on the grip, the grip of the line that moved SHALL be brought into view, and the line's new place SHALL be announced politely, as its place among its siblings and their number, a line with no tag not counted. The grip SHALL be a handle for the pointer alone: it SHALL NOT be reached by the keyboard, SHALL be hidden from assistive technology, and its tooltip SHALL say, in the reader's language, that dragging it moves the line of its row. No key SHALL move a line.
 
 #### Scenario: The birth name made the preferred one
 - **WHEN** the reader drags the grip of Marie's second name, `Maria Salomea Skłodowska`, up until the line shows before her first name, and lets go
 - **THEN** the file writes `1 NAME Maria Salomea /Skłodowska/` with `2 TYPE BIRTH` beneath it before `1 NAME Marie /Skłodowska-Curie/` with its given name and surname, and no other line has changed
+
+#### Scenario: Its new place said
+- **WHEN** the reader drags the grip of Marie's sex up until the line shows before her second name, and lets go
+- **THEN** the file writes `1 SEX F` before `1 NAME Maria Salomea /Skłodowska/`, *Sex moved to place 2 of 14* is announced, and the focus is not on the grip
+
+#### Scenario: No keys
+- **WHEN** the reader presses Alt+↑ on the row of Marie's sex, or Tab through her tree
+- **THEN** nothing is written, and the focus never lands on a grip
+
+#### Scenario: Named for its row
+- **WHEN** the plugin's language is Russian and the pointer rests on the grip of Marie's birth
+- **THEN** its tooltip says, in Russian, that dragging it moves the birth
 
 #### Scenario: Only among the siblings
 - **WHEN** the reader drags the grip of Marie's occupation over the date and the place nested beneath her opened birth
@@ -45,22 +57,6 @@ Dragging the grip SHALL work the same with a mouse, a pen and a finger. A press 
 #### Scenario: A card that does not write
 - **WHEN** the language service has no dialect for the file
 - **THEN** no row of the tree carries a grip
-
-### Requirement: A line is moved by the keyboard from its grip
-
-The grip SHALL be reached by the keyboard in the order it is drawn, SHALL show a focus ring, and SHALL be named in the reader's language for its action and its row, with the keys that move it, which it SHALL also declare to assistive technology. With the focus on the grip, Alt+↑ SHALL move the line one place up among its siblings and Alt+↓ one place down, each as one change written as a drag's is; at the first place Alt+↑, and at the last Alt+↓, SHALL write nothing. Enter and Space on the grip SHALL do nothing. After a move by the keyboard the focus SHALL be on the grip of the line that moved, in view. After a move by a drag the focus SHALL stay where it was, the grip SHALL show no focus ring, and the grip of the line that moved SHALL be brought into view. After either, the line's new place SHALL be announced politely, as its place among its siblings and their number, a line with no tag not counted.
-
-#### Scenario: Up by one
-- **WHEN** the reader reaches the grip of Marie's sex with Tab and presses Alt+↑
-- **THEN** the file writes `1 SEX F` before `1 NAME Maria Salomea /Skłodowska/`, the focus is on the sex's grip, and *Sex moved to place 2 of 14* is announced
-
-#### Scenario: At the top
-- **WHEN** the focus is on the grip of Marie's first name and the reader presses Alt+↑
-- **THEN** nothing is written and the focus stays on that grip
-
-#### Scenario: Named for its row
-- **WHEN** the plugin's language is Russian and the reader reaches the grip of Marie's birth
-- **THEN** its name says, in Russian, that it moves the birth by dragging or by Alt with the arrows
 
 ### Requirement: A move is one change, or is refused and says why
 

@@ -468,7 +468,7 @@
     "one": "The field and the {count} line under it will be removed. You can undo it.",
     "other": "The field and the {count} lines under it will be removed. You can undo it."
   },
-  "tree.moveField": "Move {field}: drag, or press {keys}",
+  "tree.moveField": "Drag to move {field}",
   "tree.moved": "{field} moved to place {place} of {count}",
   "edit.refusal.value-not-in-enum": "This value is not one of those the standard lists here.",
   "edit.refusal.payload-datatype": "The standard cannot read this value here.",

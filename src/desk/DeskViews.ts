@@ -1,4 +1,4 @@
-import { ItemView, Menu, Platform, setIcon, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Menu, setIcon, type WorkspaceLeaf } from "obsidian";
 
 import type { GedcomView } from "../GedcomView";
 import { t } from "../i18n";
@@ -63,7 +63,6 @@ export class RecordCardView extends ItemView {
         setIcon(element, icon);
       },
       session: this.host.session(),
-      macKeys: Platform.isMacOS,
       choosePointer: (choices, chosen) => {
         new PointerModal(this.app, choices, chosen).open();
       },

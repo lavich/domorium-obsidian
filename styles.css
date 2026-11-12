@@ -2396,7 +2396,6 @@ body:not(.is-grabbing) .gedcom-tree .gedcom-tree-row:hover > .gedcom-tree-action
 }
 
 .gedcom-tree .gedcom-tree-file:focus-visible,
-.gedcom-tree .gedcom-tree-grip:focus-visible,
 .gedcom-tree .gedcom-tree-open-note:focus-visible,
 .gedcom-tree .gedcom-tree-several:focus-visible,
 .gedcom-tree .gedcom-field-revert:focus-visible {

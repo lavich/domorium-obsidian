@@ -1735,19 +1735,16 @@ describe("the grip of a line", () => {
     expect(seen).not.toHaveBeenCalled();
   });
 
-  it("is a button named for its row and the keys that move it, as a Macintosh names them there", () => {
+  it("is a handle for the pointer alone, hidden from assistive technology and named for its row", () => {
     marie();
     const named = grip("Name", 1);
 
-    expect(named.getAttribute("role")).toBe("button");
-    expect(named.getAttribute("tabindex")).toBe("0");
-    expect(named.getAttribute("aria-keyshortcuts")).toBe("Alt+ArrowUp Alt+ArrowDown");
+    expect(named.getAttribute("aria-hidden")).toBe("true");
+    expect(named.hasAttribute("role")).toBe(false);
+    expect(named.hasAttribute("tabindex")).toBe(false);
+    expect(named.hasAttribute("aria-keyshortcuts")).toBe(false);
     expect(named.getAttribute("data-ignore-swipe")).toBe("true");
-    expect(named.getAttribute("data-focus-key")).toBe("t:NAME[1]:grip");
-    expect(named.getAttribute("aria-label")).toBe("Move Name 2: drag, or press Alt+↑ / Alt+↓");
-
-    marie({ macKeys: true });
-    expect(grip("Sex").getAttribute("aria-label")).toBe("Move Sex: drag, or press ⌥↑ / ⌥↓");
+    expect(named.getAttribute("aria-label")).toBe("Drag to move Name 2");
   });
 
   it("writes nothing and opens nothing for Enter, Space and a click", () => {
@@ -1762,69 +1759,60 @@ describe("the grip of a line", () => {
   });
 });
 
-describe("a line moved by the keyboard", () => {
-  it("goes up one place with Alt+↑, keeps the focus on its grip and says its new place", () => {
+const laidOut = (row: HTMLElement): void => {
+  const nodes = [...(row.parentElement?.parentElement?.children ?? [])] as HTMLElement[];
+  nodes.forEach((node, at) => {
+    const box = { x: 0, y: at * 30, top: at * 30, bottom: at * 30 + 26, left: 0, right: 300, width: 300, height: 26, toJSON: () => ({}) } as DOMRect;
+    node.getBoundingClientRect = () => box;
+    const own = node.querySelector<HTMLElement>(":scope > .gedcom-tree-row");
+    if (own) {
+      own.getBoundingClientRect = () => box;
+    }
+  });
+};
+const dropOn = (label: string, at: number, place: number): Promise<void> => {
+  const row = rowNamed(label, at);
+  laidOut(row);
+  const handle = grip(label, at);
+  const from = [...(row.parentElement?.parentElement?.children ?? [])].indexOf(row.parentElement as Element);
+  pointer(handle, "pointerdown", 0, from * 30 + 13);
+  pointer(handle, "pointermove", 0, place * 30 + 4);
+  pointer(handle, "pointerup", 0, place * 30 + 4);
+  return settled();
+};
+
+describe("a line dropped among its siblings", () => {
+  it("is written there, says its new place, and leaves the focus where it was", async () => {
     const { tab, host } = marie();
-    const sex = grip("Sex");
-    sex.focus();
-    press(sex, "ArrowUp", { altKey: true });
+    await dropOn("Sex", 0, 1);
 
     const lines = fileLines(tab);
     expect(lines.indexOf("1 SEX F")).toBe(lines.indexOf("1 NAME Maria Salomea /Skłodowska/") - 1);
     expect(tab.writes).toBe(1);
-    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:grip");
+    expect(document.activeElement?.closest(".gedcom-tree-grip")).toBeNull();
     expect(host.announce).toHaveBeenCalledWith("Sex moved to place 2 of 14");
   });
 
-  it("goes down one place with Alt+↓, and the second name then reads as the first", () => {
-    const { tab } = marie();
-    press(grip("Name"), "ArrowDown", { altKey: true });
-
-    const lines = fileLines(tab);
-    expect(lines.indexOf("1 NAME Maria Salomea /Skłodowska/")).toBeLessThan(lines.indexOf("1 NAME Marie /Skłodowska-Curie/"));
-    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:NAME[1]:grip");
-  });
-
-  it("writes nothing at the first place", () => {
-    const { tab } = marie();
-    const first = grip("Name");
-    first.focus();
-    press(first, "ArrowUp", { altKey: true });
-
-    expect(tab.writes).toBe(0);
-    expect(document.activeElement).toBe(first);
-  });
-
-  it("does nothing with another modifier held, or without Alt", () => {
-    const { tab } = marie();
-    press(grip("Sex"), "ArrowUp", { altKey: true, shiftKey: true });
-    press(grip("Sex"), "ArrowUp", { altKey: true, ctrlKey: true });
-    press(grip("Sex"), "ArrowUp");
-
-    expect(tab.writes).toBe(0);
-  });
-
-  it("takes an opened name with it, and leaves the name it passed closed", () => {
+  it("takes an opened name with it, and leaves the name it passed closed", async () => {
     marie();
     open("Name", 1);
-    press(grip("Name", 1), "ArrowUp", { altKey: true });
+    await dropOn("Name", 1, 0);
 
     expect(rowNamed("Name", 0).parentElement?.classList.contains("is-open")).toBe(true);
     expect(rowNamed("Name", 1).parentElement?.classList.contains("is-open")).toBe(false);
     expect(rows().map(labelOf).slice(0, 3)).toEqual(["Name", "Type", "Name"]);
   });
 
-  it("is refused where the file would be read otherwise, and says why under its row in Russian", () => {
+  it("is refused where the file would be read otherwise, and says why under its row in Russian", async () => {
     setLanguage("ru");
     const { tab, host } = editing(["0 @I1@ INDI", "1 BIRT", "3 DATE 1900", "2 PLAC x"]);
     const before = tab.text;
     open("Рождение");
-    const place = grip("Место");
-    press(place, "ArrowUp", { altKey: true });
+    await dropOn("Место", 0, 0);
 
     expect(tab.text).toBe(before);
     const said = "Со строкой на этом месте файл читался бы иначе, поэтому ничего не записано.";
-    expect(messageOf(place)).toBe(said);
+    expect(messageOf(grip("Место"))).toBe(said);
     expect(rowNamed("Место").nextElementSibling?.textContent).toBe(said);
     expect(host.announce).toHaveBeenCalledWith(said);
   });
@@ -1833,11 +1821,26 @@ describe("a line moved by the keyboard", () => {
     const { tab, draws, host } = editing(["0 @I1@ INDI", "1 SEX F", "1 NAME Maria /Curie/"]);
     tab.replace(tab.text.replace("1 SEX F", "1 SEX M"));
     const drawnBefore = draws();
-    press(grip("Name"), "ArrowUp", { altKey: true });
+    const name = grip("Name");
+    pointer(name, "pointerdown");
+    pointer(name, "pointermove", 0, 20);
 
     expect(fileLines(tab).indexOf("1 SEX M")).toBeLessThan(fileLines(tab).indexOf("1 NAME Maria /Curie/"));
     expect(draws()).toBe(drawnBefore + 1);
+    expect(dragged()).toEqual([]);
     expect(host.announce).toHaveBeenCalledWith("The file changed, so nothing was written. The card now shows the file as it is.");
+  });
+
+  it("is not moved by Alt and an arrow, and its grip takes no focus", () => {
+    const { tab } = marie();
+    const sex = grip("Sex");
+    sex.focus();
+    press(sex, "ArrowUp", { altKey: true });
+    press(rowNamed("Sex"), "ArrowUp", { altKey: true });
+
+    expect(tab.writes).toBe(0);
+    expect(sex.hasAttribute("tabindex")).toBe(false);
+    expect(sex.tabIndex).toBeLessThan(0);
   });
 });
 

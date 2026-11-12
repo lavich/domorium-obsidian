@@ -91,7 +91,6 @@ export interface TreeHost extends DetailHost {
   /** Where the line at this position may go among its siblings, read from the text the card was drawn from. */
   describeMoveAt?(at: Position): MoveDescription | Refusal;
   moveAt?(at: Position, target: MoveTarget): WriteOutcome;
-  macKeys?: boolean;
   /** Brings into view, once the card is drawn and its scroll restored, the grip of a line that moved. */
   reveal?(element: HTMLElement): void;
   /** Draws the card again from the text, at once, after a write of its own. */
@@ -258,18 +257,17 @@ class Tree {
     if (!wish) {
       return;
     }
-    const target = this.wished(wish);
-    if (target) {
-      if (!("key" in wish && wish.focus === false)) {
-        target.focus({ preventScroll: true });
+    if ("reveal" in wish) {
+      const grip = [...this.root.querySelectorAll<HTMLElement>("[data-focus-key]")].find((one) => one.getAttribute("data-focus-key") === `t:${wish.reveal}:grip`);
+      if (grip) {
+        this.options.host.reveal?.(grip);
       }
-      if ("key" in wish && wish.reveal) {
-        this.options.host.reveal?.(target);
-      }
+      return;
     }
+    this.wished(wish)?.focus({ preventScroll: true });
   }
 
-  private wished(wish: FocusWish): HTMLElement | null {
+  private wished(wish: Exclude<FocusWish, { reveal: string }>): HTMLElement | null {
     const keyed = (focusKey: string): HTMLElement | null =>
       [...this.root.querySelectorAll<HTMLElement>("[data-focus-key]")].find((one) => one.getAttribute("data-focus-key") === focusKey) ?? null;
     if ("unwritten" in wish) {
@@ -853,7 +851,7 @@ class Tree {
         }
       });
       header.addEventListener("click", (click) => {
-        if (!(click.target as HTMLElement).closest("button, [role=button], a, textarea, select")) {
+        if (!(click.target as HTMLElement).closest("button, [role=button], a, textarea, select, .gedcom-tree-grip")) {
           this.nodes.get(key)?.(!open);
         }
       });
@@ -864,39 +862,16 @@ class Tree {
   private grip(actions: HTMLElement, header: HTMLElement, node: HTMLElement, line: RecordLine, owner: RecordLine, key: string, named: string): void {
     const { host } = this.options;
     const grip = actions.createDiv({ cls: ["gedcom-tree-grip", "grip-handle"] });
-    grip.setAttribute("role", "button");
-    grip.setAttribute("tabindex", "0");
+    grip.setAttribute("aria-hidden", "true");
     grip.setAttribute("data-focus-key", `t:${key}:grip`);
-    grip.setAttribute("aria-keyshortcuts", "Alt+ArrowUp Alt+ArrowDown");
     grip.setAttribute("data-ignore-swipe", "true");
-    grip.setAttribute("aria-label", t("tree.moveField", { field: named, keys: host.macKeys ? "⌥↑ / ⌥↓" : "Alt+↑ / Alt+↓" }));
+    grip.setAttribute("aria-label", t("tree.moveField", { field: named }));
     if (host.setIcon) {
       host.setIcon(grip, "grip-vertical");
     } else {
       grip.setText("⋮⋮");
     }
     const refused = (refusal: Refusal): void => this.moveRefused(refusal, header, grip);
-    grip.addEventListener("keydown", (event) => {
-      const up = event.key === "ArrowUp";
-      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || (!up && event.key !== "ArrowDown")) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      const described = this.live() ? host.describeMoveAt?.(line.range.start) : undefined;
-      if (!described) {
-        return;
-      }
-      if (!described.ok) {
-        refused(described);
-        return;
-      }
-      const own = described.slots.findIndex((slot) => "before" in slot.target && slot.target.before.line === line.range.start.line);
-      const slot = own < 0 ? undefined : described.slots[up ? own - 1 : own + 2];
-      if (slot) {
-        this.move(line, owner, key, slot, refused, true);
-      }
-    });
     for (const type of ["touchstart", "touchmove"] as const) {
       // Obsidian mobile opens a side panel on a swipe it sees, and data-ignore-swipe alone does not hold every build back.
       grip.addEventListener(type, (event) => event.stopPropagation(), { passive: true });
@@ -910,12 +885,12 @@ class Tree {
         node,
         describe: () => host.describeMoveAt?.(line.range.start) ?? { ok: false, code: STALE, message: "" },
         refused,
-        drop: (slot) => this.move(line, owner, key, slot, refused, false),
+        drop: (slot) => this.move(line, owner, key, slot, refused),
       });
     });
   }
 
-  private move(line: RecordLine, owner: RecordLine, key: string, slot: MoveSlot, refused: (refusal: Refusal) => void, byKeyboard: boolean): void {
+  private move(line: RecordLine, owner: RecordLine, key: string, slot: MoveSlot, refused: (refusal: Refusal) => void): void {
     const { host, state } = this.options;
     const outcome = host.moveAt?.(line.range.start, slot.target);
     if (!outcome) {
@@ -934,7 +909,7 @@ class Tree {
     order.splice(before ? order.indexOf(before) : order.length, 0, line);
     const tagged = order.filter((one) => one.tag !== "");
     state.renameKeys(renames);
-    state.wishFocus({ key: renames.get(key) ?? key, parts: ["grip"], reveal: true, ...(byKeyboard ? {} : { focus: false as const }) });
+    state.wishFocus({ reveal: renames.get(key) ?? key });
     this.say(t("tree.moved", { field: tagLabel(line.tag), place: tagged.indexOf(line) + 1, count: tagged.length }));
     this.settle();
   }
