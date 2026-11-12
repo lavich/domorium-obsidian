@@ -111,8 +111,9 @@ own: names, events, attributes, notes, associates, identifiers and a custom tag 
 the file puts them, in the reader's language. Every node starts closed with a one-line summary — an event shows its date
 and place, an attribute its value — and a quiet dot after it where it cites a source; what you
 open comes back open when you return to that record. Each node has an arrow, and a press on its row opens or closes it; the icon in the header above the tree, as in Obsidian's file explorer, opens or closes every node and is always shown. A place named in a closed fact, or the pin beside a place's
-field, opens the card of that place, which lists
-the events held there, each with a link to the person or the family it belongs to. Every control of a card shows a focus ring for the
+field, opens the card of that place: its name in a field at the top, and below it a row for each
+line of the file that names the place, in the file's order, with the event's date and name and a link to
+the person or the family it belongs to; pressing a row opens that record's card with the event open and in view. Every control of a card shows a focus ring for the
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A pointer
 to a shared note shows the note's text where it stands, with an **Open note** control beside it
 that opens the note's own card. The text of a shared note and the value of a record of the file's
@@ -141,6 +142,14 @@ an edit in Source, a second press — is refused and the card is drawn again fro
 the file. The header edits as any record, and the language service refuses what
 would change how the file is read, its GEDCOM version for one. A file with no GEDCOM version the plugin can check is shown read-only,
 with a line saying so.
+
+Changing the name on a place's card **renames the place everywhere**: after one
+question — *Rename the place in 11 lines?* — every line that names the place,
+however it is spelt in case or spacing, gets exactly the new name, in one step
+that Undo takes back. Giving a place the name of another merges the two, and the
+question says so. Nothing is written where the language service refuses any of
+the lines. A place's map, form, translations and notes stay lines of the event's
+tree.
 
 Pressing the picture or the path of a medium's file offers two choices. **Choose
 from the vault** lists the vault's files, images first, and writes the one you
