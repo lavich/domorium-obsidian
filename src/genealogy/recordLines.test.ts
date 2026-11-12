@@ -26,6 +26,16 @@ describe("the lines of a record", () => {
     "0 TRLR",
   ]);
 
+  it("places a value where the language service answers for it, so that a medium's file can be asked about", () => {
+    const service = new GedcomLanguageService(
+      [...head("7.0"), "0 @O1@ OBJE", "1 FILE Media/photo.jpg", "2 FORM image/jpeg", "0 TRLR"].join("\n"),
+    );
+    const file = find(buildIndex(service).record("@O1@"), "FILE");
+
+    expect(file?.valueAt && service.getMediaAt(file.valueAt)?.targetText).toBe("Media/photo.jpg");
+    expect(find(file, "FORM")?.valueAt).toEqual({ line: 5, character: 7 });
+  });
+
   it("gives a name with its parts, in the order written, to any depth", () => {
     const record = index.record("@I1@");
     const name = find(record, "NAME");

@@ -1,4 +1,6 @@
-import type { DocumentSymbol, Range } from "@domorium/language-service";
+import type { DocumentSymbol, Position, Range } from "@domorium/language-service";
+
+import { payloadPosition } from "./symbols";
 
 /** One line of a record as the file writes it, with what hangs beneath it. */
 export interface RecordLine {
@@ -7,6 +9,8 @@ export interface RecordLine {
   xref?: string;
   /** What the line carries other than a pointer, its `CONT` and `CONC` lines joined into it. */
   text?: string;
+  /** Where that value starts in the file, which the language service answers a file's media on. */
+  valueAt?: Position;
   /** The record a payload of the form `@X@` points at. */
   pointer?: string;
   /** 7.0's `@VOID@`: the line deliberately names no record. */
@@ -36,7 +40,7 @@ function lineOf(symbol: DocumentSymbol): RecordLine {
   return {
     tag: symbol.name,
     ...(match ? (match[1] === "VOID" ? { void: true as const } : { pointer: payload }) : {}),
-    ...(text === undefined || text === "" ? {} : { text }),
+    ...(text === undefined || text === "" ? {} : { text, valueAt: payloadPosition(symbol) }),
     children: symbol.children.filter((child) => child.name !== "CONT" && child.name !== "CONC").map(lineOf),
     range: symbol.range,
   };

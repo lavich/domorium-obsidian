@@ -52,21 +52,11 @@ export interface PersonMedia {
   record?: string;
 }
 
-export interface MediaLink {
-  record: string;
-  title?: string;
-  crop?: MediaCrop;
-  at: Position;
-}
-
 export interface MediaRecord {
   xref: string;
   file?: string;
   form?: string;
   title?: string;
-  /** On the record's own `FILE` payload. */
-  at?: Position;
-  links: MediaLink[];
   range: Range;
 }
 

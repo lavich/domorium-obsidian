@@ -3,7 +3,8 @@ import { ItemView, Menu, setIcon, type WorkspaceLeaf } from "obsidian";
 import type { GedcomView } from "../GedcomView";
 import { t } from "../i18n";
 import type { TreeSession } from "./detail/treeSession";
-import { PointerModal } from "./pointerModal";
+import { chooseDeviceFile } from "./deviceFile";
+import { PointerModal, VaultFileModal } from "./pointerModal";
 import { renderRecordCard } from "./recordCard";
 
 export const RECORD_VIEW_TYPE = "domorium-record";
@@ -67,8 +68,13 @@ export class RecordCardView extends ItemView {
       },
       chooseField: (at, fields) => {
         const menu = new Menu();
-        for (const { title, disabled, choose } of fields) {
-          menu.addItem((item) => item.setTitle(title).setDisabled(disabled).onClick(choose));
+        for (const { title, icon, disabled, choose } of fields) {
+          menu.addItem((item) => {
+            item.setTitle(title).setDisabled(disabled).onClick(choose);
+            if (icon !== undefined) {
+              item.setIcon(icon);
+            }
+          });
         }
         menu.showAtPosition(at);
       },
@@ -78,6 +84,12 @@ export class RecordCardView extends ItemView {
           menu.addItem((item) => item.setTitle(title).setChecked(checked).onClick(toggle));
         }
         menu.showAtPosition(at);
+      },
+      chooseVaultFile: (choices, chosen) => {
+        new VaultFileModal(this.app, choices, chosen).open();
+      },
+      chooseDeviceFile: (chosen) => {
+        chooseDeviceFile(this.contentEl.ownerDocument, chosen);
       },
       ...(this.bar ? { header: this.bar } : {}),
     });

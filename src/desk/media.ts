@@ -2,27 +2,15 @@ import {
   drawnCrop,
   type MediaCrop,
   type Position,
-  type Range,
 } from "@domorium/language-service";
 
 import type { MediaPreviewContent } from "../editor/media";
-import { t, type MessageKey } from "../i18n";
-import { linkButton } from "./dom";
 
 export interface MediaItem {
   content: MediaPreviewContent;
   path?: string;
-  record?: string;
   at: Position;
 }
-
-export interface MediaHost {
-  openFile(path: string): void;
-  openRecord(xref: string): void;
-  showInSource(range: Range): void;
-}
-
-const pointAt = (at: Position): Range => ({ start: at, end: at });
 
 /**
  * The picture at its own size behind a box, moved so the rectangle's corner
@@ -66,55 +54,4 @@ export function drawPicture(
   }
   image.src = content.url;
   return box;
-}
-
-function caption(content: MediaPreviewContent): string {
-  switch (content.kind) {
-    case "image":
-    case "file":
-      return content.title ?? content.name;
-    case "remote":
-      return content.title ?? content.url;
-    case "missing":
-      return content.target;
-  }
-}
-
-export function renderTile(parent: HTMLElement, item: MediaItem, host: MediaHost): HTMLElement {
-  const { content } = item;
-  const tile = parent.createDiv({ cls: ["gedcom-desk-tile", `is-${content.kind}`] });
-  const face = tile.createEl("button", { cls: "gedcom-desk-tile-face" });
-  face.setAttribute("type", "button");
-  const path = item.path;
-  if (content.kind === "image") {
-    drawPicture(face, content, 120, 120);
-  } else {
-    face.createDiv({ cls: "gedcom-desk-tile-note", text: tileNote(content) });
-  }
-  if (path && (content.kind === "image" || content.kind === "file")) {
-    face.addEventListener("click", () => host.openFile(path));
-  } else {
-    face.setAttribute("disabled", "");
-  }
-  tile.createDiv({ cls: "gedcom-desk-tile-caption", text: caption(content) });
-  const actions = tile.createDiv({ cls: "gedcom-desk-actions" });
-  const record = item.record;
-  if (record) {
-    linkButton(actions, t("desk.mediaPage"), () => host.openRecord(record));
-  }
-  if (content.kind === "missing") {
-    linkButton(actions, t("desk.showInSource"), () => host.showInSource(pointAt(item.at)));
-  }
-  return tile;
-}
-
-function tileNote(content: Exclude<MediaPreviewContent, { kind: "image" }>): string {
-  switch (content.kind) {
-    case "file":
-      return t(`mediaKind.${content.mediaKind}` as MessageKey);
-    case "remote":
-      return t(content.state === "not-an-image" ? "desk.notAnImage" : "desk.fromWeb");
-    case "missing":
-      return t("desk.notInVault");
-  }
 }

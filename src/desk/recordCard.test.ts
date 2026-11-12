@@ -9,6 +9,7 @@ import { TextTab } from "../testing/textTab";
 import { addableAt, describes, removableAt } from "./addableFields";
 import { TreeSession } from "./detail/treeSession";
 import { addAt, commit, removeAt, setValueAt } from "./edits";
+import { mediaFileEdit } from "./mediaFile";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
 let container: HTMLElement;
@@ -22,6 +23,8 @@ let view: {
   session: TreeSession;
   header?: HTMLElement;
   chooseField?: CardView["chooseField"];
+  chooseVaultFile?: CardView["chooseVaultFile"];
+  chooseDeviceFile?: CardView["chooseDeviceFile"];
 };
 let index: GenealogyIndex;
 const scrollIntoView = vi.fn();
@@ -179,12 +182,33 @@ describe("the page of each kind of record", () => {
     expect(container.querySelector(".gedcom-card .nav-header")).toBeNull();
   });
 
-  it("shows a multimedia record with no Evidence section and no notes of the vault", () => {
+  it("shows a multimedia record as the tree of its lines, rooted at Media, with no heading and no list of who links it", () => {
     state.record = "@O5@";
     draw();
 
-    expect(texts(".gedcom-desk-title")).toEqual(["The Curie family, about 1908"]);
-    expect(container.querySelector(".gedcom-card-evidence, .gedcom-desk-note")).toBeNull();
+    expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
+    expect(container.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-label")?.textContent).toBe("Media");
+    expect(container.querySelector("h1, h2, .gedcom-desk-used-by, .gedcom-card-evidence")).toBeNull();
+    expect(texts(".gedcom-tree-file-path")).toEqual(["Media/curie-family-1908.svg"]);
+  });
+
+  it("draws the picture of a medium's file in its row while the row is closed, as a control that opens the file", () => {
+    const openFile = vi.fn();
+    tab.openFile = openFile;
+    tab.mediaItem = (at) => ({
+      content: { kind: "image", url: "app://curie-family-1908.svg", name: "curie-family-1908.svg", title: "The Curie family, about 1908" },
+      path: "Media/curie-family-1908.svg",
+      at,
+    });
+    state.record = "@O5@";
+    draw();
+    const file = container.querySelector<HTMLElement>('[data-focus-key="t:FILE[0]:file"]');
+
+    expect(file?.querySelector("img")?.getAttribute("src")).toBe("app://curie-family-1908.svg");
+    expect(file?.closest(".gedcom-tree-node")?.classList.contains("is-collapsed")).toBe(true);
+    expect(file?.getAttribute("aria-label")).toBe("Open The Curie family, about 1908");
+    file?.click();
+    expect(openFile).toHaveBeenCalledWith("Media/curie-family-1908.svg");
   });
 
   it("shows no card for an event id, and says to select a record", () => {
@@ -415,6 +439,8 @@ describe("a card that writes", () => {
       settle: () => {
         draw();
       },
+      fileEditAt: (at, path, version, type) => mediaFileEdit(service(), "curie.ged", at, path, version, type),
+      writeFileAt: (at, path, version, type) => commit(doc, mediaFileEdit(service(), "curie.ged", at, path, version, type)),
     };
   };
   const removeOf = (label: string): HTMLElement | null =>
@@ -482,16 +508,64 @@ describe("a card that writes", () => {
     expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:DEAT[0]:add");
   });
 
-  it("draws the header read-only, saying nothing of why, with its pointer to the submitter a link", () => {
+  it("edits the header as any record: a copyright from its menu, its version refused, no field on its root", () => {
+    view.chooseField = vi.fn();
     tab = writing(["0 @U1@ SUBM", "1 NAME Domorium"], [...HEAD, "1 SUBM @U1@", "1 NOTE About the file"]);
     state.record = "header:";
     draw();
 
-    expect(container.querySelector(".gedcom-tree")).not.toBeNull();
     expect(container.querySelector(".gedcom-tree-note")).toBeNull();
-    expect(container.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-pick, textarea:not([readonly]), select")).toHaveLength(0);
+    expect(container.querySelector('[data-focus-key="t::value"]')).toBeNull();
+    container.querySelector<HTMLElement>('[data-focus-key="t::add"]')?.click();
+    vi.mocked(view.chooseField).mock.calls[0]?.[1].find((one) => one.title === "Copyright")?.choose();
+    const copyright = container.querySelector<HTMLTextAreaElement>(".is-unwritten textarea");
+    copyright?.focus();
+    if (copyright) {
+      copyright.value = "Domorium";
+      copyright.dispatchEvent(new Event("input"));
+      copyright.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+    expect(doc.text).toContain("1 COPR Domorium");
+
+    container.querySelector<HTMLElement>('[data-focus-key="t:GEDC[0]"]')?.click();
+    const version = container.querySelector<HTMLTextAreaElement>('[data-focus-key="t:GEDC[0].VERS[0]:value"]');
+    version?.focus();
+    if (version) {
+      version.value = "7.1";
+      version.dispatchEvent(new Event("input"));
+      version.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+    expect(doc.text).toContain("2 VERS 7.0");
+    expect(texts(".gedcom-tree-message.is-error")).toEqual(["The standard does not allow this value here."]);
+
     [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")].find((link) => link.textContent === "Domorium")?.click();
     expect(calls.select).toHaveBeenCalledWith("@U1@");
+  });
+
+  it("offers the vault and the device on a medium's file, and writes the file chosen from the vault with its format", () => {
+    const chooseField = vi.fn<NonNullable<CardView["chooseField"]>>();
+    view = {
+      ...view,
+      chooseField,
+      chooseVaultFile: (choices, chosen) => {
+        chosen(choices.find((one) => one.path === "Media/b.png")?.path ?? "");
+      },
+      chooseDeviceFile: vi.fn(),
+    };
+    tab = writing(["0 @O1@ OBJE", "1 FILE Media/a.svg", "2 FORM image/svg+xml"]);
+    tab.vaultFiles = () => ["Media/a.svg", "Media/b.png"];
+    tab.vaultHas = () => false;
+    tab.copyIntoVault = () => Promise.resolve();
+    state.record = "@O1@";
+    draw();
+    container.querySelector<HTMLElement>('[data-focus-key="t:FILE[0]:file"]')?.click();
+    const [, choices] = chooseField.mock.calls[0] ?? [];
+
+    expect(choices?.map((one) => one.title)).toEqual(["Choose from the vault", "Upload from device"]);
+    choices?.[0]?.choose();
+    expect(doc.text).toContain("1 FILE Media/b.png\n2 FORM image/png");
+    expect(doc.writes).toBe(1);
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:FILE[0]:file");
   });
 
   it("edits a submitter, a repository and a note", () => {

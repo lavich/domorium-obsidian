@@ -154,6 +154,14 @@ describe("spelling a count", () => {
     expect(plural("list.countOf.other", 2, { shown: 1 })).toBe("1 из 2 записей");
   });
 
+  it("names the two ways to another file of a medium, and where a copy was left, in both languages", () => {
+    expect([t("media.fromVault"), t("media.fromDevice"), t("media.change", { file: "a.jpg" })]).toEqual(["Choose from the vault", "Upload from device", "Change the file a.jpg"]);
+    expect(t("media.copyKept", { reason: "The file changed.", path: "Media/a.jpg" })).toBe("The file changed. The copy of the file stays in the vault at Media/a.jpg.");
+    setLanguage("ru");
+    expect([t("media.fromVault"), t("media.fromDevice"), t("record.tag.COPR")]).toEqual(["Выбрать в хранилище", "Загрузить с устройства", "Авторские права"]);
+    expect(t("edit.refusal.file-out-of-reach")).toContain("GEDCOM 7");
+  });
+
   it("carries the other parameters through", () => {
     expect(
       plural("notice.references", 3),

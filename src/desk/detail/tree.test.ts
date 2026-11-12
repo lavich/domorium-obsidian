@@ -1517,3 +1517,97 @@ describe("opening a shared note from a pointer to it", () => {
     expect(links).toEqual(expect.arrayContaining(["Archive", "Domorium"]));
   });
 });
+
+describe("the file of a medium", () => {
+  const picture = { kind: "image" as const, url: "app://photo.jpg", name: "photo.jpg" };
+  const fileControl = (): HTMLElement | null => box.querySelector<HTMLElement>(".gedcom-tree-file");
+  const drawWith = (made: Made, host: Partial<TreeHost>, state: TreeState = ephemeralTreeState()): void => {
+    renderTree(box, made.record, { index: made.index, host: { openRecord: opened, showInSource: shown, ...host }, facts: new Map(), state });
+  };
+
+  it("shows the picture of a multimedia record's file while its node is closed, with no field", () => {
+    const made = make(["0 @O1@ OBJE", "1 FILE Media/photo.jpg", "2 FORM image/jpeg", "0 @I1@ INDI"], "7.0", "@O1@");
+    const asked: (string | undefined)[] = [];
+    drawWith(made, {
+      mediaFileAt: (line) => {
+        asked.push(line.text);
+        return { content: picture, path: "Media/photo.jpg", at: line.valueAt ?? { line: 0, character: 0 } };
+      },
+    });
+
+    expect(asked).toEqual(["Media/photo.jpg"]);
+    expect(fileControl()?.querySelector("img")?.getAttribute("src")).toBe("app://photo.jpg");
+    expect(chevron(rowNamed("File")).getAttribute("aria-expanded")).toBe("false");
+    expect(rowNamed("File").querySelector("textarea, .gedcom-tree-summary")).toBeNull();
+  });
+
+  it("shows a file icon and the path where the file is not a picture it can draw", () => {
+    const made = make(["0 @I1@ INDI", "1 OBJE", "2 FILE scans/letter.pdf", "2 TITL Letter"], "5.5.1");
+    drawWith(made, { mediaFileAt: () => null, setIcon: (element, icon) => element.setAttribute("data-icon", icon) });
+    open("Media");
+
+    expect(fileControl()?.querySelector(".gedcom-tree-file-icon")?.getAttribute("data-icon")).toBe("file");
+    expect(fileControl()?.querySelector(".gedcom-tree-file-path")?.textContent).toBe("scans/letter.pdf");
+    expect(fileControl()?.getAttribute("role")).toBeNull();
+  });
+
+  it("leaves the header's file of 5.5.1 a value like any other", () => {
+    const made = make(["1 FILE tree.ged", "0 @I1@ INDI"], "5.5.1", "header:");
+    const mediaFileAt = vi.fn(() => null);
+    drawWith(made, { mediaFileAt });
+
+    expect(fileControl()).toBeNull();
+    expect(mediaFileAt).not.toHaveBeenCalled();
+    expect(rowNamed("File").querySelector("textarea")?.value).toBe("tree.ged");
+  });
+
+  it("opens the file where the card does not write", () => {
+    const made = make(["0 @O1@ OBJE", "1 FILE Media/photo.jpg", "0 @I1@ INDI"], "7.0", "@O1@");
+    const openFile = vi.fn();
+    drawWith(made, { openFile, mediaFileAt: (line) => ({ content: picture, path: "Media/photo.jpg", at: line.range.start }) });
+    fileControl()?.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true, cancelable: true }));
+
+    expect(openFile).toHaveBeenCalledWith("Media/photo.jpg");
+    expect(fileControl()?.getAttribute("aria-label")).toBe("Open photo.jpg");
+  });
+
+  it("offers the choices where the card writes, without opening or closing the node, and draws the card again once written", () => {
+    const replaceFile = vi.fn<NonNullable<TreeHost["replaceFile"]>>();
+    const { host, draws } = editing(["0 @O1@ OBJE", "1 FILE Media/a.jpg", "2 FORM image/jpeg"], "7.0", "@O1@", { replaceFile, mediaFileAt: () => null });
+    fileControl()?.click();
+
+    expect(fileControl()?.getAttribute("data-focus-key")).toBe("t:FILE[0]:file");
+    expect(fileControl()?.getAttribute("aria-label")).toBe("Change the file Media/a.jpg");
+    expect(replaceFile.mock.calls[0]?.[1].text).toBe("Media/a.jpg");
+    expect(chevron(rowNamed("File")).getAttribute("aria-expanded")).toBe("false");
+    const before = draws();
+    replaceFile.mock.calls[0]?.[2]({ ok: true, line: 4, warnings: [] });
+    expect(draws()).toBe(before + 1);
+    expect(host.announce).not.toHaveBeenCalled();
+  });
+
+  it("says under the file why it was not changed, and where a copy was left", () => {
+    setLanguage("en");
+    const replaceFile = vi.fn<NonNullable<TreeHost["replaceFile"]>>();
+    const { host } = editing(["0 @O1@ OBJE", "1 FILE Media/a.jpg", "2 FORM jpg"], "5.5.1", "@O1@", { replaceFile, mediaFileAt: () => null });
+    fileControl()?.click();
+    replaceFile.mock.calls[0]?.[2]({ ok: false, code: "value-not-in-enum", message: "no" });
+
+    expect(box.querySelector(".gedcom-tree-message.is-error")?.textContent).toBe("This value is not one of those the standard lists here.");
+    expect(fileControl()?.getAttribute("aria-invalid")).toBe("true");
+
+    fileControl()?.click();
+    replaceFile.mock.calls[1]?.[2]({ ok: false, code: "stale-document", message: "changed", copied: "Media/photo.png" });
+    expect(box.querySelector(".gedcom-tree-message.is-error")?.textContent).toBe(
+      "The file changed, so nothing was written. The card now shows the file as it is. The copy of the file stays in the vault at Media/photo.png.",
+    );
+    expect(host.announce).toHaveBeenCalledTimes(2);
+  });
+
+  it("speaks Russian", () => {
+    setLanguage("ru");
+    editing(["0 @O1@ OBJE", "1 FILE Media/a.jpg", "2 FORM image/jpeg"], "7.0", "@O1@", { replaceFile: vi.fn(), mediaFileAt: () => null });
+
+    expect(fileControl()?.getAttribute("aria-label")).toBe("Сменить файл Media/a.jpg");
+  });
+});

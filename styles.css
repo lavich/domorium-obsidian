@@ -472,13 +472,6 @@ button.gedcom-desk-link:hover {
   text-decoration: underline;
 }
 
-.gedcom-desk-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-4-3);
-  margin-top: var(--size-2-3);
-}
-
 .gedcom-desk-facts {
   display: flex;
   flex-direction: column;
@@ -583,9 +576,7 @@ button.gedcom-desk-person:hover {
 }
 
 button.gedcom-desk-link:focus-visible,
-button.gedcom-desk-person:focus-visible,
-button.gedcom-desk-media-stage:focus-visible,
-button.gedcom-desk-tile-face:focus-visible {
+button.gedcom-desk-person:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
 }
@@ -1113,119 +1104,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.gedcom-desk-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: var(--size-4-3);
-}
-
-.gedcom-desk-tile {
-  min-width: 0;
-}
-
-button.gedcom-desk-tile-face {
-  width: 100%;
-  height: 132px;
-  padding: var(--size-2-3);
-  display: grid;
-  place-items: center;
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  box-shadow: none;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-button.gedcom-desk-tile-face:disabled {
-  cursor: default;
-}
-
-.gedcom-desk-tile-face .gedcom-desk-picture:not(.is-cropped) {
-  width: 120px;
-  height: 120px;
-}
-
-.gedcom-desk-tile-note {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  text-align: center;
-  white-space: normal;
-}
-
-.gedcom-desk-tile.is-missing .gedcom-desk-tile-note {
-  color: var(--text-warning);
-}
-
-.gedcom-desk-tile-caption {
-  margin-top: var(--size-2-3);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
-}
-
-.gedcom-desk-tile .gedcom-desk-actions {
-  margin-top: var(--size-2-1);
-}
-
-.is-mobile .gedcom-desk-tile .gedcom-desk-actions {
-  gap: var(--size-4-5);
-}
-
-button.gedcom-desk-media-stage {
-  width: 100%;
-  height: auto;
-  border: 0;
-  box-shadow: none;
-}
-
-.gedcom-desk-media-stage {
-  display: flex;
-  justify-content: center;
-  padding: var(--size-4-3);
-  background: var(--background-secondary);
-  border-radius: var(--radius-m);
-  cursor: pointer;
-}
-
-.gedcom-desk-media-stage .gedcom-desk-picture:not(.is-cropped) img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 480px;
-  object-fit: contain;
-}
-
-.gedcom-desk-user {
-  display: flex;
-  gap: var(--size-4-3);
-  align-items: center;
-  padding: var(--size-4-2) 0;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-user .gedcom-desk-picture:not(.is-cropped) {
-  width: 72px;
-  height: 90px;
-}
-
-.gedcom-desk-user .gedcom-desk-picture:not(.is-cropped) img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.gedcom-desk-user .gedcom-desk-picture {
-  flex: none;
-  border-radius: var(--radius-s);
-  border: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-user-caption {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
 }
 
 /* ── The timeline of a file ──────────────────────────────────────────────
@@ -2596,6 +2474,54 @@ button.gedcom-fg-pop-open {
   color: var(--text-normal);
 }
 
+.gedcom-tree .gedcom-tree-file {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: var(--size-4-1);
+  min-width: 0;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  padding: var(--size-2-1) var(--size-4-1);
+  color: var(--text-normal);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-file.is-picture {
+  padding: var(--size-2-1);
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row:has(> .gedcom-tree-main > .gedcom-tree-file.is-picture) {
+  align-items: flex-start;
+}
+
+.gedcom-tree .gedcom-tree-file .gedcom-desk-picture {
+  max-width: 100%;
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+
+.gedcom-tree .gedcom-tree-file .gedcom-desk-picture:not(.is-cropped) img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+}
+
+.gedcom-tree .gedcom-tree-file-icon {
+  --icon-size: var(--icon-xs);
+  display: flex;
+  flex: none;
+  align-self: flex-start;
+  align-items: center;
+  height: calc(1em * var(--line-height-tight));
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-file:focus-visible,
 .gedcom-tree .gedcom-tree-place:focus-visible,
 .gedcom-tree .gedcom-tree-open-note:focus-visible,
 .gedcom-tree .gedcom-tree-several:focus-visible,
@@ -2624,6 +2550,11 @@ button.gedcom-fg-pop-open {
     min-height: 44px;
     margin-block: -12px;
   }
+
+  .gedcom-tree .gedcom-tree-file {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 .is-mobile .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
@@ -2644,6 +2575,11 @@ button.gedcom-fg-pop-open {
 .is-mobile .gedcom-tree .gedcom-tree-choice {
   min-height: 44px;
   margin-block: -12px;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-file {
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {

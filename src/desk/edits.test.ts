@@ -212,6 +212,16 @@ describe("a refusal", () => {
     expect(linesOf(tab)).not.toContain("1 SEX F");
   });
 
+  it("refuses changing the header's GEDCOM version, and removing GEDC or a 5.5.1 CHAR", () => {
+    const seven = tabOf([]);
+    const five = tabOf([], "5.5.1");
+
+    expect(commit(seven, setValueAt(seven.service(), at(2), seven.version, { value: "7.1" }))).toMatchObject({ code: "rule-violation" });
+    expect(commit(seven, removeAt(seven.service(), at(1), seven.version))).toMatchObject({ code: "rule-violation" });
+    expect(commit(five, removeAt(five.service(), at(4), five.version))).toMatchObject({ code: "required-field-missing" });
+    expect(seven.writes + five.writes).toBe(0);
+  });
+
   it("refuses a value set against a version the text has moved on from", () => {
     const tab = tabOf(["0 @I1@ INDI", "1 SEX F"]);
     const drawn = tab.version;

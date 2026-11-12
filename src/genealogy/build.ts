@@ -4,7 +4,7 @@ import type { DateReading } from "./dates";
 import { collectCitations } from "./citations";
 import { eventsOf, NO_EVENTS } from "./events";
 import { recordLines, type RecordLine } from "./recordLines";
-import { collectMediaLinks, looksLikeAnImage, mediaOf, mediaRecordOf } from "./media";
+import { looksLikeAnImage, mediaOf, mediaRecordOf } from "./media";
 import { familyRowOf as readFamilyRow, readDatesOf, rowOf } from "./rows";
 import { SOURCE_FIELD_TAGS, sourceRowOf as readSourceRow } from "./sources";
 import { childOf, childrenOf, payload, rolePointers, roleLinks } from "./symbols";
@@ -28,7 +28,6 @@ import type {
   FamilyRow,
   GenealogyIndex,
   IndexSource,
-  MediaLink,
   Missing,
   Person,
   PersonRow,
@@ -111,7 +110,6 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
   const repositories = new Map<string, DocumentSymbol>();
   const byCiter = new Map<string, Citation[]>();
   const byCited = new Map<string, Citation[]>();
-  const mediaLinks = new Map<string, MediaLink[]>();
   const declared = new Map<string, DocumentSymbol>();
   const converted = new Map<string, RecordLine>();
   const lists: RecordLists = { media: [], notes: [], repositories: [], other: [] };
@@ -168,9 +166,6 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
 
     // Citations, collected by the walk this loop already makes rather than by
     // walking the document again per source.
-    if (symbol.detail && symbol.name !== "OBJE") {
-      collectMediaLinks(symbol, symbol.detail, mediaLinks);
-    }
     if (symbol.detail && symbol.name !== "SOUR") {
       const eventTags =
         symbol.name === "FAM" ? FAMILY_EVENT_TAGS
@@ -412,7 +407,7 @@ export function buildIndex(language: IndexSource): GenealogyIndex {
     source,
     media: (xref) => {
       const record = objects.get(xref);
-      return record ? mediaRecordOf(xref, record, mediaLinks.get(xref) ?? []) : undefined;
+      return record ? mediaRecordOf(xref, record) : undefined;
     },
     lists,
     record: (xref) => {

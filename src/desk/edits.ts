@@ -58,7 +58,7 @@ export function removeAt(
 }
 
 /** Applies what the service answered, or says why it was not; an edit the tab no longer matches is refused as stale. */
-export function commit(target: EditTarget, result: StructureEditResult | EditRefusal): WriteOutcome {
+export function commit(target: EditTarget, result: StructureEditResult | EditRefusal | Refusal): WriteOutcome {
   if (!result.ok) {
     return { ok: false, code: result.code, message: result.message, ...(result.data ? { data: result.data } : {}) };
   }

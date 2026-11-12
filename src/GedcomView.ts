@@ -96,6 +96,7 @@ import {
   type Refusal,
   type WriteOutcome,
 } from "./desk/edits";
+import { mediaFileEdit, type FileAt } from "./desk/mediaFile";
 import type { CardTab } from "./desk/recordCard";
 import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
@@ -862,6 +863,30 @@ export class GedcomView extends TextFileView implements CardTab {
       (path) => this.resolveVaultResource(path),
       this.host.remoteImages(),
     );
+  }
+
+  vaultFiles(): string[] {
+    return this.app.vault.getFiles().map((file) => file.path);
+  }
+
+  vaultHas(path: string): boolean {
+    return this.app.vault.getAbstractFileByPath(normalizePath(path)) !== null;
+  }
+
+  async copyIntoVault(path: string, data: ArrayBuffer): Promise<void> {
+    const folder = path.slice(0, Math.max(0, path.lastIndexOf("/")));
+    if (folder !== "" && !this.vaultHas(folder)) {
+      await this.app.vault.createFolder(normalizePath(folder));
+    }
+    await this.app.vault.createBinary(normalizePath(path), data);
+  }
+
+  fileEditAt(at: FileAt, vaultPath: string, version: number, deviceType?: string): ReturnType<typeof mediaFileEdit> {
+    return mediaFileEdit(this.service(), this.file?.path ?? "", at, vaultPath, version, deviceType);
+  }
+
+  writeFileAt(at: FileAt, vaultPath: string, version: number, deviceType?: string): WriteOutcome {
+    return this.wrote(commit(this.editTarget, this.fileEditAt(at, vaultPath, version, deviceType)));
   }
 
   private resolveVaultResource(path: string): string | null {

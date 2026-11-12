@@ -406,18 +406,15 @@ describe("multimedia records and the records that link them", () => {
   const service = new GedcomLanguageService(CURIE);
   const curie = buildIndex(service);
 
-  it("reports who links a photograph, in file order, each with their own part of it", () => {
+  it("reports a photograph's file, format and title, and counts the two people who link it", () => {
     const photo = curie.media("@O5@");
 
-    expect(photo?.file).toBe("Media/curie-family-1908.svg");
-    expect(photo?.links.map((link) => [link.record, link.title, link.crop?.left])).toEqual([
-      ["@I1@", "Marie, on the left", 30],
-      ["@I2@", "Pierre, in the middle", 175],
-    ]);
+    expect([photo?.file, photo?.form, photo?.title]).toEqual(["Media/curie-family-1908.svg", "image/svg+xml", "The Curie family, about 1908"]);
+    expect(curie.linkedFrom("@O5@")).toBe(2);
   });
 
-  it("reports a multimedia record nobody links", () => {
-    expect(curie.media("@O7@")?.links).toEqual([]);
+  it("counts no record linking a multimedia record nobody links", () => {
+    expect(curie.linkedFrom("@O7@")).toBe(0);
   });
 
   it("places each picture where the language service answers for its link", () => {
@@ -427,13 +424,6 @@ describe("multimedia records and the records that link them", () => {
       .toBe("Media/marie-sklodowska-curie.svg");
     expect(family && service.getMediaAt(family.at)?.crop)
       .toEqual({ top: 40, left: 30, height: 240, width: 130 });
-  });
-
-  it("places a multimedia record on its own file line", () => {
-    const at = curie.media("@O5@")?.at;
-
-    expect(at && service.getMediaAt(at)?.crop).toBeUndefined();
-    expect(at && service.getMediaAt(at)?.targetText).toBe("Media/curie-family-1908.svg");
   });
 });
 

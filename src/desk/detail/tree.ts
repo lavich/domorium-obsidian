@@ -11,6 +11,8 @@ import { isFull, type Choices } from "../addableFields";
 import { addPlan, refusalText, STALE, type Refusal, type WriteOutcome } from "../edits";
 import { plural, t } from "../../i18n";
 import { linkButton, tipPlace } from "../dom";
+import { drawPicture, type MediaItem } from "../media";
+import type { FileOutcome } from "../mediaFile";
 import { placeAt, placeId } from "../placeRows";
 import { EditableField, showMessage } from "./fieldEdit";
 import { labelId, renderField } from "./fields";
@@ -40,6 +42,7 @@ export interface MenuAt {
 /** A field the menu names; `disabled` where it cannot be added. */
 export interface FieldChoice {
   title: string;
+  icon?: string;
   disabled: boolean;
   choose: () => void;
 }
@@ -92,6 +95,9 @@ export interface TreeHost extends DetailHost {
   choosePointer?(choices: PointerChoice[], chosen: (xref: string) => void): void;
   /** Set where the card could write but the service does not describe the record. */
   uneditable?: boolean;
+  mediaFileAt?(line: RecordLine): MediaItem | null;
+  replaceFile?(at: MenuAt, line: RecordLine, done: (outcome: FileOutcome) => void): void;
+  openFile?(path: string): void;
 }
 
 export interface TreeOptions {
@@ -519,6 +525,69 @@ class Tree {
     });
   }
 
+  private fileControl(parent: HTMLElement, line: RecordLine, key: string): void {
+    const { host, state } = this.options;
+    const item = host.mediaFileAt?.(line) ?? null;
+    const path = line.text ?? "";
+    const name = item?.content.kind === "image" ? (item.content.title ?? item.content.name) : path;
+    const replaces = this.editable && host.replaceFile !== undefined;
+    const opens = !replaces && item?.path !== undefined && host.openFile !== undefined;
+    const control = parent.createDiv({ cls: ["gedcom-tree-file", ...(replaces || opens ? ["clickable-icon"] : [])] });
+    if (item?.content.kind === "image") {
+      control.addClass("is-picture");
+      drawPicture(control, item.content, 320, 160);
+    } else {
+      const icon = control.createSpan({ cls: "gedcom-tree-file-icon" });
+      if (host.setIcon) {
+        host.setIcon(icon, "file");
+      }
+      control.createSpan({ cls: "gedcom-tree-file-path", text: path }).setAttribute("dir", "auto");
+    }
+    if (replaces) {
+      pressable(control, t("media.change", { file: name }), `t:${key}:file`);
+      control.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (!this.live()) {
+          return;
+        }
+        host.replaceFile?.(menuAt(event, control), line, (outcome) => this.fileChosen(key, outcome));
+      });
+      showMessage(control, control, state.message(key));
+    } else if (opens) {
+      const vaultPath = item.path;
+      pressable(control, t("media.open", { file: name }), `t:${key}:file`);
+      control.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (vaultPath !== undefined) {
+          host.openFile?.(vaultPath);
+        }
+      });
+    }
+  }
+
+  private fileChosen(key: string, outcome: FileOutcome): void {
+    const { state } = this.options;
+    if (outcome.ok) {
+      const warning = outcome.warnings.length > 0 ? { text: outcome.warnings.join(" "), kind: "warning" as const } : undefined;
+      state.setMessage(key, warning);
+      if (warning) {
+        this.say(warning.text);
+      }
+      state.wishFocus({ key, parts: ["file"] });
+      this.settle();
+      return;
+    }
+    const reason = refusalText(outcome);
+    const text = "copied" in outcome && outcome.copied !== undefined ? t("media.copyKept", { reason, path: outcome.copied }) : reason;
+    state.setMessage(key, { text, kind: "error" });
+    this.say(text);
+    if (outcome.code === STALE || !this.live()) {
+      this.settle();
+    } else {
+      this.redraw();
+    }
+  }
+
   /** The value a record's own opening line writes: a field where the standard gives that line one and the card writes, as read otherwise. */
   private rootValue(main: HTMLElement, line: RecordLine, key: string, labelledBy: string, detail: DetailContext): void {
     const text = line.text;
@@ -649,6 +718,7 @@ class Tree {
     name.id = labelId();
     const main = header.createDiv({ cls: "gedcom-tree-main" });
 
+    const isFile = !root && line.tag === "FILE" && owner.tag === "OBJE" && line.text !== undefined;
     const missing =
       line.pointer !== undefined && !line.void && recordTitle(index, line.pointer) === undefined;
     const rootName = root ? (recordTitle(index, line.xref ?? "") ?? "") : "";
@@ -665,7 +735,9 @@ class Tree {
         return;
       }
       detail.notes = { drawn: 0, prefix: `${key}.` };
-      if (line.void || line.pointer !== undefined) {
+      if (isFile) {
+        this.fileControl(main, line, key);
+      } else if (line.void || line.pointer !== undefined) {
         renderPointer(main, line, detail, `t:${key}:link`);
         this.noteControl(main, line, key);
         this.pick(main, line, owner, key);
@@ -709,7 +781,7 @@ class Tree {
     };
     const paint = (): void => {
       main.empty();
-      if (isNode && !open) {
+      if (isNode && !open && !isFile) {
         paintSummary();
       } else {
         paintValue();

@@ -7,11 +7,11 @@ import type {
   StructureValueInput,
 } from "@domorium/language-service";
 
-import type { GenealogyIndex } from "../genealogy";
+import type { GenealogyIndex, RecordLine } from "../genealogy";
 import { t } from "../i18n";
 import { renderFamilyPage } from "./familyPage";
 import type { MediaItem } from "./media";
-import { renderMediaPage } from "./mediaPage";
+import { fileChoices, mediaFileEdit, type FileAt, type VaultFileChoice } from "./mediaFile";
 import { HEADER_ID, pageKind } from "./deskState";
 import { placeAt } from "./placeRows";
 import { renderPlacePage } from "./placePage";
@@ -20,7 +20,7 @@ import { renderRecordPage } from "./recordPage";
 import { renderSourcePage } from "./sourcePage";
 import type { Choices } from "./addableFields";
 import type { Refusal, WriteOutcome } from "./edits";
-import type { FieldChoice, MenuAt, PointerChoice, ValueChoice } from "./detail/tree";
+import type { FieldChoice, MenuAt, PointerChoice, TreeHost, ValueChoice } from "./detail/tree";
 import { recordTitle } from "./detail/lineView";
 import type { TreeSession } from "./detail/treeSession";
 
@@ -50,6 +50,11 @@ export interface CardTab {
   removeAt?(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void;
   /** Draws every view of the tab again from its text, at once. */
   settle?(): void;
+  vaultFiles?(): string[];
+  vaultHas?(path: string): boolean;
+  copyIntoVault?(path: string, data: ArrayBuffer): Promise<void>;
+  fileEditAt?(at: FileAt, vaultPath: string, version: number, deviceType?: string): ReturnType<typeof mediaFileEdit>;
+  writeFileAt?(at: FileAt, vaultPath: string, version: number, deviceType?: string): WriteOutcome;
 }
 
 export interface CardView {
@@ -60,6 +65,8 @@ export interface CardView {
   chooseField?(at: MenuAt, fields: FieldChoice[]): void;
   chooseValues?(at: MenuAt, values: ValueChoice[]): void;
   choosePointer?(choices: PointerChoice[], chosen: (xref: string) => void): void;
+  chooseVaultFile?(choices: VaultFileChoice[], chosen: (path: string) => void): void;
+  chooseDeviceFile?(chosen: (file: File) => void): void;
   /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
   header?: HTMLElement;
 }
@@ -67,7 +74,7 @@ export interface CardView {
 const FOCUS_KEY = "data-focus-key";
 const TOGGLE_KEY = "tree:toggle";
 
-const TREES: ReadonlySet<string> = new Set(["person", "family", "source", "record"]);
+const TREES: ReadonlySet<string> = new Set(["person", "family", "source", "media", "record"]);
 
 const hasTree = (index: GenealogyIndex, record: string): boolean => TREES.has(pageKind(index, record) ?? "");
 
@@ -169,8 +176,7 @@ function drawRecord(
 ): void {
   const version = tab.version?.();
   const opening = index.record(record)?.range.start;
-  const readOnly = record === HEADER_ID;
-  const writes = !readOnly && version !== undefined && opening !== undefined && (tab.describes?.(opening) ?? false);
+  const writes = version !== undefined && opening !== undefined && (tab.describes?.(opening) ?? false);
   const host: PageHost = {
     openRecord: (xref) => tab.select(xref),
     showInSource: (range) => tab.showInSource(range),
@@ -189,7 +195,8 @@ function drawRecord(
     chooseField: view.chooseField?.bind(view),
     chooseValues: view.chooseValues?.bind(view),
     choosePointer: view.choosePointer?.bind(view),
-    uneditable: !readOnly && tab.setValueAt !== undefined && !writes,
+    uneditable: tab.setValueAt !== undefined && !writes,
+    mediaFileAt: (line) => (line.valueAt === undefined ? null : tab.mediaItem(line.valueAt)),
   };
   if (writes) {
     const setValueAt = tab.setValueAt?.bind(tab);
@@ -201,27 +208,18 @@ function drawRecord(
       removeAt(at, nested, version, done);
     });
     host.settle = tab.settle?.bind(tab);
+    host.replaceFile = replacingFile(tab, view, version, host);
   }
   const person = index.person(record);
   const family = person ? undefined : index.family(record);
   const source = person || family ? undefined : index.source(record);
-  const media = person || family || source ? undefined : index.media(record);
-  const place = person || family || source || media ? undefined : placeAt(index, record);
+  const place = person || family || source ? undefined : placeAt(index, record);
   if (person) {
     renderPersonPage(body, person, index, folds, host);
   } else if (family) {
     renderFamilyPage(body, family, index, folds, host);
   } else if (source) {
     renderSourcePage(body, source, index, host, folds);
-  } else if (media) {
-    const whole = media.at ? tab.mediaItem(media.at) : null;
-    renderMediaPage(
-      body,
-      media,
-      { whole, links: media.links.map((link) => tab.mediaItem(link.at) ?? missingAt(link.at)) },
-      index,
-      host,
-    );
   } else if (place) {
     renderPlacePage(body, place, index, host);
   } else {
@@ -229,6 +227,44 @@ function drawRecord(
   }
 }
 
-function missingAt(at: Position): MediaItem {
-  return { content: { kind: "missing", target: "" }, at };
+function replacingFile(tab: CardTab, view: CardView, version: number, host: TreeHost): TreeHost["replaceFile"] {
+  const vaultFiles = tab.vaultFiles?.bind(tab);
+  const vaultHas = tab.vaultHas?.bind(tab);
+  const copyIntoVault = tab.copyIntoVault?.bind(tab);
+  const fileEditAt = tab.fileEditAt?.bind(tab);
+  const writeFileAt = tab.writeFileAt?.bind(tab);
+  const chooseVaultFile = view.chooseVaultFile?.bind(view);
+  const chooseDeviceFile = view.chooseDeviceFile?.bind(view);
+  const chooseField = view.chooseField?.bind(view);
+  const documentPath = tab.filePath();
+  if (!vaultFiles || !vaultHas || !copyIntoVault || !fileEditAt || !writeFileAt || !chooseVaultFile || !chooseDeviceFile || !chooseField || documentPath === null) {
+    return undefined;
+  }
+  return (at, line, done) => {
+    const fileAt = fileLines(line);
+    const choices = fileChoices(
+      {
+        documentPath,
+        current: host.mediaFileAt?.(line)?.path,
+        vaultFiles,
+        taken: vaultHas,
+        check: (vaultPath, deviceType) => {
+          const answer = fileEditAt(fileAt, vaultPath, version, deviceType);
+          return answer.ok ? null : answer;
+        },
+        write: (vaultPath, deviceType) => writeFileAt(fileAt, vaultPath, version, deviceType),
+        copy: copyIntoVault,
+        chooseVaultFile,
+        chooseDeviceFile,
+      },
+      done,
+    );
+    chooseField(at, choices);
+  };
+}
+
+function fileLines(line: RecordLine): FileAt {
+  const file = line.range.start;
+  const form = line.children.find((child) => child.tag === "FORM")?.range.start;
+  return form === undefined ? { file } : { file, form };
 }
