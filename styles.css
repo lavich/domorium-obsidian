@@ -2162,9 +2162,12 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree .gedcom-tree-actions {
+  --gedcom-tree-action: var(--size-4-6);
   display: flex;
   flex: none;
+  gap: var(--size-2-2);
   align-self: flex-start;
+  margin-block: calc((1em * var(--line-height-tight) - var(--gedcom-tree-action)) / 2);
   margin-inline-start: auto;
   opacity: 0;
 }
@@ -2176,13 +2179,13 @@ button.gedcom-fg-pop-open {
 
 .gedcom-tree .gedcom-tree-add,
 .gedcom-tree .gedcom-tree-remove {
-  --icon-size: var(--icon-xs);
+  --icon-size: var(--icon-s);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: calc(1em * var(--line-height-tight));
-  height: calc(1em * var(--line-height-tight));
+  width: var(--gedcom-tree-action);
+  height: var(--gedcom-tree-action);
   padding: 0;
 }
 
@@ -2442,17 +2445,17 @@ button.gedcom-fg-pop-open {
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
   position: absolute;
-  top: var(--size-4-1);
+  top: calc(var(--size-4-1) + (1em * var(--line-height-tight) - var(--gedcom-tree-action)) / 2);
   inset-inline-end: var(--size-4-2);
   margin: 0;
 }
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
-  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + 1em * var(--line-height-tight));
+  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + var(--size-4-6));
 }
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
-  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + 2em * var(--line-height-tight));
+  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + 2 * var(--size-4-6) + var(--size-2-2));
 }
 
 @media (pointer: coarse) {
@@ -2466,7 +2469,7 @@ button.gedcom-fg-pop-open {
   }
 
   .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
-    padding-inline-end: calc(var(--size-4-2) + 88px);
+    padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-2));
   }
 }
 
@@ -2480,7 +2483,7 @@ button.gedcom-fg-pop-open {
 }
 
 .is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
-  padding-inline-end: calc(var(--size-4-2) + 88px);
+  padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-2));
 }
 
 .gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick) {
