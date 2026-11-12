@@ -10,7 +10,6 @@ import {
   fileTarget,
   formFor,
   mediaFileEdit,
-  OUT_OF_REACH,
   safeName,
   vaultFileChoices,
   type FileChoiceHost,
@@ -39,7 +38,7 @@ describe("the path a medium's file is written as", () => {
 
   it("reaches a file above its folder in 5.5.1 and not in 7.0", () => {
     expect(fileTarget("trees/curie.ged", "Media/photo.jpg", "5.5.1")).toBe("../Media/photo.jpg");
-    expect(fileTarget("trees/curie.ged", "Media/photo.jpg", "7.0")).toBeNull();
+    expect(fileTarget("trees/curie.ged", "Media/photo.jpg", "7.0")).toBe("../Media/photo.jpg");
   });
 });
 
@@ -124,24 +123,34 @@ describe("writing a medium's file", () => {
     expect(linesOf(tab).slice(6, 8)).toEqual(["1 FILE Media/b.png", "2 TITL A"]);
   });
 
-  it("writes nothing where 5.5.1 does not list the format, and says the service's reason", () => {
+  it("writes a 5.5.1 format the standard does not list as an extension, with the service's warning", () => {
+    const tab = tabOf(["0 @O1@ OBJE", "1 FILE a.jpg", "2 FORM jpg"], "5.5.1");
+
+    const outcome = commit(tab, mediaFileEdit(tab.service(), "curie.ged", { file: at(6), form: at(7) }, "Media/b.png", tab.version));
+
+    expect(outcome).toMatchObject({ ok: true });
+    expect((outcome as { warnings: string[] }).warnings).toHaveLength(1);
+    expect(linesOf(tab).slice(6, 8)).toEqual(["1 FILE Media/b.png", "2 FORM png"]);
+  });
+
+  it("writes nothing where 5.5.1 cannot read the format even as an extension", () => {
     const tab = tabOf(["0 @O1@ OBJE", "1 FILE a.jpg", "2 FORM jpg"], "5.5.1");
     const before = tab.text;
 
-    const outcome = commit(tab, mediaFileEdit(tab.service(), "curie.ged", { file: at(6), form: at(7) }, "Media/b.png", tab.version));
+    const outcome = commit(tab, mediaFileEdit(tab.service(), "curie.ged", { file: at(6), form: at(7) }, "Media/b.xyz", tab.version));
 
     expect(outcome).toMatchObject({ ok: false, code: "value-not-in-enum" });
     expect(tab.text).toBe(before);
   });
 
-  it("writes nothing for a file a GEDCOM 7 file cannot name, before asking the service", () => {
+  it("writes nothing for a file a GEDCOM 7 file cannot name, as the service refuses it", () => {
     const tab = tabOf(["0 @O1@ OBJE", "1 FILE Media/a.jpg", "2 FORM image/jpeg"]);
-    const setValue = vi.spyOn(tab.service(), "setValue");
+    const before = tab.text;
 
-    const outcome = mediaFileEdit(tab.service(), "trees/curie.ged", { file: at(4), form: at(5) }, "Media/b.jpg", tab.version);
+    const outcome = commit(tab, mediaFileEdit(tab.service(), "trees/curie.ged", { file: at(4), form: at(5) }, "Media/b.jpg", tab.version));
 
-    expect(outcome).toMatchObject({ ok: false, code: OUT_OF_REACH });
-    expect(setValue).not.toHaveBeenCalled();
+    expect(outcome).toMatchObject({ ok: false, code: "file-target-unsupported" });
+    expect(tab.text).toBe(before);
   });
 
   it("is refused where the text changed since the card was drawn", () => {

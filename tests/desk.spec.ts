@@ -312,7 +312,7 @@ test.describe("the file of a medium", () => {
     await fileControl(page).click();
     const chooser = page.waitForEvent("filechooser");
     await menu(page).getByRole("menuitem", { name: "Upload from device" }).click();
-    await (await chooser).setFiles({ name: "photo.png", mimeType: "image/png", buffer: PNG });
+    await (await chooser).setFiles({ name: "photo.xyz", mimeType: "application/octet-stream", buffer: PNG });
 
     await expect(treeRow(page, "File").locator(".gedcom-tree-message.is-error")).toHaveText("This value is not one of those the standard lists here.");
     expect(await page.evaluate(() => window.desk.calls.copied)).toEqual([]);

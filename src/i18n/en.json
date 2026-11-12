@@ -483,7 +483,7 @@
   "edit.refusal.record-edit-unsupported": "A record's opening line cannot be changed here.",
   "edit.refusal.no-dialect": "This file names no GEDCOM version the plugin can check.",
   "edit.refusal.value-not-allowed": "The standard allows no value on this line.",
-  "edit.refusal.file-out-of-reach": "A GEDCOM 7 file can name only files in its own folder or beneath it.",
+  "edit.refusal.file-target-unsupported": "A GEDCOM file can name only files in its own folder or beneath it.",
   "edit.refusal.copy-failed": "The file could not be copied into the vault, so nothing was written.",
   "edit.refusal.noSuchDay": {
     "one": "There is no {date}: {month} has {count} day.",

@@ -150,7 +150,7 @@ describe("spelling a count", () => {
     expect(t("media.copyKept", { reason: "The file changed.", path: "Media/a.jpg" })).toBe("The file changed. The copy of the file stays in the vault at Media/a.jpg.");
     setLanguage("ru");
     expect([t("media.fromVault"), t("media.fromDevice"), t("record.tag.COPR")]).toEqual(["Выбрать в хранилище", "Загрузить с устройства", "Авторские права"]);
-    expect(t("edit.refusal.file-out-of-reach")).toContain("GEDCOM 7");
+    expect(t("edit.refusal.file-target-unsupported")).toContain("GEDCOM");
   });
 
   it("carries the other parameters through", () => {

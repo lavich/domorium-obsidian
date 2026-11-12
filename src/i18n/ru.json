@@ -539,7 +539,7 @@
   "edit.refusal.record-edit-unsupported": "Первую строку записи здесь изменить нельзя.",
   "edit.refusal.no-dialect": "В файле не указана версия GEDCOM, которую плагин умеет проверять.",
   "edit.refusal.value-not-allowed": "Стандарт не допускает значения в этой строке.",
-  "edit.refusal.file-out-of-reach": "Файл GEDCOM 7 может ссылаться только на файлы в своей папке и во вложенных в неё.",
+  "edit.refusal.file-target-unsupported": "Файл GEDCOM может ссылаться только на файлы в своей папке и во вложенных в неё.",
   "edit.refusal.copy-failed": "Не удалось скопировать файл в хранилище, поэтому ничего не записано.",
   "edit.refusal.noSuchDay": {
     "one": "Даты «{date}» не бывает: {month} длится {count} день.",

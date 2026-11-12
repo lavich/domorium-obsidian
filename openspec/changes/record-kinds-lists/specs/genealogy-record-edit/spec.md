@@ -110,8 +110,14 @@ open it, where it is in the vault.
 #### Scenario: A format the standard does not list
 - **WHEN** a 5.5.1 multimedia record states `2 FORM jpg` and the reader chooses a `.png` file
   from the vault
-- **THEN** nothing is written and the row says that the value is not one of those the
-  standard lists
+- **THEN** the file states the new path with `2 FORM png`, and the row shows the language
+  service's warning that the value is read as a file extension
+
+#### Scenario: A format that is no extension
+- **WHEN** a 5.5.1 multimedia record states `2 FORM jpg` and the reader uploads a file named
+  `photo.xyz`
+- **THEN** nothing is written or copied and the row says that the value is not one of those
+  the standard lists
 
 #### Scenario: The text changed while the file was copied
 - **WHEN** the reader uploads a file and the text of the tab changes before the copy is made

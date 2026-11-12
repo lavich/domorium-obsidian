@@ -1,7 +1,6 @@
 import {
   encodeFileTarget,
   relativeFilePath,
-  resolveFileTarget,
   type GedcomDialect,
   type GedcomLanguageService,
   type Position,
@@ -14,7 +13,6 @@ import { isGedcomPath } from "../vault/movedFiles";
 import type { FieldChoice } from "./detail/tree";
 import { joinEdits, type Refusal, type WriteOutcome } from "./edits";
 
-export const OUT_OF_REACH = "file-out-of-reach";
 export const COPY_FAILED = "copy-failed";
 
 export interface FileAt {
@@ -40,10 +38,8 @@ const extensionOf = (path: string): string => {
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : "";
 };
 
-/** How the GEDCOM file spells a vault path, or null where that spelling would not lead back to it. */
-export function fileTarget(documentPath: string, vaultPath: string, dialect: GedcomDialect | undefined): string | null {
-  const payload = encodeFileTarget(relativeFilePath(documentPath, vaultPath), dialect);
-  return resolveFileTarget(documentPath, payload, dialect) === vaultPath ? payload : null;
+export function fileTarget(documentPath: string, vaultPath: string, dialect: GedcomDialect | undefined): string {
+  return encodeFileTarget(relativeFilePath(documentPath, vaultPath), dialect);
 }
 
 export function copyFolder(documentPath: string, current: string | undefined): string {
@@ -131,9 +127,6 @@ export function mediaFileEdit(
 ): StructureEditResult | Refusal {
   const dialect = service.getDocument().getDialect();
   const value = fileTarget(documentPath, vaultPath, dialect);
-  if (value === null) {
-    return { ok: false, code: OUT_OF_REACH, message: "The GEDCOM file cannot name this file from its folder." };
-  }
   const file = service.setValue(at.file, { value }, version);
   return joinEdits(
     at.form === undefined || !file.ok ? [file] : [file, service.setValue(at.form, { value: formFor(vaultPath, dialect, deviceType) }, version)],
