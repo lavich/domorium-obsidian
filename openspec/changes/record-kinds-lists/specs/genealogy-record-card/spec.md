@@ -324,16 +324,22 @@ marked there, the graph and the timeline staying where they are.
 
 ### Requirement: The media card
 
-Selecting a multimedia record SHALL show its **media card**, which SHALL show the
-file as large as the card allows — or say what it is, or that it is missing or not
-loaded, as a tile does — with its caption and every record that links it. Each of
-those SHALL show the part of the picture its link names, with its own caption, and
-SHALL select that record. A multimedia record is selected by following a link to it, from a pointer to it in the tree of another card, and from its row among the media of the list; the card keeps this form and is not a tree.
+Selecting a multimedia record SHALL show its **media card**, which SHALL be the tree of the
+record's lines and nothing else, as the card of a person is and as the requirements of the
+tree say: its root is the record's opening line, labelled *Media* in the reader's language,
+and every line of the record is beneath it in the order the file writes them, its file shown
+as its picture where it is an image the card can draw and as its path otherwise. The card
+SHALL have no heading of its own and no list of the records that link it; how many records
+point at it is the list's to say. It SHALL be edited as the card of a person is, its file
+chosen as the requirements on editing say. A multimedia record is selected by following a
+link to it, from a pointer to it in the tree of another card, and from its row among the
+media of the list.
 
 #### Scenario: The family photograph
 - **WHEN** the reader follows `[[curie.ged#@O5@]]`
-- **THEN** the card shows the family photograph and lists Marie and Pierre, each
-  with their own part of it and their own caption
+- **THEN** the card is the tree of `@O5@`: its root *Media*, the family photograph drawn in
+  the row of its file, its format and its title beneath it once that row is opened, and no
+  heading and no list of records above or below the tree
 
 #### Scenario: From a tile to its media card
 - **WHEN** the reader activates the pointer to the family photograph in Marie's tree
@@ -341,7 +347,45 @@ SHALL select that record. A multimedia record is selected by following a link to
 
 #### Scenario: From the list
 - **WHEN** the reader chooses Media in the list and clicks the row of the family photograph
-- **THEN** the card shows the media card of `@O5@`, with the picture and the records that link it, and no tree
+- **THEN** the card shows the media card of `@O5@`, the tree of its lines with the picture in
+  the row of its file, and the row of `@O5@` in the list reads `2` under Linked from
+
+### Requirement: The controls of a card are easy to see and to hit
+
+Every control of a card — the pointers that select a record, the place links, the
+links *Show in source* of a missing pointer, the notes' lines, and the file of a medium in its row — SHALL
+show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
+when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
+them SHALL have an activation area at least 32 pixels tall without changing the size of its text,
+and a control that is a block of its own — a pointer, a note's line, the file of a medium — 44 pixels; where two controls stand closer together than that,
+the space between them is shared. The control of a node of the tree, its arrow, SHALL stay shown, like any control that opens or closes a part of the card; the one control that opens or closes every node of a tree SHALL always be shown, in a header above the tree. The headings of the sections of a card and the secondary lines under
+them SHALL be set in the muted text colour of the theme, not the faint one. A date at the left of an event SHALL be set
+in the muted text colour; a notice that a source is missing keeps its warning colour. Nothing SHALL set a colour that is not one of the theme's.
+
+#### Scenario: Keyboard focus
+- **WHEN** the reader reaches a pointer to a family in Marie's tree with the Tab key
+- **THEN** a ring in the accent colour surrounds it
+
+#### Scenario: A press with the pointer
+- **WHEN** the reader presses a pointer to a family in Marie's tree with a pointer device
+- **THEN** no ring is drawn around it
+
+#### Scenario: A phone
+- **WHEN** Marie's card is shown 390 pixels wide on a phone
+- **THEN** the area that activates a place link in her birth is at least 32 pixels tall, and the area that activates a pointer to a family at least 44
+
+#### Scenario: A fact without a source
+- **WHEN** Marie's card is shown
+- **THEN** the dates of her events are in the muted text colour, on a card with no orange mark
+
+#### Scenario: A picture on a media card
+- **WHEN** the card of a photograph in the vault is shown
+- **THEN** its picture, in the row of its file, is a control reached with the keyboard and
+  pressed with Enter or Space, at least 44 pixels in each direction on a phone
+
+#### Scenario: The arrows of a node
+- **WHEN** the card is shown and the pointer is not over the tree
+- **THEN** the arrows of the nodes are visible, and so is the control that opens or closes every node, in the header above the tree
 
 ## ADDED Requirements
 
@@ -356,7 +400,7 @@ root is the record's opening line, labelled with the record's kind in the reader
 — *Shared note*, *Note* for a 5.5.1 note record, *Repository*, *Submitter*, *Submission*,
 *Header*, or the tag as written for a record of the file's own — and every line of the record
 is beneath it in the order the file writes them. The card SHALL be edited as the card of a
-person is, except the card of the header, which the requirements on editing keep read-only.
+person is, the card of the header included, within what the language service allows.
 
 #### Scenario: A shared note
 - **WHEN** the reader chooses the note `@N1@` in the Notes of the list
@@ -371,8 +415,8 @@ person is, except the card of the header, which the requirements on editing keep
 
 #### Scenario: The file header
 - **WHEN** the reader chooses *File header* in the Other kind of the list
-- **THEN** the card is the tree of the header, the GEDCOM version among its lines, with no
-  field to type in, no menu and no removal
+- **THEN** the card is the tree of the header, the GEDCOM version among its lines, with the
+  menu of its root and fields for the values the language service lets be changed
 
 #### Scenario: A submitter
 - **WHEN** the reader chooses `Domorium` in the Other kind and changes its web address in the tree

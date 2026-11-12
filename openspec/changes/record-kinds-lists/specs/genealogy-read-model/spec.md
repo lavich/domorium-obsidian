@@ -46,3 +46,30 @@ that revision.
 #### Scenario: Paid once
 - **WHEN** the list asks for the counts of 1478 notes of one revision
 - **THEN** the document's lines are walked once for all of them
+
+## MODIFIED Requirements
+
+### Requirement: Multimedia records and the records that link them
+
+The model SHALL report every multimedia record the document declares, with the
+file it names, the format it states for that file, the caption it gives and the lines it
+occupies. How many records link it SHALL be the count the model keeps for every record, as
+the requirement on the media, notes, repositories and other records says; reading a
+multimedia record SHALL NOT list those records, since the media card is the tree of the
+record's own lines.
+
+Every picture the model reports for a record SHALL carry the position in the
+file of the link that names it, so that a caller can ask the language service
+what that link refers to. Every line of a record's lines that carries a value SHALL carry the
+position of that value, so that a caller can ask the language service what a file line
+refers to.
+
+#### Scenario: A photograph linked by two people
+- **WHEN** `@O5@` names `Media/curie-family-1908.svg`, and Marie's and Pierre's
+  records each link it with a rectangle and a caption
+- **THEN** reading `@O5@` reports its file, its format `image/svg+xml` and its title, and the
+  model counts two records linking it
+
+#### Scenario: A multimedia record nobody links
+- **WHEN** `@O7@` is declared and no record links it
+- **THEN** the model counts no record linking it, which is not an error
