@@ -98,3 +98,18 @@ Every Obsidian API used is old enough for 1.8.7: `setIcon`, `Platform.isMacOS`, 
 ## Migration Plan
 
 None for the reader. The branch builds against a linked `@domorium/language-service`; it merges only after a release carrying #523 is pinned in `package.json` and `package-lock.json`, with one copy of the package in `npm ls`.
+
+## Implementation
+
+Where the build departs from the decisions above, or settles what they left open:
+
+- **The copy hangs below the pointer.** The ghost keeps the horizontal offset of the press but its top sits 8 pixels below the pointer, instead of being offset by where the grip was pressed. Held by its grip, the copy lay over the boundary the pointer chose, and in the harness the drop line was hidden under it (`treeMove.ts`, `BELOW`).
+- **One click swallowed after a drag.** When a started drag ends, a capturing `click` listener on the grip's window stops the click the release may produce, for one task. Without it, a release over the moved line's own header, after the pointer travelled more than 5 pixels, opened or closed that node.
+- **Escape before the threshold.** Escape ends the session at any point, but is stopped (`preventDefault`, `stopPropagation`) only once the drag has started; before 5 pixels it ends the press and passes on.
+- **The grabbing cursor.** `app.css` at 1.15 has no body-wide `grabbing` rule (the app's helper sets the cursor from script), so `styles.css` adds `body.is-grabbing .gedcom-tree .gedcom-tree-grip { cursor: grabbing }`; the grip holds the pointer's capture for the whole drag, so its cursor is the one shown.
+- **Names of the new host members.** The Macintosh flag reaches the tree as `CardView.macKeys` → `TreeHost.macKeys`, and the post-draw callback as `TreeHost.reveal(element)`. The card binds `describeMoveAt` and `moveAt` only together, where the tab offers both.
+- **Test stand-ins.** `src/testing/obsidianDom.ts` gains `Node.doc`, `Node.win` and `HTMLElement.setCssStyles`, which the drag uses and happy-dom lacks.
+- **The harness redraw.** `window.desk.replace()` changes the text without drawing the card, so the browser specs that change the file mid-drag, and after a move, draw the card again through `window.desk.selectRecord(window.desk.record())`, as a change on disk draws it in the app.
+- **Measured (task 6.2).** The content width of a row with three controls, in the harness, matched the table above to the pixel: 181, 164, 147, 130 on a 390-pixel phone and 173, 156, 139, 122 on a 320-pixel desktop.
+- **Not done here.** Task 1.3 waits for a release of `@domorium/language-service` carrying #523; the branch still builds against the local link. Task 6.3 needs the real app, and 7.2 the archive of `record-fields-tree`.
+
