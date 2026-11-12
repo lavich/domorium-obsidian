@@ -4,7 +4,7 @@
 
 While the **Genealogy interface** setting is on, the plugin SHALL offer a view
 named **Record**, the record card, in the right sidebar. It SHALL be placed there, without taking the focus, the first time in a session a record is selected in a
-GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, or by a pointer, a citation, a place or the control that opens a shared note in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
+GEDCOM tab by a gesture of the reader — a click, a tap, a key on a card or a row, a row of the list, a link, *Go to record* — and no card is open; a reader who then closes it SHALL not have it put back until the plugin loads again, unless the setting **Open the record card when selecting** is on, as below. It SHALL open from the command **Show the record card**, which SHALL expand the sidebar if it is collapsed, bring the card into view and give it the focus. Where the right sidebar is a drawer, as on a phone, the card SHALL be reached from that drawer, and selecting a record by a second touch on a card, a node or a row of Graph or Timeline, and by a tap on a row of the list, SHALL open the drawer on the card, putting the card there if it is not open (even if the reader closed it earlier). Where the sidebar is not a drawer and the setting **Open the record card when selecting** is on, selecting a record by a click, a tap or a key on a card, a node or a row of Graph, Timeline or List, or by a link or *Go to record*, SHALL put the card in the right sidebar if no card is open, even if the reader closed it earlier, and SHALL expand the right sidebar if it is collapsed, without moving the focus from where the reader is, and SHALL NOT open or expand the left sidebar; a card that is open in an expanded sidebar SHALL be left as it is, also when another tab of the sidebar is in front. Selecting by the cursor resting in Source, or by a pointer, a citation or the control that opens a shared note in the card SHALL NOT expand or switch the sidebar. Where the sidebar is not a drawer and the setting is off, a selection by the reader SHALL NOT move, switch or expand it, once the card has been placed or not. While the genealogy interface is off, the plugin
 SHALL NOT place the card, SHALL NOT offer the command, and SHALL close a card that
 is open.
 
@@ -214,9 +214,9 @@ a source or a multimedia record, and SHALL leave the selection as it is otherwis
 A GEDCOM tab SHALL hold at most one **selected record**: a person, a family, a
 source, a multimedia record, a shared note, a repository, a submitter, a 5.5.1 submission
 record or a record of the file's own, each with an identifier, the header of the file,
-which has none and is selected under the id `header:`, or a place that the file names. It SHALL be selected by activating a
+which has none and is selected under the id `header:`. A place is not a record and SHALL NOT be selected. It SHALL be selected by activating a
 person's card, a family node, a name or a lifeline in Graph or Timeline; by
-activating a row of the list; by activating a pointer, a citation, a place or the control
+activating a row of the list; by activating a pointer, a citation or the control
 that opens a shared note in the card; by following a link into the file
 and by choosing a record with **Go to record**, where the record is of one of those
 kinds, the header included; and in Source mode by the cursor, where the record is a person,
@@ -227,7 +227,7 @@ write to the file.
 
 The selection SHALL belong to the tab and to the record, not to what is drawn. It
 SHALL be kept when the tab changes mode, and when the workspace is closed and
-reopened. It SHALL end when the record no longer exists in the file and when the tab is navigated to another file, and SHALL NOT be shown while the Genealogy interface is off.
+reopened. It SHALL end when the record no longer exists in the file and when the tab is navigated to another file, and SHALL NOT be shown while the Genealogy interface is off. A place saved as selected by an earlier version, under an id beginning `place:`, SHALL be dropped when the tab's state is read, leaving nothing selected.
 A record that has no card — the trailer, a record the file writes with no identifier other than the header — SHALL NOT be selected, and SHALL leave the selection as it was. While the Genealogy interface is off nothing SHALL be selected or shown, and a saved selection SHALL be kept in the tab's state unused, to come back when the interface is turned on. A state handed to a tab for the same file that names no selection SHALL leave the selection as it is. A record saved as selected that the file does not declare, when the file is loaded, SHALL be dropped, and until then the card SHALL show the empty state.
 
 While a record is selected the list SHALL mark its row as selected in List mode. A
@@ -236,8 +236,8 @@ fact of a person or a family SHALL NOT be selectable on its card: its lines are 
 In Graph and Timeline mode a selected person SHALL be marked in the view, as the
 requirements of those views say. In List mode the row of the selected record SHALL be
 marked, whatever its kind, as the requirements of the list say. A selected family, source,
-multimedia record, shared note, repository, submitter, record of the file's own, header or
-place has no card or row to mark in Graph or Timeline, and while one is selected nobody is
+multimedia record, shared note, repository, submitter, record of the file's own or header
+has no card or row to mark in Graph or Timeline, and while one is selected nobody is
 marked there, the graph and the timeline staying where they are.
 
 #### Scenario: From a card in the graph
@@ -322,6 +322,11 @@ marked there, the graph and the timeline staying where they are.
 - **THEN** nothing is selected, the card says to select a record, and no row of the
   list is marked
 
+#### Scenario: A place saved as selected
+- **WHEN** a tab was saved by an earlier version with `place:paris, france` selected, and
+  Obsidian is restarted
+- **THEN** nothing is selected and the card says to select a record
+
 ### Requirement: The media card
 
 Selecting a multimedia record SHALL show its **media card**, which SHALL be the tree of the
@@ -352,7 +357,7 @@ media of the list.
 
 ### Requirement: The controls of a card are easy to see and to hit
 
-Every control of a card — the pointers that select a record, the place links, the
+Every control of a card — the pointers that select a record, the
 links *Show in source* of a missing pointer, the notes' lines, and the file of a medium in its row — SHALL
 show a focus ring in the accent colour when it is reached by the keyboard, and SHALL NOT show it
 when it is pressed with a pointer. On a device whose pointer is coarse and in the mobile app, each of
@@ -372,7 +377,7 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 
 #### Scenario: A phone
 - **WHEN** Marie's card is shown 390 pixels wide on a phone
-- **THEN** the area that activates a place link in her birth is at least 32 pixels tall, and the area that activates a pointer to a family at least 44
+- **THEN** the area that activates a pointer to a family is at least 44 pixels tall, and the place in her birth is text, not a control
 
 #### Scenario: A fact without a source
 - **WHEN** Marie's card is shown
@@ -391,9 +396,9 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 
 The card SHALL be readable and usable in one column at the width a sidebar has,
 from 320 pixels up, and at a phone's width, without horizontal scrolling of the
-card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. A place named in a fact SHALL open the card of that place. Redrawing the card for the same record — the file changing —
-SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record or a place SHALL scroll the card to
-the top, except a record selected from a row of the card of a place, which SHALL show the line of that event, as the requirement on the card of a place says.
+card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. A place named in a fact SHALL be text and SHALL open nothing. Redrawing the card for the same record — the file changing —
+SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record SHALL scroll the card to
+the top.
 
 #### Scenario: A person card at a sidebar's width
 - **WHEN** Marie's card is shown 320 pixels wide
@@ -404,8 +409,8 @@ the top, except a record selected from a row of the card of a place, which SHALL
 - **THEN** every line of her record is visible without scrolling sideways
 
 #### Scenario: Tapping a place in a fact
-- **WHEN** the reader taps `Warsaw, Congress Poland` in Marie's birth
-- **THEN** the card of that place is shown
+- **WHEN** the reader taps `Warsaw, Congress Poland` in the summary of Marie's closed birth
+- **THEN** the card still shows Marie, with her birth opened
 
 #### Scenario: Another record
 - **WHEN** the card is scrolled to the end of Marie's card and the reader activates
@@ -415,56 +420,6 @@ the top, except a record selected from a row of the card of a place, which SHALL
 #### Scenario: The header stays
 - **WHEN** the reader scrolls to the end of Marie's card
 - **THEN** the card has no header: no bar, no Back or Forward control, and its body began at the top of the card
-
-### Requirement: An event is one row at a place
-
-The card of a place SHALL have no heading. At its top SHALL be a field labelled with the
-word for a place in the reader's language, holding the place's name as the Places list names
-it — the spelling of its first occurrence in the file. Where the card writes, the field SHALL
-rename the place everywhere, as the requirement on renaming a place in
-`genealogy-record-edit` says, and SHALL behave as a field of the tree: written on Enter and
-on leaving it, put back by Escape. Where the card does not write — a file with no dialect, or
-a line of the place the language service does not describe — the name SHALL be read-only and
-the card SHALL say once, in the reader's language, why it cannot be edited.
-
-Below the field, every line that names the place — each `PLAC` of an event of a person or a
-family that the Places list groups into it — SHALL be drawn as one **event row**, in the
-order the file writes them: its date as the file writes it on the left, a dash where it has
-none; its name in the reader's language, which is not a control of its own; where the event
-cites any source, a quiet dot after the name, which says how many in its accessible name and
-title, and none where it cites none; and, under the name, the person or the family the event
-belongs to, as a link. Activating the link, or pressing the row, SHALL select that record and
-show its card with the node of that event opened and brought into view, the focus on it
-where the focus was in the card. On a coarse pointer and on a phone each row SHALL be at least
-44 pixels tall. The card SHALL NOT offer to edit the lines a `PLAC` holds (`MAP`, `FORM`,
-`TRAN`, `NOTE`); they are edited in the tree of the event.
-
-#### Scenario: An event at a place
-- **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
-- **THEN** the row shows `7 NOV 1867`, names `Birth`, and links `Marie Skłodowska-Curie` under the name
-
-#### Scenario: A fact that cites a source
-- **WHEN** an event at a place carries `2 SOUR @S2@`
-- **THEN** its row shows a dot after the name, which says it cites one source
-
-#### Scenario: The record from a place
-- **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
-- **THEN** Marie's card is shown with her birth opened and in view, and the list, where it is in view, shows the people with her marked
-
-#### Scenario: The name at the top
-- **WHEN** the card of `Warsaw, Congress Poland` is shown in `curie.ged`
-- **THEN** it has no heading, its first control is a field labelled Place holding
-  `Warsaw, Congress Poland`, and eleven rows follow in the order of the file, the first
-  Marie's birth
-
-#### Scenario: The rows in the order of the file
-- **WHEN** a file names `Kyiv` first in a death of 1900 and then in a birth of 1850
-- **THEN** the card of `Kyiv` lists the death first
-
-#### Scenario: The name of a place in a file with no dialect
-- **WHEN** the card shows a place of a file that names no GEDCOM version
-- **THEN** its name is a read-only field, the card says once why it cannot be edited, and
-  its rows still select their records
 
 ## ADDED Requirements
 
@@ -511,8 +466,7 @@ person is, the card of the header included, within what the language service all
 The plugin SHALL name a record by one rule wherever it names it: in the first text column
 of its row in the list, in the announcement of the card, as the text of a pointer to it in
 the tree — a shared note excepted, below — and as the summary of the closed root of its tree. A person SHALL be named as the
-person card names them, a family by its spouses, a source by its title, a place as the
-Places list names it; a multimedia record by its title, or by the name of its first file
+person card names them, a family by its spouses, a source by its title; a multimedia record by its title, or by the name of its first file
 where it states none; a shared note by the first line of its text that is not empty, read
 with its `CONC` and `CONT` lines joined; a repository and a submitter by their `NAME`; a
 record of the file's own, and any other record, by its `NAME`, else its `TITL`, else the value
@@ -537,3 +491,11 @@ whole text where it stands, as the tree says, and not only its name.
 #### Scenario: A record named by its own value
 - **WHEN** a file declares `0 @P1@ _PLAN Custom value` with no `NAME` or `TITL` beneath it
 - **THEN** its row's Name and the summary of its closed root read `Custom value`
+
+## REMOVED Requirements
+
+### Requirement: An event is one row at a place
+
+**Reason**: The user decided on 2026-11-12 to remove the card of a place with the Places of the list («давай удалим таблицу Places», «и карточки тоже»). The event rows were drawn only on that card.
+
+**Migration**: An event is read and edited in the tree of the person or the family it belongs to, where its place is the value of its `PLAC` line. A place can be renamed in Source, with the editor's search and replace.

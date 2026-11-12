@@ -1,3 +1,8 @@
+## RENAMED Requirements
+
+- FROM: `### Requirement: A place in the tree is a link`
+- TO: `### Requirement: A place and a label in the tree are text`
+
 ## MODIFIED Requirements
 
 ### Requirement: The lines of a record are one tree in the file's order
@@ -105,6 +110,18 @@ Each line of the tree SHALL be a **row** of a label and a value. The label SHALL
 #### Scenario: An unknown tag
 - **WHEN** a record states `1 _TRIBE Highlander`
 - **THEN** the row is labelled `_TRIBE`
+
+### Requirement: A place and a label in the tree are text
+
+The place in the summary of a closed row SHALL be text, as the file writes it, and SHALL NOT act on its own: pressing it does what pressing the header of its node does. On the row of a `PLAC` line the value SHALL be a field the reader can change, as the requirements on editing a record say, with no control beside it: a place has no card. The label of a line, whether the line is an event or an attribute or not, SHALL be text and SHALL NOT act: no card of an event exists. Pressing a place or a label SHALL NOT write to the file.
+
+#### Scenario: Opening a place
+- **WHEN** the reader presses `Warsaw, Congress Poland` in the summary of Marie's closed birth, and then looks at the `PLAC` row of the opened birth
+- **THEN** the birth is opened, the card still shows Marie, and the row of its place holds a field with `Warsaw, Congress Poland` and no control that opens a place
+
+#### Scenario: A label
+- **WHEN** the reader presses `Sex` or `Birth` in Marie's tree
+- **THEN** nothing opens, and pressing the header of the node `Birth` opens or closes the node
 
 ## ADDED Requirements
 

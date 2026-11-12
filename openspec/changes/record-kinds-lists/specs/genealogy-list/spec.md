@@ -2,12 +2,16 @@
 
 - FROM: `### Requirement: People, families, sources and places`
 - TO: `### Requirement: The kinds of records the list shows`
+- FROM: `### Requirement: A row selects a record or a place, and the selected row is marked`
+- TO: `### Requirement: A row selects its record, and the selected row is marked`
+- FROM: `### Requirement: The selected record or place is brought into view`
+- TO: `### Requirement: The selected record is brought into view`
 
 ## MODIFIED Requirements
 
 ### Requirement: A GEDCOM tab can show its file as a list
 
-A GEDCOM tab SHALL offer a **List** mode that shows the people, the families, the sources, the places, the media, the shared notes, the repositories or the other records of its file as a table, in the tab itself, with no tab of its own and no sidebar.
+A GEDCOM tab SHALL offer a **List** mode that shows the people, the families, the sources, the media, the shared notes, the repositories or the other records of its file as a table, in the tab itself, with no tab of its own and no sidebar.
 The tab SHALL enter it from the mode control in its header, from a command, from the
 tab's menu, as the requirement on the mode control says, and a file opened anew MAY open
 in it by the rule for a new tab, as the requirement on the modes of a GEDCOM tab says. Entering it SHALL NOT open another tab.
@@ -58,9 +62,10 @@ Nothing in the list SHALL write to the file, save it or mark it as changed.
 - **THEN** the file on disk is byte for byte what it was
 
 #### Scenario: A place selected, restored with the workspace
-- **WHEN** the tab is in List mode on the places of `curie.ged`, `Paris, France` is selected,
-  and Obsidian is restarted
-- **THEN** the tab shows the places with the row of `Paris, France` marked and its card in the right panel
+- **WHEN** a workspace saved the tab in List mode on the places of `curie.ged`, which the list
+  no longer has, with `Paris, France` selected, and Obsidian is restarted
+- **THEN** the tab shows the people of the file, no row is marked, and the card says to select
+  a record
 
 #### Scenario: An event selected, restored with the workspace
 - **WHEN** a workspace saved the tab in List mode on the events of `curie.ged`, which the list no longer has, and Obsidian is restarted
@@ -73,11 +78,12 @@ Nothing in the list SHALL write to the file, save it or mark it as changed.
 
 ### Requirement: The kinds of records the list shows
 
-The list SHALL show the file's people, its families, its sources, its places, its media, its
-shared notes, its repositories or its other records, switched by eight buttons at its top,
-labelled **People**, **Families**, **Sources**, **Places**, **Media**, **Notes**,
+The list SHALL show the file's people, its families, its sources, its media, its
+shared notes, its repositories or its other records, switched by seven buttons at its top,
+labelled **People**, **Families**, **Sources**, **Media**, **Notes**,
 **Repositories** and **Other**, in that order, the button of the kind shown marked as the
-active one. Where the toolbar is too narrow for the eight buttons at their natural width
+active one. The list SHALL have no kind of places: a place is read in the rows of the people
+and the families and in the tree of a record, as the file writes it. Where the toolbar is too narrow for the seven buttons at their natural width
 beside the search, the buttons SHALL give way to one dropdown of the same kinds in the same
 order, showing the kind shown, as the requirement on the list in a narrow tab says. A kind SHALL show these columns, and each row SHALL
 show them as the card shows the same facts:
@@ -91,14 +97,12 @@ show them as the card shows the same facts:
   **Children**, how many children the family has;
 - sources: **Title**; **Author** and **Repository**, where stated; and **Cited by**, how
   many records cite the source;
-- places: as the requirement on the places says;
 - media, notes, repositories and other records: as the requirements on each of them say.
 
 Without a sort the people, the families, the sources, the media, the notes, the
-repositories and the other records SHALL be in the order the file declares them, the
-places in alphabetical order. Above the rows the
+repositories and the other records SHALL be in the order the file declares them. Above the rows the
 list SHALL say how many it shows, and, where the filter narrows them, how many of all:
-`17 people`, `5 families`, `3 sources`, `10 places`, `7 media`, `2 notes`,
+`17 people`, `5 families`, `3 sources`, `7 media`, `2 notes`,
 `2 repositories`, `2 records`, `11 of 17 people`, spelt by the plural rules of
 the language shown, the number written as digits with no separator of thousands. A record the file declares without an identifier SHALL NOT be listed,
 since it cannot be selected; the header of the file, which the Other kind lists, is the one
@@ -143,18 +147,19 @@ exception. A record that some kind lists SHALL be listed by exactly one kind. A 
 
 #### Scenario: Four kinds
 - **WHEN** the list is shown in a tab wide enough for its buttons
-- **THEN** its kind buttons read **People**, **Families**, **Sources**, **Places**,
-  **Media**, **Notes**, **Repositories** and **Other**, in that order, one of them is
-  marked as active, and there is no button for the events
+- **THEN** its kind buttons read **People**, **Families**, **Sources**, **Media**,
+  **Notes**, **Repositories** and **Other**, in that order, one of them is marked as
+  active, and there is no button for the events or for the places
 
 #### Scenario: The kinds in a dropdown
-- **WHEN** the list is shown in a tab too narrow for the eight buttons beside the search
-- **THEN** one dropdown, named as the kind of records shown, offers the same eight kinds in
+- **WHEN** the list is shown in a tab too narrow for the seven buttons beside the search
+- **THEN** one dropdown, named as the kind of records shown, offers the same seven kinds in
   the same order with the kind shown chosen, and choosing **Notes** in it shows the notes
 
 #### Scenario: A file with no places
-- **WHEN** the list shows the places of a file whose events name no place
-- **THEN** it says the file names no places
+- **WHEN** the list is shown for `curie.ged`, whose events name ten places
+- **THEN** no kind lists the places, and the place of Marie's birth is read in her row among
+  the people
 
 ### Requirement: The search of the list
 
@@ -164,14 +169,14 @@ way to a field when pressed and comes back when the field is closed empty. It SH
 the rows as the reader types, not step through matches, and so SHALL have no arrows. For people it SHALL
 match the name, any other name the record states, the years shown and the place shown; for
 families the spouses' names, the year and the place; for sources the title, the author and
-the repository; for places the name of the place; for media the title, the file and the
+the repository; for media the title, the file and the
 format; for notes the whole text of the note, every line of it and not only the one the row
 shows; for repositories the name and the address; for other records the kind, as shown and
 as its tag is written, and the name. A year before the common era SHALL be matched by its digits as the file
 writes it, not by the mark of the era shown beside it, so the same filter finds it in any
-language. Case SHALL NOT matter, nor, for places, media, notes, repositories and other records, the marks on letters and the letters that do not
+language. Case SHALL NOT matter, nor, for media, notes, repositories and other records, the marks on letters and the letters that do not
 decompose — `ł`, `ß`, `ø`, `đ`, `æ`, `œ` and `ı` match `l`, `ss`, `o`, `d`, `ae`, `oe` and `i`
-— so that a name typed without its marks finds the place or the record. A search matching nothing SHALL say so and say what it
+— so that a name typed without its marks finds the record. A search matching nothing SHALL say so and say what it
 searches. While it holds text it SHALL show how many rows remain of how many there are,
 spelt by the plural rules of the language shown, as `4 of 17 people`. Switching the kind
 SHALL clear the text and leave the search as open as it was. A cross in the open search
@@ -241,16 +246,18 @@ least 44 CSS pixels tall on a touch device.
 - **THEN** the keyboard is on the rows and they are still narrowed by `joliot`
 
 #### Scenario: Filtering the places
-- **WHEN** the reader types `PARIS` among the places of `curie.ged`
-- **THEN** only `Paris, France` is listed and the count reads `1 of 10 places`
+- **WHEN** the reader types `PARIS` among the families of `curie.ged`
+- **THEN** only the family of Frédéric Joliot and Irène Joliot-Curie, married at
+  `Paris, France`, is listed, through the place its row shows
 
 #### Scenario: Filtering the places without marks
-- **WHEN** a place is named `Łódź, Poland` and the reader types `lodz`
-- **THEN** `Łódź, Poland` is listed
+- **WHEN** a repository is named `Archiwum Łódź` and the reader types `lodz` among the
+  repositories
+- **THEN** `Archiwum Łódź` is listed
 
 #### Scenario: Nothing matches among the places
-- **WHEN** the reader types `zzz` among the places
-- **THEN** the list says nothing matches `zzz` and that the filter covers place names
+- **WHEN** the reader types `zzz` among the repositories
+- **THEN** the list says nothing matches `zzz` and that the filter covers names and addresses
 
 #### Scenario: Filtering the notes by a later line
 - **WHEN** the reader types `chemistry` among the notes of `curie.ged`, a word that `@N1@`
@@ -273,15 +280,15 @@ least 44 CSS pixels tall on a touch device.
 
 On a wide tab each column header of the list SHALL be a button. Pressing it SHALL sort
 the rows by that column ascending, pressing it again descending, and pressing it a third
-time SHALL return them to the order of the file, the places to alphabetical order; the header of the column the rows are
+time SHALL return them to the order of the file; the header of the column the rows are
 sorted by SHALL say which way to assistive technology, and the others SHALL say none.
 Sorting SHALL be stable: rows whose values compare equal keep the order of the file,
-descending too, and places the order in which the file first names them. Names of people SHALL be compared by surname and then given name, and every text
+descending too. Names of people SHALL be compared by surname and then given name, and every text
 column — the names of repositories and of other records, a title, a file, a format, the text of a note, an address, a kind among them — by the collation of the language shown, numbers inside a text counted as numbers,
 so that a letter with a mark sorts with its base letter. Years SHALL be compared by the
-year of birth, or, for places, by the first year of an event there; Marriage by the year of
-the marriage, Sources, Children, Cited by, Events and Linked from as numbers. A row whose value is missing — no birth year, no marriage, no place, no
-author, an unnamed person, an untitled source, a place with no dated event, a medium with no format, a repository with no address — SHALL come last in either direction. Among the other records the
+year of birth; Marriage by the year of
+the marriage, Sources, Children, Cited by and Linked from as numbers. A row whose value is missing — no birth year, no marriage, no place, no
+author, an unnamed person, an untitled source, a medium with no format, a repository with no address — SHALL come last in either direction. Among the other records the
 row of the file's header SHALL stay first whatever the sort and its direction, and the sort
 SHALL order the rows below it. The
 sort of each kind SHALL be kept with the kind, SHALL combine with the filter, and SHALL
@@ -352,13 +359,13 @@ NOT change which record is selected.
 - **THEN** the families are in the same order
 
 #### Scenario: Sorting the places by events
-- **WHEN** the reader presses Events twice among the places of `curie.ged`
-- **THEN** `Warsaw, Congress Poland`, with twelve events, is first, and the places with one
-  event follow in the order in which the file first names them
+- **WHEN** the reader presses Sources twice among the repositories of `curie.ged`
+- **THEN** `Nobel Prize Outreach`, pointed at by two sources, is first, then
+  `State Archive in Warsaw`
 
 #### Scenario: Pressing a third time among the places
-- **WHEN** the reader presses Events three times among the places
-- **THEN** the places are in alphabetical order and no header says it sorts
+- **WHEN** the reader presses Sources three times among the repositories
+- **THEN** the repositories are in the order of the file and no header says it sorts
 
 #### Scenario: Sorting the notes by how many link them
 - **WHEN** a file declares three notes, linked from 3, 0 and 1 records in that order, and
@@ -372,7 +379,7 @@ NOT change which record is selected.
 - **THEN** the file's header is the first row both times, `Album` before `Zygmunt` after
   the first press and after them after the second
 
-### Requirement: A row selects a record or a place, and the selected row is marked
+### Requirement: A row selects its record, and the selected row is marked
 
 Activating a row of the list, by a click, a tap, or Enter or Space on a row with the
 focus, SHALL select that record in the tab, as the requirement on the selected record
@@ -380,16 +387,14 @@ says: the record card shows it, the tab stays in List mode, and no page or other
 opened. The row of the selected record SHALL be marked as selected, and as selected to
 assistive technology, whichever kind is shown; with nothing selected, or a selected record
 whose row the kind shown does not hold, no row SHALL be marked. Every record that can be
-selected has a row in exactly one kind: a person, a family, a source, a place, a multimedia
+selected has a row in exactly one kind: a person, a family, a source, a multimedia
 record, a shared note, a repository, and a submitter, a record of the file's own or the
 file's header among the other records. A row of the Other kind for the file's header SHALL
 select the header, which has no xref and is selected under the id `header:`. The mark SHALL follow the
 selection however it was made: from the list, from the record card, by a link or by *Go
 to record*; and SHALL stay across sorting, filtering and switching the kind, and be
 marked again when its row is drawn. A selection made from the list SHALL NOT move the
-list. A row of the Places SHALL select its place, which has no xref and is selected under the id
-`place:` and its key: the record card shows the place, with its events, each linking to the person
-or family it belongs to. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
+list. A place is not a record and SHALL NOT be selected. Selecting SHALL NOT write to the file. On a phone, a tap on a row SHALL select the
 record and open the right drawer on the card at once: the rule of the graph and the
 timeline, that the first touch lights and the second selects, does not apply to rows.
 
@@ -479,29 +484,30 @@ derived from that text size, so that it follows the reader's font size.
 - **THEN** the right drawer opens on Marie's card
 
 #### Scenario: A place row
-- **WHEN** the reader chooses Places, and clicks `Paris, France`, with Marie selected
-- **THEN** the row of `Paris, France` is marked selected, the record card shows `Paris, France`
-  with its events, and the tab is still in List mode
+- **WHEN** the reader chooses Repositories, and clicks `State Archive in Warsaw`, with Marie
+  selected
+- **THEN** the row of `State Archive in Warsaw` is marked selected, the record card shows that
+  repository, and the tab is still in List mode
 
 #### Scenario: Another place row
-- **WHEN** `Paris, France` is marked and the reader clicks `Warsaw, Congress Poland`
-- **THEN** only the row of `Warsaw, Congress Poland` is marked
+- **WHEN** `State Archive in Warsaw` is marked and the reader clicks `Nobel Prize Outreach`
+- **THEN** only the row of `Nobel Prize Outreach` is marked
 
 #### Scenario: The place is kept across the modes
-- **WHEN** `Paris, France` is marked, and the reader switches to Graph mode and back
-- **THEN** the row of `Paris, France` is marked again
+- **WHEN** `State Archive in Warsaw` is marked, and the reader switches to Graph mode and back
+- **THEN** the row of `State Archive in Warsaw` is marked again
 
 #### Scenario: A place in a person's card
-- **WHEN** the list shows the people and the reader presses `Warsaw, Congress Poland` in the
-  summary of the closed birth in Marie's tree
-- **THEN** the list shows the places with the row of `Warsaw, Congress Poland` marked and in
-  view, and the card shows `Warsaw, Congress Poland`
+- **WHEN** the list shows the people with Marie selected and the reader presses
+  `Warsaw, Congress Poland` in the summary of the closed birth in Marie's tree
+- **THEN** the node of her birth opens, the list still shows the people with Marie's row
+  marked, and the card still shows Marie
 
 #### Scenario: A record selected elsewhere
-- **WHEN** the list shows the places and Marie is selected in the graph
-- **THEN** no row of the places is marked
+- **WHEN** the list shows the repositories and Marie is selected in the graph
+- **THEN** no row of the repositories is marked
 
-### Requirement: The selected record or place is brought into view
+### Requirement: The selected record is brought into view
 
 The list SHALL bring the row of the selected record into view when the selection is
 one it has not yet marked: a selection made from outside the list — from the record
@@ -519,15 +525,15 @@ shown but is not wholly within the visible rows, it SHALL be scrolled to the mid
 above, because the reader has just chosen this view. A filter the reader typed
 SHALL NOT be cleared by returning to the list with the selection
 unchanged. A selection made by activating a row of the list SHALL change neither the
-scroll position, the kind nor the filter. While the list shows the Places, the Media, the
+scroll position, the kind nor the filter. While the list shows the Media, the
 Notes, the Repositories or the Other records, the selection of a person, a family or a
 source from a link, *Go to record*, the graph, the timeline or the cursor SHALL NOT switch
 the list away from the kind it shows, and no row of it SHALL be marked; the selection of a
-place, a multimedia record, a shared note, a repository or a record of the Other kind,
+multimedia record, a shared note, a repository or a record of the Other kind,
 however it was made, SHALL switch the list to the kind that holds its row and bring that row
 into view when the list brings a selection into view as this requirement says: at once for
 one made from the card, by a link or by *Go to record*, and, for one made by the cursor in
-Source, when the list is next shown. A record that the reader selects in the record card — a person on the card of a place, a repository on the card of a source, a note opened from a card, for some — SHALL switch the list to the kind of that record and bring its row into view.
+Source, when the list is next shown. A record that the reader selects in the record card — a person on the card of a family, a repository on the card of a source, a note opened from a card, for some — SHALL switch the list to the kind of that record and bring its row into view.
 
 #### Scenario: Entering the list with a selection
 - **WHEN** a file of 500 people has its 400th person selected in Graph mode and the
@@ -584,16 +590,19 @@ Source, when the list is next shown. A record that the reader selects in the rec
 - **THEN** Marie's row is marked selected
 
 #### Scenario: The places stay
-- **WHEN** the list shows the places and the reader follows `[[curie.ged#@I1@]]`
-- **THEN** the list still shows the places and no row of them is marked, and Marie's row is
+- **WHEN** the list shows the media and the reader follows `[[curie.ged#@I1@]]`
+- **THEN** the list still shows the media and no row of them is marked, and Marie's row is
   marked once the reader chooses People
 
 #### Scenario: A person pressed in the card of a place
-- **WHEN** the list shows the places, `Paris, France` is selected, and the reader presses Pierre Curie in the card of that place
+- **WHEN** the list shows the notes, the reader followed `[[curie.ged#@F3@]]`, so that the
+  card shows the Curies' family and the notes stay, and the reader presses Pierre Curie in
+  the tree of that family
 - **THEN** the list shows the people with the row of Pierre Curie marked and in view
 
 #### Scenario: A family pressed in the card of a place
-- **WHEN** the list shows the places, `Sceaux, France` is selected, and the reader presses the Curies in the row of their marriage in the card of that place
+- **WHEN** the list shows the media, the reader followed `[[curie.ged#@I1@]]`, and the reader
+  presses the Curies' family in Marie's tree
 - **THEN** the list shows the families with the row of the Curies' family marked and in view
 
 #### Scenario: The notes stay for a person from the graph
@@ -628,15 +637,15 @@ citations; for the other kinds as the requirement on each says — the column he
 and a button that turns the direction, and a row and each control SHALL be at least 44
 CSS pixels tall. A count shown at the end of a two-line row SHALL say what it counts in
 words, spelt by the plural rules of the language shown: `2 sources`, `2 children`,
-`Cited by 2`, `11 events`, `Linked from 2`. On a touch device the kind buttons, the
+`Cited by 2`, `Linked from 2`. On a touch device the kind buttons, the
 search and the column headers of
 a wide tab SHALL be at least 44 CSS pixels tall as well. Row and control heights SHALL
 follow the reader's font size rather than a fixed number of pixels, and the page SHALL
 not scroll sideways at any font size the app offers.
 
-The kinds SHALL be buttons while the toolbar has room for all eight at their natural width
+The kinds SHALL be buttons while the toolbar has room for all seven at their natural width
 beside the search closed to its icon, and one dropdown otherwise. The room SHALL be decided
-by measuring, not by a fixed breakpoint: the natural width of the eight buttons is measured
+by measuring, not by a fixed breakpoint: the natural width of the seven buttons is measured
 as they are drawn, in the language and at the font size shown, and is measured again
 whenever the list is resized; the kinds SHALL become a dropdown when the toolbar is
 narrower than that width, and SHALL become buttons again only once the toolbar is wider
@@ -676,7 +685,7 @@ clear.
 #### Scenario: Buttons where they fit, a dropdown where they do not
 - **WHEN** a tab with a mouse is made narrower, a pixel at a time, from 1400 pixels
 - **THEN** the kinds are buttons until the toolbar is narrower than the measured width of
-  the eight buttons beside the search icon, and a dropdown from then on; widened again,
+  the seven buttons beside the search icon, and a dropdown from then on; widened again,
   they become buttons only once the toolbar is wider than that width by the margin
 
 #### Scenario: Measured in the language shown
@@ -684,19 +693,45 @@ clear.
 - **THEN** the kinds become a dropdown at the width the Russian buttons measure, not at the
   width of the English ones
 
-### Requirement: The Places has no actions
+### Requirement: The list is reachable by the keyboard
 
-While the list shows the Places, the row of the kind buttons SHALL hold the kind buttons and the
-search and nothing else: no button that creates, opens, appends to or otherwise writes a note, a
-table or a file. The Places SHALL be read-only.
+The rows of the list SHALL be one stop in the order of the tab key, after the kind
+buttons, the search and the headers. With the focus on a row, the Up and Down arrows
+SHALL move it to the previous and next row of the rows shown, Home and End to the first
+and the last, and Page Up and Page Down by what the list shows at once; the row given the
+focus SHALL be drawn and brought into view, also where only a window of rows is drawn.
+Enter or Space SHALL select the record of the row with the focus, and the focus SHALL stay on the row. Moving the focus SHALL NOT select. The list SHALL be a grid to assistive
+technology: a header row of column headers, each saying its sort, and rows of cells, each
+row saying its position among all the rows, including those not drawn. The row that has
+the focus SHALL always be one that is drawn. A
+row SHALL say to assistive technology whom or what it shows, and whether it is selected.
+The kind buttons, the headers and the search SHALL be reachable with the keyboard.
 
-#### Scenario: The row of the kinds
-- **WHEN** the list shows the places of a file
-- **THEN** the row of the kind buttons holds the eight kinds, as buttons or as their dropdown, and the search, and no other button
+#### Scenario: Arrow keys
+- **WHEN** the focus is on the first row of the people and the reader presses Down twice
+- **THEN** the focus is on the third row and nothing is selected
 
-#### Scenario: Nothing is written
-- **WHEN** the reader sorts, searches, marks a row and leaves the Places
-- **THEN** no note or file in the vault has been created or changed
+#### Scenario: Enter
+- **WHEN** the focus is on Pierre Curie's row and the reader presses Enter
+- **THEN** Pierre Curie is selected and the focus is still on his row
+
+#### Scenario: Space
+- **WHEN** the focus is on Marie's row and the reader presses Space
+- **THEN** Marie is selected and the page does not scroll
+
+#### Scenario: Home and End
+- **WHEN** the list holds twenty thousand people and the reader presses End
+- **THEN** the last row is drawn, has the focus and is in view
+
+#### Scenario: The first and the last
+- **WHEN** the focus is on the first row and the reader presses Up, and then on the last
+  row and presses Down
+- **THEN** the focus does not move
+
+#### Scenario: Enter on a place
+- **WHEN** the focus is on the row of `State Archive in Warsaw` among the repositories and the
+  reader presses Enter
+- **THEN** the row is marked, the focus is still on it, and the card shows the repository
 
 ## ADDED Requirements
 
@@ -839,7 +874,7 @@ column is.
 ### Requirement: The new kinds have no actions and nothing in them writes
 
 While the list shows the media, the notes, the repositories or the other records, the row of
-the kinds SHALL hold the kinds and the search and nothing else, as it does for the places,
+the kinds SHALL hold the kinds and the search and nothing else,
 and nothing the reader does in them SHALL write to the file, a note or any other file. A
 kind with no record SHALL say that the file holds none.
 
@@ -850,3 +885,17 @@ kind with no record SHALL say that the file holds none.
 #### Scenario: Nothing is written
 - **WHEN** the reader sorts, searches and selects rows in each of the four kinds
 - **THEN** no note or file in the vault has been created or changed
+
+## REMOVED Requirements
+
+### Requirement: Places
+
+**Reason**: The user decided on 2026-11-12 to remove the Places from the list («давай удалим таблицу Places»), and with it the card of a place («и карточки тоже»). A place is not a record in GEDCOM; with no card to open, a row of a place would select nothing.
+
+**Migration**: A place stays readable where the file writes it: in the Place column of the people and the families, in their search, and in the tree of every record. A workspace saved on the Places opens the list on the People, and a saved selection of a place is dropped.
+
+### Requirement: The Places has no actions
+
+**Reason**: The Places kind is removed with *Places*, above.
+
+**Migration**: None; the kinds that remain have no actions, as *The new kinds have no actions and nothing in them writes* says.

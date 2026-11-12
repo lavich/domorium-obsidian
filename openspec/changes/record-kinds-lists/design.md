@@ -19,7 +19,7 @@ This plan was first written against `main` and is now built in branch `lavich/re
 
 ## Decisions
 
-**The kinds and their rows.** Eight kinds: `people`, `families`, `sources`, `places`, `media`, `notes`, `repositories`, `other`. A record belongs to exactly one. `other` lists the header first, under the synthetic id `header:` (`HEADER_ID` in `deskState.ts`, as a place has `place:`), then, in file order, every top-level record with an identifier whose tag no other kind takes: `SUBM`, 5.5.1 `SUBN`, a custom tag, and any record of the standard no kind lists. `TRLR` and records without an identifier are not listed (M4). The header's row carries `header:` as its `xref`, so `keyOf`, `markedKey`, `activate` and `place` treat it as any record.
+**The kinds and their rows.** Eight kinds at first: `people`, `families`, `sources`, `places`, `media`, `notes`, `repositories`, `other`; seven since the Places went (2026-11-12, below). A record belongs to exactly one. `other` lists the header first, under the synthetic id `header:` (`HEADER_ID` in `deskState.ts`, as a place has `place:`), then, in file order, every top-level record with an identifier whose tag no other kind takes: `SUBM`, 5.5.1 `SUBN`, a custom tag, and any record of the standard no kind lists. `TRLR` and records without an identifier are not listed (M4). The header's row carries `header:` as its `xref`, so `keyOf`, `markedKey`, `activate` and `place` treat it as any record.
 
 **Columns.** Media: Title, File, Format, Linked from. Notes: Text, Linked from. Repositories: Name, Address, Sources. Other: Kind, Name, Linked from. New `SortKey`s: `text`, `file`, `format`, `address`, `kind`, `linkedFrom`; `title`, `name` and `sources` are reused, `sortValue` dispatching by kind as now. Under any sort the header row stays first and the sort orders the rest (M4).
 
@@ -94,6 +94,8 @@ This plan was first written against `main` and is now built in branch `lavich/re
 
 ## Decisions of 2026-11-12: the card of a place renames it everywhere
 
+*Withdrawn the same day, once built: see "No Places and no card of a place" below. Kept as the record of what was built and then taken out.*
+
 The user chose (б), to make the place useful for editing (proposal). How the card looks and behaves was decided by the agent that planned the change, not by the user, and the user may change any of it:
 
 **No heading.** The card of a place loses its heading (the name as a title, the count of events and the years) and the section label *Events*, as every other card lost its heading in `record-fields-tree`. At its top is a field labelled *Place* (`tagLabel("PLAC")`), holding the place's name as the Places list names it: the spelling of its first occurrence in the file. The field is an `EditableField`, the tree's own: written on Enter and on leaving it, put back with Escape and with its revert control, its draft and message kept in the session's state for the place (`session.stateFor("<file>\nplace:<key>")`, a slot of the twenty) under the key `place`, its focus key `place:name`.
@@ -125,12 +127,28 @@ The user chose (б), to make the place useful for editing (proposal). How the ca
 - In `record-fields-tree`: *Portrait and media on a card* is REMOVED (the archived text still promised a portrait in the heading and a Media section), genealogy-view *Selecting a record opens the record card…* is MODIFIED to drop "Back, Forward", and the record card's cursor requirement drops the card's Back and Forward and the selected fact.
 - In this change: genealogy-view *A GEDCOM tab is in one of four modes* names every kind of the list, and genealogy-record-detail *Notes, folded where they are long* covers a note of any record with a tree.
 - A spec's Purpose cannot change by delta. At archive time, edit by hand:
-  - `genealogy-list`: "shows the people, families or sources of the file" → the eight kinds.
+  - `genealogy-list`: "shows the people, families or sources of the file" → the seven kinds.
   - `genealogy-record-tree`: "How the card shows what a person's, a family's or a source's record states" → any record whose card is a tree.
   - `genealogy-record-detail`: "a person, a family or an event" → any record with a tree (the event is gone with `record-fields-tree`).
   - `genealogy-view`: "the person and source pages, moving between records" → the record card and its kinds.
   - `genealogy-read-model`: "people, families, sources and citations" → and the media, notes, repositories and other records.
   - `genealogy-record-card`: still "TBD - created by archiving change record-card-panel"; write one.
+
+## Decisions of 2026-11-12: no Places and no card of a place
+
+The user, on the built card of a place: «давай удалим таблицу Places», then «и карточки тоже». A place is not a record in GEDCOM, and with neither the list nor the card nothing can show one, so the place stops being something the tab can select at all.
+
+**What goes.**
+- The Places kind: `places` leaves `ListKind`, `LIST_KINDS`, `COLUMNS`, `cellsOf`, `listRows` and `recordKind` (`listRows.ts`); the `events` `SortKey`, which only the Places sorted by; in `fileList.ts` the six label tables' rows, `places` in `HOLDING` (which keeps `media`, `notes`, `repositories`, `other`), `totalOfKind`'s count of places, the *Alphabetical* first entry of the sort menu, `countLabel`'s `events`, `markedKey` (a row's key is now always its xref, so it is `marked` itself) and `activate`'s `placeId`; `keyOf` reads only the xref. The dropdown is measured as before, now over seven buttons.
+- The card of a place: `placePage.ts`, `placeEdits.ts` and `placeRows.ts` with their tests, since nothing else reads `placesOf`, `placeAt`, `placeId` or `placeKey` once the list and the card are gone; `drawRecord`'s place branch and `placeHost` in `recordCard.ts`; `CardTab.renamePlaceAt` and `GedcomView.renamePlaceAt`; the declined callback of `ConfirmModal`; `TreeSession.passingStateFor`, which only the place used; `revealLine` and `keysTo` in `tree.ts`, whose one caller was a row of the place; `EditableField.putBack` private again; the harness's `decline()` and its rename.
+- The place as a link: `place()` and `placeControl()` in `tree.ts`; the summary's place part is a span of text; `recordTitle` names no place; `PageKind` loses `place`.
+- Strings in both catalogues: `list.places`, `list.count.places`, `list.countOf.places`, `list.search.places`, `list.nothing.places`, `list.none.places`, `list.column.events`, `list.compact.events`, `list.alphabetical`, `places.count`, `place.rename`, `place.occurrences`, `place.renameQuestion`, `place.mergeQuestion`, `edit.refusal.place-name-empty`, `edit.openPlace`. CSS: `.gedcom-place*`, `.gedcom-tree-place`, the place link in a summary and `.gedcom-tree-clip`, `.gedcom-desk-fact*` (read only by the rows of a place), the `is-places` grid and the `is-events` grid left over from the Events. The harness's `map-pin` icon.
+
+**What stays.** `joinEdits` and `Refusal.also` in `edits.ts`, which `mediaFileEdit` uses for `FILE` and `FORM`; `foldText`, which the new kinds search through; `.gedcom-desk-source`, the dot of a cited node. The graph and the timeline never opened a place and are not touched.
+
+**What a saved state becomes.** A list saved on `places` is read by `readListState` as having no kind, as an unknown kind always was, so it opens on the People, and its sort of the places is dropped. A selection saved as `place:…` is dropped by `readDeskState`, so the tab starts with nothing selected rather than holding an id nothing answers; any other id the file no longer declares is still dropped when the file is loaded, as before.
+
+**The specs.** *Places* and *The Places has no actions* are REMOVED; *An event is one row at a place* is REMOVED (it was MODIFIED here); *A place is renamed everywhere from its card*, added by this change, is dropped from it. *A place in the tree is a link* is RENAMED *A place and a label in the tree are text* and restated, so that the rule that a label opens nothing is kept. Every requirement that listed the Places or opened the card of a place is restated; *A row selects a record or a place…* and *The selected record or place is brought into view* are renamed for it, and *The list is reachable by the keyboard*, *A value is a field* and *Selecting a record opens the record card…* gain MODIFIED blocks here.
 
 ## Spec mechanics
 
@@ -145,7 +163,7 @@ Every MODIFIED block restates the requirement as `record-fields-tree` leaves it 
 
 ## Migration Plan
 
-None. A saved list kind unknown to an older build falls back to People, as `readListState` already does; a saved selection `header:` read by an older build names no record and is dropped.
+None. A saved list kind unknown to an older build falls back to People, as `readListState` already does; a saved selection `header:` read by an older build names no record and is dropped. A list saved on the Places opens on the People, and a saved selection of a place is dropped, as *No Places and no card of a place* says.
 
 ## Open Questions
 
