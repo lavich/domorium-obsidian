@@ -116,7 +116,6 @@
   "command.branchOfSelected": "Ветка выбранного человека",
   "command.showSource": "Показать как исходник",
   "command.toggleMode": "Переключить исходник и последний режим",
-  "desk.noDetails": "Отмечено, без подробностей",
   "desk.born": "род. {year}",
   "desk.yearBce": "{year} до н. э.",
   "desk.missingRecord": "Ссылка на запись, которой нет в файле",
@@ -188,6 +187,20 @@
     "many": "{count} событий",
     "other": "{count} события"
   },
+  "place.rename": "Переименовать",
+  "place.occurrences": "Где файл называет это место",
+  "place.renameQuestion": {
+    "one": "Переименовать место в {count} строке?",
+    "few": "Переименовать место в {count} строках?",
+    "many": "Переименовать место в {count} строках?",
+    "other": "Переименовать место в {count} строки?"
+  },
+  "place.mergeQuestion": {
+    "one": "Переименовать место в {count} строке? Оно объединится с местом «{place}».",
+    "few": "Переименовать место в {count} строках? Оно объединится с местом «{place}».",
+    "many": "Переименовать место в {count} строках? Оно объединится с местом «{place}».",
+    "other": "Переименовать место в {count} строки? Оно объединится с местом «{place}»."
+  },
   "overview.search": "Найти человека…",
   "overview.clearSearch": "Очистить поиск",
   "overview.matches": {
@@ -228,7 +241,6 @@
   "card.noTab": "Откройте файл GEDCOM, чтобы увидеть его записи.",
   "card.nothing": "Выберите запись на графе, в хронологии или в списке.",
   "card.empty": "В файле нечего показывать.",
-  "desk.placeEvents": "События",
   "card.announce": "Показано: {name}",
   "mode.list": "Список",
   "command.showList": "Показать как список",
@@ -573,6 +585,7 @@
   "edit.refusal.value-not-allowed": "Стандарт не допускает значения в этой строке.",
   "edit.refusal.file-out-of-reach": "Файл GEDCOM 7 может ссылаться только на файлы в своей папке и во вложенных в неё.",
   "edit.refusal.copy-failed": "Не удалось скопировать файл в хранилище, поэтому ничего не записано.",
+  "edit.refusal.place-name-empty": "У места должно быть название.",
   "edit.refusal.noSuchDay": {
     "one": "Даты «{date}» не бывает: {month} длится {count} день.",
     "few": "Даты «{date}» не бывает: {month} длится {count} дня.",

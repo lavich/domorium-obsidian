@@ -2,7 +2,6 @@ import {
   encodeFileTarget,
   relativeFilePath,
   resolveFileTarget,
-  type EditRefusal,
   type GedcomDialect,
   type GedcomLanguageService,
   type Position,
@@ -13,7 +12,7 @@ import { isImagePath } from "../genealogy";
 import { t } from "../i18n";
 import { isGedcomPath } from "../vault/movedFiles";
 import type { FieldChoice } from "./detail/tree";
-import type { Refusal, WriteOutcome } from "./edits";
+import { joinEdits, type Refusal, type WriteOutcome } from "./edits";
 
 export const OUT_OF_REACH = "file-out-of-reach";
 export const COPY_FAILED = "copy-failed";
@@ -118,13 +117,6 @@ export function vaultFileChoices(paths: readonly string[], current: string | und
   );
 }
 
-const refused = (refusal: EditRefusal | Refusal): Refusal => ({
-  ok: false,
-  code: refusal.code,
-  message: refusal.message,
-  ...(refusal.data ? { data: refusal.data } : {}),
-});
-
 /**
  * The path of the file and, where the line states one, its format, asked of the service at one version
  * and joined into one edit: the format's line is beneath the file's, so the two never overlap.
@@ -143,21 +135,9 @@ export function mediaFileEdit(
     return { ok: false, code: OUT_OF_REACH, message: "The GEDCOM file cannot name this file from its folder." };
   }
   const file = service.setValue(at.file, { value }, version);
-  if (!file.ok) {
-    return refused(file);
-  }
-  if (at.form === undefined) {
-    return file;
-  }
-  const form = service.setValue(at.form, { value: formFor(vaultPath, dialect, deviceType) }, version);
-  if (!form.ok) {
-    return refused(form);
-  }
-  return {
-    ok: true,
-    edit: { version: file.edit.version, edits: [...file.edit.edits, ...form.edit.edits] },
-    warnings: [...file.warnings, ...form.warnings],
-  };
+  return joinEdits(
+    at.form === undefined || !file.ok ? [file] : [file, service.setValue(at.form, { value: formFor(vaultPath, dialect, deviceType) }, version)],
+  );
 }
 
 export interface FileChoiceHost {

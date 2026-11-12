@@ -3,13 +3,14 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 
 import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
-import { curieIndex, indexOf } from "../testing/curie";
+import { CURIE, curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
 import { TextTab } from "../testing/textTab";
 import { addableAt, describes, removableAt } from "./addableFields";
 import { TreeSession } from "./detail/treeSession";
 import { addAt, commit, removeAt, setValueAt } from "./edits";
 import { mediaFileEdit } from "./mediaFile";
+import { renameEdit } from "./placeEdits";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
 let container: HTMLElement;
@@ -219,15 +220,23 @@ describe("the page of each kind of record", () => {
     expect(container.querySelector(".gedcom-tree, .gedcom-desk-title")).toBeNull();
   });
 
-  it("shows a place with its events, whose names open nothing, and opens the record of an event through the tab", () => {
-    state.record = "place:paris, france";
+  it("shows a place as the field of its name over a row for each line, and reveals an event in its record's tree", () => {
+    state.record = "place:warsaw, congress poland";
     draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-name")?.click();
-    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-value .gedcom-desk-link")?.click();
 
-    expect(texts(".gedcom-desk-title")).toEqual(["Paris, France"]);
-    expect(calls.select).toHaveBeenCalledTimes(1);
-    expect(calls.select.mock.calls[0]?.[0]).not.toMatch(/^event:/u);
+    expect(container.querySelector(".gedcom-desk-title, h1")).toBeNull();
+    expect(container.querySelector<HTMLTextAreaElement>(".gedcom-place-name textarea")?.value).toBe("Warsaw, Congress Poland");
+    expect(container.querySelectorAll(".gedcom-place-line")).toHaveLength(11);
+    container.querySelector<HTMLElement>(".gedcom-place-line .gedcom-desk-link")?.focus();
+    container.querySelector<HTMLElement>(".gedcom-place-line .gedcom-desk-link")?.click();
+    expect(calls.select.mock.calls).toEqual([["@I1@"]]);
+
+    state.record = "@I1@";
+    draw();
+    const birth = container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]');
+    expect(birth?.getAttribute("aria-expanded")).toBe("true");
+    expect(document.activeElement).toBe(birth);
+    expect(scrollIntoView).toHaveBeenCalled();
   });
 
   it("selects a record through a pointer of the tree", () => {
@@ -441,7 +450,34 @@ describe("a card that writes", () => {
       },
       fileEditAt: (at, path, version, type) => mediaFileEdit(service(), "curie.ged", at, path, version, type),
       writeFileAt: (at, path, version, type) => commit(doc, mediaFileEdit(service(), "curie.ged", at, path, version, type)),
+      select: (xref) => {
+        calls.select(xref);
+        state.record = xref;
+      },
+      renamePlaceAt: (rename, version, question, done) => {
+        const answer = renameEdit(service(), rename, version);
+        if (!answer.ok) {
+          done(answer);
+          return;
+        }
+        questions.push(question);
+        asked = () => done(commit(doc, answer));
+        declined = () => done(null);
+      },
     };
+  };
+  let questions: string[] = [];
+  let declined: (() => void) | null = null;
+  const curieLines = CURIE.trimEnd().split("\n").slice(0, -1);
+  const renameTo = (name: string): HTMLTextAreaElement | null => {
+    const area = container.querySelector<HTMLTextAreaElement>(".gedcom-place-name textarea");
+    area?.focus();
+    if (area) {
+      area.value = name;
+      area.dispatchEvent(new Event("input"));
+      area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+    return area;
   };
   const removeOf = (label: string): HTMLElement | null =>
     [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")]
@@ -540,6 +576,64 @@ describe("a card that writes", () => {
 
     [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")].find((link) => link.textContent === "Domorium")?.click();
     expect(calls.select).toHaveBeenCalledWith("@U1@");
+  });
+
+  it("renames a place in every line once the question is answered, and follows it to its new name", () => {
+    questions = [];
+    tab = writing(curieLines, []);
+    state.record = "place:warsaw, congress poland";
+    draw();
+    renameTo("Warszawa, Poland");
+
+    expect(questions).toEqual(["Rename the place in 11 lines?"]);
+    expect(doc.writes).toBe(0);
+    asked?.();
+    expect(doc.writes).toBe(1);
+    expect(doc.text.split("\n").filter((line) => line === "2 PLAC Warszawa, Poland")).toHaveLength(11);
+    expect(state.record).toBe("place:warszawa, poland");
+    const area = container.querySelector<HTMLTextAreaElement>(".gedcom-place-name textarea");
+    expect(area?.value).toBe("Warszawa, Poland");
+    expect(document.activeElement).toBe(area);
+    expect(container.querySelectorAll(".gedcom-place-line")).toHaveLength(11);
+  });
+
+  it("joins another place given its name, and shows that place", () => {
+    questions = [];
+    tab = writing(curieLines, []);
+    state.record = "place:sceaux, france";
+    draw();
+    renameTo("paris, france");
+    asked?.();
+
+    expect(questions).toEqual(["Rename the place in 2 lines? It will be merged with “Paris, France”."]);
+    expect(state.record).toBe("place:paris, france");
+    expect(container.querySelector<HTMLTextAreaElement>(".gedcom-place-name textarea")?.value).toBe("Paris, France");
+    expect(container.querySelectorAll(".gedcom-place-line")).toHaveLength(11);
+  });
+
+  it("writes nothing where the reader declines, or the service refuses, and asks nothing for a refusal", () => {
+    questions = [];
+    tab = writing(curieLines, []);
+    state.record = "place:warsaw, congress poland";
+    draw();
+    const before = doc.text;
+    const area = renameTo("Warszawa");
+    declined?.();
+    expect(area?.value).toBe("Warsaw, Congress Poland");
+
+    renameTo("Warszawa\nPoland");
+    expect(questions).toHaveLength(1);
+    expect(doc.text).toBe(before);
+    expect(texts(".gedcom-tree-message.is-error")).toEqual(["A line break is not allowed in this value: it keeps to one line."]);
+  });
+
+  it("draws the name of a place of a file with no dialect read-only", () => {
+    tab = writing(["0 @I1@ INDI", "1 BIRT", "2 PLAC Kyiv"], []);
+    state.record = "place:kyiv";
+    draw();
+
+    expect(container.querySelector(".gedcom-place-name textarea")?.hasAttribute("readonly")).toBe(true);
+    expect(texts(".gedcom-tree-note")).toHaveLength(1);
   });
 
   it("offers the vault and the device on a medium's file, and writes the file chosen from the vault with its format", () => {

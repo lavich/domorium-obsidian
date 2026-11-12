@@ -82,6 +82,7 @@ import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
 import { ConfirmModal } from "./desk/confirmModal";
+import { renameEdit, type Rename } from "./desk/placeEdits";
 import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt, type Choices } from "./desk/addableFields";
 import {
   addAt,
@@ -887,6 +888,21 @@ export class GedcomView extends TextFileView implements CardTab {
 
   writeFileAt(at: FileAt, vaultPath: string, version: number, deviceType?: string): WriteOutcome {
     return this.wrote(commit(this.editTarget, this.fileEditAt(at, vaultPath, version, deviceType)));
+  }
+
+  renamePlaceAt(rename: Rename, version: number, question: string, done: (outcome: WriteOutcome | null) => void): void {
+    const answer = renameEdit(this.service(), rename, version);
+    if (!answer.ok) {
+      done(this.wrote(answer));
+      return;
+    }
+    new ConfirmModal(
+      this.app,
+      question,
+      t("place.rename"),
+      () => done(this.wrote(commit(this.editTarget, answer))),
+      () => done(null),
+    ).open();
   }
 
   private resolveVaultResource(path: string): string | null {

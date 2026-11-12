@@ -17,6 +17,8 @@ export interface Refusal {
   code: string;
   message: string;
   data?: DiagnosticData;
+  /** The other reasons, where several lines asked at once were refused for more than one. */
+  also?: Refusal[];
 }
 
 /** What a write the card asked for came to: the first line it wrote and the service's warnings, or why nothing was written. */
@@ -69,6 +71,32 @@ export function commit(target: EditTarget, result: StructureEditResult | EditRef
     ok: true,
     line: Math.min(...result.edit.edits.map((edit) => edit.range.start.line)),
     warnings: result.warnings.map((warning) => warning.message),
+  };
+}
+
+const refused = (refusal: EditRefusal | Refusal): Refusal => ({
+  ok: false,
+  code: refusal.code,
+  message: refusal.message,
+  ...(refusal.data ? { data: refusal.data } : {}),
+});
+
+/**
+ * The answers for several lines, asked at one version, as one edit; the lines are distinct, so their edits never
+ * overlap. Where any is refused, the first refusal, with the other distinct ones beside it.
+ */
+export function joinEdits(answers: readonly (StructureEditResult | EditRefusal | Refusal)[]): StructureEditResult | Refusal {
+  const refusals = answers.filter((answer) => !answer.ok).map(refused);
+  const [first, ...rest] = refusals;
+  if (first) {
+    const also = rest.filter((one, at) => one.code !== first.code && rest.findIndex((other) => other.code === one.code) === at);
+    return also.length > 0 ? { ...first, also } : first;
+  }
+  const done = answers.filter((answer): answer is StructureEditResult => answer.ok);
+  return {
+    ok: true,
+    edit: { version: done[0]?.edit.version ?? 0, edits: done.flatMap((answer) => answer.edit.edits) },
+    warnings: done.flatMap((answer) => answer.warnings),
   };
 }
 
@@ -130,7 +158,10 @@ function noSuchDay(data: DiagnosticData | undefined): { date: string; month: str
 }
 
 /** Why a value was not written, in the reader's language where the plugin has words for the code, in the service's otherwise. */
-export function refusalText(refusal: Pick<Refusal, "code" | "message" | "data">): string {
+export function refusalText(refusal: Pick<Refusal, "code" | "message" | "data" | "also">): string {
+  if (refusal.also) {
+    return [refusal, ...refusal.also].map(({ code, message, data }) => refusalText({ code, message, ...(data ? { data } : {}) })).join(" ");
+  }
   const day = noSuchDay(refusal.data);
   if (day) {
     return plural("edit.refusal.noSuchDay", day.count, { date: day.date, month: day.month });

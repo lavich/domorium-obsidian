@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage, setLanguage } from "../i18n";
 import { TextTab } from "../testing/textTab";
 import { addableAt } from "./addableFields";
-import { addAt, addPlan, checkValue, commit, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
+import { addAt, addPlan, checkValue, commit, joinEdits, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
 
 afterEach(resetLanguage);
 
@@ -51,6 +51,41 @@ describe("a value set", () => {
     commit(tab, setValueAt(tab.service(), at(4), tab.version, { value: "one\ntwo" }));
 
     expect(linesOf(tab)).toEqual(expect.arrayContaining(["1 NOTE one", "2 CONT two"]));
+  });
+});
+
+describe("several lines written as one change", () => {
+  it("joins the edits of two lines asked at one version and writes them in one write", () => {
+    const tab = tabOf(["0 @I1@ INDI", "1 BIRT", "2 PLAC Kyiv", "1 DEAT", "2 PLAC Lviv"]);
+    const service = tab.service();
+
+    const outcome = commit(tab, joinEdits([setValueAt(service, at(5), tab.version, { value: "Kharkiv" }), setValueAt(service, at(7), tab.version, { value: "Kharkiv" })]));
+
+    expect(outcome).toMatchObject({ ok: true, line: 5 });
+    expect(tab.writes).toBe(1);
+    expect(linesOf(tab)).toEqual(expect.arrayContaining(["2 PLAC Kharkiv", "1 DEAT"]));
+    expect(linesOf(tab).filter((line) => line === "2 PLAC Kharkiv")).toHaveLength(2);
+  });
+
+  it("writes nothing where one line is refused, and keeps every distinct reason", () => {
+    const tab = tabOf(["0 @I1@ INDI", "1 BIRT", "2 PLAC Kyiv", "1 SEX F"]);
+    const service = tab.service();
+    const before = tab.text;
+
+    const joined = joinEdits([
+      setValueAt(service, at(5), tab.version, { value: "Kyiv" }),
+      setValueAt(service, at(5), tab.version, { value: "a\nb" }),
+      setValueAt(service, at(6), tab.version, { value: "Q" }),
+      setValueAt(service, at(5), tab.version, { value: "c\nd" }),
+    ]);
+    const outcome = commit(tab, joined);
+
+    expect(outcome).toMatchObject({ ok: false, code: "value-spans-lines" });
+    expect(joined.ok ? [] : joined.also?.map((one) => one.code)).toEqual(["value-not-in-enum"]);
+    expect(tab.text).toBe(before);
+    expect(refusalText(joined as Refusal)).toBe(
+      "A line break is not allowed in this value: it keeps to one line. This value is not one of those the standard lists here.",
+    );
   });
 });
 

@@ -146,6 +146,34 @@ function linesByKey(line: RecordLine, key: string, into: Map<string, RecordLine>
   return into;
 }
 
+function keysTo(line: RecordLine, key: string, target: number): string[] | null {
+  if (line.range.start.line === target) {
+    return [key];
+  }
+  const seen = new Map<string, number>();
+  for (const child of line.children) {
+    const nth = seen.get(child.tag) ?? 0;
+    seen.set(child.tag, nth + 1);
+    const found = keysTo(child, keyOf(key, child.tag, nth), target);
+    if (found) {
+      return [key, ...found];
+    }
+  }
+  return null;
+}
+
+/** Opens the nodes of the record down to the line written at `line`, and asks its tree, when next drawn, to focus that line and bring it into view. */
+export function revealLine(state: TreeState, record: RecordLine, line: number): void {
+  const keys = keysTo(record, "", line);
+  if (keys === null) {
+    return;
+  }
+  for (const key of keys) {
+    state.setOpen(key, true);
+  }
+  state.wishFocus({ key: keys[keys.length - 1] ?? "", parts: [""] });
+}
+
 const descendants = (line: RecordLine): number =>
   line.children.reduce((sum, child) => sum + 1 + descendants(child), 0);
 

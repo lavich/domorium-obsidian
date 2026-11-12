@@ -330,37 +330,6 @@
   white-space: nowrap;
 }
 
-.gedcom-desk-heading {
-  margin-bottom: var(--size-4-4);
-}
-
-.gedcom-desk-title {
-  font-size: 1.6em;
-  line-height: 1.2;
-  margin: 0 0 var(--size-2-3);
-  overflow-wrap: anywhere;
-}
-
-.gedcom-desk-subtitle {
-  color: var(--text-muted);
-  margin-bottom: var(--size-2-3);
-}
-
-.gedcom-desk-section {
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-semibold);
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin: var(--size-4-4) 0 var(--size-2-2);
-}
-
-h2.gedcom-desk-section[data-count]::after {
-  content: " " attr(data-count);
-  font-weight: normal;
-  letter-spacing: 0;
-}
-
 .gedcom-detail {
   display: grid;
   grid-template-columns: minmax(70px, 130px) 1fr;
@@ -536,6 +505,71 @@ button.gedcom-desk-link:hover {
   height: 6px;
   border-radius: 50%;
   background: var(--text-faint);
+}
+
+.gedcom-place {
+  padding: var(--size-4-2) var(--size-4-2) var(--size-4-4);
+}
+
+.gedcom-place-name {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  margin-bottom: var(--size-4-3);
+}
+
+.gedcom-place-label {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.gedcom-place-name .gedcom-field {
+  font-size: var(--font-ui-large);
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.gedcom-place .gedcom-tree-note {
+  margin-bottom: var(--size-4-2);
+}
+
+.gedcom-place-line {
+  position: relative;
+  cursor: pointer;
+}
+
+.gedcom-place-line:hover {
+  background: var(--background-modifier-hover);
+}
+
+.gedcom-desk-fact.gedcom-place-line button.gedcom-desk-link {
+  position: static;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gedcom-desk-fact.gedcom-place-line button.gedcom-desk-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+@media (pointer: coarse) {
+  .gedcom-place-line {
+    min-height: 44px;
+    padding-block: var(--size-4-2);
+  }
+}
+
+.is-mobile .gedcom-desk-fact.gedcom-place-line {
+  align-items: baseline;
+  padding-block: var(--size-4-2);
+}
+
+.is-mobile .gedcom-place-line .gedcom-desk-fact-head,
+.is-mobile .gedcom-place-line .gedcom-desk-fact-value {
+  padding-block: 0;
 }
 
 button.gedcom-desk-person {
@@ -2379,15 +2413,18 @@ button.gedcom-fg-pop-open {
 }
 
 
-.gedcom-tree .gedcom-field.is-editable {
+.gedcom-tree .gedcom-field.is-editable,
+.gedcom-place .gedcom-field.is-editable {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.gedcom-tree .gedcom-field.is-editable textarea.gedcom-field-input:not(:focus) {
+.gedcom-tree .gedcom-field.is-editable textarea.gedcom-field-input:not(:focus),
+.gedcom-place .gedcom-field.is-editable textarea.gedcom-field-input:not(:focus) {
   cursor: text;
 }
 
-.gedcom-tree .gedcom-field.is-changed textarea.gedcom-field-input {
+.gedcom-tree .gedcom-field.is-changed textarea.gedcom-field-input,
+.gedcom-place .gedcom-field.is-changed textarea.gedcom-field-input {
   border-color: var(--background-modifier-border-hover);
 }
 
@@ -2397,7 +2434,8 @@ button.gedcom-fg-pop-open {
   mask-image: linear-gradient(to bottom, black calc(100% - 1lh), transparent);
 }
 
-.gedcom-tree .gedcom-field-revert {
+.gedcom-tree .gedcom-field-revert,
+.gedcom-place .gedcom-field-revert {
   --icon-size: var(--icon-xs);
   display: none;
   grid-area: 1 / 2;
@@ -2410,23 +2448,27 @@ button.gedcom-fg-pop-open {
   padding: 0;
 }
 
-.gedcom-tree .gedcom-tree-message {
+.gedcom-tree .gedcom-tree-message,
+.gedcom-place .gedcom-tree-message {
   flex-basis: 100%;
   font-size: var(--font-ui-smaller);
   line-height: var(--line-height-tight);
   overflow-wrap: anywhere;
 }
 
-.gedcom-tree .gedcom-tree-message.is-error {
+.gedcom-tree .gedcom-tree-message.is-error,
+.gedcom-place .gedcom-tree-message.is-error {
   color: var(--text-error);
 }
 
-.gedcom-tree .gedcom-tree-message.is-warning {
+.gedcom-tree .gedcom-tree-message.is-warning,
+.gedcom-place .gedcom-tree-message.is-warning {
   color: var(--text-warning);
 }
 
 .gedcom-tree .gedcom-tree-paired,
-.gedcom-tree .gedcom-tree-note {
+.gedcom-tree .gedcom-tree-note,
+.gedcom-place .gedcom-tree-note {
   flex-basis: 100%;
   color: var(--text-faint);
   font-size: var(--font-ui-smaller);
@@ -2525,17 +2567,20 @@ button.gedcom-fg-pop-open {
 .gedcom-tree .gedcom-tree-place:focus-visible,
 .gedcom-tree .gedcom-tree-open-note:focus-visible,
 .gedcom-tree .gedcom-tree-several:focus-visible,
-.gedcom-tree .gedcom-field-revert:focus-visible {
+.gedcom-tree .gedcom-field-revert:focus-visible,
+.gedcom-place .gedcom-field-revert:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
 }
 
 @media (pointer: coarse) {
-  .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
+  .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert,
+  .gedcom-place .gedcom-field.is-changed .gedcom-field-revert {
     display: flex;
   }
 
   .gedcom-tree .gedcom-field-revert,
+  .gedcom-place .gedcom-field-revert,
   .gedcom-tree .gedcom-tree-place,
   .gedcom-tree .gedcom-tree-open-note,
   .gedcom-tree .gedcom-tree-pick {
@@ -2557,11 +2602,13 @@ button.gedcom-fg-pop-open {
   }
 }
 
-.is-mobile .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
+.is-mobile .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert,
+.is-mobile .gedcom-place .gedcom-field.is-changed .gedcom-field-revert {
   display: flex;
 }
 
 .is-mobile .gedcom-tree .gedcom-field-revert,
+.is-mobile .gedcom-place .gedcom-field-revert,
 .is-mobile .gedcom-tree .gedcom-tree-place,
 .is-mobile .gedcom-tree .gedcom-tree-open-note,
 .is-mobile .gedcom-tree .gedcom-tree-pick {

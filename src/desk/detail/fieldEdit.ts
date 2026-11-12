@@ -162,7 +162,7 @@ export class EditableField {
     this.options.left?.(this);
   }
 
-  private putBack(): void {
+  putBack(): void {
     const { box, area } = this.field;
     this.options.state.setDraft(this.options.key, undefined);
     this.options.state.setMessage(this.options.key, undefined);

@@ -13,14 +13,15 @@ import { renderFamilyPage } from "./familyPage";
 import type { MediaItem } from "./media";
 import { fileChoices, mediaFileEdit, type FileAt, type VaultFileChoice } from "./mediaFile";
 import { HEADER_ID, pageKind } from "./deskState";
-import { placeAt } from "./placeRows";
-import { renderPlacePage } from "./placePage";
+import { placeLines, renameQuestion, type Rename } from "./placeEdits";
+import { placeAt, placeId, type PlaceRow } from "./placeRows";
+import { NAME_FOCUS, renderPlacePage, type PlaceHost } from "./placePage";
 import { renderPersonPage, type PageHost, type PersonPageOptions } from "./personPage";
 import { renderRecordPage } from "./recordPage";
 import { renderSourcePage } from "./sourcePage";
 import type { Choices } from "./addableFields";
-import type { Refusal, WriteOutcome } from "./edits";
-import type { FieldChoice, MenuAt, PointerChoice, TreeHost, ValueChoice } from "./detail/tree";
+import { STALE, type Refusal, type WriteOutcome } from "./edits";
+import { revealLine, type FieldChoice, type MenuAt, type PointerChoice, type TreeHost, type ValueChoice } from "./detail/tree";
 import { recordTitle } from "./detail/lineView";
 import type { TreeSession } from "./detail/treeSession";
 
@@ -55,6 +56,8 @@ export interface CardTab {
   copyIntoVault?(path: string, data: ArrayBuffer): Promise<void>;
   fileEditAt?(at: FileAt, vaultPath: string, version: number, deviceType?: string): ReturnType<typeof mediaFileEdit>;
   writeFileAt?(at: FileAt, vaultPath: string, version: number, deviceType?: string): WriteOutcome;
+  /** Asks the question, then writes the rename as one change; null where the reader declined. */
+  renamePlaceAt?(rename: Rename, version: number, question: string, done: (outcome: WriteOutcome | null) => void): void;
 }
 
 export interface CardView {
@@ -214,17 +217,54 @@ function drawRecord(
   const family = person ? undefined : index.family(record);
   const source = person || family ? undefined : index.source(record);
   const place = person || family || source ? undefined : placeAt(index, record);
-  if (person) {
+  if (place) {
+    renderPlacePage(body, place, index, placeHost(tab, index, place, view, announce), view.session.passingStateFor(shownKey(tab, record)));
+  } else if (person) {
     renderPersonPage(body, person, index, folds, host);
   } else if (family) {
     renderFamilyPage(body, family, index, folds, host);
   } else if (source) {
     renderSourcePage(body, source, index, host, folds);
-  } else if (place) {
-    renderPlacePage(body, place, index, host);
   } else {
     renderRecordPage(body, record, index, host, folds);
   }
+}
+
+const shownKey = (tab: CardTab, record: string): string => `${tab.filePath() ?? ""}\n${record}`;
+
+function placeHost(tab: CardTab, index: GenealogyIndex, place: PlaceRow, view: CardView, announce: (text: string) => void): PlaceHost {
+  const version = tab.version?.();
+  const renamePlaceAt = tab.renamePlaceAt?.bind(tab);
+  const lines = placeLines(index, place.key);
+  const writes = version !== undefined && renamePlaceAt !== undefined && lines.length > 0 && lines.every(({ at }) => tab.describes?.(at) ?? false);
+  const host: PlaceHost = {
+    revealLine: (xref, line) => {
+      const target = index.record(xref);
+      if (target) {
+        revealLine(view.session.stateFor(shownKey(tab, xref)), target, line);
+      }
+      tab.select(xref);
+    },
+    setIcon: (element, icon) => view.setIcon(element, icon),
+    announce,
+    uneditable: renamePlaceAt !== undefined && !writes,
+  };
+  if (writes) {
+    host.renamePlace = (rename, done) => {
+      renamePlaceAt(rename, version, renameQuestion(rename), (outcome) => {
+        done(outcome);
+        if (outcome?.ok) {
+          const renamed = placeId(rename.value);
+          view.session.passingStateFor(shownKey(tab, renamed)).wishFocus({ key: "place", parts: [NAME_FOCUS] });
+          tab.select(renamed);
+          tab.settle?.();
+        } else if (outcome?.code === STALE) {
+          tab.settle?.();
+        }
+      });
+    };
+  }
+  return host;
 }
 
 function replacingFile(tab: CardTab, view: CardView, version: number, host: TreeHost): TreeHost["replaceFile"] {

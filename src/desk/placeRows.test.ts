@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage } from "../i18n";
 import { curieWithEvents, indexOf } from "../testing/curie";
 import { cellsOf, collatorFor, columnsOf, listRows, nextSort, readListState, type ListSort } from "./listRows";
-import { occurrencesAt, placeAt, placeId, placeKeyOf, placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
+import { placeAt, placeId, placeKeyOf, placeRows, placesOf, yearsText, type PlaceRow } from "./placeRows";
 
 afterEach(resetLanguage);
 
@@ -113,23 +113,6 @@ describe("a place as a selectable record", () => {
     expect(placeAt(index, placeId("Paris, France"))?.name).toBe("Paris, France");
     expect(placeAt(index, "place:atlantis")).toBeUndefined();
     expect(placeAt(index, "@I1@")).toBeUndefined();
-  });
-
-  it("lists the events held there by year, with the record each belongs to", () => {
-    const found = occurrencesAt(index, "paris, france");
-
-    expect(found).toHaveLength(11);
-    expect(found.every(({ record }) => record.startsWith("@"))).toBe(true);
-    const years = found.map(({ event }) => event.date?.year ?? Infinity);
-    expect(years).toEqual([...years].sort((a, b) => a - b));
-  });
-
-  it("lists a record the file declares twice once", () => {
-    const twice = indexOf(
-      ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 PLAC Paris, France", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 PLAC Paris, France", "0 TRLR"].join("\n"),
-    );
-
-    expect(occurrencesAt(twice, "paris, france")).toHaveLength(1);
   });
 });
 

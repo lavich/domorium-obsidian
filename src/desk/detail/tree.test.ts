@@ -10,7 +10,7 @@ import { TextTab } from "../../testing/textTab";
 import { addableAt, choicesAt, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
 import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../edits";
 import { factsOf } from "../personPage";
-import { factsByLine, renderTree, type FieldChoice, type TreeHost } from "./tree";
+import { factsByLine, renderTree, revealLine, type FieldChoice, type TreeHost } from "./tree";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
 
 beforeAll(installObsidianDom);
@@ -660,6 +660,34 @@ describe("the nodes", () => {
     control("Open every node").click();
 
     expect([...box.querySelectorAll(".gedcom-tree-node")].map((node) => node.getAttribute("data-depth"))).toEqual(["0", "1", "2", "3"]);
+  });
+});
+
+describe("revealing a line", () => {
+  it("opens the nodes down to an event, and focuses it and brings it into view when the tree is drawn", () => {
+    const scrolled = vi.fn();
+    Element.prototype.scrollIntoView = scrolled;
+    const made = make(["0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 DATE 1900", "1 DEAT", "2 PLAC Kyiv"]);
+    const state = new TreeSession().stateFor("rec");
+
+    revealLine(state, made.record, 7);
+    draw(made, state);
+
+    const death = box.querySelector<HTMLElement>('[data-focus-key="t:DEAT[0]"]');
+    expect(death?.getAttribute("aria-expanded")).toBe("true");
+    expect(document.activeElement).toBe(death);
+    expect(scrolled).toHaveBeenCalledOnce();
+    expect(box.querySelector('[data-focus-key="t:BIRT[0]"]')?.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("wishes nothing for a line the record does not write", () => {
+    const made = make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]);
+    const state = new TreeSession().stateFor("rec");
+
+    revealLine(state, made.record, 99);
+
+    expect(state.takeFocus()).toBeUndefined();
+    expect(state.isOpen("BIRT[0]")).toBe(false);
   });
 });
 

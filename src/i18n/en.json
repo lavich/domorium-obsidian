@@ -106,7 +106,6 @@
   "command.branchOfSelected": "Branch of the selected person",
   "command.showSource": "Show as source",
   "command.toggleMode": "Switch between source and the last view",
-  "desk.noDetails": "Recorded, no details",
   "desk.born": "b. {year}",
   "desk.yearBce": "{year} BCE",
   "desk.missingRecord": "Points to a record that is not in the file",
@@ -174,6 +173,16 @@
     "one": "{count} event",
     "other": "{count} events"
   },
+  "place.rename": "Rename",
+  "place.occurrences": "Where the file names the place",
+  "place.renameQuestion": {
+    "one": "Rename the place in {count} line?",
+    "other": "Rename the place in {count} lines?"
+  },
+  "place.mergeQuestion": {
+    "one": "Rename the place in {count} line? It will be merged with “{place}”.",
+    "other": "Rename the place in {count} lines? It will be merged with “{place}”."
+  },
   "overview.search": "Find a person…",
   "overview.clearSearch": "Clear the search",
   "overview.matches": {
@@ -208,7 +217,6 @@
   "card.noTab": "Open a GEDCOM file to see its records.",
   "card.nothing": "Select a record in the graph, the timeline or the list.",
   "card.empty": "The file holds nothing to show.",
-  "desk.placeEvents": "Events",
   "card.announce": "Shown: {name}",
   "mode.list": "List",
   "command.showList": "Show as list",
@@ -509,6 +517,7 @@
   "edit.refusal.value-not-allowed": "The standard allows no value on this line.",
   "edit.refusal.file-out-of-reach": "A GEDCOM 7 file can name only files in its own folder or beneath it.",
   "edit.refusal.copy-failed": "The file could not be copied into the vault, so nothing was written.",
+  "edit.refusal.place-name-empty": "A place needs a name.",
   "edit.refusal.noSuchDay": {
     "one": "There is no {date}: {month} has {count} day.",
     "other": "There is no {date}: {month} has {count} days."

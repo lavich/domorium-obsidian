@@ -1,11 +1,14 @@
 import { Modal, Setting, type App } from "obsidian";
 
 export class ConfirmModal extends Modal {
+  private answered = false;
+
   constructor(
     app: App,
     private readonly message: string,
     private readonly action: string,
     private readonly confirmed: () => void,
+    private readonly declined?: () => void,
   ) {
     super(app);
   }
@@ -17,6 +20,7 @@ export class ConfirmModal extends Modal {
       button
         .setButtonText(this.action)
         .onClick(() => {
+          this.answered = true;
           this.close();
           this.confirmed();
         });
@@ -25,5 +29,8 @@ export class ConfirmModal extends Modal {
 
   onClose(): void {
     this.contentEl.empty();
+    if (!this.answered) {
+      this.declined?.();
+    }
   }
 }
