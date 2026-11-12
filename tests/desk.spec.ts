@@ -119,7 +119,7 @@ for (const size of SIZES) {
       await pressArrow(page, "Birth");
       await treeRow(page, "Place").locator(".gedcom-tree-place").click();
 
-      await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
+      await expect(page.locator(".gedcom-place-name textarea")).toHaveValue("Warsaw, Congress Poland");
     });
 
   });
@@ -151,12 +151,12 @@ test.describe("an event id", () => {
     await mountDesk(page, { record: "event:@I1@:BIRT:0" });
 
     await expect(page.locator(".gedcom-card-state")).toHaveText("Select a record in the graph, the timeline or the list.");
-    await expect(page.locator(".gedcom-desk-title")).toHaveCount(0);
+    await expect(page.locator(".gedcom-place")).toHaveCount(0);
   });
 });
 
 test.describe("every kind of card in a narrow column", () => {
-  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "@N1@", "@R2@", "@U1@", "@P1@", "header:"]) {
+  for (const record of ["@I1@", "@F3@", "@S3@", "@O5@", "@N1@", "@R2@", "@U1@", "@P1@", "header:", "place:new orleans, louisiana, united states"]) {
     for (const [width, phone, language] of [[320, false, "en"], [320, false, "ru"], [390, true, "ru"]] as const) {
       test(`${record} at ${width} pixels in ${language} has nothing to scroll sideways`, async ({ page }) => {
         await page.setViewportSize({ width: 1400, height: 760 });
@@ -166,6 +166,122 @@ test.describe("every kind of card in a narrow column", () => {
       });
     }
   }
+});
+
+test.describe("the card of a place", () => {
+  const WARSAW = "place:warsaw, congress poland";
+  const nameField = (page: Page) => page.locator(".gedcom-place-name textarea");
+  const lines = (page: Page) => page.locator(".gedcom-place-line");
+  const placLines = (page: Page, name: string) =>
+    page.evaluate((wanted) => window.desk.text().split("\n").filter((line) => line === `2 PLAC ${wanted}`).length, name);
+  const asked = (page: Page) => page.evaluate(() => window.desk.calls.asked);
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 760 });
+  });
+
+  test("has no heading, and holds its name in a field over a row for each line, in the order of the file", async ({ page }) => {
+    await mountDesk(page, { record: WARSAW });
+
+    await expect(page.locator(".gedcom-card-body h1, .gedcom-card-body h2")).toHaveCount(0);
+    await expect(nameField(page)).toHaveValue("Warsaw, Congress Poland");
+    await expect(page.locator(".gedcom-place-label")).toHaveText("Place");
+    await expect(lines(page)).toHaveCount(11);
+    await expect(lines(page).first().locator(".gedcom-desk-fact-date")).toHaveText("7 NOV 1867");
+    await expect(lines(page).first().locator(".gedcom-desk-fact-name")).toHaveText("Birth");
+    await expect(lines(page).first().locator(".gedcom-desk-link")).toHaveText("Marie Skłodowska-Curie");
+  });
+
+  test("renames the place in every line after one question, and follows it to its new name", async ({ page }) => {
+    await mountDesk(page, { record: WARSAW });
+    await nameField(page).fill("Warszawa, Poland");
+    await nameField(page).press("Enter");
+
+    expect(await asked(page)).toEqual(["Rename the place in 11 lines?"]);
+    expect(await placLines(page, "Warsaw, Congress Poland")).toBe(11);
+    await page.evaluate(() => {
+      window.desk.confirm();
+    });
+
+    expect(await placLines(page, "Warszawa, Poland")).toBe(11);
+    expect(await placLines(page, "Warsaw, Congress Poland")).toBe(0);
+    expect(await page.evaluate(() => window.desk.record())).toBe("place:warszawa, poland");
+    await expect(nameField(page)).toHaveValue("Warszawa, Poland");
+    await expect(nameField(page)).toBeFocused();
+    await expect(lines(page)).toHaveCount(11);
+  });
+
+  test("asks in Russian, and joins Sceaux to Paris", async ({ page }) => {
+    await mountDesk(page, { record: "place:sceaux, france", language: "ru" });
+    await nameField(page).fill("paris, france");
+    await nameField(page).press("Tab");
+    await expect.poll(() => asked(page)).toEqual(["Переименовать место в 2 строках? Оно объединится с местом «Paris, France»."]);
+    await page.evaluate(() => {
+      window.desk.confirm();
+    });
+
+    expect(await page.evaluate(() => window.desk.record())).toBe("place:paris, france");
+    await expect(nameField(page)).toHaveValue("Paris, France");
+    await expect(lines(page)).toHaveCount(11);
+  });
+
+  test("writes nothing for a refused name and asks nothing, and puts the name back when the question is declined", async ({ page }) => {
+    await mountDesk(page, { record: WARSAW });
+    const before = await page.evaluate(() => window.desk.text());
+    await nameField(page).fill("Warszawa\nPoland");
+    await nameField(page).press("Tab");
+
+    await expect(page.locator(".gedcom-place .gedcom-tree-message")).toHaveText("A line break is not allowed in this value: it keeps to one line.");
+    expect(await asked(page)).toEqual([]);
+    expect(await page.evaluate(() => window.desk.text())).toBe(before);
+
+    await mountDesk(page, { record: WARSAW });
+    await nameField(page).fill("Warszawa");
+    await nameField(page).press("Enter");
+    await page.evaluate(() => {
+      window.desk.decline();
+    });
+    await expect(nameField(page)).toHaveValue("Warsaw, Congress Poland");
+    expect(await page.evaluate(() => window.desk.text())).toBe(before);
+  });
+
+  test("opens the event of a row in its record's tree, in view and focused", async ({ page }) => {
+    await page.setViewportSize({ width: 1400, height: 420 });
+    await mountDesk(page, { record: WARSAW });
+    const death = lines(page).filter({ hasText: "14 MAY 1902" });
+    await expect(death.locator(".gedcom-desk-fact-name")).toHaveText("Death");
+    await death.locator(".gedcom-desk-link").click();
+
+    await shownRecord(page, "@I3@");
+    const opened = treeRow(page, "Death").locator(".gedcom-tree-chevron");
+    await expect(opened).toHaveAttribute("aria-expanded", "true");
+    await expect(opened).toBeFocused();
+    await expect(opened).toBeInViewport();
+    await expect(treeRow(page, "Place").locator("textarea").last()).toHaveValue("Warsaw, Congress Poland");
+
+    await show(page, WARSAW);
+    await lines(page).first().click({ position: { x: 8, y: 8 } });
+    await shownRecord(page, "@I1@");
+    await expect(treeRow(page, "Birth").locator(".gedcom-tree-chevron")).toHaveAttribute("aria-expanded", "true");
+  });
+
+  test("has rows 44 pixels tall on a phone, and nothing to scroll sideways at 320 and 390 pixels", async ({ page }) => {
+    for (const [width, phone] of [[320, false], [390, true]] as const) {
+      await mountDesk(page, { record: WARSAW, width, phone });
+      expect(await overflowsSideways(page)).toBe(false);
+      if (phone) {
+        const heights = await lines(page).evaluateAll((rows) => rows.map((row) => row.getBoundingClientRect().height));
+        expect(Math.min(...heights)).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+
+  test("keeps the name read-only in a file with no dialect", async ({ page }) => {
+    await mountDesk(page, { record: "place:kyiv", doc: "0 @I1@ INDI\n1 NAME A /B/\n1 BIRT\n2 PLAC Kyiv\n0 TRLR\n" });
+
+    await expect(nameField(page)).toHaveAttribute("readonly", "");
+    await expect(page.locator(".gedcom-place .gedcom-tree-note")).toHaveCount(1);
+  });
 });
 
 test.describe("the empty states", () => {
@@ -661,7 +777,7 @@ test.describe("the tree of a record", () => {
     await pressArrow(page, "Birth");
     await expect(treeRow(page, "Place").locator("textarea")).toHaveValue("Warsaw, Congress Poland");
     await treeRow(page, "Place").locator(".gedcom-tree-place").click();
-    await expect(page.locator(".gedcom-desk-title")).toHaveText("Warsaw, Congress Poland");
+    await expect(page.locator(".gedcom-place-name textarea")).toHaveValue("Warsaw, Congress Poland");
   });
 
   test("starts another record at its top, and keeps the focus on the toggle and on a control of the same record across a redraw", async ({ page }) => {
