@@ -498,6 +498,20 @@ test.describe("the toolbar's controls", () => {
     await expectOneControlHeight(page);
     expect(await page.locator(".gedcom-list-find").evaluate((node) => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(43.5);
   });
+
+  test("keep the sort select and the direction button at the toolbar's height in a narrow tab with a mouse, the select as wide as its content", async ({ page }) => {
+    await page.setViewportSize({ width: 500, height: 800 });
+    await mountList(page);
+
+    await expect(page.locator(".gedcom-list")).toHaveClass(/is-compact/);
+    await expectOneControlHeight(page);
+    const select = await page.locator(".gedcom-list-sort-select").boundingBox();
+    const direction = await page.locator(".gedcom-list-direction").boundingBox();
+    const kinds = await page.locator(".gedcom-list-kind-select").boundingBox();
+    expect(select?.height ?? NaN).toBeLessThan(43.5);
+    expect(Math.abs((direction?.height ?? NaN) - (kinds?.height ?? NaN))).toBeLessThanOrEqual(1);
+    expect(select?.width ?? NaN).toBeLessThan(250);
+  });
 });
 
 test.describe("the list on a phone", () => {

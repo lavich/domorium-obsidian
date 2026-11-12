@@ -633,7 +633,13 @@ button.gedcom-list-seg-button {
   border-radius: var(--input-radius, var(--radius-s));
 }
 
-.gedcom-list.is-touch .gedcom-list-kind-select {
+.gedcom-list.is-touch .gedcom-list-kind-select,
+.gedcom-list.is-touch .gedcom-list-sort-select {
+  height: max(var(--gedcom-list-control), 44px);
+}
+
+.gedcom-list.is-touch button.gedcom-list-direction {
+  min-width: 44px;
   height: max(var(--gedcom-list-control), 44px);
 }
 
@@ -678,18 +684,19 @@ button.gedcom-list-seg-button.is-active {
 }
 
 .gedcom-list-sort-select {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
-  height: max(var(--gedcom-list-control), 44px);
+  height: var(--gedcom-list-control);
   border-radius: var(--input-radius, var(--radius-s));
 }
 
 button.gedcom-list-direction {
   flex: none;
   box-sizing: border-box;
-  min-width: 44px;
-  height: max(var(--gedcom-list-control), 44px);
+  min-width: var(--gedcom-list-control);
+  height: var(--gedcom-list-control);
   border-radius: var(--input-radius, var(--radius-s));
   background: none;
   box-shadow: none;

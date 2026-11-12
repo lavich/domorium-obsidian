@@ -634,12 +634,12 @@ as a phone or a tablet, each row SHALL
 take two lines — the name or title with the years, the marriage or the count at its end,
 and the place or the author beneath, with the Sources mark or the count of children or
 citations; for the other kinds as the requirement on each says — the column headers SHALL be replaced by a selector of the column to sort by
-and a button that turns the direction, and a row and each control SHALL be at least 44
-CSS pixels tall. A count shown at the end of a two-line row SHALL say what it counts in
+and a button that turns the direction, as wide as their content and as tall as the other
+controls of the toolbar, and a row SHALL be at least 44 CSS pixels tall. A count shown at the end of a two-line row SHALL say what it counts in
 words, spelt by the plural rules of the language shown: `2 sources`, `2 children`,
-`Cited by 2`, `Linked from 2`. On a touch device the kind buttons, the
-search and the column headers of
-a wide tab SHALL be at least 44 CSS pixels tall as well. Row and control heights SHALL
+`Cited by 2`, `Linked from 2`. On a touch device the sort selector, the
+direction button, the kind buttons, the search and the column headers of
+a wide tab SHALL be at least 44 CSS pixels tall. Row and control heights SHALL
 follow the reader's font size rather than a fixed number of pixels, and the page SHALL
 not scroll sideways at any font size the app offers.
 
@@ -673,6 +673,11 @@ clear.
 #### Scenario: A wide tab
 - **WHEN** the tab is 1400 pixels wide with a mouse
 - **THEN** each row is one line, the headers are shown, and no selector of the sort is
+
+#### Scenario: A narrow tab with a mouse
+- **WHEN** the tab is 500 pixels wide with a mouse
+- **THEN** each row takes two lines, and the sort selector and the direction button are as
+  tall as the kinds' dropdown, the selector no wider than its content
 
 #### Scenario: Sorting on a phone
 - **WHEN** the reader chooses Years in the selector and turns the direction
