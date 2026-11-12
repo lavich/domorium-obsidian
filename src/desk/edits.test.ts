@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { resetLanguage, setLanguage } from "../i18n";
 import { TextTab } from "../testing/textTab";
 import { addableAt } from "./addableFields";
-import { addAt, addPlan, checkValue, commit, describeMoveAt, joinEdits, moveAt, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
+import { addAt, addPlan, checkValue, commit, describeMoveAt, inLineBreak, joinEdits, moveAt, refusalText, removeAt, requiredBeneath, setValueAt, type Refusal } from "./edits";
 
 afterEach(resetLanguage);
 
@@ -360,5 +360,17 @@ describe("a line break in a value", () => {
     expect(refusalText(outcome as Refusal)).toBe("A line break is not allowed in this value: it keeps to one line.");
     setLanguage("ru");
     expect(refusalText(outcome as Refusal)).toBe("В этом значении нельзя переносить строку: оно занимает одну строку.");
+  });
+});
+
+describe("an edit for a file written with CRLF", () => {
+  const edit = { version: 3, edits: [{ range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } }, newText: "1 NOTE a\n2 CONT b\n" }] };
+
+  it("writes its line breaks as the file does", () => {
+    expect(inLineBreak(edit, "\r\n").edits[0]?.newText).toBe("1 NOTE a\r\n2 CONT b\r\n");
+  });
+
+  it("is left as it is for a file written with LF", () => {
+    expect(inLineBreak(edit, "\n")).toBe(edit);
   });
 });
