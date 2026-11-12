@@ -1937,6 +1937,7 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree {
+  --gedcom-tree-action: calc(var(--nav-item-size) * var(--line-height-tight) + 2 * var(--size-4-1) - 2 * var(--size-2-1));
   position: relative;
 }
 
@@ -2162,12 +2163,10 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree .gedcom-tree-actions {
-  --gedcom-tree-action: var(--size-4-6);
   display: flex;
   flex: none;
-  gap: var(--size-2-2);
+  gap: var(--size-2-1);
   align-self: flex-start;
-  margin-block: calc((1em * var(--line-height-tight) - var(--gedcom-tree-action)) / 2);
   margin-inline-start: auto;
   opacity: 0;
 }
@@ -2445,17 +2444,17 @@ button.gedcom-fg-pop-open {
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
   position: absolute;
-  top: calc(var(--size-4-1) + (1em * var(--line-height-tight) - var(--gedcom-tree-action)) / 2);
-  inset-inline-end: var(--size-4-2);
+  top: var(--size-2-1);
+  inset-inline-end: var(--size-2-1);
   margin: 0;
 }
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
-  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + var(--size-4-6));
+  padding-inline-end: calc(var(--size-2-1) + var(--gedcom-tree-action) + var(--size-4-1));
 }
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
-  padding-inline-end: calc(var(--size-4-2) + var(--size-4-1) + 2 * var(--size-4-6) + var(--size-2-2));
+  padding-inline-end: calc(2 * var(--size-2-1) + 2 * var(--gedcom-tree-action) + var(--size-4-1));
 }
 
 @media (pointer: coarse) {
@@ -2469,7 +2468,7 @@ button.gedcom-fg-pop-open {
   }
 
   .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
-    padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-2));
+    padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-1));
   }
 }
 
@@ -2483,7 +2482,7 @@ button.gedcom-fg-pop-open {
 }
 
 .is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
-  padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-2));
+  padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-1));
 }
 
 .gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick) {
