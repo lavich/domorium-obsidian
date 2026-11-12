@@ -91,7 +91,6 @@ export interface TreeHost extends DetailHost {
   /** Where the line at this position may go among its siblings, read from the text the card was drawn from. */
   describeMoveAt?(at: Position): MoveDescription | Refusal;
   moveAt?(at: Position, target: MoveTarget): WriteOutcome;
-  /** Whether the keys are named as a Macintosh names them. */
   macKeys?: boolean;
   /** Brings into view, once the card is drawn and its scroll restored, the grip of a line that moved. */
   reveal?(element: HTMLElement): void;
@@ -261,7 +260,9 @@ class Tree {
     }
     const target = this.wished(wish);
     if (target) {
-      target.focus({ preventScroll: true });
+      if (!("key" in wish && wish.focus === false)) {
+        target.focus({ preventScroll: true });
+      }
       if ("key" in wish && wish.reveal) {
         this.options.host.reveal?.(target);
       }
@@ -763,6 +764,7 @@ class Tree {
     const canMove =
       !root &&
       line.tag !== "" &&
+      owner.tag !== "" &&
       host.moveAt !== undefined &&
       host.describeMoveAt !== undefined &&
       owner.children.filter((one) => one.tag !== "").length > 1;
@@ -892,25 +894,28 @@ class Tree {
       const own = described.slots.findIndex((slot) => "before" in slot.target && slot.target.before.line === line.range.start.line);
       const slot = own < 0 ? undefined : described.slots[up ? own - 1 : own + 2];
       if (slot) {
-        this.move(line, owner, key, slot, refused);
+        this.move(line, owner, key, slot, refused, true);
       }
     });
+    for (const type of ["touchstart", "touchmove"] as const) {
+      // Obsidian mobile opens a side panel on a swipe it sees, and data-ignore-swipe alone does not hold every build back.
+      grip.addEventListener(type, (event) => event.stopPropagation(), { passive: true });
+    }
     grip.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0 || event.defaultPrevented || !this.live()) {
+      if (event.button !== 0 || !event.isPrimary || event.defaultPrevented || !this.live()) {
         return;
       }
-      new TreeDrag(event, {
+      TreeDrag.start(event, {
         grip,
         node,
         describe: () => host.describeMoveAt?.(line.range.start) ?? { ok: false, code: STALE, message: "" },
         refused,
-        drop: (slot) => this.move(line, owner, key, slot, refused),
+        drop: (slot) => this.move(line, owner, key, slot, refused, false),
       });
     });
   }
 
-  /** Moves a line to a slot among its siblings: the reader's choices follow it, and the focus goes to its grip. */
-  private move(line: RecordLine, owner: RecordLine, key: string, slot: MoveSlot, refused: (refusal: Refusal) => void): void {
+  private move(line: RecordLine, owner: RecordLine, key: string, slot: MoveSlot, refused: (refusal: Refusal) => void, byKeyboard: boolean): void {
     const { host, state } = this.options;
     const outcome = host.moveAt?.(line.range.start, slot.target);
     if (!outcome) {
@@ -929,20 +934,18 @@ class Tree {
     order.splice(before ? order.indexOf(before) : order.length, 0, line);
     const tagged = order.filter((one) => one.tag !== "");
     state.renameKeys(renames);
-    state.wishFocus({ key: renames.get(key) ?? key, parts: ["grip"], reveal: true });
+    state.wishFocus({ key: renames.get(key) ?? key, parts: ["grip"], reveal: true, ...(byKeyboard ? {} : { focus: false as const }) });
     this.say(t("tree.moved", { field: tagLabel(line.tag), place: tagged.indexOf(line) + 1, count: tagged.length }));
     this.settle();
   }
 
-  /** Says under the row why a move was not written; the message goes with the next drawing of the card. */
   private moveRefused(refusal: Refusal, header: HTMLElement, grip: HTMLElement): void {
-    const message = { text: refusalText(refusal), kind: "error" as const };
-    if (grip.isConnected) {
-      showMessage(header, grip, message);
-    }
-    this.say(message.text);
+    const text = refusalText(refusal);
+    this.say(text);
     if (refusal.code === STALE) {
       this.settle();
+    } else if (grip.isConnected) {
+      showMessage(header, grip, { text, kind: "error" });
     }
   }
 

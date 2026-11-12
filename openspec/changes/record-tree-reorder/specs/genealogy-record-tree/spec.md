@@ -129,7 +129,7 @@ Each line of the tree SHALL be a **row** of a label and a value. The label SHALL
 
 ### Requirement: The tree fits a narrow panel and a phone
 
-The tree SHALL be readable in one column from 320 pixels up and at a phone's width, without horizontal scrolling. The indentation of nested lines SHALL stop growing after the fourth level beneath the root, so that a line nested deeper keeps the width of a line at the fourth. A long value SHALL wrap, and a long label SHALL wrap. A redraw of the card for a change of the file SHALL keep the focus on the same control and SHALL NOT scroll the card, except that after the reader moves a line the card SHALL scroll only as far as it takes to bring that line's grip, which then has the focus, into view; showing another record SHALL scroll the card to its top.
+The tree SHALL be readable in one column from 320 pixels up and at a phone's width, without horizontal scrolling. The indentation of nested lines SHALL stop growing after the fourth level beneath the root, so that a line nested deeper keeps the width of a line at the fourth. A long value SHALL wrap, and a long label SHALL wrap. A redraw of the card for a change of the file SHALL keep the focus on the same control and SHALL NOT scroll the card, except that after the reader moves a line the card SHALL scroll only as far as it takes to bring that line's grip into view, the grip then holding the focus where the keyboard moved the line; showing another record SHALL scroll the card to its top.
 
 #### Scenario: A deep line at a sidebar's width
 - **WHEN** a record nests a line six levels deep and the card is 320 pixels wide

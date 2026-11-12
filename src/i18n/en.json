@@ -478,7 +478,7 @@
   "edit.refusal.required-field-missing": "A line the standard requires beneath it is missing.",
   "edit.refusal.cardinality-exceeded": "The standard allows no more of this field here.",
   "edit.refusal.stale-document": "The file changed, so nothing was written. The card now shows the file as it is.",
-  "edit.refusal.reading-changed": "The file would be read otherwise with the line there, so nothing was written.",
+  "edit.refusal.reading-changed": "With the line there, the file would be read differently, so nothing was written.",
   "edit.refusal.not-a-sibling": "A line moves only among the lines beside it.",
   "edit.refusal.reciprocal-pointer-unsupported": "This link is changed on the other record.",
   "edit.refusal.rule-violation": "The standard does not allow this value here.",

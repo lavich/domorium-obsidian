@@ -147,7 +147,7 @@ describe("a line moved among its siblings", () => {
 
   it("writes Marie's second name, its three lines together, before her first, and changes no other line", () => {
     const tab = tabOf(marie);
-    const described = describeMoveAt(tab.service(), at(6));
+    const described = describeMoveAt(tab.service(), at(6), tab.version);
     if (!described.ok) {
       throw new Error(described.message);
     }
@@ -174,7 +174,7 @@ describe("a line moved among its siblings", () => {
 
   it("describes the line's own place and the place after it as keeping the order, which writes nothing", () => {
     const tab = tabOf(marie);
-    const described = describeMoveAt(tab.service(), at(6));
+    const described = describeMoveAt(tab.service(), at(6), tab.version);
     if (!described.ok) {
       throw new Error(described.message);
     }
@@ -200,7 +200,15 @@ describe("a line moved among its siblings", () => {
   it("refuses to move a record's opening line", () => {
     const tab = tabOf(marie);
 
-    expect(describeMoveAt(tab.service(), at(3))).toMatchObject({ ok: false, code: "record-edit-unsupported" });
+    expect(describeMoveAt(tab.service(), at(3), tab.version)).toMatchObject({ ok: false, code: "record-edit-unsupported" });
+  });
+
+  it("refuses to describe the places of a line in a text other than the one the card was drawn from", () => {
+    const tab = tabOf(marie);
+    const drawn = tab.version;
+    tab.replace(`${tab.text}\n`);
+
+    expect(describeMoveAt(tab.service(), at(6), drawn)).toMatchObject({ ok: false, code: "stale-document" });
   });
 
   it("refuses a move against a version the text has moved on from", () => {

@@ -104,7 +104,6 @@ import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
 import { documentRef, type GenealogyIndex } from "./genealogy";
 import type {
-  EditRefusal,
   GedcomLanguageService,
   MoveDescription,
   MoveTarget,
@@ -808,8 +807,12 @@ export class GedcomView extends TextFileView implements CardTab {
     return this.wrote(commit(this.editTarget, addAt(this.service(), parent, version, tag, input)));
   }
 
-  describeMoveAt(at: Position): MoveDescription | EditRefusal {
-    return describeMoveAt(this.service(), at);
+  describeMoveAt(at: Position, version: number): MoveDescription | Refusal {
+    const described = describeMoveAt(this.service(), at, version);
+    if (!described.ok) {
+      this.wrote(described);
+    }
+    return described;
   }
 
   moveAt(at: Position, target: MoveTarget, version: number): WriteOutcome {

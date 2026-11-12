@@ -646,8 +646,9 @@ body:not(.is-grabbing) .tree-item-self.is-clickable:hover {
 /* Obsidian's reordering classes, as its app.css draws them, for a drag in the harness. */
 body {
   --layer-dragged-item: 80;
+  --background-modifier-box-shadow: rgba(0, 0, 0, 0.15);
   --drag-item-background: var(--background-primary);
-  --drag-item-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --drag-item-shadow: 0 2px 8px var(--background-modifier-box-shadow);
 }
 
 .drag-reorder-ghost {

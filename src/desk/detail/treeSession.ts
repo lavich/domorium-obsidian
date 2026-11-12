@@ -32,7 +32,7 @@ export interface Unwritten {
 
 /** Where the focus goes once the tree is drawn again: a control of a node, or a part of the line written at `line` under a node. */
 export type FocusWish =
-  | { key: string; parts: string[]; reveal?: boolean }
+  | { key: string; parts: string[]; reveal?: boolean; focus?: false }
   | { under: string; line: number; parts: string[] }
   | { unwritten: number };
 

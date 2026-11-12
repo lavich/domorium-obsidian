@@ -2513,6 +2513,8 @@ body:not(.is-grabbing) .gedcom-tree .gedcom-tree-row:hover > .gedcom-tree-action
 
 /* .grip-handle, .mod-dragged-item and --drag-item-* arrive with Obsidian 1.15; below it the grip and the lifted row are drawn here alike. */
 .gedcom-tree .gedcom-tree-grip {
+  --icon-size: var(--icon-s);
+  --icon-stroke: var(--icon-s-stroke-width);
   border-radius: var(--clickable-icon-radius);
   color: var(--text-faint);
   cursor: grab;
@@ -2532,6 +2534,10 @@ body.is-grabbing .gedcom-tree .gedcom-tree-grip {
   cursor: grabbing;
 }
 
+body.gedcom-tree-moving {
+  cursor: grabbing;
+}
+
 body.is-grabbing .gedcom-tree {
   user-select: none;
 }
@@ -2544,6 +2550,10 @@ body.is-grabbing .gedcom-tree {
 
 .drag-reorder-ghost.gedcom-tree {
   position: fixed;
+}
+
+.drag-reorder-ghost.gedcom-tree :is(.gedcom-tree-actions, .gedcom-tree-pick) {
+  visibility: hidden;
 }
 
 .drag-reorder-ghost.gedcom-tree > .mod-dragged-item {

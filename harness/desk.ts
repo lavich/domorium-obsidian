@@ -152,7 +152,7 @@ const tab: CardTab = {
       confirmed = go;
     }
   },
-  describeMoveAt: (at) => describeMoveAt(service(), at),
+  describeMoveAt: (at, version) => describeMoveAt(service(), at, version),
   moveAt: (at, target, version) => commit(doc, moveAt(service(), at, version, target)),
   settle: () => {
     draw();

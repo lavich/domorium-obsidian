@@ -61,8 +61,12 @@ export function removeAt(
   return service.removeStructure(at, version);
 }
 
-export function describeMoveAt(service: GedcomLanguageService, at: Position): MoveDescription | EditRefusal {
-  return service.describeMove(at);
+/** A description read from a text other than the one at `version` would offer places the card does not show. */
+export function describeMoveAt(service: GedcomLanguageService, at: Position, version: number): MoveDescription | EditRefusal | Refusal {
+  const described = service.describeMove(at);
+  return described.ok && described.version !== version
+    ? { ok: false, code: STALE, message: "The document changed since the card was drawn." }
+    : described;
 }
 
 export function moveAt(

@@ -1030,11 +1030,69 @@ test.describe("moving a line among its siblings", () => {
     expect(await marieText(page)).toContain(SECOND_FIRST);
     await expect(page.locator(".drag-reorder-ghost, .drop-indicator, .drag-ghost-hidden")).toHaveCount(0);
     expect(await page.evaluate(() => document.body.classList.contains("is-grabbing"))).toBe(false);
-    await expect(page.locator('[data-focus-key="t:NAME[0]:grip"]')).toBeFocused();
+    const moved = page.locator('[data-focus-key="t:NAME[0]:grip"]');
+    await expect(moved).not.toBeFocused();
+    expect(await page.evaluate(() => document.querySelector(":focus-visible") === null)).toBe(true);
+    await page.mouse.move(5, 5);
+    await expect.poll(() => opacityOf(nthRow(page, "Name", 0).locator(".gedcom-tree-actions"))).toBe("0");
 
+    await moved.focus();
     await page.keyboard.press("Alt+ArrowDown");
     expect(await marieText(page)).toContain("1 NAME Marie /Skłodowska-Curie/\n2 GIVN Marie\n2 SURN Skłodowska-Curie\n1 NAME Maria Salomea");
     await expect(page.locator('[data-focus-key="t:NAME[1]:grip"]')).toBeFocused();
+  });
+
+  test("draws the grip in the faint text colour and the drop line in the accent, as the app draws its own", async ({ page }) => {
+    await mountDesk(page, { width: 400 });
+    const grip = gripOf(treeRow(page, "Sex"));
+    const faint = await page.evaluate(() => {
+      const probe = document.body.createDiv();
+      probe.setCssProps({ color: "var(--text-faint)" });
+      const colour = getComputedStyle(probe).color;
+      probe.remove();
+      return colour;
+    });
+    expect(await grip.evaluate((node) => getComputedStyle(node).color)).toBe(faint);
+
+    const at = await press(page, grip);
+    await page.mouse.move(at.x, (await top(nthRow(page, "Name", 0))) + 3, { steps: 4 });
+    const accent = await page.evaluate(() => {
+      const probe = document.body.createDiv();
+      probe.setCssProps({ color: "var(--interactive-accent)" });
+      const colour = getComputedStyle(probe).color;
+      probe.remove();
+      return colour;
+    });
+    expect(await page.locator(".drop-indicator.is-active").evaluate((node) => getComputedStyle(node).borderTopColor)).toBe(accent);
+    await page.mouse.up();
+  });
+
+  test("spans the drop line over the siblings' box in a tree written right to left", async ({ page }) => {
+    await mountDesk(page, { width: 400 });
+    await page.evaluate(() => {
+      document.body.dir = "rtl";
+    });
+    await pressArrow(page, "Birth");
+    const at = await press(page, gripOf(treeRow(page, "Place")));
+    await page.mouse.move(at.x, (await top(treeRow(page, "Date"))) + 3, { steps: 4 });
+    const line = await page.locator(".drop-indicator.is-active").boundingBox();
+    const date = await treeRow(page, "Date").locator("..").boundingBox();
+    await page.mouse.up();
+
+    expect(line && date ? Math.abs(line.x - date.x) : 99).toBeLessThanOrEqual(2);
+    expect(line && date ? Math.abs(line.x + line.width - (date.x + date.width)) : 99).toBeLessThanOrEqual(2);
+    expect(await marieText(page)).toContain("2 PLAC Warsaw, Congress Poland\n2 DATE 7 NOV 1867");
+  });
+
+  test("writes nothing for Alt+↓ at the last place", async ({ page }) => {
+    await mountDesk(page, { width: 400 });
+    const before = await page.evaluate(() => window.desk.text());
+    const last = page.locator(".gedcom-tree-node.is-root > .gedcom-tree-children > .gedcom-tree-node:last-child > .gedcom-tree-row .gedcom-tree-grip");
+    await expect(last).toHaveAttribute("data-focus-key", "t:SOUR[1]:grip");
+    await last.focus();
+    await page.keyboard.press("Alt+ArrowDown");
+
+    expect(await page.evaluate(() => window.desk.text())).toBe(before);
   });
 
   test("drops after a sibling over the lines nested beneath it, never between them", async ({ page }) => {
@@ -1072,7 +1130,7 @@ test.describe("moving a line among its siblings", () => {
     await page.keyboard.press("Alt+ArrowUp");
 
     expect(await page.evaluate(() => window.desk.text())).toBe(before);
-    await expect(page.locator(".gedcom-tree-row + .gedcom-tree-message")).toContainText("would be read otherwise");
+    await expect(page.locator(".gedcom-tree-row + .gedcom-tree-message")).toContainText("would be read differently");
   });
 
   test("ends a drag without writing when the file changes underneath it", async ({ page }) => {

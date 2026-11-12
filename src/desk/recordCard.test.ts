@@ -405,7 +405,7 @@ describe("a card that writes", () => {
           asked = go;
         }
       },
-      describeMoveAt: (at) => describeMoveAt(service(), at),
+      describeMoveAt: (at, version) => describeMoveAt(service(), at, version),
       moveAt: (at, target, version) => commit(doc, moveAt(service(), at, version, target)),
       settle: () => {
         draw();
@@ -602,12 +602,17 @@ describe("a card that writes", () => {
   });
 
   it("refuses a move described from a text that moved on since the card was drawn, and draws the card again", () => {
-    tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    const written = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    const asked = vi.fn((at: Parameters<NonNullable<CardTab["describeMoveAt"]>>[0], version: number) => describeMoveAt(doc.service(), at, version));
+    tab = { ...written, describeMoveAt: asked };
     draw();
+    const drawn = doc.version;
     const grip = gripOf("Sex");
     doc.replace(doc.text.replace("1 NAME Marie /Curie/", "1 NAME Maria /Curie/"));
     altUp(grip);
 
+    expect(asked).toHaveBeenCalledWith(expect.anything(), drawn);
+    expect(asked.mock.results[0]?.value).toMatchObject({ ok: false, code: "stale-document" });
     expect(doc.text).toContain("1 NAME Maria /Curie/\n1 SEX F");
     expect(doc.writes).toBe(0);
     expect(texts(".gedcom-tree-row .gedcom-tree-summary, .gedcom-tree-row .gedcom-field")).toEqual(expect.arrayContaining([expect.stringContaining("Maria")]));

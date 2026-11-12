@@ -98,7 +98,8 @@ function scrollerOf(element: HTMLElement): HTMLElement | null {
   return null;
 }
 
-/** One drag of a grip, from the press to its end: the copy that follows the pointer, the drop line, and the scroll near an edge. */
+const sessions = new WeakMap<Document, TreeDrag>();
+
 export class TreeDrag {
   private readonly pointerId: number;
   private readonly startX: number;
@@ -115,6 +116,20 @@ export class TreeDrag {
   private scroller: HTMLElement | null = null;
   private slots = new Map<number, MoveSlot>();
   private shown: MoveSlot | null = null;
+
+  static start(press: PointerEvent, options: DragOptions): TreeDrag | null {
+    const doc = options.grip.doc;
+    if (sessions.get(doc)?.live) {
+      return null;
+    }
+    const drag = new TreeDrag(press, options);
+    sessions.set(doc, drag);
+    return drag;
+  }
+
+  get live(): boolean {
+    return !this.ended;
+  }
 
   constructor(
     press: PointerEvent,
@@ -214,7 +229,7 @@ export class TreeDrag {
     this.offsetX = this.startX - box.left;
 
     const doc = grip.doc;
-    doc.body.addClass("is-grabbing");
+    doc.body.addClass("is-grabbing", "gedcom-tree-moving");
     const ghost = doc.body.createDiv({ cls: ["drag-reorder-ghost", "gedcom-tree"] });
     ghost.setAttribute("aria-hidden", "true");
     ghost.setAttribute("inert", "");
@@ -299,7 +314,7 @@ export class TreeDrag {
     this.indicator?.remove();
     node.removeClass("drag-ghost-hidden");
     if (this.started) {
-      grip.doc.body.removeClass("is-grabbing");
+      grip.doc.body.removeClass("is-grabbing", "gedcom-tree-moving");
       const swallow = (event: MouseEvent): void => {
         event.stopPropagation();
       };

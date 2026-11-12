@@ -8,7 +8,7 @@ import { CURIE, curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { TextTab } from "../../testing/textTab";
 import { addableAt, choicesAt, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
-import { addAt, checkValue, commit, describeMoveAt, moveAt, removeAt, requiredBeneath, setValueAt, STALE } from "../edits";
+import { addAt, checkValue, commit, describeMoveAt, moveAt, removeAt, requiredBeneath, setValueAt } from "../edits";
 import { factsOf } from "../personPage";
 import { factsByLine, renderTree, type FieldChoice, type TreeHost } from "./tree";
 import { movedKeys, slotAt, slotsByBoundary, TreeDrag } from "./treeMove";
@@ -103,10 +103,7 @@ function editingText(text: string, xref: string, extra: Partial<Omit<TreeHost, A
     removeAt: (at, _nested, done) => {
       done(commit(tab, removeAt(service(), at, drawn)));
     },
-    describeMoveAt: (at) => {
-      const described = describeMoveAt(service(), at);
-      return described.ok && described.version !== drawn ? { ok: false, code: STALE, message: "stale" } : described;
-    },
+    describeMoveAt: (at) => describeMoveAt(service(), at, drawn),
     moveAt: (at, target) => commit(tab, moveAt(service(), at, drawn, target)),
     settle: () => {
       redraw();
@@ -1626,7 +1623,7 @@ const grip = (label: string, at = 0): HTMLElement => {
   return found;
 };
 const pointer = (target: EventTarget, type: string, x = 0, y = 0): void => {
-  target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, clientX: x, clientY: y }));
+  target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, isPrimary: true, clientX: x, clientY: y }));
 };
 const dragged = (): Element[] => [...document.querySelectorAll(".drag-reorder-ghost, .drop-indicator, .drag-ghost-hidden, body.is-grabbing")];
 const marie = (extra: Partial<Omit<TreeHost, Asked>> = {}, state = ephemeralTreeState()): Editing => editingText(CURIE, "@I1@", extra, state);
@@ -1718,6 +1715,24 @@ describe("the grip of a line", () => {
     editing(["0 @I1@ INDI", "1 SEX F", "1", "1 NAME Maria /Curie/"]);
 
     expect(rows().map((row) => gripOf(row) !== null)).toEqual([true, false, true]);
+  });
+
+  it("is on no line beneath a line with no tag, which the service does not move", () => {
+    editing(["0 @I1@ INDI", "1", "2 _A x", "2 _B y", "1 SEX F", "1 NAME Maria /Curie/"]);
+    box.querySelector<HTMLElement>(".gedcom-tree-toggle[data-open=false]")?.click();
+
+    expect(rows().map((row) => `${labelOf(row)} ${gripOf(row) !== null}`)).toEqual([" false", "_A false", "_B false", "Sex true", "Name true"]);
+  });
+
+  it("keeps a touch on it from reaching the workspace that opens the side panels", () => {
+    marie();
+    const seen = vi.fn();
+    box.addEventListener("touchstart", seen);
+    box.addEventListener("touchmove", seen);
+    grip("Sex").dispatchEvent(new Event("touchstart", { bubbles: true }));
+    grip("Sex").dispatchEvent(new Event("touchmove", { bubbles: true }));
+
+    expect(seen).not.toHaveBeenCalled();
   });
 
   it("is a button named for its row and the keys that move it, as a Macintosh names them there", () => {
@@ -1815,13 +1830,14 @@ describe("a line moved by the keyboard", () => {
   });
 
   it("is refused for a description of a text that moved on, and the card is drawn again", () => {
-    const { tab, draws } = editing(["0 @I1@ INDI", "1 SEX F", "1 NAME Maria /Curie/"]);
+    const { tab, draws, host } = editing(["0 @I1@ INDI", "1 SEX F", "1 NAME Maria /Curie/"]);
     tab.replace(tab.text.replace("1 SEX F", "1 SEX M"));
     const drawnBefore = draws();
     press(grip("Name"), "ArrowUp", { altKey: true });
 
     expect(fileLines(tab).indexOf("1 SEX M")).toBeLessThan(fileLines(tab).indexOf("1 NAME Maria /Curie/"));
     expect(draws()).toBe(drawnBefore + 1);
+    expect(host.announce).toHaveBeenCalledWith("The file changed, so nothing was written. The card now shows the file as it is.");
   });
 });
 
@@ -1865,7 +1881,7 @@ describe("a line dragged by its grip", () => {
     const sex = grip("Sex");
     const node = rowNamed("Sex").parentElement as HTMLElement;
     const drop = vi.fn();
-    const drag = new TreeDrag(new PointerEvent("pointerdown", { pointerId: 7, cancelable: true }), {
+    const drag = TreeDrag.start(new PointerEvent("pointerdown", { pointerId: 7, cancelable: true }), {
       grip: sex,
       node,
       describe: () => ({ ok: true, version: 1, range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, subtreeRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, slots: [] }),
@@ -1873,12 +1889,29 @@ describe("a line dragged by its grip", () => {
       drop,
     });
     sex.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 7, clientY: 30 }));
-    drag.end();
-    drag.end();
+    drag?.end();
+    drag?.end();
     sex.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 7, clientY: 30 }));
 
     expect(dragged()).toEqual([]);
     expect(drop).not.toHaveBeenCalled();
+  });
+
+  it("starts for the primary pointer only, and one at a time", () => {
+    marie();
+    const sex = grip("Sex");
+    sex.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0, pointerId: 2, isPrimary: false }));
+    sex.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 2, clientY: 20 }));
+    expect(dragged()).toEqual([]);
+
+    pointer(sex, "pointerdown");
+    const birth = grip("Birth");
+    birth.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, button: 0, pointerId: 3, isPrimary: true }));
+    birth.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, pointerId: 3, clientY: 20 }));
+    expect(document.querySelectorAll(".drag-reorder-ghost")).toHaveLength(0);
+    pointer(sex, "pointermove", 0, 20);
+    expect(document.querySelector(".drag-reorder-ghost .gedcom-tree-label")?.textContent).toBe("Sex");
+    pointer(sex, "pointercancel", 0, 20);
   });
 
   it("ends without writing when the pointer is cancelled", () => {

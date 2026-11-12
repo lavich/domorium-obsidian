@@ -19,7 +19,7 @@ import { renderPersonPage, type PageHost, type PersonPageOptions } from "./perso
 import { renderRecordPage } from "./recordPage";
 import { renderSourcePage } from "./sourcePage";
 import type { Choices } from "./addableFields";
-import { STALE, type Refusal, type WriteOutcome } from "./edits";
+import type { Refusal, WriteOutcome } from "./edits";
 import type { FieldChoice, MenuAt, PointerChoice, TreeHost, ValueChoice } from "./detail/tree";
 import { recordTitle } from "./detail/lineView";
 import type { TreeSession } from "./detail/treeSession";
@@ -48,7 +48,7 @@ export interface CardTab {
   setValueAt?(at: Position, input: StructureValueInput, version: number): WriteOutcome;
   addAt?(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome;
   removeAt?(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void;
-  describeMoveAt?(at: Position): MoveDescription | Refusal;
+  describeMoveAt?(at: Position, version: number): MoveDescription | Refusal;
   moveAt?(at: Position, target: MoveTarget, version: number): WriteOutcome;
   /** Draws every view of the tab again from its text, at once. */
   settle?(): void;
@@ -71,7 +71,6 @@ export interface CardView {
   chooseDeviceFile?(chosen: (file: File) => void): void;
   /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
   header?: HTMLElement;
-  /** Whether the keys are named as a Macintosh names them. */
   macKeys?: boolean;
 }
 
@@ -228,12 +227,7 @@ function drawRecord(
     const describeMoveAt = tab.describeMoveAt?.bind(tab);
     const moveAt = tab.moveAt?.bind(tab);
     if (describeMoveAt && moveAt) {
-      host.describeMoveAt = (at) => {
-        const described = describeMoveAt(at);
-        return described.ok && described.version !== version
-          ? { ok: false, code: STALE, message: "The document changed since the card was drawn." }
-          : described;
-      };
+      host.describeMoveAt = (at) => describeMoveAt(at, version);
       host.moveAt = (at, target) => moveAt(at, target, version);
     }
     host.settle = tab.settle?.bind(tab);
