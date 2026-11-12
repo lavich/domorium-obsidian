@@ -1,4 +1,6 @@
-import type { DocumentSymbol, Range } from "@domorium/language-service";
+import type { DocumentSymbol, Position, Range } from "@domorium/language-service";
+
+import { payloadPosition } from "./symbols";
 
 /** One line of a record as the file writes it, with what hangs beneath it. */
 export interface RecordLine {
@@ -7,6 +9,8 @@ export interface RecordLine {
   xref?: string;
   /** What the line carries other than a pointer, its `CONT` and `CONC` lines joined into it. */
   text?: string;
+  /** Where that value starts in the file, which the language service answers a file's media on. */
+  valueAt?: Position;
   /** The record a payload of the form `@X@` points at. */
   pointer?: string;
   /** 7.0's `@VOID@`: the line deliberately names no record. */
@@ -36,7 +40,7 @@ function lineOf(symbol: DocumentSymbol): RecordLine {
   return {
     tag: symbol.name,
     ...(match ? (match[1] === "VOID" ? { void: true as const } : { pointer: payload }) : {}),
-    ...(text === undefined || text === "" ? {} : { text }),
+    ...(text === undefined || text === "" ? {} : { text, valueAt: payloadPosition(symbol) }),
     children: symbol.children.filter((child) => child.name !== "CONT" && child.name !== "CONC").map(lineOf),
     range: symbol.range,
   };
@@ -44,15 +48,16 @@ function lineOf(symbol: DocumentSymbol): RecordLine {
 
 /**
  * The lines of a record whole, to any depth. A note record carries its text in the label of its
- * symbol, the first line of it, and in `CONT` and `CONC` lines the rest.
+ * symbol, the first line of it, and in `CONT` and `CONC` lines the rest. Any other record's own
+ * value is not in its symbol, so it is handed in as `own`, already joined.
  */
-export function recordLines(symbol: DocumentSymbol): RecordLine {
+export function recordLines(symbol: DocumentSymbol, own?: string): RecordLine {
   const note = symbol.name === "NOTE" || symbol.name === "SNOTE";
   const first = symbol.label ?? (symbol.children.some((child) => child.name === "CONT") ? "" : undefined);
-  const text = note ? continued(symbol, first)?.replace(/@@/gu, "@") : undefined;
+  const text = note ? continued(symbol, first)?.replace(/@@/gu, "@") : own;
   return {
     tag: symbol.name,
-    ...(symbol.detail === undefined ? {} : { xref: symbol.detail }),
+    ...(symbol.detail === undefined || !POINTER.test(symbol.detail) ? {} : { xref: symbol.detail }),
     ...(text === undefined || text === "" ? {} : { text }),
     children: symbol.children.filter((child) => child.name !== "CONT" && child.name !== "CONC").map(lineOf),
     range: symbol.range,

@@ -40,7 +40,7 @@ import {
 
 import { createGedcomComposition } from "./editor/composition";
 import { isDarkTheme } from "./editor/darkTheme";
-import { mediaItemAt, mediaItemsOf, mediaVaultOf, portraitOf } from "./editor/mediaItems";
+import { mediaItemAt, mediaVaultOf } from "./editor/mediaItems";
 import { PreviewPopovers } from "./editor/previewPopovers";
 import { pushSearchScope } from "./editor/searchScope";
 import { openVaultFile } from "./editor/vaultFile";
@@ -49,7 +49,7 @@ import type { AllowScope } from "./editor/mediaPreviewView";
 import { hoverDelay, previewGesture } from "./editor/previewGesture";
 import { carryCursor } from "./editor/reload";
 import { recordEntries, type GedcomRecord } from "./editor/records";
-import { t } from "./i18n";
+import { plural, t } from "./i18n";
 import { DESK_MODES, type GedcomSettings } from "./settingsData";
 import {
   offsetFromPosition,
@@ -68,33 +68,57 @@ import {
   isViewMode,
   modeButtons,
   modeLook,
-  pageKind,
   readDeskState,
   shownRange,
-  routeLink,
+  followsCursor,
+  routeRecord,
+  type RecordTarget,
   type DeskMode,
   type Origin,
   type ViewKind,
 } from "./desk/deskState";
-import { eventAt, eventOwner } from "./desk/eventRows";
 import { listSelection } from "./desk/listRows";
 import { FileViews, memoryToShow, type ViewMemory } from "./desk/fileViews";
 import { originRules, TabModes } from "./desk/tabModes";
 import type { MediaItem } from "./desk/media";
-import type { FactKey } from "./desk/personPage";
+import { ConfirmModal } from "./desk/confirmModal";
+import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt, type Choices } from "./desk/addableFields";
+import {
+  addAt,
+  checkValue,
+  commit,
+  describeMoveAt,
+  moveAt,
+  refusalText,
+  removeAt,
+  requiredBeneath,
+  setValueAt,
+  STALE,
+  type EditTarget,
+  type Refusal,
+  type WriteOutcome,
+} from "./desk/edits";
+import { mediaFileEdit, type FileAt } from "./desk/mediaFile";
 import type { CardTab } from "./desk/recordCard";
-import { RecordHistory } from "./desk/recordHistory";
 import { CursorFollow, shouldFollowCursor } from "./desk/followRules";
 import { RevisionMemo } from "./editor/revisionMemo";
 import { documentRef, type GenealogyIndex } from "./genealogy";
-import type { Position } from "@domorium/language-service";
+import type {
+  GedcomLanguageService,
+  MoveDescription,
+  MoveTarget,
+  PointerCandidate,
+  Position,
+  StructureFieldDescription,
+  StructureInput,
+  StructureValueInput,
+} from "@domorium/language-service";
 import { IndexCache } from "./genealogy/cache";
 import { leafShowingFile } from "./vault/openTabs";
 import { recordAtLine, xrefFromSubpath } from "./vault/protocolLink";
 import { type Move, type Outcome, planMove } from "./vault/movedFiles";
 import type { GedcomStatus } from "./editor/status";
 import { GEDCOM_ICON_ID } from "./icon";
-import type { PortraitContent } from "./desk/media";
 
 export const GEDCOM_VIEW_TYPE = "domorium-gedcom";
 
@@ -119,8 +143,6 @@ export class GedcomView extends TextFileView implements CardTab {
   private readonly modes: TabModes;
   private readonly views: FileViews;
   private memory: ViewMemory = {};
-  private selectedFact: FactKey | null = null;
-  private readonly recordHistory = new RecordHistory();
   private revision = 0;
   private readonly genealogyCache = new IndexCache();
   private readonly editorEl: HTMLElement;
@@ -226,14 +248,13 @@ export class GedcomView extends TextFileView implements CardTab {
         });
         this.editor.scrollDOM.scrollTop = scroll;
       }
-      this.language.update(data);
+      this.language.update(this.editor.state.doc);
     } finally {
       this.applyingData = false;
     }
     this.modes.loaded = true;
     this.host.statusChanged(this);
     this.dropGoneSelection();
-    this.seedHistory();
     this.drawViews();
     this.host.genealogyChanged(this);
   }
@@ -241,8 +262,6 @@ export class GedcomView extends TextFileView implements CardTab {
   clear(): void {
     this.revision += 1;
     this.modes.loaded = false;
-    this.selectedFact = null;
-    this.recordHistory.reset();
     this.hidePreviews();
     this.language.clear();
     this.editor.setState(this.createState(""));
@@ -283,8 +302,6 @@ export class GedcomView extends TextFileView implements CardTab {
       );
       this.views.reset();
       this.memory = {};
-      this.selectedFact = null;
-      this.recordHistory.reset();
     }
     this.memory = {
       ...this.memory,
@@ -293,16 +310,9 @@ export class GedcomView extends TextFileView implements CardTab {
       ...(desk.list ? { list: desk.list } : {}),
     };
     const restored = this.modes.applyState(desk).selectionChanged;
-    if (restored) {
-      this.selectedFact = null;
-    }
     await super.setState(state, result);
     if (restored && this.modes.loaded) {
       this.dropGoneSelection();
-      const selected = this.modes.shownRecord();
-      if (selected !== null) {
-        this.recordHistory.visit(selected);
-      }
     }
     this.renderMode();
     this.host.genealogyChanged(this);
@@ -344,11 +354,8 @@ export class GedcomView extends TextFileView implements CardTab {
     this.refresh();
     if (interfaceChanged) {
       if (this.modes.interfaceChanged(settings.genealogyInterface).selectionCleared) {
-        this.selectedFact = null;
-        this.recordHistory.reset();
         this.clearViewSelections();
       }
-      this.seedHistory();
       this.renderMode();
     }
     if (this.modes.shown !== before) {
@@ -417,7 +424,7 @@ export class GedcomView extends TextFileView implements CardTab {
     if (record === null) {
       return;
     }
-    const range = shownRange(this.genealogy(), record, this.selectedFact);
+    const range = shownRange(this.genealogy(), record);
     const { doc, selection } = this.editor.state;
     const line = doc.lineAt(selection.main.head).number - 1;
     if (!range || cursorInside(range, { line, character: 0 })) {
@@ -453,8 +460,8 @@ export class GedcomView extends TextFileView implements CardTab {
     return this.genealogy();
   }
 
-  selection(): { record: string | null; fact: FactKey | null } {
-    return { record: this.modes.shownRecord(), fact: this.selectedFact };
+  selection(): { record: string | null } {
+    return { record: this.modes.shownRecord() };
   }
 
   shownRecord(): string | null {
@@ -468,15 +475,9 @@ export class GedcomView extends TextFileView implements CardTab {
     }
     this.followCursor.selected(origin);
     const rules = originRules(origin, Platform.isMobile);
-    this.selectedFact = null;
-    if (rules.addsStep === "visit") {
-      this.recordHistory.visit(xref);
-    } else if (rules.addsStep === "follow") {
-      this.recordHistory.follow(xref);
-    }
     this.markInViews(rules.revealsView, origin === "card");
     if (this.modes.shown === "source" && rules.cursorToRecord) {
-      const start = eventAt(this.genealogy(), xref)?.event.range.start ?? this.records().find((entry) => entry.identifier === xref)?.start;
+      const start = shownRange(this.genealogy(), xref)?.start;
       if (start) {
         this.placeCursor(positionToOffset(this.editor.state.doc, start), rules.editorFocus);
       }
@@ -489,26 +490,8 @@ export class GedcomView extends TextFileView implements CardTab {
     return true;
   }
 
-  history(): { canBack: boolean; canForward: boolean } {
-    const exists = (xref: string): boolean => this.has(xref);
-    return { canBack: this.recordHistory.canBack(exists), canForward: this.recordHistory.canForward(exists) };
-  }
-
   select(xref: string): void {
     this.selectRecord(xref, "card");
-  }
-
-  selectFact(fact: FactKey | null): void {
-    this.selectedFact = fact;
-    this.host.genealogyChanged(this);
-  }
-
-  back(): void {
-    this.stepHistory(this.recordHistory.back((xref) => this.has(xref)));
-  }
-
-  forward(): void {
-    this.stepHistory(this.recordHistory.forward((xref) => this.has(xref)));
   }
 
   openFile(path: string): void {
@@ -528,45 +511,35 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   goToXref(xref: string): boolean {
-    if (this.settings.genealogyInterface && pageKind(this.genealogy(), xref)) {
-      return this.selectRecord(xref, "link");
-    }
-    if (this.modes.shown !== "source") {
-      const route = routeLink(this.genealogy(), xref, (wanted) =>
-        this.records().some((entry) => entry.identifier === wanted),
-      );
-      if (route.to === "nowhere") {
-        return false;
-      }
-      this.setMode("source");
-    }
-    const record = this.records().find((entry) => entry.identifier === xref);
-    if (!record) {
-      return false;
-    }
-    this.goToRecord(record);
-    return true;
+    return this.goTo(xref);
   }
 
   goToRecord(record: GedcomRecord): void {
-    if (record.identifier && this.settings.genealogyInterface && pageKind(this.genealogy(), record.identifier)) {
-      this.selectRecord(record.identifier, "link");
-      return;
+    this.goTo(record);
+  }
+
+  private goTo(target: RecordTarget): boolean {
+    const route = routeRecord(
+      this.genealogy(),
+      target,
+      (wanted) => this.records().find((entry) => entry.identifier === wanted)?.start,
+      this.settings.genealogyInterface,
+    );
+    if (route.to === "select") {
+      return this.selectRecord(route.id, "link");
+    }
+    if (route.to === "nowhere") {
+      return false;
     }
     if (this.modes.shown !== "source") {
       this.setMode("source");
     }
-    this.placeCursor(positionToOffset(this.editor.state.doc, record.start), true);
+    this.placeCursor(positionToOffset(this.editor.state.doc, route.at), true);
+    return true;
   }
 
   private has(xref: string): boolean {
-    return pageKind(this.genealogy(), xref) !== null;
-  }
-
-  private stepHistory(xref: string | null): void {
-    if (xref !== null) {
-      this.selectRecord(xref, "history");
-    }
+    return followsCursor(this.genealogy(), xref);
   }
 
   private markInViews(reveal: boolean, fromCard = false): void {
@@ -671,7 +644,7 @@ export class GedcomView extends TextFileView implements CardTab {
   }
 
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
-    this.language.update(this.editor.state.sliceDoc());
+    this.language.update(this.editor.state.doc);
     return applyWorkspaceEdit(this.editor, edit, this.language.getVersion());
   }
 
@@ -712,11 +685,6 @@ export class GedcomView extends TextFileView implements CardTab {
       return;
     }
     this.followCursor.cancel();
-    const selected = this.modes.shownRecord();
-    if (change.selectionChanged && selected !== null) {
-      this.selectedFact = null;
-      this.recordHistory.follow(selected);
-    }
     this.renderMode(true);
     if (change.moveCursor) {
       this.moveCursorToShown();
@@ -752,7 +720,7 @@ export class GedcomView extends TextFileView implements CardTab {
     if (!isViewMode(mode) || !this.modes.needsDraw(this.containerEl.isShown() && this.viewsEl.isShown())) {
       return;
     }
-    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), eventOwner(this.modes.selected) ?? this.modes.selected ?? undefined);
+    this.views.show(mode, this.genealogy(), memoryToShow(this.views.memory(), this.memory), this.modes.selected ?? undefined);
   }
 
   onResize(): void {
@@ -778,15 +746,7 @@ export class GedcomView extends TextFileView implements CardTab {
 
   private dropGoneSelection(): void {
     if (this.modes.selected !== null && this.modes.textChanged(this.genealogy()).selectionCleared) {
-      this.selectedFact = null;
       this.clearViewSelections();
-    }
-  }
-
-  private seedHistory(): void {
-    const selected = this.modes.shownRecord();
-    if (selected !== null && this.recordHistory.current() === null) {
-      this.recordHistory.visit(selected);
     }
   }
 
@@ -812,14 +772,103 @@ export class GedcomView extends TextFileView implements CardTab {
     this.host.genealogyChanged(this);
   }
 
-  /** The picture a person's page shows, for a card: the first of their media that can be drawn. */
-  portrait(xref: string): PortraitContent | null {
-    const person = this.genealogy().person(xref);
-    return person ? portraitOf(this.mediaItems(person.media)) : null;
+  private service(): GedcomLanguageService {
+    return this.language.update(this.editor.state.doc);
   }
 
-  mediaItems(media: { at: Position; record?: string }[]): MediaItem[] {
-    return mediaItemsOf(media, (at) => this.mediaItem(at));
+  private readonly editTarget: EditTarget = {
+    service: () => this.service(),
+    apply: (edit) => this.applyWorkspaceEdit(edit),
+  };
+
+  private wrote(outcome: WriteOutcome): WriteOutcome {
+    if (outcome.ok) {
+      this.announceEdit.cancel();
+    } else if (outcome.code === STALE) {
+      new Notice(refusalText(outcome));
+    }
+    return outcome;
+  }
+
+  version(): number {
+    this.service();
+    return this.language.getVersion();
+  }
+
+  describes(at: Position): boolean {
+    return describes(this.service(), at);
+  }
+
+  setValueAt(at: Position, input: StructureValueInput, version: number): WriteOutcome {
+    return this.wrote(commit(this.editTarget, setValueAt(this.service(), at, version, input)));
+  }
+
+  addAt(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome {
+    return this.wrote(commit(this.editTarget, addAt(this.service(), parent, version, tag, input)));
+  }
+
+  describeMoveAt(at: Position, version: number): MoveDescription | Refusal {
+    const described = describeMoveAt(this.service(), at, version);
+    if (!described.ok) {
+      this.wrote(described);
+    }
+    return described;
+  }
+
+  moveAt(at: Position, target: MoveTarget, version: number): WriteOutcome {
+    return this.wrote(commit(this.editTarget, moveAt(this.service(), at, version, target)));
+  }
+
+  removeAt(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void {
+    const remove = (): void => {
+      done(this.wrote(commit(this.editTarget, removeAt(this.service(), at, version))));
+    };
+    if (nested === 0) {
+      remove();
+    } else {
+      new ConfirmModal(this.app, plural("tree.removeNested", nested), t("tree.removeField"), remove).open();
+    }
+  }
+
+  settle(): void {
+    this.announceEdit.cancel();
+    this.editsSettled();
+  }
+
+  removableAt(parent: Position, tag: string): boolean {
+    return removableAt(this.service(), parent, tag);
+  }
+
+  pointerChoicesAt(parent: Position, tag: string): PointerCandidate[] {
+    return pointerChoicesAt(this.service(), parent, tag);
+  }
+
+  pairedAt(parent: Position, tag: string): boolean {
+    return pairedAt(this.service(), parent, tag);
+  }
+
+  choicesAt(at: Position): Choices | null {
+    return choicesAt(this.service(), at);
+  }
+
+  proseAt(at: Position): boolean {
+    return proseAt(this.service(), at);
+  }
+
+  holdsValueAt(at: Position): boolean {
+    return holdsValueAt(this.service(), at);
+  }
+
+  addableAt(at: Position): StructureFieldDescription[] {
+    return addableAt(this.service(), at);
+  }
+
+  requiredBeneath(field: StructureFieldDescription): StructureFieldDescription[] {
+    return requiredBeneath(this.service(), field);
+  }
+
+  checkValue(at: Position, tag: string, input: StructureValueInput, replacing: boolean): Refusal | null {
+    return checkValue(this.service(), at, tag, input, replacing);
   }
 
   mediaItem(at: Position): MediaItem | null {
@@ -830,6 +879,30 @@ export class GedcomView extends TextFileView implements CardTab {
       (path) => this.resolveVaultResource(path),
       this.host.remoteImages(),
     );
+  }
+
+  vaultFiles(): string[] {
+    return this.app.vault.getFiles().map((file) => file.path);
+  }
+
+  vaultHas(path: string): boolean {
+    return this.app.vault.getAbstractFileByPath(normalizePath(path)) !== null;
+  }
+
+  async copyIntoVault(path: string, data: ArrayBuffer): Promise<void> {
+    const folder = path.slice(0, Math.max(0, path.lastIndexOf("/")));
+    if (folder !== "" && !this.vaultHas(folder)) {
+      await this.app.vault.createFolder(normalizePath(folder));
+    }
+    await this.app.vault.createBinary(normalizePath(path), data);
+  }
+
+  fileEditAt(at: FileAt, vaultPath: string, version: number, deviceType?: string): ReturnType<typeof mediaFileEdit> {
+    return mediaFileEdit(this.service(), this.file?.path ?? "", at, vaultPath, version, deviceType);
+  }
+
+  writeFileAt(at: FileAt, vaultPath: string, version: number, deviceType?: string): WriteOutcome {
+    return this.wrote(commit(this.editTarget, this.fileEditAt(at, vaultPath, version, deviceType)));
   }
 
   private resolveVaultResource(path: string): string | null {

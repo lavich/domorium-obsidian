@@ -12,16 +12,18 @@ the way back to the lines that state what a page shows.
 
 Following a link that names a record of a GEDCOM file — a wikilink with a
 `#@I1@` subpath, or an `obsidian://` link to the file and record — SHALL, in a tab
-in Graph, Timeline, List or Source mode, select that person, family, source or
-multimedia record and show it in the card, as the requirement on the selected
-record says; in Source mode it SHALL also put the cursor at the record. A link
-naming a record of another kind — a note, a repository, a submitter — SHALL switch
-that tab to Source mode at the record, as following such a link does today. A link
+in Graph, Timeline, List or Source mode, select that person, family, source,
+multimedia record, shared note, repository, submitter, 5.5.1 submission record or record of
+the file's own and show it in the card, as the requirement on the selected
+record says, without changing the tab's mode; in Source mode it SHALL also put the cursor at
+the record. A link naming a record that has no card SHALL switch that tab to Source mode at
+the record, as following such a link does today. A link
 naming a record the file does not declare SHALL leave the selection as it was and
 give the notice it gives today. The same SHALL hold for choosing a record in the
 command **Go to record**: a record that has a card is selected, in whatever mode
-the tab is in, and any other record, the header for one, switches the tab to
-Source mode at it, never moving a cursor in an editor that is not shown.
+the tab is in — the header among them, whose card it opens — and any other record, the
+trailer for one, switches the tab to Source mode at it, never moving a cursor in an editor
+that is not shown.
 
 #### Scenario: A link to a person
 - **WHEN** the reader follows `[[curie.ged#@I1@]]` and the file opens in Graph mode
@@ -38,7 +40,18 @@ Source mode at it, never moving a cursor in an editor that is not shown.
 
 #### Scenario: A link to a shared note
 - **WHEN** the reader follows `[[curie.ged#@N1@]]` and the file opens in Graph mode
-- **THEN** the tab switches to Source mode with the cursor at that note's record
+- **THEN** the tab stays in Graph mode and the card shows the card of that note
+
+#### Scenario: A URL to a repository
+- **WHEN** the reader follows an `obsidian://` link to `curie.ged` and `@R2@` with the tab in
+  List mode
+- **THEN** the tab stays in List mode, the row of `State Archive in Warsaw` is marked among
+  the repositories, and the card shows the repository
+
+#### Scenario: Go to record on the trailer
+- **WHEN** the tab is in Graph mode and the reader runs **Go to record** and chooses the
+  trailer
+- **THEN** the tab is in Source mode with the cursor on `0 TRLR`
 
 #### Scenario: A link to a person in a tab in Graph mode
 - **WHEN** the tab of `curie.ged` is in Graph mode and the reader follows
@@ -71,7 +84,7 @@ Source mode at it, never moving a cursor in an editor that is not shown.
 #### Scenario: Go to record in the graph
 - **WHEN** the tab is in Graph mode and the reader runs **Go to record** and
   chooses the header record
-- **THEN** the tab is in Source mode with the cursor on `0 HEAD`
+- **THEN** the tab stays in Graph mode and the card shows the header's card
 
 ### Requirement: A year before the common era is shown as one
 
@@ -310,8 +323,8 @@ for it, SHALL be offered in every mode: in Source it opens the editor's search, 
 Graph and Timeline the search of the view, and in List it opens the search of the list and focuses its field,
 as the requirements of those views say. Copying a link to a record SHALL be offered
 in Source mode, for the record under the cursor, and in Graph, Timeline and List
-modes while a record is selected, for the selected record, whether it is a person, a family, a source or a multimedia
-record.
+modes while a record with an identifier is selected, for the selected record, whatever its
+kind; the header, which has no identifier, offers no link.
 
 #### Scenario: The palette in Graph mode
 - **WHEN** the active tab is in Graph mode with nobody selected and the reader
@@ -344,12 +357,20 @@ record.
 - **WHEN** the tab is in Timeline or List mode and the reader opens the palette
 - **THEN** replace and the editor commands are not offered
 
+#### Scenario: A note selected in the list
+- **WHEN** the note `@N1@` is selected in List mode and the reader copies a link to the record
+- **THEN** the link copied is to `@N1@`
+
+#### Scenario: The header selected
+- **WHEN** the header is selected in List mode and the reader opens the palette
+- **THEN** copying a link to the record is not offered
+
 ### Requirement: A GEDCOM tab is in one of four modes
 
 A tab showing a `.ged` or `.gedcom` file SHALL be in one of four modes. In **Graph**
 mode it shows the whole file as the graph of the file, in **Timeline** mode as
-the timeline of the file, and in **List** mode as a table of its people, families or
-sources. In **Source** mode it shows the file in the editor the
+the timeline of the file, and in **List** mode as a table of its people, families,
+sources, media, shared notes, repositories or other records. In **Source** mode it shows the file in the editor the
 plugin has today, with everything that editor does. A record of the file is read in
 the record card of the right sidebar, whatever the mode, and there SHALL be no mode
 that shows a record as a page in the tab. While the **Genealogy interface** setting
@@ -544,7 +565,7 @@ card, a node, a row or a name, a row of the list, a link into a record or *Go to
 SHALL open the record card in the right sidebar, as `genealogy-record-card` says, and
 SHALL NOT take the focus from the view the reader selected in; it SHALL NOT open or
 expand the left sidebar. A selection by the cursor resting in Source, by a saved state
-being restored, or by Back, Forward or a link inside the card SHALL NOT open a sidebar.
+being restored, or by a pointer, a citation or the control that opens a shared note inside the card SHALL NOT open a sidebar.
 With the setting off the plugin SHALL behave as it did before the setting existed. On a
 phone the setting SHALL change nothing: the right drawer opens as the card specifies.
 

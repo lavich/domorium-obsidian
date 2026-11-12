@@ -1,13 +1,14 @@
 import type { Range } from "@domorium/language-service";
 
-import type { GenealogyIndex, RecordLine } from "../../genealogy";
+import { HEADER_ID, type GenealogyIndex, type RecordLine } from "../../genealogy";
+import { readName, UNNAMED } from "../../genealogy/names";
 import { t } from "../../i18n";
 import { pageKind } from "../deskState";
 import { linkButton } from "../dom";
 import { familyTitle, personName, sourceTitle } from "../labels";
 import { labelId, renderField } from "./fields";
 import { renderFoldedText } from "./foldedText";
-import { linkStatusLabel, roleLabel, sexLabel, tagLabel } from "./labels";
+import { linkStatusLabel, nameTypeLabel, roleLabel, sexLabel, tagLabel } from "./labels";
 
 export interface DetailHost {
   openRecord(xref: string): void;
@@ -18,24 +19,21 @@ export interface DetailContext {
   index: GenealogyIndex;
   host: DetailHost;
   /** The ids of what the reader has opened on the card: folds and long notes. */
-  open?: ReadonlySet<string>;
+  open?: { has(id: string): boolean };
   folded?(id: string, open: boolean): void;
   /** Counts the notes drawn so far on the card, so that one is named by its place among them and not by its line. */
   notes?: { drawn: number; prefix?: string };
 }
 
-/** A context for a body drawn later, whose notes are numbered from its own start so that the order it is opened in does not matter. */
-export function scoped(ctx: DetailContext, name: string): DetailContext {
-  return { ...ctx, notes: { drawn: 0, prefix: `${name}.` } };
-}
+const firstFilled = (text: string): string | undefined => text.split("\n").find((line) => line.trim() !== "");
 
-/** The lines of a list and of everything beneath them. */
-export function countLines(lines: readonly RecordLine[]): number {
-  return lines.reduce((sum, line) => sum + 1 + countLines(line.children), 0);
-}
+const baseName = (file: string): string => file.split(/[\\/]/u).filter(Boolean).pop() ?? file;
 
-/** What a reader calls the record a pointer names, with no identifier. */
+/** What a reader calls a record wherever it is named, with no identifier: in the list, the card's announcement, a pointer, the root of a tree. */
 export function recordTitle(index: GenealogyIndex, xref: string): string | undefined {
+  if (xref === HEADER_ID) {
+    return index.record(HEADER_ID) ? t("record.header") : undefined;
+  }
   const person = index.person(xref);
   if (person) {
     return personName(person);
@@ -50,20 +48,25 @@ export function recordTitle(index: GenealogyIndex, xref: string): string | undef
   }
   const media = index.media(xref);
   if (media) {
-    return media.title ?? media.file ?? t("desk.media");
+    return media.title ?? (media.file === undefined ? t("desk.media") : baseName(media.file));
   }
   const lines = index.record(xref);
   if (!lines) {
     return undefined;
   }
-  if (lines.text !== undefined) {
-    return lines.text.split("\n")[0];
+  if (lines.tag === "SNOTE" || lines.tag === "NOTE") {
+    return (lines.text === undefined ? undefined : firstFilled(lines.text)) ?? tagLabel(lines.tag);
   }
-  return lines.children.find((child) => child.tag === "NAME")?.text ?? tagLabel(lines.tag);
+  const child = (tag: string): string | undefined => lines.children.find((one) => one.tag === tag)?.text;
+  const own = lines.text === undefined ? undefined : firstFilled(lines.text);
+  const first = lines.children.find((one) => one.text !== undefined && one.text !== "")?.text;
+  return child("NAME") ?? child("TITL") ?? own ?? (first === undefined ? undefined : firstFilled(first)) ?? tagLabel(lines.tag);
 }
 
-function valueText(tag: string, text: string): string {
-  switch (tag) {
+/** What a line's value reads as: a sex, a role, a name or the type of a name in the reader's language, anything else as written. */
+export function valueText(line: RecordLine, parent?: RecordLine): string {
+  const text = line.text ?? "";
+  switch (line.tag) {
     case "SEX":
       return sexLabel(text);
     case "ROLE":
@@ -71,14 +74,25 @@ function valueText(tag: string, text: string): string {
       return roleLabel(text);
     case "STAT":
       return linkStatusLabel(text);
+    case "NAME": {
+      const name = readName(text);
+      return name === UNNAMED ? t("desk.unnamed") : name;
+    }
+    case "TYPE":
+      return parent?.tag === "NAME" ? nameTypeLabel(text) : text;
     default:
       return text;
   }
 }
 
+const CHOICES: ReadonlySet<string> = new Set(["SEX", "ROLE", "RELA", "STAT", "PEDI", "RESN", "QUAY"]);
+
+export const fieldKind = (line: RecordLine, parent?: RecordLine): "text" | "choice" =>
+  CHOICES.has(line.tag) || (line.tag === "TYPE" && parent?.tag === "NAME") ? "choice" : "text";
+
 /** A note's text, folded where it is long; what the reader opened stays through a redraw. */
-export function renderNoteText(parent: HTMLElement, text: string, line: number, ctx: DetailContext): void {
-  const key = `note:${ctx.notes ? `${ctx.notes.prefix ?? ""}${ctx.notes.drawn++}` : `L${line}`}`;
+export function renderNoteText(parent: HTMLElement, text: string, line: number, ctx: DetailContext, named?: string): void {
+  const key = named ?? `note:${ctx.notes ? `${ctx.notes.prefix ?? ""}${ctx.notes.drawn++}` : `L${line}`}`;
   renderFoldedText(parent, text, {
     key,
     open: ctx.open?.has(key) ?? false,
@@ -107,7 +121,7 @@ export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: Detail
       renderNoteText(parent, target.text, line.range.start.line, ctx);
     }
     if (target.children.length > 0) {
-      renderLines(parent.createDiv({ cls: "gedcom-detail" }), target.children, ctx);
+      renderLines(parent.createDiv({ cls: "gedcom-detail" }), target.children, ctx, target);
     }
     return;
   }
@@ -121,23 +135,8 @@ export function renderPointer(parent: HTMLElement, line: RecordLine, ctx: Detail
   }
 }
 
-/** The children of a line other than those a section has drawn for itself. */
-export function renderRest(
-  parent: HTMLElement,
-  line: RecordLine,
-  handled: ReadonlySet<string>,
-  ctx: DetailContext,
-): void {
-  const rest = line.children.filter((child) => !handled.has(child.tag));
-  if (rest.length > 0) {
-    renderLines(parent, rest, ctx);
-  }
-}
-
 /** One line as a row of a label and a value, its substructure nested beneath the value, none dropped. */
-const CHOICES: ReadonlySet<string> = new Set(["SEX", "ROLE", "RELA", "STAT", "PEDI", "RESN", "QUAY"]);
-
-export function renderLine(parent: HTMLElement, line: RecordLine, ctx: DetailContext): void {
+export function renderLine(parent: HTMLElement, line: RecordLine, ctx: DetailContext, owner?: RecordLine): void {
   const label = parent.createDiv({ cls: "gedcom-detail-label", text: tagLabel(line.tag) });
   label.setAttribute("data-line", String(line.range.start.line));
   label.id = labelId();
@@ -147,15 +146,15 @@ export function renderLine(parent: HTMLElement, line: RecordLine, ctx: DetailCon
   } else if (line.text !== undefined && (line.tag === "NOTE" || line.tag === "SNOTE")) {
     renderNoteText(value, line.text, line.range.start.line, ctx);
   } else if (line.text !== undefined) {
-    renderField(value, valueText(line.tag, line.text), CHOICES.has(line.tag) ? "choice" : "text", { labelledBy: label.id });
+    renderField(value, valueText(line, owner), fieldKind(line, owner), { labelledBy: label.id });
   }
   if (line.children.length > 0) {
-    renderLines(value.createDiv({ cls: "gedcom-detail" }), line.children, ctx);
+    renderLines(value.createDiv({ cls: "gedcom-detail" }), line.children, ctx, line);
   }
 }
 
-export function renderLines(parent: HTMLElement, lines: readonly RecordLine[], ctx: DetailContext): void {
+export function renderLines(parent: HTMLElement, lines: readonly RecordLine[], ctx: DetailContext, owner?: RecordLine): void {
   for (const line of lines) {
-    renderLine(parent, line, ctx);
+    renderLine(parent, line, ctx, owner);
   }
 }

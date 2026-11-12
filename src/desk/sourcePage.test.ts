@@ -14,7 +14,6 @@ let host: ReturnType<typeof pageHost>;
 function pageHost() {
   return {
     openRecord: vi.fn<PageHost["openRecord"]>(),
-    select: vi.fn<PageHost["select"]>(),
     showInSource: vi.fn<PageHost["showInSource"]>(),
     openFile: vi.fn<PageHost["openFile"]>(),
   } satisfies PageHost;
@@ -38,80 +37,46 @@ const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 
 describe("the source page", () => {
-  it("heads the page with the title, author and publication", () => {
-    draw("@S1@");
-
-    expect(texts(".gedcom-desk-title")).toEqual(["The Nobel Prize in Physics 1903"]);
-    expect(texts(".gedcom-desk-subtitle")).toEqual(["Nobel Prize Outreach · nobelprize.org"]);
-  });
-
-  it("shows the repository with its address", () => {
+  it("is the tree of the lines of the record and nothing else", () => {
     draw("@S2@");
+    const labels = [...container.querySelectorAll(".gedcom-tree-node:not(.is-root) > .gedcom-tree-row .gedcom-tree-label")].map((node) => node.textContent);
 
-    expect(texts(".gedcom-desk-repository div")).toEqual([
-      "State Archive in Warsaw",
-      "Krzywe Koło 7, Warsaw, Poland",
-    ]);
+    expect([...container.children].map((child) => child.className)).toEqual(["gedcom-tree"]);
+    expect(labels).toEqual(expect.arrayContaining(["Title", "Repository"]));
+    expect(texts("h2")).toEqual([]);
+    expect(container.querySelector(".gedcom-desk-repository, .gedcom-desk-cited-by, .gedcom-desk-citer")).toBeNull();
+    expect(container.querySelector(".gedcom-tree .gedcom-desk-fact")).toBeNull();
   });
 
-  it("lists every record citing it, with the page each states", () => {
+  it("shows the repository as the name of the record the line points at, and no address", () => {
+    draw("@S2@");
+    const row = [...container.querySelectorAll(".gedcom-tree-row")].find((one) => one.querySelector(".gedcom-tree-label")?.textContent === "Repository");
+
+    expect(row?.textContent).toContain("State Archive in Warsaw");
+    expect(container.textContent).not.toContain("Krzywe Koło");
+  });
+
+  it("shows a repository the file does not declare as a pointer to a record that is not in the file", () => {
+    draw("@S1@", buildIndex(new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @S1@ SOUR", "1 TITL Alone", "1 REPO @R9@", "0 TRLR", "",
+    ].join("\n"))));
+
+    expect(texts(".gedcom-desk-missing span")).toEqual(["Points to a record that is not in the file"]);
+  });
+
+  it("does not take a title for an event, whatever lies beneath it", () => {
+    draw("@S1@", buildIndex(new GedcomLanguageService([
+      "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @S1@ SOUR", "1 TITL Register", "2 DATE 1900", "2 PLAC Paris", "0 TRLR", "",
+    ].join("\n"))));
+
+    expect(texts(".gedcom-tree-summary")).toEqual(["Register"]);
+    expect(container.querySelector("button.gedcom-tree-label")).toBeNull();
+  });
+
+  it("lists no record that cites it, and says nothing of who does", () => {
     draw("@S3@");
 
-    expect(texts(".gedcom-desk-person-name")).toEqual([
-      "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Frédéric Joliot",
-    ]);
-    expect(texts(".gedcom-desk-citer-where")).toEqual([
-      "Whole record — Nobel Prize in Chemistry 1911",
-      "Whole record — Nobel Prize in Chemistry 1935, shared with Frédéric Joliot",
-      "Whole record — Nobel Prize in Chemistry 1935",
-    ]);
-  });
-
-  it("names the event a citation sits under", () => {
-    draw("@S1@", buildIndex(new GedcomLanguageService([
-      "0 HEAD", "1 GEDC", "2 VERS 7.0",
-      "0 @I1@ INDI", "1 NAME Anna /Nowak/", "1 BIRT", "2 SOUR @S1@", "3 PAGE entry 88",
-      "0 @S1@ SOUR", "1 TITL Register",
-      "0 TRLR", "",
-    ].join("\n"))));
-
-    expect(texts(".gedcom-desk-citer-where")).toEqual(["Birth — entry 88"]);
-  });
-
-  it("selects a citing family", () => {
-    draw("@S1@", buildIndex(new GedcomLanguageService([
-      "0 HEAD", "1 GEDC", "2 VERS 7.0",
-      "0 @I1@ INDI", "1 NAME Anna /Nowak/",
-      "0 @I2@ INDI", "1 NAME Jan /Nowak/",
-      "0 @F1@ FAM", "1 HUSB @I2@", "1 WIFE @I1@", "1 MARR", "2 SOUR @S1@",
-      "0 @S1@ SOUR", "1 TITL Register",
-      "0 TRLR", "",
-    ].join("\n"))));
-    container.querySelector<HTMLElement>(".gedcom-desk-person")?.click();
-
-    expect(texts(".gedcom-desk-person-name")).toEqual(["Jan Nowak ⚭ Anna Nowak"]);
-    expect(texts(".gedcom-desk-citer-where")).toEqual(["Marriage"]);
-    expect(host.openRecord).toHaveBeenCalledWith("@F1@");
-  });
-
-  it("selects a citing person", () => {
-    draw("@S3@");
-    container.querySelector<HTMLElement>(".gedcom-desk-person")?.click();
-
-    expect(host.openRecord).toHaveBeenCalledWith("@I1@");
-  });
-
-  it("lists Marie and Pierre as the records citing the first source", () => {
-    draw("@S1@");
-
-    expect(texts(".gedcom-desk-person-name")).toEqual(["Marie Skłodowska-Curie", "Pierre Curie"]);
-  });
-
-  it("says when nothing cites it", () => {
-    draw("@S1@", buildIndex(new GedcomLanguageService([
-      "0 HEAD", "1 GEDC", "2 VERS 7.0", "0 @S1@ SOUR", "1 TITL Alone", "0 TRLR", "",
-    ].join("\n"))));
-
-    expect(texts(".gedcom-desk-cited-by .gedcom-desk-none")).toEqual(["No record cites it."]);
+    expect(container.textContent).not.toContain("Cited by");
+    expect(container.querySelector(".gedcom-desk-person")).toBeNull();
   });
 });

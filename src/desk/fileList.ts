@@ -6,6 +6,7 @@ import {
   cellsOf,
   collatorFor,
   columnsOf,
+  isRecordKind,
   LIST_KINDS,
   listRows,
   nextSort,
@@ -16,8 +17,6 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
-import { collectEvents } from "./eventRows";
-import { placeId, placeKeyOf, placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
   select(xref: string): void;
@@ -29,6 +28,7 @@ export interface ListHost {
 
 const COMPACT_BELOW = 640;
 const WIDE_FROM = 680;
+const KINDS_MARGIN = WIDE_FROM - COMPACT_BELOW;
 const MARGIN = 10;
 const FIRST_WINDOW = 40;
 const FALLBACK_ROW = { wide: 36, compact: 56 } as const;
@@ -37,56 +37,74 @@ const KIND_LABEL: Record<ListKind, MessageKey> = {
   people: "list.people",
   families: "list.families",
   sources: "list.sources",
-  places: "list.places",
-  events: "list.events",
+  media: "list.media",
+  notes: "list.notes",
+  repositories: "list.repositories",
+  other: "list.other",
 };
 const SEARCH_HINT: Record<ListKind, MessageKey> = {
   people: "list.search.people",
   families: "list.search.families",
   sources: "list.search.sources",
-  places: "list.search.places",
-  events: "list.search.events",
+  media: "list.search.media",
+  notes: "list.search.notes",
+  repositories: "list.search.repositories",
+  other: "list.search.other",
 };
 const NOTHING: Record<ListKind, MessageKey> = {
   people: "list.nothing.people",
   families: "list.nothing.families",
   sources: "list.nothing.sources",
-  places: "list.nothing.places",
-  events: "list.nothing.events",
+  media: "list.nothing.media",
+  notes: "list.nothing.notes",
+  repositories: "list.nothing.repositories",
+  other: "list.nothing.other",
 };
 const NONE: Record<ListKind, MessageKey> = {
   people: "list.none.people",
   families: "list.none.families",
   sources: "list.none.sources",
-  places: "list.none.places",
-  events: "list.none.events",
+  media: "list.none.media",
+  notes: "list.none.notes",
+  repositories: "list.none.repositories",
+  other: "list.none.other",
 };
 const COUNT: Record<ListKind, MessageKey> = {
   people: "list.count.people",
   families: "list.count.families",
   sources: "list.count.sources",
-  places: "list.count.places",
-  events: "list.count.events",
+  media: "list.count.media",
+  notes: "list.count.notes",
+  repositories: "list.count.repositories",
+  other: "list.count.other",
 };
 const COUNT_OF: Record<ListKind, MessageKey> = {
   people: "list.countOf.people",
   families: "list.countOf.families",
   sources: "list.countOf.sources",
-  places: "list.countOf.places",
-  events: "list.countOf.events",
+  media: "list.countOf.media",
+  notes: "list.countOf.notes",
+  repositories: "list.countOf.repositories",
+  other: "list.countOf.other",
 };
+
+/** Kinds that keep the list while a person, a family or a source is selected from outside it. */
+const HOLDING: ReadonlySet<ListKind> = new Set(["media", "notes", "repositories", "other"]);
 
 let boards = 0;
 
 const canonical = (state: ListState): string =>
   JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
 
-const keyOf = (row: ListRow): string => ("key" in row ? row.key : (row.xref ?? ""));
+const keyOf = (row: ListRow): string => row.xref ?? "";
 
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
   private readonly root: HTMLElement;
+  private readonly barEl: HTMLElement;
   private readonly segEl: HTMLElement;
+  private readonly kindSelect: HTMLSelectElement;
+  private readonly kindsProbe: HTMLElement;
   private readonly find: FloatingSearch;
   private readonly countEl: HTMLElement;
   private readonly sortBarEl: HTMLElement;
@@ -112,6 +130,8 @@ export class ListBoard {
   private active = -1;
   private rowHeight = 0;
   private compact: boolean;
+  private kindsDropdown = false;
+  private iconWidth = 0;
   private readonly live = new Map<number, HTMLElement>();
 
   constructor(
@@ -122,6 +142,7 @@ export class ListBoard {
     this.root = parent.createDiv({ cls: "gedcom-list" });
     this.root.toggleClass("is-touch", this.compact);
     const bar = this.root.createDiv({ cls: "gedcom-list-bar" });
+    this.barEl = bar;
     this.segEl = bar.createDiv({ cls: "gedcom-list-seg" });
     this.segEl.setAttribute("role", "group");
     for (const kind of LIST_KINDS) {
@@ -129,6 +150,21 @@ export class ListBoard {
       button.setAttribute("type", "button");
       button.dataset.kind = kind;
       button.addEventListener("click", () => this.showKind(kind));
+    }
+    this.kindSelect = bar.createEl("select", { cls: "gedcom-list-kind-select dropdown" });
+    nameBy(this.kindSelect, bar, t("list.kind"));
+    for (const kind of LIST_KINDS) {
+      this.kindSelect.createEl("option", { text: t(KIND_LABEL[kind]), attr: { value: kind } });
+    }
+    this.kindSelect.toggle(false);
+    this.kindSelect.addEventListener("change", () => this.showKind(this.kindSelect.value as ListKind));
+    const probe = bar.createDiv({ cls: "gedcom-list-kinds-probe" });
+    probe.setAttribute("aria-hidden", "true");
+    this.kindsProbe = probe.createDiv({ cls: "gedcom-list-seg" });
+    for (const kind of LIST_KINDS) {
+      const button = this.kindsProbe.createEl("button", { cls: "gedcom-list-seg-button", text: t(KIND_LABEL[kind]) });
+      button.setAttribute("type", "button");
+      button.tabIndex = -1;
     }
     this.find = new FloatingSearch(bar, {
       prefix: "gedcom-list",
@@ -189,6 +225,7 @@ export class ListBoard {
       this.observer = new ResizeObserver(() => this.resized());
       this.observer.observe(this.root);
       this.observer.observe(this.probeEl);
+      this.observer.observe(this.kindsProbe);
     }
   }
 
@@ -234,10 +271,9 @@ export class ListBoard {
       this.applyMarks();
       return;
     }
-    const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
-    if ((this.kind === "places" || this.kind === "events") && kind !== "places" && kind !== "events" && !fromCard) {
+    if (HOLDING.has(this.kind) && !HOLDING.has(kind) && !fromCard) {
       this.applyMarks();
       return;
     }
@@ -245,17 +281,17 @@ export class ListBoard {
       this.applyMarks();
       return;
     }
-    if (fresh || (fromCard && kind !== this.kind)) {
+    if (fresh || (kind !== this.kind && (fromCard || HOLDING.has(kind)))) {
       if (kind !== this.kind) {
         this.switchKind(kind);
       }
-      if (!this.positions.has(rowKey)) {
+      if (!this.positions.has(xref)) {
         this.query = "";
         this.find.reset();
         this.refresh(true);
       }
     }
-    const at = this.positions.get(rowKey);
+    const at = this.positions.get(xref);
     if (at === undefined) {
       this.applyMarks();
       return;
@@ -284,6 +320,7 @@ export class ListBoard {
   }
 
   resized(): void {
+    this.fitKinds();
     const width = this.root.clientWidth;
     if (width > 0) {
       const compact = this.host.coarsePointer() || (this.compact ? width < WIDE_FROM : width < COMPACT_BELOW);
@@ -294,6 +331,32 @@ export class ListBoard {
     }
     this.remeasure();
     this.drawWindow();
+  }
+
+  /** The buttons need their natural width beside the search icon, measured as drawn, so that the language and the font decide and not a breakpoint. */
+  private fitKinds(): void {
+    const bar = this.barEl.clientWidth;
+    if (bar <= 0) {
+      return;
+    }
+    const icon = this.barEl.querySelector(".gedcom-list-find-toggle")?.getBoundingClientRect().width ?? 0;
+    if (icon > 0) {
+      this.iconWidth = icon;
+    }
+    const gap = Number.parseFloat(this.barEl.ownerDocument.defaultView?.getComputedStyle(this.barEl).columnGap ?? "") || 0;
+    const needed = this.kindsProbe.getBoundingClientRect().width + gap + this.iconWidth;
+    const dropdown = this.kindsDropdown ? bar <= needed + KINDS_MARGIN : bar < needed;
+    if (dropdown !== this.kindsDropdown) {
+      this.kindsDropdown = dropdown;
+      const focused = this.root.ownerDocument.activeElement;
+      const hadFocus = focused === this.kindSelect || (focused !== null && this.segEl.contains(focused));
+      this.segEl.toggle(!dropdown);
+      this.kindSelect.toggle(dropdown);
+      this.root.toggleClass("has-kinds-dropdown", dropdown);
+      if (hadFocus) {
+        (dropdown ? this.kindSelect : this.segEl.querySelector<HTMLElement>(".is-active"))?.focus();
+      }
+    }
   }
 
   dispose(): void {
@@ -420,6 +483,7 @@ export class ListBoard {
       button.toggleClass("is-active", on);
       button.setAttribute("aria-pressed", String(on));
     }
+    this.kindSelect.value = this.kind;
     this.find.describe(t(SEARCH_HINT[this.kind]));
     this.find.refresh();
     const total = this.totalOfKind();
@@ -443,11 +507,8 @@ export class ListBoard {
     if (this.kind === "people") {
       return this.totals.people;
     }
-    if (this.kind === "places") {
-      return placesOf(index).length;
-    }
-    if (this.kind === "events") {
-      return collectEvents(index).length;
+    if (isRecordKind(this.kind)) {
+      return index.lists[this.kind].length;
     }
     const all = this.kind === "families" ? index.families : index.sources;
     return all.filter((row) => row.xref !== undefined).length;
@@ -472,7 +533,7 @@ export class ListBoard {
     if (this.builtKind !== this.kind) {
       this.builtKind = this.kind;
       this.sortSelect.empty();
-      this.sortSelect.createEl("option", { text: t(this.kind === "places" ? "list.alphabetical" : "list.fileOrder"), attr: { value: "" } });
+      this.sortSelect.createEl("option", { text: t("list.fileOrder"), attr: { value: "" } });
       for (const column of columns) {
         this.sortSelect.createEl("option", { text: t(column.label), attr: { value: column.key } });
       }
@@ -545,8 +606,8 @@ export class ListBoard {
     el.dataset.pos = String(at);
     el.setAttribute("role", "row");
     el.setAttribute("aria-rowindex", String(at + 2));
-    el.setAttribute("aria-selected", String(key === this.markedKey()));
-    el.toggleClass("is-selected", key === this.markedKey());
+    el.setAttribute("aria-selected", String(key === this.marked));
+    el.toggleClass("is-selected", key === this.marked);
     el.toggleClass("is-focused", at === this.active);
     el.setCssProps({ top: `${at * this.rowHeight}px` });
     columnsOf(this.kind).forEach((column, position) => {
@@ -562,27 +623,17 @@ export class ListBoard {
           cell.appendText(` ${this.countLabel(column.key, 0)}`);
         }
       } else {
-        cell.setText(this.compact && column.numeric ? this.countLabel(column.key, Number(text)) : text);
+        cell.setText(this.compact && column.numeric && text !== "" ? this.countLabel(column.key, Number(text)) : text);
       }
     });
     return el;
   }
 
   private countLabel(key: SortKey, count: number): string {
-    if (key === "events") {
-      return plural("list.compact.events", count);
+    if (key === "linkedFrom") {
+      return t("list.compact.linkedFrom", { count });
     }
     return key === "citedBy" ? t("list.compact.citedBy", { count }) : plural(key === "children" ? "list.compact.children" : "list.compact.sources", count);
-  }
-
-  private markedKey(): string | null {
-    if (this.marked === null) {
-      return null;
-    }
-    if (this.kind === "places") {
-      return placeKeyOf(this.marked);
-    }
-    return this.marked;
   }
 
   private rowId(at: number): string {
@@ -590,7 +641,7 @@ export class ListBoard {
   }
 
   private applyMarks(): void {
-    const marked = this.markedKey();
+    const marked = this.marked;
     for (const el of this.live.values()) {
       const on = el.dataset.key === marked;
       el.toggleClass("is-selected", on);
@@ -642,7 +693,7 @@ export class ListBoard {
 
   private focusEntered(): void {
     if (this.active < 0 && this.rows.length > 0) {
-      const marked = this.markedKey();
+      const marked = this.marked;
       this.setActive(marked !== null ? (this.positions.get(marked) ?? 0) : 0, false);
     }
   }
@@ -660,7 +711,10 @@ export class ListBoard {
     if (row === undefined) {
       return;
     }
-    const xref = row.xref ?? ("owner" in row ? row.key : placeId((row as PlaceRow).key));
+    const xref = row.xref;
+    if (xref === undefined) {
+      return;
+    }
     this.marked = xref;
     this.setActive(at, scrollTo);
     this.host.select(xref);
@@ -708,7 +762,7 @@ export class ListBoard {
       return;
     }
     if (from < 0 && event.key !== "Home" && event.key !== "End") {
-      const marked = this.markedKey();
+      const marked = this.marked;
       to = marked === null ? 0 : (this.positions.get(marked) ?? 0);
     }
     this.setActive(Math.min(last, Math.max(0, to)), true);

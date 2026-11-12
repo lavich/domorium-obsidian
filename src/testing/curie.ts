@@ -87,3 +87,8 @@ export function curieWithEvents(): string {
   }
   return out.join("\n");
 }
+
+/** The demo file with a record of its own, which the demo vault does not have. */
+export function curieWithPlan(): string {
+  return CURIE.replace(/^0 TRLR$/mu, ["0 @P1@ _PLAN Custom value", "1 NAME Research plan", "1 _STEP Visit the archive", "0 TRLR"].join("\n"));
+}

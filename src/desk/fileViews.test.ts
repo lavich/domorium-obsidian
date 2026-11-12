@@ -633,7 +633,7 @@ describe("the list of a tab", () => {
 
   it("carries a selection made from the card to a list that is drawn later", () => {
     const tab = views();
-    tab.show("list", index, { list: { kind: "places" } });
+    tab.show("list", index, { list: { kind: "media" } });
     tab.show("graph", index, {});
     tab.select("list", "@I2@", true, true);
 

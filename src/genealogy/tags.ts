@@ -14,11 +14,6 @@ export const PERSON_EVENT_TAGS: ReadonlySet<string> = new Set([
   "RELI", "RESI", "SSN", "TITL", "FACT",
 ]);
 
-/** What the standard calls an individual attribute: a thing that is true of a person, not one that happened. */
-export const PERSON_ATTRIBUTE_TAGS: ReadonlySet<string> = new Set([
-  "CAST", "DSCR", "EDUC", "IDNO", "NATI", "NCHI", "NMR", "OCCU", "PROP", "RELI", "RESI", "SSN", "TITL", "FACT",
-]);
-
 /** Events of a family, in both dialects. Named for the reason above. */
 export const FAMILY_EVENT_TAGS: ReadonlySet<string> = new Set([
   "ANUL", "CENS", "DIV", "DIVF", "ENGA", "MARB", "MARC", "MARL", "MARR",

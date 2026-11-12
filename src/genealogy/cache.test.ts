@@ -17,6 +17,7 @@ const symbol = (xref: string): DocumentSymbol => ({
 const sourceOf = (...symbols: DocumentSymbol[]): IndexSource => ({
   getDocumentSymbols: () => symbols,
   readDate: () => null,
+  describeStructure: () => ({ ok: false, code: "no-dialect", message: "" }),
 });
 
 describe("reading paid for once per revision", () => {

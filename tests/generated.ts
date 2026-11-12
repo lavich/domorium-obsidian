@@ -144,3 +144,24 @@ export function tangled(count: number, { seed = 7, founders = 40 }: { seed?: num
   }
   return made.text(false);
 }
+
+/** `count` shared notes, each continued over lines and pointed at by a person of its own: `SNOTE` in 7.0, `NOTE` with `CONC` and `CONT` in 5.5.1. */
+export function generatedNotes(count: number, dialect: "7.0" | "5.5.1" = "7.0"): string {
+  const lines =
+    dialect === "7.0"
+      ? ["0 HEAD", "1 GEDC", "2 VERS 7.0"]
+      : ["0 HEAD", "1 GEDC", "2 VERS 5.5.1", "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8"];
+  const tag = dialect === "7.0" ? "SNOTE" : "NOTE";
+  for (let at = 1; at <= count; at += 1) {
+    lines.push(`0 @I${at}@ INDI`, `1 NAME Person ${at} /Noted/`, `1 ${tag} @N${at}@`);
+  }
+  for (let at = 1; at <= count; at += 1) {
+    if (dialect === "7.0") {
+      lines.push(`0 @N${at}@ SNOTE Note ${at} about a parish register`, "1 CONT read in the archive, second line");
+    } else {
+      lines.push(`0 @N${at}@ NOTE Note ${at} about a par`, "1 CONC ish register", "1 CONT read in the archive, second line");
+    }
+  }
+  lines.push("0 TRLR", "");
+  return lines.join("\n");
+}

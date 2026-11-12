@@ -1,14 +1,22 @@
-import type { FamilyRow, GenealogyIndex, PersonRow, SourceRow } from "../genealogy";
-import { UNTITLED } from "../genealogy";
-import type { Language, MessageKey } from "../i18n";
+import type { FamilyRow, GenealogyIndex, PersonRow, RecordLine, SourceRow } from "../genealogy";
+import { HEADER_ID, UNTITLED } from "../genealogy";
+import { currentLanguage, type Language, type MessageKey } from "../i18n";
+import { tagLabel } from "./detail/labels";
+import { recordTitle } from "./detail/lineView";
+import { foldText } from "./foldText";
 import { familySortKey, familyTitle, personName, personSortKey, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
-import { eventAt, eventCells, eventRows, type EventRow } from "./eventRows";
-import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
-export type ListKind = "people" | "families" | "sources" | "places" | "events";
+export type ListKind = "people" | "families" | "sources" | "media" | "notes" | "repositories" | "other";
 
-export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places", "events"];
+export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "media", "notes", "repositories", "other"];
+
+/** The kinds whose rows the read model lists by id, each row read when first asked for. */
+export type RecordKind = "media" | "notes" | "repositories" | "other";
+
+const RECORD_KINDS: readonly RecordKind[] = ["media", "notes", "repositories", "other"];
+
+export const isRecordKind = (kind: ListKind): kind is RecordKind => (RECORD_KINDS as readonly string[]).includes(kind);
 
 export type SortKey =
   | "name"
@@ -22,10 +30,12 @@ export type SortKey =
   | "author"
   | "repository"
   | "citedBy"
-  | "events"
-  | "event"
-  | "record"
-  | "date";
+  | "text"
+  | "file"
+  | "format"
+  | "address"
+  | "kind"
+  | "linkedFrom";
 
 export interface ListSort {
   by: SortKey;
@@ -37,7 +47,18 @@ export interface ListState {
   sort?: Partial<Record<ListKind, ListSort>>;
 }
 
-export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow | EventRow;
+/** A row of the media, the notes, the repositories or the other records: its cells as shown, and what the search reads. */
+export interface RecordRow {
+  xref: string;
+  texts: string[];
+  /** The count of its last column; none on the header's row, which nothing can point at. */
+  count?: number;
+  /** A column the record states nothing for, by position. */
+  missing: number[];
+  search: string;
+}
+
+export type ListRow = PersonRow | FamilyRow | SourceRow | RecordRow;
 
 export interface Column {
   key: SortKey;
@@ -64,16 +85,25 @@ const COLUMNS: Record<ListKind, Column[]> = {
     { key: "repository", label: "list.column.repository", numeric: false },
     { key: "citedBy", label: "list.column.citedBy", numeric: true },
   ],
-  places: [
-    { key: "place", label: "list.column.place", numeric: false },
-    { key: "events", label: "list.column.events", numeric: true },
-    { key: "years", label: "list.column.years", numeric: false },
+  media: [
+    { key: "title", label: "list.column.title", numeric: false },
+    { key: "file", label: "list.column.file", numeric: false },
+    { key: "format", label: "list.column.format", numeric: false },
+    { key: "linkedFrom", label: "list.column.linkedFrom", numeric: true },
   ],
-  events: [
-    { key: "event", label: "list.column.event", numeric: false },
-    { key: "record", label: "list.column.record", numeric: false },
-    { key: "date", label: "list.column.date", numeric: false },
-    { key: "place", label: "list.column.place", numeric: false },
+  notes: [
+    { key: "text", label: "list.column.text", numeric: false },
+    { key: "linkedFrom", label: "list.column.linkedFrom", numeric: true },
+  ],
+  repositories: [
+    { key: "name", label: "list.column.name", numeric: false },
+    { key: "address", label: "list.column.address", numeric: false },
+    { key: "sources", label: "list.column.sources", numeric: true },
+  ],
+  other: [
+    { key: "kind", label: "list.column.kind", numeric: false },
+    { key: "name", label: "list.column.name", numeric: false },
+    { key: "linkedFrom", label: "list.column.linkedFrom", numeric: true },
   ],
 };
 
@@ -142,12 +172,83 @@ export function citingRecords(index: GenealogyIndex, xref: string): number {
   return count;
 }
 
+const childText = (line: RecordLine | undefined, tag: string): string | undefined =>
+  line?.children.find((one) => one.tag === tag)?.text;
+
+const firstLine = (text: string | undefined): string | undefined => text?.split("\n").find((line) => line.trim() !== "");
+
+const valuesBeneath = (line: RecordLine | undefined): string[] =>
+  line === undefined ? [] : [line.text ?? "", ...line.children.flatMap(valuesBeneath)];
+
+function recordRow(kind: RecordKind, index: GenealogyIndex, xref: string): RecordRow {
+  const name = recordTitle(index, xref) ?? "";
+  const lines = index.record(xref);
+  if (kind === "media") {
+    const media = index.media(xref);
+    const file = media?.file ?? "";
+    const format = media?.form ?? "";
+    return {
+      xref,
+      texts: [name, file, format],
+      count: index.linkedFrom(xref),
+      missing: format === "" ? [2] : [],
+      search: foldText([name, file, format].join(" ")),
+    };
+  }
+  if (kind === "notes") {
+    return { xref, texts: [name], count: index.linkedFrom(xref), missing: [], search: foldText(lines?.text ?? name) };
+  }
+  if (kind === "repositories") {
+    const address = childText(lines, "ADDR");
+    const shown = firstLine(address) ?? "";
+    const whole = valuesBeneath(lines?.children.find((one) => one.tag === "ADDR"));
+    return {
+      xref,
+      texts: [name, shown],
+      count: index.sourcesOf(xref),
+      missing: shown === "" ? [1] : [],
+      search: foldText([name, ...whole].join(" ")),
+    };
+  }
+  const tag = lines?.tag ?? "";
+  const label = tagLabel(tag);
+  return {
+    xref,
+    texts: [label, name],
+    ...(xref === HEADER_ID ? {} : { count: index.linkedFrom(xref) }),
+    missing: [],
+    search: foldText([label, tag, name].join(" ")),
+  };
+}
+
+const recordRowsHeld = new WeakMap<GenealogyIndex, Map<string, RecordRow[]>>();
+
+/** Every row of a kind of records, read once per index and language. */
+export function recordRows(index: GenealogyIndex, kind: RecordKind): RecordRow[] {
+  let byKind = recordRowsHeld.get(index);
+  if (!byKind) {
+    byKind = new Map();
+    recordRowsHeld.set(index, byKind);
+  }
+  const key = `${kind}\n${currentLanguage()}`;
+  let rows = byKind.get(key);
+  if (!rows) {
+    rows = index.lists[kind].map((xref) => recordRow(kind, index, xref));
+    byKind.set(key, rows);
+  }
+  return rows;
+}
+
 export interface Cells {
   texts: string[];
   gap: boolean;
 }
 
 export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Cells {
+  if (isRecordKind(kind)) {
+    const record = row as RecordRow;
+    return { texts: [...record.texts, record.count === undefined ? "" : String(record.count)], gap: false };
+  }
   const xref = row.xref ?? "";
   if (kind === "people") {
     const person = row as PersonRow;
@@ -168,13 +269,6 @@ export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Ce
       ],
       gap: false,
     };
-  }
-  if (kind === "places") {
-    const place = row as PlaceRow;
-    return { texts: [place.name, String(place.events), yearsText(place)], gap: false };
-  }
-  if (kind === "events") {
-    return { texts: eventCells(row as EventRow), gap: false };
   }
   const source = row as SourceRow;
   return {
@@ -202,6 +296,14 @@ export function collatorFor(language: Language): Intl.Collator {
 const text = (value: string | undefined): SortValue => (value ? [value] : undefined);
 
 function sortValue(kind: ListKind, by: SortKey, row: ListRow, index: GenealogyIndex): SortValue {
+  if (isRecordKind(kind)) {
+    const record = row as RecordRow;
+    const at = columnsOf(kind).findIndex((column) => column.key === by);
+    if (at === columnsOf(kind).length - 1) {
+      return record.count;
+    }
+    return record.missing.includes(at) ? undefined : [record.texts[at] ?? ""];
+  }
   const xref = row.xref ?? "";
   if (kind === "people") {
     const person = row as PersonRow;
@@ -252,12 +354,20 @@ export interface ListQuery {
   sort: ListSort | undefined;
 }
 
-export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
-  if (kind === "places") {
-    return placeRows(index, { query, sort }, collator);
+function recordsShown(index: GenealogyIndex, kind: RecordKind, query: string, sort: ListSort | undefined, collator: Intl.Collator): RecordRow[] {
+  const wanted = foldText(query.trim());
+  const rows = recordRows(index, kind).filter((row) => wanted === "" || row.search.includes(wanted));
+  if (!sort) {
+    return rows;
   }
-  if (kind === "events") {
-    return eventRows(index, { query, sort }, collator);
+  const header = kind === "other" ? rows.filter((row) => row.xref === HEADER_ID) : [];
+  const rest = header.length > 0 ? rows.filter((row) => row.xref !== HEADER_ID) : rows;
+  return [...header, ...(sorted(kind, rest, sort, index, collator) as RecordRow[])];
+}
+
+export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
+  if (isRecordKind(kind)) {
+    return recordsShown(index, kind, query, sort, collator);
   }
   const rows: ListRow[] =
     kind === "people" ? peopleShown(index, query) : kind === "families" ? familiesShown(index, query) : sourcesShown(index, query);
@@ -297,7 +407,27 @@ export function readListState(value: unknown): ListState {
   };
 }
 
+const kindsHeld = new WeakMap<GenealogyIndex, Map<string, RecordKind>>();
+
+function listedKind(index: GenealogyIndex, xref: string): RecordKind | undefined {
+  let kinds = kindsHeld.get(index);
+  if (!kinds) {
+    kinds = new Map();
+    for (const kind of RECORD_KINDS) {
+      for (const one of index.lists[kind]) {
+        kinds.set(one, kind);
+      }
+    }
+    kindsHeld.set(index, kinds);
+  }
+  return kinds.get(xref);
+}
+
 export function recordKind(index: GenealogyIndex, xref: string): ListKind | null {
+  const listed = listedKind(index, xref);
+  if (listed) {
+    return listed;
+  }
   if (index.person(xref)) {
     return "people";
   }
@@ -307,10 +437,7 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   if (index.source(xref)) {
     return "sources";
   }
-  if (placeAt(index, xref)) {
-    return "places";
-  }
-  return eventAt(index, xref) ? "events" : null;
+  return null;
 }
 
 export const listSelection = (index: GenealogyIndex, xref: string | null): string | null =>

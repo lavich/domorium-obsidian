@@ -1,83 +1,96 @@
-import type { Position, Range } from "@domorium/language-service";
+import type {
+  MoveDescription,
+  MoveTarget,
+  PointerCandidate,
+  Position,
+  Range,
+  StructureFieldDescription,
+  StructureInput,
+  StructureValueInput,
+} from "@domorium/language-service";
 
-import type { GenealogyIndex } from "../genealogy";
+import type { GenealogyIndex, RecordLine } from "../genealogy";
 import { t } from "../i18n";
-import { renderEvidenceSection } from "./evidence";
 import { renderFamilyPage } from "./familyPage";
-import type { PortraitContent } from "./media";
-import { familyTitle, personName, sourceTitle } from "./labels";
 import type { MediaItem } from "./media";
-import { renderMediaPage } from "./mediaPage";
-import type { NoteHit } from "./noteLinks";
-import { pageKind } from "./deskState";
-import { eventAt, eventTitle } from "./eventRows";
-import { renderEventPage } from "./eventPage";
-import { placeAt } from "./placeRows";
-import { renderPlacePage } from "./placePage";
-import { renderPersonPage, type FactKey, type PageHost, type PersonPageOptions } from "./personPage";
+import { fileChoices, mediaFileEdit, type FileAt, type VaultFileChoice } from "./mediaFile";
+import { HEADER_ID, pageKind } from "./deskState";
+import { renderPersonPage, type PageHost, type PersonPageOptions } from "./personPage";
+import { renderRecordPage } from "./recordPage";
 import { renderSourcePage } from "./sourcePage";
+import type { Choices } from "./addableFields";
+import type { Refusal, WriteOutcome } from "./edits";
+import type { FieldChoice, MenuAt, PointerChoice, TreeHost, ValueChoice } from "./detail/tree";
+import { recordTitle } from "./detail/lineView";
+import type { TreeSession } from "./detail/treeSession";
 
 export interface CardTab {
   filePath(): string | null;
   index(): GenealogyIndex;
-  selection(): { record: string | null; fact: FactKey | null };
-  mediaItems(media: { at: Position; record?: string }[]): MediaItem[];
+  selection(): { record: string | null };
   mediaItem(at: Position): MediaItem | null;
-  portrait(xref: string): PortraitContent | null;
   select(xref: string): void;
-  selectFact(key: FactKey | null): void;
   showInSource(range: Range): void;
   openFile(path: string): void;
-  history(): { canBack: boolean; canForward: boolean };
-  back(): void;
-  forward(): void;
+  addableAt?(at: Position): StructureFieldDescription[];
+  choicesAt?(at: Position): Choices | null;
+  proseAt?(at: Position): boolean;
+  holdsValueAt?(at: Position): boolean;
+  removableAt?(parent: Position, tag: string): boolean;
+  pointerChoicesAt?(parent: Position, tag: string): PointerCandidate[];
+  pairedAt?(parent: Position, tag: string): boolean;
+  requiredBeneath?(field: StructureFieldDescription): StructureFieldDescription[];
+  checkValue?(at: Position, tag: string, input: StructureValueInput, replacing: boolean): Refusal | null;
+  /** The version of the text the index was read from; every write the card asks for carries the one it was drawn at. */
+  version?(): number;
+  /** Whether the service describes the line at this position, so that the card may write to it. */
+  describes?(at: Position): boolean;
+  setValueAt?(at: Position, input: StructureValueInput, version: number): WriteOutcome;
+  addAt?(parent: Position, tag: string, input: StructureInput, version: number): WriteOutcome;
+  removeAt?(at: Position, nested: number, version: number, done: (outcome: WriteOutcome) => void): void;
+  describeMoveAt?(at: Position, version: number): MoveDescription | Refusal;
+  moveAt?(at: Position, target: MoveTarget, version: number): WriteOutcome;
+  /** Draws every view of the tab again from its text, at once. */
+  settle?(): void;
+  vaultFiles?(): string[];
+  vaultHas?(path: string): boolean;
+  copyIntoVault?(path: string, data: ArrayBuffer): Promise<void>;
+  fileEditAt?(at: FileAt, vaultPath: string, version: number, deviceType?: string): ReturnType<typeof mediaFileEdit>;
+  writeFileAt?(at: FileAt, vaultPath: string, version: number, deviceType?: string): WriteOutcome;
 }
 
 export interface CardView {
   setIcon(element: HTMLElement, icon: string): void;
-  openNote(path: string, line: number): void;
+  /** What the reader chose in the trees of the records shown, kept while the plugin is loaded. */
+  session: TreeSession;
+  /** Lists the fields of the standard, the ones that cannot be added disabled. */
+  chooseField?(at: MenuAt, fields: FieldChoice[]): void;
+  chooseValues?(at: MenuAt, values: ValueChoice[]): void;
+  choosePointer?(choices: PointerChoice[], chosen: (xref: string) => void): void;
+  chooseVaultFile?(choices: VaultFileChoice[], chosen: (path: string) => void): void;
+  chooseDeviceFile?(chosen: (file: File) => void): void;
+  /** A toolbar the host keeps outside the card; the card makes its own when there is none. */
+  header?: HTMLElement;
 }
 
 const FOCUS_KEY = "data-focus-key";
-const OPEN_KEY = "data-open";
+const TOGGLE_KEY = "tree:toggle";
 
-function foldsOf(root: HTMLElement): Pick<PersonPageOptions, "open" | "folded"> {
-  const open = new Set((root.getAttribute(OPEN_KEY) ?? "").split(" ").filter(Boolean));
-  return {
-    open,
-    folded: (id, now) => {
-      if (now) {
-        open.add(id);
-      } else {
-        open.delete(id);
-      }
-      root.setAttribute(OPEN_KEY, [...open].join(" "));
-    },
-  };
-}
+const TREES: ReadonlySet<string> = new Set(["person", "family", "source", "media", "record"]);
 
-function recordName(index: GenealogyIndex, xref: string): string {
-  const person = index.person(xref);
-  if (person) {
-    return personName(person);
-  }
-  const family = index.family(xref);
-  if (family) {
-    return familyTitle(family.spouseNames);
-  }
-  const source = index.source(xref);
-  if (source) {
-    return sourceTitle(source.title);
-  }
-  const media = index.media(xref);
-  const event = eventAt(index, xref);
-  return media?.title ?? media?.file ?? placeAt(index, xref)?.name ?? (event ? `${eventTitle(event.event)} · ${recordName(index, event.owner)}` : t("desk.media"));
-}
+const hasTree = (index: GenealogyIndex, record: string): boolean => TREES.has(pageKind(index, record) ?? "");
+
+/** Nothing with an identifier: the header alone is nothing to show. */
+const holdsNothing = (index: GenealogyIndex): boolean =>
+  [index.people, index.families, index.sources].every((rows) => rows.every((row) => row.xref === undefined)) &&
+  index.lists.media.length === 0 &&
+  index.lists.notes.length === 0 &&
+  index.lists.repositories.length === 0 &&
+  index.lists.other.every((xref) => xref === HEADER_ID);
 
 export function renderRecordCard(
   container: HTMLElement,
   tab: CardTab | null,
-  notes: NoteHit[] | null,
   view: CardView,
 ): void {
   const root = container.querySelector<HTMLElement>(":scope > .gedcom-card") ?? makeRoot(container);
@@ -85,55 +98,73 @@ export function renderRecordCard(
   const before = root.querySelector<HTMLElement>(":scope > .gedcom-card-body");
   const doc = container.ownerDocument;
   const active = doc.activeElement;
-  const focusWas = active !== null && root.contains(active) ? active : null;
+  const focusWas = active !== null && (root.contains(active) || view.header?.contains(active)) ? active : null;
   const focusKey = focusWas?.closest(`[${FOCUS_KEY}]`)?.getAttribute(FOCUS_KEY) ?? null;
   const scrollTop = before?.scrollTop ?? 0;
   const previous = root.getAttribute("data-shown");
-
   for (const stale of [...root.children]) {
     if (stale !== live) {
       stale.remove();
     }
   }
 
-  const selection = tab?.selection() ?? { record: null, fact: null };
+  let drawsTree = false;
+  let drawing = true;
+  let revealed = null as HTMLElement | null;
+  const reveal = (element: HTMLElement): void => {
+    if (drawing) {
+      revealed = element;
+    } else {
+      element.scrollIntoView({ block: "nearest" });
+    }
+  };
+  const selection = tab?.selection() ?? { record: null };
   const index = tab?.index();
   const record = tab && index && selection.record && pageKind(index, selection.record) ? selection.record : null;
   const shown = tab && record ? `${tab.filePath() ?? ""}\n${record}` : "";
 
-  if (tab) {
-    renderHeader(root, tab, view, index && record ? recordName(index, record) : null);
-  }
+  const drawsTreeFor = Boolean(tab && index && record && hasTree(index, record));
+  const header = view.header ?? (drawsTreeFor ? root.createDiv({ cls: ["gedcom-card-header", "nav-header"] }) : null);
+  header?.empty();
   const body = root.createDiv({ cls: "gedcom-card-body" });
   body.setAttribute("tabindex", "-1");
 
   if (!tab || !index) {
     body.createDiv({ cls: "gedcom-desk-none gedcom-card-state", text: t("card.noTab") });
   } else if (!record) {
-    const holdsNothing = index.people.length === 0 && index.families.length === 0 && index.sources.length === 0;
     body.createDiv({
       cls: "gedcom-desk-none gedcom-card-state",
-      text: t(holdsNothing ? "card.empty" : "card.nothing"),
+      text: t(holdsNothing(index) ? "card.empty" : "card.nothing"),
     });
   } else {
-    if (shown !== previous) {
-      root.removeAttribute(OPEN_KEY);
+    drawsTree = hasTree(index, record);
+    const announce = (text: string): void => {
+      live?.setText(text);
+    };
+    drawRecord(body, tab, index, record, view, announce, reveal, drawsTree ? { tree: view.session.stateFor(shown), ...(header ? { header } : {}) } : {});
+    if (header && !header.hasChildNodes() && !view.header) {
+      header.remove();
     }
-    drawRecord(body, tab, index, record, selection.fact, notes, view, foldsOf(root));
   }
 
+  if (view.header) {
+    view.header.hidden = !view.header.hasChildNodes();
+  }
   root.setAttribute("data-shown", shown);
   if (live && shown !== previous) {
-    live.setText(tab && index && record ? t("card.announce", { name: recordName(index, record) }) : "");
+    live.setText(tab && index && record ? t("card.announce", { name: recordTitle(index, record) ?? "" }) : "");
   }
   if (shown === previous) {
     body.scrollTop = scrollTop;
   }
-  if (focusWas !== null) {
+  drawing = false;
+  revealed?.scrollIntoView({ block: "nearest" });
+  const drawnFocus = doc.activeElement;
+  if (focusWas !== null && !(drawnFocus !== null && drawnFocus !== body && root.contains(drawnFocus))) {
     const same =
-      focusKey === null
+      focusKey === null || (shown !== previous && focusKey !== TOGGLE_KEY)
         ? null
-        : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`)].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
+        : [...root.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`), ...(view.header?.querySelectorAll<HTMLElement>(`[${FOCUS_KEY}]`) ?? [])].find((one) => one.getAttribute(FOCUS_KEY) === focusKey);
     (same ?? body).focus({ preventScroll: true });
   }
 }
@@ -147,84 +178,111 @@ function makeRoot(container: HTMLElement): HTMLElement {
   return root;
 }
 
-function renderHeader(root: HTMLElement, tab: CardTab, view: CardView, name: string | null): void {
-  const head = root.createDiv({ cls: "gedcom-card-head" });
-  const { canBack, canForward } = tab.history();
-  const button = (label: "card.back" | "card.forward", icon: string, enabled: boolean, go: () => void): void => {
-    const element = head.createEl("button", { cls: ["gedcom-card-nav", "clickable-icon"] });
-    element.setAttribute("type", "button");
-    element.setAttribute("aria-label", t(label));
-    element.setAttribute(FOCUS_KEY, label);
-    if (!enabled) {
-      element.setAttribute("disabled", "");
-    }
-    view.setIcon(element, icon);
-    element.addEventListener("click", go);
-  };
-  button("card.back", "chevron-left", canBack, () => tab.back());
-  button("card.forward", "chevron-right", canForward, () => tab.forward());
-  if (name !== null) {
-    const title = head.createDiv({ cls: "gedcom-card-head-name", text: name });
-    title.setAttribute("aria-hidden", "true");
-  }
-}
-
 function drawRecord(
   body: HTMLElement,
   tab: CardTab,
   index: GenealogyIndex,
   record: string,
-  fact: FactKey | null,
-  notes: NoteHit[] | null,
   view: CardView,
-  folds: Pick<PersonPageOptions, "open" | "folded">,
+  announce: (text: string) => void,
+  reveal: (element: HTMLElement) => void,
+  folds: PersonPageOptions,
 ): void {
-  const host: PageHost & { openFile(path: string): void } = {
+  const version = tab.version?.();
+  const opening = index.record(record)?.range.start;
+  const writes = version !== undefined && opening !== undefined && (tab.describes?.(opening) ?? false);
+  const host: PageHost = {
     openRecord: (xref) => tab.select(xref),
-    select: (key) => tab.selectFact(key),
     showInSource: (range) => tab.showInSource(range),
     openFile: (path) => tab.openFile(path),
     setIcon: (element, icon) => view.setIcon(element, icon),
-    portrait: (xref) => tab.portrait(xref),
+    announce,
+    reveal,
+    addableAt: tab.addableAt?.bind(tab),
+    choicesAt: tab.choicesAt?.bind(tab),
+    proseAt: tab.proseAt?.bind(tab),
+    holdsValueAt: tab.holdsValueAt?.bind(tab),
+    removableAt: tab.removableAt?.bind(tab),
+    pointerChoicesAt: tab.pointerChoicesAt?.bind(tab),
+    pairedAt: tab.pairedAt?.bind(tab),
+    requiredBeneath: tab.requiredBeneath?.bind(tab),
+    checkValue: tab.checkValue?.bind(tab),
+    chooseField: view.chooseField?.bind(view),
+    chooseValues: view.chooseValues?.bind(view),
+    choosePointer: view.choosePointer?.bind(view),
+    uneditable: tab.setValueAt !== undefined && !writes,
+    mediaFileAt: (line) => (line.valueAt === undefined ? null : tab.mediaItem(line.valueAt)),
   };
+  if (writes) {
+    const setValueAt = tab.setValueAt?.bind(tab);
+    const addAt = tab.addAt?.bind(tab);
+    const removeAt = tab.removeAt?.bind(tab);
+    host.setValueAt = setValueAt && ((at, input) => setValueAt(at, input, version));
+    host.addAt = addAt && ((parent, tag, input) => addAt(parent, tag, input, version));
+    host.removeAt = removeAt && ((at, nested, done) => {
+      removeAt(at, nested, version, done);
+    });
+    const describeMoveAt = tab.describeMoveAt?.bind(tab);
+    const moveAt = tab.moveAt?.bind(tab);
+    if (describeMoveAt && moveAt) {
+      host.describeMoveAt = (at) => describeMoveAt(at, version);
+      host.moveAt = (at, target) => moveAt(at, target, version);
+    }
+    host.settle = tab.settle?.bind(tab);
+    host.replaceFile = replacingFile(tab, view, version, host);
+  }
   const person = index.person(record);
   const family = person ? undefined : index.family(record);
   const source = person || family ? undefined : index.source(record);
-  const media = person || family || source ? undefined : index.media(record);
-  const place = person || family || source || media ? undefined : placeAt(index, record);
-  const event = person || family || source || media || place ? undefined : eventAt(index, record);
   if (person) {
-    renderPersonPage(body, person, index, { selected: fact, media: tab.mediaItems(person.media), ...folds }, host);
+    renderPersonPage(body, person, index, folds, host);
   } else if (family) {
-    renderFamilyPage(body, family, index, { selected: fact, media: tab.mediaItems(family.media), ...folds }, host);
+    renderFamilyPage(body, family, index, folds, host);
   } else if (source) {
-    renderSourcePage(body, source, index, host, tab.mediaItems(source.media));
-  } else if (media) {
-    const whole = media.at ? tab.mediaItem(media.at) : null;
-    renderMediaPage(
-      body,
-      media,
-      { whole, links: media.links.map((link) => tab.mediaItem(link.at) ?? missingAt(link.at)) },
-      index,
-      host,
-    );
-  } else if (place) {
-    renderPlacePage(body, place, index, host);
-    return;
-  } else if (event) {
-    renderEventPage(body, event, index, host, folds);
+    renderSourcePage(body, source, index, host, folds);
+  } else {
+    renderRecordPage(body, record, index, host, folds);
   }
-  renderEvidenceSection(
-    body,
-    event ? { index, record: event.owner, event: event.event } : { index, record, notes },
-    {
-      openRecord: (xref) => tab.select(xref),
-      showInSource: (range) => tab.showInSource(range),
-      openNote: (path, line) => view.openNote(path, line),
-    },
-  );
 }
 
-function missingAt(at: Position): MediaItem {
-  return { content: { kind: "missing", target: "" }, at };
+function replacingFile(tab: CardTab, view: CardView, version: number, host: TreeHost): TreeHost["replaceFile"] {
+  const vaultFiles = tab.vaultFiles?.bind(tab);
+  const vaultHas = tab.vaultHas?.bind(tab);
+  const copyIntoVault = tab.copyIntoVault?.bind(tab);
+  const fileEditAt = tab.fileEditAt?.bind(tab);
+  const writeFileAt = tab.writeFileAt?.bind(tab);
+  const chooseVaultFile = view.chooseVaultFile?.bind(view);
+  const chooseDeviceFile = view.chooseDeviceFile?.bind(view);
+  const chooseField = view.chooseField?.bind(view);
+  const documentPath = tab.filePath();
+  if (!vaultFiles || !vaultHas || !copyIntoVault || !fileEditAt || !writeFileAt || !chooseVaultFile || !chooseDeviceFile || !chooseField || documentPath === null) {
+    return undefined;
+  }
+  return (at, line, done) => {
+    const fileAt = fileLines(line);
+    const choices = fileChoices(
+      {
+        documentPath,
+        current: host.mediaFileAt?.(line)?.path,
+        vaultFiles,
+        taken: vaultHas,
+        check: (vaultPath, deviceType) => {
+          const answer = fileEditAt(fileAt, vaultPath, version, deviceType);
+          return answer.ok ? null : answer;
+        },
+        write: (vaultPath, deviceType) => writeFileAt(fileAt, vaultPath, version, deviceType),
+        copy: copyIntoVault,
+        chooseVaultFile,
+        chooseDeviceFile,
+      },
+      done,
+    );
+    chooseField(at, choices);
+  };
+}
+
+function fileLines(line: RecordLine): FileAt {
+  const file = line.range.start;
+  const form = line.children.find((child) => child.tag === "FORM")?.range.start;
+  return form === undefined ? { file } : { file, form };
 }

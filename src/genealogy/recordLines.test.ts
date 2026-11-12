@@ -1,7 +1,7 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
-import { buildIndex, type GenealogyIndex, type RecordLine } from "./index";
+import { buildIndex, HEADER_ID, type GenealogyIndex, type RecordLine } from "./index";
 
 const indexOf = (lines: string[]): GenealogyIndex => buildIndex(new GedcomLanguageService(lines.join("\n")));
 const head = (version: string): string[] => ["0 HEAD", "1 GEDC", `2 VERS ${version}`];
@@ -25,6 +25,16 @@ describe("the lines of a record", () => {
     "1 CHIL @I1@",
     "0 TRLR",
   ]);
+
+  it("places a value where the language service answers for it, so that a medium's file can be asked about", () => {
+    const service = new GedcomLanguageService(
+      [...head("7.0"), "0 @O1@ OBJE", "1 FILE Media/photo.jpg", "2 FORM image/jpeg", "0 TRLR"].join("\n"),
+    );
+    const file = find(buildIndex(service).record("@O1@"), "FILE");
+
+    expect(file?.valueAt && service.getMediaAt(file.valueAt)?.targetText).toBe("Media/photo.jpg");
+    expect(find(file, "FORM")?.valueAt).toEqual({ line: 5, character: 7 });
+  });
 
   it("gives a name with its parts, in the order written, to any depth", () => {
     const record = index.record("@I1@");
@@ -93,5 +103,37 @@ describe("a shared note", () => {
     const index = indexOf([...head("7.0"), "0 @N1@ SNOTE", "1 CONT second", "0 TRLR"]);
 
     expect(index.record("@N1@")?.text).toBe("\nsecond");
+  });
+});
+
+describe("a record of the file's own", () => {
+  it("carries the value its opening line writes after its tag", () => {
+    const index = indexOf([...head("7.0"), "0 @P1@ _PLAN Custom value", "1 NAME Research plan", "0 TRLR"]);
+
+    expect(index.record("@P1@")).toMatchObject({ tag: "_PLAN", xref: "@P1@", text: "Custom value" });
+    expect(index.record("@P1@")?.children.map((child) => [child.tag, child.text])).toEqual([["NAME", "Research plan"]]);
+  });
+
+  it("carries no value in a file with no dialect the service checked", () => {
+    const index = indexOf(["0 HEAD", "0 @P1@ _PLAN Custom value", "0 TRLR"]);
+
+    expect(index.record("@P1@")?.text).toBeUndefined();
+  });
+
+  it("keeps a 5.5.1 note's text as its symbol and its continuations join it", () => {
+    const index = indexOf([...head("5.5.1"), "2 FORM LINEAGE-LINKED", "1 CHAR UTF-8", "0 @N1@ NOTE Te", "1 CONC xt", "0 TRLR"]);
+
+    expect(index.record("@N1@")?.text).toBe("Text");
+  });
+});
+
+describe("the header", () => {
+  it("gives the header's lines whole under its own id", () => {
+    const index = indexOf([...head("7.0"), "1 SUBM @U1@", "0 @U1@ SUBM", "0 TRLR"]);
+    const header = index.record(HEADER_ID);
+
+    expect(header?.tag).toBe("HEAD");
+    expect(header?.xref).toBeUndefined();
+    expect(header?.children.map((child) => child.tag)).toEqual(["GEDC", "SUBM"]);
   });
 });

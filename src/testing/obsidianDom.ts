@@ -76,6 +76,18 @@ export function installObsidianDom(): void {
       return this.defaultView ?? window;
     },
   });
+  Object.defineProperty(Node.prototype, "doc", {
+    configurable: true,
+    get(this: Node) {
+      return this.ownerDocument ?? window.document;
+    },
+  });
+  Object.defineProperty(Node.prototype, "win", {
+    configurable: true,
+    get(this: Node) {
+      return this.ownerDocument?.defaultView ?? window;
+    },
+  });
   (window as unknown as Record<string, unknown>).createEl = (
     tag: string,
     options?: DomOptions | string,
@@ -116,6 +128,9 @@ export function installObsidianDom(): void {
     for (const [name, value] of Object.entries(props)) {
       (this as unknown as HTMLElement).style.setProperty(name, value);
     }
+  };
+  proto.setCssStyles = function (styles: Record<string, string>) {
+    Object.assign((this as unknown as HTMLElement).style, styles);
   };
   proto.toggle = function (show: boolean) {
     (this as unknown as HTMLElement).style.display = show ? "" : "none";

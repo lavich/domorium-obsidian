@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { CursorFollow, adoptsFollow, fallbackFollowed, noteChangeMatters, shouldFollowCursor } from "./followRules";
+import { curieIndex } from "../testing/curie";
+import { followsCursor } from "./deskState";
+import { CursorFollow, adoptsFollow, fallbackFollowed, shouldFollowCursor } from "./followRules";
 
 const rest = { interfaceOn: true, mode: "source" as const, selected: "@I1@", atCursor: "@I2@", hasCard: true };
 
@@ -10,15 +12,17 @@ describe("when the cursor's record is selected", () => {
     expect(shouldFollowCursor(rest)).toBe(true);
   });
 
-  it("is not for the record of the selected event", () => {
-    expect(shouldFollowCursor({ ...rest, selected: "event:@I1@:BIRT:0", atCursor: "@I1@" })).toBe(false);
-    expect(shouldFollowCursor({ ...rest, selected: "event:@I1@:BIRT:0", atCursor: "@I2@" })).toBe(true);
-  });
-
   it("is not for the selected record, a record with no card, or no record", () => {
     expect(shouldFollowCursor({ ...rest, atCursor: "@I1@" })).toBe(false);
     expect(shouldFollowCursor({ ...rest, hasCard: false })).toBe(false);
     expect(shouldFollowCursor({ ...rest, atCursor: undefined })).toBe(false);
+  });
+
+  it("is for a multimedia record and not for a note, a repository or a submitter, though they have cards", () => {
+    const curie = curieIndex();
+    const resting = (atCursor: string): boolean => shouldFollowCursor({ ...rest, atCursor, hasCard: followsCursor(curie, atCursor) });
+
+    expect(["@O5@", "@N1@", "@R1@", "@U1@"].map(resting)).toEqual([true, false, false, false]);
   });
 
   it("is not in another mode, nor with the interface off", () => {
@@ -45,16 +49,6 @@ describe("which tab the sidebars follow", () => {
   });
 });
 
-describe("which changed note matters to the card", () => {
-  it("is the file itself or a note that links it", () => {
-    const linking = new Set(["Notes/Radium.md"]);
-
-    expect(noteChangeMatters("curie.ged", ["curie.ged"], linking)).toBe(true);
-    expect(noteChangeMatters("Notes/Radium.md", ["curie.ged"], linking)).toBe(true);
-    expect(noteChangeMatters("Notes/Other.md", ["curie.ged"], linking)).toBe(false);
-  });
-});
-
 describe("a cursor that rested and a selection made meanwhile", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -69,8 +63,8 @@ describe("a cursor that rested and a selection made meanwhile", () => {
     expect(settle).toHaveBeenCalledTimes(1);
   });
 
-  it("does not settle after Back, the card or a link selected another record", () => {
-    for (const origin of ["history", "card", "link", "view"] as const) {
+  it("does not settle after the card or a link selected another record", () => {
+    for (const origin of ["card", "link", "view"] as const) {
       vi.useFakeTimers();
       const settle = vi.fn();
       const follow = new CursorFollow(window, settle);

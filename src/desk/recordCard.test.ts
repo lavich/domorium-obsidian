@@ -1,22 +1,31 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { GenealogyIndex } from "../genealogy";
+import { buildIndex, type GenealogyIndex } from "../genealogy";
 import { resetLanguage, setLanguage } from "../i18n";
 import { curieIndex, indexOf } from "../testing/curie";
 import { installObsidianDom } from "../testing/obsidianDom";
+import { TextTab } from "../testing/textTab";
+import { addableAt, describes, removableAt } from "./addableFields";
+import { TreeSession } from "./detail/treeSession";
+import { addAt, commit, describeMoveAt, moveAt, removeAt, setValueAt } from "./edits";
+import { mediaFileEdit } from "./mediaFile";
 import { renderRecordCard, type CardTab, type CardView } from "./recordCard";
 
 let container: HTMLElement;
-let state: { record: string | null; fact: string | null; canBack: boolean; canForward: boolean };
+let state: { record: string | null };
 let tab: CardTab;
 let calls: {
   select: ReturnType<typeof vi.fn<(xref: string) => void>>;
-  selectFact: ReturnType<typeof vi.fn<(key: string | null) => void>>;
-  back: ReturnType<typeof vi.fn<() => void>>;
-  forward: ReturnType<typeof vi.fn<() => void>>;
 };
-let view: { setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>; openNote: ReturnType<typeof vi.fn<CardView["openNote"]>> };
+let view: {
+  setIcon: ReturnType<typeof vi.fn<CardView["setIcon"]>>;
+  session: TreeSession;
+  header?: HTMLElement;
+  chooseField?: CardView["chooseField"];
+  chooseVaultFile?: CardView["chooseVaultFile"];
+  chooseDeviceFile?: CardView["chooseDeviceFile"];
+};
 let index: GenealogyIndex;
 const scrollIntoView = vi.fn();
 
@@ -30,53 +39,39 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.replaceChildren(container);
   index = curieIndex();
-  state = { record: "@I1@", fact: null, canBack: false, canForward: false };
-  calls = { select: vi.fn(), selectFact: vi.fn(), back: vi.fn(), forward: vi.fn() };
+  state = { record: "@I1@" };
+  calls = { select: vi.fn() };
   tab = {
     filePath: () => "curie.ged",
     index: () => index,
-    selection: () => ({ record: state.record, fact: state.fact }),
-    mediaItems: (media) => media.map(({ at }) => ({ content: { kind: "missing", target: "" }, at })),
+    selection: () => ({ record: state.record }),
     mediaItem: () => null,
-    portrait: () => null,
     select: (xref) => {
       calls.select(xref);
     },
-    selectFact: (key) => {
-      calls.selectFact(key);
-    },
     showInSource: vi.fn(),
     openFile: vi.fn(),
-    history: () => ({ canBack: state.canBack, canForward: state.canForward }),
-    back: () => {
-      calls.back();
-    },
-    forward: () => {
-      calls.forward();
-    },
   };
   view = {
     setIcon: vi.fn((element: HTMLElement, icon: string) => {
       element.setAttribute("data-icon", icon);
     }),
-    openNote: vi.fn(),
+    session: new TreeSession(),
   };
 });
 
-const draw = (notes: Parameters<typeof renderRecordCard>[2] = []): void => {
-  renderRecordCard(container, tab, notes, view);
+const draw = (): void => {
+  renderRecordCard(container, tab, view);
 };
 const texts = (selector: string): string[] =>
   [...container.querySelectorAll(selector)].map((node) => node.textContent ?? "");
 const body = () => container.querySelector<HTMLElement>(".gedcom-card-body");
-const nav = (label: string) => container.querySelector<HTMLButtonElement>(`.gedcom-card-nav[aria-label="${label}"]`);
 
 describe("the empty states of the card", () => {
   it("says no GEDCOM file is open without a tab", () => {
-    renderRecordCard(container, null, null, view);
+    renderRecordCard(container, null, view);
 
     expect(texts(".gedcom-card-state")).toEqual(["Open a GEDCOM file to see its records."]);
-    expect(container.querySelector(".gedcom-card-head")).toBeNull();
   });
 
   it("says to select a record where the tab has none selected, or a selected one the file lacks", () => {
@@ -97,9 +92,20 @@ describe("the empty states of the card", () => {
     expect(texts(".gedcom-card-state")).toEqual(["The file holds nothing to show."]);
   });
 
+  it("says to select a record in a file of notes alone, and that a file of a header alone holds nothing", () => {
+    state.record = null;
+    index = indexOf("0 HEAD\n1 GEDC\n2 VERS 7.0\n0 @N1@ SNOTE A note\n0 TRLR\n");
+    draw();
+    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline or the list."]);
+
+    index = indexOf("0 HEAD\n1 GEDC\n2 VERS 7.0\n1 NOTE Only a header\n0 TRLR\n");
+    draw();
+    expect(texts(".gedcom-card-state")).toEqual(["The file holds nothing to show."]);
+  });
+
   it("speaks Russian", () => {
     setLanguage("ru");
-    renderRecordCard(container, null, null, view);
+    renderRecordCard(container, null, view);
     expect(texts(".gedcom-card-state")).toEqual(["Откройте файл GEDCOM, чтобы увидеть его записи."]);
 
     state.record = null;
@@ -111,234 +117,123 @@ describe("the empty states of the card", () => {
   });
 });
 
-describe("the page of each kind of record, with its evidence", () => {
-  it("shows Marie's sections in order, ending with Evidence", () => {
-    draw();
+describe("the page of each kind of record", () => {
+  it("shows a person, a family and a source as their tree and nothing else", () => {
+    for (const record of ["@I1@", "@F3@", "@S3@"]) {
+      state.record = record;
+      draw();
 
-    expect(texts(".gedcom-card-body h2")).toEqual(["Names", "Events", "Details", "Family", "Notes", "Media", "Timeline", "Evidence"]);
-    expect(texts(".gedcom-desk-title")).toEqual(["Marie Skłodowska-Curie"]);
+      expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
+    }
   });
 
-  it("names the record in the header, hidden from assistive technology, beside the page's own heading", () => {
-    draw();
-
-    expect(texts(".gedcom-card-head-name")).toEqual(["Marie Skłodowska-Curie"]);
-    expect(container.querySelector(".gedcom-card-head-name")?.getAttribute("aria-hidden")).toBe("true");
-    expect(texts("h1")).toEqual(["Marie Skłodowska-Curie"]);
-  });
-
-  it("shows the Curies' family with its evidence", () => {
-    state.record = "@F3@";
-    draw();
-
-    expect(texts(".gedcom-desk-title")).toEqual(["Pierre Curie ⚭ Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Evidence");
-  });
-
-  it("shows a source with the notes section last", () => {
-    state.record = "@S3@";
-    draw([]);
-
-    expect(texts(".gedcom-desk-title")).toEqual(["The Nobel Prize in Chemistry 1911 and 1935"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault");
-    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
-  });
-
-  it("shows a multimedia record with the notes section last", () => {
-    state.record = "@O5@";
-    draw([]);
-
-    expect(texts(".gedcom-desk-title")).toEqual(["The Curie family, about 1908"]);
-    expect(texts(".gedcom-card-body h2").at(-1)).toBe("Notes in the vault");
-  });
-
-  it("lists the notes of the vault in Marie's evidence", () => {
-    draw([{ path: "Notes/Radium.md", name: "Radium", lines: [{ line: 1, before: "by ", link: "Marie", after: "" }] }]);
-    container.querySelector<HTMLElement>(".gedcom-desk-note-line")?.click();
-
-    expect(texts(".gedcom-desk-note-name")).toEqual(["Radium"]);
-    expect(view.openNote).toHaveBeenCalledWith("Notes/Radium.md", 1);
-  });
-
-  it("lists no note and none of the record's sources on the card of an event", () => {
-    state.record = "event:@I1@:BIRT:0";
-    draw([{ path: "Notes/Radium.md", name: "Radium", lines: [{ line: 1, before: "by ", link: "Marie", after: "" }] }]);
-
-    expect(container.querySelector(".gedcom-desk-note")).toBeNull();
-    expect(container.querySelector(".gedcom-desk-cite")).toBeNull();
-    expect(texts(".gedcom-card-body h2")).toEqual(["Evidence"]);
-  });
-
-  it("opens the card of an event from a place's card", () => {
-    state.record = "place:paris, france";
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-name")?.click();
-
-    expect(calls.select.mock.calls[0]?.[0]).toMatch(/^event:/u);
-  });
-
-  it("shows a place with its events, and opens the record of an event through the tab", () => {
-    state.record = "place:paris, france";
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-place-occurrences .gedcom-desk-fact-value .gedcom-desk-link")?.click();
-
-    expect(texts(".gedcom-desk-title")).toEqual(["Paris, France"]);
-    expect(texts(".gedcom-card-head-name")).toEqual(["Paris, France"]);
-    expect(container.querySelector(".gedcom-card-evidence")).toBeNull();
-    expect(calls.select).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows an event with its record, date and place as links, and its evidence below", () => {
-    state.record = "event:@I1@:BIRT:0";
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-event-owner .gedcom-desk-link")?.click();
-    container.querySelector<HTMLElement>(".gedcom-desk-subtitle .gedcom-desk-link")?.click();
-
-    expect(texts(".gedcom-desk-event-kind")).toEqual(["Person"]);
-    expect(texts(".gedcom-desk-event-owner .gedcom-desk-link")).toEqual(["Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-desk-title")).toEqual(["Birth"]);
-    expect(texts(".gedcom-card-head-name")).toEqual(["Birth · Marie Skłodowska-Curie"]);
-    expect(texts(".gedcom-desk-subtitle")).toEqual(["7 NOV 1867 · Warsaw, Congress Poland"]);
-    expect(container.querySelector(".gedcom-desk-event-details")).toBeNull();
-    expect(container.querySelector(".gedcom-desk-evidence-head")).toBeNull();
-    expect(calls.select.mock.calls).toEqual([["@I1@"], ["place:warsaw, congress poland"]]);
-  });
-
-  it("opens the lines of an event through the tab", () => {
-    const show = vi.fn<(range: unknown) => void>();
-    tab.showInSource = (range) => {
-      show(range);
-    };
-    state.record = "event:@I1@:BIRT:0";
-    draw();
-    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-heading .gedcom-desk-link")].find((node) => node.textContent === "Show in source")?.click();
-
-    expect(show).toHaveBeenCalledWith(index.person("@I1@")?.events[0]?.range);
-  });
-
-  it("says an event with no date, place or source states none", () => {
-    index = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 OCCU Cooper\n0 TRLR");
-    state.record = "event:@I1@:OCCU:0";
-    draw();
-
-    expect(texts(".gedcom-desk-title")).toEqual(["Occupation · Cooper"]);
-    expect(texts(".gedcom-desk-none")).toContain("This event states no date, place or source.");
-  });
-
-  it("links a cited source record, and shows an inline citation as text", () => {
+  it("shows a note, a repository, a submitter, a record of the file's own and the header as their tree, rooted at their kind", () => {
     index = indexOf(
-      ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S1@", "2 SOUR An inline note", "0 @S1@ SOUR", "1 TITL Parish registers", "0 TRLR"].join("\n"),
+      [
+        "0 HEAD", "1 GEDC", "2 VERS 7.0", "1 SUBM @U1@",
+        "0 @U1@ SUBM", "1 NAME Domorium",
+        "0 @N1@ SNOTE First line", "1 CONT second line",
+        "0 @R1@ REPO", "1 NAME Archive", "1 ADDR Street 7", "2 CITY Warsaw",
+        "0 @P1@ _PLAN", "1 NAME Research plan",
+        "0 TRLR",
+      ].join("\n"),
     );
+    const roots: [string, string][] = [];
+    for (const record of ["@N1@", "@R1@", "@U1@", "@P1@", "header:"]) {
+      state.record = record;
+      draw();
+
+      expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
+      roots.push([
+        container.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-label")?.textContent ?? "",
+        String(container.querySelectorAll(".gedcom-tree-node:not(.is-root)").length),
+      ]);
+    }
+
+    expect(roots).toEqual([
+      ["Shared note", "0"],
+      ["Repository", "2"],
+      ["Submitter", "1"],
+      ["_PLAN", "1"],
+      ["Header", "2"],
+    ]);
+  });
+
+  it("has no header: no bar, no Back or Forward control, and the record's name only in the live region", () => {
+    draw();
+
+    expect(container.querySelector(".gedcom-card-head, .gedcom-card-nav, .gedcom-card-head-name")).toBeNull();
+    expect(container.querySelector('[data-focus-key="card.back"], [data-focus-key="card.forward"]')).toBeNull();
+    expect(container.firstElementChild?.firstElementChild?.classList.contains("gedcom-card-live")).toBe(true);
+    const card = container.querySelector(".gedcom-card");
+    expect(card?.children[1]?.classList.contains("nav-header")).toBe(true);
+    expect(card?.children[2]?.classList.contains("gedcom-card-body")).toBe(true);
+    expect(card?.querySelectorAll(".gedcom-card-body .nav-header")).toHaveLength(0);
+    expect(container.querySelector("h1")).toBeNull();
+  });
+
+  it("fills a toolbar the host keeps outside the card, and hides it where there is no tree", () => {
+    const bar = document.createElement("div");
+    view = { ...view, header: bar };
+    draw();
+
+    expect(bar.querySelector(".gedcom-tree-toggle")).not.toBeNull();
+    expect(bar.hidden).toBe(false);
+    expect(container.querySelector(".gedcom-card .nav-header")).toBeNull();
+  });
+
+  it("shows a multimedia record as the tree of its lines, rooted at Media, with no heading and no list of who links it", () => {
+    state.record = "@O5@";
+    draw();
+
+    expect([...(body()?.children ?? [])].map((child) => child.className)).toEqual(["gedcom-tree"]);
+    expect(container.querySelector(".gedcom-tree-node.is-root > .gedcom-tree-row .gedcom-tree-label")?.textContent).toBe("Media");
+    expect(container.querySelector("h1, h2, .gedcom-desk-used-by, .gedcom-card-evidence")).toBeNull();
+    expect(texts(".gedcom-tree-file-path")).toEqual(["Media/curie-family-1908.svg"]);
+  });
+
+  it("draws the picture of a medium's file in its row while the row is closed, as a control that opens the file", () => {
+    const openFile = vi.fn();
+    tab.openFile = openFile;
+    tab.mediaItem = (at) => ({
+      content: { kind: "image", url: "app://curie-family-1908.svg", name: "curie-family-1908.svg", title: "The Curie family, about 1908" },
+      path: "Media/curie-family-1908.svg",
+      at,
+    });
+    state.record = "@O5@";
+    draw();
+    const file = container.querySelector<HTMLElement>('[data-focus-key="t:FILE[0]:file"]');
+
+    expect(file?.querySelector("img")?.getAttribute("src")).toBe("app://curie-family-1908.svg");
+    expect(file?.closest(".gedcom-tree-node")?.classList.contains("is-collapsed")).toBe(true);
+    expect(file?.getAttribute("aria-label")).toBe("Open The Curie family, about 1908");
+    file?.click();
+    expect(openFile).toHaveBeenCalledWith("Media/curie-family-1908.svg");
+  });
+
+  it("shows no card for an event id, and says to select a record", () => {
     state.record = "event:@I1@:BIRT:0";
     draw();
-    container.querySelector<HTMLElement>("button.gedcom-desk-cite")?.click();
 
-    expect(texts(".gedcom-desk-cite-title")).toEqual(["Parish registers"]);
-    expect(texts(".gedcom-desk-cite-inline")).toEqual(["An inline note"]);
-    expect(calls.select).toHaveBeenCalledWith("@S1@");
+    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline or the list."]);
+    expect(container.querySelector(".gedcom-tree, .gedcom-desk-title")).toBeNull();
   });
 
-  it("marks a citation of a source the file does not declare as missing", () => {
-    index = indexOf(["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 SOUR @S9@", "0 TRLR"].join("\n"));
-    state.record = "event:@I1@:BIRT:0";
+  it("shows no card for a place, which has none, and says to select a record", () => {
+    state.record = "place:paris, france";
     draw();
 
-    expect(container.querySelectorAll(".gedcom-desk-missing")).toHaveLength(1);
+    expect(texts(".gedcom-card-state")).toEqual(["Select a record in the graph, the timeline or the list."]);
+    expect(container.querySelector(".gedcom-tree")).toBeNull();
   });
 
-  it("names a family as the owner of a family event", () => {
-    state.record = "event:@F3@:MARR:0";
+  it("selects a record through a pointer of the tree", () => {
     draw();
-
-    expect(texts(".gedcom-desk-event-kind")).toEqual(["Family"]);
-  });
-
-  it("draws no date and place line for an event that states neither", () => {
-    index = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME A /B/\n1 OCCU Cooper\n0 TRLR");
-    state.record = "event:@I1@:OCCU:0";
-    draw();
-
-    expect(container.querySelector(".gedcom-desk-subtitle")).toBeNull();
-  });
-
-  it("speaks Russian on an event's card", () => {
-    setLanguage("ru");
-    state.record = "event:@I1@:BIRT:0";
-    draw();
-
-    expect(texts(".gedcom-desk-title")).toEqual(["Рождение"]);
-    expect(texts(".gedcom-desk-event-kind")).toEqual(["Человек"]);
-  });
-
-  it("selects a relative through the tab", () => {
-    draw();
-    [...container.querySelectorAll<HTMLElement>(".gedcom-desk-person")]
-      .find((node) => node.textContent?.startsWith("Pierre Curie"))
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")]
+      .find((node) => node.textContent?.includes("Curie"))
       ?.click();
 
-    expect(calls.select).toHaveBeenCalledWith("@I2@");
-  });
-});
-
-describe("the folds of a person card", () => {
-  const timelineOpen = (): string | null | undefined =>
-    container.querySelector(".gedcom-desk-fold-button")?.getAttribute("aria-expanded");
-
-  it("stay open while the card shows the same record, and close for another", () => {
-    draw();
-    container.querySelector<HTMLElement>(".gedcom-desk-fold-button")?.click();
-    draw();
-    expect(timelineOpen()).toBe("true");
-
-    state.record = "@I2@";
-    draw();
-    state.record = "@I1@";
-    draw();
-    expect(timelineOpen()).toBe("false");
-  });
-
-  it("keep the focus on the heading that was pressed", () => {
-    draw();
-    const button = container.querySelector<HTMLElement>(".gedcom-desk-fold-button");
-    button?.focus();
-    button?.click();
-    draw();
-
-    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("fold:timeline");
-  });
-});
-
-describe("Back and Forward", () => {
-  it("are disabled where there is nowhere to go, and enabled by the tab's history", () => {
-    draw();
-    expect(nav("Back")?.disabled).toBe(true);
-    expect(nav("Forward")?.disabled).toBe(true);
-
-    state.canBack = true;
-    state.canForward = true;
-    draw();
-    expect(nav("Back")?.disabled).toBe(false);
-    expect(nav("Forward")?.disabled).toBe(false);
-    expect(nav("Back")?.getAttribute("data-icon")).toBe("chevron-left");
-  });
-
-  it("step through the tab", () => {
-    state.canBack = true;
-    state.canForward = true;
-    draw();
-    nav("Back")?.click();
-    nav("Forward")?.click();
-
-    expect(calls.back).toHaveBeenCalledTimes(1);
-    expect(calls.forward).toHaveBeenCalledTimes(1);
-  });
-
-  it("are named in Russian", () => {
-    setLanguage("ru");
-    draw();
-
-    expect(nav("Назад")).not.toBeNull();
-    expect(nav("Вперёд")).not.toBeNull();
+    expect(calls.select).toHaveBeenCalled();
   });
 });
 
@@ -357,17 +252,46 @@ describe("redrawing the card", () => {
     expect(body()?.scrollTop).toBe(0);
   });
 
-  it("keeps the focus on the selected fact's row where the focus was in the card", () => {
-    state.fact = "p:1";
+  it("keeps the focus on the same control of the tree where the focus was in the card", () => {
     draw();
-    container.querySelector<HTMLElement>('[data-focus-key="p:1"]')?.focus();
-
-    state.fact = "p:2";
-    draw();
-    container.querySelector<HTMLElement>('[data-focus-key="p:2"]')?.focus();
+    container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]')?.focus();
     draw();
 
-    expect(document.activeElement).toBe(container.querySelector('[data-focus-key="p:2"]'));
+    expect(document.activeElement).toBe(container.querySelector('[data-focus-key="t:BIRT[0]"]'));
+  });
+
+  it("puts the focus on the body, not on a control of the same key, when another record is shown", () => {
+    draw();
+    container.querySelector<HTMLElement>('[data-focus-key="t:NAME[0]"]')?.focus();
+    state.record = "@I2@";
+    draw();
+
+    expect(container.querySelector('[data-focus-key="t:NAME[0]"]')).not.toBeNull();
+    expect(document.activeElement).toBe(body());
+  });
+
+  it("keeps the focus on the toggle of every node when another record is shown, and flips its icon with the state", () => {
+    draw();
+    const toggle = (): HTMLElement | null => container.querySelector<HTMLElement>('[data-focus-key="tree:toggle"]');
+    expect(toggle()?.getAttribute("data-icon")).toBe("chevrons-up-down");
+    toggle()?.focus();
+    toggle()?.click();
+    expect(toggle()?.getAttribute("data-icon")).toBe("chevrons-down-up");
+    state.record = "@I2@";
+    draw();
+
+    expect(document.activeElement).toBe(toggle());
+  });
+
+  it("keeps the focus on a control that the reader pressed to open a node", () => {
+    draw();
+    const chevron = container.querySelector<HTMLElement>('[data-focus-key="t:BIRT[0]"]');
+    chevron?.focus();
+    chevron?.click();
+    draw();
+
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:BIRT[0]");
+    expect(document.activeElement?.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("does not take the focus from outside the card", () => {
@@ -399,5 +323,321 @@ describe("the live region", () => {
     draw();
 
     expect(live()).toBe("Показано: Marie Skłodowska-Curie");
+  });
+
+  it("reads a note by the text of its row in the list, and the header as the file's header", () => {
+    state.record = "@N1@";
+    draw();
+    expect(live()).toBe("Shown: The only person to have won a Nobel Prize in two different sciences:");
+
+    state.record = "header:";
+    draw();
+    expect(live()).toBe("Shown: File header");
+  });
+
+  it("reads a medium by its title", () => {
+    state.record = "@O5@";
+    draw();
+    expect(live()).toBe("Shown: The Curie family, about 1908");
+  });
+});
+
+describe("the tree of a record on the card", () => {
+  const chevron = (key: string): HTMLElement | null => container.querySelector<HTMLElement>(`[data-focus-key="${key}"]`);
+  const toggled = (key: string): string | null | undefined => chevron(key)?.getAttribute("aria-expanded");
+
+  it("keeps a node the reader opened open after the card shows Pierre Curie and Marie again, and for a redraw", () => {
+    draw();
+    chevron("t:BIRT[0]")?.click();
+    draw();
+    expect(toggled("t:BIRT[0]")).toBe("true");
+
+    state.record = "@I2@";
+    draw();
+    state.record = "@I1@";
+    draw();
+    expect(toggled("t:BIRT[0]")).toBe("true");
+  });
+
+  it("does not scroll the card for a link to the record it already shows", () => {
+    draw();
+    const first = body();
+    if (first) {
+      first.scrollTop = 200;
+    }
+    draw();
+
+    expect(body()?.scrollTop).toBe(200);
+  });
+});
+
+describe("a card that writes", () => {
+  const HEAD = ["0 HEAD", "1 GEDC", "2 VERS 7.0"];
+  let doc: TextTab;
+  let asked: (() => void) | null;
+
+  const writing = (lines: string[], head = HEAD): CardTab => {
+    doc = new TextTab([...head, ...lines, "0 TRLR"].join("\n"));
+    asked = null;
+    let read = { version: 0, index: curieIndex() };
+    const service = () => doc.service();
+    return {
+      ...tab,
+      index: () => {
+        if (read.version !== doc.version) {
+          read = { version: doc.version, index: buildIndex(service()) };
+        }
+        return read.index;
+      },
+      version: () => doc.version,
+      describes: (at) => describes(service(), at),
+      addableAt: (at) => addableAt(service(), at),
+      removableAt: (at, tag) => removableAt(service(), at, tag),
+      setValueAt: (at, input, version) => commit(doc, setValueAt(service(), at, version, input)),
+      addAt: (at, tag, input, version) => commit(doc, addAt(service(), at, version, tag, input)),
+      removeAt: (at, nested, version, done) => {
+        const go = (): void => {
+          done(commit(doc, removeAt(service(), at, version)));
+        };
+        if (nested === 0) {
+          go();
+        } else {
+          asked = go;
+        }
+      },
+      describeMoveAt: (at, version) => describeMoveAt(service(), at, version),
+      moveAt: (at, target, version) => commit(doc, moveAt(service(), at, version, target)),
+      settle: () => {
+        draw();
+      },
+      fileEditAt: (at, path, version, type) => mediaFileEdit(service(), "curie.ged", at, path, version, type),
+      writeFileAt: (at, path, version, type) => commit(doc, mediaFileEdit(service(), "curie.ged", at, path, version, type)),
+    };
+  };
+  const removeOf = (label: string): HTMLElement | null =>
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")]
+      .find((row) => row.querySelector(".gedcom-tree-label")?.textContent === label)
+      ?.querySelector<HTMLElement>(".gedcom-tree-remove") ?? null;
+
+  it("removes one line for two presses on its removal before the card is drawn again, and none after it", () => {
+    tab = writing(["0 @I1@ INDI", "1 SEX F", "1 NAME Marie /Curie/", "1 NAME Manya /Skłodowska/"]);
+    draw();
+    const remove = removeOf("Sex");
+
+    remove?.click();
+    remove?.click();
+    expect(doc.text).not.toContain("1 SEX F");
+    expect(doc.text).toContain("1 NAME Marie /Curie/");
+    expect(doc.writes).toBe(1);
+  });
+
+  it("draws the card again from the new text right after a write", () => {
+    tab = writing(["0 @I1@ INDI", "1 SEX F", "1 _MILITARY Cavalry"]);
+    draw();
+    removeOf("Sex")?.click();
+
+    expect(texts(".gedcom-tree-label")).not.toContain("Sex");
+  });
+
+  it("removes nothing when the file changed while the question was open, and draws the card from the new text", () => {
+    tab = writing(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "2 PLAC Paris"]);
+    draw();
+    removeOf("Birth")?.click();
+    doc.replace(doc.text.replace("0 @I1@ INDI", "0 @I1@ INDI\n1 SEX F"));
+    asked?.();
+
+    expect(doc.text).toContain("1 BIRT");
+    expect(texts(".gedcom-tree-label")).toContain("Sex");
+  });
+
+  it("keeps the focus on a field it wrote", () => {
+    tab = writing(["0 @I1@ INDI", "1 _MILITARY Cavalry"]);
+    draw();
+    const area = container.querySelector<HTMLTextAreaElement>('[data-focus-key="t:_MILITARY[0]:value"]');
+    area?.focus();
+    if (area) {
+      area.value = "Hussar";
+      area.dispatchEvent(new Event("input"));
+      area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+
+    expect(doc.text).toContain("1 _MILITARY Hussar");
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:_MILITARY[0]:value");
+    expect(document.activeElement).not.toBe(area);
+  });
+
+  it("puts the focus on the new line's menu after adding a death, not back where it was", () => {
+    view.chooseField = vi.fn();
+    tab = writing(["0 @I1@ INDI", "1 SEX F"]);
+    draw();
+    const add = container.querySelector<HTMLElement>('[data-focus-key="t::add"]');
+    add?.focus();
+    add?.click();
+    vi.mocked(view.chooseField).mock.calls[0]?.[1].find((one) => one.title === "Death")?.choose();
+
+    expect(doc.text).toContain("1 DEAT Y");
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:DEAT[0]:add");
+  });
+
+  it("edits the header as any record: a copyright from its menu, its version refused, no field on its root", () => {
+    view.chooseField = vi.fn();
+    tab = writing(["0 @U1@ SUBM", "1 NAME Domorium"], [...HEAD, "1 SUBM @U1@", "1 NOTE About the file"]);
+    state.record = "header:";
+    draw();
+
+    expect(container.querySelector(".gedcom-tree-note")).toBeNull();
+    expect(container.querySelector('[data-focus-key="t::value"]')).toBeNull();
+    container.querySelector<HTMLElement>('[data-focus-key="t::add"]')?.click();
+    vi.mocked(view.chooseField).mock.calls[0]?.[1].find((one) => one.title === "Copyright")?.choose();
+    const copyright = container.querySelector<HTMLTextAreaElement>(".is-unwritten textarea");
+    copyright?.focus();
+    if (copyright) {
+      copyright.value = "Domorium";
+      copyright.dispatchEvent(new Event("input"));
+      copyright.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+    expect(doc.text).toContain("1 COPR Domorium");
+
+    container.querySelector<HTMLElement>('[data-focus-key="t:GEDC[0]"]')?.click();
+    const version = container.querySelector<HTMLTextAreaElement>('[data-focus-key="t:GEDC[0].VERS[0]:value"]');
+    version?.focus();
+    if (version) {
+      version.value = "7.1";
+      version.dispatchEvent(new Event("input"));
+      version.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+    expect(doc.text).toContain("2 VERS 7.0");
+    expect(texts(".gedcom-tree-message.is-error")).toEqual(["The standard does not allow this value here."]);
+
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")].find((link) => link.textContent === "Domorium")?.click();
+    expect(calls.select).toHaveBeenCalledWith("@U1@");
+  });
+
+  it("offers the vault and the device on a medium's file, and writes the file chosen from the vault with its format", () => {
+    const chooseField = vi.fn<NonNullable<CardView["chooseField"]>>();
+    view = {
+      ...view,
+      chooseField,
+      chooseVaultFile: (choices, chosen) => {
+        chosen(choices.find((one) => one.path === "Media/b.png")?.path ?? "");
+      },
+      chooseDeviceFile: vi.fn(),
+    };
+    tab = writing(["0 @O1@ OBJE", "1 FILE Media/a.svg", "2 FORM image/svg+xml"]);
+    tab.vaultFiles = () => ["Media/a.svg", "Media/b.png"];
+    tab.vaultHas = () => false;
+    tab.copyIntoVault = () => Promise.resolve();
+    state.record = "@O1@";
+    draw();
+    container.querySelector<HTMLElement>('[data-focus-key="t:FILE[0]:file"]')?.click();
+    const [, choices] = chooseField.mock.calls[0] ?? [];
+
+    expect(choices?.map((one) => one.title)).toEqual(["Choose from the vault", "Upload from device"]);
+    choices?.[0]?.choose();
+    expect(doc.text).toContain("1 FILE Media/b.png\n2 FORM image/png");
+    expect(doc.writes).toBe(1);
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:FILE[0]:file");
+  });
+
+  it("edits a submitter, a repository and a note", () => {
+    tab = writing(["0 @U1@ SUBM", "1 NAME Domorium", "1 WWW https://domorium.com/", "0 @R2@ REPO", "1 NAME Archive", "0 @N1@ SNOTE Text"]);
+    for (const record of ["@U1@", "@R2@", "@N1@"]) {
+      state.record = record;
+      draw();
+
+      expect(container.querySelector(".gedcom-tree-note"), record).toBeNull();
+      expect(container.querySelector(".gedcom-tree-add"), record).not.toBeNull();
+    }
+    state.record = "@U1@";
+    draw();
+    const area = container.querySelector<HTMLTextAreaElement>('[data-focus-key="t:WWW[0]:value"]');
+    area?.focus();
+    if (area) {
+      area.value = "https://example.org/";
+      area.dispatchEvent(new Event("input"));
+      area.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", cancelable: true }));
+    }
+
+    expect(doc.text).toContain("0 @U1@ SUBM\n1 NAME Domorium\n1 WWW https://example.org/");
+  });
+
+  const gripOf = (label: string): HTMLElement | null =>
+    [...container.querySelectorAll<HTMLElement>(".gedcom-tree-row")]
+      .find((row) => row.querySelector(".gedcom-tree-label")?.textContent === label)
+      ?.querySelector<HTMLElement>(".gedcom-tree-grip") ?? null;
+  const pointer = (grip: HTMLElement | null, type: string, y: number): void => {
+    grip?.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, button: 0, pointerId: 1, isPrimary: true, clientY: y }));
+  };
+  const laidOut = (): void => {
+    const nodes = [...container.querySelectorAll<HTMLElement>(".gedcom-tree-node.is-root > .gedcom-tree-children > .gedcom-tree-node")];
+    nodes.forEach((node, at) => {
+      const box = { x: 0, y: at * 30, top: at * 30, bottom: at * 30 + 26, left: 0, right: 300, width: 300, height: 26, toJSON: () => ({}) } as DOMRect;
+      node.getBoundingClientRect = () => box;
+      const row = node.querySelector<HTMLElement>(":scope > .gedcom-tree-row");
+      if (row) {
+        row.getBoundingClientRect = () => box;
+      }
+    });
+  };
+
+  it("moves a line by its grip and brings the grip into view only after the scroll it kept", async () => {
+    tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    draw();
+    const kept = body();
+    if (kept) {
+      kept.scrollTop = 120;
+    }
+    const seen: { key: string | null; scrollTop: number | undefined }[] = [];
+    scrollIntoView.mockImplementation(function (this: HTMLElement) {
+      seen.push({ key: this.getAttribute("data-focus-key"), scrollTop: body()?.scrollTop });
+    });
+    laidOut();
+    const grip = gripOf("Sex");
+    pointer(grip, "pointerdown", 43);
+    pointer(grip, "pointermove", 4);
+    pointer(grip, "pointerup", 4);
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+    expect(doc.text).toContain("1 SEX F\n1 NAME Marie /Curie/");
+    expect(seen).toEqual([{ key: "t:SEX[0]:grip", scrollTop: 120 }]);
+    expect(document.activeElement?.closest(".gedcom-tree-grip")).toBeNull();
+    scrollIntoView.mockReset();
+  });
+
+  it("scrolls nothing into view for a redraw after the file changed", () => {
+    tab = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    draw();
+    container.querySelector<HTMLElement>('[data-focus-key="t:SEX[0]:value"]')?.focus();
+    doc.replace(doc.text.replace("1 SEX F", "1 SEX M"));
+    draw();
+
+    expect(scrollIntoView).not.toHaveBeenCalled();
+    expect(document.activeElement?.getAttribute("data-focus-key")).toBe("t:SEX[0]:value");
+  });
+
+  it("refuses a move described from a text that moved on since the card was drawn, and draws the card again", () => {
+    const written = writing(["0 @I1@ INDI", "1 NAME Marie /Curie/", "1 SEX F"]);
+    const asked = vi.fn((at: Parameters<NonNullable<CardTab["describeMoveAt"]>>[0], version: number) => describeMoveAt(doc.service(), at, version));
+    tab = { ...written, describeMoveAt: asked };
+    draw();
+    const drawn = doc.version;
+    const grip = gripOf("Sex");
+    doc.replace(doc.text.replace("1 NAME Marie /Curie/", "1 NAME Maria /Curie/"));
+    pointer(grip, "pointerdown", 43);
+    pointer(grip, "pointermove", 4);
+
+    expect(asked).toHaveBeenCalledWith(expect.anything(), drawn);
+    expect(asked.mock.results[0]?.value).toMatchObject({ ok: false, code: "stale-document" });
+    expect(doc.text).toContain("1 NAME Maria /Curie/\n1 SEX F");
+    expect(doc.writes).toBe(0);
+    expect(texts(".gedcom-tree-row .gedcom-tree-summary, .gedcom-tree-row .gedcom-field")).toEqual(expect.arrayContaining([expect.stringContaining("Maria")]));
+  });
+
+  it("offers no editing where the service has no dialect for the file, and says why", () => {
+    tab = writing(["0 @I1@ INDI", "1 SEX F", "1 NAME Marie /Curie/"], []);
+    draw();
+
+    expect(container.querySelector(".gedcom-tree-note")?.textContent).toContain("cannot be edited here");
+    expect(container.querySelectorAll(".gedcom-tree-add, .gedcom-tree-remove, .gedcom-tree-grip, textarea:not([readonly]), select")).toHaveLength(0);
   });
 });

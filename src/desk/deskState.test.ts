@@ -17,7 +17,9 @@ import {
   pageKind,
   readDeskState,
   RETIRED_VIEW_TYPES,
-  routeLink,
+  followsCursor,
+  HEADER_ID,
+  routeRecord,
   shownRange,
   toggleTarget,
 } from "./deskState";
@@ -88,11 +90,26 @@ describe("what a tab keeps of the desk", () => {
     });
   });
 
+  it("reads a selection saved as an event as the record it belongs to", () => {
+    expect(readDeskState({ selected: "event:@I1@:BIRT:0" })).toEqual({ selected: "@I1@" });
+    expect(readDeskState({ selected: "event:@F3@:MARR:12" })).toEqual({ selected: "@F3@" });
+  });
+
+  it("drops a place saved as the selection, which nothing selects any more", () => {
+    expect(readDeskState({ mode: "list", selected: "place:paris, france" })).toEqual({ mode: "list" });
+    expect(readDeskState({ selected: "@I1@" })).toEqual({ selected: "@I1@" });
+  });
+
   it("keeps a valid list state and drops a bad one", () => {
     expect(readDeskState({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } }))
       .toEqual({ mode: "list", list: { kind: "families", sort: { families: { by: "children", dir: "desc" } } } });
     expect(readDeskState({ list: "wide" })).toEqual({});
     expect(readDeskState({ list: { kind: "everyone" } })).toEqual({ list: {} });
+    expect(readDeskState({ mode: "list", list: { kind: "events", sort: { events: { by: "date", dir: "asc" } } } })).toEqual({ mode: "list", list: {} });
+  });
+
+  it("reads a list saved on the places as one with no kind, which opens on the people", () => {
+    expect(readDeskState({ mode: "list", list: { kind: "places", sort: { places: { by: "events", dir: "desc" } } } })).toEqual({ mode: "list", list: {} });
   });
 
   it("ignores what it does not recognise, so the setting decides", () => {
@@ -106,46 +123,85 @@ describe("which records have a card", () => {
     expect(pageKind(index(), "@O1@")).toBe("media");
   });
 
-  it("gives a person, a family and a source a card, and a note none", () => {
+  it("gives a person, a family and a source a card of their own", () => {
     expect(pageKind(index(), "@I1@")).toBe("person");
     expect(pageKind(index(), "@F1@")).toBe("family");
     expect(pageKind(index(), "@S1@")).toBe("source");
-    expect(pageKind(index(), "@N1@")).toBeNull();
   });
 
-  it("gives a place the file names a card, and one it does not name none", () => {
-    const named = index(["0 HEAD", "0 @I1@ INDI", "1 BIRT", "2 PLAC Paris, France", "0 TRLR"].join("\n"));
+  it("gives a note, a repository, a submitter, a record of the file's own and the header a record's card, and the trailer none", () => {
+    const curie = curieIndex();
+    const own = indexOf("0 HEAD\n1 GEDC\n2 VERS 5.5.1\n0 @SUB1@ SUBN\n0 @X1@ _PLAN\n0 TRLR");
 
-    expect(pageKind(named, "place:paris, france")).toBe("place");
-    expect(pageKind(index(), "place:atlantis")).toBeNull();
+    expect(["@N1@", "@R2@", "@U1@", HEADER_ID].map((xref) => pageKind(curie, xref))).toEqual(["record", "record", "record", "record"]);
+    expect(["@SUB1@", "@X1@"].map((xref) => pageKind(own, xref))).toEqual(["record", "record"]);
+    expect(pageKind(curie, "@X9@")).toBeNull();
   });
 
-  it("gives an event the file names a card, and one it does not name none", () => {
+  it("lets the cursor select a person, a family, a source and a multimedia record, and nothing else", () => {
     const curie = curieIndex();
 
-    expect(pageKind(curie, "event:@I1@:BIRT:0")).toBe("event");
-    expect(pageKind(curie, "event:@F3@:MARR:0")).toBe("event");
-    expect(pageKind(curie, "event:@I1@:BIRT:999")).toBeNull();
+    expect(["@I1@", "@F3@", "@S1@", "@O5@"].map((xref) => followsCursor(curie, xref))).toEqual([true, true, true, true]);
+    expect(["@N1@", "@R1@", "@U1@", HEADER_ID, "place:paris, france", "@X9@"].map((xref) => followsCursor(curie, xref))).toEqual([false, false, false, false, false, false]);
+  });
+
+  it("gives a place no card, though the file names it", () => {
+    const named = index(["0 HEAD", "0 @I1@ INDI", "1 BIRT", "2 PLAC Paris, France", "0 TRLR"].join("\n"));
+
+    expect(pageKind(named, "place:paris, france")).toBeNull();
+  });
+
+  it("gives an event id no card, which no longer has one", () => {
+    const curie = curieIndex();
+
+    expect(pageKind(curie, "event:@I1@:BIRT:0")).toBeNull();
+    expect(pageKind(curie, "event:@F3@:MARR:0")).toBeNull();
   });
 });
 
 describe("where a link into a record lands", () => {
-  const declared = (xref: string) => ["@I1@", "@I2@", "@F1@", "@N1@", "@S1@"].includes(xref);
+  const curie = curieIndex();
+  const starts = new Map([
+    ["@I1@", { line: 20, character: 0 }],
+    ["@N1@", { line: 300, character: 0 }],
+    ["@R1@", { line: 280, character: 0 }],
+    ["@U1@", { line: 10, character: 0 }],
+  ]);
+  const declared = (xref: string) => starts.get(xref);
+  const head = { tag: "HEAD", start: { line: 0, character: 0 } };
+  const trailer = { tag: "TRLR", start: { line: 340, character: 0 } };
 
-  it("opens a person's page", () => {
-    expect(routeLink(index(), "@I1@", declared)).toEqual({ to: "page", xref: "@I1@" });
+  it("selects a person, a note, a repository and a submitter from a link, whatever the mode", () => {
+    expect(["@I1@", "@N1@", "@R1@", "@U1@"].map((xref) => routeRecord(curie, xref, declared, true))).toEqual([
+      { to: "select", id: "@I1@" },
+      { to: "select", id: "@N1@" },
+      { to: "select", id: "@R1@" },
+      { to: "select", id: "@U1@" },
+    ]);
   });
 
-  it("opens a family's page", () => {
-    expect(routeLink(index(), "@F1@", declared)).toEqual({ to: "page", xref: "@F1@" });
-  });
-
-  it("sends a shared note to the source", () => {
-    expect(routeLink(index(), "@N1@", declared)).toEqual({ to: "source", xref: "@N1@" });
+  it("selects the header from Go to record, and sends the trailer to the source at its start", () => {
+    expect(routeRecord(curie, head, declared, true)).toEqual({ to: "select", id: HEADER_ID });
+    expect(routeRecord(curie, trailer, declared, true)).toEqual({ to: "source", at: trailer.start });
+    expect(routeRecord(curie, { tag: "SNOTE", identifier: "@N1@", start: { line: 300, character: 0 } }, declared, true)).toEqual({ to: "select", id: "@N1@" });
   });
 
   it("goes nowhere for a record the file does not hold", () => {
-    expect(routeLink(index(), "@I9@", declared)).toEqual({ to: "nowhere" });
+    expect(routeRecord(curie, "@X9@", declared, true)).toEqual({ to: "nowhere" });
+  });
+
+  it("sends every link and entry to the source while the interface is off", () => {
+    expect(["@I1@", "@N1@", "@R1@", "@U1@"].map((xref) => routeRecord(curie, xref, declared, false))).toEqual(
+      ["@I1@", "@N1@", "@R1@", "@U1@"].map((xref) => ({ to: "source", at: starts.get(xref) })),
+    );
+    expect(routeRecord(curie, head, declared, false)).toEqual({ to: "source", at: head.start });
+    expect(routeRecord(curie, "@X9@", declared, false)).toEqual({ to: "nowhere" });
+  });
+
+  it("sends a record that has no card to the source at its start", () => {
+    const own = indexOf("0 HEAD\n1 GEDC\n2 VERS 7.0\n0 TRLR");
+
+    expect(routeRecord(own, "@I1@", declared, true)).toEqual({ to: "source", at: starts.get("@I1@") });
   });
 });
 
@@ -153,23 +209,21 @@ describe("where the source opens when the tab switches to it", () => {
   const curie = curieIndex();
   const marie = curie.person("@I1@");
 
-  it("opens on the selected fact", () => {
-    expect(shownRange(curie, "@I1@", "p:0")).toEqual(marie?.events[0]?.range);
+  it("opens on the whole record", () => {
+    expect(shownRange(curie, "@I1@")).toEqual(marie?.range);
+    expect(shownRange(curie, "@F3@")).toEqual(curie.family("@F3@")?.range);
   });
 
-  it("opens on the whole record when no fact is selected", () => {
-    expect(shownRange(curie, "@I1@", null)).toEqual(marie?.range);
+  it("opens on a source and a multimedia record too, and on nothing for an event id", () => {
+    expect(shownRange(curie, "@S1@")).toEqual(curie.source("@S1@")?.range);
+    expect(shownRange(curie, "@O5@")).toEqual(curie.media("@O5@")?.range);
+    expect(shownRange(curie, "event:@I1@:BIRT:0")).toBeNull();
   });
 
-  it("opens on a family's fact, a source and a multimedia record too", () => {
-    expect(shownRange(curie, "@F3@", "f:0")).toEqual(curie.family("@F3@")?.events[0]?.range);
-    expect(shownRange(curie, "@S1@", null)).toEqual(curie.source("@S1@")?.range);
-    expect(shownRange(curie, "@O5@", null)).toEqual(curie.media("@O5@")?.range);
-  });
-
-  it("opens on the lines of an event", () => {
-    expect(shownRange(curie, "event:@I1@:BIRT:0", null)).toEqual(marie?.events[0]?.range);
-    expect(shownRange(curie, "event:@F3@:MARR:0", null)).toEqual(curie.family("@F3@")?.events[0]?.range);
+  it("opens on a note, a repository, a submitter and the header", () => {
+    expect(["@N2@", "@R2@", "@U1@"].map((xref) => shownRange(curie, xref))).toEqual(["@N2@", "@R2@", "@U1@"].map((xref) => curie.record(xref)?.range));
+    expect(shownRange(curie, HEADER_ID)?.start).toEqual({ line: 0, character: 0 });
+    expect(shownRange(curie, "place:paris, france")).toBeNull();
   });
 
   it("leaves a cursor already inside the lines where it is", () => {

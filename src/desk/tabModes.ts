@@ -2,13 +2,13 @@ import type { GenealogyIndex } from "../genealogy";
 import {
   effectiveMode,
   isViewMode,
+  followsCursor,
   pageKind,
   toggleTarget,
   type DeskMode,
   type DeskState,
   type Origin,
 } from "./deskState";
-import { eventOwner } from "./eventRows";
 
 export type { Origin } from "./deskState";
 
@@ -30,7 +30,6 @@ export interface OriginRules {
   cursorToRecord: boolean;
   editorFocus: boolean;
   revealsView: boolean;
-  addsStep: "visit" | "follow" | "none";
   placesCard: boolean;
   opensDrawer: boolean;
 }
@@ -40,7 +39,6 @@ export function originRules(origin: Origin, mobile: boolean): OriginRules {
     cursorToRecord: origin === "card" || origin === "link",
     editorFocus: origin === "link",
     revealsView: origin !== "view" && origin !== "cursor",
-    addsStep: origin === "cursor" ? "follow" : origin === "history" ? "none" : "visit",
     placesCard: origin !== "cursor",
     opensDrawer: mobile && origin === "view",
   };
@@ -80,11 +78,9 @@ export class TabModes {
     let selectionChanged = false;
     if (before === "source") {
       const atCursor = leaving.cursorRecord;
-      if (atCursor && pageKind(leaving.index(), atCursor)) {
-        if (atCursor !== eventOwner(this.selected)) {
-          selectionChanged = atCursor !== this.selected;
-          this.selected = atCursor;
-        }
+      if (atCursor && followsCursor(leaving.index(), atCursor)) {
+        selectionChanged = atCursor !== this.selected;
+        this.selected = atCursor;
       }
     } else {
       this.lastMode = before;

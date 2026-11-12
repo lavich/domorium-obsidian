@@ -345,6 +345,19 @@ describe("what a command offers in List", () => {
     expect(command("copy-gedcom-record-link").isAvailable(view({ ...list, recordAtCursor: () => undefined }))).toBe(false);
   });
 
+  it("offers copying a link with a note selected, and none with the header selected", async () => {
+    const note: GedcomRecord = { tag: "SNOTE", identifier: "@N1@", label: "The only person", start: { line: 300, character: 0 } };
+    const header: GedcomRecord = { tag: "HEAD", start: { line: 0, character: 0 } };
+    const { host: commandHost, copy, notify } = host();
+    const withNote = view({ ...list, recordAtCursor: () => note });
+
+    expect(command("copy-gedcom-record-link").isAvailable(withNote)).toBe(true);
+    command("copy-gedcom-record-link").run(commandHost, withNote);
+    await vi.waitFor(() => expect(notify).toHaveBeenCalled());
+    expect(copy).toHaveBeenCalledWith("obsidian://domorium?vault=Family&file=tree.ged&xref=%40N1%40");
+    expect(command("copy-gedcom-record-link").isAvailable(view({ ...list, recordAtCursor: () => header }))).toBe(false);
+  });
+
   it("toggles between the list and Source through the view", () => {
     const toggleMode = vi.fn();
     command("toggle-gedcom-mode").run(host().host, view({ ...list, toggleMode }));

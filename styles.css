@@ -287,40 +287,15 @@
   overflow: hidden;
 }
 
+.view-content.gedcom-record-view {
+  padding-top: 0;
+}
+
 .gedcom-card {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-width: 0;
-}
-
-.gedcom-card-head {
-  flex: none;
-  display: flex;
-  gap: var(--size-2-2);
-  padding: var(--size-2-3) var(--size-4-2);
-  border-bottom: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-}
-
-.gedcom-card-head {
-  align-items: center;
-}
-
-.gedcom-card-head-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin-inline-start: var(--size-2-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-button.gedcom-card-nav:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 .gedcom-card-body {
@@ -331,11 +306,10 @@ button.gedcom-card-nav:disabled {
   overflow-y: auto;
   overflow-wrap: anywhere;
   container: gedcom-card / inline-size;
-  padding: var(--size-4-2) var(--size-4-4) var(--size-4-16);
 }
 
 .is-mobile .gedcom-card-body {
-  padding-bottom: calc(var(--size-4-16) + var(--navbar-height, 0px));
+  padding-bottom: var(--navbar-height, 0px);
 }
 
 .gedcom-card-body:focus {
@@ -347,17 +321,6 @@ button.gedcom-card-nav:disabled {
   text-align: center;
 }
 
-.gedcom-card-evidence > h2 {
-  scroll-margin-top: var(--size-4-2);
-}
-
-.gedcom-desk-subsection {
-  font-size: var(--font-ui-small);
-  font-weight: var(--font-semibold);
-  color: var(--text-muted);
-  margin: var(--size-4-4) 0 var(--size-2-3);
-}
-
 .gedcom-visually-hidden {
   position: absolute;
   width: 1px;
@@ -365,38 +328,6 @@ button.gedcom-card-nav:disabled {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.gedcom-desk-heading {
-  margin-bottom: var(--size-4-4);
-}
-
-.gedcom-desk-title {
-  font-size: 1.6em;
-  line-height: 1.2;
-  margin: 0 0 var(--size-2-3);
-  overflow-wrap: anywhere;
-}
-
-.gedcom-desk-subtitle {
-  color: var(--text-muted);
-  margin-bottom: var(--size-2-3);
-}
-
-.gedcom-desk-section {
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-semibold);
-  color: var(--text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin: var(--size-4-4) 0 var(--size-2-2);
-}
-
-h2.gedcom-desk-section[data-count]::after,
-h3.gedcom-desk-subsection[data-count]::after {
-  content: " " attr(data-count);
-  font-weight: normal;
-  letter-spacing: 0;
 }
 
 .gedcom-detail {
@@ -437,55 +368,6 @@ h3.gedcom-desk-subsection[data-count]::after {
 
 .gedcom-detail .gedcom-detail .gedcom-detail-value {
   padding: 0 0 var(--size-2-1);
-}
-
-.gedcom-related {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--size-2-2) var(--size-4-2);
-}
-
-.gedcom-related > .gedcom-detail {
-  flex-basis: 100%;
-}
-
-.gedcom-name {
-  margin-bottom: var(--size-4-2);
-}
-
-.gedcom-name-translation-label {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-name-translation {
-  margin-top: var(--size-2-3);
-  margin-inline-start: var(--size-4-4);
-}
-
-.gedcom-related-kind,
-.gedcom-related-role,
-.gedcom-related-phrase {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-note + .gedcom-note {
-  margin-top: var(--size-4-3);
-  padding-top: var(--size-4-3);
-  border-top: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-related + .gedcom-related {
-  margin-top: var(--size-2-3);
-}
-
-.gedcom-desk-kin-child {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
 }
 
 .is-mobile button.gedcom-detail-more {
@@ -559,116 +441,6 @@ button.gedcom-desk-link:hover {
   text-decoration: underline;
 }
 
-.gedcom-desk-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-4-3);
-  margin-top: var(--size-2-3);
-}
-
-.gedcom-desk-facts {
-  display: flex;
-  flex-direction: column;
-}
-
-.gedcom-desk-fact {
-  display: grid;
-  gap: 0 var(--size-4-3);
-  align-items: baseline;
-  box-sizing: border-box;
-  margin-inline: calc(-1 * var(--size-4-2));
-  padding: var(--size-2-1) var(--size-4-2);
-  border-radius: var(--radius-s);
-  text-align: start;
-  color: var(--text-normal);
-  cursor: pointer;
-}
-
-.gedcom-desk-fact.is-event {
-  grid-template-columns: minmax(70px, 96px) 1fr;
-}
-
-.gedcom-desk-fact.is-detail {
-  grid-template-columns: minmax(70px, 130px) 1fr;
-}
-
-.gedcom-desk-fact.is-inert {
-  cursor: default;
-}
-
-.gedcom-desk-fact:not(.is-inert):hover {
-  background: var(--background-modifier-hover);
-}
-
-.gedcom-desk-fact-date {
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
-}
-
-.gedcom-desk-fact-date.is-empty {
-  color: var(--text-faint);
-}
-
-.gedcom-desk-fact-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--size-2-3);
-}
-
-.gedcom-desk-fact-main {
-  min-width: 0;
-}
-
-.gedcom-desk-fact.is-detail .gedcom-desk-fact-main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--size-2-3);
-}
-
-button.gedcom-desk-fact-name {
-  height: auto;
-  min-height: 0;
-  padding: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font: inherit;
-  color: var(--text-normal);
-  cursor: pointer;
-}
-
-.gedcom-desk-fact.is-detail button.gedcom-desk-fact-name,
-button.gedcom-desk-fact-name:disabled {
-  color: var(--text-muted);
-}
-
-button.gedcom-desk-fact-name:disabled {
-  cursor: default;
-}
-
-.gedcom-desk-fact-value {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.gedcom-desk-fact-value .gedcom-desk-link {
-  text-align: start;
-}
-
-.gedcom-desk-fact-value.is-empty {
-  color: var(--text-muted);
-}
-
-.gedcom-desk-fact-where {
-  flex-basis: 100%;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  overflow-wrap: anywhere;
-}
-
 .gedcom-desk-source {
   flex: none;
   align-self: center;
@@ -676,33 +448,6 @@ button.gedcom-desk-fact-name:disabled {
   height: 6px;
   border-radius: 50%;
   background: var(--text-faint);
-}
-
-.gedcom-desk-union-events {
-  margin-top: var(--size-2-1);
-}
-
-
-.gedcom-desk-family {
-  display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: var(--size-2-1) var(--size-4-3);
-}
-
-.gedcom-desk-kin-label {
-  color: var(--text-muted);
-  padding: var(--size-2-1) 0;
-}
-
-.gedcom-desk-kin-label:not(:first-child) {
-  margin-top: var(--size-2-3);
-}
-
-.gedcom-desk-kin {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-width: 0;
 }
 
 button.gedcom-desk-person {
@@ -726,12 +471,6 @@ button.gedcom-desk-person:hover {
   background: var(--background-modifier-hover);
 }
 
-.gedcom-desk-person-years,
-.gedcom-desk-person-note {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
 .gedcom-desk-none {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
@@ -748,141 +487,15 @@ button.gedcom-desk-person:hover {
   padding: var(--size-2-3) 0;
 }
 
-.gedcom-desk-repository {
-  line-height: 1.55;
-}
-
-.gedcom-desk-repository div + div {
-  color: var(--text-muted);
-}
-
-.gedcom-desk-citer {
-  padding: var(--size-4-2) 0;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-citer-where {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-@container gedcom-card (max-width: 560px) {
-  .gedcom-desk-family {
-    grid-template-columns: 1fr;
-  }
-
-  .gedcom-desk-kin-label {
-    padding-bottom: 0;
-    font-size: var(--font-ui-smaller);
-  }
-}
-
-.gedcom-desk-event-owner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--size-2-3);
-  margin-bottom: var(--size-2-3);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-event-owner .gedcom-desk-link {
-  text-align: start;
-}
-
-.gedcom-desk-event-kind {
-  color: var(--text-muted);
-}
-
-h2.gedcom-desk-fold-heading {
-  margin: var(--size-4-4) 0 var(--size-2-2);
-}
-
-button.gedcom-desk-fold-button {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--size-2-3);
-  width: 100%;
-  height: auto;
-  padding: var(--size-2-2) 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  text-align: start;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
-button.gedcom-desk-fold-button::before {
-  content: "";
-  flex: none;
-  width: 0;
-  height: 0;
-  border-block: 4px solid transparent;
-  border-inline-start: 6px solid currentcolor;
-  transition: transform 0.12s ease;
-}
-
-button.gedcom-desk-fold-button[aria-expanded="true"]::before {
-  transform: rotate(90deg);
-}
-
-button.gedcom-desk-fold-button::after {
-  content: attr(data-count);
-  white-space: nowrap;
-  font-weight: normal;
-  letter-spacing: 0;
-}
-
-.gedcom-desk-fold-body[hidden] {
-  display: none;
-}
-
 button.gedcom-desk-link:focus-visible,
-button.gedcom-desk-person:focus-visible,
-button.gedcom-desk-cite:focus-visible,
-button.gedcom-desk-fact-name:focus-visible,
-button.gedcom-desk-moment-what:focus-visible,
-button.gedcom-desk-note-line:focus-visible,
-button.gedcom-desk-fold-button:focus-visible,
-button.gedcom-desk-media-stage:focus-visible,
-button.gedcom-desk-tile-face:focus-visible,
-button.gedcom-card-nav:focus-visible {
+button.gedcom-desk-person:focus-visible {
   outline: 2px solid var(--interactive-accent);
   outline-offset: 1px;
 }
 
 @media (pointer: coarse) {
-  .gedcom-desk-event-owner {
+  button.gedcom-desk-person {
     min-height: 44px;
-    align-items: center;
-  }
-
-  button.gedcom-card-nav {
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  button.gedcom-desk-person,
-  button.gedcom-desk-cite,
-  button.gedcom-desk-note-line,
-  button.gedcom-desk-moment-what,
-  button.gedcom-desk-fold-button {
-    min-height: 44px;
-  }
-
-  .gedcom-desk-fact {
-    position: relative;
-  }
-
-  button.gedcom-desk-fact-name::after {
-    content: "";
-    position: absolute;
-    inset: 0;
   }
 
   button.gedcom-desk-link {
@@ -897,44 +510,8 @@ button.gedcom-card-nav:focus-visible {
   }
 }
 
-.is-mobile .gedcom-desk-event-owner {
+.is-mobile button.gedcom-desk-person {
   min-height: 44px;
-  align-items: center;
-}
-
-.is-mobile button.gedcom-card-nav {
-  min-width: 44px;
-  min-height: 44px;
-}
-
-.is-mobile button.gedcom-desk-person,
-.is-mobile button.gedcom-desk-cite,
-.is-mobile button.gedcom-desk-note-line,
-.is-mobile button.gedcom-desk-moment-what,
-.is-mobile button.gedcom-desk-fold-button {
-  min-height: 44px;
-}
-
-.is-mobile .gedcom-desk-fact {
-  position: relative;
-  min-height: 44px;
-  align-items: center;
-}
-
-.is-mobile .gedcom-desk-fact-head,
-.is-mobile .gedcom-desk-fact-value,
-.is-mobile .gedcom-desk-fact-where {
-  padding-block: 12px;
-}
-
-.is-mobile .gedcom-desk-fact .gedcom-desk-link::after {
-  inset: -12px 0;
-}
-
-.is-mobile button.gedcom-desk-fact-name::after {
-  content: "";
-  position: absolute;
-  inset: 0;
 }
 
 .is-mobile button.gedcom-desk-link {
@@ -981,6 +558,7 @@ button.gedcom-card-nav:focus-visible {
 }
 
 .gedcom-list-bar {
+  position: relative;
   flex: none;
   display: flex;
   flex-wrap: wrap;
@@ -1026,6 +604,45 @@ button.gedcom-list-seg-button {
   }
 }
 
+.gedcom-list-bar > .gedcom-list-kinds-probe {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.gedcom-list-kinds-probe > .gedcom-list-seg {
+  width: max-content;
+  max-width: none;
+}
+
+.gedcom-list-kinds-probe button.gedcom-list-seg-button {
+  flex: none;
+}
+
+.gedcom-list-kind-select {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  height: var(--gedcom-list-control);
+  border-radius: var(--input-radius, var(--radius-s));
+}
+
+.gedcom-list.is-touch .gedcom-list-kind-select,
+.gedcom-list.is-touch .gedcom-list-sort-select {
+  height: max(var(--gedcom-list-control), 44px);
+}
+
+.gedcom-list.is-touch button.gedcom-list-direction {
+  min-width: 44px;
+  height: max(var(--gedcom-list-control), 44px);
+}
+
 button.gedcom-list-seg-button.is-active {
   background: var(--background-primary);
   color: var(--text-normal);
@@ -1067,18 +684,19 @@ button.gedcom-list-seg-button.is-active {
 }
 
 .gedcom-list-sort-select {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
-  height: max(var(--gedcom-list-control), 44px);
+  height: var(--gedcom-list-control);
   border-radius: var(--input-radius, var(--radius-s));
 }
 
 button.gedcom-list-direction {
   flex: none;
   box-sizing: border-box;
-  min-width: 44px;
-  height: max(var(--gedcom-list-control), 44px);
+  min-width: var(--gedcom-list-control);
+  height: var(--gedcom-list-control);
   border-radius: var(--input-radius, var(--radius-s));
   background: none;
   box-shadow: none;
@@ -1130,14 +748,24 @@ button.gedcom-list-direction:disabled {
   grid-template-columns: minmax(0, 3.2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 5.5em);
 }
 
-.gedcom-list-head.is-places,
-.gedcom-list-row.is-places {
-  grid-template-columns: minmax(0, 3.4fr) minmax(0, 5.5em) minmax(0, 1.4fr);
+.gedcom-list-head.is-media,
+.gedcom-list-row.is-media {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 7em);
 }
 
-.gedcom-list-head.is-events,
-.gedcom-list-row.is-events {
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2.4fr) minmax(7.5em, 1.3fr) minmax(0, 2.4fr);
+.gedcom-list-head.is-notes,
+.gedcom-list-row.is-notes {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 7em);
+}
+
+.gedcom-list-head.is-repositories,
+.gedcom-list-row.is-repositories {
+  grid-template-columns: minmax(0, 3fr) minmax(0, 3fr) minmax(0, 5.5em);
+}
+
+.gedcom-list-head.is-other,
+.gedcom-list-row.is-other {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 3fr) minmax(0, 7em);
 }
 
 .gedcom-list-headcell,
@@ -1289,12 +917,47 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
   grid-area: c4;
 }
 
-.gedcom-list.is-compact .gedcom-list-row.is-events .gedcom-list-cell:nth-child(2) {
+.gedcom-list.is-compact .gedcom-list-row.is-media .gedcom-list-cell:nth-child(2) {
   grid-area: c3;
 }
 
-.gedcom-list.is-compact .gedcom-list-row.is-events .gedcom-list-cell:nth-child(3) {
+.gedcom-list.is-compact .gedcom-list-row.is-media .gedcom-list-cell:nth-child(3) {
+  grid-area: c4;
+  text-align: end;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-media .gedcom-list-cell:nth-child(4),
+.gedcom-list.is-compact .gedcom-list-row.is-notes .gedcom-list-cell:nth-child(2),
+.gedcom-list.is-compact .gedcom-list-row.is-repositories .gedcom-list-cell:nth-child(3),
+.gedcom-list.is-compact .gedcom-list-row.is-other .gedcom-list-cell:nth-child(3) {
   grid-area: c2;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-notes .gedcom-list-cell:nth-child(1) {
+  grid-area: 1 / 1 / 3 / 2;
+  display: -webkit-box;
+  align-self: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-repositories .gedcom-list-cell:nth-child(2) {
+  grid-area: 2 / 1 / 3 / 3;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-other .gedcom-list-cell:nth-child(2) {
+  grid-area: c1;
+  color: inherit;
+  font-size: inherit;
+}
+
+.gedcom-list.is-compact .gedcom-list-row.is-other .gedcom-list-cell:nth-child(1) {
+  grid-area: 2 / 1 / 3 / 3;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
 }
 
 .gedcom-list.is-compact .gedcom-list-count {
@@ -1303,79 +966,6 @@ body:not(.is-phone) .workspace-leaf.mod-active .gedcom-list-scroll:focus-visible
 
 .gedcom-list.is-touch button.gedcom-list-sort {
   min-height: 44px;
-}
-
-.gedcom-desk-notice {
-  padding: var(--size-4-2) var(--size-4-3);
-  border-radius: var(--radius-m);
-  background: rgba(var(--color-orange-rgb), 0.12);
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  line-height: 1.45;
-}
-
-.gedcom-desk-notice-title {
-  color: var(--text-normal);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-desk-cite,
-button.gedcom-desk-cite {
-  display: block;
-  width: 100%;
-  height: auto;
-  padding: var(--size-4-2);
-  margin: 0 calc(-1 * var(--size-2-2));
-  background: none;
-  border: 0;
-  border-radius: var(--radius-s);
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font-weight: normal;
-}
-
-button.gedcom-desk-cite:hover {
-  background: var(--background-modifier-hover);
-}
-
-.gedcom-desk-cite-title {
-  color: var(--text-accent);
-  font-weight: var(--font-medium);
-}
-
-.gedcom-desk-cite-page,
-.gedcom-desk-cite-inline {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-cite-meta {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.gedcom-desk-who {
-  display: flex;
-  gap: var(--size-4-4);
-  align-items: flex-start;
-}
-
-.gedcom-desk-who .gedcom-desk-heading {
-  flex: 1;
-  min-width: 0;
-}
-
-.gedcom-desk-portrait {
-  flex: none;
-  width: 76px;
-  height: 95px;
-  border-radius: var(--radius-s);
-  overflow: hidden;
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-  display: grid;
-  place-items: center;
 }
 
 .gedcom-desk-picture {
@@ -1396,243 +986,6 @@ button.gedcom-desk-cite:hover {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.gedcom-desk-portrait .gedcom-desk-picture:not(.is-cropped) {
-  width: 100%;
-  height: 100%;
-}
-
-.gedcom-desk-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: var(--size-4-3);
-}
-
-.gedcom-desk-tile {
-  min-width: 0;
-}
-
-button.gedcom-desk-tile-face {
-  width: 100%;
-  height: 132px;
-  padding: var(--size-2-3);
-  display: grid;
-  place-items: center;
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  box-shadow: none;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-button.gedcom-desk-tile-face:disabled {
-  cursor: default;
-}
-
-.gedcom-desk-tile-face .gedcom-desk-picture:not(.is-cropped) {
-  width: 120px;
-  height: 120px;
-}
-
-.gedcom-desk-tile-note {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  text-align: center;
-  white-space: normal;
-}
-
-.gedcom-desk-tile.is-missing .gedcom-desk-tile-note {
-  color: var(--text-warning);
-}
-
-.gedcom-desk-tile-caption {
-  margin-top: var(--size-2-3);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-  overflow-wrap: anywhere;
-}
-
-.gedcom-desk-tile .gedcom-desk-actions {
-  margin-top: var(--size-2-1);
-}
-
-.is-mobile .gedcom-desk-tile .gedcom-desk-actions {
-  gap: var(--size-4-5);
-}
-
-button.gedcom-desk-media-stage {
-  width: 100%;
-  height: auto;
-  border: 0;
-  box-shadow: none;
-}
-
-.gedcom-desk-media-stage {
-  display: flex;
-  justify-content: center;
-  padding: var(--size-4-3);
-  background: var(--background-secondary);
-  border-radius: var(--radius-m);
-  cursor: pointer;
-}
-
-.gedcom-desk-media-stage .gedcom-desk-picture:not(.is-cropped) img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 480px;
-  object-fit: contain;
-}
-
-.gedcom-desk-user {
-  display: flex;
-  gap: var(--size-4-3);
-  align-items: center;
-  padding: var(--size-4-2) 0;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-user .gedcom-desk-picture:not(.is-cropped) {
-  width: 72px;
-  height: 90px;
-}
-
-.gedcom-desk-user .gedcom-desk-picture:not(.is-cropped) img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.gedcom-desk-user .gedcom-desk-picture {
-  flex: none;
-  border-radius: var(--radius-s);
-  border: 1px solid var(--background-modifier-border);
-}
-
-.gedcom-desk-user-caption {
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-.gedcom-desk-note {
-  padding: var(--size-2-3) 0;
-}
-
-.gedcom-desk-note-name {
-  font-weight: var(--font-medium);
-}
-
-button.gedcom-desk-note-line {
-  display: block;
-  width: 100%;
-  height: auto;
-  padding: var(--size-2-2) var(--size-2-3);
-  margin: 0 calc(-1 * var(--size-2-3));
-  background: none;
-  border: 0;
-  border-radius: var(--radius-s);
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font-weight: normal;
-  font-size: var(--font-ui-small);
-  line-height: 1.45;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-button.gedcom-desk-note-line:hover {
-  background: var(--background-modifier-hover);
-}
-
-.gedcom-desk-note-line mark {
-  background: var(--background-modifier-active-hover);
-  color: var(--text-accent);
-  border-radius: 3px;
-  padding: 0 2px;
-}
-
-.gedcom-desk-timeline {
-  margin-top: var(--size-4-3);
-}
-
-.gedcom-desk-moment {
-  display: grid;
-  grid-template-columns: 52px 22px 1fr;
-  align-items: start;
-  padding: var(--size-2-3) 0;
-}
-
-.gedcom-desk-moment-year {
-  text-align: end;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.gedcom-desk-moment-dot {
-  position: relative;
-  align-self: stretch;
-}
-
-.gedcom-desk-moment-dot::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 10px;
-  top: calc(-1 * var(--size-2-3));
-  bottom: calc(-1 * var(--size-2-3));
-  width: 1.5px;
-  background: var(--background-modifier-border);
-}
-
-.gedcom-desk-moment-dot::after {
-  content: "";
-  position: absolute;
-  inset-inline-start: 6px;
-  top: 5px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--background-primary);
-  border: 1.5px solid var(--text-faint);
-}
-
-.gedcom-desk-moment.is-own .gedcom-desk-moment-dot::after {
-  background: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-}
-
-button.gedcom-desk-moment-what {
-  height: auto;
-  padding: 0;
-  background: none;
-  border: 0;
-  box-shadow: none;
-  text-align: start;
-  white-space: normal;
-  font-weight: normal;
-  color: var(--text-muted);
-  cursor: pointer;
-}
-
-button.gedcom-desk-moment-what:hover:not(:disabled) {
-  background: none;
-  color: var(--text-accent);
-}
-
-button.gedcom-desk-moment-what:disabled {
-  cursor: default;
-}
-
-.gedcom-desk-moment.is-own button.gedcom-desk-moment-what {
-  color: var(--text-normal);
-  font-weight: var(--font-semibold);
-}
-
-.gedcom-desk-moment-detail {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
 }
 
 /* ── The timeline of a file ──────────────────────────────────────────────
@@ -2074,7 +1427,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find button,
 .gedcom-ft-find button,
 
-
 .gedcom-list-find button {
   height: auto;
   padding: var(--size-2-2) var(--size-2-3);
@@ -2092,7 +1444,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find button:hover,
 .gedcom-ft-find button:hover,
 
-
 .gedcom-list-find button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
@@ -2103,7 +1454,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find .svg-icon,
 .gedcom-ft-find .svg-icon,
 
-
 .gedcom-list-find .svg-icon {
   width: 16px;
   height: 16px;
@@ -2111,7 +1461,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find,
 .gedcom-ft-find,
-
 
 .gedcom-list-find {
   top: var(--size-4-2);
@@ -2168,7 +1517,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find input.gedcom-fg-search,
 .gedcom-ft-find input.gedcom-ft-search,
 
-
 .gedcom-list-find input.gedcom-list-search {
   width: 0;
   min-width: 0;
@@ -2188,7 +1536,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find.is-open input.gedcom-fg-search,
 .gedcom-ft-find.is-open input.gedcom-ft-search,
 
-
 .gedcom-list-find.is-open input.gedcom-list-search {
   width: 220px;
   flex: 0 1 220px;
@@ -2200,7 +1547,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-search::-webkit-search-cancel-button,
 .gedcom-ft-search::-webkit-search-cancel-button,
-
 
 .gedcom-list-search::-webkit-search-cancel-button {
   display: none;
@@ -2240,14 +1586,12 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find,
 .gedcom-ft-find,
 
-
 .gedcom-list-find {
   max-width: calc(100% - 2 * var(--size-4-2));
 }
 
 .gedcom-fg-find-count,
 .gedcom-ft-find-count,
-
 
 .gedcom-list-find-count {
   flex: none;
@@ -2261,7 +1605,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find button:disabled,
 .gedcom-ft-find button:disabled,
-
 
 .gedcom-list-find button:disabled {
   opacity: 0.4;
@@ -2313,7 +1656,6 @@ button.gedcom-fg-pop-open {
 .is-phone .gedcom-fg-dock,
 .is-phone .gedcom-ft-dock,
 
-
 .is-phone .gedcom-list-find {
   --gedcom-find-size: 44px;
 }
@@ -2338,7 +1680,6 @@ button.gedcom-fg-pop-open {
 .gedcom-fg-find .gedcom-fg-find-toggle,
 .gedcom-ft-find .gedcom-ft-find-toggle,
 
-
 .gedcom-list-find .gedcom-list-find-toggle {
   overflow: hidden;
   transition:
@@ -2351,7 +1692,6 @@ button.gedcom-fg-pop-open {
 
 .gedcom-fg-find.is-open .gedcom-fg-find-toggle,
 .gedcom-ft-find.is-open .gedcom-ft-find-toggle,
-
 
 .gedcom-list-find.is-open .gedcom-list-find-toggle {
   width: 0;
@@ -2566,9 +1906,6 @@ button.gedcom-fg-pop-open {
   opacity: 0.25;
 }
 
-
-
-
 .gedcom-fg-person,
 .gedcom-fg-line,
 .gedcom-fg-family,
@@ -2606,10 +1943,629 @@ button.gedcom-fg-pop-open {
   }
 }
 
-.gedcom-desk-cite-inline {
-  white-space: pre-line;
+.gedcom-tree {
+  --gedcom-tree-action: var(--size-4-6);
+  position: relative;
 }
 
-.gedcom-desk-stated {
-  margin-top: var(--size-2-3);
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--size-4-2);
+  box-sizing: border-box;
+  min-width: 0;
+  margin-bottom: 0;
+  padding-block: var(--size-4-1);
+  padding-inline: var(--size-4-6) var(--size-4-2);
+  border-radius: var(--clickable-icon-radius);
+  font-size: var(--nav-item-size);
+  line-height: var(--line-height-tight);
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row::before,
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row::after {
+  content: none;
+}
+
+.gedcom-tree .gedcom-tree-node + .gedcom-tree-node {
+  margin-block-start: var(--size-2-2);
+}
+
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-node > .gedcom-tree-row:hover {
+  background: var(--nav-item-background-hover);
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row.mod-collapsible {
+  color: var(--nav-item-color);
+  font-weight: var(--nav-item-weight);
+  cursor: pointer;
+}
+
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-node > .gedcom-tree-row.mod-collapsible:hover {
+  color: var(--nav-item-color-hover);
+}
+
+.gedcom-tree .gedcom-tree-children {
+  margin-inline-start: var(--size-4-3);
+  padding-block-start: var(--size-2-2);
+  padding-inline-start: var(--size-2-2);
+  border-inline-start: var(--indentation-guide-width) solid var(--indentation-guide-color);
+}
+
+.gedcom-tree .gedcom-tree-children[hidden] {
+  display: none;
+}
+
+.gedcom-tree .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children .gedcom-tree-children {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  border-inline-start: 0;
+}
+
+.gedcom-tree .gedcom-tree-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-main {
+  display: flex;
+  flex: 1 1 9rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--size-2-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-main:empty {
+  display: none;
+}
+
+.gedcom-tree .gedcom-tree-main > .gedcom-field,
+.gedcom-tree .gedcom-tree-main > .gedcom-detail-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gedcom-tree .gedcom-tree-main > .gedcom-detail {
+  flex-basis: 100%;
+}
+
+.gedcom-tree .gedcom-tree-summary {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: pre;
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-join {
+  flex: none;
+}
+
+.gedcom-tree .gedcom-tree-part {
+  min-width: 0;
+}
+
+.gedcom-tree .gedcom-tree-part.is-value {
+  flex: 0 1 auto;
+  min-width: 4ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gedcom-tree .gedcom-tree-part.is-date {
+  flex: 0 0 auto;
+}
+
+.gedcom-tree .gedcom-tree-part.is-place {
+  flex: 0 1000 auto;
+  min-width: 5ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gedcom-tree .gedcom-tree-main .gedcom-desk-link {
+  text-align: start;
+}
+
+.gedcom-tree .gedcom-tree-main > .gedcom-desk-link {
+  max-width: 100%;
+  height: auto;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-chevron {
+  position: absolute;
+  top: var(--size-4-1);
+  inset-inline-start: calc(var(--size-4-6) - var(--size-4-5));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--size-4-4);
+  height: calc(1em * var(--line-height-tight));
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: var(--nav-collapse-icon-color);
+  opacity: 1;
+  cursor: pointer;
+}
+
+.gedcom-tree .gedcom-tree-chevron::before {
+  content: none;
+}
+
+.gedcom-tree .gedcom-tree-chevron:hover {
+  background: none;
+  color: var(--nav-item-color-hover);
+}
+
+.gedcom-tree .gedcom-tree-chevron:empty::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-inline-end: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.gedcom-tree .gedcom-tree-chevron.is-collapsed:empty::before {
+  transform: rotate(-45deg);
+}
+
+.gedcom-tree-control:focus-visible,
+.gedcom-tree .gedcom-tree-chevron:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+.gedcom-tree .gedcom-tree-choice {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  padding-block: 0;
+  font: inherit;
+}
+
+.gedcom-tree .gedcom-tree-pick {
+  --icon-size: var(--icon-xs);
+  align-self: center;
+  background: none;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: calc(1em * var(--line-height-tight));
+  height: calc(1em * var(--line-height-tight));
+  padding: 0;
+  opacity: 0;
+}
+
+.gedcom-tree .gedcom-tree-pick:hover {
+  background: none;
+  color: var(--nav-item-color-hover);
+}
+
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-row:hover .gedcom-tree-pick,
+.gedcom-tree .gedcom-tree-pick:focus-visible {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-tree-pick {
+    opacity: 1;
+  }
+}
+
+.gedcom-tree .gedcom-tree-actions {
+  display: flex;
+  flex: none;
+  gap: var(--size-2-1);
+  align-self: flex-start;
+  margin-inline-start: auto;
+  opacity: 0;
+}
+
+body:not(.is-grabbing) .gedcom-tree .gedcom-tree-row:hover > .gedcom-tree-actions,
+.gedcom-tree .gedcom-tree-actions:focus-within {
+  opacity: 1;
+}
+
+.gedcom-tree .gedcom-tree-add,
+.gedcom-tree .gedcom-tree-remove,
+.gedcom-tree .gedcom-tree-grip {
+  --icon-size: var(--icon-s);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: auto;
+  height: min(calc(100% - 2 * var(--size-2-1)), var(--gedcom-tree-action));
+  aspect-ratio: 1;
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-tree-actions {
+    margin-block: -12px;
+    opacity: 1;
+  }
+
+  .gedcom-tree .gedcom-tree-add,
+  .gedcom-tree .gedcom-tree-remove,
+  .gedcom-tree .gedcom-tree-grip {
+    --icon-size: var(--icon-s);
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-actions {
+  margin-block: -12px;
+  opacity: 1;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-add,
+.is-mobile .gedcom-tree .gedcom-tree-remove,
+.is-mobile .gedcom-tree .gedcom-tree-grip {
+  --icon-size: var(--icon-s);
+  width: 44px;
+  height: 44px;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
+  min-height: 44px;
+  padding-block: 12px;
+  padding-inline: var(--size-4-6) var(--size-4-2);
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-chevron {
+  top: 0;
+  inset-inline-start: 0;
+  width: var(--size-4-6);
+  height: 44px;
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row {
+    min-height: 44px;
+    padding-block: 12px;
+    padding-inline: var(--size-4-6) var(--size-4-2);
+  }
+
+  .gedcom-tree .gedcom-tree-chevron {
+    top: 0;
+    inset-inline-start: 0;
+    width: var(--size-4-6);
+    height: 44px;
+  }
+}
+
+
+.gedcom-tree .gedcom-field.is-editable {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.gedcom-tree .gedcom-field.is-editable textarea.gedcom-field-input:not(:focus) {
+  cursor: text;
+}
+
+.gedcom-tree .gedcom-field.is-changed textarea.gedcom-field-input {
+  border-color: var(--background-modifier-border-hover);
+}
+
+.gedcom-tree .gedcom-field.is-folded {
+  max-height: calc(5lh + 2px);
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black calc(100% - 1lh), transparent);
+}
+
+.gedcom-tree .gedcom-field-revert {
+  --icon-size: var(--icon-xs);
+  display: none;
+  grid-area: 1 / 2;
+  align-self: start;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: calc(1em * var(--line-height-tight));
+  height: calc(1em * var(--line-height-tight));
+  padding: 0;
+}
+
+.gedcom-tree .gedcom-tree-message {
+  flex-basis: 100%;
+  font-size: var(--font-ui-smaller);
+  line-height: var(--line-height-tight);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-message.is-error {
+  color: var(--text-error);
+}
+
+.gedcom-tree .gedcom-tree-message.is-warning {
+  color: var(--text-warning);
+}
+
+.gedcom-tree .gedcom-tree-paired,
+.gedcom-tree .gedcom-tree-note {
+  flex-basis: 100%;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  line-height: var(--line-height-tight);
+}
+
+.gedcom-tree .gedcom-tree-note {
+  padding: var(--size-4-1) var(--size-4-2) var(--size-4-2);
+}
+
+.gedcom-tree .gedcom-tree-node.is-unwritten > .gedcom-tree-row {
+  outline: 1px dashed var(--background-modifier-border-hover);
+  outline-offset: -1px;
+}
+
+.gedcom-tree .gedcom-tree-node.is-unwritten > .gedcom-tree-row > .gedcom-tree-label {
+  font-style: italic;
+}
+
+.gedcom-tree .gedcom-tree-open-note {
+  --icon-size: var(--icon-xs);
+  align-self: center;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: calc(1em * var(--line-height-tight));
+  height: calc(1em * var(--line-height-tight));
+  padding: 0;
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-open-note {
+  align-self: flex-start;
+}
+
+.gedcom-tree .gedcom-tree-several {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: auto;
+  padding: 0 var(--size-4-1);
+  overflow-wrap: anywhere;
+  color: var(--text-normal);
+}
+
+.gedcom-tree .gedcom-tree-file {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: var(--size-4-1);
+  min-width: 0;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  padding: var(--size-2-1) var(--size-4-1);
+  color: var(--text-normal);
+  overflow-wrap: anywhere;
+}
+
+.gedcom-tree .gedcom-tree-file.is-picture {
+  padding: var(--size-2-1);
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row:has(> .gedcom-tree-main > .gedcom-tree-file.is-picture) {
+  align-items: flex-start;
+}
+
+.gedcom-tree .gedcom-tree-file .gedcom-desk-picture {
+  max-width: 100%;
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+
+.gedcom-tree .gedcom-tree-file .gedcom-desk-picture:not(.is-cropped) img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+}
+
+.gedcom-tree .gedcom-tree-file-icon {
+  --icon-size: var(--icon-xs);
+  display: flex;
+  flex: none;
+  align-self: flex-start;
+  align-items: center;
+  height: calc(1em * var(--line-height-tight));
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-file:focus-visible,
+.gedcom-tree .gedcom-tree-open-note:focus-visible,
+.gedcom-tree .gedcom-tree-several:focus-visible,
+.gedcom-tree .gedcom-field-revert:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 1px;
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
+    display: flex;
+  }
+
+  .gedcom-tree .gedcom-field-revert,
+  .gedcom-tree .gedcom-tree-open-note,
+  .gedcom-tree .gedcom-tree-pick {
+    --icon-size: var(--icon-s);
+    width: 44px;
+    height: 44px;
+    margin-block: -12px;
+  }
+
+  .gedcom-tree .gedcom-tree-several,
+  .gedcom-tree .gedcom-tree-choice {
+    min-height: 44px;
+    margin-block: -12px;
+  }
+
+  .gedcom-tree .gedcom-tree-file {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.is-mobile .gedcom-tree .gedcom-field.is-changed .gedcom-field-revert {
+  display: flex;
+}
+
+.is-mobile .gedcom-tree .gedcom-field-revert,
+.is-mobile .gedcom-tree .gedcom-tree-open-note,
+.is-mobile .gedcom-tree .gedcom-tree-pick {
+  --icon-size: var(--icon-s);
+  width: 44px;
+  height: 44px;
+  margin-block: -12px;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-several,
+.is-mobile .gedcom-tree .gedcom-tree-choice {
+  min-height: 44px;
+  margin-block: -12px;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-file {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--size-2-1);
+  align-self: stretch;
+  align-items: center;
+  margin: 0;
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
+  padding-inline-end: calc(var(--size-2-1) + var(--gedcom-tree-action) + var(--size-4-1));
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
+  padding-inline-end: calc(2 * var(--size-2-1) + 2 * var(--gedcom-tree-action) + var(--size-4-1));
+}
+
+.gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="3"] {
+  padding-inline-end: calc(3 * var(--size-2-1) + 3 * var(--gedcom-tree-action) + var(--size-4-1));
+}
+
+@media (pointer: coarse) {
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
+    top: 0;
+    margin: 0;
+  }
+
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
+    padding-inline-end: calc(var(--size-4-2) + 44px);
+  }
+
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
+    padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-1));
+  }
+
+  .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="3"] {
+    padding-inline-end: calc(var(--size-4-2) + 132px + 2 * var(--size-2-1));
+  }
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
+  top: 0;
+  margin: 0;
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="1"] {
+  padding-inline-end: calc(var(--size-4-2) + 44px);
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="2"] {
+  padding-inline-end: calc(var(--size-4-2) + 88px + var(--size-2-1));
+}
+
+.is-mobile .gedcom-tree .gedcom-tree-node > .gedcom-tree-row[data-actions="3"] {
+  padding-inline-end: calc(var(--size-4-2) + 132px + 2 * var(--size-2-1));
+}
+
+/* .grip-handle, .mod-dragged-item and --drag-item-* arrive with Obsidian 1.15; below it the grip and the lifted row are drawn here alike. */
+.gedcom-tree .gedcom-tree-grip {
+  --icon-size: var(--icon-s);
+  --icon-stroke: var(--icon-s-stroke-width);
+  border-radius: var(--clickable-icon-radius);
+  color: var(--text-faint);
+  cursor: grab;
+  touch-action: none;
+}
+
+.gedcom-tree .gedcom-tree-grip circle {
+  fill: currentColor;
+}
+
+.gedcom-tree .gedcom-tree-grip:hover {
+  color: var(--text-muted);
+}
+
+.gedcom-tree .gedcom-tree-grip:active,
+body.is-grabbing .gedcom-tree .gedcom-tree-grip {
+  cursor: grabbing;
+}
+
+body.gedcom-tree-moving {
+  cursor: grabbing;
+}
+
+body.is-grabbing .gedcom-tree {
+  user-select: none;
+}
+
+.gedcom-tree .drop-indicator {
+  left: auto;
+  width: auto;
+  inset-inline-end: 0;
+}
+
+.drag-reorder-ghost.gedcom-tree {
+  position: fixed;
+}
+
+.drag-reorder-ghost.gedcom-tree :is(.gedcom-tree-actions, .gedcom-tree-pick) {
+  visibility: hidden;
+}
+
+.drag-reorder-ghost.gedcom-tree > .mod-dragged-item {
+  border-radius: var(--radius-s);
+  background-color: var(--drag-item-background, var(--background-primary));
+  box-shadow: var(--drag-item-shadow, 0 2px 8px var(--background-modifier-box-shadow));
+}
+
+.gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick) {
+  flex-wrap: nowrap;
+}
+
+.gedcom-tree .gedcom-tree-main:has(> .gedcom-tree-pick) > :is(.gedcom-desk-link, .gedcom-field) {
+  flex: 0 1 auto;
+  min-width: 0;
 }

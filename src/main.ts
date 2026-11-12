@@ -26,11 +26,10 @@ import { registerRecordEmbeds } from "./notes/embedRegistry";
 import { blockDialect, renderGedcomBlock } from "./notes/gedcomBlock";
 import { RecordIndex } from "./notes/recordIndex";
 import { RecordSuggest } from "./notes/recordSuggest";
-import { notesLinking, type NoteHit, type NoteLinks } from "./desk/noteLinks";
 import { RETIRED_VIEW_TYPES, type DeskMode, type Origin } from "./desk/deskState";
 import { originRules } from "./desk/tabModes";
 import { sidePanelPlan } from "./desk/sidePanels";
-import { adoptsFollow, fallbackFollowed, noteChangeMatters } from "./desk/followRules";
+import { adoptsFollow, fallbackFollowed } from "./desk/followRules";
 import {
   parseGedcomLink,
   PROTOCOL_ACTION,
@@ -44,6 +43,7 @@ import {
   RecordCardView,
   type DeskViewsHost,
 } from "./desk/DeskViews";
+import { TreeSession } from "./desk/detail/treeSession";
 import type { AllowScope } from "./editor/mediaPreviewView";
 import { GEDCOM_ICON_ID, GEDCOM_ICON_SVG } from "./icon";
 import { GedcomSettingTab } from "./settings";
@@ -87,10 +87,9 @@ export default class GedcomPlugin
   readonly api: GedcomApi = createGedcomApi(this.vault);
   private statusBar: HTMLElement | undefined;
   private followedView: GedcomView | null = null;
+  private readonly treeSession = new TreeSession();
   /** Placed once a session, so a card the reader closes stays closed. */
   private cardPlaced = false;
-  private notesCache = new Map<string, Promise<NoteLinks[]>>();
-  private linkingNotes = new Map<string, Set<string>>();
   private recentViews: GedcomView[] = [];
   private readonly moves = new MoveFollower<TFile>(
     {
@@ -226,11 +225,6 @@ export default class GedcomPlugin
       }),
     );
     this.registerEvent(
-      this.app.metadataCache.on("changed", (file) => {
-        this.notesMayHaveChanged(file.path);
-      }),
-    );
-    this.registerEvent(
       this.app.workspace.on("layout-change", () => {
         this.sweepRetiredViews();
         if (!this.settings.genealogyInterface) {
@@ -346,80 +340,6 @@ export default class GedcomPlugin
     void this.placeCard();
   }
 
-  async notesFor(path: string, xref: string): Promise<NoteHit[]> {
-    const { metadataCache } = this.app;
-    let asked = this.notesCache.get(path);
-    if (!asked) {
-      const fresh = this.noteLinksTo(path);
-      asked = fresh;
-      this.notesCache.set(path, fresh);
-      void fresh.then(
-        (notes) => {
-          this.linkingNotes.set(path, new Set(notes.map((note) => note.path)));
-        },
-        () => {
-          if (this.notesCache.get(path) === fresh) {
-            this.notesCache.delete(path);
-          }
-        },
-      );
-    }
-    return notesLinking(
-      await asked,
-      { path, xref },
-      (linkPath, from) => metadataCache.getFirstLinkpathDest(linkPath, from)?.path ?? null,
-    );
-  }
-
-  private notesMayHaveChanged(changed: string): void {
-    const { resolvedLinks } = this.app.metadataCache;
-    const stale = [...this.notesCache.keys()].filter(
-      (path) =>
-        noteChangeMatters(changed, [path], this.linkingNotes.get(path) ?? new Set()) ||
-        path in (resolvedLinks[changed] ?? {}),
-    );
-    if (stale.length === 0) {
-      return;
-    }
-    for (const path of stale) {
-      this.notesCache.delete(path);
-      this.linkingNotes.delete(path);
-    }
-    for (const leaf of this.app.workspace.getLeavesOfType(RECORD_VIEW_TYPE)) {
-      if (leaf.view instanceof RecordCardView) {
-        leaf.view.refreshNotes();
-      }
-    }
-  }
-
-  private async noteLinksTo(path: string): Promise<NoteLinks[]> {
-    const { metadataCache, vault } = this.app;
-    const notes: NoteLinks[] = [];
-    for (const [source, targets] of Object.entries(metadataCache.resolvedLinks)) {
-      if (!(path in targets)) {
-        continue;
-      }
-      const file = vault.getAbstractFileByPath(source);
-      if (!(file instanceof TFile)) {
-        continue;
-      }
-      const cache = metadataCache.getFileCache(file);
-      const links = [...(cache?.links ?? []), ...(cache?.embeds ?? [])].map((one) => ({
-        link: one.link,
-        start: one.position.start.offset,
-        end: one.position.end.offset,
-      }));
-      if (links.length > 0) {
-        notes.push({ path: source, name: file.basename, text: await vault.cachedRead(file), links });
-      }
-    }
-    return notes;
-  }
-
-  openNote(path: string, line: number): void {
-    void this.app.workspace.openLinkText(path, "", "tab", { eState: { line } });
-  }
-
   private syncInterface(): void {
     const { workspace } = this.app;
     if (this.settings.genealogyInterface) {
@@ -501,6 +421,10 @@ export default class GedcomPlugin
     if (leaf.view instanceof GedcomView) {
       leaf.view.showMode("list");
     }
+  }
+
+  session(): TreeSession {
+    return this.treeSession;
   }
 
   private redrawDesk(): void {

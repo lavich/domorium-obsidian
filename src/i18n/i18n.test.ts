@@ -1,6 +1,7 @@
 import { evaluateSentenceCase } from "eslint-plugin-obsidianmd/dist/lib/rules/ui/sentenceCaseUtil.js";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { refusalText } from "../desk/edits";
 import {
   CATALOGUES,
   currentLanguage,
@@ -99,6 +100,21 @@ describe("filling a message", () => {
       t("note.problemLine", { line: 3, message: "Missing required tag" }),
     ).toBe("Строка 3: Missing required tag");
   });
+
+  it("names a grip and a move, and why a move was refused, in English and in Russian", () => {
+    const keys = ["tree.moveField", "tree.moved", "edit.refusal.reading-changed", "edit.refusal.not-a-sibling"] as const;
+    for (const key of keys) {
+      expect(placeholdersOf(ru[key] ?? "")).toEqual(placeholdersOf(en[key]));
+    }
+    const refused = (code: string): string => refusalText({ code, message: "service" });
+    expect(t("tree.moveField", { field: "Birth" })).toBe("Drag to move Birth");
+    expect(t("tree.moved", { field: "Sex", place: 2, count: 14 })).toBe("Sex moved to place 2 of 14");
+    expect([refused("reading-changed"), refused("not-a-sibling")]).toEqual([en["edit.refusal.reading-changed"], en["edit.refusal.not-a-sibling"]]);
+
+    setLanguage("ru");
+    expect(t("tree.moveField", { field: "Рождение" })).toBe("Перетащите, чтобы переместить «Рождение»");
+    expect([refused("reading-changed"), refused("not-a-sibling")]).toEqual([ru["edit.refusal.reading-changed"], ru["edit.refusal.not-a-sibling"]]);
+  });
 });
 
 describe("spelling a count", () => {
@@ -131,13 +147,26 @@ describe("spelling a count", () => {
     expect(plural("list.countOf.families", 21, { shown: 2 })).toBe("2 из 21 семьи");
   });
 
-  it("spells the count line of the places in both languages", () => {
-    expect([1, 10].map((count) => plural("list.count.places", count))).toEqual(["1 place", "10 places"]);
-    expect(plural("list.countOf.places", 10, { shown: 1 })).toBe("1 of 10 places");
+  it("spells the count lines of the media, notes, repositories and other records in both languages", () => {
+    expect(plural("list.count.media", 7)).toBe("7 media");
+    expect(plural("list.count.notes", 1478)).toBe("1478 notes");
+    expect(plural("list.countOf.notes", 2, { shown: 1 })).toBe("1 of 2 notes");
+    expect(plural("list.count.repositories", 2)).toBe("2 repositories");
+    expect(plural("list.count.other", 2)).toBe("2 records");
+    expect(t("list.compact.linkedFrom", { count: 2 })).toBe("Linked from 2");
     setLanguage("ru");
-    expect([1, 2, 5, 21].map((count) => plural("list.count.places", count))).toEqual(["1 место", "2 места", "5 мест", "21 место"]);
-    expect(plural("list.countOf.places", 21, { shown: 2 })).toBe("2 из 21 места");
-    expect(plural("list.compact.events", 11)).toBe("11 событий");
+    expect([1, 2, 5, 21].map((count) => plural("list.count.notes", count))).toEqual(["1 заметка", "2 заметки", "5 заметок", "21 заметка"]);
+    expect([1, 3, 7].map((count) => plural("list.count.media", count))).toEqual(["1 медиафайл", "3 медиафайла", "7 медиафайлов"]);
+    expect(plural("list.count.repositories", 5)).toBe("5 хранилищ");
+    expect(plural("list.countOf.other", 2, { shown: 1 })).toBe("1 из 2 записей");
+  });
+
+  it("names the two ways to another file of a medium, and where a copy was left, in both languages", () => {
+    expect([t("media.fromVault"), t("media.fromDevice"), t("media.change", { file: "a.jpg" })]).toEqual(["Choose from the vault", "Upload from device", "Change the file a.jpg"]);
+    expect(t("media.copyKept", { reason: "The file changed.", path: "Media/a.jpg" })).toBe("The file changed. The copy of the file stays in the vault at Media/a.jpg.");
+    setLanguage("ru");
+    expect([t("media.fromVault"), t("media.fromDevice"), t("record.tag.COPR")]).toEqual(["Выбрать в хранилище", "Загрузить с устройства", "Авторские права"]);
+    expect(t("edit.refusal.file-target-unsupported")).toContain("GEDCOM");
   });
 
   it("carries the other parameters through", () => {

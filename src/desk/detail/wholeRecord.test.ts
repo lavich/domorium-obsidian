@@ -2,12 +2,10 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GenealogyIndex, RecordLine } from "../../genealogy";
-import { FAMILY_EVENT_TAGS, PERSON_EVENT_TAGS } from "../../genealogy/tags";
 import { resetLanguage } from "../../i18n";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { richIndex, richIndex551 } from "../../testing/rich";
-import { eventIdOf } from "../eventRows";
-import { drawnByGallery } from "../personPage";
+import { TreeSession } from "./treeSession";
 import { renderRecordCard, type CardTab, type CardView } from "../recordCard";
 
 beforeAll(installObsidianDom);
@@ -19,8 +17,6 @@ beforeEach(() => {
   document.body.replaceChildren(container);
 });
 
-const EVENT_TAGS: ReadonlySet<string> = new Set([...PERSON_EVENT_TAGS, ...FAMILY_EVENT_TAGS]);
-
 const everyLine = (line: RecordLine): number[] => [line.range.start.line, ...line.children.flatMap(everyLine)];
 
 /** The numbers of the lines a card draws, from the rows that carry them; `text` gets what the card says. */
@@ -29,22 +25,21 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
     filePath: () => "rich.ged",
     index: () => index,
     selection: () => ({ record, fact: null }),
-    mediaItems: (media) => media.map(({ at }) => ({ content: { kind: "missing", target: "" }, at })),
     mediaItem: () => null,
-    portrait: () => null,
     select: vi.fn(),
-    selectFact: vi.fn(),
     showInSource: vi.fn(),
     openFile: vi.fn(),
-    history: () => ({ canBack: false, canForward: false }),
-    back: vi.fn(),
-    forward: vi.fn(),
   };
-  const view: CardView = { setIcon: vi.fn(), openNote: vi.fn() };
+  const view: CardView = { setIcon: vi.fn(), session: new TreeSession() };
   container.replaceChildren();
-  renderRecordCard(container, tab, [], view);
-  container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline info other");
-  renderRecordCard(container, tab, [], view);
+  renderRecordCard(container, tab, view);
+  container.querySelector(".gedcom-card")?.setAttribute("data-open", "timeline other");
+  renderRecordCard(container, tab, view);
+  for (const control of container.querySelectorAll<HTMLElement>(".gedcom-tree-control")) {
+    if (control.getAttribute("aria-label") === "Open every node") {
+      control.click();
+    }
+  }
   if (text) {
     text.said = container.textContent ?? "";
   }
@@ -57,14 +52,9 @@ function drawn(index: GenealogyIndex, record: string, text?: { said: string }): 
   return found;
 }
 
-/** What a person's or a family's own card must draw: every line but those beneath an event, which its card draws. */
+/** What a person's or a family's own card must draw: every line of its record, to any depth. */
 function ownLines(index: GenealogyIndex, xref: string): number[] {
-  const record = index.record(xref);
-  const media = (index.person(xref) ?? index.family(xref))?.media ?? [];
-  const items = media.map(({ at }) => ({ content: { kind: "missing" as const, target: "" }, at }));
-  return (record?.children ?? [])
-    .filter((line) => !(line.tag === "OBJE" && drawnByGallery(line, items)))
-    .flatMap((line) => (EVENT_TAGS.has(line.tag) ? [line.range.start.line] : everyLine(line)));
+  return (index.record(xref)?.children ?? []).flatMap(everyLine);
 }
 
 function check(index: GenealogyIndex, xref: string): void {
@@ -72,30 +62,22 @@ function check(index: GenealogyIndex, xref: string): void {
   const missing = ownLines(index, xref).filter((line) => !have.has(line));
   expect(missing, `lines of ${xref} not on its card`).toEqual([]);
 
-  const record = index.person(xref) ?? index.family(xref);
-  for (const event of record?.events ?? []) {
-    const id = eventIdOf(xref, record?.events ?? [], event);
-    const there = drawn(index, id);
-    const line = index.record(xref)?.children.find((one) => one.tag === event.tag && one.range.start.line === event.range.start.line);
-    const absent = (line ? everyLine(line) : []).filter((one) => !there.has(one));
-    expect(absent, `lines of ${id} not on its card`).toEqual([]);
-  }
 }
 
 describe("every line of a record is on a card", () => {
-  it("shows every line of a person in 7.0, and of each of their events, on their cards", () => {
+  it("shows every line of a person in 7.0 on their card", () => {
     check(richIndex(), "@I1@");
   });
 
-  it("shows every line of a family in 7.0, and of each of its events, on its cards", () => {
+  it("shows every line of a family in 7.0 on its card", () => {
     check(richIndex(), "@F3@");
   });
 
-  it("shows every line of a person in 5.5.1, and of each of their events, on their cards", () => {
+  it("shows every line of a person in 5.5.1 on their card", () => {
     check(richIndex551(), "@I1@");
   });
 
-  it("shows every line of a family in 5.5.1, and of each of its events, on its cards", () => {
+  it("shows every line of a family in 5.5.1 on its card", () => {
     check(richIndex551(), "@F1@");
   });
 });
@@ -138,7 +120,7 @@ describe("what the lines of a record say is on the card, not only where they sta
   });
 
   it("shows the phrase of a spouse's age, and a second date and place, on the card of the marriage", () => {
-    const card = said(seven, "event:@F3@:MARR:0");
+    const card = said(seven, "@F3@");
 
     expect(card).toContain("about that");
     expect(card).toContain("ABT 1895");

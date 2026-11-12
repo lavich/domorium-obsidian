@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { resetLanguage, setLanguage } from "../../i18n";
 import { FAMILY_EVENT_TAGS, PERSON_EVENT_TAGS } from "../../genealogy/tags";
-import { childMark, linkStatusLabel, nameTypeLabel, parentsHeading, roleLabel, sexLabel, tagLabel } from "./labels";
+import { linkStatusLabel, nameTypeLabel, roleLabel, sexLabel, tagLabel } from "./labels";
 
 afterEach(resetLanguage);
 
@@ -53,16 +53,5 @@ describe("the names of a type, a role, a status and a sex", () => {
     expect(nameTypeLabel("Stage name")).toBe("Stage name");
     expect(roleLabel("Landlord")).toBe("Landlord");
     expect(sexLabel("Q")).toBe("Q");
-  });
-
-  it("names the parents by how the person belongs to them, and marks a child who is not theirs by birth", () => {
-    expect(parentsHeading(undefined)).toBe("Parents");
-    expect(parentsHeading("birth")).toBe("Parents");
-    expect(parentsHeading("adopted")).toBe("Adoptive parents");
-    expect(childMark("adopted")).toBe("Adopted");
-    expect(childMark("birth")).toBeUndefined();
-    expect(childMark("unstated")).toBeUndefined();
-    setLanguage("ru");
-    expect(parentsHeading("foster")).toBe("Патронатные родители");
   });
 });

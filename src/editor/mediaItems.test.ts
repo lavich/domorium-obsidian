@@ -1,8 +1,7 @@
 import type { MediaReference, Position } from "@domorium/language-service";
 import { describe, expect, it } from "vitest";
 
-import type { MediaItem } from "../desk/media";
-import { mediaItemAt, mediaItemsOf, portraitOf } from "./mediaItems";
+import { mediaItemAt } from "./mediaItems";
 
 const at = (line: number): Position => ({ line, character: 7 });
 
@@ -38,37 +37,5 @@ describe("a media item at a position", () => {
     const item = mediaItemAt(service(reference) as never, at(1), "tree.ged", () => null, false);
     expect(item?.content.kind).toBe("missing");
     expect(item).not.toHaveProperty("path");
-  });
-});
-
-describe("media items of a record", () => {
-  const found = (line: number): MediaItem => ({
-    content: { kind: "image", url: `app://${line}`, name: `${line}.jpg` },
-    at: at(line),
-  });
-
-  it("drops entries that resolve to nothing and keeps the record of the rest", () => {
-    const items = mediaItemsOf(
-      [{ at: at(1), record: "@O1@" }, { at: at(2) }, { at: at(3) }],
-      (position) => (position.line === 2 ? null : found(position.line)),
-    );
-    expect(items.map((item) => item.record)).toEqual(["@O1@", undefined]);
-    expect(items).toHaveLength(2);
-    expect(items[1]).not.toHaveProperty("record");
-  });
-});
-
-describe("the portrait of a person", () => {
-  it("is the first item that can be drawn", () => {
-    const missing: MediaItem = { content: { kind: "missing", name: "x.jpg" } as never, at: at(1) };
-    const image: MediaItem = {
-      content: { kind: "image", url: "app://a", name: "a.jpg" },
-      at: at(2),
-    };
-    expect(portraitOf([missing, image])).toBe(image.content);
-  });
-
-  it("is null without an image", () => {
-    expect(portraitOf([])).toBeNull();
   });
 });

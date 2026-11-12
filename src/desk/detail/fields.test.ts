@@ -6,7 +6,6 @@ import { buildIndex, type RecordLine } from "../../genealogy";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { labelId, renderField, setFieldText } from "./fields";
 import { renderLines, type DetailContext } from "./lineView";
-import { nameLines, renderNames } from "./names";
 
 beforeAll(installObsidianDom);
 
@@ -67,12 +66,12 @@ describe("the rows of a card", () => {
     ]);
   });
 
-  it("draw a name as a form of its own rows: the name, the type as a choice, the parts", () => {
+  it("draw a name as a name, the type as a choice, the parts as fields", () => {
     const { record, ctx } = person(["1 NAME Maria /Curie/", "2 TYPE BIRTH", "2 GIVN Maria"]);
-    renderNames(box, nameLines(record), ctx);
-    const kinds = [...box.querySelectorAll(".gedcom-field")].map((field) => field.getAttribute("data-kind"));
+    renderLines(box.createDiv({ cls: "gedcom-detail" }), record.children.slice(0, 1), ctx);
+    const fields = [...box.querySelectorAll(".gedcom-field")];
 
-    expect(kinds).toEqual(["text", "choice", "text"]);
-    expect([...box.querySelectorAll(".gedcom-field")].map((field) => field.textContent)).toEqual(["Maria Curie", "Birth", "Maria"]);
+    expect(fields.map((field) => field.getAttribute("data-kind"))).toEqual(["text", "choice", "text"]);
+    expect(fields.map((field) => field.textContent)).toEqual(["Maria Curie", "Birth", "Maria"]);
   });
 });

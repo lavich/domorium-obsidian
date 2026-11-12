@@ -2,9 +2,10 @@
 import { GedcomLanguageService } from "@domorium/language-service";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildIndex, type GenealogyIndex, type RecordLine } from "../../genealogy";
+import { buildIndex, HEADER_ID, type GenealogyIndex, type RecordLine } from "../../genealogy";
+import { curieIndex } from "../../testing/curie";
 import { installObsidianDom } from "../../testing/obsidianDom";
-import { countLines, renderLine, renderLines, renderRest, type DetailContext } from "./lineView";
+import { recordTitle, renderLines, type DetailContext } from "./lineView";
 
 beforeAll(installObsidianDom);
 
@@ -41,7 +42,6 @@ describe("a line as the file writes it", () => {
 
     expect(rows(".gedcom-detail-label")).toEqual(["_TRIBE", "_CLAN", "_SINCE"]);
     expect(box.querySelector(".gedcom-detail .gedcom-detail .gedcom-detail .gedcom-detail-value")?.textContent).toBe("1800");
-    expect(countLines(record.children)).toBe(3);
   });
 
   it("names a standard tag in the reader's language and gives every row the number of its line", () => {
@@ -102,19 +102,65 @@ describe("a pointer", () => {
   });
 });
 
-describe("the rest of a structure", () => {
-  it("draws the children a section did not draw, and none of those it did", () => {
-    const { ctx, record } = make(["0 @I1@ INDI", "1 NAME A /B/", "2 TYPE BIRTH", "2 NICK Ab", "2 _SPELLING Polish"]);
-    const name = record.children[0];
-    renderRest(box.createDiv({ cls: "gedcom-detail" }), name, new Set(["TYPE", "NICK"]), ctx);
+describe("a pointer to a record that has a card", () => {
+  it("is a link to a repository and to a submitter, named as the list names them, that selects it", () => {
+    const { ctx, record } = make(["0 @I1@ INDI", "1 _REPO @R1@", "1 _SUBM @U1@", "0 @R1@ REPO", "1 NAME Archive", "0 @U1@ SUBM", "1 NAME Domorium"]);
+    renderLines(box.createDiv({ cls: "gedcom-detail" }), record.children, ctx);
+    const links = [...box.querySelectorAll<HTMLElement>("button.gedcom-desk-link")];
 
-    expect(rows(".gedcom-detail-label")).toEqual(["_SPELLING"]);
+    expect(links.map((link) => link.textContent)).toEqual(["Archive", "Domorium"]);
+    links[0]?.click();
+    expect(opened).toHaveBeenCalledWith("@R1@");
+  });
+});
+
+describe("the one name of every record", () => {
+  const curie = curieIndex();
+
+  it("names a person, a family, a source, a medium, a note, a repository, a submitter and the header, and no place", () => {
+    expect(
+      ["@I1@", "@F3@", "@S2@", "place:paris, france", "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID].map((xref) => recordTitle(curie, xref)),
+    ).toEqual([
+      "Marie Skłodowska-Curie",
+      "Pierre Curie ⚭ Marie Skłodowska-Curie",
+      "Parish registers of Warsaw",
+      undefined,
+      "The Curie family, about 1908",
+      "The only person to have won a Nobel Prize in two different sciences:",
+      "State Archive in Warsaw",
+      "Domorium",
+      "File header",
+    ]);
   });
 
-  it("draws one line on its own", () => {
-    const { ctx, record } = make(["0 @I1@ INDI", "1 REFN 123", "2 TYPE user"]);
-    renderLine(box.createDiv({ cls: "gedcom-detail" }), record.children[0], ctx);
+  it("names a medium with no title by the base name of its file", () => {
+    const { index } = make(["0 @O1@ OBJE", "1 FILE scans/letter.jpg", "0 @I1@ INDI"]);
 
-    expect(rows(".gedcom-detail-label")).toEqual(["Reference number", "Type"]);
+    expect(recordTitle(index, "@O1@")).toBe("letter.jpg");
+  });
+
+  it("names a note by its first line that is not empty", () => {
+    const { index } = make(["0 @N1@ SNOTE", "1 CONT", "1 CONT Second", "0 @I1@ INDI"]);
+
+    expect(recordTitle(index, "@N1@")).toBe("Second");
+  });
+
+  it("names a record of the file's own by its name, its title, its own value, its first value, or its kind", () => {
+    const { index } = make([
+      "0 @P1@ _PLAN Custom value", "1 TITL A title", "1 NAME Research plan",
+      "0 @P2@ _PLAN Custom value", "1 TITL A title",
+      "0 @P3@ _PLAN Custom value", "1 _STEP First step",
+      "0 @P4@ _PLAN", "1 _STEP First step",
+      "0 @X2@ _LOG",
+      "0 @I1@ INDI",
+    ]);
+
+    expect(["@P1@", "@P2@", "@P3@", "@P4@", "@X2@"].map((xref) => recordTitle(index, xref))).toEqual([
+      "Research plan", "A title", "Custom value", "First step", "_LOG",
+    ]);
+  });
+
+  it("names nothing the file does not declare", () => {
+    expect(recordTitle(curie, "@X9@")).toBeUndefined();
   });
 });

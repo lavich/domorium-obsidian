@@ -1,7 +1,7 @@
 import type { DocumentSymbol, MediaCrop } from "@domorium/language-service";
 
 import { childOf, childrenOf, payload, payloadPosition } from "./symbols";
-import type { MediaLink, MediaRecord, PersonMedia } from "./types";
+import type { MediaRecord, PersonMedia } from "./types";
 
 export function mediaOf(
   record: DocumentSymbol,
@@ -48,6 +48,11 @@ const IMAGE_EXTENSIONS = new Set([
   "png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "tif", "tiff", "avif",
 ]);
 
+export function isImagePath(path: string): boolean {
+  const dot = path.lastIndexOf(".");
+  return dot > 0 && IMAGE_EXTENSIONS.has(path.slice(dot + 1).toLowerCase());
+}
+
 /**
  * Whether the document calls this an image. Where it says what the file is,
  * that is believed; where it says nothing, the name is the only evidence left.
@@ -56,10 +61,7 @@ export function looksLikeAnImage(media: PersonMedia): boolean {
   if (media.form) {
     return media.form.toLowerCase().startsWith("image/");
   }
-  const dot = media.file.lastIndexOf(".");
-  return (
-    dot > 0 && IMAGE_EXTENSIONS.has(media.file.slice(dot + 1).toLowerCase())
-  );
+  return isImagePath(media.file);
 }
 
 export function cropOf(link: DocumentSymbol): MediaCrop | undefined {
@@ -84,43 +86,19 @@ export function cropOf(link: DocumentSymbol): MediaCrop | undefined {
   return { top, left, height, width };
 }
 
-export function collectMediaLinks(
-  symbol: DocumentSymbol,
-  owner: string,
-  into: Map<string, MediaLink[]>,
-): void {
-  for (const link of childrenOf(symbol, "OBJE")) {
-    const pointer = payload(link);
-    if (!pointer?.startsWith("@")) {
-      continue;
-    }
-    const title = payload(childOf(link, "TITL"));
-    const crop = cropOf(link);
-    const held = into.get(pointer) ?? [];
-    held.push({
-      record: owner,
-      ...(title === undefined ? {} : { title }),
-      ...(crop === undefined ? {} : { crop }),
-      at: payloadPosition(link),
-    });
-    into.set(pointer, held);
-  }
-}
-
 export function mediaRecordOf(
   xref: string,
   record: DocumentSymbol,
-  links: MediaLink[],
 ): MediaRecord {
   const fileLine = childOf(record, "FILE");
   const file = payload(fileLine);
   const title = payload(childOf(record, "TITL")) ?? payload(fileLine && childOf(fileLine, "TITL"));
+  const form = payload(fileLine && childOf(fileLine, "FORM"));
   return {
     xref,
     ...(file === undefined ? {} : { file }),
+    ...(form === undefined ? {} : { form }),
     ...(title === undefined ? {} : { title }),
-    ...(fileLine && file !== undefined ? { at: payloadPosition(fileLine) } : {}),
-    links,
     range: record.range,
   };
 }

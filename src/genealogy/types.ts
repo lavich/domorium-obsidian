@@ -8,7 +8,19 @@ import type {
 import type { DateReading } from "./dates";
 import type { RecordLine } from "./recordLines";
 
-export type IndexSource = Pick<GedcomLanguageService, "getDocumentSymbols" | "readDate">;
+export type IndexSource = Pick<GedcomLanguageService, "getDocumentSymbols" | "readDate" | "describeStructure">;
+
+/** The id the file's header is selected and looked up under, since it has no identifier. */
+export const HEADER_ID = "header:";
+
+/** The records of the kinds the list shows beyond people, families and sources, by id in the file's order. */
+export interface RecordLists {
+  media: string[];
+  notes: string[];
+  repositories: string[];
+  /** The header first, as `HEADER_ID`, then every other record with an identifier. */
+  other: string[];
+}
 
 export type DateOf = (payload: string) => DateReading;
 
@@ -40,20 +52,11 @@ export interface PersonMedia {
   record?: string;
 }
 
-export interface MediaLink {
-  record: string;
-  title?: string;
-  crop?: MediaCrop;
-  at: Position;
-}
-
 export interface MediaRecord {
   xref: string;
   file?: string;
+  form?: string;
   title?: string;
-  /** On the record's own `FILE` payload. */
-  at?: Position;
-  links: MediaLink[];
   range: Range;
 }
 
@@ -98,12 +101,6 @@ export interface SourceField {
   value: string;
 }
 
-export interface Repository {
-  name?: string;
-  address?: string;
-  web?: string;
-}
-
 export interface SourceRow extends Row {
   title: string;
   author?: string;
@@ -112,7 +109,6 @@ export interface SourceRow extends Row {
 
 export interface Source extends SourceRow {
   fields: SourceField[];
-  heldAt?: Repository;
   media: PersonMedia[];
   portrait?: PersonMedia;
   unresolved: string[];
@@ -209,8 +205,13 @@ export interface GenealogyIndex {
   family(xref: string): Family | undefined;
   source(xref: string): Source | undefined;
   media(xref: string): MediaRecord | undefined;
-  /** The lines of any record that has an identifier, whole, converted on request; none for one the document does not declare. */
+  lists: RecordLists;
+  /** The lines of any record that has an identifier, or of the header under `HEADER_ID`, whole, converted on request; none for one the document does not declare. */
   record(xref: string): RecordLine | undefined;
+  /** How many distinct records hold a pointer to this one, on any line. */
+  linkedFrom(xref: string): number;
+  /** How many distinct source records hold a pointer to this one. */
+  sourcesOf(xref: string): number;
   citesBy(xref: string): Citation[];
   citedBy(xref: string): Citation[];
 }

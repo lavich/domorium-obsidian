@@ -9,6 +9,19 @@ interface Shape {
 }
 
 const ICONS: Record<string, Shape[]> = {
+  "right-triangle": [{ tag: "path", attrs: { d: "M3 8L12 17L21 8" } }],
+  "chevrons-up-down": [
+    { tag: "path", attrs: { d: "m7 15 5 5 5-5" } },
+    { tag: "path", attrs: { d: "m7 9 5-5 5 5" } },
+  ],
+  "chevrons-down-up": [
+    { tag: "path", attrs: { d: "m7 20 5-5 5 5" } },
+    { tag: "path", attrs: { d: "m7 4 5 5 5-5" } },
+  ],
+  code: [
+    { tag: "path", attrs: { d: "m16 18 6-6-6-6" } },
+    { tag: "path", attrs: { d: "m8 6-6 6 6 6" } },
+  ],
   "whole-word": [
     { tag: "circle", attrs: { cx: 7, cy: 12, r: 3 } },
     { tag: "path", attrs: { d: "M10 9v6" } },
@@ -88,6 +101,33 @@ const ICONS: Record<string, Shape[]> = {
   plus: [
     { tag: "path", attrs: { d: "M5 12h14" } },
     { tag: "path", attrs: { d: "M12 5v14" } },
+  ],
+  "trash-2": [
+    { tag: "path", attrs: { d: "M3 6h18" } },
+    { tag: "path", attrs: { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" } },
+    { tag: "path", attrs: { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" } },
+    { tag: "path", attrs: { d: "M10 11v6" } },
+    { tag: "path", attrs: { d: "M14 11v6" } },
+  ],
+  "grip-vertical": [
+    { tag: "circle", attrs: { cx: 9, cy: 12, r: 1 } },
+    { tag: "circle", attrs: { cx: 9, cy: 5, r: 1 } },
+    { tag: "circle", attrs: { cx: 9, cy: 19, r: 1 } },
+    { tag: "circle", attrs: { cx: 15, cy: 12, r: 1 } },
+    { tag: "circle", attrs: { cx: 15, cy: 5, r: 1 } },
+    { tag: "circle", attrs: { cx: 15, cy: 19, r: 1 } },
+  ],
+  "sticky-note": [
+    { tag: "path", attrs: { d: "M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z" } },
+    { tag: "path", attrs: { d: "M15 3v6h6" } },
+  ],
+  file: [
+    { tag: "path", attrs: { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" } },
+    { tag: "path", attrs: { d: "M14 2v4a2 2 0 0 0 2 2h4" } },
+  ],
+  "rotate-ccw": [
+    { tag: "path", attrs: { d: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" } },
+    { tag: "path", attrs: { d: "M3 3v5h5" } },
   ],
   "chevron-up": [{ tag: "path", attrs: { d: "m18 15-6-6-6 6" } }],
   "chevron-down": [{ tag: "path", attrs: { d: "m6 9 6 6 6-6" } }],

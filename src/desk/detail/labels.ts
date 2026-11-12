@@ -39,15 +39,3 @@ export function sexLabel(sex: string): string {
   const key = `record.sex.${sex.trim().toUpperCase()}`;
   return known(key) ? t(key) : sex;
 }
-
-/** The head over the parents of a family the person is a child of, by how the person belongs to it. */
-export function parentsHeading(kind: string | undefined): string {
-  const key = `record.pedi.${kind ?? ""}`;
-  return known(key) ? t(key) : t("desk.parents");
-}
-
-/** The mark on a child who does not belong to a family by birth; none for birth and for a link the file does not state. */
-export function childMark(kind: string | undefined): string | undefined {
-  const key = `record.childMark.${kind ?? ""}`;
-  return known(key) ? t(key) : undefined;
-}

@@ -1,22 +1,22 @@
-import { eventOwner } from "./eventRows";
-import { ItemView, setIcon, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Menu, setIcon, type WorkspaceLeaf } from "obsidian";
 
 import type { GedcomView } from "../GedcomView";
 import { t } from "../i18n";
-import type { NoteHit } from "./noteLinks";
+import type { TreeSession } from "./detail/treeSession";
+import { chooseDeviceFile } from "./deviceFile";
+import { PointerModal, VaultFileModal } from "./pointerModal";
 import { renderRecordCard } from "./recordCard";
 
 export const RECORD_VIEW_TYPE = "domorium-record";
 
 export interface DeskViewsHost {
   followed(): GedcomView | null;
-  notesFor(path: string, xref: string): Promise<NoteHit[]>;
-  openNote(path: string, line: number): void;
+  session(): TreeSession;
 }
 
 export class RecordCardView extends ItemView {
-  private notes: { key: string; hits: NoteHit[] | null } | null = null;
   private stale = false;
+  private bar: HTMLElement | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -39,6 +39,8 @@ export class RecordCardView extends ItemView {
 
   onOpen(): Promise<void> {
     this.contentEl.addClass("gedcom-record-view");
+    this.bar = this.containerEl.createDiv({ cls: ["gedcom-card-header", "nav-header"] });
+    this.containerEl.prepend(this.bar);
     this.redraw();
     return Promise.resolve();
   }
@@ -56,42 +58,40 @@ export class RecordCardView extends ItemView {
     }
     this.stale = false;
     const view = this.host.followed();
-    const record = view?.shownRecord() ?? null;
-    const path = view?.file?.path;
-    const key = record && path ? `${path}#${eventOwner(record) ?? record}` : "";
-    if (key && this.notes?.key !== key && path && record) {
-      const asked = { key, hits: null as NoteHit[] | null };
-      this.notes = asked;
-      void this.host.notesFor(path, eventOwner(record) ?? record).then((hits) => {
-        if (this.notes === asked) {
-          asked.hits = hits;
-          this.redraw();
-        }
-      });
-    }
-    renderRecordCard(this.contentEl, view, this.notes?.key === key ? (this.notes?.hits ?? null) : null, {
+    renderRecordCard(this.contentEl, view, {
       setIcon: (element, icon) => {
         setIcon(element, icon);
       },
-      openNote: (notePath, line) => {
-        this.host.openNote(notePath, line);
+      session: this.host.session(),
+      choosePointer: (choices, chosen) => {
+        new PointerModal(this.app, choices, chosen).open();
       },
-    });
-  }
-
-  refreshNotes(): void {
-    const asked = this.notes;
-    const view = this.host.followed();
-    const path = view?.file?.path;
-    const record = view?.shownRecord();
-    if (!asked || !path || !record) {
-      return;
-    }
-    void this.host.notesFor(path, eventOwner(record) ?? record).then((hits) => {
-      if (this.notes === asked && JSON.stringify(hits) !== JSON.stringify(asked.hits)) {
-        asked.hits = hits;
-        this.redraw();
-      }
+      chooseField: (at, fields) => {
+        const menu = new Menu();
+        for (const { title, icon, disabled, choose } of fields) {
+          menu.addItem((item) => {
+            item.setTitle(title).setDisabled(disabled).onClick(choose);
+            if (icon !== undefined) {
+              item.setIcon(icon);
+            }
+          });
+        }
+        menu.showAtPosition(at);
+      },
+      chooseValues: (at, values) => {
+        const menu = new Menu();
+        for (const { title, checked, toggle } of values) {
+          menu.addItem((item) => item.setTitle(title).setChecked(checked).onClick(toggle));
+        }
+        menu.showAtPosition(at);
+      },
+      chooseVaultFile: (choices, chosen) => {
+        new VaultFileModal(this.app, choices, chosen).open();
+      },
+      chooseDeviceFile: (chosen) => {
+        chooseDeviceFile(this.contentEl.ownerDocument, chosen);
+      },
+      ...(this.bar ? { header: this.bar } : {}),
     });
   }
 }

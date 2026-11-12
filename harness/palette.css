@@ -251,6 +251,19 @@ body {
   --input-border-width: 1px;
   --input-height: 30px;
   --icon-size: 18px;
+  --icon-xs: 14px;
+  --nav-item-color: var(--text-muted);
+  --nav-item-padding: var(--size-4-1) var(--size-4-2) var(--size-4-1) var(--size-4-6);
+  --nav-item-parent-padding: var(--size-4-1) var(--size-4-2) var(--size-4-1) var(--size-4-6);
+  --nav-item-margin-bottom: 1px;
+  --nav-item-children-padding-start: var(--size-4-2);
+  --nav-item-children-margin-start: var(--size-4-3);
+  --nav-indentation-guide-width: 1px;
+  --nav-indentation-guide-color: var(--background-modifier-border);
+  --nav-item-weight: inherit;
+  --nav-collapse-icon-color: var(--text-faint);
+  --indentation-guide-width: 1px;
+  --indentation-guide-color: var(--background-modifier-border);
   --icon-stroke: 1.75px;
   --clickable-icon-radius: var(--radius-s);
   --icon-opacity: 0.85;
@@ -519,4 +532,163 @@ body {
    in a class — the offsets are measured per hover and stay with the element. */
 .gedcom-harness-anchored {
   position: fixed;
+}
+
+.nav-header {
+  padding: var(--size-4-2) var(--size-4-3) 0;
+}
+
+.nav-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 1px;
+}
+
+.is-mobile .nav-action-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.collapse-icon {
+  display: flex;
+  align-items: center;
+}
+
+.collapse-icon::before {
+  content: "\200b";
+}
+
+.collapse-icon svg.svg-icon {
+  color: var(--nav-collapse-icon-color);
+  stroke-width: 4px;
+  width: 10px;
+  height: 10px;
+  transition: transform 0.1s ease-in-out;
+}
+
+.collapse-icon.is-collapsed svg.svg-icon {
+  transform: rotate(calc(var(--direction) * -1 * 90deg));
+}
+
+body {
+  --direction: 1;
+}
+
+body[dir="rtl"] {
+  --direction: -1;
+}
+
+.tree-item-self {
+  align-items: baseline;
+  display: flex;
+  border-radius: var(--nav-item-radius);
+  color: var(--nav-item-color);
+  font-size: var(--nav-item-size);
+  line-height: var(--line-height-tight);
+  font-weight: var(--nav-item-weight);
+  margin-bottom: var(--nav-item-margin-bottom);
+  padding: var(--nav-item-padding);
+  position: relative;
+}
+
+.tree-item-self::before {
+  content: "\200b";
+}
+
+.tree-item-self.mod-collapsible {
+  padding: var(--nav-item-parent-padding);
+}
+
+.tree-item-self.is-clickable {
+  cursor: pointer;
+}
+
+body:not(.is-grabbing) .tree-item-self.is-clickable:hover {
+  color: var(--nav-item-color-hover);
+  background-color: var(--nav-item-background-hover);
+}
+
+.tree-item-self.is-selected {
+  color: var(--nav-item-color-selected);
+  background-color: var(--nav-item-background-selected);
+}
+
+.tree-item-self .tree-item-icon {
+  position: absolute;
+  margin-inline-start: calc(-1 * var(--size-4-5));
+  width: var(--size-4-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.tree-item-self .tree-item-icon::before {
+  content: "\200b";
+}
+
+.is-mobile .tree-item .tree-item-self {
+  padding-inline-end: var(--size-4-2);
+}
+
+.tree-item-inner {
+  flex-grow: 1;
+  overflow-wrap: anywhere;
+}
+
+.tree-item-children {
+  padding-inline-start: var(--nav-item-children-padding-start);
+  margin-inline-start: var(--nav-item-children-margin-start);
+  border-inline-start: var(--nav-indentation-guide-width) solid var(--nav-indentation-guide-color);
+}
+
+/* Obsidian's reordering classes, as its app.css draws them, for a drag in the harness. */
+body {
+  --layer-dragged-item: 80;
+  --background-modifier-box-shadow: rgba(0, 0, 0, 0.15);
+  --drag-item-background: var(--background-primary);
+  --drag-item-shadow: 0 2px 8px var(--background-modifier-box-shadow);
+}
+
+.drag-reorder-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border-radius: var(--radius-s);
+  z-index: var(--layer-dragged-item);
+  pointer-events: none;
+  cursor: grabbing;
+}
+
+.drag-reorder-ghost > .mod-dragged-item {
+  background-color: var(--drag-item-background);
+  box-shadow: var(--drag-item-shadow);
+}
+
+.drop-indicator {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0;
+  border: 2px solid var(--interactive-accent);
+  pointer-events: none;
+}
+
+.drop-indicator:not(.is-active) {
+  display: none;
+}
+
+.drag-ghost-hidden {
+  visibility: hidden;
+  position: relative;
+}
+
+.drag-ghost-hidden::before {
+  content: " ";
+  position: absolute;
+  inset: 0;
+  visibility: visible;
+  border-radius: 5px;
+  background-color: color-mix(in oklch, var(--interactive-accent) 30%, transparent);
 }

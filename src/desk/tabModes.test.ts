@@ -46,19 +46,6 @@ describe("the record a tab selects on leaving Source", () => {
     expect(modes.selected).toBe("@I3@");
   });
 
-  it("keeps the event it shows while the cursor is in its record, and leaves it for another record", () => {
-    const modes = tab("graph");
-    modes.select("event:@I1@:BIRT:0", index);
-    modes.setMode("source", at());
-
-    expect(modes.setMode("graph", at("@I1@"))).toMatchObject({ changed: true, selectionChanged: false });
-    expect(modes.selected).toBe("event:@I1@:BIRT:0");
-
-    modes.setMode("source", at());
-    expect(modes.setMode("graph", at("@I2@")).selectionChanged).toBe(true);
-    expect(modes.selected).toBe("@I2@");
-  });
-
   it("leaves the selection alone for a record that has no card", () => {
     const modes = tab("source");
     modes.select("@I1@", index);
@@ -67,6 +54,32 @@ describe("the record a tab selects on leaving Source", () => {
 
     expect(modes.selected).toBe("@I1@");
     expect(change.selectionChanged).toBe(false);
+  });
+
+  it("leaves the selection alone for a note, a repository, a submitter and the header, which have cards the cursor does not select", () => {
+    for (const xref of ["@N1@", "@R2@", "@U1@", "header:"]) {
+      const modes = tab("source");
+      modes.select("@I1@", index);
+
+      expect(modes.setMode("list", at(xref)).selectionChanged).toBe(false);
+      expect(modes.selected).toBe("@I1@");
+    }
+  });
+
+  it("selects a multimedia record under the cursor", () => {
+    const modes = tab("source");
+
+    modes.setMode("list", at("@O5@"));
+
+    expect(modes.selected).toBe("@O5@");
+  });
+
+  it("accepts a note, a repository and the header selected from elsewhere", () => {
+    const modes = tab("list");
+
+    expect(["@N1@", "@R2@", "header:"].map((xref) => modes.select(xref, index))).toEqual([true, true, true]);
+    expect(modes.selected).toBe("header:");
+    expect(modes.textChanged(index).selectionCleared).toBe(false);
   });
 
   it("asks to move the cursor going to Source with a record selected, and not without one", () => {
@@ -120,15 +133,15 @@ describe("the toggle", () => {
 });
 
 describe("the selected record", () => {
-  it("is a person, a family, a source or a multimedia record, and not a note", () => {
-    for (const xref of ["@I2@", "@F3@", "@S3@", "@O5@"]) {
+  it("is any record with a card, and not one the file does not declare", () => {
+    for (const xref of ["@I2@", "@F3@", "@S3@", "@O5@", "@N1@", "@R1@", "@U1@", "header:"]) {
       const modes = tab("graph");
 
       expect(modes.select(xref, index)).toBe(true);
       expect(modes.selected).toBe(xref);
     }
     const modes = tab("graph");
-    expect(modes.select("@N1@", index)).toBe(false);
+    expect(modes.select("@X9@", index)).toBe(false);
     expect(modes.selected).toBeNull();
   });
 
@@ -150,24 +163,10 @@ describe("the selected record", () => {
     expect(modes.shownRecord()).toBeNull();
   });
 
-  it("ends when a text change removes the event it shows, and keeps it while the event stays", () => {
+  it("selects nothing for an event id, which names no record of a tab", () => {
     const modes = tab("graph");
-    const event = "event:@I1@:BIRT:0";
-    const kept = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n1 BIRT\n2 DATE 1867\n0 TRLR\n");
-    const gone = indexOf("0 HEAD\n0 @I1@ INDI\n1 NAME Marie /Curie/\n0 TRLR\n");
 
-    expect(modes.select(event, kept)).toBe(true);
-    expect(modes.textChanged(kept).selectionCleared).toBe(false);
-    expect(modes.textChanged(gone).selectionCleared).toBe(true);
-    expect(modes.selected).toBeNull();
-  });
-
-  it("drops the second of two events of a tag when the first is removed, since its number now names nothing", () => {
-    const modes = tab("graph");
-    const two = ["0 HEAD", "0 @I1@ INDI", "1 NAME A /B/", "1 RESI", "2 PLAC One", "1 RESI", "2 PLAC Two"];
-    modes.select("event:@I1@:RESI:1", indexOf(two.join("\n")));
-
-    expect(modes.textChanged(indexOf([...two.slice(0, 3), ...two.slice(5)].join("\n"))).selectionCleared).toBe(true);
+    expect(modes.select("event:@I1@:BIRT:0", index)).toBe(false);
     expect(modes.selected).toBeNull();
   });
 
@@ -306,8 +305,8 @@ describe("what each origin of a selection asks for", () => {
     expect(rules("view", true).opensDrawer).toBe(true);
   });
 
-  it("never moves the cursor or takes the focus for the cursor and for history", () => {
-    for (const origin of ["cursor", "history"] as const) {
+  it("never moves the cursor or takes the focus for the cursor", () => {
+    for (const origin of ["cursor"] as const) {
       expect(rules(origin)).toMatchObject({ cursorToRecord: false, editorFocus: false });
     }
   });
@@ -320,22 +319,14 @@ describe("what each origin of a selection asks for", () => {
 
   it("moves a view for every origin but a click in it", () => {
     expect(rules("view").revealsView).toBe(false);
-    for (const origin of ["card", "link", "history"] as const) {
+    for (const origin of ["card", "link"] as const) {
       expect(rules(origin).revealsView).toBe(true);
-    }
-  });
-
-  it("adds a follow step for the cursor, none for history and a visit for the rest", () => {
-    expect(rules("cursor").addsStep).toBe("follow");
-    expect(rules("history").addsStep).toBe("none");
-    for (const origin of ["view", "card", "link"] as const) {
-      expect(rules(origin).addsStep).toBe("visit");
     }
   });
 
   it("places the card for every origin but the cursor", () => {
     expect(rules("cursor").placesCard).toBe(false);
-    for (const origin of ["view", "card", "link", "history"] as const) {
+    for (const origin of ["view", "card", "link"] as const) {
       expect(rules(origin).placesCard).toBe(true);
     }
   });
@@ -343,7 +334,7 @@ describe("what each origin of a selection asks for", () => {
   it("opens the drawer only for a view, and only on mobile", () => {
     expect(rules("view", true).opensDrawer).toBe(true);
     expect(rules("view", false).opensDrawer).toBe(false);
-    for (const origin of ["card", "link", "history", "cursor"] as const) {
+    for (const origin of ["card", "link", "cursor"] as const) {
       expect(rules(origin, true).opensDrawer).toBe(false);
     }
   });

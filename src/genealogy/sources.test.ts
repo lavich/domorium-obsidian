@@ -44,11 +44,8 @@ describe("the sources a document declares", () => {
     expect(row?.title).toBe("@untitled@");
   });
 
-  it("reports a repository the document does not declare", () => {
-    const one = source("@S4@");
-
-    expect(one.repository).toBeUndefined();
-    expect(one.unresolved).toContain("@R9@");
+  it("reports no repository name for a repository the document does not declare", () => {
+    expect(source("@S4@").repository).toBeUndefined();
   });
 });
 
@@ -61,14 +58,6 @@ describe("a source read in full", () => {
       { tag: "AUTH", value: "Parish of the Holy Cross" },
       { tag: "PUBL", value: "Warsaw, 1867" },
     ]);
-  });
-
-  it("reports the repository as a record of its own", () => {
-    const held = source("@S1@").heldAt;
-
-    expect(held?.name).toBe("State Archive in Warsaw");
-    expect(held?.address).toBe("Krzywe Koło 7, Warsaw, Poland");
-    expect(held?.web).toBe("https://example.org/archive");
   });
 
   it("reports the pictures it points at, as a person's are", () => {
