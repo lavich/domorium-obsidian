@@ -69,13 +69,6 @@ export function describeMoveAt(service: GedcomLanguageService, at: Position, ver
     : described;
 }
 
-/** The service writes `\n`; an editor that keeps a file's `\r\n` splits lines on that alone, and would hold a line with a `\n` inside it. */
-export function inLineBreak(edit: WorkspaceEdit, lineBreak: string): WorkspaceEdit {
-  return lineBreak === "\n"
-    ? edit
-    : { ...edit, edits: edit.edits.map((one) => ({ ...one, newText: one.newText.replace(/\r?\n/g, lineBreak) })) };
-}
-
 export function moveAt(
   service: GedcomLanguageService,
   at: Position,

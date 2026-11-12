@@ -88,7 +88,6 @@ import {
   checkValue,
   commit,
   describeMoveAt,
-  inLineBreak,
   moveAt,
   refusalText,
   removeAt,
@@ -646,7 +645,7 @@ export class GedcomView extends TextFileView implements CardTab {
 
   applyWorkspaceEdit(edit: WorkspaceEdit): boolean {
     this.language.update(this.editor.state.doc);
-    return applyWorkspaceEdit(this.editor, inLineBreak(edit, this.editor.state.lineBreak), this.language.getVersion());
+    return applyWorkspaceEdit(this.editor, edit, this.language.getVersion());
   }
 
   onClose(): Promise<void> {
