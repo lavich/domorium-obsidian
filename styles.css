@@ -1937,7 +1937,7 @@ button.gedcom-fg-pop-open {
 }
 
 .gedcom-tree {
-  --gedcom-tree-action: calc(var(--nav-item-size) * var(--line-height-tight) + 2 * var(--size-4-1) - 2 * var(--size-2-1));
+  --gedcom-tree-action: var(--size-4-6);
   position: relative;
 }
 
@@ -2183,8 +2183,9 @@ button.gedcom-fg-pop-open {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: var(--gedcom-tree-action);
-  height: var(--gedcom-tree-action);
+  width: auto;
+  height: min(calc(100% - 2 * var(--size-2-1)), var(--gedcom-tree-action));
+  aspect-ratio: 1;
   padding: 0;
 }
 
@@ -2444,8 +2445,10 @@ button.gedcom-fg-pop-open {
 
 .gedcom-tree .gedcom-tree-node > .gedcom-tree-row > .gedcom-tree-actions {
   position: absolute;
-  top: var(--size-2-1);
+  inset-block: 0;
   inset-inline-end: var(--size-2-1);
+  align-self: stretch;
+  align-items: center;
   margin: 0;
 }
 
