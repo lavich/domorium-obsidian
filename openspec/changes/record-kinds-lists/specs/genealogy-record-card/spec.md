@@ -387,6 +387,85 @@ in the muted text colour; a notice that a source is missing keeps its warning co
 - **WHEN** the card is shown and the pointer is not over the tree
 - **THEN** the arrows of the nodes are visible, and so is the control that opens or closes every node, in the header above the tree
 
+### Requirement: The card fits a narrow panel and a phone, with no header
+
+The card SHALL be readable and usable in one column at the width a sidebar has,
+from 320 pixels up, and at a phone's width, without horizontal scrolling of the
+card. The card SHALL have no header and no Back or Forward control: its body is the whole of it and scrolls. A place named in a fact SHALL open the card of that place. Redrawing the card for the same record — the file changing —
+SHALL NOT scroll it back to the top, and, where the focus was in the card, SHALL keep it on the same fact; selecting another record or a place SHALL scroll the card to
+the top, except a record selected from a row of the card of a place, which SHALL show the line of that event, as the requirement on the card of a place says.
+
+#### Scenario: A person card at a sidebar's width
+- **WHEN** Marie's card is shown 320 pixels wide
+- **THEN** every line of her record is visible without scrolling sideways
+
+#### Scenario: A person card on a phone
+- **WHEN** Marie's card is shown 390 pixels wide
+- **THEN** every line of her record is visible without scrolling sideways
+
+#### Scenario: Tapping a place in a fact
+- **WHEN** the reader taps `Warsaw, Congress Poland` in Marie's birth
+- **THEN** the card of that place is shown
+
+#### Scenario: Another record
+- **WHEN** the card is scrolled to the end of Marie's card and the reader activates
+  a pointer to a family in her tree
+- **THEN** that family's card is shown from its top
+
+#### Scenario: The header stays
+- **WHEN** the reader scrolls to the end of Marie's card
+- **THEN** the card has no header: no bar, no Back or Forward control, and its body began at the top of the card
+
+### Requirement: An event is one row at a place
+
+The card of a place SHALL have no heading. At its top SHALL be a field labelled with the
+word for a place in the reader's language, holding the place's name as the Places list names
+it — the spelling of its first occurrence in the file. Where the card writes, the field SHALL
+rename the place everywhere, as the requirement on renaming a place in
+`genealogy-record-edit` says, and SHALL behave as a field of the tree: written on Enter and
+on leaving it, put back by Escape. Where the card does not write — a file with no dialect, or
+a line of the place the language service does not describe — the name SHALL be read-only and
+the card SHALL say once, in the reader's language, why it cannot be edited.
+
+Below the field, every line that names the place — each `PLAC` of an event of a person or a
+family that the Places list groups into it — SHALL be drawn as one **event row**, in the
+order the file writes them: its date as the file writes it on the left, a dash where it has
+none; its name in the reader's language, which is not a control of its own; where the event
+cites any source, a quiet dot after the name, which says how many in its accessible name and
+title, and none where it cites none; and, under the name, the person or the family the event
+belongs to, as a link. Activating the link, or pressing the row, SHALL select that record and
+show its card with the node of that event opened and brought into view, the focus on it
+where the focus was in the card. On a coarse pointer and on a phone each row SHALL be at least
+44 pixels tall. The card SHALL NOT offer to edit the lines a `PLAC` holds (`MAP`, `FORM`,
+`TRAN`, `NOTE`); they are edited in the tree of the event.
+
+#### Scenario: An event at a place
+- **WHEN** the card of `Warsaw, Congress Poland` lists Marie's birth
+- **THEN** the row shows `7 NOV 1867`, names `Birth`, and links `Marie Skłodowska-Curie` under the name
+
+#### Scenario: A fact that cites a source
+- **WHEN** an event at a place carries `2 SOUR @S2@`
+- **THEN** its row shows a dot after the name, which says it cites one source
+
+#### Scenario: The record from a place
+- **WHEN** the reader presses `Marie Skłodowska-Curie` in that row
+- **THEN** Marie's card is shown with her birth opened and in view, and the list, where it is in view, shows the people with her marked
+
+#### Scenario: The name at the top
+- **WHEN** the card of `Warsaw, Congress Poland` is shown in `curie.ged`
+- **THEN** it has no heading, its first control is a field labelled Place holding
+  `Warsaw, Congress Poland`, and eleven rows follow in the order of the file, the first
+  Marie's birth
+
+#### Scenario: The rows in the order of the file
+- **WHEN** a file names `Kyiv` first in a death of 1900 and then in a birth of 1850
+- **THEN** the card of `Kyiv` lists the death first
+
+#### Scenario: The name of a place in a file with no dialect
+- **WHEN** the card shows a place of a file that names no GEDCOM version
+- **THEN** its name is a read-only field, the card says once why it cannot be edited, and
+  its rows still select their records
+
 ## ADDED Requirements
 
 ### Requirement: The card of a shared note, a repository and the other records
