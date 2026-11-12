@@ -658,133 +658,30 @@ test.describe("hover tooltips", () => {
 for (const viewport of [WIDE, PHONE]) {
   const phone = viewport.width < 400;
 
-  test.describe(`the places of the list at ${viewport.width} px`, () => {
-    test.use({ viewport });
-
-    const mountPlaces = (page: Page, options: TabOptions = {}) =>
-      mountList(page, { events: true, phone, touch: phone, memory: { list: { kind: "places" } }, ...options });
-    const place = (page: Page, key: string) => page.locator(`.gedcom-list-row[data-key="${key}"]`);
-
-    test("lists every place alphabetically with the events and the years", async ({ page }) => {
-      await mountPlaces(page);
-
-      await expect(rows(page)).toHaveCount(10);
-      expect((await names(page))[0]).toBe("Montpellier, France");
-      await expect(page.locator(".gedcom-list-count")).toHaveText("10 places");
-      const cells = await place(page, "paris, france").locator(".gedcom-list-cell").allInnerTexts();
-      expect(cells.map((cell) => cell.trim())).toEqual(["Paris, France", phone ? "11 events" : "11", "1855–1958"]);
-    });
-
-    test("sorts by each column in three presses and keeps the sort", async ({ page }) => {
-      test.skip(phone, "the headers are a menu on a phone");
-      await mountPlaces(page);
-
-      await header(page, "Events").click();
-      expect((await names(page))[0]).toBe("Passy, Haute-Savoie, France");
-      await header(page, "Events").click();
-      expect((await names(page))[0]).toBe("Warsaw, Congress Poland");
-      await header(page, "Events").click();
-      expect((await names(page))[0]).toBe("Montpellier, France");
-      await header(page, "Years").click();
-      expect(await page.evaluate(() => window.tab.views?.memory().list?.sort)).toEqual({ places: { by: "years", dir: "asc" } });
-    });
-
-    test("sorts by a menu on a phone", async ({ page }) => {
-      test.skip(!phone, "the headers do the work above a phone");
-      await mountPlaces(page);
-      const menu = page.locator(".gedcom-list-sort-select");
-
-      await expect(menu.locator("option").first()).toHaveText("Alphabetical");
-      await menu.selectOption("events");
-      expect((await names(page))[0]).toBe("Passy, Haute-Savoie, France");
-    });
-
-    test("narrows by place name without case or accents and counts what is left", async ({ page }) => {
-      await mountPlaces(page);
-      await searchFor(page, "MONTPELLIÉR");
-
-      expect(await names(page)).toEqual(["Montpellier, France"]);
-      await expect(page.locator(".gedcom-list-count")).toHaveText("1 of 10 places");
-    });
-
-    test("selects the place of a row and stays on the places", async ({ page }) => {
-      await mountPlaces(page);
-      await place(page, "paris, france").click();
-
-      await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
-      expect(await selected(page)).toEqual(["place:paris, france"]);
-      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Places");
-    });
-
-    test("brings a place selected elsewhere into view on the places", async ({ page }) => {
-      await mountList(page, { events: true, phone, touch: phone });
-      await page.evaluate(() => window.tab.select("place:paris, france", true));
-
-      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("Places");
-      await expect(place(page, "paris, france")).toHaveAttribute("aria-selected", "true");
-    });
-
-    test("switches to the people for a person chosen in the card of a place", async ({ page }) => {
-      await mountPlaces(page);
-      await page.evaluate(() => window.tab.select("@I2@", true, true));
-
-      await expect(page.locator(".gedcom-list-seg-button.is-active")).toHaveText("People");
-      await expect(rowOf(page, "@I2@")).toHaveAttribute("aria-selected", "true");
-    });
-
-    test("is reached by keyboard and selects by Enter", async ({ page }) => {
-      await mountPlaces(page);
-      await page.locator(".gedcom-list-scroll").focus();
-      await page.keyboard.press("ArrowDown");
-      await page.keyboard.press("Enter");
-
-      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(1);
-      expect(await selected(page)).toHaveLength(1);
-    });
-
-    test("has no button in the row of the kinds but the kinds", async ({ page }) => {
-      await mountPlaces(page);
-
-      await expect(page.locator(KIND_BUTTON)).toHaveCount(8);
-      await expect(phone ? kindSelect(page) : page.locator(".gedcom-list-bar > .gedcom-list-seg")).toBeVisible();
-      const parts = await page.locator(".gedcom-list-bar > *").evaluateAll((all) =>
-        all.filter((one) => !one.classList.contains("gedcom-visually-hidden")).map((one) => one.classList[0]),
-      );
-      expect(parts).toEqual(["gedcom-list-seg", "gedcom-list-kind-select", "gedcom-list-kinds-probe", "gedcom-list-find"]);
-      await expect(page.locator(".gedcom-list-action")).toHaveCount(0);
-    });
-
-    test("gives its rows the height a finger finds", async ({ page }) => {
-      test.skip(!phone, "a pointer needs no more than the default");
-      await mountPlaces(page);
-
-      const rowHeight = (await rows(page).first().boundingBox())?.height ?? 0;
-      expect(rowHeight).toBeGreaterThanOrEqual(44);
-    });
-
-    test("does not overflow sideways", async ({ page }) => {
-      await mountPlaces(page);
-
-      expect(await sidewaysOverflow(page)).toBe(false);
-    });
-  });
-}
-
-for (const viewport of [WIDE, PHONE]) {
-  const phone = viewport.width < 400;
-
   test.describe(`the kinds of the list at ${viewport.width} px`, () => {
     test.use({ viewport });
 
-    test("has no Events kind", async ({ page }) => {
+    test("has no Events kind and no Places kind", async ({ page }) => {
       await mountList(page, { events: true, phone, touch: phone });
 
-      const kinds = ["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"];
+      const kinds = ["People", "Families", "Sources", "Media", "Notes", "Repositories", "Other"];
       if (phone) {
         await expect(kindSelect(page).locator("option")).toHaveText(kinds);
         await expect(kindSelect(page)).toHaveValue("people");
       } else {
         await expect(page.locator(KIND_BUTTON)).toHaveText(kinds);
+        await expect(page.locator(`${KIND_BUTTON}.is-active`)).toHaveText("People");
+      }
+    });
+
+    test("marks nothing and keeps the kind for a place an older workspace selected", async ({ page }) => {
+      await mountList(page, { events: true, phone, touch: phone });
+      await page.evaluate(() => window.tab.select("place:paris, france", true));
+
+      await expect(page.locator(".gedcom-list-row[aria-selected='true']")).toHaveCount(0);
+      if (phone) {
+        await expect(kindSelect(page)).toHaveValue("people");
+      } else {
         await expect(page.locator(`${KIND_BUTTON}.is-active`)).toHaveText("People");
       }
     });
@@ -855,12 +752,12 @@ test.describe("the kinds as buttons or a dropdown", () => {
     expect(Math.abs(english - russian)).toBeGreaterThan(1);
   });
 
-  test("offer the eight kinds in one dropdown named as the kind of records, and choosing Notes shows the notes", async ({ page }) => {
+  test("offer the seven kinds in one dropdown named as the kind of records, and choosing Notes shows the notes", async ({ page }) => {
     await page.setViewportSize(PHONE);
     await mountList(page, { phone: true, touch: true });
 
     await expect(kindSelect(page)).toBeVisible();
-    await expect(kindSelect(page).locator("option")).toHaveText(["People", "Families", "Sources", "Places", "Media", "Notes", "Repositories", "Other"]);
+    await expect(kindSelect(page).locator("option")).toHaveText(["People", "Families", "Sources", "Media", "Notes", "Repositories", "Other"]);
     expect(await kindSelect(page).evaluate((select) => document.getElementById(select.getAttribute("aria-labelledby") ?? "")?.textContent)).toBe("Kind of records");
     expect((await kindSelect(page).boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(43.5);
     await kindSelect(page).selectOption("notes");
