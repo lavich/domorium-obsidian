@@ -105,7 +105,7 @@ nothing. With it off, the first selection in a session puts the card in the
 right sidebar without expanding it. **Show the record
 card** brings it back, opens a collapsed sidebar and gives it the focus; on a
 phone it is in the right drawer, which a second touch on a card, or a tap on a
-row of the list, opens. The card of a person, a family, a source, a shared note, a repository, a submitter or any other record is the **lines of the record as a tree** and nothing else: no heading, no section of relatives, pictures or timeline. The tree runs in the
+row of the list, opens. The card of a person, a family, a source, a medium, a shared note, a repository, a submitter, the file's header or any other record is the **lines of the record as a tree** and nothing else: no heading, no section of relatives, pictures or timeline. The tree runs in the
 order the file writes the lines and nests them as the file nests them, with no sections of the plugin's
 own: names, events, attributes, notes, associates, identifiers and a custom tag all stand where
 the file puts them, in the reader's language. Every node starts closed with a one-line summary — an event shows its date
@@ -116,8 +116,8 @@ the events held there, each with a link to the person or the family it belongs t
 keyboard and, on a phone, can be hit over at least 32 pixels, a block button over 44. A pointer
 to a shared note shows the note's text where it stands, with an **Open note** control beside it
 that opens the note's own card. The text of a shared note and the value of a record of the file's
-own are a field on the root of its tree. The header's card is read-only: change the header in
-Source. A place and a media record have cards of their own, and the card has no header: select a record again in the
+own are a field on the root of its tree. The file of a medium shows its picture where it is an
+image in the vault, and its path beside a file icon otherwise. A place has a card of its own, and the card has no header: select a record again in the
 graph, the timeline or the list to return to it. **Show in source** on a pointer to a record the file does not
 declare switches to Source with that line selected.
 
@@ -138,8 +138,20 @@ bin of a line removes it with everything beneath it, asking first when lines go
 with it. What the service refuses is not written, and the reason is shown under
 the field; a change made against text that has moved since the card was drawn —
 an edit in Source, a second press — is refused and the card is drawn again from
-the file. A file with no GEDCOM version the plugin can check is shown read-only,
+the file. The header edits as any record, and the language service refuses what
+would change how the file is read, its GEDCOM version for one. A file with no GEDCOM version the plugin can check is shown read-only,
 with a line saying so.
+
+Pressing the picture or the path of a medium's file offers two choices. **Choose
+from the vault** lists the vault's files, images first, and writes the one you
+pick as a path relative to the GEDCOM file; a GEDCOM 7 file names only files in
+its own folder or beneath it. **Upload from device** opens your device's file
+picker and copies the file into the vault — beside the file the line names, or
+into a `Media` folder beside the GEDCOM file — numbering the name where it is
+taken, then writes its path. Where the line states a format, the same change
+writes the new file's (`image/png` in GEDCOM 7, `png` in 5.5.1, where the
+standard lists it). Nothing is copied before you choose a file, and a copy is
+never removed by the plugin.
 
 What selects a record: a click or tap on a card or a node in Graph, or a bar in
 Timeline, marks the person and shows the card without moving the
