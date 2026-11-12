@@ -169,20 +169,6 @@
   "desk.couple": "{one} ⚭ {other}",
   "desk.familyNoSpouses": "A family with no spouses recorded",
   "desk.media": "Media",
-  "places.count": {
-    "one": "{count} event",
-    "other": "{count} events"
-  },
-  "place.rename": "Rename",
-  "place.occurrences": "Where the file names the place",
-  "place.renameQuestion": {
-    "one": "Rename the place in {count} line?",
-    "other": "Rename the place in {count} lines?"
-  },
-  "place.mergeQuestion": {
-    "one": "Rename the place in {count} line? It will be merged with “{place}”.",
-    "other": "Rename the place in {count} lines? It will be merged with “{place}”."
-  },
   "overview.search": "Find a person…",
   "overview.clearSearch": "Clear the search",
   "overview.matches": {
@@ -225,7 +211,6 @@
   "list.people": "People",
   "list.families": "Families",
   "list.sources": "Sources",
-  "list.places": "Places",
   "list.media": "Media",
   "list.notes": "Notes",
   "list.repositories": "Repositories",
@@ -242,7 +227,6 @@
   "list.column.author": "Author",
   "list.column.repository": "Repository",
   "list.column.citedBy": "Cited by",
-  "list.column.events": "Events",
   "list.column.file": "File",
   "list.column.format": "Format",
   "list.column.linkedFrom": "Linked from",
@@ -260,10 +244,6 @@
   "list.count.sources": {
     "one": "{count} source",
     "other": "{count} sources"
-  },
-  "list.count.places": {
-    "one": "{count} place",
-    "other": "{count} places"
   },
   "list.count.media": {
     "one": "{count} medium",
@@ -297,10 +277,6 @@
     "one": "{shown} of {count} source",
     "other": "{shown} of {count} sources"
   },
-  "list.countOf.places": {
-    "one": "{shown} of {count} place",
-    "other": "{shown} of {count} places"
-  },
   "list.countOf.media": {
     "one": "{shown} of {count} medium",
     "other": "{shown} of {count} media"
@@ -324,7 +300,6 @@
   "list.search.people": "Name, year, place…",
   "list.search.families": "Names, year, place…",
   "list.search.sources": "Title, author, repository…",
-  "list.search.places": "Place name…",
   "list.search.media": "Title, file, format…",
   "list.search.notes": "Text of the note…",
   "list.search.repositories": "Name, address…",
@@ -332,7 +307,6 @@
   "list.nothing.people": "Nothing matches “{query}”. Search covers names, years and places.",
   "list.nothing.families": "Nothing matches “{query}”. Search covers names, years and places.",
   "list.nothing.sources": "Nothing matches “{query}”. Search covers titles, authors and repositories.",
-  "list.nothing.places": "Nothing matches “{query}”. Search covers place names.",
   "list.nothing.media": "Nothing matches “{query}”. Search covers titles, files and formats.",
   "list.nothing.notes": "Nothing matches “{query}”. Search covers the text of the notes.",
   "list.nothing.repositories": "Nothing matches “{query}”. Search covers names and addresses.",
@@ -340,7 +314,6 @@
   "list.none.people": "The file holds no people.",
   "list.none.families": "The file holds no families.",
   "list.none.sources": "The file holds no sources.",
-  "list.none.places": "The file names no places.",
   "list.none.media": "The file holds no media.",
   "list.none.notes": "The file holds no shared notes.",
   "list.none.repositories": "The file holds no repositories.",
@@ -349,7 +322,6 @@
   "list.sortAscending": "Ascending",
   "list.sortDescending": "Descending",
   "list.fileOrder": "File order",
-  "list.alphabetical": "Alphabetical",
   "list.gapMark": "No sources at all",
   "list.label": "Records of the file",
   "list.compact.sources": {
@@ -362,10 +334,6 @@
   },
   "list.compact.citedBy": "Cited by {count}",
   "list.compact.linkedFrom": "Linked from {count}",
-  "list.compact.events": {
-    "one": "{count} event",
-    "other": "{count} events"
-  },
   "record.tag.NAME": "Name",
   "record.tag.GIVN": "Given names",
   "record.tag.SURN": "Surname",
@@ -517,7 +485,6 @@
   "edit.refusal.value-not-allowed": "The standard allows no value on this line.",
   "edit.refusal.file-out-of-reach": "A GEDCOM 7 file can name only files in its own folder or beneath it.",
   "edit.refusal.copy-failed": "The file could not be copied into the vault, so nothing was written.",
-  "edit.refusal.place-name-empty": "A place needs a name.",
   "edit.refusal.noSuchDay": {
     "one": "There is no {date}: {month} has {count} day.",
     "other": "There is no {date}: {month} has {count} days."
@@ -527,7 +494,6 @@
   "edit.revert": "Put back the value the file holds",
   "edit.asText": "{field} as text",
   "edit.asRecord": "{field} as a record",
-  "edit.openPlace": "Open the place {place}",
   "desk.openNote": "Open note",
   "edit.chooseValues": "Choose the values of {field}",
   "edit.noValues": "None",

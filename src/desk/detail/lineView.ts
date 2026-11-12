@@ -5,7 +5,6 @@ import { readName, UNNAMED } from "../../genealogy/names";
 import { t } from "../../i18n";
 import { pageKind } from "../deskState";
 import { linkButton } from "../dom";
-import { placeAt } from "../placeRows";
 import { familyTitle, personName, sourceTitle } from "../labels";
 import { labelId, renderField } from "./fields";
 import { renderFoldedText } from "./foldedText";
@@ -46,10 +45,6 @@ export function recordTitle(index: GenealogyIndex, xref: string): string | undef
   const source = index.source(xref);
   if (source) {
     return sourceTitle(source.title);
-  }
-  const place = placeAt(index, xref);
-  if (place) {
-    return place.name;
   }
   const media = index.media(xref);
   if (media) {

@@ -17,7 +17,6 @@ import {
   type ListState,
   type SortKey,
 } from "./listRows";
-import { placeId, placeKeyOf, placesOf, type PlaceRow } from "./placeRows";
 
 export interface ListHost {
   select(xref: string): void;
@@ -38,7 +37,6 @@ const KIND_LABEL: Record<ListKind, MessageKey> = {
   people: "list.people",
   families: "list.families",
   sources: "list.sources",
-  places: "list.places",
   media: "list.media",
   notes: "list.notes",
   repositories: "list.repositories",
@@ -48,7 +46,6 @@ const SEARCH_HINT: Record<ListKind, MessageKey> = {
   people: "list.search.people",
   families: "list.search.families",
   sources: "list.search.sources",
-  places: "list.search.places",
   media: "list.search.media",
   notes: "list.search.notes",
   repositories: "list.search.repositories",
@@ -58,7 +55,6 @@ const NOTHING: Record<ListKind, MessageKey> = {
   people: "list.nothing.people",
   families: "list.nothing.families",
   sources: "list.nothing.sources",
-  places: "list.nothing.places",
   media: "list.nothing.media",
   notes: "list.nothing.notes",
   repositories: "list.nothing.repositories",
@@ -68,7 +64,6 @@ const NONE: Record<ListKind, MessageKey> = {
   people: "list.none.people",
   families: "list.none.families",
   sources: "list.none.sources",
-  places: "list.none.places",
   media: "list.none.media",
   notes: "list.none.notes",
   repositories: "list.none.repositories",
@@ -78,7 +73,6 @@ const COUNT: Record<ListKind, MessageKey> = {
   people: "list.count.people",
   families: "list.count.families",
   sources: "list.count.sources",
-  places: "list.count.places",
   media: "list.count.media",
   notes: "list.count.notes",
   repositories: "list.count.repositories",
@@ -88,7 +82,6 @@ const COUNT_OF: Record<ListKind, MessageKey> = {
   people: "list.countOf.people",
   families: "list.countOf.families",
   sources: "list.countOf.sources",
-  places: "list.countOf.places",
   media: "list.countOf.media",
   notes: "list.countOf.notes",
   repositories: "list.countOf.repositories",
@@ -96,14 +89,14 @@ const COUNT_OF: Record<ListKind, MessageKey> = {
 };
 
 /** Kinds that keep the list while a person, a family or a source is selected from outside it. */
-const HOLDING: ReadonlySet<ListKind> = new Set(["places", "media", "notes", "repositories", "other"]);
+const HOLDING: ReadonlySet<ListKind> = new Set(["media", "notes", "repositories", "other"]);
 
 let boards = 0;
 
 const canonical = (state: ListState): string =>
   JSON.stringify([state.kind ?? "people", LIST_KINDS.map((kind) => state.sort?.[kind] ?? null)]);
 
-const keyOf = (row: ListRow): string => ("key" in row ? row.key : (row.xref ?? ""));
+const keyOf = (row: ListRow): string => row.xref ?? "";
 
 export class ListBoard {
   private readonly id = `gedcom-list-${(boards += 1)}`;
@@ -278,7 +271,6 @@ export class ListBoard {
       this.applyMarks();
       return;
     }
-    const rowKey = placeKeyOf(xref) ?? xref;
     const fresh = xref !== this.marked;
     this.marked = xref;
     if (HOLDING.has(this.kind) && !HOLDING.has(kind) && !fromCard) {
@@ -293,13 +285,13 @@ export class ListBoard {
       if (kind !== this.kind) {
         this.switchKind(kind);
       }
-      if (!this.positions.has(rowKey)) {
+      if (!this.positions.has(xref)) {
         this.query = "";
         this.find.reset();
         this.refresh(true);
       }
     }
-    const at = this.positions.get(rowKey);
+    const at = this.positions.get(xref);
     if (at === undefined) {
       this.applyMarks();
       return;
@@ -515,9 +507,6 @@ export class ListBoard {
     if (this.kind === "people") {
       return this.totals.people;
     }
-    if (this.kind === "places") {
-      return placesOf(index).length;
-    }
     if (isRecordKind(this.kind)) {
       return index.lists[this.kind].length;
     }
@@ -544,7 +533,7 @@ export class ListBoard {
     if (this.builtKind !== this.kind) {
       this.builtKind = this.kind;
       this.sortSelect.empty();
-      this.sortSelect.createEl("option", { text: t(this.kind === "places" ? "list.alphabetical" : "list.fileOrder"), attr: { value: "" } });
+      this.sortSelect.createEl("option", { text: t("list.fileOrder"), attr: { value: "" } });
       for (const column of columns) {
         this.sortSelect.createEl("option", { text: t(column.label), attr: { value: column.key } });
       }
@@ -617,8 +606,8 @@ export class ListBoard {
     el.dataset.pos = String(at);
     el.setAttribute("role", "row");
     el.setAttribute("aria-rowindex", String(at + 2));
-    el.setAttribute("aria-selected", String(key === this.markedKey()));
-    el.toggleClass("is-selected", key === this.markedKey());
+    el.setAttribute("aria-selected", String(key === this.marked));
+    el.toggleClass("is-selected", key === this.marked);
     el.toggleClass("is-focused", at === this.active);
     el.setCssProps({ top: `${at * this.rowHeight}px` });
     columnsOf(this.kind).forEach((column, position) => {
@@ -641,23 +630,10 @@ export class ListBoard {
   }
 
   private countLabel(key: SortKey, count: number): string {
-    if (key === "events") {
-      return plural("list.compact.events", count);
-    }
     if (key === "linkedFrom") {
       return t("list.compact.linkedFrom", { count });
     }
     return key === "citedBy" ? t("list.compact.citedBy", { count }) : plural(key === "children" ? "list.compact.children" : "list.compact.sources", count);
-  }
-
-  private markedKey(): string | null {
-    if (this.marked === null) {
-      return null;
-    }
-    if (this.kind === "places") {
-      return placeKeyOf(this.marked);
-    }
-    return this.marked;
   }
 
   private rowId(at: number): string {
@@ -665,7 +641,7 @@ export class ListBoard {
   }
 
   private applyMarks(): void {
-    const marked = this.markedKey();
+    const marked = this.marked;
     for (const el of this.live.values()) {
       const on = el.dataset.key === marked;
       el.toggleClass("is-selected", on);
@@ -717,7 +693,7 @@ export class ListBoard {
 
   private focusEntered(): void {
     if (this.active < 0 && this.rows.length > 0) {
-      const marked = this.markedKey();
+      const marked = this.marked;
       this.setActive(marked !== null ? (this.positions.get(marked) ?? 0) : 0, false);
     }
   }
@@ -735,7 +711,10 @@ export class ListBoard {
     if (row === undefined) {
       return;
     }
-    const xref = row.xref ?? placeId((row as PlaceRow).key);
+    const xref = row.xref;
+    if (xref === undefined) {
+      return;
+    }
     this.marked = xref;
     this.setActive(at, scrollTo);
     this.host.select(xref);
@@ -783,7 +762,7 @@ export class ListBoard {
       return;
     }
     if (from < 0 && event.key !== "Home" && event.key !== "End") {
-      const marked = this.markedKey();
+      const marked = this.marked;
       to = marked === null ? 0 : (this.positions.get(marked) ?? 0);
     }
     this.setActive(Math.min(last, Math.max(0, to)), true);

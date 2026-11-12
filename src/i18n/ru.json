@@ -181,26 +181,6 @@
   "desk.couple": "{one} ⚭ {other}",
   "desk.familyNoSpouses": "Семья без указанных супругов",
   "desk.media": "Медиа",
-  "places.count": {
-    "one": "{count} событие",
-    "few": "{count} события",
-    "many": "{count} событий",
-    "other": "{count} события"
-  },
-  "place.rename": "Переименовать",
-  "place.occurrences": "Где файл называет это место",
-  "place.renameQuestion": {
-    "one": "Переименовать место в {count} строке?",
-    "few": "Переименовать место в {count} строках?",
-    "many": "Переименовать место в {count} строках?",
-    "other": "Переименовать место в {count} строки?"
-  },
-  "place.mergeQuestion": {
-    "one": "Переименовать место в {count} строке? Оно объединится с местом «{place}».",
-    "few": "Переименовать место в {count} строках? Оно объединится с местом «{place}».",
-    "many": "Переименовать место в {count} строках? Оно объединится с местом «{place}».",
-    "other": "Переименовать место в {count} строки? Оно объединится с местом «{place}»."
-  },
   "overview.search": "Найти человека…",
   "overview.clearSearch": "Очистить поиск",
   "overview.matches": {
@@ -249,7 +229,6 @@
   "list.people": "Люди",
   "list.families": "Семьи",
   "list.sources": "Источники",
-  "list.places": "Места",
   "list.media": "Медиа",
   "list.notes": "Заметки",
   "list.repositories": "Хранилища",
@@ -266,7 +245,6 @@
   "list.column.author": "Автор",
   "list.column.repository": "Хранилище",
   "list.column.citedBy": "Цитируют",
-  "list.column.events": "События",
   "list.column.file": "Файл",
   "list.column.format": "Формат",
   "list.column.linkedFrom": "Ссылаются",
@@ -290,12 +268,6 @@
     "few": "{count} источника",
     "many": "{count} источников",
     "other": "{count} источника"
-  },
-  "list.count.places": {
-    "one": "{count} место",
-    "few": "{count} места",
-    "many": "{count} мест",
-    "other": "{count} места"
   },
   "list.count.media": {
     "one": "{count} медиафайл",
@@ -345,12 +317,6 @@
     "many": "{shown} из {count} источников",
     "other": "{shown} из {count} источника"
   },
-  "list.countOf.places": {
-    "one": "{shown} из {count} места",
-    "few": "{shown} из {count} мест",
-    "many": "{shown} из {count} мест",
-    "other": "{shown} из {count} места"
-  },
   "list.countOf.media": {
     "one": "{shown} из {count} медиафайла",
     "few": "{shown} из {count} медиафайлов",
@@ -384,7 +350,6 @@
   "list.search.people": "Имя, год, место…",
   "list.search.families": "Имена, год, место…",
   "list.search.sources": "Название, автор, хранилище…",
-  "list.search.places": "Название места…",
   "list.search.media": "Название, файл, формат…",
   "list.search.notes": "Текст заметки…",
   "list.search.repositories": "Название, адрес…",
@@ -392,7 +357,6 @@
   "list.nothing.people": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.families": "Ничего не найдено по запросу «{query}». Поиск идёт по именам, годам и местам.",
   "list.nothing.sources": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям, авторам и хранилищам.",
-  "list.nothing.places": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям мест.",
   "list.nothing.media": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям, файлам и форматам.",
   "list.nothing.notes": "Ничего не найдено по запросу «{query}». Поиск идёт по тексту заметок.",
   "list.nothing.repositories": "Ничего не найдено по запросу «{query}». Поиск идёт по названиям и адресам.",
@@ -400,7 +364,6 @@
   "list.none.people": "В файле нет людей.",
   "list.none.families": "В файле нет семей.",
   "list.none.sources": "В файле нет источников.",
-  "list.none.places": "В файле нет мест.",
   "list.none.media": "В файле нет медиа.",
   "list.none.notes": "В файле нет общих заметок.",
   "list.none.repositories": "В файле нет хранилищ.",
@@ -409,7 +372,6 @@
   "list.sortAscending": "По возрастанию",
   "list.sortDescending": "По убыванию",
   "list.fileOrder": "Порядок файла",
-  "list.alphabetical": "По алфавиту",
   "list.gapMark": "Ни одного источника",
   "list.label": "Записи файла",
   "list.compact.sources": {
@@ -426,12 +388,6 @@
   },
   "list.compact.citedBy": "Цитируют: {count}",
   "list.compact.linkedFrom": "Ссылаются: {count}",
-  "list.compact.events": {
-    "one": "{count} событие",
-    "few": "{count} события",
-    "many": "{count} событий",
-    "other": "{count} события"
-  },
   "record.tag.NAME": "Имя",
   "record.tag.GIVN": "Имена",
   "record.tag.SURN": "Фамилия",
@@ -585,7 +541,6 @@
   "edit.refusal.value-not-allowed": "Стандарт не допускает значения в этой строке.",
   "edit.refusal.file-out-of-reach": "Файл GEDCOM 7 может ссылаться только на файлы в своей папке и во вложенных в неё.",
   "edit.refusal.copy-failed": "Не удалось скопировать файл в хранилище, поэтому ничего не записано.",
-  "edit.refusal.place-name-empty": "У места должно быть название.",
   "edit.refusal.noSuchDay": {
     "one": "Даты «{date}» не бывает: {month} длится {count} день.",
     "few": "Даты «{date}» не бывает: {month} длится {count} дня.",
@@ -597,7 +552,6 @@
   "edit.revert": "Вернуть значение из файла",
   "edit.asText": "{field}: текст",
   "edit.asRecord": "{field}: запись",
-  "edit.openPlace": "Открыть место {place}",
   "desk.openNote": "Открыть заметку",
   "edit.chooseValues": "Выбрать значения поля «{field}»",
   "edit.noValues": "Нет",

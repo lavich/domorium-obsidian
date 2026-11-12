@@ -6,11 +6,10 @@ import { recordTitle } from "./detail/lineView";
 import { foldText } from "./foldText";
 import { familySortKey, familyTitle, personName, personSortKey, sourceTitle, year, yearsOf } from "./labels";
 import { orderRows, type SortValue } from "./listOrder";
-import { placeAt, placeRows, yearsText, type PlaceRow } from "./placeRows";
 
-export type ListKind = "people" | "families" | "sources" | "places" | "media" | "notes" | "repositories" | "other";
+export type ListKind = "people" | "families" | "sources" | "media" | "notes" | "repositories" | "other";
 
-export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "places", "media", "notes", "repositories", "other"];
+export const LIST_KINDS: readonly ListKind[] = ["people", "families", "sources", "media", "notes", "repositories", "other"];
 
 /** The kinds whose rows the read model lists by id, each row read when first asked for. */
 export type RecordKind = "media" | "notes" | "repositories" | "other";
@@ -31,7 +30,6 @@ export type SortKey =
   | "author"
   | "repository"
   | "citedBy"
-  | "events"
   | "text"
   | "file"
   | "format"
@@ -60,7 +58,7 @@ export interface RecordRow {
   search: string;
 }
 
-export type ListRow = PersonRow | FamilyRow | SourceRow | PlaceRow | RecordRow;
+export type ListRow = PersonRow | FamilyRow | SourceRow | RecordRow;
 
 export interface Column {
   key: SortKey;
@@ -86,11 +84,6 @@ const COLUMNS: Record<ListKind, Column[]> = {
     { key: "author", label: "list.column.author", numeric: false },
     { key: "repository", label: "list.column.repository", numeric: false },
     { key: "citedBy", label: "list.column.citedBy", numeric: true },
-  ],
-  places: [
-    { key: "place", label: "list.column.place", numeric: false },
-    { key: "events", label: "list.column.events", numeric: true },
-    { key: "years", label: "list.column.years", numeric: false },
   ],
   media: [
     { key: "title", label: "list.column.title", numeric: false },
@@ -277,10 +270,6 @@ export function cellsOf(kind: ListKind, row: ListRow, index: GenealogyIndex): Ce
       gap: false,
     };
   }
-  if (kind === "places") {
-    const place = row as PlaceRow;
-    return { texts: [place.name, String(place.events), yearsText(place)], gap: false };
-  }
   const source = row as SourceRow;
   return {
     texts: [
@@ -377,9 +366,6 @@ function recordsShown(index: GenealogyIndex, kind: RecordKind, query: string, so
 }
 
 export function listRows(index: GenealogyIndex, { kind, query, sort }: ListQuery, collator: Intl.Collator): ListRow[] {
-  if (kind === "places") {
-    return placeRows(index, { query, sort }, collator);
-  }
   if (isRecordKind(kind)) {
     return recordsShown(index, kind, query, sort, collator);
   }
@@ -450,9 +436,6 @@ export function recordKind(index: GenealogyIndex, xref: string): ListKind | null
   }
   if (index.source(xref)) {
     return "sources";
-  }
-  if (placeAt(index, xref)) {
-    return "places";
   }
   return null;
 }

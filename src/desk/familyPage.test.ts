@@ -55,7 +55,7 @@ describe("the family page", () => {
     draw("@F3@");
     const links = [...container.querySelectorAll<HTMLElement>(".gedcom-tree button.gedcom-desk-link")];
 
-    expect(links.map((link) => link.textContent)).toEqual(["Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie", "Sceaux, France"]);
+    expect(links.map((link) => link.textContent)).toEqual(["Pierre Curie", "Marie Skłodowska-Curie", "Irène Joliot-Curie", "Ève Curie"]);
     links.find((link) => link.textContent === "Ève Curie")?.click();
     expect(host.openRecord).toHaveBeenCalledWith("@I13@");
   });

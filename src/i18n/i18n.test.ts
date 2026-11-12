@@ -131,15 +131,6 @@ describe("spelling a count", () => {
     expect(plural("list.countOf.families", 21, { shown: 2 })).toBe("2 из 21 семьи");
   });
 
-  it("spells the count line of the places in both languages", () => {
-    expect([1, 10].map((count) => plural("list.count.places", count))).toEqual(["1 place", "10 places"]);
-    expect(plural("list.countOf.places", 10, { shown: 1 })).toBe("1 of 10 places");
-    setLanguage("ru");
-    expect([1, 2, 5, 21].map((count) => plural("list.count.places", count))).toEqual(["1 место", "2 места", "5 мест", "21 место"]);
-    expect(plural("list.countOf.places", 21, { shown: 2 })).toBe("2 из 21 места");
-    expect(plural("list.compact.events", 11)).toBe("11 событий");
-  });
-
   it("spells the count lines of the media, notes, repositories and other records in both languages", () => {
     expect(plural("list.count.media", 7)).toBe("7 media");
     expect(plural("list.count.notes", 1478)).toBe("1478 notes");

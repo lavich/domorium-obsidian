@@ -316,8 +316,11 @@ describe("reading a saved list state", () => {
   });
 
   it("drops a saved events kind, which no longer exists, and its sort, so that the list opens on the people", () => {
-    expect(readListState({ kind: "events", sort: { events: desc("events") } })).toEqual({});
-    expect(readListState({ kind: "places", sort: { events: desc("events"), places: desc("events") } })).toEqual({ kind: "places", sort: { places: desc("events") } });
+    expect(readListState({ kind: "events", sort: { events: { by: "events", dir: "desc" } } })).toEqual({});
+  });
+
+  it("drops a saved places kind, which no longer exists, and its sort, so that the list opens on the people", () => {
+    expect(readListState({ kind: "places", sort: { places: { by: "events", dir: "desc" }, people: desc("name") } })).toEqual({ sort: { people: desc("name") } });
   });
 
   it("reads a value that is not an object as empty", () => {
@@ -329,11 +332,11 @@ describe("reading a saved list state", () => {
 
 describe("which selection the list can show", () => {
   it("is any record a kind lists, the header among them, and nothing for one the file lacks or nobody", () => {
-    const listed = ["@I1@", "@F3@", "@S2@", "place:paris, france", "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID];
+    const listed = ["@I1@", "@F3@", "@S2@", "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID];
 
     expect(listed.map((xref) => listSelection(index, xref))).toEqual(listed);
     expect(listed.map((xref) => recordKind(index, xref))).toEqual([
-      "people", "families", "sources", "places", "media", "notes", "repositories", "other", "other",
+      "people", "families", "sources", "media", "notes", "repositories", "other", "other",
     ]);
     expect(["@X9@", null].map((xref) => listSelection(index, xref))).toEqual([null, null]);
   });
@@ -341,5 +344,10 @@ describe("which selection the list can show", () => {
   it("is nothing for an event id, which names no kind of the list", () => {
     expect(recordKind(index, "event:@I1@:BIRT:0")).toBeNull();
     expect(listSelection(index, "event:@I1@:BIRT:0")).toBeNull();
+  });
+
+  it("is nothing for a place the file names, which no kind lists", () => {
+    expect(recordKind(index, "place:paris, france")).toBeNull();
+    expect(listSelection(index, "place:paris, france")).toBeNull();
   });
 });

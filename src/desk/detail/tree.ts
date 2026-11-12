@@ -13,7 +13,6 @@ import { plural, t } from "../../i18n";
 import { linkButton, tipPlace } from "../dom";
 import { drawPicture, type MediaItem } from "../media";
 import type { FileOutcome } from "../mediaFile";
-import { placeAt, placeId } from "../placeRows";
 import { EditableField, showMessage } from "./fieldEdit";
 import { labelId, renderField } from "./fields";
 import { tagLabel } from "./labels";
@@ -144,34 +143,6 @@ function linesByKey(line: RecordLine, key: string, into: Map<string, RecordLine>
     linesByKey(child, keyOf(key, child.tag, nth), into);
   }
   return into;
-}
-
-function keysTo(line: RecordLine, key: string, target: number): string[] | null {
-  if (line.range.start.line === target) {
-    return [key];
-  }
-  const seen = new Map<string, number>();
-  for (const child of line.children) {
-    const nth = seen.get(child.tag) ?? 0;
-    seen.set(child.tag, nth + 1);
-    const found = keysTo(child, keyOf(key, child.tag, nth), target);
-    if (found) {
-      return [key, ...found];
-    }
-  }
-  return null;
-}
-
-/** Opens the nodes of the record down to the line written at `line`, and asks its tree, when next drawn, to focus that line and bring it into view. */
-export function revealLine(state: TreeState, record: RecordLine, line: number): void {
-  const keys = keysTo(record, "", line);
-  if (keys === null) {
-    return;
-  }
-  for (const key of keys) {
-    state.setOpen(key, true);
-  }
-  state.wishFocus({ key: keys[keys.length - 1] ?? "", parts: [""] });
 }
 
 const descendants = (line: RecordLine): number =>
@@ -496,39 +467,6 @@ class Tree {
     }
   }
 
-  private place(parent: HTMLElement, name: string, focusKey: string): void {
-    const id = placeId(name);
-    if (placeAt(this.options.index, id) === undefined) {
-      parent.appendText(name);
-      return;
-    }
-    const link = linkButton(parent, "", () => this.options.host.openRecord(id));
-    link.setAttribute("data-focus-key", focusKey);
-    link.createSpan({ cls: "gedcom-tree-clip", text: name });
-  }
-
-  /** The control beside a place's field that opens the card of the place, where the card knows it. */
-  private placeControl(parent: HTMLElement, name: string, key: string): void {
-    const { host, index } = this.options;
-    const id = placeId(name);
-    if (placeAt(index, id) === undefined) {
-      return;
-    }
-    const button = parent.createDiv({ cls: ["gedcom-tree-place", "clickable-icon"] });
-    pressable(button, t("edit.openPlace", { place: name }), `t:${key}:place`);
-    if (host.setIcon) {
-      host.setIcon(button, "map-pin");
-    } else {
-      button.setText("⌖");
-    }
-    button.addEventListener("click", (event) => {
-      event.stopPropagation();
-      if (this.live()) {
-        host.openRecord(id);
-      }
-    });
-  }
-
   /** The control beside a shared note's text, drawn where the pointer is, that opens the note's own card. */
   private noteControl(parent: HTMLElement, line: RecordLine, key: string): void {
     const { host, index } = this.options;
@@ -633,7 +571,7 @@ class Tree {
     renderField(main, text, "text", { labelledBy }).area.setAttribute("dir", "auto");
   }
 
-  /** What a closed node says of its line, as the parts of one line; a part that is a place is a link. */
+  /** What a closed node says of its line, as the parts of one line. */
   private summary(line: RecordLine, owner: RecordLine, fact: TreeFact | undefined): SummaryPart[] {
     const { index } = this.options;
     let value: string | undefined;
@@ -773,9 +711,6 @@ class Tree {
         renderNoteText(main, line.text, line.range.start.line, detail, `note:${key}`);
       } else if (line.text !== undefined && !(fact && line.text === "Y")) {
         this.valueField(main, line, owner, key, name.id);
-        if (line.tag === "PLAC") {
-          this.placeControl(main, line.text, key);
-        }
       }
     };
     const paintSummary = (): void => {
@@ -787,12 +722,7 @@ class Tree {
           if (at > 0) {
             text.createSpan({ cls: "gedcom-tree-join", text: " · " });
           }
-          const one = text.createSpan({ cls: ["gedcom-tree-part", `is-${part.kind}`] });
-          if (part.kind === "place") {
-            this.place(one, part.text, `t:${key}:place`);
-          } else {
-            one.setText(part.text);
-          }
+          text.createSpan({ cls: ["gedcom-tree-part", `is-${part.kind}`], text: part.text });
         });
       }
       if (missing) {

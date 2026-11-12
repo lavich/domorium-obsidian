@@ -75,17 +75,4 @@ describe("the choices of the reader in the trees", () => {
     expect(state.takeFocus()).toEqual({ key: "", parts: ["add"] });
     expect(state.takeFocus()).toBeUndefined();
   });
-
-  it("keep the state of a place only while it is the last one asked for, taking no slot of the twenty", () => {
-    const session = new TreeSession();
-    session.stateFor("a").setOpen("BIRT[0]", true);
-    session.passingStateFor("place:x").setDraft("place", { text: "Y", over: "X" });
-
-    expect(session.passingStateFor("place:x").draft("place")?.text).toBe("Y");
-    for (let at = 0; at < 25; at += 1) {
-      session.passingStateFor(`place:${at}`);
-    }
-    expect(session.passingStateFor("place:x").draft("place")).toBeUndefined();
-    expect(session.stateFor("a").isOpen("BIRT[0]")).toBe(true);
-  });
 });

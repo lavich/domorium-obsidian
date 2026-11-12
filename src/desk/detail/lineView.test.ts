@@ -4,7 +4,6 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { buildIndex, HEADER_ID, type GenealogyIndex, type RecordLine } from "../../genealogy";
 import { curieIndex } from "../../testing/curie";
-import { placeId } from "../placeRows";
 import { installObsidianDom } from "../../testing/obsidianDom";
 import { recordTitle, renderLines, type DetailContext } from "./lineView";
 
@@ -118,14 +117,14 @@ describe("a pointer to a record that has a card", () => {
 describe("the one name of every record", () => {
   const curie = curieIndex();
 
-  it("names a person, a family, a source, a place, a medium, a note, a repository, a submitter and the header", () => {
+  it("names a person, a family, a source, a medium, a note, a repository, a submitter and the header, and no place", () => {
     expect(
-      ["@I1@", "@F3@", "@S2@", placeId("Paris, France"), "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID].map((xref) => recordTitle(curie, xref)),
+      ["@I1@", "@F3@", "@S2@", "place:paris, france", "@O5@", "@N1@", "@R2@", "@U1@", HEADER_ID].map((xref) => recordTitle(curie, xref)),
     ).toEqual([
       "Marie Skłodowska-Curie",
       "Pierre Curie ⚭ Marie Skłodowska-Curie",
       "Parish registers of Warsaw",
-      "Paris, France",
+      undefined,
       "The Curie family, about 1908",
       "The only person to have won a Nobel Prize in two different sciences:",
       "State Archive in Warsaw",

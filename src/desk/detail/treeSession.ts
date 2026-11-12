@@ -77,48 +77,16 @@ const put = <T>(map: Map<string, T>, key: string, value: T | undefined): void =>
 };
 
 /** The choices of the reader in the trees of the last twenty records shown: the nodes and notes opened, and what is typed and not written. */
-const fresh = (): RecordMemory => ({
-  open: new Set<string>([""]),
-  drafts: new Map<string, Draft>(),
-  messages: new Map<string, FieldMessage>(),
-  unwritten: new Map<string, Unwritten[]>(),
-});
-
-function stateOf(held: RecordMemory): TreeState {
-  return {
-    isOpen: (key) => held.open.has(key),
-    setOpen: (key, open) => {
-      if (open) {
-        held.open.add(key);
-      } else {
-        held.open.delete(key);
-      }
-    },
-    draft: (key) => held.drafts.get(key),
-    setDraft: (key, draft) => put(held.drafts, key, draft),
-    message: (key) => held.messages.get(key),
-    setMessage: (key, message) => put(held.messages, key, message),
-    unwritten: (parent) => held.unwritten.get(parent) ?? [],
-    setUnwritten: (parent, rows) => put(held.unwritten, parent, rows.length > 0 ? rows : undefined),
-    unwrittenParents: () => [...held.unwritten.keys()],
-    wishFocus: (wish) => {
-      held.focus = wish;
-    },
-    takeFocus: () => {
-      const wish = held.focus;
-      held.focus = undefined;
-      return wish;
-    },
-  };
-}
-
-/** The choices of the reader in the trees of the last twenty records shown: the nodes and notes opened, and what is typed and not written. */
 export class TreeSession {
   private readonly records = new Map<string, RecordMemory>();
-  private passing: { record: string; held: RecordMemory } | null = null;
 
   private memory(record: string): RecordMemory {
-    const held = this.records.get(record) ?? fresh();
+    const held = this.records.get(record) ?? {
+      open: new Set<string>([""]),
+      drafts: new Map<string, Draft>(),
+      messages: new Map<string, FieldMessage>(),
+      unwritten: new Map<string, Unwritten[]>(),
+    };
     this.records.delete(record);
     this.records.set(record, held);
     for (const oldest of this.records.keys()) {
@@ -131,15 +99,32 @@ export class TreeSession {
   }
 
   stateFor(record: string): TreeState {
-    return stateOf(this.memory(record));
-  }
-
-  /** The state of a card that takes no slot of the twenty, a place's: kept only while it is the last one asked for. */
-  passingStateFor(record: string): TreeState {
-    if (this.passing?.record !== record) {
-      this.passing = { record, held: fresh() };
-    }
-    return stateOf(this.passing.held);
+    const held = this.memory(record);
+    return {
+      isOpen: (key) => held.open.has(key),
+      setOpen: (key, open) => {
+        if (open) {
+          held.open.add(key);
+        } else {
+          held.open.delete(key);
+        }
+      },
+      draft: (key) => held.drafts.get(key),
+      setDraft: (key, draft) => put(held.drafts, key, draft),
+      message: (key) => held.messages.get(key),
+      setMessage: (key, message) => put(held.messages, key, message),
+      unwritten: (parent) => held.unwritten.get(parent) ?? [],
+      setUnwritten: (parent, rows) => put(held.unwritten, parent, rows.length > 0 ? rows : undefined),
+      unwrittenParents: () => [...held.unwritten.keys()],
+      wishFocus: (wish) => {
+        held.focus = wish;
+      },
+      takeFocus: () => {
+        const wish = held.focus;
+        held.focus = undefined;
+        return wish;
+      },
+    };
   }
 }
 

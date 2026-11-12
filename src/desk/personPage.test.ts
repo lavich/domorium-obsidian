@@ -120,21 +120,16 @@ describe("the person card", () => {
     expect(second?.closest(".gedcom-tree-node")?.querySelector(".gedcom-tree-children .gedcom-field")?.getAttribute("data-value")).toBe("Birth");
   });
 
-  it("draws the label of a fact as text that opens nothing, and keeps its place a link", () => {
+  it("draws the label of a fact and its place as text that opens nothing", () => {
     draw("@I1@");
     const birth = treeRow("Birth");
 
     expect(birth?.querySelector("button.gedcom-tree-label")).toBeNull();
+    expect(birth?.querySelector(".gedcom-tree-summary .gedcom-desk-link")).toBeNull();
+    expect(birth?.querySelector(".gedcom-tree-summary .is-place")?.textContent).toBe("Warsaw, Congress Poland");
     treeRow("Sex")?.querySelector<HTMLElement>(".gedcom-tree-label")?.click();
+    birth?.querySelector<HTMLElement>(".gedcom-tree-summary .is-place")?.click();
     expect(host.openRecord).not.toHaveBeenCalled();
-    expect(birth?.querySelector(".gedcom-tree-summary .gedcom-desk-link")?.textContent).toBe("Warsaw, Congress Poland");
-  });
-
-  it("opens the place of a fact, and not the event, when the place is pressed", () => {
-    draw("@I1@");
-    container.querySelector<HTMLElement>(".gedcom-tree-summary .gedcom-desk-link")?.click();
-
-    expect(host.openRecord.mock.calls).toEqual([["place:warsaw, congress poland"]]);
   });
 
   it("names facts and relationships in Russian, keeping what the file says", () => {

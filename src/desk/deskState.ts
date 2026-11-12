@@ -13,7 +13,7 @@ export type { DeskMode };
 export { HEADER_ID };
 
 /** `record` is a shared note, a repository, a submitter, a submission, a record of the file's own or the header: a card that is its tree. */
-export type PageKind = "person" | "family" | "source" | "media" | "place" | "record";
+export type PageKind = "person" | "family" | "source" | "media" | "record";
 
 export type ViewKind = "graph" | "timeline" | "list";
 
@@ -42,12 +42,15 @@ export function readDeskState(state: unknown): DeskState {
   const read = readDeskMode(mode);
   return {
     ...(read === undefined ? {} : { mode: read }),
-    ...(typeof selected === "string" && selected ? { selected: ownerOfSavedEvent(selected) } : {}),
+    ...(typeof selected === "string" && selected && !selected.startsWith(SAVED_PLACE) ? { selected: ownerOfSavedEvent(selected) } : {}),
     ...(isObject(graph) ? { graph: readGraphState(graph) } : {}),
     ...(isObject(timeline) ? { timeline: readTimelineState(timeline) } : {}),
     ...(isObject(list) ? { list: readListState(list) } : {}),
   };
 }
+
+/** A workspace saved while places had cards may name one as the selection; nothing selects a place now. */
+const SAVED_PLACE = "place:";
 
 const SAVED_EVENT = /^event:(.+):[A-Za-z0-9_]+:(?:0|[1-9]\d*)$/u;
 
@@ -80,7 +83,6 @@ const PAGE_OF: Record<ListKind, PageKind> = {
   people: "person",
   families: "family",
   sources: "source",
-  places: "place",
   media: "media",
   notes: "record",
   repositories: "record",
@@ -184,7 +186,7 @@ export function routeRecord(
 /** The lines of the record shown. */
 export function shownRange(index: GenealogyIndex, record: string): Range | null {
   const kind = pageKind(index, record);
-  if (kind === null || kind === "place") {
+  if (kind === null) {
     return null;
   }
   return (index.person(record) ?? index.family(record) ?? index.source(record) ?? index.media(record) ?? index.record(record))?.range ?? null;

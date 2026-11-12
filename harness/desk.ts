@@ -7,7 +7,6 @@ import { addableAt, choicesAt, describes, holdsValueAt, pairedAt, pointerChoices
 import { chooseDeviceFile } from "../src/desk/deviceFile";
 import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../src/desk/edits";
 import { mediaFileEdit } from "../src/desk/mediaFile";
-import { renameEdit } from "../src/desk/placeEdits";
 import { renderRecordCard, type CardTab, type CardView } from "../src/desk/recordCard";
 import { TreeSession } from "../src/desk/detail/treeSession";
 import { buildIndex, type GenealogyIndex } from "../src/genealogy";
@@ -36,7 +35,7 @@ export interface DeskOptions {
 export interface DeskCalls {
   shownInSource: Range[];
   filesOpened: string[];
-  /** The questions asked before a removal or a rename, answered by `confirm` or `decline`. */
+  /** The questions asked before a removal, answered by `confirm`. */
   asked: string[];
   /** The paths of the files copied into the vault. */
   copied: string[];
@@ -67,10 +66,8 @@ declare global {
       text(): string;
       /** Changes the text from outside the card, as Source would. */
       replace(text: string): void;
-      /** Answers the question asked before a removal or a rename. */
+      /** Answers the question asked before a removal. */
       confirm(): void;
-      /** Declines the question asked before a rename. */
-      decline(): void;
     };
   }
 }
@@ -82,7 +79,6 @@ let doc: TextTab;
 let index: GenealogyIndex;
 let indexed = -1;
 let confirmed: (() => void) | null = null;
-let declined: (() => void) | null = null;
 const service = () => doc.service();
 let record: string | null = null;
 let hasTab = true;
@@ -168,24 +164,6 @@ const tab: CardTab = {
   },
   fileEditAt: (at, path, version, type) => mediaFileEdit(service(), "curie.ged", at, path, version, type),
   writeFileAt: (at, path, version, type) => commit(doc, mediaFileEdit(service(), "curie.ged", at, path, version, type)),
-  renamePlaceAt: (rename, version, question, done) => {
-    const answer = renameEdit(service(), rename, version);
-    if (!answer.ok) {
-      done(answer);
-      return;
-    }
-    calls.asked.push(question);
-    confirmed = () => {
-      confirmed = null;
-      declined = null;
-      done(commit(doc, answer));
-    };
-    declined = () => {
-      confirmed = null;
-      declined = null;
-      done(null);
-    };
-  },
 };
 
 /** Stands in for Obsidian's menu and list, which the harness cannot load: a list of buttons that call the same callbacks. */
@@ -251,7 +229,6 @@ function mount(options: DeskOptions): void {
   calls.copied = [];
   vault = freshVault();
   confirmed = null;
-  declined = null;
   doc = new TextTab(options.doc ?? (options.plan ? curieWithPlan() : curie));
   indexed = -1;
   index = tab.index();
@@ -274,8 +251,5 @@ window.desk = {
   },
   confirm: () => {
     confirmed?.();
-  },
-  decline: () => {
-    declined?.();
   },
 };

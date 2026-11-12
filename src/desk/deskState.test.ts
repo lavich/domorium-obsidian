@@ -93,7 +93,11 @@ describe("what a tab keeps of the desk", () => {
   it("reads a selection saved as an event as the record it belongs to", () => {
     expect(readDeskState({ selected: "event:@I1@:BIRT:0" })).toEqual({ selected: "@I1@" });
     expect(readDeskState({ selected: "event:@F3@:MARR:12" })).toEqual({ selected: "@F3@" });
-    expect(readDeskState({ selected: "place:paris" })).toEqual({ selected: "place:paris" });
+  });
+
+  it("drops a place saved as the selection, which nothing selects any more", () => {
+    expect(readDeskState({ mode: "list", selected: "place:paris, france" })).toEqual({ mode: "list" });
+    expect(readDeskState({ selected: "@I1@" })).toEqual({ selected: "@I1@" });
   });
 
   it("keeps a valid list state and drops a bad one", () => {
@@ -102,6 +106,10 @@ describe("what a tab keeps of the desk", () => {
     expect(readDeskState({ list: "wide" })).toEqual({});
     expect(readDeskState({ list: { kind: "everyone" } })).toEqual({ list: {} });
     expect(readDeskState({ mode: "list", list: { kind: "events", sort: { events: { by: "date", dir: "asc" } } } })).toEqual({ mode: "list", list: {} });
+  });
+
+  it("reads a list saved on the places as one with no kind, which opens on the people", () => {
+    expect(readDeskState({ mode: "list", list: { kind: "places", sort: { places: { by: "events", dir: "desc" } } } })).toEqual({ mode: "list", list: {} });
   });
 
   it("ignores what it does not recognise, so the setting decides", () => {
@@ -137,11 +145,10 @@ describe("which records have a card", () => {
     expect(["@N1@", "@R1@", "@U1@", HEADER_ID, "place:paris, france", "@X9@"].map((xref) => followsCursor(curie, xref))).toEqual([false, false, false, false, false, false]);
   });
 
-  it("gives a place the file names a card, and one it does not name none", () => {
+  it("gives a place no card, though the file names it", () => {
     const named = index(["0 HEAD", "0 @I1@ INDI", "1 BIRT", "2 PLAC Paris, France", "0 TRLR"].join("\n"));
 
-    expect(pageKind(named, "place:paris, france")).toBe("place");
-    expect(pageKind(index(), "place:atlantis")).toBeNull();
+    expect(pageKind(named, "place:paris, france")).toBeNull();
   });
 
   it("gives an event id no card, which no longer has one", () => {

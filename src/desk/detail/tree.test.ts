@@ -10,7 +10,7 @@ import { TextTab } from "../../testing/textTab";
 import { addableAt, choicesAt, holdsValueAt, pairedAt, pointerChoicesAt, proseAt, removableAt } from "../addableFields";
 import { addAt, checkValue, commit, removeAt, requiredBeneath, setValueAt } from "../edits";
 import { factsOf } from "../personPage";
-import { factsByLine, renderTree, revealLine, type FieldChoice, type TreeHost } from "./tree";
+import { factsByLine, renderTree, type FieldChoice, type TreeHost } from "./tree";
 import { ephemeralTreeState, TreeSession, type TreeState } from "./treeSession";
 
 beforeAll(installObsidianDom);
@@ -663,34 +663,6 @@ describe("the nodes", () => {
   });
 });
 
-describe("revealing a line", () => {
-  it("opens the nodes down to an event, and focuses it and brings it into view when the tree is drawn", () => {
-    const scrolled = vi.fn();
-    Element.prototype.scrollIntoView = scrolled;
-    const made = make(["0 @I1@ INDI", "1 NAME A /B/", "1 BIRT", "2 DATE 1900", "1 DEAT", "2 PLAC Kyiv"]);
-    const state = new TreeSession().stateFor("rec");
-
-    revealLine(state, made.record, 7);
-    draw(made, state);
-
-    const death = box.querySelector<HTMLElement>('[data-focus-key="t:DEAT[0]"]');
-    expect(death?.getAttribute("aria-expanded")).toBe("true");
-    expect(document.activeElement).toBe(death);
-    expect(scrolled).toHaveBeenCalledOnce();
-    expect(box.querySelector('[data-focus-key="t:BIRT[0]"]')?.getAttribute("aria-expanded")).toBe("false");
-  });
-
-  it("wishes nothing for a line the record does not write", () => {
-    const made = make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900"]);
-    const state = new TreeSession().stateFor("rec");
-
-    revealLine(state, made.record, 99);
-
-    expect(state.takeFocus()).toBeUndefined();
-    expect(state.isOpen("BIRT[0]")).toBe(false);
-  });
-});
-
 describe("a fact", () => {
   const marie = (): Made => {
     const index = curieIndex();
@@ -705,34 +677,30 @@ describe("a fact", () => {
     expect(opened).not.toHaveBeenCalled();
   });
 
-  it("opens the card of the place from the summary and, once opened, from the control beside the place's field", () => {
+  it("shows the place in the summary as text, and its row as a field with nothing beside it that opens a place", () => {
     draw(marie());
-    const summaryPlace = rowNamed("Birth").querySelector<HTMLButtonElement>(".gedcom-tree-summary button");
-    expect(summaryPlace?.textContent).toBe("Warsaw, Congress Poland");
-    summaryPlace?.click();
-    expect(opened).toHaveBeenLastCalledWith("place:warsaw, congress poland");
+    const summary = rowNamed("Birth").querySelector<HTMLElement>(".gedcom-tree-summary");
+    expect(summary?.querySelector(".is-place")?.textContent).toBe("Warsaw, Congress Poland");
+    expect(summary?.querySelector("button, a, [role=button]")).toBeNull();
 
     open("Birth");
     expect(valuesOf(rowNamed("Place"))).toEqual(["Warsaw, Congress Poland"]);
-    const control = rowNamed("Place").querySelector<HTMLElement>(".gedcom-tree-place");
-    expect(control?.getAttribute("aria-label")).toBe("Open the place Warsaw, Congress Poland");
-    expect(control?.getAttribute("role")).toBe("button");
-    control?.click();
-    expect(opened).toHaveBeenLastCalledWith("place:warsaw, congress poland");
+    expect(rowNamed("Place").querySelector(".gedcom-tree-place")).toBeNull();
+    expect(opened).not.toHaveBeenCalled();
   });
 
-  it("shows the summary of a fact and its place as a link while the label is text", () => {
+  it("shows the summary of a fact and its place as text while the label is text", () => {
     draw(make(["0 @I1@ INDI", "1 BIRT", "2 DATE 1900", "2 PLAC Paris"]));
 
     expect(summaryOf(rowNamed("Birth"))).toBe("1900 · Paris");
-    rowNamed("Birth").querySelector<HTMLButtonElement>(".gedcom-tree-summary button")?.click();
-    expect(opened).toHaveBeenCalledWith("place:paris");
+    rowNamed("Birth").querySelector<HTMLElement>(".gedcom-tree-summary .is-place")?.click();
+    expect(opened).not.toHaveBeenCalled();
   });
 
-  it("is a residence whose place is a link", () => {
+  it("is a residence whose place is text", () => {
     draw(make(["0 @I1@ INDI", "1 RESI", "2 PLAC Paris", "2 DATE 1895", "0 @I2@ INDI", "1 RESI", "2 PLAC Paris"]));
 
-    expect(rowNamed("Residence").querySelector<HTMLButtonElement>(".gedcom-tree-summary button")?.textContent).toBe("Paris");
+    expect(rowNamed("Residence").querySelector(".gedcom-tree-summary .is-place")?.textContent).toBe("Paris");
   });
 });
 
@@ -1187,11 +1155,10 @@ describe("a pointer pointed at another record", () => {
 });
 
 describe("a place", () => {
-  it("is a field that writes the place and a control beside it that opens its card", () => {
+  it("is a field that writes the place, as any value", () => {
     const { tab } = editing(["0 @I1@ INDI", "1 BIRT", "2 PLAC Paris", "0 @I2@ INDI", "1 BIRT", "2 PLAC Paris"]);
     open("Birth");
-    rowNamed("Place").querySelector<HTMLElement>(".gedcom-tree-place")?.click();
-    expect(opened).toHaveBeenCalledWith("place:paris");
+    expect(rowNamed("Place").querySelector(".gedcom-tree-place")).toBeNull();
 
     const area = fieldOf(rowNamed("Place"));
     type(area, "Paris, France");
