@@ -18,7 +18,7 @@ adapted per editor.
 
 ## Features
 
-- An optional genealogy interface, off until you turn it on: a graph and a
+- A genealogy interface, still a beta and on unless you turn it off: a graph and a
   timeline of the whole file, a sortable list of its people, families,
   sources, media, shared notes, repositories and other records, and a record card in the right sidebar that shows the selected
   record as a tree of its lines
@@ -45,17 +45,18 @@ to a remote service.
 ## Usage
 
 1. Enable **GEDCOM** in **Settings → Community plugins**.
-2. Open a `.ged` or `.gedcom` file in your vault. It opens in the editor, and
+2. Open a `.ged` or `.gedcom` file in your vault. It opens in **Graph** mode,
+   and the mode buttons in the view header, with the commands **Show as
+   graph**, **Show as timeline**, **Show as list** and **Show as source**, go
+   between its four modes; the next file opens in the mode you chose last.
    Obsidian saves changes back to the same file.
-3. To read the file as people and sources, turn on **Genealogy interface (beta)**
-   in the plugin settings; it is still a beta and may change. Files then open in
-   **Graph** mode, and the mode buttons in the view header, with the commands
-   **Show as graph**, **Show as timeline**, **Show as list** and **Show as
-   source**, go between its four modes.
+3. The genealogy interface is still a beta and may change. To work in the
+   source editor alone, turn off **Genealogy interface (beta)** in the plugin
+   settings. Files then open in the editor.
 
 The next paragraphs — the modes of a tab and the record card — are
 part of the genealogy interface and appear only while it is on; turning it off
-hides it again and closes its panels without losing the mode a tab was in. The
+hides it and closes its panels without losing the mode a tab was in. The
 editor features after them need no setting.
 
 A GEDCOM tab shows its file in four modes — **Graph**, **Timeline**, **List**

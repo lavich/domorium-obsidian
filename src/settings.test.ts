@@ -18,7 +18,7 @@ describe("GEDCOM settings", () => {
       mediaPreview: "hover",
       remoteImages: false,
       lastMode: "graph",
-      genealogyInterface: false,
+      genealogyInterface: true,
       openPanelsOnSelect: true,
     });
   });
@@ -63,7 +63,7 @@ describe("GEDCOM settings", () => {
       mediaPreview: "hover",
       remoteImages: false,
       lastMode: "graph",
-      genealogyInterface: false,
+      genealogyInterface: true,
       openPanelsOnSelect: true,
     });
   });
@@ -88,16 +88,22 @@ describe("GEDCOM settings", () => {
     expect(parsed.diagnostics).toBe(false);
   });
 
-  it("leaves the genealogy interface off for a settings file written before it existed", () => {
+  it("turns the genealogy interface on for a settings file that does not hold it", () => {
     expect(
       parseSettings({ diagnostics: true, openAs: "genealogy" })
         .genealogyInterface,
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it("keeps the genealogy interface off for a reader whose settings hold it off", () => {
+    expect(parseSettings({ genealogyInterface: false }).genealogyInterface).toBe(
+      false,
+    );
   });
 
   it("ignores a genealogy interface value that is not a boolean", () => {
     expect(parseSettings({ genealogyInterface: "yes" }).genealogyInterface).toBe(
-      false,
+      true,
     );
   });
 
@@ -135,7 +141,7 @@ describe("GEDCOM settings", () => {
         control: {
           type: "toggle",
           key: "genealogyInterface",
-          defaultValue: false,
+          defaultValue: true,
         },
       },
       {
