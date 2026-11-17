@@ -112,61 +112,6 @@ A year of the common era SHALL be shown bare, as before.
 - **THEN** the timeline section of their card lists them in that order, showing `10 BCE`, `5 BCE` and
   `20`
 
-### Requirement: The genealogy interface is off until the reader turns it on
-
-The plugin SHALL have a setting, **Genealogy interface (beta)**, that SHALL be
-off by default for every reader, including one whose settings were saved before
-the setting existed, and whose description SHALL say that the interface is still
-in beta and may change. It SHALL be changed only in the plugin settings. While it is
-off, the plugin SHALL NOT offer Graph, Timeline or List mode, the record card,
-the mode control in a tab header, or the commands
-that show a mode or open a panel; every GEDCOM tab SHALL show the source.
-
-Turning the setting on or off SHALL take effect in every open tab and sidebar
-without restarting Obsidian. A mode a tab was last in, the scope and zoom of its
-Graph and Timeline, the kind and sort of its List, and the last
-mode the reader chose, SHALL be kept while the
-setting is off and honoured again when it is turned on. A mode chosen on purpose
-SHALL be remembered only while the interface is on.
-
-#### Scenario: A reader who never touched the setting
-- **WHEN** the plugin is installed or updated and the setting is not changed
-- **THEN** no card or mode command, and no mode
-  control in a tab header is offered
-
-#### Scenario: The setting says it is a beta
-- **WHEN** the reader opens the plugin settings
-- **THEN** the setting is named **Genealogy interface (beta)**, and its
-  description says that the interface is still in beta and may change
-
-#### Scenario: A reader who used Genealogy mode before
-- **WHEN** the plugin updates, their saved settings hold a value of the retired
-  *Open GEDCOM files as* setting, and the interface is off
-- **THEN** `curie.ged` opens in Source mode until they turn the setting on, and a
-  file opened anew after that opens in Graph mode
-
-#### Scenario: Turning it on with a tab open
-- **WHEN** `curie.ged` is open in Source mode and the reader turns the setting
-  on
-- **THEN** the mode control appears in the tab header and the commands appear,
-  and the tab stays in Source mode
-
-#### Scenario: Turning it off with panels open
-- **WHEN** a tab is in List mode, the card is open, and the reader turns the
-  setting off
-- **THEN** the card closes, the tab shows the source, and the mode control and
-  the commands are gone
-
-#### Scenario: Turning it on again
-- **WHEN** a tab was in Graph mode on Irène's branch, zoomed in, the setting was
-  turned off and then on
-- **THEN** the tab is in Graph mode again, on Irène's branch at the same zoom
-
-#### Scenario: A tab opened while it is off
-- **WHEN** the interface is off, `curie.ged` is opened and the reader then
-  turns the interface on
-- **THEN** the tab is still in Source mode
-
 ### Requirement: The mode control
 
 While the **Genealogy interface** setting is on, the header of a GEDCOM tab SHALL
@@ -404,8 +349,8 @@ each have a mode of their own. A tab saved by an earlier version as **Genealogy*
 SHALL be read as Graph.
 
 #### Scenario: A file opened with the default setting
-- **WHEN** the reader has turned the Genealogy interface on, has not yet chosen a
-  mode and opens `curie.ged`
+- **WHEN** the Genealogy interface is on, as it is by default, the reader has not
+  yet chosen a mode and opens `curie.ged`
 - **THEN** the tab is in Graph mode and shows a card for each of the 17 people
 
 #### Scenario: A reader who prefers the source
@@ -638,3 +583,74 @@ Wherever the plugin names a family by its spouses — the title of its card, a r
 #### Scenario: One spouse
 - **WHEN** a family names only one spouse
 - **THEN** its title is that spouse's name, with no marriage sign
+
+### Requirement: The genealogy interface is on until the reader turns it off
+
+The plugin SHALL have a setting, **Genealogy interface (beta)**, that SHALL be on by
+default: for a reader with no saved settings, and for one whose saved settings do
+not hold a value for it, including settings saved before the setting existed. A
+value the saved settings hold, on or off, SHALL be kept as it is and SHALL NOT be
+changed by an update. Its description SHALL say that the interface is still in
+beta and may change, what the interface shows, and that GEDCOM files open in the
+source editor while it is off. It SHALL be changed only
+in the plugin settings. While it is
+off, the plugin SHALL NOT offer Graph, Timeline or List mode, the record card,
+the mode control in a tab header, or the commands
+that show a mode or open a panel; every GEDCOM tab SHALL show the source.
+
+Turning the setting on or off SHALL take effect in every open tab and sidebar
+without restarting Obsidian. A mode a tab was last in, the scope and zoom of its
+Graph and Timeline, the kind and sort of its List, and the last
+mode the reader chose, SHALL be kept while the
+setting is off and honoured again when it is turned on. A mode chosen on purpose
+SHALL be remembered only while the interface is on.
+
+#### Scenario: A reader who never touched the setting
+- **WHEN** the plugin is installed, or updated with saved settings that do not
+  hold the setting, and the setting is not changed
+- **THEN** the interface is on: the card and the mode commands are offered, and
+  the mode control is in the header of a GEDCOM tab
+
+#### Scenario: A reader who turned the setting off
+- **WHEN** the plugin updates and the saved settings hold the setting as off
+- **THEN** the interface stays off: no card or mode command, and no mode control
+  in a tab header is offered
+
+#### Scenario: A reader who changed another setting before
+- **WHEN** the plugin updates, and the saved settings hold the setting as off
+  because the reader changed another setting on an earlier version, without
+  touching this one
+- **THEN** the interface stays off until the reader turns it on
+
+#### Scenario: The setting says it is a beta
+- **WHEN** the reader opens the plugin settings
+- **THEN** the setting is named **Genealogy interface (beta)**, and its
+  description says that the interface is still in beta and may change
+
+#### Scenario: A reader who used Genealogy mode before
+- **WHEN** the plugin updates, their saved settings hold a value of the retired
+  *Open GEDCOM files as* setting, and the interface is off
+- **THEN** `curie.ged` opens in Source mode until they turn the setting on, and a
+  file opened anew after that opens in Graph mode
+
+#### Scenario: Turning it on with a tab open
+- **WHEN** `curie.ged` is open in Source mode and the reader turns the setting
+  on
+- **THEN** the mode control appears in the tab header and the commands appear,
+  and the tab stays in Source mode
+
+#### Scenario: Turning it off with panels open
+- **WHEN** a tab is in List mode, the card is open, and the reader turns the
+  setting off
+- **THEN** the card closes, the tab shows the source, and the mode control and
+  the commands are gone
+
+#### Scenario: Turning it on again
+- **WHEN** a tab was in Graph mode on Irène's branch, zoomed in, the setting was
+  turned off and then on
+- **THEN** the tab is in Graph mode again, on Irène's branch at the same zoom
+
+#### Scenario: A tab opened while it is off
+- **WHEN** the interface is off, `curie.ged` is opened and the reader then
+  turns the interface on
+- **THEN** the tab is still in Source mode
