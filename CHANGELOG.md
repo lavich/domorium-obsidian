@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.20.0
+
+- **The genealogy interface is on from the start.** The graph, the timeline, the
+  list and the record card no longer wait to be turned on: a new install opens a
+  GEDCOM file in Graph mode, and *Source* shows the editor. It is still a beta.
+  Anyone who wants the source editor alone turns **Genealogy interface (beta)** off
+  in the plugin settings; a reader who already has it off keeps it off. If you
+  changed any setting of the plugin on an earlier version, the interface may still
+  be off for you: turn it on there.
+
 ## 1.19.0
 
 - **A card is the record's own lines, and they can be edited.** The card of a person,
