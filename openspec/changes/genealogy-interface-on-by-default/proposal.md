@@ -43,4 +43,5 @@ None.
 
 - `src/settingsData.ts`: the default.
 - `README.md`: the feature list, the getting-started step and the section on the interface.
+- `demo-vault/Start here.md`: the interface is on, `curie.ged` opens in Graph mode, and Source shows the editor.
 - Tests: `src/settings.test.ts`.

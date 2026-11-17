@@ -36,6 +36,12 @@ SHALL be remembered only while the interface is on.
 - **THEN** the interface stays off: no card or mode command, and no mode control
   in a tab header is offered
 
+#### Scenario: A reader who changed another setting before
+- **WHEN** the plugin updates, and the saved settings hold the setting as off
+  because the reader changed another setting on an earlier version, without
+  touching this one
+- **THEN** the interface stays off until the reader turns it on
+
 #### Scenario: The setting says it is a beta
 - **WHEN** the reader opens the plugin settings
 - **THEN** the setting is named **Genealogy interface (beta)**, and its

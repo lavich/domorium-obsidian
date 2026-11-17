@@ -52,7 +52,8 @@ to a remote service.
    Obsidian saves changes back to the same file.
 3. The genealogy interface is still a beta and may change. To work in the
    source editor alone, turn off **Genealogy interface (beta)** in the plugin
-   settings. Files then open in the editor.
+   settings. Files then open in the editor. If you changed any setting on an
+   earlier version, the interface may still be off; turn it on there.
 
 The next paragraphs — the modes of a tab and the record card — are
 part of the genealogy interface and appear only while it is on; turning it off

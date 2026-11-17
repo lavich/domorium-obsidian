@@ -6,6 +6,7 @@
 ## 2. Documentation
 
 - [x] 2.1 In `README.md`, describe the interface as on by default and turned off in the plugin settings, without calling it optional, and still as a beta; verify by reading the Features and Usage sections
+- [x] 2.2 In `demo-vault/Start here.md`, say the interface is on by default and can be turned off, that `curie.ged` opens in Graph mode and that Source shows the editor; verify by reading the note
 
 ## 3. Verification
 

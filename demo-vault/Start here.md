@@ -12,13 +12,14 @@ Four generations of the Skłodowski, Curie and Joliot families live in
 repositories — and the notes around it are ordinary notes that happen to point
 into it.
 
-Enable **GEDCOM** in Settings → Community plugins, then try these in order. To
-see the graph, timeline, index and record card, also turn on **Genealogy interface** in
-the plugin's settings.
+Enable **GEDCOM** in Settings → Community plugins, then try these in order. The
+graph, timeline, index and record card are the **Genealogy interface**, on by
+default; turn it off in the plugin's settings to work in the source editor alone.
 
 ## Open the tree
 
-Open [[curie.ged]]. It opens in the plugin's editor rather than as plain text:
+Open [[curie.ged]]. It opens in **Graph** mode, a card for each person. Switch it
+to **Source** to see the plugin's editor rather than plain text:
 levels, tags and identifiers are coloured, nested lines are indented without the
 file being changed, and the status bar names the specification the file is
 checked against. Ctrl/Cmd-hover any `@I1@` to see the record it points at.
