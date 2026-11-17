@@ -28,9 +28,7 @@ export const DEFAULT_SETTINGS: GedcomSettings = {
   // plugin, so it waits to be asked.
   remoteImages: false,
   lastMode: "graph",
-  // The pages and panels are the plugin's largest surface; a reader who came
-  // for the editor has not asked for them.
-  genealogyInterface: false,
+  genealogyInterface: true,
   openPanelsOnSelect: true,
 };
 
