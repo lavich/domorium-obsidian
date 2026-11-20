@@ -1,9 +1,11 @@
 # Working in this repository
 
 `domorium-obsidian` is an Obsidian community plugin — id `domorium`, display
-name **Gedcom** — that adds GEDCOM 5.5.1 and 7.0 language support to Obsidian:
-validation, autocomplete, navigation, folding, semantic highlighting, and links
-from notes into records.
+name **Gedcom** — that adds GEDCOM 5.5.1 and 7.0 to Obsidian: a genealogy
+interface (a family graph, a timeline, a list of records and a record card that
+edits the record's lines), and language support in the source — validation,
+autocomplete, navigation, folding, semantic highlighting — with links from notes
+into records.
 
 The GEDCOM file stays the source of truth. The plugin does not convert records
 into Markdown, build a second genealogy database, or send vault data anywhere.

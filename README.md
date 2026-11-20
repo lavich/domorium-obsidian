@@ -4,11 +4,12 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 GEDCOM language support by Domorium. Read a `.ged` or `.gedcom` file as
-genealogy — people, families, sources and what each fact rests on — and edit its
-source directly in Obsidian with validation, autocomplete, navigation, folding,
-and semantic highlighting.
+genealogy — a family graph, a timeline of lives, a list of its records and a
+card that edits each record's own lines — and edit its source directly in
+Obsidian with validation, autocomplete, navigation, folding, and semantic
+highlighting.
 
-![GEDCOM editor in Obsidian](images/gedcom-obsidian.png)
+![A GEDCOM file in Obsidian as a family graph: choosing Marie Skłodowska-Curie opens her record card beside it, and Branch narrows the graph to her ancestors, descendants and their spouses](images/gedcom-obsidian.gif)
 
 Part of [Domorium](https://github.com/lavich/domorium). The same GEDCOM language
 support runs in [VS Code](https://marketplace.visualstudio.com/items?itemName=domorium.gedcom),
@@ -37,6 +38,10 @@ adapted per editor.
 - Highlighted and checked `gedcom` code blocks in notes
 - Links from a note to a record, indexed by the vault or as an `obsidian://` URL
 - Desktop and mobile Obsidian support
+
+![The timeline of the Curie family, each life a bar, with lines from Marie Skłodowska-Curie's parents to her and from her to her daughters](images/timeline.png)
+
+![The list of people in curie.ged beside Pierre Curie's record card, its Occupation field open for editing with its remove, add and move controls](images/list-and-card.png)
 
 The plugin keeps the GEDCOM file as the source of truth. It does not convert
 records into Markdown, create a second genealogy database, or send vault data
