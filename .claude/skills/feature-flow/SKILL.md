@@ -111,7 +111,8 @@ the user's.
   Name what still needs a look in Obsidian on the demo vault, and on a phone.
 - A new string the reader sees is translated into every language the plugin ships;
   no test catches a missing one.
-- A change a reader notices goes into `README.md` where the README describes it.
+- A change a reader notices goes into `docs/usage.md`, and into the overview in
+  `README.md` when it changes what the plugin offers.
 
 ## 5. Cross-review of the code
 
