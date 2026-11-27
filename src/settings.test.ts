@@ -185,7 +185,7 @@ describe("GEDCOM settings", () => {
       },
       {
         name: "Load images from the web",
-        desc: "Draw a FILE payload naming an https address. Off, the preview says the file is remote and fetches nothing.",
+        desc: "Draw a FILE payload naming an HTTPS address. Off, the preview says the file is remote and fetches nothing.",
         control: {
           type: "toggle",
           key: "remoteImages",

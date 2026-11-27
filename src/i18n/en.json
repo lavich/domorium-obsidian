@@ -52,7 +52,7 @@
   "setting.mediaPreview.name": "Media preview",
   "setting.mediaPreview.desc": "Show the photograph a FILE payload names when the pointer is over it.",
   "setting.remoteImages.name": "Load images from the web",
-  "setting.remoteImages.desc": "Draw a FILE payload naming an https address. Off, the preview says the file is remote and fetches nothing.",
+  "setting.remoteImages.desc": "Draw a FILE payload naming an HTTPS address. Off, the preview says the file is remote and fetches nothing.",
   "previewOption.modifier": "Hold Ctrl/Cmd and hover",
   "previewOption.hover": "Hover",
   "previewOption.off": "Never",
